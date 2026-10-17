@@ -34,6 +34,13 @@ products `Â[i, j] ×_T ŝ[j]` in the accumulator at `scratch + 1024` (in
 `rbp`), the first stored there (`Bodies.mulSet`) and the others added
 (`Bodies.mulAcc`), and adds the sum to `t[i]` (`Bodies.fin`).
 
+With AVX2, `encryptMulY` and `decryptMulY` go row by row instead: a first
+loop computes each `NTT(y[j])` (or `NTT(u'[j])`) to an accumulator at
+`scratch + 1024 + 512 j` (`nttTermY`, with the next accumulator in `r9`);
+then each output, from a row of products of those accumulators with the
+polynomials of a column of `Â`, of `t̂` or of `ŝ` (`rowEY`), stored as an
+accumulator in the output, and `NTT⁻¹` of it in place (`rowInvY`).
+
 Every address and branch depends only on the pointers.
 -/
 
