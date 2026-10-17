@@ -61,6 +61,9 @@ structure EDone (cs : BlockSpec c) (s₀ : State) (m₀ : Mem) (B D : Addr) (n :
   frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  /-- The buffer's first block holds the last ciphertext block. -/
+  last : n ≠ 0 → ∀ u < 8 * c.bw, s.mem (B + BitVec.ofNat 64 (8 * c.buf) + BitVec.ofNat 64 u) =
+    (cbcEncC (8 * c.bw) (cs.cipher k) m₀ D iv (n - 1)).getD u 0
 
 theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr} {n : Nat} {k : cs.Key}
     {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : GPre c s₀ B D n (8 * c.bw)) {j : Nat} {s : State}
@@ -267,7 +270,8 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
   by_cases hdone : j + 1 = n
   · have hm : s₆.mem = s₃.mem := by rw [mem₆, mDone hdone]
     refine .inl ⟨by rw [hz, decide_eq_true hdone], base₆, rsp₆, by rw [hm]; exact saved₃,
-      dinv_of_blocks hL0 fun q hq r hr => ?_, by rw [hm]; exact fr₃, rd₆', wr₆'⟩
+      dinv_of_blocks hL0 fun q hq r hr => ?_, by rw [hm]; exact fr₃, rd₆', wr₆',
+      fun _ u hu => by rw [hm, ← hdone, Nat.add_sub_cancel]; exact T₃ u hu⟩
     rw [hm, D₃ q hq r hr, ite_eq_left hq]
     split
     · rename_i h; subst h; rfl
