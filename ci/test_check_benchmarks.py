@@ -21,6 +21,11 @@ const NAMES: [&str; 6] = ["ssse3", "aes", "bmi2", "adx", "sha3", "neon"];
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn runtime() -> u32 {
+    decode(|leaf, sub| cpuid(leaf, sub), || xgetbv(0))
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32 {
     let ssse3 = 1;
     let aes = 1;
     let bmi2 = 1;

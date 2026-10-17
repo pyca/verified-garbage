@@ -259,8 +259,9 @@ FEATURES = re.compile(
     r"_FEATURES: (?:&\[&str\] = &\[|crate::cpu::Features = crate::cpu::Features::of\(&\[)([^\]]*)\]")
 NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[([^\]]*)\];")
 # Each architecture's feature detection in `src/cpu.rs`: its `cfg`, and the
-# body, which names each feature in quotes or as a `let`.
-RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn runtime\(\) -> u32 \{\n(.*?)\n\}\n", re.S)
+# body, which names each feature in quotes or as a `let`; on x86 and x86-64,
+# `runtime` reads the CPU and `decode` (under the same `cfg`) names them.
+RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn (?:runtime\(\)|decode\([^\n]*\)) -> u32 \{\n(.*?)\n\}\n", re.S)
 LET = re.compile(r"\blet ([a-z0-9_]+) =")
 # A top-level module only tests compile: from its `#[cfg(test)]` to the `}`
 # closing it, alone in column 0 as rustfmt writes it.
