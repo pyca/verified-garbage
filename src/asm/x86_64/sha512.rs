@@ -3722,14 +3722,14 @@ ret
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 48 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -3738,7 +3738,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -3893,7 +3893,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -4081,15 +4081,15 @@ pub(crate) const VG_SHA384_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 48 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -4098,7 +4098,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -4253,7 +4253,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
@@ -4441,15 +4441,15 @@ pub(crate) const VG_SHA384_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 48 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_digest_shani(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -4458,7 +4458,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -4613,7 +4613,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
@@ -5289,14 +5289,14 @@ ret
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 64 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -5305,7 +5305,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -5466,7 +5466,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -6161,15 +6161,15 @@ pub(crate) const VG_SHA512_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 64 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -6178,7 +6178,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -6339,7 +6339,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
@@ -7034,15 +7034,15 @@ pub(crate) const VG_SHA512_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 64 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_digest_shani(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -7051,7 +7051,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -7212,7 +7212,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
@@ -7387,14 +7387,14 @@ ret
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -7403,7 +7403,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -7552,7 +7552,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -7734,15 +7734,15 @@ pub(crate) const VG_SHA512_224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crat
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -7751,7 +7751,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -7900,7 +7900,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
@@ -8082,15 +8082,15 @@ pub(crate) const VG_SHA512_224_DIGEST_SHANI_FEATURES: crate::cpu::Features = cra
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -8099,7 +8099,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -8248,7 +8248,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
@@ -8423,14 +8423,14 @@ ret
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -8439,7 +8439,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -8588,7 +8588,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -8770,15 +8770,15 @@ pub(crate) const VG_SHA512_256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crat
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -8787,7 +8787,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -8936,7 +8936,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
@@ -9118,15 +9118,15 @@ pub(crate) const VG_SHA512_256_DIGEST_SHANI_FEATURES: crate::cpu::Features = cra
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1592]
+        r"lea rsp, [rsp-1624]
 mov rcx, rsp
 add rcx, 8
-add rcx, 192
+add rcx, 224
 mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
@@ -9135,7 +9135,7 @@ mov QWORD PTR [rcx+1360], r14
 mov QWORD PTR [rcx+1368], r15
 mov r15, rcx
 mov rbx, rcx
-sub rbx, 192
+sub rbx, 224
 mov r13, rdi
 mov r12, rsi
 mov rbp, rdx
@@ -9284,7 +9284,7 @@ mov r12, QWORD PTR [r15+1344]
 mov r13, QWORD PTR [r15+1352]
 mov r14, QWORD PTR [r15+1360]
 mov r15, QWORD PTR [r15+1368]
-lea rsp, [rsp+1592]
+lea rsp, [rsp+1624]
 ret
 .p2align 6",
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
