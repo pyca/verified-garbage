@@ -74,6 +74,8 @@ def VOp.fp : VOp → Option Fp
   | .umull _ d n m | .mul d n m => some (vecFp (vbit n ||| vbit m) (vbit d))
   | .shift _ _ d n _ => some (vecFp (vbit d ||| vbit n) (vbit d))
   | .umlal _ d n m => some (vecFp (vbit d ||| vbit n ||| vbit m) (vbit d))
+  | .eor3 d n m a | .bcax d n m a => some (vecFp (vbit n ||| vbit m ||| vbit a) (vbit d))
+  | .rax1 d n m | .xar d n m _ => some (vecFp (vbit n ||| vbit m) (vbit d))
   | _ => none
 
 /-- The footprint of an instruction of the class (memory at `[xb, #off]`), `none` for any other. -/
@@ -83,7 +85,8 @@ def fp (xb : Reg) : Instr → Option Fp
   | .adds _ d n m | .subs _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, false, true, 0, 0⟩
   | .adcs _ d n m | .sbcs _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, true, 0, 0⟩
   | .adc _ d n m | .sbc _ d n m | .csel _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, false, 0, 0⟩
-  | .addImm _ d n _ | .subImm _ d n _ | .lsr _ d n _ | .lsl _ d n _ =>
+  | .logicRor _ _ d n m _ | .bicRor _ d n m _ => some (regFp (gbit n ||| gbit m) (gbit d))
+  | .addImm _ d n _ | .subImm _ d n _ | .lsr _ d n _ | .lsl _ d n _ | .ror _ d n _ =>
     some (regFp (gbit n) (gbit d))
   | .madd _ d n m a => some (regFp (gbit n ||| gbit m ||| gbit a) (gbit d))
   | .movz _ d _ _ => some (regFp 0 (gbit d))
@@ -627,6 +630,51 @@ theorem det_lsl {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb 
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
+theorem det_logicRor {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.logicRor op sz d n m sh) = some F) :
+    Det xb (.logicRor op sz d n m sh) F := by
+  intro s t h s' he
+  have hg := h.gpr
+  simp only [fp, Option.some.injEq] at hf
+  subst hf
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
+  split at he
+  · rename_i hcond
+    simp only [Option.some.injEq] at he
+    subst he
+    refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
+    simp only [exec, State.read, hcond, ite_true]
+  · cases he
+
+theorem det_bicRor {sz : Size} {d : Reg} {n : Reg} {m : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.bicRor sz d n m sh) = some F) :
+    Det xb (.bicRor sz d n m sh) F := by
+  intro s t h s' he
+  have hg := h.gpr
+  simp only [fp, Option.some.injEq] at hf
+  subst hf
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
+  split at he
+  · rename_i hcond
+    simp only [Option.some.injEq] at he
+    subst he
+    refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
+    simp only [exec, State.read, hcond, ite_true]
+  · cases he
+
+theorem det_ror {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.ror sz d n sh) = some F) :
+    Det xb (.ror sz d n sh) F := by
+  intro s t h s' he
+  have hg := h.gpr
+  simp only [fp, Option.some.injEq] at hf
+  subst hf
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg] at he
+  split at he
+  · rename_i hcond
+    simp only [Option.some.injEq] at he
+    subst he
+    refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
+    simp only [exec, State.read, hcond, ite_true]
+  · cases he
+
 theorem det_extr {sz : Size} {d : Reg} {n : Reg} {m : Reg} {lsb : Nat} {F : Fp} (hf : fp xb (.extr sz d n m lsb) = some F) :
     Det xb (.extr sz d n m lsb) F := by
   intro s t h s' he
@@ -789,6 +837,9 @@ theorem det {i : Instr} {F : Fp} (hf : fp xb i = some F) : Det xb i F := by
   case lsr => exact det_lsr hf
   case lsl => exact det_lsl hf
   case extr => exact det_extr hf
+  case logicRor => exact det_logicRor hf
+  case bicRor => exact det_bicRor hf
+  case ror => exact det_ror hf
   case movz => exact det_movz hf
   case movk => exact det_movk hf
   case str => exact det_str hf
