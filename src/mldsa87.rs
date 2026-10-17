@@ -13,6 +13,12 @@
 //! module supplies the randomness and working space, and destroys the
 //! intermediate values (§3.6.3).
 //!
+//! On AArch64, verification is `vg_mldsa87_verify_message_cached`
+//! (`verifyMessageCachedContract`), which takes the hash `tr = H(pk, 64)`
+//! of the public key (FIPS 204 Algorithm 8) rather than computing it each
+//! time: a [`VerifyingKey87`] keeps it, computed when the key is made from
+//! its bytes or taken from the private key, which holds it.
+//!
 //! A private key is kept as the 32-byte seed `ξ` it is generated from
 //! (§3.6.3), which [`SigningKey87::from_seed`] expands; the caller generates
 //! the seed with an approved RBG. The expanded private key is never
@@ -38,6 +44,7 @@ crate::mldsa_common::ml_dsa! {
     verify: crate::arch::mldsa87::vg_mldsa87_verify,
     sign_message: crate::arch::mldsa87::vg_mldsa87_sign_message,
     verify_message: crate::arch::mldsa87::vg_mldsa87_verify_message,
+    verify_message_cached: crate::arch::mldsa87::vg_mldsa87_verify_message_cached,
     keygen_sha3: (crate::arch::mldsa87::vg_mldsa87_keygen_sha3, crate::arch::mldsa87::VG_MLDSA87_KEYGEN_SHA3_FEATURES),
     sign_sha3: (crate::arch::mldsa87::vg_mldsa87_sign_sha3, crate::arch::mldsa87::VG_MLDSA87_SIGN_SHA3_FEATURES),
     verify_sha3: (crate::arch::mldsa87::vg_mldsa87_verify_sha3, crate::arch::mldsa87::VG_MLDSA87_VERIFY_SHA3_FEATURES),

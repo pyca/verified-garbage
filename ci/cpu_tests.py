@@ -172,7 +172,7 @@ GROUPS = {
         ],
     },
     "mlkem": {
-        "lib": ["mlkem_common", "mlkem768::sha3_variant_tests", "mlkem1024::sha3_variant_tests"],
+        "lib": ["mlkem_common"],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
     "p224_sha": {

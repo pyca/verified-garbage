@@ -23324,505 +23324,6 @@ ret
     )
 }
 
-/// Decomposes a canonical polynomial minus a signed inverse-transform result and returns its strict low-part norm check.
-///
-/// # Safety
-///
-/// * `w` must be valid for reads and writes of 1024 bytes.
-/// * `cs` must be valid for reads of 1024 bytes.
-/// * `low` must be valid for reads and writes of 1024 bytes.
-/// * The first input must be canonical modulo 8380417; the second must have signed coefficients strictly between -8380417 and 16760834.
-/// * Gamma2 must be 95232 or 261888; the norm bound must be between 1 and 524288 inclusive.
-/// * `w` and `low` must not overlap each other or `cs` (distinct Rust objects never do).
-/// * None of `w`, `cs` and `low` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_signed_sub_low_norm(w: *mut [u32; 256], cs: *const [u32; 256], low: *mut [u32; 256], gamma2: u32, bound: u32) -> u32 {
-    core::arch::naked_asm!(
-        r"add w3, w3, #0
-movz w5, #65280, lsl #0
-movk w5, #3, lsl #16
-sub x5, x3, x5
-cbz x5, 20f
-movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-dup v16.4s, w9
-movz w9, #127, lsl #0
-movk w9, #0, lsl #16
-dup v17.4s, w9
-movz w9, #11275, lsl #0
-movk w9, #0, lsl #16
-dup v18.4s, w9
-movz w9, #0, lsl #0
-movk w9, #128, lsl #16
-dup v19.4s, w9
-movz w9, #44, lsl #0
-movk w9, #0, lsl #16
-dup v20.4s, w9
-movz w9, #59392, lsl #0
-movk w9, #2, lsl #16
-dup v21.4s, w9
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v22.4s, w9
-movi v23.2d, #0
-movz w9, #0, lsl #0
-movk w9, #64, lsl #16
-dup v25.4s, w9
-movz w9, #61440, lsl #0
-movk w9, #63, lsl #16
-dup v26.4s, w9
-dup v24.4s, w4
-movi v31.2d, #0
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v27.4s, w9
-sub v27.4s, v24.4s, v27.4s
-add v24.4s, v24.4s, v27.4s
-movz x10, #16, lsl #0
-22:
-ldr q0, [x0, #0]
-ldr q1, [x1, #0]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #24
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #0]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #0]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-ldr q0, [x0, #16]
-ldr q1, [x1, #16]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #24
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #16]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #16]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-ldr q0, [x0, #32]
-ldr q1, [x1, #32]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #24
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #32]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #32]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-ldr q0, [x0, #48]
-ldr q1, [x1, #48]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #24
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #48]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #48]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-add x0, x0, #64
-add x1, x1, #64
-add x2, x2, #64
-sub x10, x10, #1
-cbnz x10, 22b
-umov w0, v31.s[0]
-umov w9, v31.s[1]
-orr w0, w0, w9
-umov w9, v31.s[2]
-orr w0, w0, w9
-umov w9, v31.s[3]
-orr w0, w0, w9
-add w0, w0, #1
-b 21f
-20:
-movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-dup v16.4s, w9
-movz w9, #127, lsl #0
-movk w9, #0, lsl #16
-dup v17.4s, w9
-movz w9, #1025, lsl #0
-movk w9, #0, lsl #16
-dup v18.4s, w9
-movz w9, #0, lsl #0
-movk w9, #32, lsl #16
-dup v19.4s, w9
-movz w9, #16, lsl #0
-movk w9, #0, lsl #16
-dup v20.4s, w9
-movz w9, #65024, lsl #0
-movk w9, #7, lsl #16
-dup v21.4s, w9
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v22.4s, w9
-movi v23.2d, #0
-movz w9, #0, lsl #0
-movk w9, #64, lsl #16
-dup v25.4s, w9
-movz w9, #61440, lsl #0
-movk w9, #63, lsl #16
-dup v26.4s, w9
-dup v24.4s, w4
-movi v31.2d, #0
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v27.4s, w9
-sub v27.4s, v24.4s, v27.4s
-add v24.4s, v24.4s, v27.4s
-movz x10, #16, lsl #0
-23:
-ldr q0, [x0, #0]
-ldr q1, [x1, #0]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #22
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #0]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #0]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-ldr q0, [x0, #16]
-ldr q1, [x1, #16]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #22
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #16]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #16]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-ldr q0, [x0, #32]
-ldr q1, [x1, #32]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #22
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #32]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #32]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-ldr q0, [x0, #48]
-ldr q1, [x1, #48]
-sub v0.4s, v0.4s, v1.4s
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #22
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-str q1, [x0, #48]
-mls v0.4s, v1.4s, v21.4s
-sub v6.4s, v26.4s, v0.4s
-sshr v6.4s, v6.4s, #31
-and v6.16b, v6.16b, v16.16b
-sub v0.4s, v0.4s, v6.4s
-str q0, [x2, #48]
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-add x0, x0, #64
-add x1, x1, #64
-add x2, x2, #64
-sub x10, x10, #1
-cbnz x10, 23b
-umov w0, v31.s[0]
-umov w9, v31.s[1]
-orr w0, w0, w9
-umov w9, v31.s[2]
-orr w0, w0, w9
-umov w9, v31.s[3]
-orr w0, w0, w9
-add w0, w0, #1
-21:
-ret
-.p2align 6",
-    )
-}
-
-/// Creates hints from decomposed signed low and high parts and a signed challenge product, returning hint count and strict norm validity.
-///
-/// # Safety
-///
-/// * `low` must be valid for reads and writes of 1024 bytes.
-/// * `ct0` must be valid for reads of 1024 bytes.
-/// * `high` must be valid for reads of 1024 bytes.
-/// * Gamma2 must be 95232 or 261888; the low/high inputs must be an exact decomposition for that Gamma2.
-/// * Challenge-product coefficients must be signed integers strictly between -8380417 and 16760834.
-/// * `low` must not overlap `ct0` or `high` (distinct Rust objects never do).
-/// * None of `low`, `ct0` and `high` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_signed_hint_norm(low: *mut [u32; 256], ct0: *const [u32; 256], high: *const [u32; 256], gamma2: u32) -> u64 {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-dup v16.4s, w9
-movz w9, #0, lsl #0
-movk w9, #64, lsl #16
-dup v25.4s, w9
-dup v24.4s, w3
-dup v17.4s, w3
-movi v23.2d, #0
-sub v18.4s, v23.4s, v17.4s
-movi v30.2d, #0
-movi v31.2d, #0
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v27.4s, w9
-sub v27.4s, v24.4s, v27.4s
-add v24.4s, v24.4s, v27.4s
-movz x10, #16, lsl #0
-20:
-ldr q0, [x1, #0]
-ldr q3, [x0, #0]
-ldr q4, [x2, #0]
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-add v0.4s, v0.4s, v3.4s
-sub v2.4s, v17.4s, v0.4s
-sub v3.4s, v0.4s, v18.4s
-orr v2.16b, v2.16b, v3.16b
-sshr v2.4s, v2.4s, #31
-cmeq v3.4s, v0.4s, v18.4s
-cmeq v4.4s, v4.4s, v23.4s
-bic v3.16b, v3.16b, v4.16b
-orr v2.16b, v2.16b, v3.16b
-ushr v2.4s, v2.4s, #31
-str q2, [x0, #0]
-add v30.4s, v30.4s, v2.4s
-ldr q0, [x1, #16]
-ldr q3, [x0, #16]
-ldr q4, [x2, #16]
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-add v0.4s, v0.4s, v3.4s
-sub v2.4s, v17.4s, v0.4s
-sub v3.4s, v0.4s, v18.4s
-orr v2.16b, v2.16b, v3.16b
-sshr v2.4s, v2.4s, #31
-cmeq v3.4s, v0.4s, v18.4s
-cmeq v4.4s, v4.4s, v23.4s
-bic v3.16b, v3.16b, v4.16b
-orr v2.16b, v2.16b, v3.16b
-ushr v2.4s, v2.4s, #31
-str q2, [x0, #16]
-add v30.4s, v30.4s, v2.4s
-ldr q0, [x1, #32]
-ldr q3, [x0, #32]
-ldr q4, [x2, #32]
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-add v0.4s, v0.4s, v3.4s
-sub v2.4s, v17.4s, v0.4s
-sub v3.4s, v0.4s, v18.4s
-orr v2.16b, v2.16b, v3.16b
-sshr v2.4s, v2.4s, #31
-cmeq v3.4s, v0.4s, v18.4s
-cmeq v4.4s, v4.4s, v23.4s
-bic v3.16b, v3.16b, v4.16b
-orr v2.16b, v2.16b, v3.16b
-ushr v2.4s, v2.4s, #31
-str q2, [x0, #32]
-add v30.4s, v30.4s, v2.4s
-ldr q0, [x1, #48]
-ldr q3, [x0, #48]
-ldr q4, [x2, #48]
-add v6.4s, v0.4s, v25.4s
-sshr v6.4s, v6.4s, #23
-mls v0.4s, v6.4s, v16.4s
-add v2.4s, v0.4s, v27.4s
-umin v2.4s, v2.4s, v24.4s
-cmeq v2.4s, v2.4s, v24.4s
-orr v31.16b, v31.16b, v2.16b
-add v0.4s, v0.4s, v3.4s
-sub v2.4s, v17.4s, v0.4s
-sub v3.4s, v0.4s, v18.4s
-orr v2.16b, v2.16b, v3.16b
-sshr v2.4s, v2.4s, #31
-cmeq v3.4s, v0.4s, v18.4s
-cmeq v4.4s, v4.4s, v23.4s
-bic v3.16b, v3.16b, v4.16b
-orr v2.16b, v2.16b, v3.16b
-ushr v2.4s, v2.4s, #31
-str q2, [x0, #48]
-add v30.4s, v30.4s, v2.4s
-add x0, x0, #64
-add x1, x1, #64
-add x2, x2, #64
-sub x10, x10, #1
-cbnz x10, 20b
-umov w1, v31.s[0]
-umov w9, v31.s[1]
-orr w1, w1, w9
-umov w9, v31.s[2]
-orr w1, w1, w9
-umov w9, v31.s[3]
-orr w1, w1, w9
-add w1, w1, #1
-umov w0, v30.s[0]
-umov w9, v30.s[1]
-add w0, w0, w9
-umov w9, v30.s[2]
-add w0, w0, w9
-umov w9, v30.s[3]
-add w0, w0, w9
-lsl x1, x1, #32
-orr x0, x0, x1
-ret
-.p2align 6",
-    )
-}
-
 /// `Power2Round` (FIPS 204 Algorithm 35) of each coefficient of `*t`: writes the `r1`s to `*t1` and the `r0`s, modulo `q` = 8380417, to `*t0`.
 ///
 /// Contract: `VG.Spec.MlDsa.power2RoundContract`. Constant time: only the pointers may affect timing, not the data.
@@ -23896,150 +23397,6 @@ ret
     )
 }
 
-/// `HighBits` (FIPS 204 Algorithm 37) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r1`s to `*out`.
-///
-/// Contract: `VG.Spec.MlDsa.highBitsContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `r` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of 1024 bytes.
-/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
-/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
-/// * `out` must not overlap `r` (distinct Rust objects never do).
-/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
-    core::arch::naked_asm!(
-        r"add w1, w1, #0
-movz w3, #65280, lsl #0
-movk w3, #3, lsl #16
-sub x3, x1, x3
-cbz x3, 20f
-movz x4, #11275, lsl #0
-movz x5, #128, lsl #16
-movz x6, #256, lsl #0
-22:
-ldr w11, [x0, #0]
-add x12, x11, #127
-lsr x12, x12, #7
-mul x12, x12, x4
-add x12, x12, x5
-lsr x12, x12, #24
-sub x13, x12, #44
-lsr x13, x13, #63
-mul x12, x12, x13
-str w12, [x2, #0]
-add x0, x0, #4
-add x2, x2, #4
-sub x6, x6, #1
-cbnz x6, 22b
-b 21f
-20:
-movz x4, #1025, lsl #0
-movz x5, #32, lsl #16
-movz x6, #256, lsl #0
-23:
-ldr w11, [x0, #0]
-add x12, x11, #127
-lsr x12, x12, #7
-mul x12, x12, x4
-add x12, x12, x5
-lsr x12, x12, #22
-sub x13, x12, #16
-lsr x13, x13, #63
-mul x12, x12, x13
-str w12, [x2, #0]
-add x0, x0, #4
-add x2, x2, #4
-sub x6, x6, #1
-cbnz x6, 23b
-21:
-ret
-.p2align 6",
-    )
-}
-
-/// `LowBits` (FIPS 204 Algorithm 38) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r0`s, modulo `q` = 8380417, to `*out`.
-///
-/// Contract: `VG.Spec.MlDsa.lowBitsContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `r` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of 1024 bytes.
-/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
-/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
-/// * `out` must not overlap `r` (distinct Rust objects never do).
-/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
-    core::arch::naked_asm!(
-        r"add w1, w1, #0
-movz w3, #65280, lsl #0
-movk w3, #3, lsl #16
-sub x3, x1, x3
-cbz x3, 20f
-movz x4, #11275, lsl #0
-movz x5, #128, lsl #16
-movz w7, #59392, lsl #0
-movk w7, #2, lsl #16
-movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz x6, #256, lsl #0
-22:
-ldr w11, [x0, #0]
-add x12, x11, #127
-lsr x12, x12, #7
-mul x12, x12, x4
-add x12, x12, x5
-lsr x12, x12, #24
-sub x13, x12, #44
-lsr x13, x13, #63
-mul x12, x12, x13
-mul x12, x12, x7
-sub x11, x11, x12
-lsr x13, x11, #63
-madd x11, x13, x9, x11
-str w11, [x2, #0]
-add x0, x0, #4
-add x2, x2, #4
-sub x6, x6, #1
-cbnz x6, 22b
-b 21f
-20:
-movz x4, #1025, lsl #0
-movz x5, #32, lsl #16
-movz w7, #65024, lsl #0
-movk w7, #7, lsl #16
-movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz x6, #256, lsl #0
-23:
-ldr w11, [x0, #0]
-add x12, x11, #127
-lsr x12, x12, #7
-mul x12, x12, x4
-add x12, x12, x5
-lsr x12, x12, #22
-sub x13, x12, #16
-lsr x13, x13, #63
-mul x12, x12, x13
-mul x12, x12, x7
-sub x11, x11, x12
-lsr x13, x11, #63
-madd x11, x13, x9, x11
-str w11, [x2, #0]
-add x0, x0, #4
-add x2, x2, #4
-sub x6, x6, #1
-cbnz x6, 23b
-21:
-ret
-.p2align 6",
-    )
-}
-
 /// Returns 1 if the infinity norm of the polynomial `*f` (FIPS 204 §2.3: the largest `|fᵢ mod± q|`) is less than `bound`, and 0 otherwise.
 ///
 /// Contract: `VG.Spec.MlDsa.normLtContract`. Constant time: only the pointer and `bound` may affect timing, not the data.
@@ -24069,115 +23426,6 @@ add x0, x0, #4
 sub x11, x11, #1
 cbnz x11, 20b
 lsr x0, x10, #63
-ret
-.p2align 6",
-    )
-}
-
-/// `MakeHint` (FIPS 204 Algorithm 39) of each pair of coefficients of `*z` and `*r`, with `gamma2` = `γ₂`: writes 1 for true and 0 for false to `*h`, and returns the number of 1s.
-///
-/// Contract: `VG.Spec.MlDsa.makeHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `z` must be valid for reads of 1024 bytes.
-/// * `r` must be valid for reads of 1024 bytes.
-/// * `h` must be valid for reads and writes of 1024 bytes.
-/// * `gamma2` must be (q - 1)/88 = 95232 or (q - 1)/32 = 261888.
-/// * Each of the 256 `u32`s of `z` must be less than `q` = 8380417.
-/// * Each of the 256 `u32`s of `r` must be less than `q` = 8380417.
-/// * `h` must not overlap `z` or `r` (distinct Rust objects never do).
-/// * None of `z`, `r` and `h` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
-    core::arch::naked_asm!(
-        r"add w2, w2, #0
-movz w4, #65280, lsl #0
-movk w4, #3, lsl #16
-sub x4, x2, x4
-cbz x4, 20f
-movz x5, #11275, lsl #0
-movz x6, #128, lsl #16
-movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz x8, #0, lsl #0
-movz x7, #256, lsl #0
-22:
-ldr w11, [x1, #0]
-add x12, x11, #127
-lsr x12, x12, #7
-mul x12, x12, x5
-add x12, x12, x6
-lsr x12, x12, #24
-sub x13, x12, #44
-lsr x13, x13, #63
-mul x12, x12, x13
-ldr w14, [x0, #0]
-add x11, x11, x14
-sub x11, x11, x9
-lsr x13, x11, #63
-madd x11, x13, x9, x11
-add x14, x11, #127
-lsr x14, x14, #7
-mul x14, x14, x5
-add x14, x14, x6
-lsr x14, x14, #24
-sub x13, x14, #44
-lsr x13, x13, #63
-mul x14, x14, x13
-eor x14, x14, x12
-add x14, x14, #63
-lsr x14, x14, #6
-str w14, [x3, #0]
-add x8, x8, x14
-add x0, x0, #4
-add x1, x1, #4
-add x3, x3, #4
-sub x7, x7, #1
-cbnz x7, 22b
-b 21f
-20:
-movz x5, #1025, lsl #0
-movz x6, #32, lsl #16
-movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz x8, #0, lsl #0
-movz x7, #256, lsl #0
-23:
-ldr w11, [x1, #0]
-add x12, x11, #127
-lsr x12, x12, #7
-mul x12, x12, x5
-add x12, x12, x6
-lsr x12, x12, #22
-sub x13, x12, #16
-lsr x13, x13, #63
-mul x12, x12, x13
-ldr w14, [x0, #0]
-add x11, x11, x14
-sub x11, x11, x9
-lsr x13, x11, #63
-madd x11, x13, x9, x11
-add x14, x11, #127
-lsr x14, x14, #7
-mul x14, x14, x5
-add x14, x14, x6
-lsr x14, x14, #22
-sub x13, x14, #16
-lsr x13, x13, #63
-mul x14, x14, x13
-eor x14, x14, x12
-add x14, x14, #63
-lsr x14, x14, #6
-str w14, [x3, #0]
-add x8, x8, x14
-add x0, x0, #4
-add x1, x1, #4
-add x3, x3, #4
-sub x7, x7, #1
-cbnz x7, 23b
-21:
-add x0, x8, #0
 ret
 .p2align 6",
     )
@@ -25554,486 +24802,6 @@ ldr x19, [x19, #7968]
 ret
 .p2align 6",
         vg_keccak_f1600_x2 = sym super::sha3::vg_keccak_f1600_x2,
-    )
-}
-
-/// `RejNTTPoly` (FIPS 204 Algorithm 30): writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes `*seed` to `*a` (256 coefficients less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.rejNTTContract`. Not constant time in the seed: timing may depend on the pointers and on `*seed` (public in ML-DSA: the seed `ρ` of the matrix and two indices), but not on anything else.
-///
-/// It squeezes 1008 bytes of SHAKE128 output (6 blocks) and runs the loop of `RejNTTPoly` over them.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 34 bytes.
-/// * `a` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
-    core::arch::naked_asm!(
-        r"str x25, [x2, #2016]
-str x26, [x2, #2024]
-str x27, [x2, #2032]
-str x30, [x2, #2040]
-add x25, x2, #0
-add x26, x1, #0
-movz x27, #0, lsl #0
-add x3, x0, #0
-movz x4, #34, lsl #0
-movz x9, #0, lsl #0
-str x9, [x25, #0]
-str x9, [x25, #8]
-str x9, [x25, #16]
-str x9, [x25, #24]
-str x9, [x25, #32]
-str x9, [x25, #40]
-str x9, [x25, #48]
-str x9, [x25, #56]
-str x9, [x25, #64]
-str x9, [x25, #72]
-str x9, [x25, #80]
-str x9, [x25, #88]
-str x9, [x25, #96]
-str x9, [x25, #104]
-str x9, [x25, #112]
-str x9, [x25, #120]
-str x9, [x25, #128]
-str x9, [x25, #136]
-str x9, [x25, #144]
-str x9, [x25, #152]
-str x9, [x25, #160]
-str x9, [x25, #168]
-str x9, [x25, #176]
-str x9, [x25, #184]
-str x9, [x25, #192]
-add x0, x25, #0
-movz x1, #168, lsl #0
-movz x2, #0, lsl #0
-add x5, x25, #200
-bl {vg_keccak_absorb_scratch}
-add x2, x0, #0
-add x0, x25, #0
-movz x1, #168, lsl #0
-movz x3, #31, lsl #0
-add x4, x25, #200
-bl {vg_keccak_pad_scratch}
-add x0, x25, #0
-movz x1, #168, lsl #0
-movz x2, #0, lsl #0
-add x3, x25, #840
-movz x4, #1008, lsl #0
-add x5, x25, #200
-bl {vg_keccak_squeeze_scratch}
-movz x9, #0, lsl #0
-add x3, x26, #0
-movz x4, #256, lsl #0
-20:
-str w9, [x3, #0]
-add x3, x3, #4
-sub x4, x4, #1
-cbnz x4, 20b
-add x2, x25, #840
-add x3, x26, #0
-movz x4, #256, lsl #0
-movz x5, #336, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-movz x10, #127, lsl #0
-21:
-ldrb w6, [x2, #0]
-ldrb w7, [x2, #1]
-ldrb w8, [x2, #2]
-add x2, x2, #3
-sub x5, x5, #1
-and x8, x8, x10
-lsl x8, x8, #16
-lsl x7, x7, #8
-add x11, x6, x7
-add x11, x11, x8
-cbz x4, 22f
-sub x13, x11, x9
-lsr x14, x13, #63
-str w11, [x3, #0]
-lsl x15, x14, #2
-add x3, x3, x15
-sub x4, x4, x14
-b 23f
-22:
-23:
-cbnz x5, 21b
-sub x0, x4, #1
-lsr x0, x0, #63
-ldr x30, [x25, #2040]
-ldr x26, [x25, #2024]
-ldr x27, [x25, #2032]
-ldr x25, [x25, #2016]
-ret
-.p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
-    )
-}
-
-/// `RejBoundedPoly` (FIPS 204 Algorithm 31): writes the polynomial with coefficients in `[-eta, eta]` sampled from the SHAKE256 output of the 66 bytes `*seed` to `*a` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 481 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.rejBoundedContract`. Not constant time in which half-bytes of the SHAKE256 output it rejects: timing may depend on the pointers, `eta`, and whether each half-byte of the first 1088 bytes of output is rejected (`rejBoundedLeak`), which is independent of the coefficients sampled from those accepted; but not on anything else of the seed or the output.
-///
-/// It squeezes 544 bytes of SHAKE256 output (4 blocks) and runs the loop of `RejBoundedPoly` over them. The coefficient of a half-byte is computed and stored without a branch or a table, and counted only if the half-byte is accepted, so only whether each half-byte is accepted affects timing.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 66 bytes.
-/// * `a` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `eta` must be 2 or 4.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
-    core::arch::naked_asm!(
-        r"str x25, [x3, #2016]
-str x26, [x3, #2024]
-str x27, [x3, #2032]
-str x30, [x3, #2040]
-add x25, x3, #0
-add x26, x2, #0
-add w27, w1, #0
-add x3, x0, #0
-movz x4, #66, lsl #0
-movz x9, #0, lsl #0
-str x9, [x25, #0]
-str x9, [x25, #8]
-str x9, [x25, #16]
-str x9, [x25, #24]
-str x9, [x25, #32]
-str x9, [x25, #40]
-str x9, [x25, #48]
-str x9, [x25, #56]
-str x9, [x25, #64]
-str x9, [x25, #72]
-str x9, [x25, #80]
-str x9, [x25, #88]
-str x9, [x25, #96]
-str x9, [x25, #104]
-str x9, [x25, #112]
-str x9, [x25, #120]
-str x9, [x25, #128]
-str x9, [x25, #136]
-str x9, [x25, #144]
-str x9, [x25, #152]
-str x9, [x25, #160]
-str x9, [x25, #168]
-str x9, [x25, #176]
-str x9, [x25, #184]
-str x9, [x25, #192]
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x5, x25, #200
-bl {vg_keccak_absorb_scratch}
-add x2, x0, #0
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x25, #200
-bl {vg_keccak_pad_scratch}
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x25, #840
-movz x4, #544, lsl #0
-add x5, x25, #200
-bl {vg_keccak_squeeze_scratch}
-sub x9, x27, #2
-cbz x9, 20f
-add x2, x25, #840
-add x3, x26, #0
-movz x4, #256, lsl #0
-movz x5, #544, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-add x10, x27, #0
-movz x11, #15, lsl #0
-movz x15, #9, lsl #0
-movz x16, #10, lsl #0
-movz x17, #5, lsl #0
-22:
-ldrb w6, [x2, #0]
-add x2, x2, #1
-sub x5, x5, #1
-and x7, x6, x11
-cbz x4, 23f
-sub x8, x7, x15
-lsr x12, x8, #63
-sub x13, x10, x7
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-lsr x7, x6, #4
-cbz x4, 25f
-sub x8, x7, x15
-lsr x12, x8, #63
-sub x13, x10, x7
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-b 26f
-25:
-26:
-b 24f
-23:
-24:
-cbnz x5, 22b
-b 21f
-20:
-add x2, x25, #840
-add x3, x26, #0
-movz x4, #256, lsl #0
-movz x5, #544, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-add x10, x27, #0
-movz x11, #15, lsl #0
-movz x15, #15, lsl #0
-movz x16, #10, lsl #0
-movz x17, #5, lsl #0
-27:
-ldrb w6, [x2, #0]
-add x2, x2, #1
-sub x5, x5, #1
-and x7, x6, x11
-cbz x4, 28f
-sub x8, x7, x15
-lsr x12, x8, #63
-add x13, x7, #0
-sub x13, x13, x16
-lsr x14, x13, #63
-madd x13, x14, x16, x13
-sub x13, x13, x17
-lsr x14, x13, #63
-madd x13, x14, x17, x13
-sub x13, x10, x13
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-lsr x7, x6, #4
-cbz x4, 210f
-sub x8, x7, x15
-lsr x12, x8, #63
-add x13, x7, #0
-sub x13, x13, x16
-lsr x14, x13, #63
-madd x13, x14, x16, x13
-sub x13, x13, x17
-lsr x14, x13, #63
-madd x13, x14, x17, x13
-sub x13, x10, x13
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-b 211f
-210:
-211:
-b 29f
-28:
-29:
-cbnz x5, 27b
-21:
-sub x0, x4, #1
-lsr x0, x0, #63
-ldr x30, [x25, #2040]
-ldr x26, [x25, #2024]
-ldr x27, [x25, #2032]
-ldr x25, [x25, #2016]
-ret
-.p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
-    )
-}
-
-/// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
-///
-/// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
-///
-/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks four coefficients at a time.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 66 bytes.
-/// * `a` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `gamma1` must be 2^17 or 2^19.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r"str x25, [x3, #2016]
-str x26, [x3, #2024]
-str x27, [x3, #2032]
-str x30, [x3, #2040]
-add x25, x3, #0
-add x26, x2, #0
-add w27, w1, #0
-add x3, x0, #0
-movz x4, #66, lsl #0
-movz x9, #0, lsl #0
-str x9, [x25, #0]
-str x9, [x25, #8]
-str x9, [x25, #16]
-str x9, [x25, #24]
-str x9, [x25, #32]
-str x9, [x25, #40]
-str x9, [x25, #48]
-str x9, [x25, #56]
-str x9, [x25, #64]
-str x9, [x25, #72]
-str x9, [x25, #80]
-str x9, [x25, #88]
-str x9, [x25, #96]
-str x9, [x25, #104]
-str x9, [x25, #112]
-str x9, [x25, #120]
-str x9, [x25, #128]
-str x9, [x25, #136]
-str x9, [x25, #144]
-str x9, [x25, #152]
-str x9, [x25, #160]
-str x9, [x25, #168]
-str x9, [x25, #176]
-str x9, [x25, #184]
-str x9, [x25, #192]
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x5, x25, #200
-bl {vg_keccak_absorb_scratch}
-add x2, x0, #0
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x25, #200
-bl {vg_keccak_pad_scratch}
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x25, #840
-movz x4, #640, lsl #0
-add x5, x25, #200
-bl {vg_keccak_squeeze_scratch}
-lsr x9, x27, #18
-cbz x9, 20f
-add x2, x25, #840
-add x3, x26, #0
-movz x5, #64, lsl #0
-movz x8, #15, lsl #16
-movk x8, #65535, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-22:
-ldr x6, [x2, #0]
-ldrb w7, [x2, #8]
-ldrb w11, [x2, #9]
-and x12, x6, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsr x12, x6, #20
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #4]
-lsr x12, x6, #40
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #8]
-lsr x12, x6, #60
-lsl x13, x7, #4
-add x12, x12, x13
-lsl x13, x11, #12
-add x12, x12, x13
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #12]
-add x2, x2, #10
-add x3, x3, #16
-sub x5, x5, #1
-cbnz x5, 22b
-b 21f
-20:
-add x2, x25, #840
-add x3, x26, #0
-movz x5, #64, lsl #0
-movz x8, #3, lsl #16
-movk x8, #65535, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-23:
-ldr x6, [x2, #0]
-ldrb w7, [x2, #8]
-and x12, x6, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsr x12, x6, #18
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #4]
-lsr x12, x6, #36
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #8]
-lsr x12, x6, #54
-lsl x13, x7, #10
-add x12, x12, x13
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #12]
-add x2, x2, #9
-add x3, x3, #16
-sub x5, x5, #1
-cbnz x5, 23b
-21:
-ldr x30, [x25, #2040]
-ldr x26, [x25, #2024]
-ldr x27, [x25, #2032]
-ldr x25, [x25, #2016]
-ret
-.p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -28181,504 +26949,6 @@ ret
     )
 }
 
-/// The CPU features `vg_mldsa_rej_ntt_poly_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_NTT_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
-
-/// `RejNTTPoly` (FIPS 204 Algorithm 30): writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes `*seed` to `*a` (256 coefficients less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.rejNTTContract`. Not constant time in the seed: timing may depend on the pointers and on `*seed` (public in ML-DSA: the seed `ρ` of the matrix and two indices), but not on anything else.
-///
-/// It squeezes 1008 bytes of SHAKE128 output (6 blocks) and runs the loop of `RejNTTPoly` over them.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 34 bytes.
-/// * `a` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly_sha3(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-str x25, [x2, #2016]
-str x26, [x2, #2024]
-str x27, [x2, #2032]
-str x30, [x2, #2040]
-add x25, x2, #0
-add x26, x1, #0
-movz x27, #0, lsl #0
-add x3, x0, #0
-movz x4, #34, lsl #0
-movz x9, #0, lsl #0
-str x9, [x25, #0]
-str x9, [x25, #8]
-str x9, [x25, #16]
-str x9, [x25, #24]
-str x9, [x25, #32]
-str x9, [x25, #40]
-str x9, [x25, #48]
-str x9, [x25, #56]
-str x9, [x25, #64]
-str x9, [x25, #72]
-str x9, [x25, #80]
-str x9, [x25, #88]
-str x9, [x25, #96]
-str x9, [x25, #104]
-str x9, [x25, #112]
-str x9, [x25, #120]
-str x9, [x25, #128]
-str x9, [x25, #136]
-str x9, [x25, #144]
-str x9, [x25, #152]
-str x9, [x25, #160]
-str x9, [x25, #168]
-str x9, [x25, #176]
-str x9, [x25, #184]
-str x9, [x25, #192]
-add x0, x25, #0
-movz x1, #168, lsl #0
-movz x2, #0, lsl #0
-add x5, x25, #200
-bl {vg_keccak_absorb_scratch_sha3}
-add x2, x0, #0
-add x0, x25, #0
-movz x1, #168, lsl #0
-movz x3, #31, lsl #0
-add x4, x25, #200
-bl {vg_keccak_pad_scratch_sha3}
-add x0, x25, #0
-movz x1, #168, lsl #0
-movz x2, #0, lsl #0
-add x3, x25, #840
-movz x4, #1008, lsl #0
-add x5, x25, #200
-bl {vg_keccak_squeeze_scratch_sha3}
-movz x9, #0, lsl #0
-add x3, x26, #0
-movz x4, #256, lsl #0
-20:
-str w9, [x3, #0]
-add x3, x3, #4
-sub x4, x4, #1
-cbnz x4, 20b
-add x2, x25, #840
-add x3, x26, #0
-movz x4, #256, lsl #0
-movz x5, #336, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-movz x10, #127, lsl #0
-21:
-ldrb w6, [x2, #0]
-ldrb w7, [x2, #1]
-ldrb w8, [x2, #2]
-add x2, x2, #3
-sub x5, x5, #1
-and x8, x8, x10
-lsl x8, x8, #16
-lsl x7, x7, #8
-add x11, x6, x7
-add x11, x11, x8
-cbz x4, 22f
-sub x13, x11, x9
-lsr x14, x13, #63
-str w11, [x3, #0]
-lsl x15, x14, #2
-add x3, x3, x15
-sub x4, x4, x14
-b 23f
-22:
-23:
-cbnz x5, 21b
-sub x0, x4, #1
-lsr x0, x0, #63
-ldr x30, [x25, #2040]
-ldr x26, [x25, #2024]
-ldr x27, [x25, #2032]
-ldr x25, [x25, #2016]
-ret
-.arch_extension nosha3
-.p2align 6",
-        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
-    )
-}
-
-/// The CPU features `vg_mldsa_rej_bounded_poly_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
-
-/// `RejBoundedPoly` (FIPS 204 Algorithm 31): writes the polynomial with coefficients in `[-eta, eta]` sampled from the SHAKE256 output of the 66 bytes `*seed` to `*a` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 481 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.rejBoundedContract`. Not constant time in which half-bytes of the SHAKE256 output it rejects: timing may depend on the pointers, `eta`, and whether each half-byte of the first 1088 bytes of output is rejected (`rejBoundedLeak`), which is independent of the coefficients sampled from those accepted; but not on anything else of the seed or the output.
-///
-/// It squeezes 544 bytes of SHAKE256 output (4 blocks) and runs the loop of `RejBoundedPoly` over them. The coefficient of a half-byte is computed and stored without a branch or a table, and counted only if the half-byte is accepted, so only whether each half-byte is accepted affects timing.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 66 bytes.
-/// * `a` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `eta` must be 2 or 4.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly_sha3(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-str x25, [x3, #2016]
-str x26, [x3, #2024]
-str x27, [x3, #2032]
-str x30, [x3, #2040]
-add x25, x3, #0
-add x26, x2, #0
-add w27, w1, #0
-add x3, x0, #0
-movz x4, #66, lsl #0
-movz x9, #0, lsl #0
-str x9, [x25, #0]
-str x9, [x25, #8]
-str x9, [x25, #16]
-str x9, [x25, #24]
-str x9, [x25, #32]
-str x9, [x25, #40]
-str x9, [x25, #48]
-str x9, [x25, #56]
-str x9, [x25, #64]
-str x9, [x25, #72]
-str x9, [x25, #80]
-str x9, [x25, #88]
-str x9, [x25, #96]
-str x9, [x25, #104]
-str x9, [x25, #112]
-str x9, [x25, #120]
-str x9, [x25, #128]
-str x9, [x25, #136]
-str x9, [x25, #144]
-str x9, [x25, #152]
-str x9, [x25, #160]
-str x9, [x25, #168]
-str x9, [x25, #176]
-str x9, [x25, #184]
-str x9, [x25, #192]
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x5, x25, #200
-bl {vg_keccak_absorb_scratch_sha3}
-add x2, x0, #0
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x25, #200
-bl {vg_keccak_pad_scratch_sha3}
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x25, #840
-movz x4, #544, lsl #0
-add x5, x25, #200
-bl {vg_keccak_squeeze_scratch_sha3}
-sub x9, x27, #2
-cbz x9, 20f
-add x2, x25, #840
-add x3, x26, #0
-movz x4, #256, lsl #0
-movz x5, #544, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-add x10, x27, #0
-movz x11, #15, lsl #0
-movz x15, #9, lsl #0
-movz x16, #10, lsl #0
-movz x17, #5, lsl #0
-22:
-ldrb w6, [x2, #0]
-add x2, x2, #1
-sub x5, x5, #1
-and x7, x6, x11
-cbz x4, 23f
-sub x8, x7, x15
-lsr x12, x8, #63
-sub x13, x10, x7
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-lsr x7, x6, #4
-cbz x4, 25f
-sub x8, x7, x15
-lsr x12, x8, #63
-sub x13, x10, x7
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-b 26f
-25:
-26:
-b 24f
-23:
-24:
-cbnz x5, 22b
-b 21f
-20:
-add x2, x25, #840
-add x3, x26, #0
-movz x4, #256, lsl #0
-movz x5, #544, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-add x10, x27, #0
-movz x11, #15, lsl #0
-movz x15, #15, lsl #0
-movz x16, #10, lsl #0
-movz x17, #5, lsl #0
-27:
-ldrb w6, [x2, #0]
-add x2, x2, #1
-sub x5, x5, #1
-and x7, x6, x11
-cbz x4, 28f
-sub x8, x7, x15
-lsr x12, x8, #63
-add x13, x7, #0
-sub x13, x13, x16
-lsr x14, x13, #63
-madd x13, x14, x16, x13
-sub x13, x13, x17
-lsr x14, x13, #63
-madd x13, x14, x17, x13
-sub x13, x10, x13
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-lsr x7, x6, #4
-cbz x4, 210f
-sub x8, x7, x15
-lsr x12, x8, #63
-add x13, x7, #0
-sub x13, x13, x16
-lsr x14, x13, #63
-madd x13, x14, x16, x13
-sub x13, x13, x17
-lsr x14, x13, #63
-madd x13, x14, x17, x13
-sub x13, x10, x13
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsl x14, x12, #2
-add x3, x3, x14
-sub x4, x4, x12
-b 211f
-210:
-211:
-b 29f
-28:
-29:
-cbnz x5, 27b
-21:
-sub x0, x4, #1
-lsr x0, x0, #63
-ldr x30, [x25, #2040]
-ldr x26, [x25, #2024]
-ldr x27, [x25, #2032]
-ldr x25, [x25, #2016]
-ret
-.arch_extension nosha3
-.p2align 6",
-        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
-    )
-}
-
-/// The CPU features `vg_mldsa_expand_mask_poly_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
-
-/// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
-///
-/// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
-///
-/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks four coefficients at a time.
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 66 bytes.
-/// * `a` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `gamma1` must be 2^17 or 2^19.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly_sha3(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-str x25, [x3, #2016]
-str x26, [x3, #2024]
-str x27, [x3, #2032]
-str x30, [x3, #2040]
-add x25, x3, #0
-add x26, x2, #0
-add w27, w1, #0
-add x3, x0, #0
-movz x4, #66, lsl #0
-movz x9, #0, lsl #0
-str x9, [x25, #0]
-str x9, [x25, #8]
-str x9, [x25, #16]
-str x9, [x25, #24]
-str x9, [x25, #32]
-str x9, [x25, #40]
-str x9, [x25, #48]
-str x9, [x25, #56]
-str x9, [x25, #64]
-str x9, [x25, #72]
-str x9, [x25, #80]
-str x9, [x25, #88]
-str x9, [x25, #96]
-str x9, [x25, #104]
-str x9, [x25, #112]
-str x9, [x25, #120]
-str x9, [x25, #128]
-str x9, [x25, #136]
-str x9, [x25, #144]
-str x9, [x25, #152]
-str x9, [x25, #160]
-str x9, [x25, #168]
-str x9, [x25, #176]
-str x9, [x25, #184]
-str x9, [x25, #192]
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x5, x25, #200
-bl {vg_keccak_absorb_scratch_sha3}
-add x2, x0, #0
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x25, #200
-bl {vg_keccak_pad_scratch_sha3}
-add x0, x25, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x25, #840
-movz x4, #640, lsl #0
-add x5, x25, #200
-bl {vg_keccak_squeeze_scratch_sha3}
-lsr x9, x27, #18
-cbz x9, 20f
-add x2, x25, #840
-add x3, x26, #0
-movz x5, #64, lsl #0
-movz x8, #15, lsl #16
-movk x8, #65535, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-22:
-ldr x6, [x2, #0]
-ldrb w7, [x2, #8]
-ldrb w11, [x2, #9]
-and x12, x6, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsr x12, x6, #20
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #4]
-lsr x12, x6, #40
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #8]
-lsr x12, x6, #60
-lsl x13, x7, #4
-add x12, x12, x13
-lsl x13, x11, #12
-add x12, x12, x13
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #12]
-add x2, x2, #10
-add x3, x3, #16
-sub x5, x5, #1
-cbnz x5, 22b
-b 21f
-20:
-add x2, x25, #840
-add x3, x26, #0
-movz x5, #64, lsl #0
-movz x8, #3, lsl #16
-movk x8, #65535, lsl #0
-movz x9, #57345, lsl #0
-movk x9, #127, lsl #16
-23:
-ldr x6, [x2, #0]
-ldrb w7, [x2, #8]
-and x12, x6, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #0]
-lsr x12, x6, #18
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #4]
-lsr x12, x6, #36
-and x12, x12, x8
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #8]
-lsr x12, x6, #54
-lsl x13, x7, #10
-add x12, x12, x13
-sub x13, x27, x12
-lsr x14, x13, #63
-madd x13, x14, x9, x13
-str w13, [x3, #12]
-add x2, x2, #9
-add x3, x3, #16
-sub x5, x5, #1
-cbnz x5, 23b
-21:
-ldr x30, [x25, #2040]
-ldr x26, [x25, #2024]
-ldr x27, [x25, #2032]
-ldr x25, [x25, #2016]
-ret
-.arch_extension nosha3
-.p2align 6",
-        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
-    )
-}
-
 /// The CPU features `vg_mldsa_sample_in_ball_sha3` requires (`Artifact.features`).
 pub(crate) const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
@@ -28919,6 +27189,179 @@ b 28f
 27:
 28:
 lsr x0, x10, #8
+ldr x30, [x25, #2040]
+ldr x26, [x25, #2024]
+ldr x27, [x25, #2032]
+ldr x25, [x25, #2016]
+ret
+.arch_extension nosha3
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
+    )
+}
+
+/// The CPU features `vg_mldsa_expand_mask_poly_sha3` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+
+/// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
+///
+/// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
+///
+/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks four coefficients at a time.
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 66 bytes.
+/// * `a` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `gamma1` must be 2^17 or 2^19.
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly_sha3(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+str x25, [x3, #2016]
+str x26, [x3, #2024]
+str x27, [x3, #2032]
+str x30, [x3, #2040]
+add x25, x3, #0
+add x26, x2, #0
+add w27, w1, #0
+add x3, x0, #0
+movz x4, #66, lsl #0
+movz x9, #0, lsl #0
+str x9, [x25, #0]
+str x9, [x25, #8]
+str x9, [x25, #16]
+str x9, [x25, #24]
+str x9, [x25, #32]
+str x9, [x25, #40]
+str x9, [x25, #48]
+str x9, [x25, #56]
+str x9, [x25, #64]
+str x9, [x25, #72]
+str x9, [x25, #80]
+str x9, [x25, #88]
+str x9, [x25, #96]
+str x9, [x25, #104]
+str x9, [x25, #112]
+str x9, [x25, #120]
+str x9, [x25, #128]
+str x9, [x25, #136]
+str x9, [x25, #144]
+str x9, [x25, #152]
+str x9, [x25, #160]
+str x9, [x25, #168]
+str x9, [x25, #176]
+str x9, [x25, #184]
+str x9, [x25, #192]
+add x0, x25, #0
+movz x1, #136, lsl #0
+movz x2, #0, lsl #0
+add x5, x25, #200
+bl {vg_keccak_absorb_scratch_sha3}
+add x2, x0, #0
+add x0, x25, #0
+movz x1, #136, lsl #0
+movz x3, #31, lsl #0
+add x4, x25, #200
+bl {vg_keccak_pad_scratch_sha3}
+add x0, x25, #0
+movz x1, #136, lsl #0
+movz x2, #0, lsl #0
+add x3, x25, #840
+movz x4, #640, lsl #0
+add x5, x25, #200
+bl {vg_keccak_squeeze_scratch_sha3}
+lsr x9, x27, #18
+cbz x9, 20f
+add x2, x25, #840
+add x3, x26, #0
+movz x5, #64, lsl #0
+movz x8, #15, lsl #16
+movk x8, #65535, lsl #0
+movz x9, #57345, lsl #0
+movk x9, #127, lsl #16
+22:
+ldr x6, [x2, #0]
+ldrb w7, [x2, #8]
+ldrb w11, [x2, #9]
+and x12, x6, x8
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #0]
+lsr x12, x6, #20
+and x12, x12, x8
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #4]
+lsr x12, x6, #40
+and x12, x12, x8
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #8]
+lsr x12, x6, #60
+lsl x13, x7, #4
+add x12, x12, x13
+lsl x13, x11, #12
+add x12, x12, x13
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #12]
+add x2, x2, #10
+add x3, x3, #16
+sub x5, x5, #1
+cbnz x5, 22b
+b 21f
+20:
+add x2, x25, #840
+add x3, x26, #0
+movz x5, #64, lsl #0
+movz x8, #3, lsl #16
+movk x8, #65535, lsl #0
+movz x9, #57345, lsl #0
+movk x9, #127, lsl #16
+23:
+ldr x6, [x2, #0]
+ldrb w7, [x2, #8]
+and x12, x6, x8
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #0]
+lsr x12, x6, #18
+and x12, x12, x8
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #4]
+lsr x12, x6, #36
+and x12, x12, x8
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #8]
+lsr x12, x6, #54
+lsl x13, x7, #10
+add x12, x12, x13
+sub x13, x27, x12
+lsr x14, x13, #63
+madd x13, x14, x9, x13
+str w13, [x3, #12]
+add x2, x2, #9
+add x3, x3, #16
+sub x5, x5, #1
+cbnz x5, 23b
+21:
 ldr x30, [x25, #2040]
 ldr x26, [x25, #2024]
 ldr x27, [x25, #2032]
