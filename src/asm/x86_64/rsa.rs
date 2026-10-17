@@ -22669,35 +22669,25 @@ sbb rax, rax
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
 vmovdqu64 ymm11, YMMWORD PTR [r8]
-vpandq ymm11, ymm11, ymm10
-vporq ymm0, ymm0, ymm11
+vpternlogq ymm0, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+32]
-vpandq ymm11, ymm11, ymm10
-vporq ymm1, ymm1, ymm11
+vpternlogq ymm1, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+64]
-vpandq ymm11, ymm11, ymm10
-vporq ymm2, ymm2, ymm11
+vpternlogq ymm2, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+96]
-vpandq ymm11, ymm11, ymm10
-vporq ymm3, ymm3, ymm11
+vpternlogq ymm3, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+128]
-vpandq ymm11, ymm11, ymm10
-vporq ymm4, ymm4, ymm11
+vpternlogq ymm4, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+160]
-vpandq ymm11, ymm11, ymm10
-vporq ymm5, ymm5, ymm11
+vpternlogq ymm5, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+192]
-vpandq ymm11, ymm11, ymm10
-vporq ymm6, ymm6, ymm11
+vpternlogq ymm6, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+224]
-vpandq ymm11, ymm11, ymm10
-vporq ymm7, ymm7, ymm11
+vpternlogq ymm7, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+256]
-vpandq ymm11, ymm11, ymm10
-vporq ymm8, ymm8, ymm11
+vpternlogq ymm8, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+288]
-vpandq ymm11, ymm11, ymm10
-vporq ymm9, ymm9, ymm11
+vpternlogq ymm9, ymm11, ymm10, 248
 add r8, 320
 add rcx, 1
 cmp rcx, 16
@@ -22735,35 +22725,25 @@ sbb rax, rax
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
 vmovdqu64 ymm11, YMMWORD PTR [r8]
-vpandq ymm11, ymm11, ymm10
-vporq ymm0, ymm0, ymm11
+vpternlogq ymm0, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+32]
-vpandq ymm11, ymm11, ymm10
-vporq ymm1, ymm1, ymm11
+vpternlogq ymm1, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+64]
-vpandq ymm11, ymm11, ymm10
-vporq ymm2, ymm2, ymm11
+vpternlogq ymm2, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+96]
-vpandq ymm11, ymm11, ymm10
-vporq ymm3, ymm3, ymm11
+vpternlogq ymm3, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+128]
-vpandq ymm11, ymm11, ymm10
-vporq ymm4, ymm4, ymm11
+vpternlogq ymm4, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+160]
-vpandq ymm11, ymm11, ymm10
-vporq ymm5, ymm5, ymm11
+vpternlogq ymm5, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+192]
-vpandq ymm11, ymm11, ymm10
-vporq ymm6, ymm6, ymm11
+vpternlogq ymm6, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+224]
-vpandq ymm11, ymm11, ymm10
-vporq ymm7, ymm7, ymm11
+vpternlogq ymm7, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+256]
-vpandq ymm11, ymm11, ymm10
-vporq ymm8, ymm8, ymm11
+vpternlogq ymm8, ymm11, ymm10, 248
 vmovdqu64 ymm11, YMMWORD PTR [r8+288]
-vpandq ymm11, ymm11, ymm10
-vporq ymm9, ymm9, ymm11
+vpternlogq ymm9, ymm11, ymm10, 248
 add r8, 320
 add rcx, 1
 cmp rcx, 16
@@ -27576,29 +27556,21 @@ sbb rax, rax
 vmovq xmm8, rax
 vpbroadcastq ymm8, xmm8
 vmovdqu64 ymm9, YMMWORD PTR [r8]
-vpandq ymm9, ymm9, ymm8
-vporq ymm0, ymm0, ymm9
+vpternlogq ymm0, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+32]
-vpandq ymm9, ymm9, ymm8
-vporq ymm1, ymm1, ymm9
+vpternlogq ymm1, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+64]
-vpandq ymm9, ymm9, ymm8
-vporq ymm2, ymm2, ymm9
+vpternlogq ymm2, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+96]
-vpandq ymm9, ymm9, ymm8
-vporq ymm3, ymm3, ymm9
+vpternlogq ymm3, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+128]
-vpandq ymm9, ymm9, ymm8
-vporq ymm4, ymm4, ymm9
+vpternlogq ymm4, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+160]
-vpandq ymm9, ymm9, ymm8
-vporq ymm5, ymm5, ymm9
+vpternlogq ymm5, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+192]
-vpandq ymm9, ymm9, ymm8
-vporq ymm6, ymm6, ymm9
+vpternlogq ymm6, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+224]
-vpandq ymm9, ymm9, ymm8
-vporq ymm7, ymm7, ymm9
+vpternlogq ymm7, ymm9, ymm8, 248
 add r8, 256
 add rcx, 1
 cmp rcx, 16
@@ -27632,29 +27604,21 @@ sbb rax, rax
 vmovq xmm8, rax
 vpbroadcastq ymm8, xmm8
 vmovdqu64 ymm9, YMMWORD PTR [r8]
-vpandq ymm9, ymm9, ymm8
-vporq ymm0, ymm0, ymm9
+vpternlogq ymm0, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+32]
-vpandq ymm9, ymm9, ymm8
-vporq ymm1, ymm1, ymm9
+vpternlogq ymm1, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+64]
-vpandq ymm9, ymm9, ymm8
-vporq ymm2, ymm2, ymm9
+vpternlogq ymm2, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+96]
-vpandq ymm9, ymm9, ymm8
-vporq ymm3, ymm3, ymm9
+vpternlogq ymm3, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+128]
-vpandq ymm9, ymm9, ymm8
-vporq ymm4, ymm4, ymm9
+vpternlogq ymm4, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+160]
-vpandq ymm9, ymm9, ymm8
-vporq ymm5, ymm5, ymm9
+vpternlogq ymm5, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+192]
-vpandq ymm9, ymm9, ymm8
-vporq ymm6, ymm6, ymm9
+vpternlogq ymm6, ymm9, ymm8, 248
 vmovdqu64 ymm9, YMMWORD PTR [r8+224]
-vpandq ymm9, ymm9, ymm8
-vporq ymm7, ymm7, ymm9
+vpternlogq ymm7, ymm9, ymm8, 248
 add r8, 256
 add rcx, 1
 cmp rcx, 16
@@ -31157,20 +31121,15 @@ sbb rax, rax
 vmovq xmm5, rax
 vpbroadcastq ymm5, xmm5
 vmovdqu64 ymm6, YMMWORD PTR [r8]
-vpandq ymm6, ymm6, ymm5
-vporq ymm0, ymm0, ymm6
+vpternlogq ymm0, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+32]
-vpandq ymm6, ymm6, ymm5
-vporq ymm1, ymm1, ymm6
+vpternlogq ymm1, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+64]
-vpandq ymm6, ymm6, ymm5
-vporq ymm2, ymm2, ymm6
+vpternlogq ymm2, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+96]
-vpandq ymm6, ymm6, ymm5
-vporq ymm3, ymm3, ymm6
+vpternlogq ymm3, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+128]
-vpandq ymm6, ymm6, ymm5
-vporq ymm4, ymm4, ymm6
+vpternlogq ymm4, ymm6, ymm5, 248
 add r8, 160
 add rcx, 1
 cmp rcx, 16
@@ -31198,20 +31157,15 @@ sbb rax, rax
 vmovq xmm5, rax
 vpbroadcastq ymm5, xmm5
 vmovdqu64 ymm6, YMMWORD PTR [r8]
-vpandq ymm6, ymm6, ymm5
-vporq ymm0, ymm0, ymm6
+vpternlogq ymm0, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+32]
-vpandq ymm6, ymm6, ymm5
-vporq ymm1, ymm1, ymm6
+vpternlogq ymm1, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+64]
-vpandq ymm6, ymm6, ymm5
-vporq ymm2, ymm2, ymm6
+vpternlogq ymm2, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+96]
-vpandq ymm6, ymm6, ymm5
-vporq ymm3, ymm3, ymm6
+vpternlogq ymm3, ymm6, ymm5, 248
 vmovdqu64 ymm6, YMMWORD PTR [r8+128]
-vpandq ymm6, ymm6, ymm5
-vporq ymm4, ymm4, ymm6
+vpternlogq ymm4, ymm6, ymm5, 248
 add r8, 160
 add rcx, 1
 cmp rcx, 16

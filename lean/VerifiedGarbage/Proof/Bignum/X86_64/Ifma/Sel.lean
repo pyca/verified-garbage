@@ -52,8 +52,7 @@ theorem qv_lo {s s' : State} (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi) {k 
 def selVec (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List Instr :=
   [.eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] ++
   ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
-    .eop (.bin .vpandq (vreg (l.R + 1)) (vreg (l.R + 1)) (vreg l.R)),
-    .eop (.bin .vporq (vreg k) (vreg k) (vreg (l.R + 1)))])
+    .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)])
 
 def selLim (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Reg → Nat := fun b => if b = .r8 then l.NB else 0
 
@@ -125,8 +124,7 @@ def selBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List Instr :=
   [.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax),
     .eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] ++
   ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
-    .eop (.bin .vpandq (vreg (l.R + 1)) (vreg (l.R + 1)) (vreg l.R)),
-    .eop (.bin .vporq (vreg k) (vreg k) (vreg (l.R + 1)))]) ++
+    .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)]) ++
   [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)]
 
 /-- Entry `i`. -/
