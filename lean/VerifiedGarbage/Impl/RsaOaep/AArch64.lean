@@ -167,7 +167,7 @@ def lenOf : Prog isa :=
 `sel`, and its `hLen` to the slot `len`. -/
 def selArg (j sel len : Nat) : Prog isa :=
   seqs [.block [.ldrSp .x16 (arg j), .addSp .x9 0, .str .x .x16 .x9 sel], lenOf hs,
-    .block [.str .x .x10 .x9 len]]
+    .block [.addSp .x9 0, .str .x .x10 .x9 len]]
 
 /-- The hash functions' numbers, our stack arguments `jH` and `jG`, and
 their lengths, to their slots. -/
