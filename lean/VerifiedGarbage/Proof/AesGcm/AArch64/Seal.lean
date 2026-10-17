@@ -173,8 +173,9 @@ theorem entryStash_ok {s : State} {Ctx W : Addr} {k j : Nat} {V : BitVec 64} (hk
         exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide))
 
 /-- `sealPre`'s common arguments. -/
-theorem sealCore {extra : List Region} {s : State} (hs : sealPreX extra s) : oneCore 2 1 s := by
-  simp only [sealPreX] at hs
+theorem sealCore {w : Nat} {extra : List Region} {s : State} (hs : sealPreXW w extra s) :
+    oneCore (w + 1) w s := by
+  simp only [sealPreXW] at hs
   sig_split hs
   rename_i hrd hwr dcd dcw dnd dnw dad daw hdrop8 ddw dda hdrop11 dwa wc wn wa wd ww wsp
   clear hdrop8 hdrop11
@@ -184,55 +185,56 @@ theorem sealCore {extra : List Region} {s : State} (hs : sealPreX extra s) : one
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `sealPre` gives. -/
-theorem sealLay {extra : List Region} {s : State} (hs : sealPreX extra s) :
-    OneLay s 2 1 ∧ Covers [⟨stackArg s 0, 16⟩] s.wr ∧
-      (⟨stackArg s 0, 16⟩ : Region).Disjoint (workR (stackArg s 1)) ∧
+theorem sealLay {w : Nat} {extra : List Region} {s : State} (hs : sealPreXW w extra s) :
+    OneLay s (w + 1) w ∧ Covers [⟨stackArg s 0, 16⟩] s.wr ∧
+      (⟨stackArg s 0, 16⟩ : Region).Disjoint (workR (stackArg s w)) ∧
       (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint ⟨stackArg s 0, 16⟩ := by
   have hs' := hs
-  simp only [sealPreX] at hs'
+  simp only [sealPreXW] at hs'
   obtain ⟨-, hwr, -, -, -, -, -, -, ddt, -, -, dtw, -⟩ := hs'
   exact ⟨oneLay (sealCore hs), covers_of_mem (by rw [hwr]; simp), dtw, ddt⟩
 
-/-- What the entry of `seal` leaves, from `s`. -/
-structure SealEntry (s s₁ : State) : Prop where
-  env : Env (s.gpr .x0) (stackArg s 1 + BitVec.ofNat 64 16) (stackArg s 1) s.sp s₁
+/-- What the entry of `seal` leaves, from `s`, with `work` the stack argument `w`. -/
+structure SealEntry (w : Nat) (s s₁ : State) : Prop where
+  env : Env (s.gpr .x0) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w) s.sp s₁
   x22 : s₁.gpr .x22 = s.gpr .x1
   x23 : s₁.gpr .x23 = s.gpr .x2
   x24 : s₁.gpr .x24 = s.gpr .x3
   x26 : s₁.gpr .x26 = s.gpr .x3
   x27 : s₁.gpr .x27 = 0
   x28 : s₁.gpr .x28 = stackArg s 0
-  sA : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 216) 64 = s.gpr .x4
-  sL : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 224) 64 = s.gpr .x5
-  sD : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 232) 64 = s.gpr .x6
-  sN : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 240) 64 = s.gpr .x7
-  sT : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 248) 64 = stackArg s 0
-  frame : Frame [entryR (stackArg s 1)] s.mem s₁.mem
-  saved : SavedAt s₁.mem (stackArg s 1) s
+  sA : s₁.mem.readW (stackArg s w + BitVec.ofNat 64 216) 64 = s.gpr .x4
+  sL : s₁.mem.readW (stackArg s w + BitVec.ofNat 64 224) 64 = s.gpr .x5
+  sD : s₁.mem.readW (stackArg s w + BitVec.ofNat 64 232) 64 = s.gpr .x6
+  sN : s₁.mem.readW (stackArg s w + BitVec.ofNat 64 240) 64 = s.gpr .x7
+  sT : s₁.mem.readW (stackArg s w + BitVec.ofNat 64 248) 64 = stackArg s 0
+  frame : Frame [entryR (stackArg s w)] s.mem s₁.mem
+  saved : SavedAt s₁.mem (stackArg s w) s
   rd : s₁.rd = s.rd
   wr : s₁.wr = s.wr
 
 /-- The entry of `seal`. -/
-theorem sealEntry_ok {extra : List Region} {s : State} (hs : sealPreX extra s) :
-    WP isa (.block (oneEntry 8 ++ stashArg 0)) s (SealEntry s) := by
+theorem sealEntry_ok {w : Nat} (hw : w = 1 ∨ w = 2) {extra : List Region} {s : State}
+    (hs : sealPreXW w extra s) :
+    WP isa (.block (oneEntry (8 * w) ++ stashArg 0)) s (SealEntry w s) := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
-  have hW8 : s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = stackArg s 1 := rfl
+  have hW8 : s.mem.readW (s.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg s w := rfl
   have hT0 : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := rfl
-  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := hsp 1 (by decide)
-  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by decide)
-  have darg : (⟨s.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (workR (stackArg s 1)) := by
+  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * w)) 8 := hsp w (by omega)
+  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by omega)
+  have darg : (⟨s.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (workR (stackArg s w)) := by
     refine daA.sub_left ?_
-    show Region.Sub ⟨s.sp + BitVec.ofNat 64 0, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * 2⟩
-    exact Region.sub_prefix (by decide)
-  exact WP.mono (entryStash_ok (k := 8) (j := 0) (V := stackArg s 0) (by decide) (by decide) hW8 hsp8 hsp0 hT0
-      darg rfl perm)
+    show Region.Sub ⟨s.sp + BitVec.ofNat 64 0, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * (w + 1)⟩
+    exact Region.sub_prefix (by omega)
+  exact WP.mono (entryStash_ok (k := 8 * w) (j := 0) (V := stackArg s 0) (by omega) (by decide) hW8 hsp8 hsp0
+      hT0 darg rfl perm)
     fun s₁ ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ =>
       ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩
 
 /-- `seal` after its entry. -/
-theorem sealRest_ok (v : GcmImpl) {extra : List Region} {s s₁ : State} (hs : sealPreX extra s)
-    (h₁ : SealEntry s s₁) :
+theorem sealRest_ok (v : GcmImpl) {w : Nat} {extra : List Region} {s s₁ : State}
+    (hs : sealPreXW w extra s) (h₁ : SealEntry w s s₁) :
     WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
@@ -241,7 +243,7 @@ theorem sealRest_ok (v : GcmImpl) {extra : List Region} {s s₁ : State} (hs : s
   have h3 := ofNat_toNat' (s.gpr .x3)
   have h5 := ofNat_toNat' (s.gpr .x5)
   have h7 := ofNat_toNat' (s.gpr .x7)
-  generalize hW : stackArg s 1 = W at *
+  generalize hW : stackArg s w = W at *
   generalize hTg : stackArg s 0 = Tg at *
   generalize hCtx : s.gpr .x0 = Ctx at *
   generalize hRR : (s.gpr .x1).toNat = R at *
@@ -352,6 +354,6 @@ theorem sealRest_ok (v : GcmImpl) {extra : List Region} {s s₁ : State} (hs : s
 
 theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
     WP isa («seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
-  WP.seq (WP.mono (sealEntry_ok hs) fun _ h₁ => sealRest_ok v hs h₁)
+  WP.seq (WP.mono (sealEntry_ok (.inl rfl) (sealPreX_W hs)) fun _ h₁ => sealRest_ok v (sealPreX_W hs) h₁)
 
 end VG.Proof.AesGcm.AArch64

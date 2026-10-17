@@ -29,13 +29,19 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 def sealCode (v : GcmImpl) : Prog isa :=
   if v.gh.pmull then Impl.AesGcm.AArch64.Fast.«seal» v.callees else «seal» v.callees
 
-theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs keepsV = true) :
-    (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh).allInstrs keepsV = true := by
-  simp only [Impl.AesGcm.AArch64.Fast.sealWith, Impl.AesGcm.AArch64.Fast.runWith, Impl.AesGcm.AArch64.Fast.front,
+theorem fastSealWithE_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {cl : Prog isa}
+    (hcl : cl.allInstrs keepsV = true) :
+    (Impl.AesGcm.AArch64.Fast.sealWithE v.callees k cl).allInstrs keepsV = true := by
+  rcases hk with rfl | rfl <;>
+  simp only [Impl.AesGcm.AArch64.Fast.sealWithE, Impl.AesGcm.AArch64.Fast.runWithP, Impl.AesGcm.AArch64.Fast.front,
     Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail,
     sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1,
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
-    Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hgh]; decide +kernel
+    Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hcl] <;> decide +kernel
+
+theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs keepsV = true) :
+    (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh).allInstrs keepsV = true :=
+  fastSealWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, hgh])
 
 theorem fastSeal_keepsV (v : GcmImpl) : (Impl.AesGcm.AArch64.Fast.«seal» v.callees).allInstrs keepsV = true :=
   fastSealWith_keepsV v v.gh.keepsV
@@ -71,16 +77,24 @@ theorem sealCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     (sealCode_verified v hMK) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 open VG.Proof.AesGcm.AArch64.Gather in
+/-- `sealWithE` has no frames of its own. -/
+theorem fastSealWithE_depth0 (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {cl : Prog isa}
+    (hcl : cl.aarch64Depth = 0) : (Impl.AesGcm.AArch64.Fast.sealWithE v.callees k cl).aarch64Depth = 0 := by
+  rcases hk with rfl | rfl <;>
+  simp only [Impl.AesGcm.AArch64.Fast.sealWithE, Impl.AesGcm.AArch64.Fast.runWithP, Impl.AesGcm.AArch64.Fast.front,
+    Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail, sealRest, j0, j0hash,
+    oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail,
+    minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth,
+    depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames, hcl] <;> decide
+
+open VG.Proof.AesGcm.AArch64.Gather in
 /-- The frames of `sealWith v gh`, in its frame of 2576 bytes, use at most those. -/
 theorem fastSealWith_depth (v : GcmImpl) {gh : Fn} (hgh : gh.code.noFrames = true) :
     16 * (Impl.StackScratch.AArch64.withStackArgScratch 2576 1
       (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh)).aarch64Depth ≤ 2576 := by
-  simp only [Impl.StackScratch.AArch64.withStackArgScratch, Impl.AesGcm.AArch64.Fast.sealWith,
-    Impl.AesGcm.AArch64.Fast.runWith, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
-    Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail, sealRest, j0, j0hash, oneAad, absorbAl,
-    encBody, fo, textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
-    Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
-    depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames, depth_of_noFrames hgh]
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, Impl.AesGcm.AArch64.Fast.sealWith, Code.aarch64Depth,
+    Instr.frameUnits, fastSealWithE_depth0 v (.inl rfl) (cl := .call gh.name gh.code)
+      (by simp only [Code.aarch64Depth, depth_of_noFrames hgh])]
   decide
 
 open VG.Proof.AesGcm.AArch64.Gather in

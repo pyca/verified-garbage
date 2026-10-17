@@ -28,15 +28,21 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 def openCode (v : GcmImpl) : Prog isa :=
   if v.gh.pmull then Impl.AesGcm.AArch64.Fast.«open» v.callees else «open» v.callees
 
-theorem fastOpenWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs keepsV = true) :
-    (Impl.AesGcm.AArch64.Fast.openWith v.callees gh).allInstrs keepsV = true := by
-  simp only [Impl.AesGcm.AArch64.Fast.openWith, Impl.AesGcm.AArch64.Fast.openFast,
-    Impl.AesGcm.AArch64.Fast.openRunWith, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
-    Impl.AesGcm.AArch64.Fast.padMul, openEntry, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest,
+theorem fastOpenWithE_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) {cl : Prog isa}
+    (hcl : cl.allInstrs keepsV = true) :
+    (Impl.AesGcm.AArch64.Fast.openWithE v.callees k cl).allInstrs keepsV = true := by
+  rcases hk with rfl | rfl <;>
+  simp only [Impl.AesGcm.AArch64.Fast.openWithE, Impl.AesGcm.AArch64.Fast.openFastP,
+    Impl.AesGcm.AArch64.Fast.openRunWithP, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
+    Impl.AesGcm.AArch64.Fast.padMul, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest,
     tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
     crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
-    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hgh]
+    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hcl] <;>
   decide +kernel
+
+theorem fastOpenWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs keepsV = true) :
+    (Impl.AesGcm.AArch64.Fast.openWith v.callees gh).allInstrs keepsV = true :=
+  fastOpenWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, hgh])
 
 theorem fastOpen_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : openAArch64.pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«open» v.callees) s t s' ∧ abiPreserved s s' ∧

@@ -88,20 +88,23 @@ def lensTag : List Instr := lensTagAt 0
 variable (c : Callees)
 
 /-- After the entry: `front`, the text (at `x27`, of `x26` bytes) encrypted,
-its whole blocks hashed by `vg_ghash`, its last bytes and the lengths
-absorbed, and the tag, to `x28`. -/
-def runWith (gh : Fn) : Prog isa :=
+its whole blocks hashed by `cl` (a call of `vg_ghash`, with its arguments
+set), its last bytes and the lengths absorbed, and the tag, to `x28`. -/
+def runWithP (cl : Prog isa) : Prog isa :=
   .seq (front)
   (.seq (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])
   (.seq (cryptAl c)
   (.seq (.block ([mov .x23 .x27, mov .x24 .x26] ++ absSeg2 16))
-  (.seq (.call gh.name gh.code)
+  (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
   (.seq padMul
   (.seq (.block lensTag)
   (.seq (ctrCall c)
   (.seq (.block tagOut)
     (.block restore))))))))))
+
+/-- `runWithP`, hashing the whole blocks by a call of `gh`. -/
+def runWith (gh : Fn) : Prog isa := runWithP c (.call gh.name gh.code)
 
 /-- `runWith`, hashing the whole blocks with `vg_ghash`. -/
 def run : Prog isa := runWith c c.gh
@@ -111,13 +114,17 @@ def «seal» : Prog isa :=
   .seq (.block (oneEntry 8 ++ stashArg 0))
     (.seq cond (.ite (.zero .x .x10) (run c) (sealRest c)))
 
+/-- `seal`, with `work` at `sp + k` and the whole blocks of this path hashed
+by `cl`. -/
+def sealWithE (k : Nat) (cl : Prog isa) : Prog isa :=
+  .seq (.block (oneEntry k ++ stashArg 0))
+    (.seq cond (.ite (.zero .x .x10) (runWithP c cl) (sealRest c)))
+
 /-- `seal`, with the whole blocks of this path hashed by `gh`: for
 `vg_aes_gcm_seal_prepared`, `vg_ghash_prepared`, which reads the powers of
 `H` from the prepared context instead of computing them (`sealRest` reads
 only the first 256 bytes of the context, as in `seal`). -/
-def sealWith (gh : Fn) : Prog isa :=
-  .seq (.block (oneEntry 8 ++ stashArg 0))
-    (.seq cond (.ite (.zero .x .x10) (runWith c gh) (sealRest c)))
+def sealWith (gh : Fn) : Prog isa := sealWithE c 8 (.call gh.name gh.code)
 
 /-! ## `open` -/
 
@@ -127,10 +134,10 @@ bytes at `x23`) hashed by `gh`; its last bytes and the lengths absorbed; the
 tag to `W + uO` (`uO`, as `openMain`), compared with the received one (the
 tag length still in `x28`, which nothing here writes); and the text
 decrypted only if they are equal, `x0` then 1 and else 0. -/
-def openRunWith (gh : Fn) : Prog isa :=
+def openRunWithP (cl : Prog isa) : Prog isa :=
   .seq front
   (.seq (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))
-  (.seq (.call gh.name gh.code)
+  (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
   (.seq padMul
   (.seq (.block (lensTagAt uO))
@@ -140,18 +147,46 @@ def openRunWith (gh : Fn) : Prog isa :=
   (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
     (.block [mov .x0 .x27]))))))))))
 
-/-- `openRest`, with `openRunWith` for `openMain`. -/
-def openFast (gh : Fn) : Prog isa :=
+/-- `openRunWithP`, hashing the whole blocks by a call of `gh`. -/
+def openRunWith (gh : Fn) : Prog isa := openRunWithP c (.call gh.name gh.code)
+
+/-- `openRest`, with `openRunWithP` for `openMain`. -/
+def openFastP (cl : Prog isa) : Prog isa :=
   .seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWith c gh)))
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWithP c cl)))
     (.block restore))
+
+/-- `openFastP`, hashing by a call of `gh`. -/
+def openFast (gh : Fn) : Prog isa := openFastP c (.call gh.name gh.code)
+
+/-- `vg_aes_gcm_open` with this path, with `work` at `sp + k`: the entry,
+`cond`, then `openFastP` or `openRest`; the ciphertext's whole blocks hashed
+by `cl`. -/
+def openWithE (k : Nat) (cl : Prog isa) : Prog isa :=
+  .seq (.block (oneEntry k ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
+    (.seq cond (.ite (.zero .x .x10) (openFastP c cl) (openRest c)))
 
 /-- `vg_aes_gcm_open` with this path: the entry, `cond`, then `openFast` or
 `openRest`; the ciphertext's whole blocks hashed by `gh`. -/
-def openWith (gh : Fn) : Prog isa :=
-  .seq (.block openEntry) (.seq cond (.ite (.zero .x .x10) (openFast c gh) (openRest c)))
+def openWith (gh : Fn) : Prog isa := openWithE c 16 (.call gh.name gh.code)
 
 /-- `vg_aes_gcm_open` with this path, hashing with `vg_ghash`. -/
 def «open» : Prog isa := openWith c c.gh
+
+/-! ## With the powers in their own buffer
+
+`vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers` take one more
+stack argument, `pw`, after the others, so `work` is one slot further. On the
+path for TLS records, `gh` (`vg_ghash_with_powers`) takes `pw` in `x5`, read
+from its stack slot just before the call; the other paths never read it. -/
+
+/-- The call of `gh` with `pw`, the stack argument at `sp + k`, in `x5`. -/
+def pwCall (k : Nat) (gh : Fn) : Prog isa := .seq (.block [.ldrSp .x5 k]) (.call gh.name gh.code)
+
+/-- `vg_aes_gcm_seal_with_powers`: `tag`, `pw`, then `work` on the stack. -/
+def sealWithPw (gh : Fn) : Prog isa := sealWithE c 16 (pwCall 8 gh)
+
+/-- `vg_aes_gcm_open_with_powers`: `tag`, `tag_len`, `pw`, then `work` on the stack. -/
+def openWithPw (gh : Fn) : Prog isa := openWithE c 24 (pwCall 16 gh)
 
 end VG.Impl.AesGcm.AArch64.Fast

@@ -106,24 +106,24 @@ theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k =
 
 /-- What the entry of `seal` leaves in a run from `σ`, with the values of the
 first run `σ₀`. -/
-abbrev SealEntered (σ σ₀ τ : State) : Prop :=
-  Env (σ₀.gpr .x0) (stackArg σ₀ 1 + BitVec.ofNat 64 16) (stackArg σ₀ 1) σ.sp τ ∧
+abbrev SealEntered (w : Nat) (σ σ₀ τ : State) : Prop :=
+  Env (σ₀.gpr .x0) (stackArg σ₀ w + BitVec.ofNat 64 16) (stackArg σ₀ w) σ.sp τ ∧
     τ.gpr .x22 = σ.gpr .x1 ∧ τ.gpr .x23 = σ.gpr .x2 ∧ τ.gpr .x24 = σ.gpr .x3 ∧
     τ.gpr .x26 = σ.gpr .x3 ∧ τ.gpr .x27 = 0 ∧ τ.gpr .x28 = stackArg σ₀ 0 ∧
-    τ.mem.readW (stackArg σ₀ 1 + BitVec.ofNat 64 216) 64 = σ.gpr .x4 ∧
-    τ.mem.readW (stackArg σ₀ 1 + BitVec.ofNat 64 224) 64 = σ.gpr .x5 ∧
-    τ.mem.readW (stackArg σ₀ 1 + BitVec.ofNat 64 232) 64 = σ.gpr .x6 ∧
-    τ.mem.readW (stackArg σ₀ 1 + BitVec.ofNat 64 240) 64 = σ.gpr .x7 ∧
-    τ.mem.readW (stackArg σ₀ 1 + BitVec.ofNat 64 248) 64 = stackArg σ₀ 0 ∧
-    Frame [entryR (stackArg σ₀ 1)] σ.mem τ.mem ∧ SavedAt τ.mem (stackArg σ₀ 1) σ ∧ τ.rd = σ.rd ∧ τ.wr = σ.wr
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 216) 64 = σ.gpr .x4 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 224) 64 = σ.gpr .x5 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 232) 64 = σ.gpr .x6 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 240) 64 = σ.gpr .x7 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 248) 64 = stackArg σ₀ 0 ∧
+    Frame [entryR (stackArg σ₀ w)] σ.mem τ.mem ∧ SavedAt τ.mem (stackArg σ₀ w) σ ∧ τ.rd = σ.rd ∧ τ.wr = σ.wr
 
 /-- `seal` after its entry, in two runs. -/
-theorem sealRest_rel (v : GcmImpl) {extra₁ extra₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
-    (h₁ : sealPreX extra₁ σ₁) (h₂ : sealPreX extra₂ σ₂)
-    (hq : sealAArch64.pub σ₁ σ₂) (a₁ : SealEntered σ₁ σ₁ τ₁) (a₂ : SealEntered σ₂ σ₁ τ₂) :
+theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
+    (h₁ : sealPreXW w extra₁ σ₁) (h₂ : sealPreXW w extra₂ σ₂)
+    (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered w σ₁ σ₁ τ₁) (a₂ : SealEntered w σ₂ σ₁ τ₂) :
     RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
   unfold sealRest
-  obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq
+  obtain ⟨f₁, f₂⟩ := oneFacts (by omega : w < w + 1) (sealCore h₁) (sealCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
   have L := f₁.ol.lay
   have i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl a₁
@@ -135,15 +135,15 @@ theorem sealRest_rel (v : GcmImpl) {extra₁ extra₂ : List Region} {σ₁ σ�
   rw [← q5] at s2₂
   rw [← q7] at s4₂
   have ol := f₁.ol
-  have sub16 : Region.Sub ⟨stackArg σ₁ 1 + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ 1)) := Lay.wSub (by decide)
+  have sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
   have hRb : (σ₁.gpr .x1).toNat = 10 ∨ (σ₁.gpr .x1).toNat = 12 ∨ (σ₁.gpr .x1).toNat = 14 := ol.rounds
   have hal := (σ₁.gpr .x5).isLt
   have hn := (σ₁.gpr .x7).isLt
   refine front_rel L v i₁ i₂ fun u₁ u₂ o₁ o₂ => ?_
-  have mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ 2 1 → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
-      FrontOut (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) σ₁.sp τ.gpr (σ₁.gpr .x6)
+  have mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ (w + 1) w → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
+      FrontOut (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
-      BodyIn (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
+      BodyIn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
         (σ₁.gpr .x7).toNat 0 (σ₁.gpr .x6) (Spec.Gcm.zeros (σ₁.gpr .x5).toNat) []
         (blockAt u.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240)) u := fun f x22 wr o =>
     ⟨o.env, fun _ _ => rfl, by rw [o.x22, x22, ofNat_toNat'], hRb, by rw [o.x25, Proof.Gcm.length_zeros],
@@ -154,12 +154,12 @@ theorem sealRest_rel (v : GcmImpl) {extra₁ extra₂ : List Region} {σ₁ σ�
   have B₂ := mkB f₂ x22₂ wr₂ o₂
   refine rel_seq (encBody_rel L v B₁ B₂ rfl) (WP.with_rdwr (encBody_ok L v B₁ 0))
     (WP.with_rdwr (encBody_ok L v B₂ 0)) fun w₁ w₂ ⟨b₁, _, _⟩ ⟨b₂, _, _⟩ => ?_
-  have sl : ∀ {σ τ u w : State}, OneFacts σ σ₁ 2 1 →
-      FrontOut (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) σ₁.sp τ.gpr (σ₁.gpr .x6)
+  have sl : ∀ {σ τ u ω : State}, OneFacts σ σ₁ (w + 1) w →
+      FrontOut (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
-      Frame (bodyFrame (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
-        u.mem w.mem → ∀ d, 216 ≤ d → d + 8 ≤ 256 →
-      w.mem.readW (stackArg σ₁ 1 + BitVec.ofNat 64 d) 64 = τ.mem.readW (stackArg σ₁ 1 + BitVec.ofNat 64 d) 64 :=
+      Frame (bodyFrame (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
+        u.mem ω.mem → ∀ d, 216 ≤ d → d + 8 ≤ 256 →
+      ω.mem.readW (stackArg σ₁ w + BitVec.ofNat 64 d) 64 = τ.mem.readW (stackArg σ₁ w + BitVec.ofNat 64 d) 64 :=
     fun _ o fb d h₁ h₂ => by
       rw [slot_kept fb (slots_bodyFrame L ol.data) h₁ h₂, slot_kept o.frame (slots_frontFrame L) h₁ h₂]
   refine rel_seq (rel_taint [.x19] (by rw [b₁.env.sp, b₂.env.sp]) (by agree_tac [b₁.env.x19, b₂.env.x19])
@@ -211,6 +211,6 @@ theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub
     (entryStash_ok (V := stackArg σ₁ 0) (by decide) (by decide) hW₁ (f₁.hsp 1 (by decide)) (f₁.hsp 0 (by decide))
       hT₁ (f₁.argW (by decide)) rfl f₁.perm)
     (entryStash_ok (V := stackArg σ₁ 0) (by decide) (by decide) hW₂ (f₂.hsp 1 (by decide)) (f₂.hsp 0 (by decide))
-      hT₂ (f₂.argW (by decide)) q0.symm f₂.perm) fun _ _ a₁ a₂ => sealRest_rel v h₁ h₂ hq₀ a₁ a₂
+      hT₂ (f₂.argW (by decide)) q0.symm f₂.perm) fun _ _ a₁ a₂ => sealRest_rel v (sealPreX_W h₁) (sealPreX_W h₂) hq₀ a₁ a₂
 
 end VG.Proof.AesGcm.AArch64
