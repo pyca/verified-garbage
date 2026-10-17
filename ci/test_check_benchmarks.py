@@ -752,7 +752,10 @@ class FreshCopies(unittest.TestCase):
         # AES-GCM's by up to 35%; ChaCha20's, Poly1305's and AES-GCM-SIV's
         # own groups are not known to. The SHA-512 family's digests and
         # PBKDF2's moved by up to 11% and 9% on AMD's Zen 4; HMAC's are not
-        # known to. ML-KEM's moved by up to 14%.
+        # known to. ML-KEM's moved by up to 14%. The 25519 fixed-base
+        # comb's groups (a table of 48 KB on AArch64) moved by up to 12% on
+        # Apple's M1 where the ladder's did not; the ladder's and Ed25519's
+        # verification, which reads no comb, do not run from copies.
         for group in ['mlkem768_keygen', 'mlkem768_encaps', 'mlkem768_decaps', 'mlkem1024_keygen',
                       'mlkem1024_encaps', 'mlkem1024_decaps', 'sha384', 'sha512', 'sha512-224', 'sha512-256', 'pbkdf2-hmac-sha384',
                       'pbkdf2-hmac-sha512', 'pbkdf2-hmac-sha512-224', 'pbkdf2-hmac-sha512-256',
@@ -760,12 +763,14 @@ class FreshCopies(unittest.TestCase):
                       'chacha20poly1305', 'chacha20poly1305-decrypt',
                       'chacha20poly1305-encrypt-out-of-place', 'chacha20poly1305-copy-encrypt-in-place',
                       'aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-128-gcm-stream',
-                      'aes-128-gcm-tls-seal', 'aes-256-gcm-tls-open']:
+                      'aes-128-gcm-tls-seal', 'aes-256-gcm-tls-open',
+                      'x25519_public_key', 'x25519_generate', 'ed25519_keygen', 'ed25519_sign']:
             self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
         for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key',
                       'chacha20', 'poly1305', 'xchacha20poly1305',
                       'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash',
-                      'sha256', 'sha512-256-hash', 'hmac-sha512', 'pbkdf2-hmac-sha256', 'mldsa65_sign']:
+                      'sha256', 'sha512-256-hash', 'hmac-sha512', 'pbkdf2-hmac-sha256', 'mldsa65_sign',
+                      'x25519', 'x25519_raw', 'ed25519_verify']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
     def test_the_copies_select_only_the_modules_with_those_groups(self):
@@ -779,9 +784,9 @@ class FreshCopies(unittest.TestCase):
         # The copies' runs set up the benchmarks holding those groups, and
         # beyond the four that used to run from copies, only benchmarks of
         # code built on SHA-512 (which the `sha512` module selects).
-        held = ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521', 'mlkem1024', 'mlkem768',
+        held = ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521', 'ed25519', 'mlkem1024', 'mlkem768',
                 'pbkdf2_sha384', 'pbkdf2_sha512', 'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'sha384', 'sha512',
-                'sha512_224', 'sha512_256']
+                'sha512_224', 'sha512_256', 'x25519']
         self.assertLessEqual(set(held), set(selected))
         for name in set(selected) - set(held):
             self.assertIn('sha512', catalog[name], name)
@@ -802,6 +807,12 @@ class FreshCopies(unittest.TestCase):
         source = (root / 'bench/benches/primitives/mlkem.rs').read_text()
         for suffix in ['_keygen', '_encaps', '_decaps']:
             self.assertIn(f'concat!(stringify!($module), "{suffix}")', source)
+        source = (root / 'bench/benches/primitives/x25519.rs').read_text()
+        for group in ['x25519_public_key', 'x25519_generate']:
+            self.assertIn(f'"{group}"', source)
+        source = (root / 'bench/benches/primitives/ed25519.rs').read_text()
+        for group in ['ed25519_keygen', 'ed25519_sign']:
+            self.assertIn(f'"{group}"', source)
         source = (root / 'bench/benches/primitives/aes_gcm.rs').read_text()
         for group in ['aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-{bits}-gcm-tls-seal',
                       'aes-{bits}-gcm-tls-open']:
