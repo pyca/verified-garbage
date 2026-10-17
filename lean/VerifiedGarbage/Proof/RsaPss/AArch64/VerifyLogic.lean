@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
+public import VerifiedGarbage.Proof.RsaPss.VerifyAny
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -140,13 +141,13 @@ theorem nz_lz (l : List Byte) : ∀ j ≤ l.length, nz (fun i => l.getD i 0) j =
       · rw [ifp (getD_lt_lz (by omega)), ifn (by omega)]
 
 section
-variable {G : Hash} (hG : Proof.Mgf1.Valid G) {D : Nat} (hGl : G.len = D) {x : List Byte} {V : Nat → Byte}
+variable {H G : Hash} (hG : Proof.Mgf1.Valid G) {D : Nat} (hHl : H.len = D) {x : List Byte} {V : Nat → Byte}
   {k lo db : Nat} (hx : x.length = k) (hV : ∀ i < k, V (oEm + i) = x.getD i 0) (hdb : lo + db + D + 1 = k)
 
-include hGl hx hV hdb in
+include hHl hx hV hdb in
 /-- `H` in `EM`. -/
-theorem vH_view : vH G (x.drop lo) db = (List.range D).map fun i => V (oEm + lo + db + i) := by
-  unfold vH
+theorem vH_view : vH₂ H (x.drop lo) db = (List.range D).map fun i => V (oEm + lo + db + i) := by
+  unfold vH₂
   refine eq_range_map (by simp only [List.length_take, List.length_drop, hx]; omega) fun i hi => ?_
   rw [show oEm + lo + db + i = oEm + (lo + db + i) by omega, hV _ (by omega)]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop]
@@ -154,21 +155,21 @@ theorem vH_view : vH G (x.drop lo) db = (List.range D).map fun i => V (oEm + lo 
   congr 2
   omega
 
-include hG hGl hx hV hdb in
+include hG hHl hx hV hdb in
 /-- `DB` in `EM`, unmasked and its top bits cleared. -/
 theorem vDb_view {c : Byte} {z : Nat} (hc : c = (0xFF : Byte) >>> z) :
     ∀ i < db, wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c (oEm + lo + i) =
-      (vDb G (x.drop lo) db z).getD i 0 := by
+      (vDb₂ H G (x.drop lo) db z).getD i 0 := by
   intro i hi
-  have hmk : mkB G D V (oEm + lo) db = mgf1 G (vH G (x.drop lo) db) db := by
-    rw [vH_view hGl hx hV hdb]; rfl
-  have hml := Proof.Mgf1.mgf1_length hG (vH G (x.drop lo) db) db
+  have hmk : mkB G D V (oEm + lo) db = mgf1 G (vH₂ H (x.drop lo) db) db := by
+    rw [vH_view hHl hx hV hdb]; rfl
+  have hml := Proof.Mgf1.mgf1_length hG (vH₂ H (x.drop lo) db) db
   have ht : ((x.drop lo).take db).length = db := by simp only [List.length_take, List.length_drop, hx]; omega
   have hxi : ∀ j < db, ((x.drop lo).take db).getD j 0 = V (oEm + lo + j) := fun j hj => by
     rw [Nat.add_assoc, hV _ (by omega)]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop]
     rw [ifp hj]
-  unfold vDb
+  unfold vDb₂
   rw [clearTop_getD, hmk, hc]
   unfold wct upd mixV
   by_cases h0 : i = 0
@@ -232,20 +233,20 @@ theorem msgV_eq {f : Nat → Byte} {dbL : List Byte} {db : Nat} (hl : dbL.length
   simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]
 
 /-- `x0` after `cmpH` is 1 exactly when the encoding in `x` is valid. -/
-theorem vlogic {G : Hash} (hG : Proof.Mgf1.Valid G) {D : Nat} (hGl : G.len = D) {x : List Byte} {V : Nat → Byte}
+theorem vlogic {H G : Hash} (hHv : Proof.Mgf1.Valid H) (hG : Proof.Mgf1.Valid G) {D : Nat} (hHl : H.len = D) {x : List Byte} {V : Nat → Byte}
     {k lo db : Nat} (hx : x.length = k) (hV : ∀ i < k, V (oEm + i) = x.getD i 0) (hdb : lo + db + D + 1 = k)
     (hdb1 : 1 ≤ db) (hlo : lo ≤ 1) (hk : k ≤ 1024) {mH : List Byte} (hm : mH.length = D) {c : Byte} {z : Nat}
     (hc : c = (0xFF : Byte) >>> z) {any sv : BitVec 64} (hs : any = 0 → sv.toNat < db) {b : Bool}
     (hb : b = true ↔ (lo = 1 → x.getD 0 0 = 0) ∧
-      EncOk G mH (x.drop lo) (k - lo) z (if any = 0 then some sv.toNat else none)) :
+      EncOk₂ H G mH (x.drop lo) (k - lo) z (if any = 0 then some sv.toNat else none)) :
     resV (acc1V (acc0V V k lo c) (fun i => wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c (oEm + lo + i)) db any sv)
-      (G.hash (msgV mH (fun i => wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c (oEm + lo + i)) db
+      (H.hash (msgV mH (fun i => wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c (oEm + lo + i)) db
         ((nz (fun i => wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c (oEm + lo + i)) db).getD 0)))
       (wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c) (oEm + lo) db D = if b then 1#64 else 0#64 := by
-  have hf := vDb_view hG hGl hx hV hdb hc
+  have hf := vDb_view hG hHl hx hV hdb hc
   have hH : ∀ i < D, wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c (oEm + lo + db + i) =
-      (vH G (x.drop lo) db).getD i 0 := fun i hi => by
-    rw [vH_view hGl hx hV hdb]
+      (vH₂ H (x.drop lo) db).getD i 0 := fun i hi => by
+    rw [vH_view hHl hx hV hdb]
     unfold wct upd mixV
     rw [ifn (by omega), ifn (by omega), List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]
     rfl
@@ -257,24 +258,24 @@ theorem vlogic {G : Hash} (hG : Proof.Mgf1.Valid G) {D : Nat} (hGl : G.len = D) 
   have e3 : V (oEm + lo) = (x.drop lo).getD 0 0 := by
     rw [hV _ (by omega)]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop, Nat.add_zero]
-  have hvl : (vH G (x.drop lo) db).length = D := by rw [vH_view hGl hx hV hdb, List.length_map, List.length_range]
-  have hdbl : (vDb G (x.drop lo) db z).length = db := by
-    rw [vDb, clearTop_length, Proof.Mgf1.xorBytes_length, Proof.Mgf1.mgf1_length hG]
+  have hvl : (vH₂ H (x.drop lo) db).length = D := by rw [vH_view hHl hx hV hdb, List.length_map, List.length_range]
+  have hdbl : (vDb₂ H G (x.drop lo) db z).length = db := by
+    rw [vDb₂, clearTop_length, Proof.Mgf1.xorBytes_length, Proof.Mgf1.mgf1_length hG]
     simp only [List.length_take, List.length_drop, hx]; omega
   generalize wct V (mkB G D V (oEm + lo) db) (oEm + lo) db c = W at hf hH ⊢
   rw [resV, top_sub _ (acc_lt V k lo c _ db any sv _ D (by omega) (fun h => by have := hs h; omega)
     (fun i => lt_xor (lt_byte _ (by decide)) (lt_byte _ (by decide))))]
   suffices hy : acc1V (acc0V V k lo c) (fun i => W (oEm + lo + i)) db any sv |||
-      orF (fun i => BitVec.setWidth 64 ((G.hash (msgV mH (fun i => W (oEm + lo + i)) db
+      orF (fun i => BitVec.setWidth 64 ((H.hash (msgV mH (fun i => W (oEm + lo + i)) db
         ((nz (fun i => W (oEm + lo + i)) db).getD 0))).getD i 0) ^^^ BitVec.setWidth 64 (W (oEm + lo + db + i))) D = 0 ↔
-      (lo = 1 → x.getD 0 0 = 0) ∧ EncOk G mH (x.drop lo) (k - lo) z (if any = 0 then some sv.toNat else none) by
+      (lo = 1 → x.getD 0 0 = 0) ∧ EncOk₂ H G mH (x.drop lo) (k - lo) z (if any = 0 then some sv.toNat else none) by
     rw [← hb] at hy
     by_cases h : b = true
     · rw [ifp (hy.mpr h), ifp h]
     · rw [ifn (fun e => h (hy.mp e)), ifn h]
-  unfold EncOk
-  rw [show k - lo - G.len - 1 = db by omega]
-  generalize vDb G (x.drop lo) db z = dbL at hf hdbl ⊢
+  unfold EncOk₂
+  rw [show k - lo - H.len - 1 = db by omega]
+  generalize vDb₂ H G (x.drop lo) db z = dbL at hf hdbl ⊢
   have hnz : nz (fun i => W (oEm + lo + i)) db = if lz dbL < db then some (lz dbL) else none := by
     rw [nz_congr hf, nz_lz dbL db (by omega)]
   have hnzV : nzV (fun i => W (oEm + lo + i)) db = if lz dbL < db then dbL.getD (lz dbL) 0 else 0 := by
@@ -288,13 +289,13 @@ theorem vlogic {G : Hash} (hG : Proof.Mgf1.Valid G) {D : Nat} (hGl : G.len = D) 
   by_cases hp : lz dbL < db
   · simp only [hp, ↓reduceIte, Option.getD_some, ne_eq, reduceCtorEq, not_false_eq_true, true_and]
     rw [msgV_eq hdbl hf mH hp]
-    have hz : ∀ i < D, (BitVec.setWidth 64 ((G.hash (Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (lz dbL + 1))).getD i 0) ^^^
+    have hz : ∀ i < D, (BitVec.setWidth 64 ((H.hash (Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (lz dbL + 1))).getD i 0) ^^^
         BitVec.setWidth 64 (W (oEm + lo + db + i)) = 0) ↔
-        (G.hash (Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (lz dbL + 1))).getD i 0 = (vH G (x.drop lo) db).getD i 0 :=
+        (H.hash (Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (lz dbL + 1))).getD i 0 = (vH₂ H (x.drop lo) db).getD i 0 :=
       fun i hi => by rw [xor_eq_zero64, zext_inj, hH i hi]
-    rw [show (∀ i < D, BitVec.setWidth 64 ((G.hash (Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (lz dbL + 1))).getD i 0) ^^^
+    rw [show (∀ i < D, BitVec.setWidth 64 ((H.hash (Spec.RsaPss.zeros 8 ++ mH ++ dbL.drop (lz dbL + 1))).getD i 0) ^^^
         BitVec.setWidth 64 (W (oEm + lo + db + i)) = 0) ↔ _ from forall₂_congr hz,
-      ← list_eq_iff_getD (by rw [hG.2, hGl]) hvl]
+      ← list_eq_iff_getD (by rw [hHv.2, hHl]) hvl]
     have hsl : ∀ {any : BitVec 64}, (any = 0 → sv = BitVec.ofNat 64 (db - lz dbL - 1)) ↔
         ((if any = 0 then some sv.toNat else none) = none ∨
           (if any = 0 then some sv.toNat else none) = some (db - 1 - lz dbL)) := fun {any} => by

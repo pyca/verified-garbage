@@ -84,4 +84,40 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     · intro r hr; rw [vs r hr, O.vcs r hr]
     · simpa only [O.mem] using result
 
+include hH in
+/-- `select`, for the hash function the slot `sHash` names in `hs`. -/
+theorem selectAny_ok {hs : List Hash} {k : Nat} (hk : hs[k]? = some H) (hl : hs.length ≤ 4096)
+    {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db pos : Nat} {acc : BitVec 64}
+    {dig : Addr} (hEm : ∀ o, oEm ≤ o → o < oY → u.mem (off S o) = W o) (he : oEm ≤ e)
+    (hfit : e + db + H.D ≤ oY) (hpos : pos < db) (hdb : db < 1024)
+    (h19 : u.gpr .x19 = off S oSt) (h21 : u.gpr .x21 = off S oDig) (h24 : u.gpr .x24 = off S e)
+    (h25 : u.gpr .x25 = BitVec.ofNat 64 db) (h26 : u.gpr .x26 = acc)
+    (hP : u.mem.readW (off F sPos) 64 = BitVec.ofNat 64 pos) (hdg : u.mem.readW (off F sDig) 64 = dig)
+    (hr : ∀ j < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 j) 1)
+    (hd : Region.Disjoint ⟨dig, H.D⟩ ⟨S, oRsa⟩)
+    {any : BitVec 64} {sl : Nat}
+    (hAny : u.mem.readW (off F sAny) 64 = any)
+    (hSl : u.mem.readW (off F sSaltLen) 64 = BitVec.ofNat 64 sl)
+    (hFits : any = 0 → sl < db)
+    (hMatch : any = 0 → acc = 0 → sl = db - pos - 1)
+    (hAcc : acc.toNat < 2^63) (hsel : u.mem.readW (off F sHash) 64 = BitVec.ofNat 64 k) :
+    WP isa (onHash sHash hs Impl.RsaPss.AArch64.FixedSalt.select) u
+      fun u' => u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+        (∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25], u'.gpr r = u.gpr r) ∧
+        (∀ r ∈ preservedV, (u'.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) ∧
+        Frame (mgfWr F S) u.mem u'.mem ∧
+        u'.gpr .x0 = resV acc (hH.SH.H.hash (msgV (Spec.Rsa.bytesAt u.mem dig H.D) (fun i => W (e + i)) db pos))
+          W e db H.D := by
+  refine onHash_wp hk hl (by decide) (ld_slot L (by decide)) (by rw [L.sp]; exact hsel) fun v O => ?_
+  have g : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], v.gpr r = u.gpr r := fun r hr =>
+    O.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+                rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  refine WP.mono (select_ok hH (L.congr O.sp O.wr (g .x20 (by decide))) (O.mem ▸ hEm) he hfit hpos hdb
+    (by rw [g .x19 (by decide), h19]) (by rw [g .x21 (by decide), h21]) (by rw [g .x24 (by decide), h24])
+    (by rw [g .x25 (by decide), h25]) (by rw [g .x26 (by decide), h26]) (by rw [O.mem, hP]) (by rw [O.mem, hdg])
+    (by rw [O.rd, O.wr]; exact hr) hd (by rw [O.mem, hAny]) (by rw [O.mem, hSl]) hFits hMatch hAcc)
+    fun t ⟨sp, rd, wr, cs, vs, fr, res⟩ => ⟨sp.trans O.sp, rd.trans O.rd, wr.trans O.wr,
+      fun r hr => by rw [cs r hr, g r (List.mem_append_left [Reg.x26] hr)],
+      fun r hr => by rw [vs r hr, O.vcs r hr], O.mem ▸ fr, by rw [res, O.mem]⟩
+
 end VG.Proof.RsaPss.AArch64.FixedSalt
