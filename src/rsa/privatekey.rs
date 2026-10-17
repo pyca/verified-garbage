@@ -619,6 +619,16 @@ mod tests {
     /// modulo `p - 1`), and so does a `d` of zero or longer than `n`, which
     /// the check refuses before the arithmetic. With `d = p dP` it passes.
     #[test]
+    fn components_round_trip() {
+        let [n, p, q, dp, dq, qi] = composite(32, false);
+        let key = PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &dp, &dq, &qi).unwrap();
+        let c = key.components();
+        assert_eq!(c[..3], [&n[..], &[3][..], &[1][..]]);
+        let again = PrivateKey::from_crt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).unwrap();
+        assert_eq!(again.components(), c);
+    }
+
+    #[test]
     fn check_key_invalid() {
         let [n, p, q, dp, dq, qi] = composite(32, false);
         let key = |d: &[u8]| PrivateKey::from_crt(&n, &[3], d, &p, &q, &dp, &dq, &qi).unwrap();
