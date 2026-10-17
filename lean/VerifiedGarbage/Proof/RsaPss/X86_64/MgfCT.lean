@@ -249,7 +249,7 @@ theorem xorOut_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (M3 H n)) (xorOut
     (fun p t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun p t h => ?_
   obtain ⟨hm, hj, P⟩ := h
   obtain ⟨V, W, R, hw, -⟩ := P.W
-  exact WP.mono (xorOut_ok hH P.L R hm.2 (hw (23, off p.1.S p.1.e) (by simp [mws])) (hw (24, BitVec.ofNat 64 p.1.db) (by simp [mws]))
+  exact WP.mono (xorOut_ok hH P.L R hm.2.zero (hw (23, off p.1.S p.1.e) (by simp [mws])) (hw (24, BitVec.ofNat 64 p.1.db) (by simp [mws]))
     (hw (32, BitVec.ofNat 64 (p.2 * H.D)) (by simp [mws])) hj) fun u ⟨L', k, R'⟩ => ⟨hm, P.next L' k.2.2 R' hw trivial⟩
 
 theorem nextCtr_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (M4 H n)) (.block (nextCtr H)) fun _ _ => True := by

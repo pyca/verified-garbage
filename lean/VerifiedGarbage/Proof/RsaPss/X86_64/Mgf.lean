@@ -78,6 +78,8 @@ structure DbAt (D e db : Nat) : Prop where
   db1 : 1 ≤ db
   fit : e + db + D ≤ oEm + 1024
 
+theorem DbAt.zero {D e db : Nat} (h : DbAt D e db) : DbAt 0 e db := ⟨h.e1, h.db1, by have := h.fit; omega⟩
+
 include hH in
 theorem copyHBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {e db : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
@@ -212,7 +214,7 @@ theorem counter_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
 
 include hH in
 theorem xorArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
+    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt 0 e db) (he : W 23 = off S e)
     (hdb : W 24 = BitVec.ofNat 64 db) (hdn : W 32 = BitVec.ofNat 64 done) (hlt : done < db) :
     WP isa (.block (xorArgs H)) u fun v =>
       (v.gpr .rcx = off S oDig ∧ v.gpr .rdi = off S (e + done) ∧
@@ -236,12 +238,12 @@ theorem xorArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   xrun [xorArgs, scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
     VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide), L.ld (d := sEb) (by decide),
     L.ld (d := sDone) (by decide), L.ld (d := sDb) (by decide), h23, h24, h32,
-    VG.Offset.ofNat_sub_ofNat (show done ≤ db by omega_using [hlt]), zx32 (show H.D < 2 ^ 32 by omega_using [hfit, c1]), off_plus]
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdbn]), Nat.mod_eq_of_lt (by omega_using [hfit, c1])]
+    VG.Offset.ofNat_sub_ofNat (show done ≤ db by omega_using [hlt]), zx32 (show H.D < 2 ^ 32 by omega_using [hDN, hN]), off_plus]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdbn]), Nat.mod_eq_of_lt (by omega_using [hDN, hN])]
 
 include hH in
 theorem xorOutBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
+    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt 0 e db) (he : W 23 = off S e)
     (hdb : W 24 = BitVec.ofNat 64 db) (hdn : W 32 = BitVec.ofNat 64 done) (hlt : done < db) :
     WP isa (xorOutBytes H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r10, .r8, .rdx] u u' ∧
       Rep u'.mem F S (xorV V oDig (e + done) (min H.D (db - done))) W := by
@@ -288,7 +290,7 @@ theorem xorOutBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byt
 
 include hH in
 theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
+    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt 0 e db) (he : W 23 = off S e)
     (hdb : W 24 = BitVec.ofNat 64 db) (hdn : W 32 = BitVec.ofNat 64 done) (hlt : done < db) :
     WP isa (xorOut H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r10, .r8, .rdx] u u' ∧
       Rep u'.mem F S (xorV V oDig (e + done) (min H.D (db - done))) W := by
@@ -313,7 +315,7 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     · rw [decide_eq_false_iff_not] at hb
       have hw : 8 * (H.D / 8) = H.D := by omega_using [h8]
       refine WP.mono (xorScratchWords_ok (H.D / 8) Lv Rv
-        (by rw [hw]; unfold oDig oRsa; omega_using [hfit, c1])
+        (by rw [hw]; unfold oDig oRsa; omega_using [hDN, hN])
         (by rw [hw]; unfold oRsa; omega_using [hD, hfit, c1, hb])
         (by rw [hw]; unfold oDig; omega_using [hDN, hN, he1, c1]) h₁ h₂) fun t ⟨Lt, kt, Rt⟩ => ?_
       rw [Nat.min_eq_left (by omega_using [hb])]
@@ -449,7 +451,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     rw [hW4 k (by unfold nW frameBytes; omega_using [h]) (by omega_using [h]) (by omega_using [h])]
     simp only [upd, ifn (show k ≠ 28 by omega_using [h]), ifn (show k ≠ 27 by omega_using [h])]
   have hcD' : c * H.D + H.D ≤ db + H.D := by omega_using [hc]
-  refine WP.seq (WP.mono (xorOut_ok hH L4 R4 hd ((hW3 23 (by decide) (by omega_using [])).trans he)
+  refine WP.seq (WP.mono (xorOut_ok hH L4 R4 hd.zero ((hW3 23 (by decide) (by omega_using [])).trans he)
     ((hW3 24 (by decide) (by omega_using [])).trans hdb) ((hW3' 32 (by omega_using [])).trans h32) hc)
     fun u5 ⟨L5, k5, R5⟩ => ?_)
   -- The next counter.
