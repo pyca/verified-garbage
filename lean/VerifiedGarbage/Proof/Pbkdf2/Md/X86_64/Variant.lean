@@ -117,6 +117,13 @@ structure MdHash where
   function: RSASSA-PSS's, `Generic/MdHash/RsaPrivateCrt/X86_64/RsaPss.lean`). -/
   ok : HashOK H
   K : Callees H
+  /-- What the kernel checks of the code HMAC adds to the hash function's,
+  and that the proofs' hash function and working space are the instance's
+  (for the callers that work at the level of HMAC's functions:
+  deterministic ECDSA's, `Proof/Ecdsa/Rfc6979/X86_64/`). -/
+  C : CoreOK (core H)
+  hSH : ok.SH = I.S
+  hW : H.W = I.scratch
   /-- The hash function as RSA's padding takes it. -/
   mgf : MgfLink H ok
   /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
@@ -318,6 +325,9 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   I := I
   ok := hH
   K := K
+  C := C
+  hSH := hSH
+  hW := hW
   mgf := mgf
   pss := pss
   hmacInit := MdHash.hmacInit_of hH C K hSH hW hsI

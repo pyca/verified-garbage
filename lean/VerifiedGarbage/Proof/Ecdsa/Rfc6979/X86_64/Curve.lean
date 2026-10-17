@@ -24,14 +24,14 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 What the proof needs of the curve (`RfcCurve`): the code of
 `vg_ecdsa_<curve>_sign` for curves of `n` words (`Impl.Ecdsa.X86_64.Cfg`),
 the instance of ECDSA it is, its sizes: scalars of `Q` bytes in 4, 6 or 8 words
-(32, 48 or 64 bytes, or P-224's 28 in 4) whose order `n` has exactly `8 Q` bits
-and `2^(8 Q) < 2 n` (so that one `V` makes a candidate and `bits2octets` is
-one conditional subtraction), or, if `wide`,
-P-521's (9 words, 66 bytes, 521 bits: two `V`s make a candidate); the bits
-`sh` the signature drops from its digest; and what is proven of the code:
-that it meets the contract the proof of each curve is written against
-(`coreK`: each curve's `signX86_64` at its sizes), in constant time, and the
-facts of every instruction the proof of the whole function needs. Each
+(32, 48 or 64 bytes, or P-192's 24 and P-224's 28 in 4) whose order `n` has
+exactly `8 Q` bits and `2^(8 Q) < 2 n` (so that `bits2octets` is one
+conditional subtraction), or, if `wide`, P-521's (9 words, 66 bytes, 521
+bits); the bits `sh` the signature drops from its digest; and what is proven
+of the code: that it meets the contract the proof of each curve is written
+against (`coreK`: each curve's `signX86_64` at its sizes), in constant time,
+the facts of every instruction the proof of the whole function needs, and the
+taint checks of the blocks that depend on the curve (`CurveBlks`). Each
 curve's file builds one, so that the heavy algebra of its proof stays out
 of the modules generic over the curve and the hash function.
 -/
@@ -74,18 +74,47 @@ def coreK (E : Impl.Ecdsa.X86_64.Cfg) : Contract X86_64.isa where
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     ∀ c ∈ E.combConsts, s₁.syms c.1 = s₂.syms c.1
 
-/-- The code's blocks that depend on neither the hash function nor the
-compression function, for scalars of `E` (with `h` above the frame's
-pointers if `hHigh`). -/
-def cfgC (E : Impl.Ecdsa.X86_64.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
-  H := ⟨Impl.Sha256.X86_64.Stream.params, 32, 104, "", .block [], "", .block [], "", "", "", "", ""⟩
+/-- The code's blocks that depend on neither the hash functions nor the
+compression functions, for scalars of `E` (P-521's if `wide`, `core`'s
+digest shifted by `sh` bits). -/
+def cfgC (E : Impl.Ecdsa.X86_64.Cfg) (wide : Bool := false) (sh : Nat := 0) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
+  hs := []
   w := E.n
   len := E.C.len
+  wide := wide
+  sh := sh
   n := E.C.n
   tries := 8
   coreN := ""
   coreC := .block []
-  hHigh := hHigh
+
+/-- The taint check of a block whose addresses depend only on `rs`. -/
+abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
+  ∃ hc, (taint.check (Taint.ofRegs rs) (.block is) hc).isSome = true
+
+/-- A property of every instruction of the blocks `c` makes for its curve. -/
+def CurveInstrs (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) (p : Instr → Bool) : Prop :=
+  (∀ D ∈ [20, 28, 32, 48, 64], (c.prepCase D).all p = true) ∧ c.prepPost.all p = true ∧
+    (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 false).all p = true ∧
+    (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 true).all p = true ∧
+    (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 1 true).all p = true ∧
+    c.appendV.all p = true ∧ (c.conv Impl.Ecdsa.Rfc6979.X86_64.fC c.sh).all p = true
+
+/-- What the kernel checks of the blocks that depend on the curve (the
+digest's copies for each output length, `h`'s reduction or the digest's
+shift, the messages, the candidate's appending and shift): which registers
+their addresses depend on, and that they write neither `rsp` nor MXCSR. -/
+structure CurveBlks (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
+  prepCase : ∀ D ∈ [20, 28, 32, 48, 64], TaintOk [.rsp, .rsi] (c.prepCase D)
+  post : TaintOk [.rsp, .rdi] c.prepPost
+  msg₀ : TaintOk [.rsp, .rdi, .rsi, .rdx] (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 false)
+  msg₀f : TaintOk [.rsp, .rdi, .rsi, .rdx] (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 true)
+  msg₁f : TaintOk [.rsp, .rdi, .rsi, .rdx] (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 1 true)
+  appendV : TaintOk [.rsp, .rdx] c.appendV
+  conv : TaintOk [.rsp, .rdi] (c.conv Impl.Ecdsa.Rfc6979.X86_64.fC c.sh)
+  sp : CurveInstrs c fun i => !isa.writesSp i
+  mx : CurveInstrs c fun i => !loadsMxcsr i
+  cs : CurveInstrs c fun i => calleeSaved.all fun r => !Taint.clobbers i r
 
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
@@ -94,8 +123,8 @@ structure RfcCurve where
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Whether the scalars are longer than any hash function's output, so
-  that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.wide`). -/
+  /-- Whether the scalars are longer than any hash function's output, and
+  `nBits` below `8 len` (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.wide`). -/
   wide : Bool
   /-- Scalars of 4, 6 or 8 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
   exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `wide`, of 9 words and
@@ -104,10 +133,6 @@ structure RfcCurve where
     else (E.n = 4 ∨ E.n = 6 ∨ E.n = 8) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ (E.C.len = 28 ∨ E.C.len = 24)) ∧ nBits E.C = 8 * E.C.len ∧
       2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
-  /-- Whether `h` is kept above the frame's pointers
-  (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.hHigh`): for scalars of 8 words. -/
-  hHigh : Bool := false
-  hHigh_eq : hHigh = decide (E.n = 8) := by decide
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
@@ -125,18 +150,8 @@ structure RfcCurve where
   coreSp : coreC.allInstrs (fun i => !isa.writesSp i) = true
   coreMx : coreC.allInstrs (fun i => !loadsMxcsr i) = true
   coreD : coreC.depth ≤ 1
-  /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
-  memory only from `rsp` and `rsi` (the taint analysis, of the block for
-  `n`'s words). -/
-  reduceT : wide = false → ∃ hc, (taint.check (Taint.ofRegs [.rsp, .rsi])
-    (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV)) hc).isSome = true
-  /-- None of its instructions writes `rsp` or loads MXCSR. -/
-  reduceSp : wide = false →
-    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
-      (fun i => !isa.writesSp i) = true
-  reduceMx : wide = false →
-    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
-      (fun i => !loadsMxcsr i) = true
+  /-- The blocks that depend on the curve. -/
+  blks : CurveBlks (cfgC E wide sh)
 
 namespace RfcCurve
 
@@ -173,6 +188,13 @@ theorem nBits_len : 8 * R.E.C.len < nBits R.E.C + 8 ∧ nBits R.E.C ≤ 8 * R.E.
   cases h : R.wide
   · have := R.sizesA h; exact ⟨by omega, by omega, rfl⟩
   · have := R.sizesW h; exact ⟨by omega, by omega, rfl⟩
+
+/-- `sh` is 0 but for P-521's 7. -/
+theorem sh_wide : R.sh = if R.wide then 7 else 0 := by
+  have := R.nBits_len
+  cases h : R.wide
+  · have := R.sizesA h; simp only [Bool.false_eq_true, ite_false]; omega
+  · have := R.sizesW h; simp only [ite_true]; omega
 
 theorem n_ne : R.E.C.n ≠ 0 := fun h => by
   have h₁ := R.nBits_len; have h₂ := R.len_words
