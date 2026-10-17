@@ -95,23 +95,48 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 
     let mut g = c.benchmark_group("x25519_public_key");
+    // THROWAWAY (never merge): the "openssl" column is s2n-bignum's
+    // curve25519_x25519base_byte_alt, the "aws-lc-rs" column its
+    // curve25519_x25519base_byte, called directly from aws-lc-sys, on the
+    // clamped scalar as aws-lc does.
+    unsafe extern "C" {
+        fn aws_lc_0_45_0_curve25519_x25519base_byte_alt(res: *mut u8, k: *const u8);
+        fn aws_lc_0_45_0_curve25519_x25519base_byte(res: *mut u8, k: *const u8);
+    }
+    let s2n = |f: unsafe extern "C" fn(*mut u8, *const u8), k: &[u8; 32]| {
+        let mut k = *k;
+        k[0] &= 248;
+        k[31] &= 127;
+        k[31] |= 64;
+        let mut r = [0u8; 32];
+        unsafe { f(r.as_mut_ptr(), k.as_ptr()) };
+        r
+    };
+    assert_eq!(
+        s2n(aws_lc_0_45_0_curve25519_x25519base_byte_alt, &private),
+        vg_private.public_key()
+    );
+    assert_eq!(
+        s2n(aws_lc_0_45_0_curve25519_x25519base_byte, &private),
+        vg_private.public_key()
+    );
     g.bench_function(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| PrivateKey::from_bytes(black_box(&private)).public_key())
     });
     g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
-            PKey::private_key_from_raw_bytes(black_box(&private), Id::X25519)
-                .unwrap()
-                .raw_public_key()
-                .unwrap()
+            s2n(
+                aws_lc_0_45_0_curve25519_x25519base_byte_alt,
+                black_box(&private),
+            )
         })
     });
     g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
         b.iter(|| {
-            agreement::PrivateKey::from_private_key(&agreement::X25519, black_box(&private))
-                .unwrap()
-                .compute_public_key()
-                .unwrap()
+            s2n(
+                aws_lc_0_45_0_curve25519_x25519base_byte,
+                black_box(&private),
+            )
         })
     });
     g.finish();
