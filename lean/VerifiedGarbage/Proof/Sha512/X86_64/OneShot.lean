@@ -37,8 +37,8 @@ open VG.Spec.Sha256 (bytesAt)
 abbrev Po (o : List Instr) : Impl.MdStream.X86_64.Params := { params with out := o }
 
 /-- The scratch buffer's 8-byte words, and the frame holding it. -/
-abbrev words : Nat := 196
-abbrev frame : Nat := 1592
+abbrev words : Nat := 198
+abbrev frame : Nat := 1608
 
 theorem scratchBytes_eq (o : List Instr) : Impl.MdStream.X86_64.OneShot.scratchBytes (Po o) = 8 * words :=
   show Impl.MdStream.X86_64.OneShot.scratchBytes params = 8 * words by decide
