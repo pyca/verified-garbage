@@ -142,14 +142,15 @@ theorem build_ok (k : Nat) (s : State)
         (s.gpr .x3 + BitVec.ofNat 64 (slot k + 8)) (kWord k 1) ∧
       s'.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hs : slot k % 8 = 0 ∧ slot k < 4096 * 8 ∧ (slot k + 8) % 8 = 0 ∧ slot k + 8 < 4096 * 8 := by
-    simp only [slot]; omega
+  have hs : slot k % 8 = 0 ∧ slot k ≤ 504 := by simp only [slot]; omega
+  have ha : s.gpr .x3 + BitVec.ofNat 64 (slot k) + 8 = s.gpr .x3 + BitVec.ofNat 64 (slot k + 8) :=
+    Offset.add_add _ _ _
   apply WP.of_runBlock
   simp only [build, runBlock_cons, runStep_some, runBlock_nil, exec, reduceCtorEq, ↓reduceIte,
-    Nat.reduceMul, Nat.reduceLT, ne_eq, not_false_eq_true, addr, State.store, Option.bind_some, and_self, isa, State.read, Size.bits,
-    Size.bytes, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
+    Nat.reduceMul, Nat.reduceLT, ne_eq, not_false_eq_true, State.store, Option.bind_some, and_self, isa, State.read, Size.bits,
+    RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, RegUpd.v_write, BitVec.setWidth_eq, movz_movk64r,
-    hs.1, hs.2.1, hs.2.2.1, hs.2.2.2, h1, h2, Option.some.injEq, exists_eq_left']
+    hs.1, hs.2, ha, h1, h2, Option.some.injEq, exists_eq_left']
   refine ⟨by rw [writeW64, writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
   simp only [RegUpd.gpr_write_of_ne, h4, h5, not_false_eq_true]
 

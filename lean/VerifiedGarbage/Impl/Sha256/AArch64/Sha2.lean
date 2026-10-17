@@ -18,8 +18,10 @@ The sixteen round-constant vectors are loaded into `v16`–`v31` by the first
 block, each just before its group of rounds; later blocks only read them.
 The first block builds each group's four constants in general-purpose
 registers (`movz`/`movk`, two 64-bit words through `x4` and `x5`) two groups
-ahead and stores them in `scratch`, in one of four 16-byte slots (group `k`
-at `16 (k mod 4)`), from which its group loads them with one `ldr q`.
+ahead and stores them in `scratch` with one `stp`, in one of four 16-byte
+slots (group `k` at `16 (k mod 4)`), from which its group loads them with one
+`ldr q`: a load that one store covers can take its value from the store
+before the store reaches the cache.
 Moving the constants into vector registers directly (`dup`, `ins`) took
 twelve instructions a group, four of them general-to-vector transfers, which
 are slow on some cores (Neoverse N2; see `Sha512/AArch64/Sha3.lean`). Only
@@ -56,12 +58,11 @@ def build (k : Nat) : List Instr :=
    .movk .x .x4 ((kWord k 0).extractLsb' 16 16) 1,
    .movk .x .x4 ((kWord k 0).extractLsb' 32 16) 2,
    .movk .x .x4 ((kWord k 0).extractLsb' 48 16) 3,
-   .str .x .x4 .x3 (slot k),
    .movz .x .x5 ((kWord k 1).extractLsb' 0 16) 0,
    .movk .x .x5 ((kWord k 1).extractLsb' 16 16) 1,
    .movk .x .x5 ((kWord k 1).extractLsb' 32 16) 2,
    .movk .x .x5 ((kWord k 1).extractLsb' 48 16) 3,
-   .str .x .x5 .x3 (slot k + 8)]
+   .stp .x4 .x5 .x3 (slot k)]
 
 /-- In the first block, before group `i`: build group `i + 2`'s constants and
 load group `i`'s. -/
