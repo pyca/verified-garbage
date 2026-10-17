@@ -26,7 +26,8 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 ))]
 pub fn bench(c: &mut Criterion) {
     // Measurement only: the parts of deriving the prepared context (1: derive
-    // into a buffer, 2: a 384-byte Box allocated, cleared, wiped and freed).
+    // into a buffer, 2: a 384-byte Box allocated, cleared, wiped and freed,
+    // 3: the same zeroed by the allocator, 4 and 5: 2 and 3 for 128 bytes).
     #[cfg(target_arch = "aarch64")]
     {
         let k = verified_garbage::aes_gcm::AesGcm::new(&[0x42; 16]).unwrap();
@@ -37,6 +38,15 @@ pub fn bench(c: &mut Criterion) {
         });
         g.bench_function(criterion::BenchmarkId::new(crate::VG, 2), |b| {
             b.iter(verified_garbage::aes_gcm::bench_box)
+        });
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, 3), |b| {
+            b.iter(verified_garbage::aes_gcm::bench_box_zeroed)
+        });
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, 4), |b| {
+            b.iter(verified_garbage::aes_gcm::bench_box128)
+        });
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, 5), |b| {
+            b.iter(verified_garbage::aes_gcm::bench_box128_zeroed)
         });
         g.finish();
     }

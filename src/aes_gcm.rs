@@ -2726,3 +2726,33 @@ pub fn bench_box() {
     core::hint::black_box(&mut *b);
     zeroize(&mut *b);
 }
+
+/// Measurement only: as `bench_box`, but the allocation zeroed by the
+/// allocator (`calloc`).
+#[cfg(target_arch = "aarch64")]
+#[doc(hidden)]
+pub fn bench_box_zeroed() {
+    // SAFETY: zeroed `u64`s are valid.
+    let mut b = unsafe { Box::<[u64; 48]>::new_zeroed().assume_init() };
+    core::hint::black_box(&mut *b);
+    zeroize(&mut *b);
+}
+
+/// Measurement only: a 128-byte context, as `bench_box`.
+#[cfg(target_arch = "aarch64")]
+#[doc(hidden)]
+pub fn bench_box128() {
+    let mut b = Box::new([0u64; 16]);
+    core::hint::black_box(&mut *b);
+    zeroize(&mut *b);
+}
+
+/// Measurement only: a 128-byte context, as `bench_box_zeroed`.
+#[cfg(target_arch = "aarch64")]
+#[doc(hidden)]
+pub fn bench_box128_zeroed() {
+    // SAFETY: zeroed `u64`s are valid.
+    let mut b = unsafe { Box::<[u64; 16]>::new_zeroed().assume_init() };
+    core::hint::black_box(&mut *b);
+    zeroize(&mut *b);
+}
