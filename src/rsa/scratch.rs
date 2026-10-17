@@ -73,6 +73,8 @@ impl VerifyScratch {
     /// is the message) wipes it; signature verification, whose every value
     /// (the modulus, the signature, the encoded message it recovers and the
     /// intermediates of a public exponentiation of it) is public, need not.
+    // Only the padding schemes take it, which ARMv7 does not have yet.
+    #[cfg_attr(target_arch = "arm", allow(dead_code))]
     pub(crate) fn take(&self, words: usize, wipe: bool) -> ScratchLease<'_> {
         let pointer = self.0.swap(ptr::null_mut(), Ordering::Acquire);
         let mut buffer = if pointer.is_null() {
@@ -122,6 +124,8 @@ impl Drop for VerifyScratch {
     }
 }
 
+// Only the padding schemes take it, which ARMv7 does not have yet.
+#[cfg_attr(target_arch = "arm", allow(dead_code))]
 pub(crate) struct ScratchLease<'a> {
     pool: &'a VerifyScratch,
     // The atomic cache transfers the Vec descriptor through one stable pointer.

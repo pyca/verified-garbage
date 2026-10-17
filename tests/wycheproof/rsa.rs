@@ -9,7 +9,7 @@
 //! message. Other ciphertexts are refused.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
