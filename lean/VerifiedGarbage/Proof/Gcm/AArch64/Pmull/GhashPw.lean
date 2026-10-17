@@ -30,48 +30,6 @@ then stores them after its epilogue, where `H'ᵏ = pp H k` (`tReg_pp`).
 
 @[expose] public section
 
-namespace VG.Proof.Gcm
-
-open Spec.Gcm
-
-open VG.AArch64 in
-/-- `vg_ghash_with_powers(h = x0, y = x1, data = x2, n = x3, scratch = x4,
-pw = x5)`: `ghashAArch64`, with the 8 prepared powers of the hash subkey at
-`pw` (`Spec.Gcm.Powers8Repr`), which the code may read (128 bytes). -/
-def ghashWithAArch64 : Contract AArch64.isa where
-  pre s :=
-    let h : Region := ⟨s.gpr .x0, 16⟩
-    let y : Region := ⟨s.gpr .x1, 16⟩
-    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
-    let scratch : Region := ⟨s.gpr .x4, 256⟩
-    let pw : Region := ⟨s.gpr .x5, 128⟩
-    s.rd = [h, data, pw] ∧ s.wr = [y, scratch] ∧
-    h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
-    y.Disjoint pw ∧ data.Disjoint scratch ∧ scratch.Disjoint pw ∧
-    Powers8Repr s.mem (s.gpr .x5) (blockAt s.mem (s.gpr .x0))
-  post := ghashAArch64.post
-  pub s₁ s₂ := ghashAArch64.pub s₁ s₂ ∧ s₁.gpr .x5 = s₂.gpr .x5
-
-open VG.AArch64 in
-/-- `vg_ghash_store_powers(h = x0, y = x1, data = x2, n = x3, scratch = x4,
-pw = x5)`: `ghashAArch64`, and the 8 prepared powers of the hash subkey
-written to `pw` (`Spec.Gcm.Powers8Repr`, 128 bytes). -/
-def ghashStoreAArch64 : Contract AArch64.isa where
-  pre s :=
-    let h : Region := ⟨s.gpr .x0, 16⟩
-    let y : Region := ⟨s.gpr .x1, 16⟩
-    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
-    let scratch : Region := ⟨s.gpr .x4, 256⟩
-    let pw : Region := ⟨s.gpr .x5, 128⟩
-    s.rd = [h, data] ∧ s.wr = [y, scratch, pw] ∧
-    h.Disjoint y ∧ h.Disjoint scratch ∧ h.Disjoint pw ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
-    y.Disjoint pw ∧ data.Disjoint scratch ∧ data.Disjoint pw ∧ scratch.Disjoint pw
-  post s s' := ghashAArch64.post s s' ∧
-    Powers8Repr s'.mem (s.gpr .x5) (blockAt s.mem (s.gpr .x0))
-  pub s₁ s₂ := ghashAArch64.pub s₁ s₂ ∧ s₁.gpr .x5 = s₂.gpr .x5
-
-end VG.Proof.Gcm
-
 namespace VG.Proof.Gcm.AArch64.Pmull
 
 open VG VG.AArch64 VG.Proof.Gcm VG.Proof.Gcm.Poly
