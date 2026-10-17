@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
@@ -192,11 +194,13 @@ theorem rounds2With_ok (n : Nat) (a b c d t f : VReg) (s : State) (v : HashValue
   generalize msg n = x at *
   generalize kreg n = kr at *
   generalize (n + 2) % 40 = m at *
+  simp only [runBlock_cons, runStep_some, exec_vop, VOp.eval, isa, Option.map_some, hk, hq']
+  rw [exec_kld hm (by rw [RegUpd.gpr_setV, syms_setV]; exact hx4), runStep_some]
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
-    isa, exec_kld, hm, syms_setV, hx4, RegUpd.v_setV, ite_true, ite_false, RegUpd.gpr_setV, RegUpd.mem_setV,
-    RegUpd.rd_setV, RegUpd.wr_setV, Option.map_some, h0, h1, h2, h3, h31, hq', hk, hs, hs', hx,
+    isa, RegUpd.v_setV, ite_true, ite_false, RegUpd.gpr_setV, RegUpd.mem_setV,
+    RegUpd.rd_setV, RegUpd.wr_setV, syms_setV, Option.map_some, h0, h1, h2, h3, h31, hk, hs, hs',
     Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, trivial⟩
+  refine ⟨?_, ?_, ?_, ?_, trivial, ?_, trivial⟩
   rotate_right
   · intro r h0 h1 h6 h7 h28 hkr
     simp only [h0, h1, h6, h7, h28, hkr, ite_false]
@@ -221,7 +225,7 @@ theorem rounds2_ok (n : Nat) (s : State) (v : HashValue) (M : Block)
   have hs₁ : [reg n 0, reg n 1, reg n 2, reg n 3, reg n 4, reg n 5, .v6, .v7, .v28, .v31, kreg n].Nodup := by
     have h₀ : [reg n 0, reg n 1, reg n 2, reg n 3, reg n 4, reg n 5, .v6, .v7, .v28, .v31].Nodup :=
       hs.sublist (by simp)
-    refine List.nodup_append.mpr ⟨h₀, List.nodup_singleton _, fun x hx y hy => ?_⟩
+    refine List.nodup_append.mpr ⟨h₀, List.nodup_cons.mpr ⟨List.not_mem_nil, List.nodup_nil⟩, fun x hx y hy => ?_⟩
     rw [List.mem_singleton.mp hy]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -460,18 +464,23 @@ theorem init_ok (s : State)
   have e2 := exec_kld (s := s.write .x .x4 (s.syms kSym)) (r := kreg 0) (m := 0) (by decide) hx4
   have e3 := exec_kld (s := (s.write .x .x4 (s.syms kSym)).setV (kreg 0) (kPair 0)) (r := kreg 1) (m := 1)
     (by decide) (by rw [RegUpd.gpr_setV, syms_setV]; exact hx4)
-  simp only [kld, Nat.mul_zero, Nat.mul_one] at e2 e3
+  simp only [Nat.mul_zero, Nat.mul_one] at e2 e3
   have hk01 : kreg 0 = .v29 ∧ kreg 1 = .v30 := ⟨rfl, rfl⟩
   apply WP.of_runBlock
-  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, init, kld, Nat.mul_zero, Nat.mul_one,
-    runBlock_cons, runStep_some, runBlock_nil, isa]
-  rw [e1, runStep_some, e2, runStep_some, e3, runStep_some]
+  simp only [init, kld, Nat.mul_zero, Nat.mul_one, runBlock_cons, isa]
+  rw [e1, runStep_some, runBlock_cons, e2, runStep_some, runBlock_cons, e3, runStep_some]
   simp only [hk01, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, runBlock_cons, runStep_some, runBlock_nil,
     exec, addr, State.load, VOp.eval, Option.bind_some, and_self, isa,
-    Option.map_some, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.v_setV,
-    RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.v_write,
+    Option.map_some, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
+    RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    RegUpd.gpr_write_of_ne _ _ _ (by decide : ¬Reg.x0 = Reg.x4),
     h0, h16, h32, h48, read_ab, read_cd, read_ef, read_gh, Option.some.injEq, exists_eq_left']
-  sorry
+  refine ⟨⟨rfl, rfl, rfl, rfl, zero_pair⟩, ⟨?_, ?_, ?_⟩, fun r hr => ?_, trivial⟩
+  · simp only [RegUpd.gpr_setV, syms_setV, RegUpd.gpr_write_self, BitVec.setWidth_eq]
+    rfl
+  · simp only [hk01, RegUpd.v_setV, reduceCtorEq, ↓reduceIte]
+  · simp only [hk01, RegUpd.v_setV, reduceCtorEq, ↓reduceIte]
+  · exact RegUpd.gpr_write_of_ne _ _ _ hr
 
 theorem load_ok (s : State) (v : HashValue) (hH : Held s v) :
     WP isa (.block load) s fun s' =>
@@ -580,7 +589,7 @@ theorem block_ok {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat} (hi : i < nb s
     · rw [hst, compressBlocks_succ, ← hL.state]
       rfl
   have hK₃ : Ready s₃ := by
-    refine ⟨by rw [hg₃ .x4 (by decide) (by decide), hg₂ .x4, hsy₃, hsy₂, hR.syms, hsy₁]; exact hK.x4, ?_, ?_⟩
+    refine ⟨by rw [hg₃ .x4 (by decide) (by decide), hg₂ .x4, hsy₃, hsy₂, hsy₁]; exact hK.x4, ?_, ?_⟩
     · rw [show kreg 0 = .v29 from rfl, h29₃]; exact hR.k0
     · rw [show kreg 1 = .v30 from rfl, h30₃]; exact hR.k1
   have := hp.nb_lt
