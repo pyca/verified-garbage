@@ -23,7 +23,7 @@ The code of CBC encryption and decryption as literals
 
 namespace VG.Proof.Sm4.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Sm4.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Sm4.X86.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Sm4.X86.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Sm4.X86.cbcDecryptChained
 
 end VG.Proof.Sm4.X86

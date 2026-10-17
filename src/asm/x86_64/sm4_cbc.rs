@@ -2,21 +2,21 @@
 //! Verified `sm4_cbc` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
+/// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Sm4.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused; the key schedule's table of round keys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/X86_64/`, over SM4's ECB core.
+/// Baseline x86-64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused; the key schedule's table of round keys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/X86_64/`, over SM4's ECB core; the IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sm4_cbc_encrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sm4_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3144]
 mov r8, rsp
@@ -28,6 +28,7 @@ mov QWORD PTR [r9+3088], r12
 mov QWORD PTR [r9+3096], r13
 mov QWORD PTR [r9+3104], r14
 mov QWORD PTR [r9+3112], r15
+movq xmm15, rsi
 test rcx, rcx
 je 20f
 mov rax, QWORD PTR [rdx]
@@ -4335,6 +4336,11 @@ jmp 28f
 add rdx, 16
 test r8, r8
 jne 25b
+movq rax, xmm15
+mov rbp, QWORD PTR [r9+768]
+mov QWORD PTR [rax], rbp
+mov rbp, QWORD PTR [r9+776]
+mov QWORD PTR [rax+8], rbp
 jmp 24f
 23:
 24:
@@ -4743,21 +4749,21 @@ ret
     )
 }
 
-/// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
+/// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Sm4.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: sixteen blocks at a time, decrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/X86_64/`, over SM4's ECB core.
+/// Baseline x86-64: sixteen blocks at a time, decrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/X86_64/`, over SM4's ECB core; the last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sm4_cbc_decrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_sm4_cbc_decrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3144]
 mov r8, rsp
@@ -4773,6 +4779,19 @@ mov rax, QWORD PTR [rsi]
 mov QWORD PTR [r9+3120], rax
 mov rax, QWORD PTR [rsi+8]
 mov QWORD PTR [r9+3128], rax
+test rcx, rcx
+je 20f
+mov rax, rcx
+sub rax, 1
+shl rax, 4
+add rax, rdx
+mov rbx, QWORD PTR [rax]
+mov QWORD PTR [rsi], rbx
+mov rbx, QWORD PTR [rax+8]
+mov QWORD PTR [rsi+8], rbx
+jmp 21f
+20:
+21:
 mov rdx, rdx
 mov r8, rcx
 movabs r14, 71777214294589695
@@ -4784,7 +4803,7 @@ mov QWORD PTR [r9+400], r14
 mov rsi, r9
 add rsi, 3008
 movabs r15, 16
-20:
+22:
 mov rax, QWORD PTR [rdi]
 mov rbx, rax
 mov rcx, rax
@@ -5429,24 +5448,24 @@ mov QWORD PTR [rsi+56], r13
 sub rsi, 64
 add rdi, 8
 sub r15, 1
-jne 20b
+jne 22b
 mov rdi, r9
 add rdi, 3072
 test r8, r8
-je 21f
-23:
+je 23f
+25:
 movabs rcx, 16
 cmp r8, 16
-jb 24f
-jmp 25f
-24:
+jb 26f
+jmp 27f
+26:
 mov rcx, r8
-25:
+27:
 mov rax, r9
 add rax, 768
 mov rbx, rdx
 mov r10, rcx
-26:
+28:
 mov rbp, QWORD PTR [rbx]
 mov QWORD PTR [rax], rbp
 mov rbp, QWORD PTR [rbx+8]
@@ -5454,7 +5473,7 @@ mov QWORD PTR [rax+8], rbp
 add rax, 16
 add rbx, 16
 sub rcx, 1
-jne 26b
+jne 28b
 mov rdi, r9
 add rdi, 3072
 movabs r14, 4294901760
@@ -6495,7 +6514,7 @@ mov QWORD PTR [r9+752], r12
 mov QWORD PTR [r9+760], r13
 mov rsi, r9
 add rsi, 1024
-27:
+29:
 mov rax, QWORD PTR [r9+576]
 xor rax, QWORD PTR [r9+640]
 xor rax, QWORD PTR [r9+704]
@@ -8030,7 +8049,7 @@ xor r14, QWORD PTR [r9+760]
 mov QWORD PTR [r9+760], r14
 add rsi, 256
 cmp rsi, rdi
-jne 27b
+jne 29b
 movabs r14, 4294901760
 mov QWORD PTR [r9+8], r14
 movabs r14, 280375465148160
@@ -9069,16 +9088,16 @@ mov QWORD PTR [r9+888], rbp
 mov QWORD PTR [r9+1016], r13
 movabs rcx, 16
 cmp r8, 16
-jb 28f
-jmp 29f
-28:
+jb 210f
+jmp 211f
+210:
 mov rcx, r8
-29:
+211:
 mov rax, r9
 add rax, 768
 mov rbx, rdx
 mov r10, rcx
-210:
+212:
 mov rbp, QWORD PTR [rax]
 xor rbp, QWORD PTR [r9+3120]
 mov QWORD PTR [rax], rbp
@@ -9096,13 +9115,13 @@ mov QWORD PTR [rbx+8], rbp
 add rax, 16
 add rbx, 16
 sub rcx, 1
-jne 210b
+jne 212b
 mov rdx, rbx
 sub r8, r10
-jne 23b
-jmp 22f
-21:
-22:
+jne 25b
+jmp 24f
+23:
+24:
 mov rbx, QWORD PTR [r9+3072]
 mov rbp, QWORD PTR [r9+3080]
 mov r12, QWORD PTR [r9+3088]

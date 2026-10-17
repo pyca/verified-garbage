@@ -2,21 +2,21 @@
 //! Verified `sm4_cbc` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
+/// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Sm4.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline AArch64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused; the key schedule's table of round keys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/AArch64/`, over SM4's ECB core.
+/// Baseline AArch64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused; the key schedule's table of round keys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/AArch64/`, over SM4's ECB core; the IV's address is kept in `x19`, which the core saves in `v31`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_cbc_encrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3168
 add x4, sp, #0
@@ -31,6 +31,7 @@ str x25, [x5, #3120]
 str x26, [x5, #3128]
 str x27, [x5, #3136]
 str x28, [x5, #3144]
+add x19, x1, #0
 cbz x3, 20f
 ldr x6, [x2, #0]
 ldr x7, [x1, #0]
@@ -45,6 +46,7 @@ b 21f
 21:
 add x1, x2, #0
 add x2, x3, #0
+dup v31.2d, x19
 movz x21, #255, lsl #0
 movk x21, #255, lsl #16
 movk x21, #255, lsl #32
@@ -669,12 +671,14 @@ sub x3, x3, #1
 cbnz x3, 22b
 add x3, x5, #0
 add x3, x3, #3072
+umov x19, v31.d[0]
 cbz x2, 23f
 25:
 ldr x6, [x1, #0]
 str x6, [x5, #768]
 ldr x6, [x1, #8]
 str x6, [x5, #776]
+dup v31.2d, x19
 add x3, x5, #0
 add x3, x3, #3072
 movz x14, #0, lsl #0
@@ -3723,6 +3727,7 @@ str x8, [x5, #872]
 str x12, [x5, #1000]
 str x9, [x5, #888]
 str x13, [x5, #1016]
+umov x19, v31.d[0]
 ldr x6, [x5, #768]
 str x6, [x1, #0]
 ldr x6, [x5, #776]
@@ -3742,6 +3747,10 @@ b 28f
 28:
 add x1, x1, #16
 cbnz x2, 25b
+ldr x6, [x5, #768]
+str x6, [x19, #0]
+ldr x6, [x5, #776]
+str x6, [x19, #8]
 b 24f
 23:
 24:
@@ -4159,21 +4168,21 @@ ret
     )
 }
 
-/// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
+/// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Sm4.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline AArch64: sixteen blocks at a time, decrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over SM4's ECB core.
+/// Baseline AArch64: sixteen blocks at a time, decrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over SM4's ECB core; the last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_cbc_decrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_cbc_decrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3168
 add x4, sp, #0
@@ -4192,6 +4201,17 @@ ldr x6, [x1, #0]
 str x6, [x5, #3152]
 ldr x6, [x1, #8]
 str x6, [x5, #3160]
+cbz x3, 20f
+sub x7, x3, #1
+lsl x7, x7, #4
+add x7, x7, x2
+ldr x6, [x7, #0]
+str x6, [x1, #0]
+ldr x6, [x7, #8]
+str x6, [x1, #8]
+b 21f
+20:
+21:
 add x1, x2, #0
 add x2, x3, #0
 movz x21, #255, lsl #0
@@ -4210,7 +4230,7 @@ str x21, [x5, #400]
 add x4, x5, #0
 add x4, x4, #3008
 movz x3, #16, lsl #0
-20:
+22:
 ldr x6, [x0, #0]
 add x7, x6, #0
 add x8, x6, #0
@@ -4815,23 +4835,23 @@ str x13, [x4, #56]
 sub x4, x4, #64
 add x0, x0, #8
 sub x3, x3, #1
-cbnz x3, 20b
+cbnz x3, 22b
 add x3, x5, #0
 add x3, x3, #3072
-cbz x2, 21f
-23:
-lsr x13, x2, #4
-cbnz x13, 24f
-add x16, x2, #0
-b 25f
-24:
-movz x16, #16, lsl #0
+cbz x2, 23f
 25:
+lsr x13, x2, #4
+cbnz x13, 26f
+add x16, x2, #0
+b 27f
+26:
+movz x16, #16, lsl #0
+27:
 add x14, x5, #0
 add x14, x14, #768
 add x15, x1, #0
 add x17, x16, #0
-26:
+28:
 ldr x8, [x15, #0]
 str x8, [x14, #0]
 ldr x8, [x15, #8]
@@ -4839,7 +4859,7 @@ str x8, [x14, #8]
 add x14, x14, #16
 add x15, x15, #16
 sub x17, x17, #1
-cbnz x17, 26b
+cbnz x17, 28b
 add x3, x5, #0
 add x3, x3, #3072
 movz x14, #0, lsl #0
@@ -5760,7 +5780,7 @@ str x12, [x5, #752]
 str x13, [x5, #760]
 add x4, x5, #0
 add x4, x4, #1024
-27:
+29:
 ldr x6, [x5, #576]
 ldr x21, [x5, #640]
 eor x6, x6, x21
@@ -6971,7 +6991,7 @@ eor x21, x21, x22
 str x21, [x5, #760]
 add x4, x4, #256
 sub x21, x4, x3
-cbnz x21, 27b
+cbnz x21, 29b
 movz x14, #0, lsl #0
 movk x14, #65535, lsl #16
 movz x15, #65280, lsl #0
@@ -7889,17 +7909,17 @@ str x12, [x5, #1000]
 str x9, [x5, #888]
 str x13, [x5, #1016]
 lsr x13, x2, #4
-cbnz x13, 28f
+cbnz x13, 210f
 add x16, x2, #0
-b 29f
-28:
+b 211f
+210:
 movz x16, #16, lsl #0
-29:
+211:
 add x14, x5, #0
 add x14, x14, #768
 add x15, x1, #0
 add x17, x16, #0
-210:
+212:
 ldr x8, [x14, #0]
 ldr x9, [x5, #3152]
 eor x8, x8, x9
@@ -7919,13 +7939,13 @@ str x8, [x15, #8]
 add x14, x14, #16
 add x15, x15, #16
 sub x17, x17, #1
-cbnz x17, 210b
+cbnz x17, 212b
 add x1, x15, #0
 sub x2, x2, x16
-cbnz x2, 23b
-b 22f
-21:
-22:
+cbnz x2, 25b
+b 24f
+23:
+24:
 ldr x19, [x5, #3072]
 ldr x20, [x5, #3080]
 ldr x21, [x5, #3088]
