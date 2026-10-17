@@ -32,12 +32,13 @@ words.
 
 `encrypt(out = x0, out_len = x1, n = x2, n_len = x3, e = x4, e_len = x5,
 label = x6, label_len = x7, msg, msg_len, seed, seed_len, scratch,
-scratch_len, pre, pre_len, hash, mgf1_hash)`, the last ten on the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen - 2`
-(public), it writes zeros to `out` and returns 0. Otherwise it writes
-`EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the
-label hashed with `H`), masks `DB` with MGF1 of the seed and then the seed
-with MGF1 of `maskedDB` (`G`), and returns `vg_rsa_public_checked` of `EM`
-into `out`.
+scratch_len, pre, pre_len, hash, mgf1_hash)`, the last ten on the stack,
+whose hash functions' numbers and lengths are stored after the prologue.
+If `k < 2 hLen + 2` or `msg_len > k - 2 hLen - 2` (public), it writes zeros
+to `out` and returns 0. Otherwise it writes `EM = 0x00 ‖ seed ‖ DB` to
+`scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the label hashed with `H`), masks
+`DB` with MGF1 of the seed and then the seed with MGF1 of `maskedDB` (`G`),
+and returns the precomputed public operation of `EM` into `out`.
 
 ## Decryption
 
@@ -46,9 +47,9 @@ e_len = x6, p = x7, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv,
 qinv_len, label, label_len, ct, ct_len, scratch, scratch_len, hash,
 mgf1_hash)`, the last seventeen on the stack, whose hash functions'
 numbers and lengths are stored after the private operation (whose stack
-arguments use those words of the frame until then). `vg_rsa_private_checked` writes `EM` (or zeros) to
-`scratch` and returns `r` (1, 0 or 2), which only selects values without a
-branch. If `k < 2 hLen + 2` (public), the result is `r = 2 ? 2 : 0`, with
+arguments use those words of the frame until then).
+`vg_rsa_private_checked` writes `EM` (or zeros) to `scratch` and returns `r`
+(1, 0 or 2), which only selects values without a branch. If `k < 2 hLen + 2` (public), the result is `r = 2 ? 2 : 0`, with
 zeros to `out` and `*msg_len`. Otherwise, without a branch on anything
 secret: the label is hashed (`H`), the seed and `DB` unmasked in place
 (`G`); an accumulator `acc` ORs together `EM`'s first byte and

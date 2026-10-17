@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
-public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -14,9 +13,9 @@ import Mathlib.Tactic.SplitIfs
 As `Code.eraseImm` (`Proof/Framework/AArch64/TaintErase.lean`), which
 zeroes the immediates of `movz` and `movk`, `zImm` also zeroes those of
 `addImm` and `subImm`, which the analysis does not read either
-(`check_zImm`). The blocks that use the hash length (`hLen`, as an
-immediate) are then checked once, for any hash function, on their copy for
-one of them (`check_of_zImm`).
+(`check_zImm`). A block whose immediates vary (the label's digest's offset,
+a dispatch's constants) is then checked once, on its copy with others
+(`check_of_zImm`).
 -/
 
 @[expose] public section
@@ -80,23 +79,5 @@ those immediates. -/
 theorem check_of_zImm {c c' : Prog isa} (he : zImm c = zImm c') {τ : taint.T} {hc : VG.Taint.Hint taint.T}
     (h : (taint.check τ c' hc).isSome = true) : (taint.check τ c hc).isSome = true := by
   rw [← check_zImm, he, check_zImm]; exact h
-
-/-- A hash function whose code is checked in place of any other's: its
-fields are what code with its length as an immediate reads, all zero. -/
-def gH : Impl.Pbkdf2.Md.AArch64.Hash where
-  P := { N := 0, B := 0, L := 0, so := 0, len := [], out := [] }
-  D := 0
-  W := 0
-  compN := ""
-  compC := .block []
-  initN := ""
-  initC := .block []
-  updN := ""
-  updC := .block []
-  finN := ""
-  finC := .block []
-  hmacInitN := ""
-  hmacFinN := ""
-  iterN := ""
 
 end VG.Proof.RsaOaep.AArch64
