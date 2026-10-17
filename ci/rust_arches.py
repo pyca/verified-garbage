@@ -12,15 +12,16 @@ vectors, Cargo's files, the Rust jobs' workflow, matrices and scripts):
 every path but those of one architecture and those in `NOT_RUST`. Each
 architecture's jobs cover every line it builds (ci/merge_rust_coverage.py),
 so a pull request's coverage is checked for those it tests. The merge queue
-runs every job, and a push to main runs every job without its tests (for
-main's caches).
+runs every job, and a push to main builds without tests, for main's caches:
+every job of `rust` and `thumb`, and of `cpu`, whose jobs all build the same
+tests into one cache per platform, the first entry of each (see `cache_of`).
 
   rust_arches.py pull_request < PATHS
       the jobs of the architectures the changed paths (one per line) reach
   rust_arches.py merge_group
       every job
   rust_arches.py push
-      every job, with `tests` false
+      one job per cache, with `tests` false
 
 It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 `all=true` or `all=false` (whether that is every architecture), and each
@@ -123,9 +124,20 @@ def arch_of(entry):
     return entry.get("arch", "x86_64")  # the SDE chips'
 
 
+def cache_of(entry):
+    """What a `cpu` job's cache entry depends on but for what every one
+    shares. Swatinem/rust-cache keys it by the job's `shared-key`, the
+    runner's OS and architecture, the compiler's version (which the
+    container's sets: the x86 image's is i686's) and the environment's
+    CARGO*/RUST*/CC* variables (the same for every entry), and the
+    lockfiles."""
+    runner = entry.get("runner") or entry.get("os") or "ubuntu-26.04"
+    return (runner.endswith("-arm"), json.dumps(entry.get("container"), sort_keys=True))
+
+
 def output(matrix, selected, tests=True):
     """The outputs of a run testing the architectures `selected` (or, without
-    `tests`, building every job)."""
+    `tests`, building one job per cache)."""
     everything = sorted(set(ARCHES.values()))
     lines = [
         f"arches={json.dumps(selected if tests else [])}",
@@ -134,6 +146,11 @@ def output(matrix, selected, tests=True):
     for job in JOBS:
         keep = [dict(e, tests=tests) for e in entries(matrix, job)
                 if not tests or arch_of(e) in selected]
+        if not tests and job == "cpu":
+            first = {}
+            for e in keep:
+                first.setdefault(cache_of(e), e)
+            keep = list(first.values())
         lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
     return "".join(line + "\n" for line in lines)
 

@@ -312,9 +312,10 @@ jobs:
   # Each architecture's tests cover every line it builds (`coverage`), so
   # those that run are checked alone. The merge queue runs every job, so that
   # everything is checked before anything lands. A push to main is the commit the
-  # merge queue tested (see the `lean` job's `reuse`): its Rust jobs all run,
-  # but only build (each entry's `tests`, the jobs' `TESTS`), for main's
-  # caches, which only main saves.
+  # merge queue tested (see the `lean` job's `reuse`): its Rust jobs only
+  # build (each entry's `tests`, the jobs' `TESTS`), for main's caches, which
+  # only main saves, and so run once per cache: every `rust` and `thumb` job,
+  # but one `rust-cpu-features` job per runner architecture and container.
   rust-arches:
     name: "Rust: architectures to test"
     runs-on: ubuntu-26.04
