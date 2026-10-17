@@ -13,7 +13,8 @@
 //! The secret is in a static, which each operation reads through a slice, so
 //! that the test's own frames never hold it. The operations of `CLEAN` must
 //! leave no residue; the others are measured and reported, until a change
-//! makes them clean and adds them there. `control` (no secret) and `leaky`
+//! makes them clean and adds them there, which holds of optimized builds
+//! only (`check`). `control` (no secret) and `leaky`
 //! (a copy of the secret in its own frame) check the measurement itself.
 
 #![cfg(all(
@@ -133,8 +134,11 @@ fn residue(op: fn()) -> usize {
 pub(crate) fn check(name: &str, op: fn()) {
     let n = residue(op);
     eprintln!("residue of {name}: {n} bytes");
+    // Debug builds keep a copy of what they move, in temporaries of their
+    // own: only optimized code is held to `CLEAN` (ci.yml runs these tests
+    // with `--release` too).
     assert!(
-        n == 0 || !CLEAN.contains(&name),
+        n == 0 || !CLEAN.contains(&name) || cfg!(debug_assertions),
         "{name} leaves {n} bytes of its secret on the stack"
     );
 }

@@ -463,6 +463,15 @@ jobs:
         run: |
           cargo test --locked --features std --lib cpu::
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
+      # The residue tests hold optimized code to their `CLEAN` list, which a
+      # debug build, keeping copies of what it moves, does not meet
+      # (tests/residue/main.rs). Not measured for coverage: the run above
+      # covers them.
+      - name: Test the residue of optimized code
+        if: ${{ env.TESTS == 'true' && runner.os != 'Windows' }}
+        env:
+          RUSTFLAGS: -D warnings
+        run: cargo test --locked --release --test tests residue
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
         with:
