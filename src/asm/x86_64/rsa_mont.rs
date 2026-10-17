@@ -821,7 +821,6 @@ je 219f
 mov eax, 0
 mov QWORD PTR [rdi+224], rax
 mov QWORD PTR [rdi+248], rax
-.p2align 6
 221:
 mov eax, 0
 mov QWORD PTR [rdi+240], rax
@@ -3430,7 +3429,6 @@ je 219f
 mov eax, 0
 mov QWORD PTR [rdi+224], rax
 mov QWORD PTR [rdi+248], rax
-.p2align 6
 221:
 mov eax, 0
 mov QWORD PTR [rdi+240], rax
