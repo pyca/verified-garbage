@@ -136,7 +136,7 @@ theorem ArithOk.dm_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk :
 
 /-- A call of `vg_mlkem*_decrypt_mul` never writes the stack pointer. -/
 theorem ArithOk.dm_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    (Code.call n (decryptMul A.bodies k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.dm k hk).sp
+    (Code.call n (A.decMul k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.dm k hk).sp
 
 /-- A call of `vg_mlkem*_encrypt_mul` keeps MXCSR's control bits. -/
 theorem ArithOk.em_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
@@ -144,7 +144,7 @@ theorem ArithOk.em_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk :
 
 /-- A call of `vg_mlkem*_encrypt_mul` never writes the stack pointer. -/
 theorem ArithOk.em_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    (Code.call n (encryptMul A.bodies k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.em k hk).sp
+    (Code.call n (A.encMul k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.em k hk).sp
 
 /-- A call of `vg_mlkem*_keygen_mul` keeps MXCSR's control bits. -/
 theorem ArithOk.km_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
