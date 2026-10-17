@@ -45,6 +45,10 @@ pub(crate) mod aarch64;
 #[rustfmt::skip]
 pub(crate) mod arm;
 
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+#[rustfmt::skip]
+pub(crate) mod powerpc64le;
+
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub(crate) mod x86;
@@ -52,7 +56,3 @@ pub(crate) mod x86;
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub(crate) mod x86_64;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub(crate) mod powerpc64le;
