@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.Framework.X86_64.Dispatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -21,6 +22,12 @@ the state at `scratch + oSt`, with the working space at `scratch + oW` and
 the digest to `scratch + o`: what each leaves of the frame and the working
 space (`Lay`, `Rep`, with the ranges it writes read again), and what it
 computes. A register `d` is set to `scratch + o` by `scr_ok`.
+
+Each call is of the hash function a selector in a slot names
+(`Impl.Mgf1.X86_64.initD`, …): the selector is loaded into `rax`
+(`ldSel_ok`), and the dispatch on it (`chainD_wp`) calls that hash
+function's, `(k, G)` of the hash functions `hs` (whose keys are distinct and
+below `2^31`, `Keys`), as the call of `G` does (`initD_ok`, …).
 -/
 
 @[expose] public section
@@ -34,6 +41,8 @@ open VG.Proof.Bignum (off word off_off)
 open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK After init_call upd_call fin_call UpdArgs FinArgs)
+open VG.Impl.Mgf1.X86_64 (ldSel initD updD finD)
+open VG.Proof.Dispatch.X86_64 (FlagsOnly)
 
 /-- `scratch + o` into `d`. -/
 theorem scr_ok {t : State} {F S : Addr} (L : Lay t F S) {d : Reg} (hd : d ≠ .rsp) {o : Nat} (ho : o < 2 ^ 31) :
@@ -208,5 +217,155 @@ theorem updExt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
     (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption)
     hF (keep_cs A.cs) A.wr
   exact ⟨L', A.rd, A.wr, A.cs, R', hF, fun m hm hc => hr m hm hc⟩
+
+/-! ## The calls of the hash function a selector names -/
+
+/-- The hash functions' keys are distinct and below `2^31` (`cmp rax, k`). -/
+structure Keys (hs : List (Nat × Stream)) : Prop where
+  nodup : (hs.map (·.1)).Nodup
+  lt : ∀ i ∈ hs.map (·.1), i < 2 ^ 31
+
+/-- With distinct keys, one hash function per key. -/
+theorem Keys.unique {hs : List (Nat × Stream)} (hd : Keys hs) {k : Nat} {G H : Stream} (h₁ : (k, G) ∈ hs)
+    (h₂ : (k, H) ∈ hs) : G = H := by
+  have hnd := hd.nodup
+  clear hd
+  induction hs with
+  | nil => cases h₁
+  | cons p hs ih =>
+    simp only [List.map_cons, List.nodup_cons] at hnd
+    rcases List.mem_cons.mp h₁ with e₁ | e₁ <;> rcases List.mem_cons.mp h₂ with e₂ | e₂
+    · rw [← e₁] at e₂; cases e₂; rfl
+    · subst e₁; exact absurd (List.mem_map.mpr ⟨_, e₂, rfl⟩) hnd.1
+    · subst e₂; exact absurd (List.mem_map.mpr ⟨_, e₁, rfl⟩) hnd.1
+    · exact ih e₁ e₂ hnd.2
+
+/-- The selector in the slot `8 * j` into `rax`. -/
+theorem ldSel_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {sl j k : Nat} (hj : sl = 8 * j) (hjn : j < nW) (hk : W j = BitVec.ofNat 64 k) :
+    WP isa (.block (ldSel sl)) t fun t' => t'.gpr .rax = BitVec.ofNat 64 k ∧ t'.mem = t.mem ∧ Keep [.rax] t t' := by
+  refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 k ∧ t'.mem = t.mem) ?_ rfl)
+    fun t' ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
+  have hl : InRegions (t.rd ++ t.wr) (off F sl) 8 := L.ld (by subst hj; unfold nW at hjn; unfold frameBytes at hjn ⊢; omega)
+  have hv : t.mem.readW (off F sl) 64 = BitVec.ofNat 64 k := by rw [R.rd j hj hjn, hk]
+  xrun [ldSel, ea_sp, L.rsp, hl, hv]
+
+/-- The dispatch on `rax = k` to `f H` for each hash function `(i, H)` of
+`hs`: `f G`, from a state that differs only in the flags. -/
+theorem chainD_wp {hs : List (Nat × Stream)} (hd : Keys hs) {f : Stream → Prog isa} {k : Nat} {G : Stream}
+    (hk : (k, G) ∈ hs) {t : State} {Q : State → Prop} (hax : t.gpr .rax = BitVec.ofNat 64 k)
+    (h : ∀ s', FlagsOnly t s' → WP isa (f G) s' Q) :
+    WP isa (Impl.Dispatch.X86_64.chain (hs.map fun p => (p.1, f p.2))) t Q := by
+  have hkeys : Proof.Dispatch.keys (hs.map fun p => (p.1, f p.2)) = hs.map (·.1) := by
+    simp only [Proof.Dispatch.keys, List.map_map]; rfl
+  have hkm : k ∈ hs.map (·.1) := List.mem_map.mpr ⟨_, hk, rfl⟩
+  have hk31 := hd.lt k hkm
+  have hsel : Proof.Dispatch.X86_64.sel t = k := by
+    simp only [Proof.Dispatch.X86_64.sel, hax, BitVec.toNat_ofNat]; omega
+  refine Proof.Dispatch.chain_wp Proof.Dispatch.X86_64.tests _ (by rw [hkeys]; exact hd.lt)
+    (by rw [hkeys, hsel]; exact hkm) (by rw [hkeys]; exact hd.nodup) fun c hc s' hs' _ => ?_
+  rw [hsel] at hc
+  obtain ⟨⟨i, H⟩, hm, he⟩ := List.mem_map.mp hc
+  simp only [Prod.mk.injEq] at he
+  obtain ⟨rfl, rfl⟩ := he
+  rw [Keys.unique hd hm hk]; exact h s' hs'
+
+/-- What a dispatched call's post-state keeps of the state before the load of
+the selector: the regions, the callee-saved registers and the memory. -/
+theorem FlagsOnly.of_keep {t t₁ s' : State} (hm : t₁.mem = t.mem) (hk : Keep [.rax] t t₁) (hs : FlagsOnly t₁ s') :
+    s'.mem = t.mem ∧ s'.rd = t.rd ∧ s'.wr = t.wr ∧ ∀ r, r ≠ .rax → s'.gpr r = t.gpr r :=
+  ⟨hs.mem.trans hm, hs.rd.trans hk.2.1, hs.wr.trans hk.2.2, fun r hr => (hs.gpr r).trans
+    (hk.gpr (by simp only [List.mem_singleton]; exact hr))⟩
+
+theorem calleeSaved_ne_rax : ∀ r ∈ calleeSaved, r ≠ .rax := by decide
+
+variable (hs : List (Nat × Stream)) {sl j kk : Nat}
+
+include hG in
+/-- `init` of the hash function the selector in the slot `sl` names. -/
+theorem initD_ok (hd : Keys hs) (hk : (kk, G) ∈ hs) {t : State} {F S : Addr} (L : Lay t F S)
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem F S V W) (hj : sl = 8 * j) (hjn : j < nW)
+    (hsk : W j = BitVec.ofNat 64 kk) (hdi : t.gpr .rdi = off S oSt) :
+    WP isa (initD hs sl) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      Rep t'.mem F S (fun o => if inR [(oSt, G.S)] o then t'.mem (off S o) else V o) W ∧
+      Frame (regs S [(oSt, G.S)] ++ [retR F]) t.mem t'.mem ∧
+      hG.SH.Repr t'.mem (off S oSt) [] := by
+  refine WP.seq (WP.mono (ldSel_ok L R hj hjn hsk) fun t₁ ⟨hax, hm, hk1⟩ => ?_)
+  refine chainD_wp hd (f := fun H => .call H.initN H.initC) hk hax fun s' hs' => ?_
+  obtain ⟨m', rd', wr', g'⟩ := FlagsOnly.of_keep hm hk1 hs'
+  refine WP.mono (init_ok hG (L.congr (g' _ (by decide)) wr' (by rw [m'])) (m' ▸ R) (by rw [g' _ (by decide), hdi]))
+    fun t' ⟨a, b, c, d, e, f, g⟩ => ⟨a, b.trans rd', c.trans wr', fun r hr => (d r hr).trans
+      (g' r (calleeSaved_ne_rax r hr)), e, m' ▸ f, g⟩
+
+include hG in
+/-- `update` of the hash function the selector in the slot `sl` names, with
+the `len` bytes at `scratch + a`. -/
+theorem updD_ok (hd : Keys hs) (hk : (kk, G) ∈ hs) {t : State} {F S : Addr} (L : Lay t F S)
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem F S V W) (hj : sl = 8 * j) (hjn : j < nW)
+    (hsk : W j = BitVec.ofNat 64 kk) {a len : Nat} (ha : a + len ≤ oRsa)
+    (hda : a + len ≤ oSt ∨ oSt + G.S ≤ a) (hwa : a + len ≤ oW ∨ oW + hG.Wb ≤ a)
+    (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S a) (hcx : t.gpr .rcx = BitVec.ofNat 64 len)
+    (h8 : t.gpr .r8 = off S oW) :
+    WP isa (updD hs sl) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      Rep t'.mem F S (fun o => if inR [(oSt, G.S), (oW, hG.Wb)] o then t'.mem (off S o) else V o) W ∧
+      (∀ m, hG.SH.Repr t.mem (off S oSt) m → t.gpr .rsi = BitVec.ofNat 64 m.length →
+        hG.SH.Repr t'.mem (off S oSt) (m ++ (List.range len).map fun i => V (a + i))) := by
+  refine WP.seq (WP.mono (ldSel_ok L R hj hjn hsk) fun t₁ ⟨hax, hm, hk1⟩ => ?_)
+  refine chainD_wp hd (f := fun H => .call H.updN H.updC) hk hax fun s' hs' => ?_
+  obtain ⟨m', rd', wr', g'⟩ := FlagsOnly.of_keep hm hk1 hs'
+  refine WP.mono (upd_ok hG (L.congr (g' _ (by decide)) wr' (by rw [m'])) (m' ▸ R) ha hda hwa
+    (by rw [g' _ (by decide), hdi]) (by rw [g' _ (by decide), hdx]) (by rw [g' _ (by decide), hcx])
+    (by rw [g' _ (by decide), h8]))
+    fun t' ⟨a, b, c, d, e, f⟩ => ⟨a, b.trans rd', c.trans wr', fun r hr => (d r hr).trans
+      (g' r (calleeSaved_ne_rax r hr)), e, fun m hm' hsi => f m (m' ▸ hm') (by rw [g' _ (by decide), hsi])⟩
+
+include hG in
+/-- `finalize` of the hash function the selector in the slot `sl` names, to
+`scratch + o`. -/
+theorem finD_ok (hd : Keys hs) (hk : (kk, G) ∈ hs) {t : State} {F S : Addr} (L : Lay t F S)
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem F S V W) (hj : sl = 8 * j) (hjn : j < nW)
+    (hsk : W j = BitVec.ofNat 64 kk) {o : Nat} (ho : o + 64 ≤ oSt ∨ (oSt + 256 ≤ o ∧ o + 64 ≤ oW))
+    (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S o) (hcx : t.gpr .rcx = off S oW) :
+    WP isa (finD hs sl) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      Rep t'.mem F S (fun x => if inR [(oSt, G.S), (o, G.F), (oW, hG.Wb)] x then t'.mem (off S x) else V x) W ∧
+      (∀ m, hG.SH.Repr t.mem (off S oSt) m → m.length < 2 ^ 64 → t.gpr .rsi = BitVec.ofNat 64 m.length →
+        ∀ i < G.D, t'.mem (off S (o + i)) = (hG.SH.H.hash m).getD i 0) := by
+  refine WP.seq (WP.mono (ldSel_ok L R hj hjn hsk) fun t₁ ⟨hax, hm, hk1⟩ => ?_)
+  refine chainD_wp hd (f := fun H => .call H.finN H.finC) hk hax fun s' hs' => ?_
+  obtain ⟨m', rd', wr', g'⟩ := FlagsOnly.of_keep hm hk1 hs'
+  refine WP.mono (fin_ok hG (L.congr (g' _ (by decide)) wr' (by rw [m'])) (m' ▸ R) ho
+    (by rw [g' _ (by decide), hdi]) (by rw [g' _ (by decide), hdx]) (by rw [g' _ (by decide), hcx]))
+    fun t' ⟨a, b, c, d, e, f⟩ => ⟨a, b.trans rd', c.trans wr', fun r hr => (d r hr).trans
+      (g' r (calleeSaved_ne_rax r hr)), e, fun m hm' hl hsi => f m (m' ▸ hm') hl (by rw [g' _ (by decide), hsi])⟩
+
+include hG in
+/-- `update` of the hash function the selector in the slot `sl` names, with
+the `len` bytes at `d`, outside our working space. -/
+theorem updExtD_ok (hd : Keys hs) (hk : (kk, G) ∈ hs) {t : State} {F S : Addr} (L : Lay t F S)
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem F S V W) (hj : sl = 8 * j) (hjn : j < nW)
+    (hsk : W j = BitVec.ofNat 64 kk) {d : Addr} {len : Nat} (hlen : len < 2 ^ 64)
+    (hcd : Covers [⟨d, len⟩] (t.rd ++ t.wr)) (hds : Region.Disjoint ⟨d, len⟩ ⟨S, oRsa⟩)
+    (hdk : (below F 16).Disjoint ⟨d, len⟩)
+    (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = d) (hcx : t.gpr .rcx = BitVec.ofNat 64 len)
+    (h8 : t.gpr .r8 = off S oW) :
+    WP isa (updD hs sl) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      Rep t'.mem F S (fun o => if inR [(oSt, G.S), (oW, hG.Wb)] o then t'.mem (off S o) else V o) W ∧
+      Frame (regs S [(oSt, G.S), (oW, hG.Wb)] ++ [retR F]) t.mem t'.mem ∧
+      (∀ m, hG.SH.Repr t.mem (off S oSt) m → t.gpr .rsi = BitVec.ofNat 64 m.length →
+        hG.SH.Repr t'.mem (off S oSt) (m ++ Spec.Rsa.bytesAt t.mem d len)) := by
+  refine WP.seq (WP.mono (ldSel_ok L R hj hjn hsk) fun t₁ ⟨hax, hm, hk1⟩ => ?_)
+  refine chainD_wp hd (f := fun H => .call H.updN H.updC) hk hax fun s' hs' => ?_
+  obtain ⟨m', rd', wr', g'⟩ := FlagsOnly.of_keep hm hk1 hs'
+  refine WP.mono (updExt_ok hG (L.congr (g' _ (by decide)) wr' (by rw [m'])) (m' ▸ R) hlen
+    (by rw [rd', wr']; exact hcd) hds hdk
+    (by rw [g' _ (by decide), hdi]) (by rw [g' _ (by decide), hdx]) (by rw [g' _ (by decide), hcx])
+    (by rw [g' _ (by decide), h8]))
+    fun t' ⟨a, b, c, d', e, f, g⟩ => ⟨a, b.trans rd', c.trans wr', fun r hr => (d' r hr).trans
+      (g' r (calleeSaved_ne_rax r hr)), e, m' ▸ f,
+      fun m hm' hsi => by rw [← m']; exact g m (m' ▸ hm') (by rw [g' _ (by decide), hsi])⟩
 
 end VG.Proof.RsaOaep.X86_64

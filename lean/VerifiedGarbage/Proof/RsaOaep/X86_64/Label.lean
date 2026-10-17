@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 /-!
 # RSAES-OAEP on x86-64: the label's hash
 
-`hashLabel H o` writes the label's hash `H(label)` to `scratch + o`
+`hashLabel hs o` writes the label's hash `H(label)` to `scratch + o`, `H` the hash
+function of `hs` the selector in the slot `sSelH` names
 (`hashLabel_ok`): `init`, `update` with the label (from its slots, in the
 caller's memory), and `finalize`. The working space changes only within the
 hash function's ranges and the digest's 64 bytes at `o`.
@@ -84,11 +85,16 @@ theorem labF_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
 /-- The ranges the label's hashing writes, with its digest at `o`. -/
 def labR (o : Nat) : List (Nat × Nat) := [(oSt, 256), (o, 64), (oW, 2048)]
 
+variable (hs : List (Nat × Stream)) {kH : Nat}
+
 include hG in
-theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
+/-- The label's hash with the hash function `G` of `hs` that the selector in
+the slot `sSelH` (word 37) names. -/
+theorem hashLabel_ok (hd : Keys hs) (hk : (kH, G) ∈ hs) {Hs : Spec.Mgf1.Hash}
+    (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
     (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lab : Addr} {labLen : Nat}
-    (A : LabAt u F S W lab labLen) {o : Nat} (ho : o = oDig ∨ o = oLh) :
-    WP isa (hashLabel G o) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+    (A : LabAt u F S W lab labLen) (hsel : W 37 = BitVec.ofNat 64 kH) {o : Nat} (ho : o = oDig ∨ o = oLh) :
+    WP isa (hashLabel hs o) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       (∀ r ∈ calleeSaved, u'.gpr r = u.gpr r) ∧
       ∃ V', Rep u'.mem F S V' W ∧ (∀ x, ¬ inR (labR o) x → V' x = V x) ∧
         ∀ i < G.D, V' (o + i) = (Hs.hash (Spec.Rsa.bytesAt u.mem lab labLen)).getD i 0 := by
@@ -99,14 +105,16 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
   refine WP.seq (WP.mono (scr_ok L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u1 ⟨hdi1, hm1, k1⟩ => ?_)
   have L1 : Lay u1 F S := L.congr (k1.gpr (by decide)) k1.2.2 (by rw [hm1])
   have R1 : Rep u1.mem F S V W := hm1 ▸ R
-  refine WP.seq (WP.mono (init_ok hG L1 R1 hdi1) fun u2 ⟨L2, rd2, wr2, cs2, R2, hF2, hr2⟩ => ?_)
+  refine WP.seq (WP.mono (initD_ok hG hs hd hk L1 R1 (j := 37) rfl (by decide) hsel hdi1)
+    fun u2 ⟨L2, rd2, wr2, cs2, R2, hF2, hr2⟩ => ?_)
   obtain ⟨V2, R2, hV2, -⟩ := Rep.ex R2
   have A2 : LabAt u2 F S W lab labLen := A.congr (rd2.trans k1.2.1) (wr2.trans k1.2.2) rfl rfl
   refine WP.seq (WP.mono (labA_ok L2 R2 A2) fun u3 ⟨hdi3, hsi3, hdx3, hcx3, h83, hm3, k3⟩ => ?_)
   have L3 : Lay u3 F S := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep u3.mem F S V2 W := hm3 ▸ R2
   have A3 : LabAt u3 F S W lab labLen := A2.congr k3.2.1 k3.2.2 rfl rfl
-  refine WP.seq (WP.mono (updExt_ok hG L3 R3 A3.len A3.cov A3.dS A3.dK hdi3 hdx3 hcx3 h83)
+  refine WP.seq (WP.mono (updExtD_ok hG hs hd hk L3 R3 (j := 37) rfl (by decide) hsel A3.len A3.cov A3.dS A3.dK
+      hdi3 hdx3 hcx3 h83)
     fun u4 ⟨L4, rd4, wr4, cs4, R4, _, hr4⟩ => ?_)
   have hR4 := hr4 [] (hm3 ▸ hr2) (by rw [hsi3]; rfl)
   rw [List.nil_append, hm3] at hR4
@@ -115,7 +123,8 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
     fun u5 ⟨hdi5, hsi5, hdx5, hcx5, hm5, k5⟩ => ?_)
   have L5 : Lay u5 F S := L4.congr (k5.gpr (by decide)) k5.2.2 (by rw [hm5])
   have R5 : Rep u5.mem F S V4 W := hm5 ▸ R4
-  refine WP.mono (fin_ok hG L5 R5 (o := o) (Or.inr hoo) hdi5 hdx5 hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hr6⟩ => ?_
+  refine WP.mono (finD_ok hG hs hd hk L5 R5 (j := 37) rfl (by decide) hsel (o := o) (Or.inr hoo) hdi5 hdx5 hcx5)
+    fun u6 ⟨L6, rd6, wr6, cs6, R6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
   have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [hsi5, hlb])

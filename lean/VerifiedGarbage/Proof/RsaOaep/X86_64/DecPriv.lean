@@ -110,9 +110,9 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
   have ⟨r1, r2⟩ := rsaD_toNat hp
   have hk1 := hp.lv.1; have hk2 := hp.lv.2
   have hsl := hp.hsl; have wS := hp.wS
-  have e5 : decStack = 3560 := rfl
+  have e5 : decStack = 3624 := rfl
   have e6 : privStack = 3256 := rfl
-  have e7 : frameBytes = 296 := rfl
+  have e7 : frameBytes = 360 := rfl
   have hfb : fb s = off (kbD s) (8 + privStack) := fb_eqD s
   have sK : Region.Sub ⟨kbD s, privStack⟩ (stkD s) := Region.sub_prefix (by omega)
   have sR : Region.Sub ⟨off (kbD s) privStack, 8⟩ (stkD s) := Offset.sub_base _ (by omega)

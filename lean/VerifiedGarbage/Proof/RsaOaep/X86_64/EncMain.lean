@@ -69,46 +69,59 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (Spec.Rsa.bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]
 
-/-- The function's argument slots, as the prologue stored them. -/
-def ArgsW (s : State) (W : Nat → BitVec 64) : Prop := ∀ k, k = 14 ∨ (21 ≤ k ∧ k ≤ 31) → W k = encW s k
+/-- The function's argument slots, as the prologues stored them. -/
+def ArgsW (s : State) (W : Nat → BitVec 64) : Prop :=
+  ∀ k, k = 14 ∨ (21 ≤ k ∧ k ≤ 31) ∨ (37 ≤ k ∧ k ≤ 43) → W k = encW s k
 
 theorem ArgsW.w {s : State} {W : Nat → BitVec 64} (h : ArgsW s W) :
-    W 14 = stackArg s 5 ∧ W 21 = s.gpr .rdi ∧ W 22 = s.gpr .rdx ∧ W 23 = s.gpr .rcx ∧ W 24 = s.gpr .r8 ∧
-    W 25 = s.gpr .r9 ∧ W 26 = stackArg s 6 ∧ W 27 = stackArg s 0 ∧ W 28 = stackArg s 1 ∧
+    W 14 = stackArg s 6 ∧ W 21 = s.gpr .rdi ∧ W 22 = s.gpr .rdx ∧ W 23 = s.gpr .rcx ∧ W 24 = s.gpr .r8 ∧
+    W 25 = s.gpr .r9 ∧ W 26 = stackArg s 7 ∧ W 27 = stackArg s 0 ∧ W 28 = stackArg s 1 ∧
     W 29 = stackArg s 2 ∧ W 30 = stackArg s 3 ∧ W 31 = stackArg s 4 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    (rw [h _ (by omega_using [])]; simp [encW, upd])
+    (rw [h _ (by omega_using [])]; simp [encW, selW, encPW, upd])
 
-variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
-  (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
+/-- The selectors' slots, and the lengths of the hash functions they name. -/
+theorem ArgsW.sel {s : State} {W : Nat → BitVec 64} (h : ArgsW s W) :
+    W 37 = BitVec.ofNat 64 (selH s) ∧ W 38 = BitVec.ofNat 64 (selG s) ∧
+    W 39 = BitVec.ofNat 64 (lenOf (selH s)) ∧ W 40 = BitVec.ofNat 64 (lenOf (selH s) + 1) ∧
+    W 41 = BitVec.ofNat 64 (2 * lenOf (selH s) + 1) ∧ W 42 = BitVec.ofNat 64 (2 * lenOf (selH s) + 2) ∧
+    W 43 = BitVec.ofNat 64 (lenOf (selG s)) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    (rw [h _ (by omega_using [])]; simp [encW, selW, upd])
 
-include hH KH mH in
-theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
-    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
+variable {Hl Gm : Hash} (hH : HashOK Hl) (hG : HashOK Gm) (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
+  {hs : List (Nat × Impl.Pbkdf2.Md.X86_64.Stream)} (hok : HsOk hs) (g : ∀ p ∈ hs, HGood p.2)
+
+include hH mH hok g in
+theorem encEm_ok {s t : State} (hkH : (selH s, Hl.stream) ∈ hs) (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 6))
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
-    WP isa (encEm Hl.stream) t fun t' => EnvE s t' ∧ Lay t' (fb s) (stackArg s 5) ∧
-      ∃ V', Rep t'.mem (fb s) (stackArg s 5) V' W ∧
+    WP isa (encEm hs) t fun t' => EnvE s t' ∧ Lay t' (fb s) (stackArg s 6) ∧
+      ∃ V', Rep t'.mem (fb s) (stackArg s 6) V' W ∧
         EmAt V' (s.gpr .rcx).toNat Hl.D (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
           (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
           (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) (stackArg s 3).toNat := by
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
+  obtain ⟨w37, -, w39, -, -, -, -⟩ := hW.sel
   have hk1 := hp.k1; have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
   have hD := hH.hD0; have hDN := hH.hDN; have hN := hH.N_le
   have hlen : mH.G.len = Hl.D := mH.len
   have hsD : Hl.stream.D = Hl.D := rfl
+  have hDl : Hl.D = lenOf (selH s) := hok.len _ hkH
+  rw [← hDl] at w39
   have c0 : oEm = 0 := rfl
   have cS : oSt = 3072 := rfl
   have cD : oDig = 3328 := rfl
   have cW : oW = 4096 := rfl
   -- What reads the caller's buffers needs.
-  have scrC : ∀ {o : Nat}, o < oRsa → (scrR s).Contains (off (stackArg s 5) o) 1 := fun ho =>
+  have scrC : ∀ {o : Nat}, o < oRsa → (scrR s).Contains (off (stackArg s 6) o) 1 := fun ho =>
     Offset.contains_base _ (by unfold oRsa at ho; omega_using [hsl, ho]) (by unfold oRsa at ho; omega_using [ho])
   unfold encEm seqs seqs seqs seqs
   -- `EM`'s place cleared.
   refine WP.seq (WP.mono (wp_good clearEm_good (clearEm_ok L R)) fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ => ?_)
   have he1 : EnvE s t1 := he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1
   -- The seed.
-  refine WP.seq (WP.mono (wp_good (copySeed_good _) (copySeed_ok (H := Hl.stream) L1 R1 w31 hD (by omega_using [hDN, hN, hsD])
+  refine WP.seq (WP.mono (wp_good copySeed_good (copySeed_ok L1 R1 w31 w39 hD (by omega_using [hDN, hN, hsD])
     (fun i hi => hp.rd_in he1.rd (by simp [rdL]) (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
       (k := mH.G.len) (by omega_using [hlen, hsD, hi]) (by omega_using [hDN, hN, hsD, hi])))
     (fun i hi j hj => ne_of_disjoint hp.d_sd_scr (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
@@ -118,13 +131,13 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
   have he2 : EnvE s t2 := he1.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2
   -- The label's hash.
   have hll : W 28 = BitVec.ofNat 64 (stackArg s 1).toNat := by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have sS : Region.Sub ⟨stackArg s 5, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
-  have A2 : LabAt t2 (fb s) (stackArg s 5) W (stackArg s 0) (stackArg s 1).toNat :=
+  have sS : Region.Sub ⟨stackArg s 6, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
+  have A2 : LabAt t2 (fb s) (stackArg s 6) W (stackArg s 0) (stackArg s 1).toNat :=
     ⟨w27, hll, (stackArg s 1).isLt, Covers.left (by
         rw [he2.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
       (hp.d_lb_scr.sub_right sS), (hp.d_stk_lb.sub_left (ret_sub s))⟩
-  refine WP.seq (WP.mono (wp_good (hashLabel_good (HGood.of hH KH) oDig)
-    (hashLabel_ok hH.stream (Hs := mH.G) mH.hash L2 R2 A2 (Or.inl rfl)))
+  refine WP.seq (WP.mono (wp_good (hashLabel_good g oDig)
+    (hashLabel_ok hH.stream hs hok.toKeys hkH (Hs := mH.G) mH.hash L2 R2 A2 w37 (Or.inl rfl)))
     fun t3 ⟨⟨L3, rd3, wr3, cs3, V3, R3, hV3, hV3'⟩, sp3, mx3, f3⟩ => ?_)
   have he3 : EnvE s t3 := he2.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3
   have hlab : Spec.Rsa.bytesAt t2.mem (stackArg s 0) (stackArg s 1).toNat =
@@ -132,7 +145,7 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
     FrE.bytes he2.fr hp.d_stk_lb hp.d_out_lb hp.d_lb_scr.symm (by have := hp.wL; omega_using [])
   rw [hlab] at hV3'
   -- `lHash` after the seed.
-  refine WP.seq (WP.mono (wp_good (copyLh_good _) (copyLh_ok (H := Hl.stream) L3 R3 hD (by omega_using [hDN, hN, hsD])))
+  refine WP.seq (WP.mono (wp_good copyLh_good (copyLh_ok L3 R3 w39 hD (by omega_using [hDN, hN, hsD])))
     fun t4 ⟨⟨L4, k4, R4⟩, sp4, mx4, f4⟩ => ?_)
   have he4 : EnvE s t4 := he3.step k4.2.1 k4.2.2 sp4 (keep_cs3 k4 (by decide)) mx4 f4
   -- `0x01` and the message.
@@ -161,7 +174,7 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       bytesAt_getD _ _ (by omega_using [hlen, hi])]
   · simp only [cpV, upd]
     rw [ifn (by omega_using [hk, hi]), ifn (by omega_using [hk, hi]), ifp (by unfold oEm; omega_using [hsD, hi]),
-      show 1 + Hl.D + i - (oEm + (oEm + 1 + Hl.stream.D)) = i by unfold oEm; omega_using [hsD], hV3' i (by omega_using [hsD, hi])]
+      show 1 + Hl.D + i - (oEm + (oEm + 1 + Hl.D)) = i by unfold oEm; omega_using [], hV3' i (by omega_using [hsD, hi])]
   · simp only [cpV, upd]
     rw [ifn (by omega_using [h2]), ifn (by omega_using [h2]), ifn (by unfold oEm; omega_using [hsD, h1]),
         hV3 _ (nl _ (by omega_using [hk2, cS, h2]))]
@@ -175,22 +188,28 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       FrE.byte he4.fr hp.d_stk_ms hp.d_out_ms hp.d_ms_scr.symm (by have := hp.wM; omega_using []) hi,
       bytesAt_getD _ _ hi]
 
-include hH KH hG KG mH mG in
+include hH hG mH mG hok g in
 /-- `EM` built and masked, then `rest`, from the state with the arguments of
 the public operation's call to make: `EnvE`, the slots, and `EM` in the
 working space. -/
-theorem encMask_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
-    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
+theorem encMask_ok {s t : State} (hkH : (selH s, Hl.stream) ∈ hs) (hkG : (selG s, Gm.stream) ∈ hs)
+    (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 6))
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) {rest : Prog isa} {Q : State → Prop}
-    (hrest : ∀ t9 V9 W9, EnvE s t9 → Lay t9 (fb s) (stackArg s 5) → Rep t9.mem (fb s) (stackArg s 5) V9 W9 →
+    (hrest : ∀ t9 V9 W9, EnvE s t9 → Lay t9 (fb s) (stackArg s 6) → Rep t9.mem (fb s) (stackArg s 6) V9 W9 →
       (∀ k, 21 ≤ k → k ≤ 26 → W9 k = encW s k) →
       (List.range (s.gpr .rcx).toNat).map (fun i => V9 (oEm + i)) =
         emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
           (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
           (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) → WP isa rest t9 Q) :
-    WP isa (.seq (encEm Hl.stream) (.seq (.block (dbArgs Hl.stream)) (.seq (mgfXor lay Gm.stream)
-      (.seq (.block (seedArgs Hl.stream)) (.seq (mgfXor lay Gm.stream) rest))))) t Q := by
+    WP isa (.seq (encEm hs) (.seq (.block dbArgs) (.seq (mgfXor lay hs)
+      (.seq (.block seedArgs) (.seq (mgfXor lay hs) rest))))) t Q := by
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
+  obtain ⟨-, w38, w39, w40, -, -, w43⟩ := hW.sel
+  have hDl : Hl.D = lenOf (selH s) := hok.len _ hkH
+  have hGl : Gm.D = lenOf (selG s) := hok.len _ hkG
+  rw [← hDl] at w39 w40
+  rw [← hGl] at w43
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.hD0
   have hsD : Hl.stream.D = Hl.D := rfl
@@ -199,37 +218,40 @@ theorem encMask_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (
   have cS : oSt = 3072 := rfl
   have w23' : W 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- `EM` before masking.
-  refine WP.seq (WP.mono (encEm_ok hH KH mH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ => ?_)
+  refine WP.seq (WP.mono (encEm_ok hH mH hok g hkH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ => ?_)
   -- `DB` masked.
-  refine WP.seq (WP.mono (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L5 R5 w23' (by omega_using [hk, hk2, hsD])
-      (by omega_using [hk, hsD])))
+  refine WP.seq (WP.mono (wp_good dbArgs_good (dbArgs_ok L5 R5 w23' w39 w40 (by omega_using [hk, hsD])))
     fun t6 ⟨⟨L6, k6, R6⟩, sp6, mx6, f6⟩ => ?_)
   have he6 : EnvE s t6 := he5.step k6.2.1 k6.2.2 sp6 (keep_cs3 k6 (by decide)) mx6 f6
-  refine WP.seq (WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
+  refine WP.seq (WP.mono (wp_good (mgfXor_good g) (mgfXor_ok hG.stream hs hok.toKeys hkG mG.hash mG.len
     (valid_of_link hG mG)
         L6 R6 ⟨by unfold oEm oSt; omega_using [hk, hk2, hsD], by unfold oEm oSt; omega_using [hk, hk2, hsD], by omega_using [], by omega_using [hk, hsD], by omega_using [hk2]⟩
-    (mW_args _ _ _ _ _ _))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ => ?_)
+    (mW_args _ _ _ _ _ _) ((mW_other (by omega_using [])).trans w38) ((mW_other (by omega_using [])).trans w43))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ => ?_)
   have he7 : EnvE s t7 := he6.step rd7 wr7 sp7 (fun r hr _ => cs7 r hr) mx7 f7
   have W7e : ∀ k, (k < 15 ∨ 18 < k) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = W k := fun k h1 h2 h3 h4 =>
     (hW7 k h2 h3 h4).trans (mW_other h1)
   -- The seed masked.
-  refine WP.seq (WP.mono (wp_good (seedArgs_good _) (seedArgs_ok (H := Hl.stream) L7 R7
+  refine WP.seq (WP.mono (wp_good seedArgs_good (seedArgs_ok L7 R7
     ((W7e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23')
-        (by omega_using [hk, hk2, hsD]) (by omega_using [hk, hsD])))
+        ((W7e 39 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w39)
+        ((W7e 40 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w40)
+        (by omega_using [hk, hsD])))
     fun t8 ⟨⟨L8, k8, R8⟩, sp8, mx8, f8⟩ => ?_)
   have he8 : EnvE s t8 := he7.step k8.2.1 k8.2.2 sp8 (keep_cs3 k8 (by decide)) mx8 f8
-  refine WP.seq (WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
+  refine WP.seq (WP.mono (wp_good (mgfXor_good g) (mgfXor_ok hG.stream hs hok.toKeys hkG mG.hash mG.len
     (valid_of_link hG mG)
         L8 R8 ⟨by unfold oEm oSt; omega_using [hk, hk2, hsD], by unfold oEm oSt; omega_using [hk, hk2, hsD], by omega_using [], by omega_using [hD, hsD], by omega_using [hk, hk2, hsD]⟩
-    (mW_args _ _ _ _ _ _))) fun t9 ⟨⟨L9, rd9, wr9, cs9, V9, W9, R9, hW9, hV9⟩, sp9, mx9, f9⟩ => ?_)
+    (mW_args _ _ _ _ _ _)
+    ((mW_other (by omega_using [])).trans ((W7e 38 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w38))
+    ((mW_other (by omega_using [])).trans ((W7e 43 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w43)))) fun t9 ⟨⟨L9, rd9, wr9, cs9, V9, W9, R9, hW9, hV9⟩, sp9, mx9, f9⟩ => ?_)
   have he9 : EnvE s t9 := he8.step rd9 wr9 sp9 (fun r hr _ => cs9 r hr) mx9 f9
   -- The call.
   have W9e : ∀ k, 21 ≤ k → k ≤ 26 → W9 k = encW s k := fun k h1 h2 => by
     rw [hW9 k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1]), mW_other (by omega_using [h1]),
       W7e k (by omega_using [h1]) (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])]
-    exact hW k (.inr ⟨h1, by omega_using [h2]⟩)
+    exact hW k (.inr (.inl ⟨h1, by omega_using [h2]⟩))
   have e1 : (s.gpr .rcx).toNat - (Hl.D + 1) = (s.gpr .rcx).toNat - Hl.D - 1 := by omega_using []
-  rw [hsD, e1] at hV7 hV9
+  rw [e1] at hV7 hV9
   have hm : ∀ o, o < (s.gpr .rcx).toNat → mOut o := fun o ho => (mOut_iff o).mpr (.inl (by omega_using [hk2, cS, ho]))
   have hlen : mH.G.len = Hl.D := mH.len
   have hsdl : (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len).length = Hl.D := by simp [Spec.Rsa.bytesAt, hlen]

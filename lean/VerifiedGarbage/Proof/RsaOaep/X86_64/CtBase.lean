@@ -37,6 +37,8 @@ open VG.Proof.Bignum (off word)
 open VG.Proof.Bignum.X86_64 (Two Pins two_post)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK UpdArgs FinArgs init_rel upd_rel fin_rel)
+open VG.Impl.Mgf1.X86_64 (ldSel)
+open VG.Proof.MlKem.X86_64 (WP.keep)
 
 /-! ## The taint from the frame -/
 
@@ -244,5 +246,52 @@ theorem two_fin {Φ : α → State → Prop} (F S : α → Addr) (o : α → Nat
   obtain ⟨L₁, -, -, e₁, -⟩ := h a t₁ p₁
   obtain ⟨L₂, -, -, e₂, -⟩ := h a t₂ p₂
   exact ⟨args a t₁ p₁, args a t₂ p₂, e₁.trans e₂.symm, by rw [L₁.rsp, L₂.rsp]⟩
+
+/-! ## The calls of the hash function a selector names -/
+
+theorem nopin {β : Type} {Φ : β → State → Prop} : Pins Φ [] := fun _ _ _ _ _ _ h => absurd h List.not_mem_nil
+
+/-- `Φ a` of a state but for `rax` and the flags. -/
+def Mod (Φ : α → State → Prop) (a : α) (t : State) : Prop :=
+  ∃ t₀, Φ a t₀ ∧ t.mem = t₀.mem ∧ t.rd = t₀.rd ∧ t.wr = t₀.wr ∧ ∀ r, r ≠ .rax → t.gpr r = t₀.gpr r
+
+/-- The dispatch on the selector in the slot `sl`, `kk` in both runs, to
+`f` of each hash function: constant time if `f G` is, for the hash
+function `(kk, G)` of `hs`, from the states but for `rax` and the flags. -/
+theorem two_callD {n : Nat} {hs : List (Nat × Stream)} (hd : Keys hs) {kk : Nat} {G : Stream} (hk : (kk, G) ∈ hs)
+    {f : Stream → Prog isa} {Φ : α → State → Prop} (F S : α → Addr) (ws : α → List Region) {sl : Nat}
+    (hv : ∀ a t, Φ a t → FrV n (F a) (ws a) t ∧ Lay t (F a) (S a) ∧
+      t.mem.readW (off (F a) sl) 64 = BitVec.ofNat 64 kk)
+    (hsl : sl + 8 ≤ frameBytes) (ht : ∃ hc, (taint.check (frT [] [] n) (.block (ldSel sl)) hc).isSome = true)
+    {Q : State → State → Prop} (hc : RelCT isa (Two (Mod Φ)) (f G) Q) :
+    RelCT isa (Two Φ) (.seq (.block (ldSel sl)) (Impl.Dispatch.X86_64.chain (hs.map fun p => (p.1, f p.2)))) Q := by
+  have hkeys : Proof.Dispatch.keys (hs.map fun p => (p.1, f p.2)) = hs.map (·.1) := by
+    simp only [Proof.Dispatch.keys, List.map_map]; rfl
+  have hkm : kk ∈ hs.map (·.1) := List.mem_map.mpr ⟨_, hk, rfl⟩
+  have hk31 := hd.lt kk hkm
+  have hsel : ∀ {t : State}, t.gpr .rax = BitVec.ofNat 64 kk → Proof.Dispatch.X86_64.sel t = kk := fun h => by
+    simp only [Proof.Dispatch.X86_64.sel, h, BitVec.toNat_ofNat]; omega
+  refine RelCT.seq (two_post (Ψ := fun a t => Mod Φ a t ∧ t.gpr .rax = BitVec.ofNat 64 kk)
+    (two_taintF [] [] F ws (fun _ _ => 0) (fun a t h => ⟨(hv a t h).1, fun _ h => absurd h List.not_mem_nil⟩)
+      nopin (by decide) ht) fun a t h => ?_) ?_
+  · obtain ⟨-, L, hr⟩ := hv a t h
+    refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 kk ∧ t'.mem = t.mem) ?_ rfl)
+      fun t' ⟨⟨ha, hm⟩, k⟩ => ⟨⟨t, h, hm, k.2.1, k.2.2, fun r hr => k.gpr (by simpa using hr)⟩, ha⟩
+    xrun [ldSel, ea_sp, L.rsp, L.ld (d := sl) hsl, hr]
+  refine Proof.Dispatch.chain_relCT Proof.Dispatch.X86_64.tests (by rw [hkeys]; exact hd.lt)
+    (by rw [hkeys]; exact hd.nodup) (fun s₁ s₂ ⟨a, h₁, h₂⟩ => ⟨by rw [hsel h₁.2, hsel h₂.2], by
+      rw [hkeys, hsel h₁.2]; exact hkm⟩) fun k c hc' => ?_
+  obtain ⟨⟨i, H⟩, hm, he⟩ := List.mem_map.mp hc'
+  simp only [Prod.mk.injEq] at he
+  obtain ⟨rfl, rfl⟩ := he
+  by_cases hik : i = kk
+  · subst hik
+    rw [Keys.unique hd hm hk]
+    refine hc.mono (fun s₁ s₂ ⟨a₁, a₂, ⟨a, h₁, h₂⟩, _, r₁, r₂, _, _⟩ => ⟨a, ?_, ?_⟩) fun _ _ h => h
+    · obtain ⟨⟨t₀, p, m, rd, wr, g⟩, -⟩ := h₁
+      exact ⟨t₀, p, r₁.mem.trans m, r₁.rd.trans rd, r₁.wr.trans wr, fun r hr => (r₁.gpr r).trans (g r hr)⟩
+    · obtain ⟨⟨t₀, p, m, rd, wr, g⟩, -⟩ := h₂
+      exact ⟨t₀, p, r₂.mem.trans m, r₂.rd.trans rd, r₂.wr.trans wr, fun r hr => (r₂.gpr r).trans (g r hr)⟩
+  · exact RelCT.of_false fun s₁ s₂ ⟨a₁, a₂, ⟨a, h₁, _⟩, hs₁, _⟩ => hik (hs₁.symm.trans (hsel h₁.2))
 
 end VG.Proof.RsaOaep.X86_64
