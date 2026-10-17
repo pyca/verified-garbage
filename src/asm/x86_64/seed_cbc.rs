@@ -2,21 +2,23 @@
 //! Verified `seed_cbc` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// SEED-CBC encryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`. No padding is added.
+/// SEED-CBC encryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Seed.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
+///
+/// The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1512 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_seed_cbc_encrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_seed_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1512]
 mov r8, rsp
@@ -28,6 +30,7 @@ mov QWORD PTR [r9+1456], r12
 mov QWORD PTR [r9+1464], r13
 mov QWORD PTR [r9+1472], r14
 mov QWORD PTR [r9+1480], r15
+movq xmm15, rsi
 test rcx, rcx
 je 20f
 mov rax, QWORD PTR [rdx]
@@ -2891,6 +2894,11 @@ jmp 215f
 add r12, 16
 test r13, r13
 jne 24b
+movq rax, xmm15
+mov rbp, QWORD PTR [r9+1056]
+mov QWORD PTR [rax], rbp
+mov rbp, QWORD PTR [r9+1064]
+mov QWORD PTR [rax+8], rbp
 jmp 23f
 22:
 23:
@@ -3095,21 +3103,23 @@ ret
     )
 }
 
-/// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
+/// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Seed.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
+///
+/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1512 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_seed_cbc_decrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_seed_cbc_decrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1512]
 mov r8, rsp
@@ -3125,6 +3135,19 @@ mov rax, QWORD PTR [rsi]
 mov QWORD PTR [r9+1488], rax
 mov rax, QWORD PTR [rsi+8]
 mov QWORD PTR [r9+1496], rax
+test rcx, rcx
+je 20f
+mov rax, rcx
+sub rax, 1
+shl rax, 4
+add rax, rdx
+mov rbx, QWORD PTR [rax]
+mov QWORD PTR [rsi], rbx
+mov rbx, QWORD PTR [rax+8]
+mov QWORD PTR [rsi+8], rbx
+jmp 21f
+20:
+21:
 mov r12, rdx
 mov r13, rcx
 mov rax, QWORD PTR [rdi]
@@ -3186,20 +3209,20 @@ mov QWORD PTR [r9+472], r14
 movabs r14, -1789082251201616085
 mov QWORD PTR [r9+480], r14
 test r13, r13
-je 20f
-22:
+je 22f
+24:
 movabs rcx, 16
 cmp r13, 16
-jb 23f
-jmp 24f
-23:
+jb 25f
+jmp 26f
+25:
 mov rcx, r13
-24:
+26:
 mov rax, r9
 add rax, 1056
 mov rbx, r12
 mov r10, rcx
-25:
+27:
 mov rbp, QWORD PTR [rbx]
 mov QWORD PTR [rax], rbp
 mov rbp, QWORD PTR [rbx+8]
@@ -3207,7 +3230,7 @@ mov QWORD PTR [rax+8], rbp
 add rax, 16
 add rbx, 16
 sub rcx, 1
-jne 25b
+jne 27b
 movq xmm13, r12
 movq xmm14, r13
 mov rsi, r9
@@ -3217,14 +3240,14 @@ mov rdi, r9
 add rdi, 1432
 mov rcx, rdx
 cmp rcx, 16
-jb 26f
+jb 28f
 mov rcx, 16
-jmp 27f
-26:
-27:
+jmp 29f
+28:
+29:
 mov r10, rsi
 mov rbx, r9
-28:
+210:
 mov eax, DWORD PTR [r10]
 bswap eax
 mov DWORD PTR [rbx+744], eax
@@ -3240,9 +3263,9 @@ mov DWORD PTR [rbx+936], eax
 add r10, 16
 add rbx, 4
 sub rcx, 1
-jne 28b
+jne 210b
 mov r8, 16
-29:
+211:
 mov r11d, DWORD PTR [rdi]
 mov r12d, DWORD PTR [rdi+4]
 mov eax, DWORD PTR [r9+872]
@@ -5936,18 +5959,18 @@ mov QWORD PTR [r9+864], rcx
 mov QWORD PTR [r9+992], rax
 add rdi, -8
 sub r8, 1
-jne 29b
+jne 211b
 sub rdi, -128
 mov rcx, rdx
 cmp rcx, 16
-jb 210f
+jb 212f
 mov rcx, 16
-jmp 211f
-210:
-211:
+jmp 213f
+212:
+213:
 mov r10, rsi
 mov rbx, r9
-212:
+214:
 mov eax, DWORD PTR [rbx+872]
 bswap eax
 mov DWORD PTR [r10], eax
@@ -5963,30 +5986,30 @@ mov DWORD PTR [r10+12], eax
 add r10, 16
 add rbx, 4
 sub rcx, 1
-jne 212b
+jne 214b
 mov rcx, rdx
 cmp rcx, 16
-jb 213f
+jb 215f
 mov rcx, 16
-jmp 214f
-213:
-214:
+jmp 216f
+215:
+216:
 mov rsi, r10
 sub rdx, rcx
 movq r12, xmm13
 movq r13, xmm14
 movabs rcx, 16
 cmp r13, 16
-jb 215f
-jmp 216f
-215:
+jb 217f
+jmp 218f
+217:
 mov rcx, r13
-216:
+218:
 mov rax, r9
 add rax, 1056
 mov rbx, r12
 mov r10, rcx
-217:
+219:
 mov rbp, QWORD PTR [rax]
 xor rbp, QWORD PTR [r9+1488]
 mov QWORD PTR [rax], rbp
@@ -6004,13 +6027,13 @@ mov QWORD PTR [rbx+8], rbp
 add rax, 16
 add rbx, 16
 sub rcx, 1
-jne 217b
+jne 219b
 mov r12, rbx
 sub r13, r10
-jne 22b
-jmp 21f
-20:
-21:
+jne 24b
+jmp 23f
+22:
+23:
 mov rbx, QWORD PTR [r9+1440]
 mov rbp, QWORD PTR [r9+1448]
 mov r12, QWORD PTR [r9+1456]
