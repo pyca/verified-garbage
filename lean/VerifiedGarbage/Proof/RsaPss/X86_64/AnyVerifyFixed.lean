@@ -24,7 +24,7 @@ open VG.Proof.RsaPss.X86_64
 
 /-- The first block of `anyArgs`. -/
 def any1A : List Instr :=
-  [.mov .rax (.mem (arg 2)), .store (sp sSlen) .rax, .mov32 .rax (.mem (arg 3)), .alu .test .rax (.reg .rax)]
+  [.mov .rax (.mem (arg 3)), .store (sp sSlen) .rax, .mov32 .rax (.mem (arg 2)), .alu .test .rax (.reg .rax)]
 
 theorem anyArgs_eqA : AnyHash.anyArgs = .seq (.block any1A)
     (.ite .e (.block [.mov32 .rax (.imm 0), .store (sp sAny) .rax, .mov .rdx (.mem (sp sSlen))])

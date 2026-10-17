@@ -80,7 +80,7 @@ theorem spro_ctA : RelCT isa (Two (SAtA G k g J0)) (.block (AnyHash.signPrologue
       hm2 ▸ frame_wrRA f1, hax2, hz2⟩
   simp only [KS1A, List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp [proWA, upd, swA, setWidth_sel]
+    simp [proWA, upd, swA, BitVec.ofNat_toNat]
 
 /-- A refusal: zeros to `out`. -/
 theorem sfail_ctA {Φ : State → State → Prop}

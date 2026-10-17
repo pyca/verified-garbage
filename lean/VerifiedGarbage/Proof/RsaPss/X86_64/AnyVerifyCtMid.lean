@@ -91,7 +91,7 @@ theorem jt_meA (hD0 : 0 < H.D) (hD64 : H.D ≤ 64) (hGl : G.len = H.D) {a t : St
     · simp [pwA, KMA, vwA]
     · simp only [pwA, KMA, vwA, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false,
         Prod.mk.injEq, Nat.reduceEqDiff, false_and, false_or, true_and]
-      rw [← S.2.2.2.2]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      rw [← S.2.2.2.2, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 variable (hH : HashOK H) (K : Callees H) (lk : MgfLink H hH)
 
@@ -115,8 +115,7 @@ theorem mgfAny_ctA {hs : List Hash} (hg : g < hs.length) (hl : hs.length ≤ 2 ^
   have h15 : W 15 = BitVec.ofNat 64 H.D := (hw 15 (by decide)).trans (by
     simp only [vwA]; rw [← lk.len, ← hp.hdl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
   have h48 : W 48 = BitVec.ofNat 64 g := (hw 48 (by decide)).trans (by
-    simp only [vwA]; rw [← S.msel_eq]; apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat])
+    simp only [vwA]; rw [← S.msel_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq])
   refine WP.mono (mgfXorAny_ok hg hl hG KG lkG.hash lkG.len hGv v.L R (e := oEm + vlo s) (db := vdb H.D s)
     ⟨by omega, by unfold vdb; omega, by unfold vdb veml at *; unfold oEm; omega⟩ hD (by omega) (hw 23 (by decide))
     (hw 24 (by decide)) h15 h48) fun u ⟨L', rd', wr', _, V', W', R', hW', _⟩ =>
@@ -171,7 +170,7 @@ theorem posCheck_ctA (hc : VerifyChecks H.P H.D) :
     ⟨s, S, h.1⟩) _) (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, ⟨v, hrd, hok⟩, fd, pos, val, hpos, hdx, hsi, h11⟩ => ?_
   obtain ⟨V, W, R, hw, -⟩ := v.W
   exact WP.mono (posCheck_ok hH v.L R (db := vdb H.D s) (pos := pos) (fd := fd) (val := val)
-    (fixed := decide ((stackArg s 3).setWidth 32 = 0)) (hw 24 (by decide))
+    (fixed := decide ((stackArg s 2).setWidth 32 = 0)) (hw 24 (by decide))
     (by rw [hw 35 (by decide)]; simp only [vwA, decide_eq_true_eq]) hpos hdx hsi h11) fun u ⟨L', k', R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (km_updA (km_updA (km_updA hw (by decide) _) (by decide) _) (by decide) _)
       ⟨pos, hpos, by simp [upd], by simp [upd]⟩, k'.2.1.trans hrd, hok⟩

@@ -69,11 +69,11 @@ theorem eB : Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat =
     Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat := h.2.1.2.2.2.2.2.symm
 
 theorem hsel_eq : hsel s = k := by
-  show ((stackArg s 16).setWidth 32).toNat = k
+  show (stackArg s 16).toNat = k
   rw [← h.2.1.2.2.1, ← h.2.2.2.1]
 
 theorem msel_eq : msel s = g := by
-  show ((stackArg s 17).setWidth 32).toNat = g
+  show (stackArg s 17).toNat = g
   rw [← h.2.1.2.2.2.1, ← h.2.2.2.2.1]
 
 theorem pa : SPreA G a := SPreA.of G h.1 (by rw [h.2.2.2.1]; exact h.2.2.2.2.2)

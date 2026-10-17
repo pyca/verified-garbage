@@ -112,10 +112,8 @@ theorem code_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
   have hGl : lk.G.len = H.D := lk.len
   have h15v : s.gpr .r9 = BitVec.ofNat 64 H.D := by
     rw [← lk.len, ← hp.hdl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have e8 : ((stackArg s 8).setWidth 32).setWidth 64 = BitVec.ofNat 64 kh := by
-    rw [← hsk]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  have e9 : ((stackArg s 9).setWidth 32).setWidth 64 = BitVec.ofNat 64 g := by
-    rw [← hsg]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  have e8 : stackArg s 8 = BitVec.ofNat 64 kh := by rw [← hsk, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have e9 : stackArg s 9 = BitVec.ofNat 64 g := by rw [← hsg, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine wp_frame (by have := hp.sp1; unfold verifyStack frameBytes at *; omega) ?_
   rw [AnyHash.verifyBody]
   simp only [seqs]
@@ -149,7 +147,7 @@ theorem code_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
   have hout : verifyOutA lk.G lkG.G s = Spec.RsaPss.verify lk.G lkG.G (n₀ :: rest)
       (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len)
       (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rsi).toNat)
-      (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32)) := by rw [verifyOutA, hnB]
+      (Spec.RsaPss.expectedSaltLen (stackArg s 3) ((stackArg s 2).setWidth 32)) := by rw [verifyOutA, hnB]
   have hfail : ∀ {t : State} {V : Nat → Byte} {W : Nat → BitVec 64}, Lay t (fb s) (stackArg s 4) →
       Rep t.mem (fb s) (stackArg s 4) V W → t.wr = frR s :: s.wr →
       (∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r) →
@@ -193,12 +191,12 @@ theorem code_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
   refine WP.seq (WP.mono (WP.keepIn (by safe_by [AnyHash.anyArgs]) (by exact Nat.zero_le 8)
     (anyArgs_okA hp L4 hrd4 hM4 R4)) fun t5 ⟨⟨L5, k5, R5, hdx5⟩, f5⟩ => ?_)
   have hM5 : Frame (vwrRA s) s.mem t5.mem := vframe_keepA hp hw4 L4.rsp hM4 f5
-  set fixed := decide ((stackArg s 3).setWidth 32 = 0) with hfixed
-  set sLen := Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32) with hsLen
-  have hsl : sLen = if fixed then some (stackArg s 2).toNat else none := expectedSaltLen_eq _ _
+  set fixed := decide ((stackArg s 2).setWidth 32 = 0) with hfixed
+  set sLen := Spec.RsaPss.expectedSaltLen (stackArg s 3) ((stackArg s 2).setWidth 32) with hsLen
+  have hsl : sLen = if fixed then some (stackArg s 3).toNat else none := expectedSaltLen_eq _ _
   have hdx5' : t5.gpr .rdx = BitVec.ofNat 64 (sLen.getD 0) := by
     rw [hdx5, hsl, hfixed]
-    by_cases hf : (stackArg s 3).setWidth 32 = 0
+    by_cases hf : (stackArg s 2).setWidth 32 = 0
     · rw [ifp hf, decide_eq_true hf, ifp rfl, Option.getD_some, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [ifn hf, decide_eq_false hf]; rfl
   -- The salt fits.
@@ -221,7 +219,7 @@ theorem code_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
   have hsl0 : (BitVec.ofNat 64 (sLen.getD 0)).toNat = sLen.getD 0 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     rw [hsl]; split
-    · exact (stackArg s 2).isLt
+    · exact (stackArg s 3).isLt
     · simp
   rw [hsl0] at hc7
   have L7 : Lay t7 (fb s) (stackArg s 4) := L5.congr ((k7.gpr (by decide)).trans (k6.gpr (by decide)))

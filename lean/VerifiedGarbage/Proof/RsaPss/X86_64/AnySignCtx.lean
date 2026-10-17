@@ -31,12 +31,11 @@ theorem stackArgs_eighteen (s : State) :
       stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15, stackArg s 16,
       stackArg s 17] := rfl
 
-/-- The selector of the digest's hash function: the low 32 bits of stack
-argument 16. -/
-abbrev hsel (s : State) : Nat := ((stackArg s 16).setWidth 32).toNat
+/-- The selector of the digest's hash function: stack argument 16. -/
+abbrev hsel (s : State) : Nat := (stackArg s 16).toNat
 
 /-- MGF1's: stack argument 17's. -/
-abbrev msel (s : State) : Nat := ((stackArg s 17).setWidth 32).toNat
+abbrev msel (s : State) : Nat := (stackArg s 17).toNat
 
 /-- `sign(out = rdi, out_len = rsi, n = rdx, n_len = rcx, e = r8, e_len = r9,
 p = [rsp + 8], p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len,
@@ -101,8 +100,7 @@ def signAnyK : Contract isa where
   pub s₁ s₂ :=
     (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r) ∧
       (List.range 16).map (stackArg s₁) = (List.range 16).map (stackArg s₂) ∧
-      (stackArg s₁ 16).setWidth 32 = (stackArg s₂ 16).setWidth 32 ∧
-      (stackArg s₁ 17).setWidth 32 = (stackArg s₂ 17).setWidth 32 ∧
+      stackArg s₁ 16 = stackArg s₂ 16 ∧ stackArg s₁ 17 = stackArg s₂ 17 ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .rdx) (s₁.gpr .rcx).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rdx) (s₂.gpr .rcx).toNat ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9).toNat =

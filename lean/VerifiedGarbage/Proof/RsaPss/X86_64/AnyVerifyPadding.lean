@@ -88,7 +88,7 @@ def verifyOutA (H G : Spec.Mgf1.Hash) (s : State) : Bool :=
   Spec.RsaPss.verify H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) H.len)
     (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rsi).toNat)
-    (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32))
+    (Spec.RsaPss.expectedSaltLen (stackArg s 3) ((stackArg s 2).setWidth 32))
 
 /-- The padding result and the state needed by the epilogue. -/
 structure PaddingDoneA (result : Bool) (s t : State) : Prop where
@@ -119,15 +119,15 @@ theorem vpadding_doneA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg 
     (h17 : W1 17 = s.gpr .rsi) (h23 : W1 23 = off (stackArg s 4) (oEm + lo))
     (h24 : W1 24 = BitVec.ofNat 64 ((s.gpr .rsi).toNat - lo - lk.G.len - 1))
     (h25 : W1 25 = BitVec.setWidth 64 ((0xFF : Byte) >>> z)) (h26 : W1 26 = BitVec.ofNat 64 lo)
-    (h35 : W1 35 = if fixed then 0 else 1) (h36 : W1 36 = stackArg s 2) (h37 : W1 37 = s.gpr .r8)
+    (h35 : W1 35 = if fixed then 0 else 1) (h36 : W1 36 = stackArg s 3) (h37 : W1 37 = s.gpr .r8)
     (h41 : W1 41 = s.gpr .rbx) (h42 : W1 42 = s.gpr .rbp) (h43 : W1 43 = s.gpr .r12)
     (h47 : W1 47 = BitVec.ofNat 64 kh) (h48 : W1 48 = BitVec.ofNat 64 g)
     (hlo : lo ≤ 1) (hfit : H.D + 2 ≤ (s.gpr .rsi).toNat - lo)
     (hspec : result = true ↔ (lo = 1 → x.getD 0 0 = 0) ∧
       RsaPss.Any.EncOk lk.G lkG.G (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (x.drop lo)
-        ((s.gpr .rsi).toNat - lo) z (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32)))
-    (hsl : Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32) =
-      if fixed then some (stackArg s 2).toNat else none) :
+        ((s.gpr .rsi).toNat - lo) z (Spec.RsaPss.expectedSaltLen (stackArg s 3) ((stackArg s 2).setWidth 32)))
+    (hsl : Spec.RsaPss.expectedSaltLen (stackArg s 3) ((stackArg s 2).setWidth 32) =
+      if fixed then some (stackArg s 3).toNat else none) :
     WP isa (seqs [.block acc0, mgfXorAny hs, .block clearTop, posScan, dispatch sHsel verifyTail hs]) u3
       (PaddingDoneA result s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
@@ -197,7 +197,7 @@ theorem vpadding_doneA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg 
     (acc1V (W3 33) fd val fixed (BitVec.ofNat 64 (db - pos - 1)) (W3 36))) 27
     (BitVec.ofNat 64 (db - pos - 1 + (8 + H.D))) with hW5
   have g5 : ∀ j, j ≠ 27 → j ≠ 33 → j ≠ 34 → W5 j = W3 j := fun j a b c => by simp [hW5, upd, a, b, c]
-  have h36' : W3 36 = stackArg s 2 := by rw [g3 36 (by decide) (by decide) (by decide), h36]
+  have h36' : W3 36 = stackArg s 3 := by rw [g3 36 (by decide) (by decide) (by decide), h36]
   have h37' : W5 37 = s.gpr .r8 := by
     rw [g5 37 (by decide) (by decide) (by decide), g3 37 (by decide) (by decide) (by decide), h37]
   have wDg := hp.wDg
@@ -246,11 +246,11 @@ theorem vpadding_doneA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg 
       show oEm + lo + db + i = oEm + (lo + (db + i)) by omega, hV1 _ (by omega)]
     simp only [RsaPss.Any.vH, List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop,
       ifp (show i < lk.G.len by omega)]
-  have hV := vlogicA lk.G lkG.G hHv x (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (z := z) fixed (stackArg s 2)
+  have hV := vlogicA lk.G lkG.G hHv x (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (z := z) fixed (stackArg s 3)
     hsl hxl hlo (by omega) hk2
   simp only [← hdb, ← hdbL] at hV
   have h33' : W5 33 = acc1V (acc0V (x.getD (k - 1) 0) (x.getD 0 0) (x.getD lo 0) ((0xFF : Byte) >>> z) lo) fd val
-      fixed (BitVec.ofNat 64 (db - pos - 1)) (stackArg s 2) := by
+      fixed (BitVec.ofNat 64 (db - pos - 1)) (stackArg s 3) := by
     have h0 := hV1 0 (by omega)
     rw [Nat.add_zero] at h0
     simp only [hW5, upd, Nat.reduceEqDiff, ite_true, ite_false]

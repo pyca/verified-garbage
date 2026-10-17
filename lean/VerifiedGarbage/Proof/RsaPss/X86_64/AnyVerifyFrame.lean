@@ -192,27 +192,12 @@ theorem vcopy1_okA {s : State} (hp : VPreA G s) {u : State} (hsp : u.gpr .rsp = 
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ vframe_wA hp hf hd _⟩
   xrun [arg, ea_sp, hsp, varg_inA hp hrd hj, varg_readA hp hf hj, hsc.st (d := d) hd]
 
-/-- The low 32 bits of a stack argument, zero-extended, copied to a slot. -/
-theorem vcopy32_okA {s : State} (hp : VPreA G s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
-    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 10) (hd : d + 8 ≤ frameBytes) :
-    WP isa (.block [.mov32 .rax (.mem (arg j)), .store (sp d) .rax]) u fun u' => Keep [.rax] u u' ∧
-      u'.mem = u.mem.writeW (off (fb s) d) (((stackArg s j).setWidth 32).setWidth 64) ∧ Frame [frR s] s.mem u'.mem := by
-  have hF := vfb_toNatA hp
-  have := hp.sp2
-  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
-  have hv : u.mem.readW (off (fb s) (frameBytes + 8 + 8 * j)) 32 = (stackArg s j).setWidth 32 := by
-    rw [readW32_low, varg_readA hp hf hj]
-  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d)
-      (((stackArg s j).setWidth 32).setWidth 64)) ?_ rfl)
-    fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ vframe_wA hp hf hd _⟩
-  xrun [arg, ea_sp, hsp, varg_inA hp hrd hj 4, hv, hsc.st (d := d) hd]
-
 /-- The slots `verifyPrologue` stores to, and what. -/
 def vproWA (s : State) : Nat → BitVec 64 :=
   upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (fun k => word s.mem (fb s) (8 * k))
     41 (s.gpr .rbx)) 42 (s.gpr .rbp)) 43 (s.gpr .r12)) 18 (s.gpr .rdi)) 17 (s.gpr .rsi)) 19 (s.gpr .rdx))
     20 (s.gpr .rcx)) 37 (s.gpr .r8)) 15 (s.gpr .r9)) 38 (stackArg s 0)) 21 (stackArg s 4)) 22 (stackArg s 5))
-    47 (((stackArg s 8).setWidth 32).setWidth 64)) 48 (((stackArg s 9).setWidth 32).setWidth 64)
+    47 (stackArg s 8)) 48 (stackArg s 9)
 
 theorem verifyPrologue_eqA : AnyHash.verifyPrologue =
     ([.store (sp sRbx) .rbx, .store (sp sRbp) .rbp, .store (sp sR12) .r12, .store (sp sN) .rdi,
@@ -221,8 +206,8 @@ theorem verifyPrologue_eqA : AnyHash.verifyPrologue =
     ([.mov .rax (.mem (arg 0)), .store (sp sSig) .rax] : List Instr) ++
     ([.mov .rax (.mem (arg 4)), .store (sp sScr) .rax] : List Instr) ++
     ([.mov .rax (.mem (arg 5)), .store (sp sScrLen) .rax] : List Instr) ++
-    ([.mov32 .rax (.mem (arg 8)), .store (sp sHsel) .rax] : List Instr) ++
-    ([.mov32 .rax (.mem (arg 9)), .store (sp sMsel) .rax] : List Instr) := rfl
+    ([.mov .rax (.mem (arg 8)), .store (sp sHsel) .rax] : List Instr) ++
+    ([.mov .rax (.mem (arg 9)), .store (sp sMsel) .rax] : List Instr) := rfl
 
 /-- The prologue: the slots as `vproWA` says, the working space untouched. -/
 theorem verifyPro_okA {s : State} (hp : VPreA G s) :
@@ -267,17 +252,17 @@ theorem verifyPro_okA {s : State} (hp : VPreA G s) :
   refine WP.mono (vcopy1_okA hp ((k23.gpr (by decide)).trans sp1) (k23.2.2 ▸ k1.2.2 ▸ hfr) (k23.2.1.trans k1.2.1) f3
     (j := 5) (d := sScrLen) (by decide) (by decide)) fun t4 ⟨k4, hm4, f4⟩ => ?_
   have k24 := k23.trans k4
-  refine WP.mono (vcopy32_okA hp ((k24.gpr (by decide)).trans sp1) (k24.2.2 ▸ k1.2.2 ▸ hfr) (k24.2.1.trans k1.2.1) f4
+  refine WP.mono (vcopy1_okA hp ((k24.gpr (by decide)).trans sp1) (k24.2.2 ▸ k1.2.2 ▸ hfr) (k24.2.1.trans k1.2.1) f4
     (j := 8) (d := sHsel) (by decide) (by decide)) fun t5 ⟨k5, hm5, f5⟩ => ?_
   have k25 := k24.trans k5
-  refine WP.mono (vcopy32_okA hp ((k25.gpr (by decide)).trans sp1) (k25.2.2 ▸ k1.2.2 ▸ hfr) (k25.2.1.trans k1.2.1) f5
+  refine WP.mono (vcopy1_okA hp ((k25.gpr (by decide)).trans sp1) (k25.2.2 ▸ k1.2.2 ▸ hfr) (k25.2.1.trans k1.2.1) f5
     (j := 9) (d := sMsel) (by decide) (by decide)) fun t6 ⟨k6, hm6, f6⟩ => ?_
   have k13 : Keep [.rax] A t6 := (k1.trans (k25.trans k6)).mono (by decide)
   have R3 : Rep t6.mem (fb s) (stackArg s 4) (fun o => s.mem (off (stackArg s 4) o)) (vproWA s) := by
     rw [hm6, hm5, hm4, hm3, hm2, hm1]
     exact ((((R1.wf G' (k := 38) (by decide) (stackArg s 0)).wf G' (k := 21) (by decide) (stackArg s 4)).wf G'
-      (k := 22) (by decide) (stackArg s 5)).wf G' (k := 47) (by decide) (((stackArg s 8).setWidth 32).setWidth 64)).wf
-      G' (k := 48) (by decide) (((stackArg s 9).setWidth 32).setWidth 64)
+      (k := 22) (by decide) (stackArg s 5)).wf G' (k := 47) (by decide) (stackArg s 8)).wf
+      G' (k := 48) (by decide) (stackArg s 9)
   have := hp.sp1
   have h392 : frameBytes = 392 := rfl
   have hvs : verifyStack = 400 := rfl
@@ -307,36 +292,36 @@ length the encoding must fit, 0 for any. -/
 theorem anyArgs_okA {s : State} (hp : VPreA G s) {u : State} {S : Addr} (L : Lay u (fb s) S) (hrd : u.rd = s.rd)
     (hf : Frame (vwrRA s) s.mem u.mem) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem (fb s) S V W) :
     WP isa AnyHash.anyArgs u fun u' => Lay u' (fb s) S ∧ Keep [.rax, .rdx] u u' ∧
-      Rep u'.mem (fb s) S V (upd (upd W 36 (stackArg s 2)) 35
-        (if (stackArg s 3).setWidth 32 = 0 then 0 else 1)) ∧
-      u'.gpr .rdx = if (stackArg s 3).setWidth 32 = 0 then stackArg s 2 else 0 := by
+      Rep u'.mem (fb s) S V (upd (upd W 36 (stackArg s 3)) 35
+        (if (stackArg s 2).setWidth 32 = 0 then 0 else 1)) ∧
+      u'.gpr .rdx = if (stackArg s 2).setWidth 32 = 0 then stackArg s 3 else 0 := by
   have G' := L.geo
-  have R1 := R.wf G' (k := 36) (by decide) (stackArg s 2)
+  have R1 := R.wf G' (k := 36) (by decide) (stackArg s 3)
   rw [show off (fb s) (8 * 36) = off (fb s) sSlen from rfl] at R1
   have hF := vfb_toNatA hp
   have := hp.sp2
-  have a1 := varg_read'A hp hf (j := 2) (by decide)
-  have a2 : (u.mem.writeW (off (fb s) sSlen) (stackArg s 2)).readW (off (fb s) (frameBytes + 8 + 8 * 3)) 32 =
-      (stackArg s 3).setWidth 32 := by
+  have a1 := varg_read'A hp hf (j := 3) (by decide)
+  have a2 : (u.mem.writeW (off (fb s) sSlen) (stackArg s 3)).readW (off (fb s) (frameBytes + 8 + 8 * 2)) 32 =
+      (stackArg s 2).setWidth 32 := by
     rw [readW32_low, Mem.readW_writeW_sep (Offset.sep _ (.inr (by unfold sSlen frameBytes; omega))
-      (by unfold frameBytes; omega) (by unfold sSlen; omega)) (by decide), varg_read'A hp hf (j := 3) (by decide)]
-  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun v => v.mem = u.mem.writeW (off (fb s) sSlen) (stackArg s 2) ∧
-      v.zf = some (decide ((stackArg s 3).setWidth 32 = 0))) ?_ rfl) fun v ⟨⟨hm, hz⟩, hk⟩ => ?_)
-  · xrun [AnyHash.anyArgs, arg, ea_sp, L.rsp, varg_inA hp hrd (j := 2) (by decide), varg_inA hp hrd (j := 3) (by decide) 4, a1, a2,
+      (by unfold frameBytes; omega) (by unfold sSlen; omega)) (by decide), varg_read'A hp hf (j := 2) (by decide)]
+  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun v => v.mem = u.mem.writeW (off (fb s) sSlen) (stackArg s 3) ∧
+      v.zf = some (decide ((stackArg s 2).setWidth 32 = 0))) ?_ rfl) fun v ⟨⟨hm, hz⟩, hk⟩ => ?_)
+  · xrun [AnyHash.anyArgs, arg, ea_sp, L.rsp, varg_inA hp hrd (j := 3) (by decide), varg_inA hp hrd (j := 2) (by decide) 4, a1, a2,
       L.st (d := sSlen) (by decide)]
     rw [BitVec.and_self, zext32_beq_zero]
-  have R1' : Rep v.mem (fb s) S V (upd W 36 (stackArg s 2)) := hm ▸ R1
+  have R1' : Rep v.mem (fb s) S V (upd W 36 (stackArg s 3)) := hm ▸ R1
   have Lv : Lay v (fb s) S := L.of_rep' R R1' (by simp [upd]) (hk.gpr (by decide)) hk.2.2
-  have R2 := R1'.wf G' (k := 35) (by decide) (if (stackArg s 3).setWidth 32 = 0 then 0 else 1)
+  have R2 := R1'.wf G' (k := 35) (by decide) (if (stackArg s 2).setWidth 32 = 0 then 0 else 1)
   rw [show off (fb s) (8 * 35) = off (fb s) sAny from rfl] at R2
   refine WP.ite (M := isa) _ (show isa.eval .e v = _ from hz) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
     rw [ifp hb] at R2 ⊢
     rw [ifp hb]
-    have e36 : (v.mem.writeW (off (fb s) sAny) (0 : BitVec 64)).readW (off (fb s) sSlen) 64 = stackArg s 2 := by
+    have e36 : (v.mem.writeW (off (fb s) sAny) (0 : BitVec 64)).readW (off (fb s) sSlen) 64 = stackArg s 3 := by
       rw [R2.rd (d := sSlen) 36 rfl (by decide)]; simp [upd]
     refine WP.mono (WP.keep [.rax, .rdx] (Q := fun w => w.mem = v.mem.writeW (off (fb s) sAny) (0 : BitVec 64) ∧
-        w.gpr .rdx = stackArg s 2) ?_ rfl)
+        w.gpr .rdx = stackArg s 3) ?_ rfl)
       fun w ⟨⟨hm', hdx⟩, k'⟩ => ⟨Lv.of_rep' R1' (hm' ▸ R2) (by simp [upd]) (k'.gpr (by decide)) k'.2.2,
         (hk.trans k').mono (by decide), hm' ▸ R2, hdx⟩
     xrun [ea_sp, Lv.rsp, Lv.st (d := sAny) (by decide), Lv.ld (d := sSlen) (by decide),

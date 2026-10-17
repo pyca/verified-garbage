@@ -276,10 +276,6 @@ theorem restore_okA {s t : State} (hp : SPreA G s) {Gm : Spec.Mgf1.Hash}
     rw [hm, k.gpr (show Reg.rax ∉ [Reg.rbx, .rbp, .r12] by decide), hp.hdl]
     exact D.out
 
-theorem setWidth_sel (x : BitVec 64) : (x.setWidth 32).setWidth 64 = BitVec.ofNat 64 (x.setWidth 32).toNat := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-
 theorem sign_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < hs.length)
     (hl : hs.length ≤ 2 ^ 31) (ht : TierOk hs)
     {H : Hash} (hkH : hs[kh] = H) (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
@@ -295,8 +291,8 @@ theorem sign_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
   have hp := SPreA.of lk.G h (by rw [hsk]; exact hHs)
   have e11 : stackArg s 11 = BitVec.ofNat 64 H.D := by
     rw [← lk.len, ← hp.hdl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have e16 : ((stackArg s 16).setWidth 32).setWidth 64 = BitVec.ofNat 64 kh := by rw [setWidth_sel]; exact congrArg _ hsk
-  have e17 : ((stackArg s 17).setWidth 32).setWidth 64 = BitVec.ofNat 64 g := by rw [setWidth_sel]; exact congrArg _ hsg
+  have e16 : stackArg s 16 = BitVec.ofNat 64 kh := by rw [← hsk, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have e17 : stackArg s 17 = BitVec.ofNat 64 g := by rw [← hsg, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have hF := fb_toNatA hp
   have hk1 := hp.k1; have hk2 := hp.k2
   refine wp_frame (by have := hp.sp1; unfold signStack Rsa.X86_64.stackBytes frameBytes at *; omega_arith) ?_
@@ -361,6 +357,8 @@ theorem sign_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
   have R3 : Rep t3.mem (fb s) (stackArg s 14) _ (proWA s) := hm3 ▸ R2
   -- `emLen`, the mask and `lo`.
   have h15 : proWA s 15 = BitVec.ofNat 64 H.D := by simp only [proWA, upd]; exact e11
+  have h47 : proWA s 47 = BitVec.ofNat 64 kh := by simp only [proWA, upd]; exact e16
+  have h48 : proWA s 48 = BitVec.ofNat 64 g := by simp only [proWA, upd]; exact e17
   refine WP.seq (WP.mono_mx (safe_mx (by safe_by [emLenAny])) (WP.keepIn (by safe_by [emLenAny]) (by exact Nat.zero_le 8)
     (emLenAny_ok (D := H.D) (by omega_arith) L3 R3 (x := n₀.toNat) (k := (s.gpr .rcx).toNat)
       (by simp [proWA, upd]) h15 (by omega_arith) (by omega_arith) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ hx4 => ?_)
@@ -385,7 +383,8 @@ theorem sign_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
     xrun [ea_sp, L4.rsp, L4.ld (d := sSaltLen) (by decide), R4.rd (d := sSaltLen) 40 rfl (by decide)]
     simp [upd, proWA]) rfl) fun t5 ⟨⟨hdx5, hm5⟩, k5⟩ hx5 => ?_
   have L5 : Lay t5 (fb s) (stackArg s 14) := L4.congr (k5.gpr (by decide)) k5.2.2 (by rw [hm5])
-  refine WP.mono_mx (safe_mx (by safe_by [saltFitsAny])) (saltFitsAny_ok (D := H.D) L5 (hm5 ▸ R4) (by simp only [upd]; exact h15)
+  refine WP.mono_mx (safe_mx (by safe_by [saltFitsAny])) (saltFitsAny_ok (D := H.D) L5 (hm5 ▸ R4)
+    ((upd_ne _ (by decide)).trans ((upd_ne _ (by decide)).trans h15))
     (a := (s.gpr .rcx).toNat - loV n₀.toNat)
     (b := stackArg s 13) (by omega_arith) (by omega_arith) (by rw [k5.gpr (by decide)]; exact hax4) hdx5)
     fun t6 ⟨k6, hm6, hax6, hc6⟩ hx6 => ?_
@@ -417,7 +416,9 @@ theorem sign_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
     (by simp [proWA, upd]) (by simp only [upd, Nat.reduceEqDiff, ite_true, ite_false]; exact maskV_eq rest h0)
     (by simp [upd]) (by simp [proWA, upd]) (by simp [proWA, upd]) (by simp [proWA, upd]) (by simp [proWA, upd])
     (by simp [proWA, upd]) (by simp [proWA, upd])
-    (by simp only [upd]; exact h15) (by simp only [upd, proWA]; exact e16) (by simp only [upd, proWA]; exact e17)
+    ((upd_ne _ (by decide)).trans ((upd_ne _ (by decide)).trans h15))
+    ((upd_ne _ (by decide)).trans ((upd_ne _ (by decide)).trans h47))
+    ((upd_ne _ (by decide)).trans ((upd_ne _ (by decide)).trans h48))
     hlo hfit hax6 ?_ (by rw [hx6, hx5, hx4, hx3, hx2, hx1]; rfl)
   rw [hout, Any.sign_eq lk.G lkG.G (validG hH lk.hash lk.len) (validG hG lkG.hash lkG.len) h0 (by rw [bytesAt_length]) rfl rfl hlo'
     (by rw [emLen_eq h0, hrl, hGl]) (by rw [emLen_eq h0, hrl, hGl, bytesAt_length]; omega_arith), hnB, hrl, hGl,

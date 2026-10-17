@@ -76,27 +76,6 @@ theorem copy1_okA {s : State} (hp : SPreA G s) {u : State} (hsp : u.gpr .rsp = f
       (Offset.contains_base _ (by omega) (by omega))⟩
   xrun [arg, ea_sp, hsp, hin, arg_readA hp hf hj, hsc.st (d := d) hd]
 
-/-- The low 32 bits of a stack argument, zero-extended, copied to a slot. -/
-theorem copy32_okA {s : State} (hp : SPreA G s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
-    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 18) (hd : d + 8 ≤ frameBytes) :
-    WP isa (.block [.mov32 .rax (.mem (arg j)), .store (sp d) .rax]) u fun u' => Keep [.rax] u u' ∧
-      u'.mem = u.mem.writeW (off (fb s) d) (((stackArg s j).setWidth 32).setWidth 64) ∧ Frame [frR s] s.mem u'.mem := by
-  have hF := fb_toNatA hp
-  have := hp.sp2
-  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
-  have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 4 := by
-    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
-    rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-    exact Offset.contains_base _ (by omega) (by omega)
-  have hv : u.mem.readW (off (fb s) (frameBytes + 8 + 8 * j)) 32 = (stackArg s j).setWidth 32 := by
-    rw [readW32_low, arg_readA hp hf hj]
-  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d)
-      (((stackArg s j).setWidth 32).setWidth 64)) ?_ rfl)
-    fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))⟩
-  xrun [arg, ea_sp, hsp, hin, hv, hsc.st (d := d) hd]
-
 theorem frame_wA {s : State} (hp : SPreA G s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
   have hF := fb_toNatA hp
@@ -109,8 +88,7 @@ def proWA (s : State) : Nat → BitVec 64 :=
     (fun k => word s.mem (fb s) (8 * k))
     41 (s.gpr .rbx)) 42 (s.gpr .rbp)) 43 (s.gpr .r12)) 16 (s.gpr .rdi)) 18 (s.gpr .rdx)) 17 (s.gpr .rcx))
     19 (s.gpr .r8)) 20 (s.gpr .r9)) 37 (stackArg s 10)) 15 (stackArg s 11)) 39 (stackArg s 12)) 40 (stackArg s 13))
-    21 (stackArg s 14)) 22 (stackArg s 15)) 47 (((stackArg s 16).setWidth 32).setWidth 64))
-    48 (((stackArg s 17).setWidth 32).setWidth 64)
+    21 (stackArg s 14)) 22 (stackArg s 15)) 47 (stackArg s 16)) 48 (stackArg s 17)
 
 theorem signPrologue_eqA : AnyHash.signPrologue =
     ([.store (sp sRbx) .rbx, .store (sp sRbp) .rbp, .store (sp sR12) .r12, .store (sp sOut) .rdi,
@@ -121,8 +99,8 @@ theorem signPrologue_eqA : AnyHash.signPrologue =
     ([.mov .rax (.mem (arg 13)), .store (sp sSaltLen) .rax] : List Instr) ++
     ([.mov .rax (.mem (arg 14)), .store (sp sScr) .rax] : List Instr) ++
     ([.mov .rax (.mem (arg 15)), .store (sp sScrLen) .rax] : List Instr) ++
-    ([.mov32 .rax (.mem (arg 16)), .store (sp sHsel) .rax] : List Instr) ++
-    ([.mov32 .rax (.mem (arg 17)), .store (sp sMsel) .rax] : List Instr) := rfl
+    ([.mov .rax (.mem (arg 16)), .store (sp sHsel) .rax] : List Instr) ++
+    ([.mov .rax (.mem (arg 17)), .store (sp sMsel) .rax] : List Instr) := rfl
 
 /-- The prologue: the slots as `proWA` says, the working space untouched. -/
 theorem signPro_okA {s : State} (hp : SPreA G s) :
@@ -175,10 +153,10 @@ theorem signPro_okA {s : State} (hp : SPreA G s) :
   refine WP.mono (copy1_okA hp ((k26.gpr (by decide)).trans sp1) (k26.2.2 ▸ k1.2.2 ▸ hfr) (k26.2.1.trans k1.2.1) f6
     (j := 15) (d := sScrLen) (by decide) (by decide)) fun t7 ⟨k7, hm7, f7⟩ => ?_
   have k27 := k26.trans k7
-  refine WP.mono (copy32_okA hp ((k27.gpr (by decide)).trans sp1) (k27.2.2 ▸ k1.2.2 ▸ hfr) (k27.2.1.trans k1.2.1) f7
+  refine WP.mono (copy1_okA hp ((k27.gpr (by decide)).trans sp1) (k27.2.2 ▸ k1.2.2 ▸ hfr) (k27.2.1.trans k1.2.1) f7
     (j := 16) (d := sHsel) (by decide) (by decide)) fun t8 ⟨k8, hm8, f8⟩ => ?_
   have k28 := k27.trans k8
-  refine WP.mono (copy32_okA hp ((k28.gpr (by decide)).trans sp1) (k28.2.2 ▸ k1.2.2 ▸ hfr) (k28.2.1.trans k1.2.1) f8
+  refine WP.mono (copy1_okA hp ((k28.gpr (by decide)).trans sp1) (k28.2.2 ▸ k1.2.2 ▸ hfr) (k28.2.1.trans k1.2.1) f8
     (j := 17) (d := sMsel) (by decide) (by decide)) fun t9 ⟨k9, hm9, f9⟩ => ?_
   have k16 : Keep [.rax] A t9 := (k1.trans (k28.trans k9)).mono (by decide)
   have R9 : Rep t9.mem (fb s) (stackArg s 14) (fun o => s.mem (off (stackArg s 14) o)) (proWA s) := by
@@ -186,7 +164,7 @@ theorem signPro_okA {s : State} (hp : SPreA G s) :
     exact (((((((R1.wf G' (k := 37) (by decide) (stackArg s 10)).wf G' (k := 15) (by decide) (stackArg s 11)).wf G'
       (k := 39) (by decide) (stackArg s 12)).wf G' (k := 40) (by decide) (stackArg s 13)).wf G' (k := 21) (by decide)
       (stackArg s 14)).wf G' (k := 22) (by decide) (stackArg s 15)).wf G' (k := 47) (by decide)
-      (((stackArg s 16).setWidth 32).setWidth 64)).wf G' (k := 48) (by decide) (((stackArg s 17).setWidth 32).setWidth 64)
+      (stackArg s 16)).wf G' (k := 48) (by decide) (stackArg s 17)
   have h392 : frameBytes = 392 := rfl
   have hss : signStack = 3656 := rfl
   have := hp.sp1

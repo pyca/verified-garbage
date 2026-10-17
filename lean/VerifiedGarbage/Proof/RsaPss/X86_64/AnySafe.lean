@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 public import VerifiedGarbage.Impl.RsaPss.X86_64.AnyHash
+public import VerifiedGarbage.Proof.Framework.X86_64.Dispatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -26,38 +27,19 @@ open VG.Proof.RsaPss.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
+/-- A frame word another index's update leaves (by this lemma, not by
+unfolding `upd`, which the kernel checks slowly through a chain of them). -/
+theorem upd_ne {α : Type} {f : Nat → α} {a x : Nat} (v : α) (h : x ≠ a) : upd f a v x = f x := ite_eq_right_iff.mpr fun h' => absurd h' h
+
 /-- What the proofs know of each of the hash functions `hs`. -/
 def TierOk (hs : List Hash) : Prop := ∀ h ∈ hs, Nonempty (HashOK h) ∧ Callees h
-
-theorem chain_all {p : Instr → Bool} (hp : ∀ k, (Impl.Dispatch.X86_64.test k).all p = true) :
-    ∀ cs : List (Nat × Prog isa), (∀ c ∈ cs, c.2.allInstrs p = true) →
-      (Impl.Dispatch.X86_64.chain cs).allInstrs p = true
-  | [], _ => rfl
-  | [(_, c)], h => h (_, c) List.mem_cons_self
-  | (k, c) :: c' :: cs, h => by
-    have h1 := h (k, c) List.mem_cons_self
-    have h2 := chain_all hp (c' :: cs) fun x hx => h x (List.mem_cons_of_mem _ hx)
-    simp only [Impl.Dispatch.X86_64.chain, Impl.Dispatch.chain] at h2 ⊢
-    simp only [Code.allInstrs, h1, h2, Bool.and_true]
-    rw [rec_all]; exact hp k
-
-theorem chain_xd {d : Nat} :
-    ∀ cs : List (Nat × Prog isa), (∀ c ∈ cs, c.2.x86_64Depth ≤ d) →
-      (Impl.Dispatch.X86_64.chain cs).x86_64Depth ≤ d
-  | [], _ => Nat.zero_le _
-  | [(_, c)], h => h (_, c) List.mem_cons_self
-  | (k, c) :: c' :: cs, h => by
-    have h1 : c.x86_64Depth ≤ d := h (k, c) List.mem_cons_self
-    have h2 := chain_xd (c' :: cs) fun x hx => h x (List.mem_cons_of_mem _ hx)
-    simp only [Impl.Dispatch.X86_64.chain, Impl.Dispatch.chain] at h2 ⊢
-    simp only [Code.x86_64Depth]
-    omega
 
 theorem dispatch_all {p : Instr → Bool} (hp : ∀ k, (Impl.Dispatch.X86_64.test k).all p = true) {d : Nat}
     (hd : p (.mov .rax (.mem (sp d))) = true) {f : Hash → Prog isa} {hs : List Hash}
     (hf : ∀ h ∈ hs, (f h).allInstrs p = true) : (dispatch d f hs).allInstrs p = true := by
   simp only [dispatch, Code.allInstrs, hd, Bool.true_and]
-  refine chain_all hp _ fun c hc => ?_
+  refine Proof.Dispatch.chain_allInstrs (M := isa) (test := Impl.Dispatch.X86_64.test) (eq := Cond.e) p
+    (fun k => by simp only [Code.allInstrs, rec_all]; exact hp k) _ fun c hc => ?_
   simp only [cases, List.mem_mapIdx] at hc
   obtain ⟨i, hi, rfl⟩ := hc
   exact hf _ (List.getElem_mem hi)
@@ -65,7 +47,7 @@ theorem dispatch_all {p : Instr → Bool} (hp : ∀ k, (Impl.Dispatch.X86_64.tes
 theorem dispatch_xd {d e : Nat} {f : Hash → Prog isa} {hs : List Hash} (hf : ∀ h ∈ hs, (f h).x86_64Depth ≤ e) :
     (dispatch d f hs).x86_64Depth ≤ e := by
   simp only [dispatch, Code.x86_64Depth]
-  refine Nat.max_le.mpr ⟨Nat.zero_le _, chain_xd _ fun c hc => ?_⟩
+  refine Nat.max_le.mpr ⟨Nat.zero_le _, Proof.Dispatch.X86_64.chain_x86_64Depth _ fun c hc => ?_⟩
   simp only [cases, List.mem_mapIdx] at hc
   obtain ⟨i, hi, rfl⟩ := hc
   exact hf _ (List.getElem_mem hi)

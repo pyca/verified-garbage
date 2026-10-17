@@ -138,28 +138,28 @@ theorem emLen_ctA (hH : HashOK H) (hGl : G.len = H.D) :
 /-- `anyArgs`' first block. -/
 theorem any1_okA {s : State} (hp : VPreA G s) {u : State} {S : Addr} (L : Lay u (fb s) S) (hrd : u.rd = s.rd)
     (hf : Frame (vwrRA s) s.mem u.mem) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem (fb s) S V W) :
-    WP isa (.block any1A) u fun v => Lay v (fb s) S ∧ Keep [.rax] u v ∧ Rep v.mem (fb s) S V (upd W 36 (stackArg s 2)) ∧
-      v.zf = some (decide ((stackArg s 3).setWidth 32 = 0)) := by
+    WP isa (.block any1A) u fun v => Lay v (fb s) S ∧ Keep [.rax] u v ∧ Rep v.mem (fb s) S V (upd W 36 (stackArg s 3)) ∧
+      v.zf = some (decide ((stackArg s 2).setWidth 32 = 0)) := by
   have G' := L.geo
-  have R1 := R.wf G' (k := 36) (by decide) (stackArg s 2)
+  have R1 := R.wf G' (k := 36) (by decide) (stackArg s 3)
   rw [show off (fb s) (8 * 36) = off (fb s) sSlen from rfl] at R1
   have hF := vfb_toNatA hp
   have := hp.sp2
-  have a1 := varg_read'A hp hf (j := 2) (by decide)
-  have a2 : (u.mem.writeW (off (fb s) sSlen) (stackArg s 2)).readW (off (fb s) (frameBytes + 8 + 8 * 3)) 32 =
-      (stackArg s 3).setWidth 32 := by
+  have a1 := varg_read'A hp hf (j := 3) (by decide)
+  have a2 : (u.mem.writeW (off (fb s) sSlen) (stackArg s 3)).readW (off (fb s) (frameBytes + 8 + 8 * 2)) 32 =
+      (stackArg s 2).setWidth 32 := by
     rw [readW32_low, Mem.readW_writeW_sep (Offset.sep _ (.inr (by unfold sSlen frameBytes; omega))
-      (by unfold frameBytes; omega) (by unfold sSlen; omega)) (by decide), varg_read'A hp hf (j := 3) (by decide)]
-  refine WP.mono (WP.keep [.rax] (Q := fun v => v.mem = u.mem.writeW (off (fb s) sSlen) (stackArg s 2) ∧
-      v.zf = some (decide ((stackArg s 3).setWidth 32 = 0))) ?_ rfl) fun v ⟨⟨hm, hz⟩, hk⟩ =>
+      (by unfold frameBytes; omega) (by unfold sSlen; omega)) (by decide), varg_read'A hp hf (j := 2) (by decide)]
+  refine WP.mono (WP.keep [.rax] (Q := fun v => v.mem = u.mem.writeW (off (fb s) sSlen) (stackArg s 3) ∧
+      v.zf = some (decide ((stackArg s 2).setWidth 32 = 0))) ?_ rfl) fun v ⟨⟨hm, hz⟩, hk⟩ =>
     ⟨L.of_rep' R (hm ▸ R1) (by simp [upd]) (hk.gpr (by decide)) hk.2.2, hk, hm ▸ R1, hz⟩
-  xrun [any1A, arg, ea_sp, L.rsp, varg_inA hp hrd (j := 2) (by decide), varg_inA hp hrd (j := 3) (by decide) 4, a1, a2,
+  xrun [any1A, arg, ea_sp, L.rsp, varg_inA hp hrd (j := 3) (by decide), varg_inA hp hrd (j := 2) (by decide) 4, a1, a2,
     L.st (d := sSlen) (by decide)]
   rw [BitVec.and_self, zext32_beq_zero]
 
 variable (H) in
 /-- Between `anyArgs`' blocks. -/
-def JZA (s t : State) : Prop := VSA H s t [] [] (fun _ _ => True) ∧ t.zf = some (decide ((stackArg s 3).setWidth 32 = 0))
+def JZA (s t : State) : Prop := VSA H s t [] [] (fun _ _ => True) ∧ t.zf = some (decide ((stackArg s 2).setWidth 32 = 0))
 
 theorem anyArgs_ctA :
     RelCT isa (Two fun a t => VAtA G k g (J4A H) a t ∧ isa.eval .b t = some false) AnyHash.anyArgs (Two (VAtA G k g (J5A H))) := by
@@ -172,14 +172,14 @@ theorem anyArgs_ctA :
       (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (fun _ h => by cases h) _ (fun _ hp => by cases hp) fun _ _ x => x⟩)
       (fun _ => rfl) (by decide) h1) fun a t ⟨⟨s, S, ⟨v, hrd, hM, _⟩⟩, _⟩ => ?_)
       (two_ite (fun a t₁ t₂ ⟨s₁, S₁, _, z₁⟩ ⟨s₂, S₂, _, z₂⟩ => by
-          rw [show isa.eval .e t₁ = t₁.zf from rfl, show isa.eval .e t₂ = t₂.zf from rfl, z₁, z₂, S₁.arg3, S₂.arg3])
+          rw [show isa.eval .e t₁ = t₁.zf from rfl, show isa.eval .e t₂ = t₂.zf from rfl, z₁, z₂, S₁.arg2, S₂.arg2])
         (vtwoA (G := G) (H := H) [] [] (fun _ => []) (fun a t ⟨⟨s, S, v, _⟩, _⟩ => ⟨s, _, S, v⟩) (fun _ => rfl)
           (by decide) hT)
         (vtwoA (G := G) (H := H) [] [] (fun _ => []) (fun a t ⟨⟨s, S, v, _⟩, _⟩ => ⟨s, _, S, v⟩) (fun _ => rfl)
           (by decide) hE))
     obtain ⟨V, W, R, -, -⟩ := v.W
     exact WP.mono (any1_okA S.ps v.L hrd hM R) fun u ⟨L', k', R', hz⟩ =>
-      ⟨s, S, ⟨L', k'.2.2.trans v.wr, ⟨V, upd W 36 (stackArg s 2), R', (fun k (h : k ∈ ([] : List Nat)) => nomatch h),
+      ⟨s, S, ⟨L', k'.2.2.trans v.wr, ⟨V, upd W 36 (stackArg s 3), R', (fun k (h : k ∈ ([] : List Nat)) => nomatch h),
         trivial⟩, fun _ hp => by cases hp⟩, hz⟩
   have hp := S.ps
   have hok : H.D + 2 ≤ veml s := by
@@ -252,8 +252,7 @@ theorem tail_ctA {hs : List Hash} (hkh : k < hs.length) (hl : hs.length ≤ 2 ^ 
   · obtain ⟨s, S, ⟨v, hrd, hok⟩, fd, pos, val, hpos, hdx, hsi, h11⟩ := h
     obtain ⟨V, W, R, hw, -⟩ := v.W
     have h47 : W 47 = BitVec.ofNat 64 k := (hw 47 (by decide)).trans (by
-      simp only [vwA]; rw [← S.hsel_eq]; apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat])
+      simp only [vwA]; rw [← S.hsel_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq])
     have L := v.L
     have hr : t.mem.readW (off (fb s) sHsel) 64 = BitVec.ofNat 64 k := by
       rw [R.rd (d := sHsel) 47 rfl (by decide), h47]

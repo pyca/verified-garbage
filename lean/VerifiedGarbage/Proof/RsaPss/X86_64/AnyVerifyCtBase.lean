@@ -61,14 +61,14 @@ theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) :
 
 theorem arg0 : stackArg s 0 = stackArg a 0 := h.2.1.2.1.symm
 theorem arg1 : stackArg s 1 = stackArg a 1 := h.2.1.2.2.1.symm
-theorem arg2 : stackArg s 2 = stackArg a 2 := h.2.1.2.2.2.1.symm
-theorem arg3 : (stackArg s 3).setWidth 32 = (stackArg a 3).setWidth 32 := h.2.1.2.2.2.2.1.symm
+theorem arg2 : (stackArg s 2).setWidth 32 = (stackArg a 2).setWidth 32 := h.2.1.2.2.2.1.symm
+theorem arg3 : stackArg s 3 = stackArg a 3 := h.2.1.2.2.2.2.1.symm
 theorem arg4 : stackArg s 4 = stackArg a 4 := h.2.1.2.2.2.2.2.1.symm
 theorem arg5 : stackArg s 5 = stackArg a 5 := h.2.1.2.2.2.2.2.2.1.symm
 theorem arg6 : stackArg s 6 = stackArg a 6 := h.2.1.2.2.2.2.2.2.2.1.symm
 theorem arg7 : stackArg s 7 = stackArg a 7 := h.2.1.2.2.2.2.2.2.2.2.1.symm
-theorem arg8 : (stackArg s 8).setWidth 32 = (stackArg a 8).setWidth 32 := h.2.1.2.2.2.2.2.2.2.2.2.1.symm
-theorem arg9 : (stackArg s 9).setWidth 32 = (stackArg a 9).setWidth 32 := h.2.1.2.2.2.2.2.2.2.2.2.2.1.symm
+theorem arg8 : stackArg s 8 = stackArg a 8 := h.2.1.2.2.2.2.2.2.2.2.2.1.symm
+theorem arg9 : stackArg s 9 = stackArg a 9 := h.2.1.2.2.2.2.2.2.2.2.2.2.1.symm
 
 theorem nB : Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat =
     Spec.Rsa.bytesAt a.mem (a.gpr .rdi) (a.gpr .rsi).toNat := h.2.1.2.2.2.2.2.2.2.2.2.2.2.1.symm
@@ -105,7 +105,7 @@ end VSibA
 /-! ## The public values -/
 
 /-- The expected salt length's register, 0 if any. -/
-def vrdxA (s : State) : BitVec 64 := if (stackArg s 3).setWidth 32 = 0 then stackArg s 2 else 0
+def vrdxA (s : State) : BitVec 64 := if (stackArg s 2).setWidth 32 = 0 then stackArg s 3 else 0
 
 /-- The public words of the frame, by index. -/
 def vwA (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
@@ -122,12 +122,12 @@ def vwA (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
   | 25 => maskV (n0v s)
   | 26 => BitVec.ofNat 64 (vlo s)
   | 28 => BitVec.ofNat 64 (vnb H s)
-  | 35 => if (stackArg s 3).setWidth 32 = 0 then 0 else 1
-  | 36 => stackArg s 2
+  | 35 => if (stackArg s 2).setWidth 32 = 0 then 0 else 1
+  | 36 => stackArg s 3
   | 37 => s.gpr .r8
   | 38 => stackArg s 0
-  | 47 => ((stackArg s 8).setWidth 32).setWidth 64
-  | 48 => ((stackArg s 9).setWidth 32).setWidth 64
+  | 47 => stackArg s 8
+  | 48 => stackArg s 9
   | _ => 0
 
 /-- The public words `ks`. -/
@@ -144,13 +144,13 @@ theorem veml : veml s = veml a := by
   simp only [VG.Proof.RsaPss.X86_64.veml, h.vlo, h.gpr (r := .rsi) (by decide)]
 theorem vdb {D : Nat} : vdb D s = vdb D a := by simp only [VG.Proof.RsaPss.X86_64.vdb, h.veml]
 theorem vnb {H : Hash} : vnb H s = vnb H a := by simp only [VG.Proof.RsaPss.X86_64.vnb, h.vdb]
-theorem vrdxA : vrdxA s = vrdxA a := by simp only [VG.Proof.RsaPss.X86_64.Any.vrdxA, h.arg3, h.arg2]
+theorem vrdxA : vrdxA s = vrdxA a := by simp only [VG.Proof.RsaPss.X86_64.Any.vrdxA, h.arg2, h.arg3]
 
 theorem vwA {H : Hash} (j : Nat) : vwA H s j = vwA H a j := by
   unfold VG.Proof.RsaPss.X86_64.Any.vwA
   split <;> simp only [h.gpr (r := .rsi) (by decide), h.gpr (r := .rdi) (by decide),
     h.gpr (r := .rdx) (by decide), h.gpr (r := .rcx) (by decide), h.gpr (r := .r8) (by decide),
-    h.gpr (r := .r9) (by decide), h.arg0, h.arg2, h.arg3, h.arg4, h.arg5, h.arg8, h.arg9, h.vlo, h.vdb, h.n0v,
+    h.gpr (r := .r9) (by decide), h.arg0, h.arg3, h.arg2, h.arg4, h.arg5, h.arg8, h.arg9, h.vlo, h.vdb, h.n0v,
     h.vnb]
 
 theorem pwA {H : Hash} (ks : List Nat) : pwA H s ks = pwA H a ks := by

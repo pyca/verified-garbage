@@ -25,20 +25,20 @@ open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 variable {G : Spec.Mgf1.Hash} {H : Hash} {k g : Nat}
 
 def fixedNbA (H : Hash) (s : State) : Nat :=
-  (8 + H.D + (stackArg s 2).toNat + H.P.L) / H.P.B + 1
+  (8 + H.D + (stackArg s 3).toNat + H.P.L) / H.P.B + 1
 
 def JFixedA (H : Hash) (s t : State) : Prop :=
-  JMA H (X7A H) s t ∧ (stackArg s 2).toNat < vdb H.D s
+  JMA H (X7A H) s t ∧ (stackArg s 3).toNat < vdb H.D s
 
 def JFixedNA (H : Hash) (s t : State) : Prop :=
-  VSA H s t KMA [] (fun _ W => W 27 = BitVec.ofNat 64 (8 + H.D + (stackArg s 2).toNat) ∧
+  VSA H s t KMA [] (fun _ W => W 27 = BitVec.ofNat 64 (8 + H.D + (stackArg s 3).toNat) ∧
     W 28 = BitVec.ofNat 64 (fixedNbA H s)) ∧ t.rd = s.rd ∧
-    H.D + 2 ≤ veml s ∧ (stackArg s 2).toNat < vdb H.D s
+    H.D + 2 ≤ veml s ∧ (stackArg s 3).toNat < vdb H.D s
 
 variable (hH : HashOK H) (K : Callees H) (lk : MgfLink H hH)
 
 def JFixed8A (H : Hash) (s t : State) : Prop :=
-  JC8A H s t ∧ (stackArg s 2).toNat < vdb H.D s
+  JC8A H s t ∧ (stackArg s 3).toNat < vdb H.D s
 
 include hH in
 theorem fixedCyd_ctA (hc : VerifyChecks H.P H.D) :
@@ -84,7 +84,7 @@ theorem fixedCopy_ctA (hc : VerifyChecks H.P H.D) :
   have hN := hH.N_le
   refine WP.mono (copyFixedSalt_ok hH v.L R (e := oEm + vlo s) (db := vdb H.D s)
     (hw 23 (by decide)) (hw 24 (by decide))
-    (show W 36 = BitVec.ofNat 64 (stackArg s 2).toNat by rw [hw 36 (by decide)]; simp [vwA]) hf
+    (show W 36 = BitVec.ofNat 64 (stackArg s 3).toNat by rw [hw 36 (by decide)]; simp [vwA]) hf
     (by unfold vdb veml oEm oY; omega) (by unfold vdb veml at hf; omega) hcx)
     fun u ⟨L, k, R⟩ => ?_
   exact ⟨s, S, ⟨v.next L k.2.2 R hw hx, k.2.1.trans hrd, hok⟩, hf⟩
@@ -102,7 +102,7 @@ theorem fixedLen_ctA (hc : VerifyChecks H.P H.D) :
   have hDN := hH.hDN
   have hN := hH.N_le
   refine WP.mono (hashSaltLen_ok hH v.L R (k := 36) (by decide)
-    (show W 36 = BitVec.ofNat 64 (stackArg s 2).toNat by rw [hw 36 (by decide)]; simp [vwA])
+    (show W 36 = BitVec.ofNat 64 (stackArg s 3).toNat by rw [hw 36 (by decide)]; simp [vwA])
     (by unfold vdb veml at hf; omega)) fun u ⟨L, k, R⟩ => ?_
   exact ⟨s, S, v.next L k.2.2 R (km_updA (km_updA hw (by decide) _) (by decide) _)
     ⟨by simp [upd], by simp [upd, fixedNbA]⟩, k.2.1.trans hrd, hok, hf⟩
@@ -125,18 +125,18 @@ theorem fixedN_heA {a t : State} (h : VAtA G k g (JFixedNA H) a t) :
   have hDN := hH.hDN
   have hN := hH.N_le
   have hL := hH.dims.L
-  have hf : (stackArg a 2).toNat < vdb H.D a := by rwa [S.arg2, S.vdb] at hfit
-  have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg a 2).toNat + H.P.L) (b := H.P.B) hB0
-  have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg a 2).toNat + H.P.L) H.P.B
+  have hf : (stackArg a 3).toNat < vdb H.D a := by rwa [S.arg3, S.vdb] at hfit
+  have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg a 3).toNat + H.P.L) (b := H.P.B) hB0
+  have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg a 3).toNat + H.P.L) H.P.B
   refine ⟨⟨S.rest, Nat.succ_pos _, by
     simp only [fixedHashAA, fixedNbA]; rw [Nat.succ_mul]; unfold vdb veml at hf; omega⟩, ?_⟩
   obtain ⟨L, wr, ⟨V, W, R, hw, h27, h28⟩, regs⟩ := vs_pubA S v
-  refine ⟨L, wr, ⟨V, W, R, fun p hp => ?_, 8 + H.D + (stackArg s 2).toNat, h27, ?_⟩, regs⟩
+  refine ⟨L, wr, ⟨V, W, R, fun p hp => ?_, 8 + H.D + (stackArg s 3).toNat, h27, ?_⟩, regs⟩
   · simp only [hws, fixedHashAA, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl
     · exact hw (21, stackArg a 4) (by simp [pwA, KMA, vwA])
-    · simpa only [fixedNbA, S.arg2] using h28
-  · simp only [fixedHashAA, fixedNbA, S.arg2]; rw [Nat.succ_mul]; omega
+    · simpa only [fixedNbA, S.arg3] using h28
+  · simp only [fixedHashAA, fixedNbA, S.arg3]; rw [Nat.succ_mul]; omega
 
 include hH K in
 theorem fixedMhash_ctA (hc : HashChecks H.P H.D 1) :
@@ -151,8 +151,8 @@ theorem fixedMhash_ctA (hc : HashChecks H.P H.D 1) :
   have hDN := hH.hDN
   have hN := hH.N_le
   have hL := hH.dims.L
-  have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg s 2).toNat + H.P.L) (b := H.P.B) hB0
-  have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg s 2).toNat + H.P.L) H.P.B
+  have h1 := Nat.lt_div_mul_add (a := 8 + H.D + (stackArg s 3).toNat + H.P.L) (b := H.P.B) hB0
+  have h2 := Nat.div_mul_le_self (8 + H.D + (stackArg s 3).toNat + H.P.L) H.P.B
   refine WP.mono (ctHash_gen hH K v.L R h27 h28 (by unfold fixedNbA; rw [Nat.succ_mul]; omega)
     (by unfold fixedNbA; rw [Nat.succ_mul]; unfold vdb veml at hf; omega))
     fun u ⟨L', rd', wr', _, V', W', R', _, hW', _⟩ => ?_

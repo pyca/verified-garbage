@@ -135,7 +135,7 @@ def signPrologue : List Instr :=
     .store (sp sEl) .r9, .mov .rax (.mem (arg 10)), .store (sp sDig) .rax, .mov .rax (.mem (arg 11)),
     .store (sp sHd) .rax, .mov .rax (.mem (arg 12)), .store (sp sSalt) .rax, .mov .rax (.mem (arg 13)),
     .store (sp sSaltLen) .rax, .mov .rax (.mem (arg 14)), .store (sp sScr) .rax, .mov .rax (.mem (arg 15)),
-    .store (sp sScrLen) .rax, .mov32 .rax (.mem (arg 16)), .store (sp sHsel) .rax, .mov32 .rax (.mem (arg 17)),
+    .store (sp sScrLen) .rax, .mov .rax (.mem (arg 16)), .store (sp sHsel) .rax, .mov .rax (.mem (arg 17)),
     .store (sp sMsel) .rax] : List Instr)
 
 /-- What the digest's hash function decides of the encoding: `M'` in `Y`
@@ -172,12 +172,12 @@ def verifyPrologue : List Instr :=
   saveRegs ++ ([.store (sp sN) .rdi, .store (sp sK) .rsi, .store (sp sE) .rdx, .store (sp sEl) .rcx,
     .store (sp sDig) .r8, .store (sp sHd) .r9, .mov .rax (.mem (arg 0)), .store (sp sSig) .rax,
     .mov .rax (.mem (arg 4)), .store (sp sScr) .rax, .mov .rax (.mem (arg 5)), .store (sp sScrLen) .rax,
-    .mov32 .rax (.mem (arg 8)), .store (sp sHsel) .rax, .mov32 .rax (.mem (arg 9)),
+    .mov .rax (.mem (arg 8)), .store (sp sHsel) .rax, .mov .rax (.mem (arg 9)),
     .store (sp sMsel) .rax] : List Instr)
 
 /-- `anyArgs`, from `salt_len` and `any_salt_len` here. -/
 def anyArgs : Prog isa :=
-  .seq (.block [.mov .rax (.mem (arg 2)), .store (sp sSlen) .rax, .mov32 .rax (.mem (arg 3)),
+  .seq (.block [.mov .rax (.mem (arg 3)), .store (sp sSlen) .rax, .mov32 .rax (.mem (arg 2)),
       .alu .test .rax (.reg .rax)])
     (.ite .e (.block [.mov32 .rax (.imm 0), .store (sp sAny) .rax, .mov .rdx (.mem (sp sSlen))])
       (.block [.mov32 .rax (.imm 1), .store (sp sAny) .rax, .mov32 .rdx (.imm 0)]))

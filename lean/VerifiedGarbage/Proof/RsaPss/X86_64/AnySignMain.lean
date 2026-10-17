@@ -68,7 +68,7 @@ theorem signEncAny_ok {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg :
   have hS1' := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   rw [hdb] at R1
   -- The digest's hash function.
-  refine WP.seq (dispatch_ok (j := 47) L1 R1 rfl (by decide) (by simp only [upd]; exact h47) hl hkh
+  refine WP.seq (dispatch_ok (j := 47) L1 R1 rfl (by decide) ((upd_ne _ (by decide)).trans ((upd_ne _ (by decide)).trans h47)) hl hkh
     fun v kv hmv _ => ?_)
   rw [hkH, signPre]
   simp only [seqs]

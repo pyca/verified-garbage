@@ -49,21 +49,21 @@ theorem saltAny_ctA : RelCT isa (Two (VAtA G k g (JMA H (X7A H))))
 theorem saltLen_ctA : RelCT isa (Two (VAtA G k g (JMA H (X7A H))))
     (.block [.mov .rax (.mem (sp sSlen)), .alu .cmp .rax (.mem (sp sDb))])
     (Two fun a t => VAtA G k g (JMA H (X7A H)) a t ∧
-      isa.eval .b t = some (decide ((stackArg a 2).toNat < vdb H.D a))) := by
+      isa.eval .b t = some (decide ((stackArg a 3).toNat < vdb H.D a))) := by
   refine two_post (vtwoA (G := G) (H := H) [24, 36] [] (fun _ => [])
     (fun a t h => jm_vsA h _) (fun _ => rfl) (by decide) (by taint_decide))
     fun a t ⟨s, S, v, hrd, hok⟩ => ?_
   obtain ⟨V, W, R, hw, _⟩ := v.W
   have hk2 := S.ps.k2
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t.mem ∧
-    u.cf = some (decide ((stackArg s 2).toNat < vdb H.D s))) ?_ rfl) fun u ⟨⟨hm, hz⟩, ku⟩ => ?_
+    u.cf = some (decide ((stackArg s 3).toNat < vdb H.D s))) ?_ rfl) fun u ⟨⟨hm, hz⟩, ku⟩ => ?_
   · xrun [ea_sp, v.L.rsp, v.L.ld (d := sSlen) (by decide), v.L.ld (d := sDb) (by decide),
       R.rd (d := sSlen) 36 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide),
       hw 36 (by decide), hw 24 (by decide)]
     simp only [vwA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show vdb H.D s < 2 ^ 64 by unfold vdb veml; omega)]
   · refine ⟨⟨s, S, v.keep ku hm (by decide) (fun _ hp => by cases hp), ku.2.1.trans hrd, hok⟩, ?_⟩
     change u.cf = _
-    rw [hz, S.arg2, S.vdb]
+    rw [hz, S.arg3, S.vdb]
 
 variable (hH : HashOK H) (K : Callees H) (lk : MgfLink H hH)
 
@@ -88,9 +88,9 @@ theorem saltBack_ctA (hc : PssChecks H.P H.D) :
     (generic.mono (fun _ _ => two_mono fun _ _ h => h.1.1) fun _ _ h => h))).mono
     (fun _ _ => two_mono fun _ _ h => h.1.1) (fun _ _ h => h)
   refine fixed.mono (fun _ _ => two_mono fun a t ⟨⟨⟨s, S, h⟩, hz⟩, hb⟩ => ?_) fun _ _ h => h
-  have hf : (stackArg a 2).toNat < vdb H.D a := by
+  have hf : (stackArg a 3).toNat < vdb H.D a := by
     rw [hz, Option.some.injEq, decide_eq_true_eq] at hb
     exact hb
-  exact ⟨s, S, h, by rwa [S.arg2, S.vdb]⟩
+  exact ⟨s, S, h, by rwa [S.arg3, S.vdb]⟩
 
 end VG.Proof.RsaPss.X86_64.Any

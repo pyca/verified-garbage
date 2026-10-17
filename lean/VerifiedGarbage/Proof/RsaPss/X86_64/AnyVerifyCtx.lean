@@ -29,12 +29,11 @@ theorem stackArgs_ten (s : State) :
     List.map (stackArg s) (List.range 10) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl
 
-/-- The selector of the digest's hash function: the low 32 bits of stack
-argument 8. -/
-abbrev vhsel (s : State) : Nat := ((stackArg s 8).setWidth 32).toNat
+/-- The selector of the digest's hash function: stack argument 8. -/
+abbrev vhsel (s : State) : Nat := (stackArg s 8).toNat
 
 /-- MGF1's: stack argument 9's. -/
-abbrev vmsel (s : State) : Nat := ((stackArg s 9).setWidth 32).toNat
+abbrev vmsel (s : State) : Nat := (stackArg s 9).toNat
 
 /-- The cached values are the modulus's. -/
 def validCacheA (s : State) : Prop :=
@@ -42,7 +41,7 @@ def validCacheA (s : State) : Prop :=
     some (Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat)
 
 /-- `verify(n = rdi, n_len = rsi, e = rdx, e_len = rcx, digest = r8,
-digest_len = r9, sig = [rsp + 8], sig_len, salt_len, any_salt_len, scratch,
+digest_len = r9, sig = [rsp + 8], sig_len, any_salt_len, salt_len, scratch,
 scratch_len, pre, pre_len, hash, mgf1_hash = [rsp + 80])`. -/
 def verifyAnyK : Contract isa where
   pre s :=
@@ -79,14 +78,14 @@ def verifyAnyK : Contract isa where
         (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rsi).toNat)
-        (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32)) then 1 else 0
+        (Spec.RsaPss.expectedSaltLen (stackArg s 3) ((stackArg s 2).setWidth 32)) then 1 else 0
   pub s₁ s₂ :=
     (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r) ∧
-      stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2 ∧
-      (stackArg s₁ 3).setWidth 32 = (stackArg s₂ 3).setWidth 32 ∧ stackArg s₁ 4 = stackArg s₂ 4 ∧
+      stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
+      (stackArg s₁ 2).setWidth 32 = (stackArg s₂ 2).setWidth 32 ∧ stackArg s₁ 3 = stackArg s₂ 3 ∧
+      stackArg s₁ 4 = stackArg s₂ 4 ∧
       stackArg s₁ 5 = stackArg s₂ 5 ∧ stackArg s₁ 6 = stackArg s₂ 6 ∧ stackArg s₁ 7 = stackArg s₂ 7 ∧
-      (stackArg s₁ 8).setWidth 32 = (stackArg s₂ 8).setWidth 32 ∧
-      (stackArg s₁ 9).setWidth 32 = (stackArg s₂ 9).setWidth 32 ∧
+      stackArg s₁ 8 = stackArg s₂ 8 ∧ stackArg s₁ 9 = stackArg s₂ 9 ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .rdi) (s₁.gpr .rsi).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rdi) (s₂.gpr .rsi).toNat ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .rdx) (s₁.gpr .rcx).toNat =
