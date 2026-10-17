@@ -30,13 +30,19 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.AArch64.Pmull.ghash
     verified := Proof.Gcm.AArch64.Pmull.ghash_verified
     features := ["aes"] },
-  Spec.Gcm.ghashPrepared8Api.artifact AArch64.target {
+  Spec.Gcm.ghashWithPowersApi.artifact AArch64.target {
     suffix := "_aes"
-    notes := ["Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight \
-        blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) \
+    notes := ["Uses PMULL as `vg_ghash_aes` does, loading `H'` to `H'⁸` (`H'ᵏ = Hᵏ · x⁻¹`) from `pw` \
         instead of computing them."]
-    code := Impl.Gcm.AArch64.Pmull.ghashP
-    verified := Proof.Gcm.AArch64.Pmull.ghashP_verified
+    code := Impl.Gcm.AArch64.Pmull.ghashW
+    verified := Proof.Gcm.AArch64.Pmull.ghashW_verified
+    features := ["aes"] },
+  Spec.Gcm.ghashStorePowersApi.artifact AArch64.target {
+    suffix := "_aes"
+    notes := ["Uses PMULL as `vg_ghash_aes` does, computing `H'` to `H'⁸` on every call and storing them \
+        to `pw` after the hash."]
+    code := Impl.Gcm.AArch64.Pmull.ghashS
+    verified := Proof.Gcm.AArch64.Pmull.ghashS_verified
     features := ["aes"] }]
 
 end VG.Artifacts.Gcm.AArch64

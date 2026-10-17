@@ -213,6 +213,26 @@ def sealPreX (extra : List Region) (s : State) : Prop :=
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 2 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
 
+/-- `sealPreX`, with `work` the stack argument `w` (after `tag` and `w - 1`
+others, such as `pw` for `vg_aes_gcm_seal_with_powers`): `sealPreX` is
+`sealPreXW 1`. -/
+def sealPreXW (w : Nat) (extra : List Region) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, 256⟩
+  let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, 16⟩
+  let work : Region := ⟨stackArg s w, 2560⟩
+  s.rd = [ctx, nonce, aad, args s (w + 1)] ++ extra ∧ s.wr = [data, tag, work] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
+    aad.Disjoint data ∧ aad.Disjoint work ∧ data.Disjoint tag ∧
+    data.Disjoint work ∧ data.Disjoint (args s (w + 1)) ∧ tag.Disjoint work ∧ work.Disjoint (args s (w + 1)) ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s w).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * (w + 1) ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+
+theorem sealPreX_W {extra : List Region} {s : State} (h : sealPreX extra s) : sealPreXW 1 extra s := h
+
 /-- What `vg_aes_gcm_seal` needs (`sealPreX` with nothing else readable). -/
 def sealPre (s : State) : Prop := sealPreX [] s
 
@@ -248,6 +268,26 @@ def openPreX (extra : List Region) (s : State) : Prop :=
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 3 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+
+/-- `openPreX`, with `work` the stack argument `w` (after `tag`, `tag_len`
+and `w - 2` others, such as `pw` for `vg_aes_gcm_open_with_powers`):
+`openPreX` is `openPreXW 2`. -/
+def openPreXW (w : Nat) (extra : List Region) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, 256⟩
+  let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  let work : Region := ⟨stackArg s w, 2560⟩
+  s.rd = [ctx, nonce, aad, tag, args s (w + 1)] ++ extra ∧ s.wr = [data, work] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
+    aad.Disjoint data ∧ aad.Disjoint work ∧
+    data.Disjoint work ∧ data.Disjoint (args s (w + 1)) ∧ tag.Disjoint work ∧ work.Disjoint (args s (w + 1)) ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s w).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * (w + 1) ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+
+theorem openPreX_W {extra : List Region} {s : State} (h : openPreX extra s) : openPreXW 2 extra s := h
 
 /-- What `vg_aes_gcm_open` needs (`openPreX` with nothing else readable). -/
 def openPre (s : State) : Prop := openPreX [] s
