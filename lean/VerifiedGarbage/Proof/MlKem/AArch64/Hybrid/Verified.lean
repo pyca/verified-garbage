@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
@@ -11,17 +12,20 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
 /-!
-# `vg_mlkem768_encaps_sha3` and `vg_mlkem1024_encaps_sha3`, hashing `ek` in the matrix
+# The paired `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`, hashing `ek` in the matrix
 
 The instances of `using_correctH` and `encapsH_ct` for ML-KEM-768 and
-ML-KEM-1024, with the taint analyses of the code decided on each, and their
-contract: `Spec.MlKem.encapsContract` with the constant tables and 128
+ML-KEM-1024, with the taint analyses of the code decided on each, for any
+single-state permutation (`KeyGenChecks`), and their contract: `Spec.MlKem.encapsContract` with the constant tables and 128
 bytes of stack (`encapsH768_verified`, `encapsH1024_verified`).
 -/
 
@@ -32,7 +36,7 @@ namespace VG.Proof.MlKem.AArch64.Hybrid
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
 open VG.Proof.MlKem.AArch64.Optimized
-open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prf prf_valid)
+open VG.Proof.MlKem.AArch64.FixedHash (fixedHash hole prf prf_valid)
 open VG.Proof.MlKem
 
 /-! ## The blocks of `ek` -/
@@ -75,21 +79,28 @@ theorem habs1024 : ∀ blk, 136 * blk < Impl.MlKem1024.AArch64.lay1024.ekLen →
 theorem startH768_taint : ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3,.x4])
     (Impl.MlKem.AArch64.Hybrid.startH lay768) h).isSome=true := ⟨_,by taint_decide⟩
 
-theorem restH768_taint : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-    (.seq (Impl.MlKem.AArch64.Hybrid.tailH fixedHash) (Impl.MlKem.AArch64.Optimized.enRestUsing prf lay768)) h).isSome=true :=
-  ⟨_,by taint_decide⟩
+theorem restH768_taint (c : Impl.Sha3.AArch64.Callee)
+    (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
+    ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
+    (.seq (Impl.MlKem.AArch64.Hybrid.tailH (fixedHash c)) (Impl.MlKem.AArch64.Optimized.enRestUsing (prf c) lay768)) h).isSome=true := by
+  taint_decide_generic c := hole using hS
 
 theorem startH1024_taint : ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3,.x4])
     (Impl.MlKem.AArch64.Hybrid.startH Impl.MlKem1024.AArch64.lay1024) h).isSome=true := ⟨_,by taint_decide⟩
 
-theorem restH1024_taint : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-    (.seq (Impl.MlKem.AArch64.Hybrid.tailH fixedHash)
-      (Impl.MlKem.AArch64.Optimized.enRestUsing prf Impl.MlKem1024.AArch64.lay1024)) h).isSome=true :=
-  ⟨_,by taint_decide⟩
+theorem restH1024_taint (c : Impl.Sha3.AArch64.Callee)
+    (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
+    ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
+    (.seq (Impl.MlKem.AArch64.Hybrid.tailH (fixedHash c))
+      (Impl.MlKem.AArch64.Optimized.enRestUsing (prf c) Impl.MlKem1024.AArch64.lay1024)) h).isSome=true := by
+  taint_decide_generic c := hole using hS
 
 theorem matrixH768_depth : (Impl.MlKem.AArch64.Hybrid.matrixH lay768).aarch64Depth ≤ 8 := by decide +kernel
 theorem matrixH1024_depth : (Impl.MlKem.AArch64.Hybrid.matrixH Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 8 := by
   decide +kernel
-theorem tailH_depth : (Impl.MlKem.AArch64.Hybrid.tailH fixedHash).aarch64Depth ≤ 1 := by decide +kernel
+theorem tailH_depth (v : Proof.Sha3.AArch64.Permutation) :
+    (Impl.MlKem.AArch64.Hybrid.tailH (fixedHash v.callee)).aarch64Depth ≤ 1 :=
+  Code.aarch64Depth_le_of_fillHoles (n := v.callee.name) (e := Impl.MlKem.AArch64.Hybrid.tailH (fixedHash hole))
+    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel)
 
 end VG.Proof.MlKem.AArch64.Hybrid

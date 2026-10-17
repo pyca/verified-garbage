@@ -11,7 +11,7 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   variant `f_<s>`, then `g` must have the variant `g_<s>`, and `g_<s>` must
   not call the baseline `f`: it calls `f_<s>`, or none of `f`'s
   implementations, when it does the work itself (e.g. ML-KEM's AArch64
-  `vg_mlkem768_keygen_sha3`, which runs two Keccak permutations at once
+  `vg_mlkem768_keygen_x2_sha3`, which runs two Keccak permutations at once
   with `vg_keccak_f1600_x2_sha3` rather than calling the sponge functions
   `vg_keccak_absorb_scratch_sha3`, … that `vg_mlkem768_keygen` calls the
   baseline of). (A variant may call the function it is a variant of, e.g.
@@ -19,7 +19,7 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   nothing would call needs none: one the Rust code does not use, all of
   whose callers have variants for `f_<s>` that do not call it, or need
   none themselves (`vg_mlkem_sample_ntt`, which `vg_mlkem768_keygen`, …
-  call, but not their `_sha3` variants). Variants compose: a variant
+  call, but not their `_x2_sha3` variants). Variants compose: a variant
   of a variant, `g_<t>_<s>`, has both suffixes, in either order, so when
   `g_<t>` calls `f`, its variant for `f_<s>` may be `g_<t>_<s>` or
   `g_<s>_<t>` (e.g. Ed25519's operations over each SHA-512 backend and each

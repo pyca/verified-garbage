@@ -189,6 +189,7 @@ def backend : Permutation where
   features := []
   ok := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_correct
   noFrames := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_noFrames
+  callerSums := callerSums
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := absorbTaint
