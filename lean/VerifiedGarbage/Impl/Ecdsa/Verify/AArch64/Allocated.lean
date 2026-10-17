@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
+public import VerifiedGarbage.Impl.P256.EcdhDouble
 
 /-! Public P-256 verification with register-allocated point and inversion arithmetic. -/
 
@@ -36,7 +37,7 @@ def ops : Joint.Ops where
   table := P256Joint.ops.table
   cache := P256Joint.ops.cache
   digitQ := CachedJac.digit K cachedOps
-  double := VerifyAllocated.program .doubleRR
+  double := EcdhDouble.program
   mixedAdd := mixedAdd
 
 def extra : List (Reg × Nat) := [(.x26,7800),(.x27,7808),(.x28,7816),(.x30,7824)]

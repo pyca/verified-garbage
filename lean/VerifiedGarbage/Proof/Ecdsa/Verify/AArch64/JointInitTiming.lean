@@ -223,7 +223,7 @@ theorem ops_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
             point := by simpa only [hk.mem] using hs.external.point }
   double := by
     intro A s hA hs
-    refine WP.mono_syms (double_ok raw hC ha hs.field hA hs.point) fun t ⟨hk,hi,hj⟩ hsym => ?_
+    refine WP.mono_syms (double_ok hC ha hs.field hA hs.point) fun t ⟨hk,hi,hj⟩ hsym => ?_
     exact ⟨hk,hs.allocatedNext JointLayout.layout hk work_stable hi hj
       (external_frame hk hsym hs.external)⟩
   peer := by
