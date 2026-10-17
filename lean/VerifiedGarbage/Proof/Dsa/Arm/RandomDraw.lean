@@ -75,7 +75,7 @@ theorem nonce_encodes {s₀ : State} (A : RandomABI s₀) {m : Mem} {bs : List B
 
 /-- The sampler's state. -/
 structure Smp (s₀ : State) (used draws : Nat) (t : State) : Prop where
-  ready : Ready s₀ t
+  ready : RReady s₀ t
   q : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀)
   width : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)
   mask : slot t.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat
@@ -93,7 +93,7 @@ abbrev drawRanges (s₀ : State) : List (Nat × Nat) :=
 
 /-- A memory change apart from the rest of the sampler's state. -/
 theorem Smp.of {s₀ t u : State} (A : RandomABI s₀) {used draws used' draws' : Nat}
-    (S : Smp s₀ used draws t) (hr : Ready s₀ u) (hm : Outs (rBase s₀) (drawRanges s₀) t.mem u.mem)
+    (S : Smp s₀ used draws t) (hr : RReady s₀ u) (hm : Outs (rBase s₀) (drawRanges s₀) t.mem u.mem)
     (hu : slot u.mem (rBase s₀) oUsed = BitVec.ofNat 32 used')
     (hdw : slot u.mem (rBase s₀) oDraws = BitVec.ofNat 32 draws')
     (hub : used' ≤ (rInput s₀).rand.length) : Smp s₀ used' draws' u := by
@@ -121,7 +121,7 @@ theorem Smp.of {s₀ t u : State} (A : RandomABI s₀) {used draws used' draws' 
   · left; unfold drawPlace; omega
 
 theorem Smp.congr {s₀ t u : State} (A : RandomABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
-    (hr : Ready s₀ u) (hm : Outs (rBase s₀) (drawRanges s₀) t.mem u.mem)
+    (hr : RReady s₀ u) (hm : Outs (rBase s₀) (drawRanges s₀) t.mem u.mem)
     (hu : slot u.mem (rBase s₀) oUsed = slot t.mem (rBase s₀) oUsed)
     (hdw : slot u.mem (rBase s₀) oDraws = slot t.mem (rBase s₀) oDraws) : Smp s₀ used draws u :=
   S.of A hr hm (hu.trans S.usedW) (hdw.trans S.drawsW) S.usedBound
@@ -137,7 +137,7 @@ theorem drawDec_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S :
     (hd : 1 ≤ draws) (hdb : draws ≤ 128) :
     WP isa (.block [ld .r0 oDraws, .subs .r0 .r0 (.imm 1), st .r0 oDraws]) t fun u =>
       Rest [.r0] t u ∧ u.gpr .r0 = BitVec.ofNat 32 (draws - 1) ∧
-      u.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) ∧ Ready s₀ u ∧
+      u.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) ∧ RReady s₀ u ∧
       u.z = decide (draws - 1 = 0) ∧ Smp s₀ used (draws - 1) u := by
   have h := S.ready
   refine wp_ld h (by decide) fun t₁ u₁ => wp_dec fun t₂ u₂ z₂ =>
@@ -155,7 +155,7 @@ theorem drawDec_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S :
 /-- Accept, or spend a draw. -/
 theorem drawFinish_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
     (hd : 1 ≤ draws) (hdb : draws ≤ 128) {acc : Bool} (hz : t.z = !acc) :
-    WP isa drawFinish t fun u => Rest [.r0] t u ∧ Ready s₀ u ∧
+    WP isa drawFinish t fun u => Rest [.r0] t u ∧ RReady s₀ u ∧
       Outs (rBase s₀) [(oDraws, 4), (oStatus, 4)] t.mem u.mem ∧
       (acc → Smp s₀ used draws u ∧ slot u.mem (rBase s₀) oStatus = 1) ∧
       (acc = false → Smp s₀ used (draws - 1) u ∧

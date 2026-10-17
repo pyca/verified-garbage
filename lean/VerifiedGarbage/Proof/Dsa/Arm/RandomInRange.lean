@@ -61,7 +61,7 @@ abbrev rangeRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6]
 
 /-- The comparison after the last `width - k` bytes. -/
 structure RangeInv (s₀ t₀ : State) (cs : List Byte) (k : Nat) (t : State) : Prop where
-  ready : Ready s₀ t
+  ready : RReady s₀ t
   mem : t.mem = t₀.mem
   r4 : t.gpr .r4 = t.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀ + k)
   r1 : t.gpr .r1 = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀ + k)
@@ -177,7 +177,7 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomABI s₀) {cs : List Byte}
 theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length = rWidth s₀)
     (I : RangeInv s₀ t₀ cs 0 t) :
     WP isa (.block rangeFinish) t fun u => u.gpr .r3 = (if accepts s₀ cs then 1 else 0) ∧
-      u.z = !accepts s₀ cs ∧ u.mem = t₀.mem ∧ Ready s₀ u ∧ Rest rangeRegs t₀ u := by
+      u.z = !accepts s₀ cs ∧ u.mem = t₀.mem ∧ RReady s₀ u ∧ Rest rangeRegs t₀ u := by
   unfold rangeFinish
   refine wp_mov (op2_imm (by decide)) fun t₁ u₁ => wp_dp (op2_reg _ _) fun t₂ u₂ => wp_dp (op2_reg _ _) fun t₃ u₃ =>
     wp_mov (op2_lsr (by decide)) fun t₄ u₄ => wp_dp (op2_reg _ _) fun t₅ u₅ => wp_cmp0 fun t₆ f₆ z₆ =>
@@ -209,7 +209,7 @@ theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length =
   cases accepts s₀ cs <;> rfl
 
 /-- The comparison's pointers and count. -/
-theorem rangeInit_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {cs : List Byte}
+theorem rangeInit_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {cs : List Byte}
     (hq : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
     (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)) (hcs : cs.length = rWidth s₀) :
     WP isa (.block rangeInit) t fun u => RangeInv s₀ t cs (rWidth s₀) u ∧ u.mem = t.mem := by
@@ -246,13 +246,13 @@ theorem rangeInit_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {c
   · rw [u₈.gpr]; decide
   · rw [u₈.gpr, hcsd]; simp
 
-theorem inRange_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {cs : List Byte}
+theorem inRange_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {cs : List Byte}
     (hq : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
     (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
     (hcs : cs.length = rWidth s₀) (hw1 : 1 ≤ rWidth s₀)
     (hnonce : ∀ i < rWidth s₀, t.mem (off (rBase s₀) (drawPlace s₀ + i)) = cs.getD i 0) :
     WP isa inRange t fun u => u.gpr .r3 = (if accepts s₀ cs then 1 else 0) ∧
-      u.z = !accepts s₀ cs ∧ u.mem = t.mem ∧ Ready s₀ u ∧ Rest rangeRegs t u := by
+      u.z = !accepts s₀ cs ∧ u.mem = t.mem ∧ RReady s₀ u ∧ Rest rangeRegs t u := by
   unfold inRange
   refine WP.seq (WP.mono (rangeInit_ok A h hq hw hcs) fun t₈ ⟨I₀, _⟩ => ?_)
   refine WP.seq (WP.loop (M := isa) (fun (n : Nat) (u : State) => ∃ k, n = k ∧ 1 ≤ k ∧ k ≤ rWidth s₀ ∧

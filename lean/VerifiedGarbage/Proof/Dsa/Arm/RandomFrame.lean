@@ -19,7 +19,7 @@ Slots and arguments are 32-bit words at offsets from `B` (`slot`). From
 the entry state `s₀`, the frame lies 32 bytes above the lowest byte of stack
 the signer uses (`rBase`), and the body writes only that stack, `out`,
 `scratch` and `used` (`rWrites`), so it reads the caller's arguments and
-input bytes as they were on entry (`Ready`).
+input bytes as they were on entry (`RReady`).
 -/
 
 @[expose] public section
@@ -128,7 +128,7 @@ theorem alloc_base : State.addr (s₀.sp - BitVec.ofNat 32 frameBytes) = rBase s
   unfold frameBytes; omega
 
 /-- The arguments' 36 bytes are apart from where the body writes. -/
-theorem args_apart : ∀ r ∈ rWrites s₀, Region.Disjoint (rArgs s₀) r := by
+theorem rArgs_apart : ∀ r ∈ rWrites s₀, Region.Disjoint (rArgs s₀) r := by
   intro r hr
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -142,7 +142,7 @@ end
 
 /-- The frame, the permissions of the entry state with the frame, and memory
 changed only where the body may write. -/
-structure Ready (s₀ t : State) : Prop where
+structure RReady (s₀ t : State) : Prop where
   rf : RF t (rBase s₀)
   sp : t.sp = s₀.sp - BitVec.ofNat 32 frameBytes
   rd : t.rd = s₀.rd
@@ -150,17 +150,17 @@ structure Ready (s₀ t : State) : Prop where
   frame : Frame (rWrites s₀) s₀.mem t.mem
 
 /-- Registers but `r11` and memory within the stack change. -/
-theorem Ready.congr {s₀ t t' : State} {ws : List Reg} (h : Ready s₀ t) (R : Rest ws t t')
-    (hm : Frame [rStack s₀] t.mem t'.mem) (h11 : .r11 ∉ ws := by decide) : Ready s₀ t' :=
+theorem RReady.congr {s₀ t t' : State} {ws : List Reg} (h : RReady s₀ t) (R : Rest ws t t')
+    (hm : Frame [rStack s₀] t.mem t'.mem) (h11 : .r11 ∉ ws := by decide) : RReady s₀ t' :=
   ⟨h.rf.of_rest R h11, R.sp.trans h.sp, R.rd.trans h.rd, R.wr.trans h.wr,
     h.frame.trans (hm.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [rWrites])⟩
 
-theorem Ready.upd {s₀ t t' : State} {d : Reg} {v : BitVec 32} (h : Ready s₀ t) (u : Upd t t' d v)
-    (hd : d ≠ .r11 := by decide) : Ready s₀ t' :=
+theorem RReady.upd {s₀ t t' : State} {d : Reg} {v : BitVec 32} (h : RReady s₀ t) (u : Upd t t' d v)
+    (hd : d ≠ .r11 := by decide) : RReady s₀ t' :=
   h.congr (ws := [d]) (u.rest (List.mem_singleton_self _)) (by rw [u.mem]; exact Frame.refl _ _)
     (by simpa using hd.symm)
 
-theorem Ready.fupd {s₀ t t' : State} (h : Ready s₀ t) (u : Fupd t t') : Ready s₀ t' :=
+theorem RReady.fupd {s₀ t t' : State} (h : RReady s₀ t) (u : Fupd t t') : RReady s₀ t' :=
   h.congr (ws := []) (u.rest _) (by rw [u.mem]; exact Frame.refl _ _)
 
 /-- A store to the frame. -/
@@ -170,15 +170,15 @@ theorem frame_store (s₀ : State) (m : Mem) {d : Nat} {w : Nat} (hd : d + w / 8
   rw [rBase_off]
   exact Offset.contains_base _ (by unfold frameBytes at hd; omega) (by unfold frameBytes at hd; omega)
 
-theorem Ready.mupd {s₀ t t' : State} {d w : Nat} {v : BitVec w} (h : Ready s₀ t)
-    (u : Mupd t t' (t.mem.writeW (off (rBase s₀) d) v)) (hd : d + w / 8 ≤ frameBytes) : Ready s₀ t' :=
+theorem RReady.mupd {s₀ t t' : State} {d w : Nat} {v : BitVec w} (h : RReady s₀ t)
+    (u : Mupd t t' (t.mem.writeW (off (rBase s₀) d) v)) (hd : d + w / 8 ≤ frameBytes) : RReady s₀ t' :=
   h.congr (ws := []) (u.rest _) (by rw [u.mem]; exact frame_store s₀ _ hd v)
 
 /-- The caller's stack arguments. -/
-theorem Ready.arg {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {j : Nat} (hj : j < 9) :
+theorem RReady.arg {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {j : Nat} (hj : j < 9) :
     slot t.mem (rBase s₀) (Random.arg j) = stackArg s₀ j := by
   rw [slot, rBase_arg A hj, stackArg]
-  refine h.frame.readW (r := rArgs s₀) ?_ (args_apart A) (by decide)
+  refine h.frame.readW (r := rArgs s₀) ?_ (rArgs_apart A) (by decide)
   rw [stackArgAddr, VG.Arm.addr_add (by have := A.stackBound; omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 
@@ -207,27 +207,27 @@ section
 variable {s₀ t : State} {is : List Instr} {Q : State → Prop}
 
 /-- `ldr r, [r11, #d]`, a slot of the frame. -/
-theorem wp_ld (h : Ready s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
+theorem wp_ld (h : RReady s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
     (k : ∀ u, Upd t u r (slot t.mem (rBase s₀) d) → WP isa (.block is) u Q) :
     WP isa (.block (ld r d :: is)) t Q :=
   wp_ldr (by unfold frameBytes at hd; omega) (h.rf.ea (by omega)) (h.rf.read hd) k
 
 /-- `ldr r, [r11, #arg j]`, the caller's stack argument `j`. -/
-theorem wp_ldArg (A : RandomABI s₀) (h : Ready s₀ t) {r : Reg} {j : Nat} (hj : j < 9)
+theorem wp_ldArg (A : RandomABI s₀) (h : RReady s₀ t) {r : Reg} {j : Nat} (hj : j < 9)
     (k : ∀ u, Upd t u r (stackArg s₀ j) → WP isa (.block is) u Q) :
     WP isa (.block (ld r (Random.arg j) :: is)) t Q :=
   wp_ldr (by unfold Random.arg frameBytes; omega) (h.rf.ea (by unfold Random.arg; omega)) (h.rf.readArg hj)
     fun u v => k u (by rw [← h.arg A hj]; exact v)
 
 /-- `str r, [r11, #d]`, a slot of the frame. -/
-theorem wp_st (h : Ready s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
-    (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → Ready s₀ u → WP isa (.block is) u Q) :
+theorem wp_st (h : RReady s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
+    (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → RReady s₀ u → WP isa (.block is) u Q) :
     WP isa (.block (st r d :: is)) t Q :=
   wp_str (by unfold frameBytes at hd; omega) (h.rf.ea (by omega)) (h.rf.write hd) fun u v => k u v (h.mupd v hd)
 
 /-- `str r, [r11, #d]`, keeping the flags. -/
-theorem wp_stF (h : Ready s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
-    (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → Ready s₀ u → u.z = t.z → u.c = t.c →
+theorem wp_stF (h : RReady s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
+    (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → RReady s₀ u → u.z = t.z → u.c = t.c →
       WP isa (.block is) u Q) :
     WP isa (.block (st r d :: is)) t Q := by
   have e := h.rf.ea (d := d) (by omega)
@@ -273,7 +273,7 @@ theorem BytesIn.congr {s t : State} {p : BitVec 32} {bs : List Byte} (h : BytesI
   ⟨h.fit, fun i hi => by rw [hr, hw]; exact h.rd i hi, fun i hi => by rw [hm]; exact h.val i hi⟩
 
 /-- Bytes the body reads, apart from where it writes. -/
-theorem Ready.bytes {s₀ t : State} (h : Ready s₀ t) {p : BitVec 32} {n : Nat}
+theorem RReady.bytes {s₀ t : State} (h : RReady s₀ t) {p : BitVec 32} {n : Nat}
     (hr : (⟨State.addr p, n⟩ : Region) ∈ s₀.rd) (hfit : p.toNat + n ≤ 2 ^ 32)
     (hd : ∀ r ∈ rWrites s₀, Region.Disjoint ⟨State.addr p, n⟩ r) :
     BytesIn t p (Spec.Rsa.bytesAt s₀.mem (State.addr p) n) := by
@@ -284,7 +284,7 @@ theorem Ready.bytes {s₀ t : State} (h : Ready s₀ t) {p : BitVec 32} {n : Nat
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     exact h.frame.bytes (R := ⟨State.addr p, n⟩) hd (show n ≤ 2 ^ 64 by omega) hi
 
-theorem Ready.rand {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) :
+theorem RReady.rand {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) :
     BytesIn t (stackArg s₀ 5) (rInput s₀).rand := by
   refine h.bytes (by rw [A.rd]; simp) A.randBound fun r hr => ?_
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -294,7 +294,7 @@ theorem Ready.rand {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) :
   · exact A.randScratch
   · exact A.usedRand.symm
 
-theorem Ready.key {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) :
+theorem RReady.key {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) :
     BytesIn t (s₀.gpr .r3) (rInput s₀).key := by
   refine h.bytes (by rw [A.rd]; simp) A.keyBound fun r hr => ?_
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -304,7 +304,7 @@ theorem Ready.key {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) :
   · exact A.keyScratch
   · exact A.usedKey.symm
 
-theorem Ready.q {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) : BytesIn t (rQ s₀) (rQBytes s₀) := by
+theorem RReady.q {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) : BytesIn t (rQ s₀) (rQBytes s₀) := by
   have hk := h.key A
   have hp : (stackArg s₀ 1).toNat ≤ (rInput s₀).key.length := by
     simp only [rInput, rBytes_length, A.keyLength]; omega

@@ -31,7 +31,7 @@ abbrev drawBytes (s₀ : State) (used : Nat) : List Byte := ((rInput s₀).rand.
 theorem drawPlace_le {s₀ : State} (A : RandomABI s₀) : drawPlace s₀ + rWidth s₀ ≤ oNonce + 32 := by
   have := rQBytes_le A; have := rWidth_le s₀; unfold drawPlace; omega
 
-theorem Ready.draw {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {used : Nat}
+theorem RReady.draw {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {used : Nat}
     (hu : used ≤ (rInput s₀).rand.length) (w : Nat) :
     BytesIn t (stackArg s₀ 5 + BitVec.ofNat 32 used) (((rInput s₀).rand.drop used).take w) :=
   ((h.rand A).drop used hu).take w
@@ -40,7 +40,7 @@ theorem Ready.draw {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {use
 frame, `p` its source. -/
 structure CopyInv (s₀ t₀ : State) (p : BitVec 32) (d : Nat) (bs : List Byte) (mask : BitVec 32)
     (k : Nat) (t : State) : Prop where
-  ready : Ready s₀ t
+  ready : RReady s₀ t
   r1 : t.gpr .r1 = p + BitVec.ofNat 32 k
   r4 : t.gpr .r4 = t.gpr .r11 + BitVec.ofNat 32 (d + k)
   r2 : t.gpr .r2 = BitVec.ofNat 32 (bs.length - k)
@@ -93,7 +93,7 @@ theorem copyByte_ok {s₀ t₀ t : State} {p : BitVec 32} {d : Nat} {bs : List B
 
 /-- The bytes after the first. -/
 theorem copyLoop_ok {s₀ t₀ t : State} {p : BitVec 32} {d : Nat} {bs : List Byte} {mask : BitVec 32}
-    {k : Nat} (hin : ∀ u, Ready s₀ u → BytesIn u p bs) (hd : d + bs.length ≤ frameBytes)
+    {k : Nat} (hin : ∀ u, RReady s₀ u → BytesIn u p bs) (hd : d + bs.length ≤ frameBytes)
     (hk : k < bs.length) (hk0 : 1 ≤ k) (I : CopyInv s₀ t₀ p d bs mask k t) :
     WP isa (.loop (.block copyByte) .ne) t fun u => CopyInv s₀ t₀ p d bs mask bs.length u := by
   refine WP.loop (M := isa) (fun (n : Nat) (u : State) =>
@@ -114,7 +114,7 @@ theorem drawBytes_length {s₀ : State} {used : Nat} (hfull : used + rWidth s₀
   simp only [drawBytes, List.length_take, List.length_drop]; omega
 
 /-- The draw's source, count and place, and its first byte, masked. -/
-theorem copyInit_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {used : Nat}
+theorem copyInit_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {used : Nat}
     (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
     (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
     (hm : slot t.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat)
@@ -199,12 +199,12 @@ theorem copyInit_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {us
   · rw [m₁₅, hdl]; exact (writeW8_outside _ _ _ (by omega)).mono (by omega) (by omega)
   · rw [z₁₅, r2, ofNat_sub_one hw1, ofNat_beq_zero (by omega)]
 
-theorem copy_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {used : Nat}
+theorem copy_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {used : Nat}
     (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
     (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
     (hm : slot t.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat)
     (hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length) (hw1 : 1 ≤ rWidth s₀) :
-    WP isa copy t fun u => Ready s₀ u ∧
+    WP isa copy t fun u => RReady s₀ u ∧
       (∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
         copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
       Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧
@@ -217,7 +217,7 @@ theorem copy_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t) {used :
   refine WP.seq (WP.mono (copyInit_ok A h hu hw hm hfull hw1) fun u ⟨I, z⟩ => ?_)
   have fin : ∀ v, CopyInv s₀ t (stackArg s₀ 5 + BitVec.ofNat 32 used) (drawPlace s₀) (drawBytes s₀ used)
       (maskValue (rLead s₀).toNat) (rWidth s₀) v →
-      Ready s₀ v ∧ (∀ i < rWidth s₀, v.mem (off (rBase s₀) (drawPlace s₀ + i)) =
+      RReady s₀ v ∧ (∀ i < rWidth s₀, v.mem (off (rBase s₀) (drawPlace s₀ + i)) =
         copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
       Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem v.mem ∧ Rest [.r0, .r1, .r2, .r4, .r7] t v :=
     fun v J => ⟨J.ready, J.bytes, by rw [← hdl]; exact J.out, J.rest⟩

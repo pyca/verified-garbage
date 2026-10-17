@@ -28,7 +28,7 @@ open VG.Proof.Dsa (maskValue copied copiedList copiedList_length copiedList_getD
 theorem draw_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
     (hd : 1 ≤ draws) (hdb : draws ≤ 128) (hq : 1 < rq s₀)
     (hst : slot t.mem (rBase s₀) oStatus = 4) :
-    WP isa draw t fun u => Ready s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Rest sampleRegs t u ∧
+    WP isa draw t fun u => RReady s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Rest sampleRegs t u ∧
       ((slot u.mem (rBase s₀) oStatus = 4 ∧ 2 ≤ draws ∧ Smp s₀ (used + rWidth s₀) (draws - 1) u ∧
           (∀ S' base, SampleRel s₀ S' base used draws → SampleRel s₀ S' base (used + rWidth s₀) (draws - 1)) ∧
           (spl s₀ draws used).trace = 0 :: (spl s₀ (draws - 1) (used + rWidth s₀)).trace) ∨
@@ -164,11 +164,11 @@ theorem draw_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S : Sm
         rw [st₉]; simp only [Nat.add_sub_cancel, h0, ↓reduceIte]; exact st₈
 
 theorem Smp.mem {s₀ t u : State} (A : RandomABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
-    (hr : Ready s₀ u) (hm : u.mem = t.mem) : Smp s₀ used draws u :=
+    (hr : RReady s₀ u) (hm : u.mem = t.mem) : Smp s₀ used draws u :=
   S.congr A hr (by rw [hm]; exact Outs.refl _ _ _) (by rw [hm]) (by rw [hm])
 
 theorem SampleOut.mem {s₀ v u : State} (A : RandomABI s₀) {base : Nat} {S : Spec.Dsa.Random.Sample}
-    (O : SampleOut s₀ base S v) (hr : Ready s₀ u) (hm : u.mem = v.mem) : SampleOut s₀ base S u :=
+    (O : SampleOut s₀ base S v) (hr : RReady s₀ u) (hm : u.mem = v.mem) : SampleOut s₀ base S u :=
   ⟨let ⟨d, Sd⟩ := O.smp; ⟨d, Sd.mem A hr hm⟩, by rw [hm]; exact O.status, by rw [hm]; exact O.nonce⟩
 
 /-- A new budget of 128 draws. -/
@@ -208,7 +208,7 @@ theorem sample_ok {s₀ t : State} (A : RandomABI s₀) {used d₀ : Nat} (S : S
     (hq : 1 < rq s₀) :
     WP isa sample t fun u => SampleOut s₀ used (spl s₀ 128 used) u ∧
       u.gpr .r0 = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 used)) ∧
-      Ready s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Rest sampleRegs t u := by
+      RReady s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Rest sampleRegs t u := by
   unfold sample
   refine WP.seq (WP.mono (sampleInit_ok A S) fun t₄ ⟨S₄, st₄, o₄, k₄⟩ => ?_)
   let S₀ := spl s₀ 128 used
@@ -219,7 +219,7 @@ theorem sample_ok {s₀ t : State} (A : RandomABI s₀) {used d₀ : Nat} (S : S
   obtain ⟨used', hn1, hn, Sm, st, R, ou, ku⟩ := hu
   refine WP.seq (WP.mono (draw_ok A Sm hn1 hn hq st) fun v ⟨hv, ov, kv, hcase⟩ => ?_)
   refine wp_ld hv (by decide) fun v₁ uv₁ => wp_cmp (op2_imm (by decide)) fun v₂ fv₂ zv₂ => WP.block_nil ?_
-  have hv₂ : Ready s₀ v₂ := (hv.upd uv₁).fupd fv₂
+  have hv₂ : RReady s₀ v₂ := (hv.upd uv₁).fupd fv₂
   have mv₂ : v₂.mem = v.mem := by rw [fv₂.mem, uv₁.mem]
   have kv₂ : Rest sampleRegs t v₂ := ((ku.trans kv).trans (uv₁.rest (by decide))).trans (fv₂.rest _)
   have ov₂ : Outs (rBase s₀) sampleRanges t.mem v₂.mem := by rw [mv₂]; exact ou.trans ov
@@ -234,7 +234,7 @@ theorem sample_ok {s₀ t : State} (A : RandomABI s₀) {used d₀ : Nat} (S : S
     left
     refine ⟨by rw [eval_eq, zv₂, uv₁.gpr, hz], ?_⟩
     refine wp_ld hv₂ (by decide) fun u uu => WP.block_nil ?_
-    have hu : Ready s₀ u := hv₂.upd uu
+    have hu : RReady s₀ u := hv₂.upd uu
     have mu : u.mem = v.mem := by rw [uu.mem, mv₂]
     refine ⟨O.mem A hu mu, by rw [uu.gpr, mv₂, O.status], hu, by rw [uu.mem]; exact ov₂,
       kv₂.trans (uu.rest (by decide))⟩

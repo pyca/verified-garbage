@@ -79,11 +79,11 @@ theorem or_shr_beq (x y : BitVec 32) :
 
 /-- Store the mask, and set `r0 = 1` exactly when the scan's width or
 leading byte is at least two. -/
-theorem prepareFinish_ok {s₀ t : State} (h : Ready s₀ t) {w : Nat} {b : Byte} (hw : w < 2 ^ 32)
+theorem prepareFinish_ok {s₀ t : State} (h : RReady s₀ t) {w : Nat} {b : Byte} (hw : w < 2 ^ 32)
     (h3 : t.gpr .r3 = BitVec.ofNat 32 w) (h4 : t.gpr .r4 = b.setWidth 32) :
     WP isa prepareFinish t fun u =>
       u.gpr .r0 = (if 2 ≤ w ∨ 2 ≤ b.toNat then 1 else 0) ∧
-      u.mem = t.mem.writeW (off (rBase s₀) oMask) (maskValue b.toNat) ∧ Ready s₀ u ∧
+      u.mem = t.mem.writeW (off (rBase s₀) oMask) (maskValue b.toNat) ∧ RReady s₀ u ∧
       Rest [.r0, .r5, .r7] t u := by
   unfold prepareFinish
   refine WP.seq (WP.mono (mask_ok (n := b.toNat) (by rw [h4, VG.Proof.Dsa.toNat_setWidth8]))
@@ -102,7 +102,7 @@ theorem prepareFinish_ok {s₀ t : State} (h : Ready s₀ t) {w : Nat} {b : Byte
     ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans (f₆.rest _)))))
   have m₆ : s₆.mem = t.mem.writeW (off (rBase s₀) oMask) (maskValue b.toNat) := by
     rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, e₁, m₁]
-  have h₆ : Ready s₀ s₆ :=
+  have h₆ : RReady s₀ s₆ :=
     (((h₂.upd u₃ (by decide)).upd u₄ (by decide)).upd u₅ (by decide)).fupd f₆
   by_cases hs : w < 2 ∧ b.toNat < 2
   · refine WP.ite true (by rw [eval_eq, z₆, decide_eq_true hs]) (fun _ =>
@@ -144,9 +144,9 @@ theorem clearMem_zero (m : Mem) (B : Addr) : ∀ k, k ≤ 8 → ∀ i < 4 * k, c
     · rw [clearMem, show oNonce + i = oNonce + 4 * k + (i - 4 * k) by omega]
       exact zeroWord_at _ B _ _ (by omega)
 
-theorem clearWords_ok {s₀ t : State} (h : Ready s₀ t) (h0 : t.gpr .r0 = 0) : ∀ k ≤ 8,
+theorem clearWords_ok {s₀ t : State} (h : RReady s₀ t) (h0 : t.gpr .r0 = 0) : ∀ k ≤ 8,
     WP isa (.block ((List.range k).map fun i => st .r0 (oNonce + 4 * i))) t fun u =>
-      Ready s₀ u ∧ u.mem = clearMem t.mem (rBase s₀) k ∧ Rest [] t u
+      RReady s₀ u ∧ u.mem = clearMem t.mem (rBase s₀) k ∧ Rest [] t u
   | 0, _ => WP.block_nil ⟨h, rfl, Rest.refl _ _⟩
   | k + 1, hk => by
     rw [List.range_succ, List.map_append, List.map_singleton]
@@ -155,8 +155,8 @@ theorem clearWords_ok {s₀ t : State} (h : Ready s₀ t) (h0 : t.gpr .r0 = 0) :
     rw [mv.mem, mu, Ru.gpr _ (by simp), h0]
     rfl
 
-theorem clearNonce_ok {s₀ t : State} (h : Ready s₀ t) {is : List Instr} {Q : State → Prop}
-    (k : ∀ u, Ready s₀ u → u.mem = clearMem t.mem (rBase s₀) 8 → Rest [.r0] t u → u.gpr .r0 = 0 →
+theorem clearNonce_ok {s₀ t : State} (h : RReady s₀ t) {is : List Instr} {Q : State → Prop}
+    (k : ∀ u, RReady s₀ u → u.mem = clearMem t.mem (rBase s₀) 8 → Rest [.r0] t u → u.gpr .r0 = 0 →
       WP isa (.block is) u Q) :
     WP isa (.block (clearNonce ++ is)) t Q := by
   unfold clearNonce
@@ -169,7 +169,7 @@ theorem clearNonce_ok {s₀ t : State} (h : Ready s₀ t) {is : List Instr} {Q :
 
 /-- What `prepare` leaves, with q > 1. -/
 structure Prepared (s₀ u : State) : Prop where
-  ready : Ready s₀ u
+  ready : RReady s₀ u
   q : slot u.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀)
   width : slot u.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)
   mask : slot u.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat
@@ -185,10 +185,10 @@ theorem add_ofNat_sub32 (a : BitVec 32) {k d : Nat} (hd : d ≤ k) (hk : k < 2 ^
 
 abbrev prepareRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r7]
 
-theorem prepare_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t)
+theorem prepare_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t)
     (hk : slot t.mem (rBase s₀) oKey = s₀.gpr .r3) :
     WP isa prepare t fun u =>
-      u.gpr .r0 = (if 1 < rq s₀ then 1 else 0) ∧ (1 < rq s₀ → Prepared s₀ u) ∧ Ready s₀ u ∧
+      u.gpr .r0 = (if 1 < rq s₀ then 1 else 0) ∧ (1 < rq s₀ → Prepared s₀ u) ∧ RReady s₀ u ∧
       Outs (rBase s₀) [(oQ, 12), (oNonce, 32)] t.mem u.mem ∧ Rest prepareRegs t u := by
   have hfit := VG.Proof.Dsa.significant_fits (rQBytes s₀)
   have hql := rQBytes_le A
@@ -214,7 +214,7 @@ theorem prepare_ok {s₀ t : State} (A : RandomABI s₀) (h : Ready s₀ t)
   have m₅ : t₅.mem = clearMem t.mem (rBase s₀) 8 := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
   refine WP.seq (WP.mono (significant_ok r1₅ r2₅ (h₅.q A) (rQBytes_pos A) (by omega))
     fun t₆ ⟨r3₆, r4₆, m₆, k₆⟩ => ?_)
-  have h₆ : Ready s₀ t₆ := h₅.congr k₆ (by rw [m₆]; exact Frame.refl _ _)
+  have h₆ : RReady s₀ t₆ := h₅.congr k₆ (by rw [m₆]; exact Frame.refl _ _)
   have hk₆ : slot t₆.mem (rBase s₀) oKey = s₀.gpr .r3 := by rw [m₆, m₅, ← m₁]; exact hk₁
   refine WP.seq (wp_ld h₆ (by decide) fun t₇ u₇ => wp_ldArg A (h₆.upd u₇) (j := 1) (by decide) fun t₈ u₈ =>
     wp_dp (op2_reg _ _) fun t₉ u₉ => wp_ldArg A (((h₆.upd u₇).upd u₈).upd u₉) (j := 2) (by decide)
