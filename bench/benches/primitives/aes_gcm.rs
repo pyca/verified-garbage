@@ -32,17 +32,17 @@ pub fn bench(c: &mut Criterion) {
         for key in [&[0x42u8; 16][..], &[0x42u8; 32][..]] {
             let bits = key.len() * 8;
             let mut g = c.benchmark_group(format!("aes-{bits}-gcm-init-breakdown"));
-            g.bench_function("new+drop", |b| {
+            g.bench_function("verified-garbage/new+drop", |b| {
                 b.iter(|| AesGcm::new(black_box(key)).unwrap())
             });
-            g.bench_function("new+prepare+drop", |b| {
+            g.bench_function("verified-garbage/new+prepare+drop", |b| {
                 b.iter(|| {
                     let k = AesGcm::new(black_box(key)).unwrap();
                     assert!(k.__prepare_now());
                     k
                 })
             });
-            g.bench_function("alloc+zeroize+free", |b| {
+            g.bench_function("verified-garbage/alloc+zeroize+free", |b| {
                 b.iter(AesGcm::__alloc_zeroize_free)
             });
             // A fresh connection's first record (255 bytes and the content
@@ -59,17 +59,17 @@ pub fn bench(c: &mut Criterion) {
             let ty = [0x17u8];
             let mut out = [0u8; 256];
             let mut record = [0u8; 256];
-            g.bench_function("aws-lc-rs new+drop", |b| {
+            g.bench_function("aws-lc-rs/new+drop", |b| {
                 b.iter(|| LessSafeKey::new(UnboundKey::new(alg, black_box(key)).unwrap()))
             });
-            g.bench_function("new+seal255", |b| {
+            g.bench_function("verified-garbage/new+seal255", |b| {
                 b.iter(|| {
                     let k = AesGcm::new(black_box(key)).unwrap();
                     k.encrypt(&nonce, &aad, &[&data[..], &ty[..]], black_box(&mut out))
                         .unwrap()
                 })
             });
-            g.bench_function("aws-lc-rs new+seal255", |b| {
+            g.bench_function("aws-lc-rs/new+seal255", |b| {
                 b.iter(|| {
                     let k = LessSafeKey::new(UnboundKey::new(alg, black_box(key)).unwrap());
                     k.seal_in_place_separate_tag(
@@ -81,14 +81,14 @@ pub fn bench(c: &mut Criterion) {
                 })
             });
             let warm = AesGcm::new(key).unwrap();
-            g.bench_function("seal255 reused (switched)", |b| {
+            g.bench_function("verified-garbage/seal255", |b| {
                 b.iter(|| {
                     warm.encrypt(&nonce, &aad, &[&data[..], &ty[..]], black_box(&mut out))
                         .unwrap()
                 })
             });
             let aws = LessSafeKey::new(UnboundKey::new(alg, key).unwrap());
-            g.bench_function("aws-lc-rs seal255", |b| {
+            g.bench_function("aws-lc-rs/seal255", |b| {
                 b.iter(|| {
                     aws.seal_in_place_separate_tag(
                         Nonce::assume_unique_for_key(nonce),
@@ -100,7 +100,7 @@ pub fn bench(c: &mut Criterion) {
             });
             let k = AesGcm::new(key).unwrap();
             let mut ctx = Box::new([0u64; 128]);
-            g.bench_function("init_prepared", |b| {
+            g.bench_function("verified-garbage/init_prepared", |b| {
                 b.iter(|| assert!(k.__init_only(black_box(&mut ctx))))
             });
             g.finish();
