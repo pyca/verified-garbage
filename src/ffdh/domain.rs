@@ -1,20 +1,18 @@
 //! The FFDH operations, entirely in verified code: the domain, public-key
 //! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
-//! contracts). On x86-64 key generation's whole rejection search is
-//! verified (`vg_ffdh_generate_key_search`); on AArch64 Rust still retries
-//! one verified attempt (`vg_ffdh_generate_key`) with fresh random bytes.
-//! Rust lays out the domain, pads the values to the modulus' width,
+//! contracts). Key generation's whole rejection search is verified
+//! (`vg_ffdh_generate_key_search`). Rust lays out the domain, pads the values to the modulus' width,
 //! allocates the working space and selects the implementation for the CPU.
 
 use super::arithmetic::{Backend, scalar};
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
+    vg_ffdh_generate_key_search, vg_ffdh_key_generation_init,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
     vg_ffdh_check_domain_adx, vg_ffdh_check_private_adx, vg_ffdh_check_public_adx,
-    vg_ffdh_exchange_adx, vg_ffdh_generate_key_search, vg_ffdh_generate_key_search_adx,
-    vg_ffdh_key_generation_init,
+    vg_ffdh_exchange_adx, vg_ffdh_generate_key_search_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
@@ -130,7 +128,6 @@ impl Domain {
     /// The key-generation controller's 16 words for this domain: the
     /// rejection budgets, `p_len` and the first request, then private
     /// working space (`vg_ffdh_key_generation_init`).
-    #[cfg(target_arch = "x86_64")]
     pub(super) fn key_state(&self) -> [u64; 16] {
         let mut state = [0; 16];
         // SAFETY: `state` is 16 writable words, a Rust object of its own.
@@ -144,7 +141,6 @@ impl Domain {
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
     /// entropy), the bytes of the tape consumed and the next request
     /// (`vg_ffdh_generate_key_search`).
-    #[cfg(target_arch = "x86_64")]
     pub(super) fn key_search(
         &self,
         state: &mut [u64; 16],
@@ -156,6 +152,7 @@ impl Domain {
         let mut ws = scratch(self.p_len);
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => vg_ffdh_generate_key_search,
+            #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_generate_key_search_adx,
         };
         let mut used = [0u64; 1];
@@ -190,7 +187,7 @@ impl Domain {
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
     /// scalar out of range, 3 for a degenerate public value
     /// (`vg_ffdh_generate_key`).
-    #[cfg(any(test, target_arch = "aarch64"))]
+    #[cfg(test)]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);

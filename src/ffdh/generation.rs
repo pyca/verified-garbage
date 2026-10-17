@@ -24,9 +24,7 @@ use {
 };
 
 /// A random tape, wiped when dropped: a controller may keep secrets in it.
-#[cfg(target_arch = "x86_64")]
 struct Tape(Vec<u8>);
-#[cfg(target_arch = "x86_64")]
 impl Drop for Tape {
     fn drop(&mut self) {
         zeroize(&mut self.0);
@@ -39,7 +37,6 @@ impl Drop for Tape {
 /// it consumed and its next request. For 0, the unconsumed rest of the
 /// tape is kept and extended with fresh bytes to the request, as the
 /// controllers' contracts say.
-#[cfg(target_arch = "x86_64")]
 pub(super) fn serve<E>(
     requested: usize,
     mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,

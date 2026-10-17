@@ -12070,3 +12070,270 @@ ret
         vg_rsa_square_6_6 = sym super::rsa::vg_rsa_square_6_6,
     )
 }
+
+/// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"movz x9, #64, lsl #0
+movz x11, #0, lsl #0
+movz x12, #1, lsl #0
+subs x10, x1, x9
+csel x13, x12, x11, hs
+movz x9, #1025, lsl #0
+subs x10, x1, x9
+csel x14, x11, x12, hs
+and x13, x13, x14
+cbz x13, 20f
+movz x9, #128, lsl #0
+str x9, [x0, #0]
+str x9, [x0, #8]
+str x1, [x0, #16]
+str x1, [x0, #24]
+movz x0, #1, lsl #0
+b 21f
+20:
+movz x9, #0, lsl #0
+str x9, [x0, #0]
+str x9, [x0, #8]
+str x9, [x0, #16]
+str x9, [x0, #24]
+movz x0, #0, lsl #0
+21:
+ret
+.p2align 6",
+    )
+}
+
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in a frame of 32 bytes holding its stack arguments, within a frame saving `x30`. Timing depends on the domain, the controller's public words and the attempts' statuses.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"add x14, sp, #0
+ldr x8, [x14, #32]
+ldr x9, [x14, #0]
+ldr x10, [x14, #8]
+ldr x11, [x14, #16]
+ldr x12, [x14, #24]
+str x19, [x8, #32]
+add x19, x8, #0
+movz x13, #0, lsl #0
+str x0, [x19, #40]
+str x2, [x19, #48]
+str x5, [x19, #56]
+str x6, [x19, #64]
+str x9, [x19, #72]
+str x10, [x19, #80]
+str x13, [x19, #88]
+str x11, [x19, #96]
+str x12, [x19, #104]
+str x4, [x19, #120]
+str x30, [sp, #-16]!
+20:
+ldr x9, [x19, #0]
+cbz x9, 21f
+ldr x9, [x19, #8]
+cbz x9, 23f
+ldr x9, [x19, #80]
+ldr x10, [x19, #16]
+movz x13, #0, lsl #0
+movz x14, #1, lsl #0
+subs x11, x9, x10
+csel x12, x14, x13, hs
+cbz x12, 25f
+sub sp, sp, #32
+ldr x0, [x19, #40]
+ldr x1, [x19, #16]
+ldr x2, [x19, #48]
+ldr x3, [x19, #16]
+ldr x4, [x19, #56]
+ldr x5, [x19, #64]
+ldr x6, [x19, #16]
+ldr x7, [x19, #72]
+ldr x9, [x19, #96]
+ldr x10, [x19, #104]
+add x11, sp, #0
+str x1, [x11, #0]
+str x9, [x11, #8]
+str x10, [x11, #16]
+bl {vg_ffdh_generate_key}
+add sp, sp, #32
+add w9, w0, #0
+ldr x11, [x19, #16]
+ldr x12, [x19, #72]
+ldr x13, [x19, #80]
+ldr x14, [x19, #88]
+add x12, x12, x11
+sub x13, x13, x11
+add x14, x14, x11
+str x12, [x19, #72]
+str x13, [x19, #80]
+str x14, [x19, #88]
+sub x10, x9, #1
+cbz x10, 27f
+sub x10, x9, #2
+cbz x10, 29f
+sub x10, x9, #3
+cbz x10, 211f
+movz x10, #0, lsl #0
+movz x11, #3, lsl #0
+str x10, [x19, #0]
+str x10, [x19, #8]
+str x10, [x19, #24]
+str x11, [x19, #112]
+ldr x1, [x19, #40]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+213:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 213b
+ldr x1, [x19, #48]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+214:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 214b
+b 212f
+211:
+ldr x10, [x19, #0]
+sub x10, x10, #1
+movz x11, #128, lsl #0
+movz x12, #4, lsl #0
+str x10, [x19, #0]
+str x11, [x19, #8]
+str x12, [x19, #112]
+212:
+b 210f
+29:
+ldr x10, [x19, #8]
+sub x10, x10, #1
+movz x11, #4, lsl #0
+str x10, [x19, #8]
+str x11, [x19, #112]
+210:
+b 28f
+27:
+movz x10, #0, lsl #0
+movz x11, #1, lsl #0
+str x10, [x19, #0]
+str x10, [x19, #8]
+str x10, [x19, #24]
+str x11, [x19, #112]
+28:
+b 26f
+25:
+ldr x10, [x19, #16]
+movz x11, #0, lsl #0
+str x10, [x19, #24]
+str x11, [x19, #112]
+ldr x1, [x19, #40]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+215:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 215b
+ldr x1, [x19, #48]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+216:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 216b
+26:
+b 24f
+23:
+movz x10, #0, lsl #0
+movz x11, #3, lsl #0
+str x10, [x19, #0]
+str x10, [x19, #8]
+str x10, [x19, #24]
+str x11, [x19, #112]
+ldr x1, [x19, #40]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+217:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 217b
+ldr x1, [x19, #48]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+218:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 218b
+24:
+b 22f
+21:
+movz x10, #0, lsl #0
+movz x11, #3, lsl #0
+str x10, [x19, #0]
+str x10, [x19, #8]
+str x10, [x19, #24]
+str x11, [x19, #112]
+ldr x1, [x19, #40]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+219:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 219b
+ldr x1, [x19, #48]
+ldr x2, [x19, #16]
+movz x3, #0, lsl #0
+220:
+strb w3, [x1, #0]
+add x1, x1, #1
+sub x2, x2, #1
+cbnz x2, 220b
+22:
+ldr x9, [x19, #112]
+sub x9, x9, #4
+cbz x9, 20b
+ldr x30, [sp], #16
+ldr x1, [x19, #120]
+ldr x2, [x19, #88]
+ldr x0, [x19, #112]
+ldr x19, [x19, #32]
+str x2, [x1, #0]
+ret
+.p2align 6",
+        vg_ffdh_generate_key = sym super::ffdh::vg_ffdh_generate_key,
+    )
+}

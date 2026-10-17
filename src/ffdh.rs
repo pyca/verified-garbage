@@ -4,10 +4,10 @@
 //! Exchange secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
 //! All domain arithmetic and secret exponentiation run in verified code.
-//! Private-key generation samples and validates the scalar in verified code.
-//! On x86-64 the verified code also retries rejected attempts and asks for
-//! the random bytes they need; on AArch64 Rust still retries them. Rust
-//! obtains random bytes and packs inputs and results. On x86-64, parameter generation runs entirely in verified code,
+//! Private-key generation samples and validates the scalar in verified code,
+//! which also retries rejected attempts and asks for the random bytes they
+//! need. Rust obtains random bytes and packs inputs and results. On x86-64,
+//! parameter generation runs entirely in verified code,
 //! including its attempt limit and entropy requests; Rust allocates and
 //! fills the random tape it asks for. On AArch64, Rust still runs the search
 //! with the shared verified Miller–Rabin round, preparing its workspace and
@@ -135,7 +135,6 @@ impl Parameters {
     /// and its public value, retries up to 128 times for an in-range scalar
     /// and up to 128 times for a public value that is not degenerate, and
     /// asks for the random bytes each attempt needs.
-    #[cfg(target_arch = "x86_64")]
     fn generate_with<E>(
         &self,
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
@@ -157,50 +156,6 @@ impl Parameters {
             x,
             exponent_len,
         })
-    }
-
-    /// Verified code draws and checks the scalar and its public value.
-    /// Retry up to 128 times for an in-range scalar and up to 128 times
-    /// for a public value that is not degenerate.
-    #[cfg(target_arch = "aarch64")]
-    fn generate_with<E>(
-        &self,
-        mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
-    ) -> Result<PrivateKey, Error> {
-        let len = self.p.len();
-        let exponent_len = self.q.as_ref().map_or(len, Vec::len);
-        let mut rand = alloc::vec![0; len];
-        let mut x = alloc::vec![0; len];
-        let mut y = alloc::vec![0; len];
-        let mut result = Err(Error::TooManyIterations);
-        'keys: for _ in 0..128 {
-            for _ in 0..128 {
-                if fill(&mut rand).is_err() {
-                    result = Err(Error::Randomness);
-                    break 'keys;
-                }
-                match self.domain.generate_key(&rand, &mut x, &mut y) {
-                    1 => {
-                        result = Ok(PrivateKey {
-                            public: PublicKey {
-                                params: self.clone(),
-                                y: canonical(&y).to_vec(),
-                            },
-                            x: core::mem::take(&mut x),
-                            exponent_len,
-                        });
-                        break 'keys;
-                    }
-                    2 => continue,
-                    _ => continue 'keys,
-                }
-            }
-            break;
-        }
-        // The last candidate scalar, if no attempt succeeded.
-        zeroize(&mut x);
-        zeroize(&mut rand);
-        result
     }
 }
 
@@ -375,7 +330,6 @@ mod tests {
         assert_eq!(attempts, 2);
         assert_eq!(key.private_component()[63], 3);
     }
-    #[cfg(target_arch = "x86_64")]
     #[test]
     fn key_search_consumes_rejected_attempts() {
         let params = composite_domain();
