@@ -16,7 +16,7 @@ A function that takes the hash function as an argument (by its number,
 each hash function: a `Tier`, a variant of the interface `MdHashTier` on
 x86-64 (`Variants/MdHashTier/X86_64/`). Its hash functions are those of
 `HashId` from 0 to 7 (MD5 to SHA-512/256), in that order (`mgf_ok`,
-`hmac_ok`), made with one implementation of each compression function:
+`hmac_ok`, `insts`), made with one implementation of each compression function:
 SHA-1's, SHA-256's (for SHA-224 and SHA-256) and SHA-512's (for SHA-384,
 SHA-512, SHA-512/224 and SHA-512/256) (`Tier.of`). An instance needs the
 CPU features of all of them, and its name ends with the tier's suffix,
@@ -44,6 +44,9 @@ structure Tier where
   mgf_ok : hashes.map (some ·.mgf.G) = (List.range 8).map Spec.HashId.mgf1
   /-- They are those `HashId.hmac` numbers, as HMAC takes them. -/
   hmac_ok : hashes.map (some ·.I.S.H) = (List.range 8).map Spec.HashId.hmac
+  /-- Their instances of the shared contracts are those of `Spec/Hmac/Generic.lean`, by number. -/
+  insts : hashes.map (·.I) = [Spec.Hmac.md5I, Spec.Hmac.sha1I, Spec.Hmac.sha224I, Spec.Hmac.sha256I,
+    Spec.Hmac.sha384I, Spec.Hmac.sha512I, Spec.Hmac.sha512_224I, Spec.Hmac.sha512_256I]
   /-- The CPU features of their implementations, each once. -/
   features : List String
 
@@ -56,6 +59,7 @@ def Tier.of (suffix : String) (c1 : Proof.Sha1.X86_64.Compress) (c256 : Proof.Sh
     Sha512.sha512 c512, Sha512.sha512_224 c512, Sha512.sha512_256 c512]
   mgf_ok := rfl
   hmac_ok := rfl
+  insts := rfl
   features := (c1.features ++ c256.features ++ c512.features).eraseDups
 
 /-- The hash function `i` names in the tier `t`. -/
