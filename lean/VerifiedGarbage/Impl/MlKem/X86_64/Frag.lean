@@ -140,8 +140,9 @@ def Codecs.dd : Codecs → Prog isa
 a top-level function calls: `vg_mlkem_inv_ntt`, `vg_mlkem_add`,
 `vg_mlkem_sub`, `vg_mlkem_cbd2`, `vg_mlkem_decode12` and `vg_mlkem_encode12`;
 the baseline ones (`sse`), or those with AVX2 (`avx2`); the code the products
-of K-PKE inline (`bodies`); and the compression and decompression that go
-with them. -/
+of K-PKE inline (`bodies`); the compression and decompression that go
+with them; and the products of encryption and decryption (`encMul`,
+`decMul`). -/
 structure Arith where
   nttInvN : String
   nttInv : Prog isa
@@ -159,16 +160,20 @@ structure Arith where
   bodies : Bodies
   sfx : String
   codecs : Codecs
+  /-- `vg_mlkem*_encrypt_mul` and `vg_mlkem*_decrypt_mul` of rank `k`. -/
+  encMul : Nat → Prog isa
+  decMul : Nat → Prog isa
 
 def Arith.sse : Arith :=
   ⟨"vg_mlkem_inv_ntt", X86_64.nttInv,
     "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12,
-    "vg_mlkem_encode12", encode12, .sse, "", .base⟩
+    "vg_mlkem_encode12", encode12, .sse, "", .base, encryptMul .sse, decryptMul .sse⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_inv_ntt_avx2",
     nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
-    "vg_mlkem_decode12_avx2", decode12Avx2, "vg_mlkem_encode12_avx2", encode12Avx2, .avx2, "_avx2", .avx2⟩
+    "vg_mlkem_decode12_avx2", decode12Avx2, "vg_mlkem_encode12_avx2", encode12Avx2, .avx2, "_avx2", .avx2,
+    encryptMulY, decryptMulY⟩
 
 def nttInvAt (A : Arith) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttInvN A.nttInv)

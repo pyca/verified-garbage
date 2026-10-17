@@ -198,6 +198,16 @@ def unexch (A : Alloc) (i j : Nat) : Alloc :=
   let A := A.emit [yb .vpunpckldq t a b, yb .vpunpckhdq b a b]
   { A.give a with regs := A.regs.set i t }
 
+/-- `lo` and `hi` of blocks `i` and `j` (`vpunpckl*` and `vpunpckh*`): `lo`
+to a free register, which becomes `i`'s, `hi` to `j` in place, and `i`'s old
+register freed. -/
+def unpk (A : Alloc) (lo hi : VBinOp) (i j : Nat) : Alloc :=
+  let a := A.reg i
+  let b := A.reg j
+  let (t, A) := A.take
+  let A := A.emit [yb lo t a b, yb hi b a b]
+  { A.give a with regs := A.regs.set i t }
+
 end Alloc
 
 /-! ## The passes -/
@@ -229,8 +239,10 @@ def storeU (d : Reg) (r z t : XReg) (off : Nat) : List Instr :=
   [.vop (.vpermq r r 0xD8), yb .vpunpckhwd t r z, yb .vpunpcklwd r r z,
     .vmovdquStore .l256 (at_ d off) r, .vmovdquStore .l256 (at_ d (off + 64)) t]
 
-/-- Pass B on half `H` of `S`, its `u32`s to `d`. -/
-def passBAlloc (d : Reg) (H : Nat) : Alloc :=
+/-- Pass B on half `H` of `S`, its words reduced, before they are stored:
+in each pair of registers `2p`, `2p + 1`, the two words of each butterfly of
+`len = 2` in the same lane. -/
+def passBRed (H : Nat) : Alloc :=
   let A : Alloc := ⟨[.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7],
     [.xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14], #[]⟩
   let A := A.emit ((List.range 8).map fun i =>
@@ -249,7 +261,11 @@ def passBAlloc (d : Reg) (H : Nat) : Alloc :=
   let A := (List.range 8).foldl (fun A i =>
     let (t, A) := A.take
     (A.emit (red (A.reg i) c c' t)).give t) A
-  let A := (A.give c).give c'
+  (A.give c).give c'
+
+/-- Pass B on half `H` of `S`, its `u32`s to `d`. -/
+def passBAlloc (d : Reg) (H : Nat) : Alloc :=
+  let A := passBRed H
   -- back, and stored
   let A := (List.range 4).foldl (fun A p => A.unexch (2 * p) (2 * p + 1)) A
   let (z, A) := A.take
@@ -262,6 +278,26 @@ def passBAlloc (d : Reg) (H : Nat) : Alloc :=
 
 def passB (d : Reg) (H : Nat) : List Instr := (passBAlloc d H).code.toList
 
+/-- Pass B on half `H` of `S`, its words to the accumulator at `d`
+(`accIdx`, `KpkeAccY.lean`): the 32 coefficients of each pair of registers,
+`32 (4H + p)` on, are block `4H + p` of the accumulator, their even
+coefficients at `d + 64 (4H + p)` and their odd ones 32 bytes on, which
+`vpunpck{l,h}wd`, `vpunpck{l,h}dq`, `vpunpck{l,h}qdq` and `vpermq` put in
+its order. -/
+def passBAccAlloc (d : Reg) (H : Nat) : Alloc :=
+  let A := passBRed H
+  (List.range 4).foldl (fun A p =>
+    let A := A.unpk .vpunpcklwd .vpunpckhwd (2 * p) (2 * p + 1)
+    let A := A.unpk .vpunpckldq .vpunpckhdq (2 * p) (2 * p + 1)
+    let A := A.unpk .vpunpcklqdq .vpunpckhqdq (2 * p) (2 * p + 1)
+    let a := A.reg (2 * p)
+    let b := A.reg (2 * p + 1)
+    let o := 256 * H + 64 * p
+    A.emit [.vop (.vpermq a a 0xD8), .vop (.vpermq b b 0xD8), .vmovdquStore .l256 (at_ d o) a,
+      .vmovdquStore .l256 (at_ d (o + 32)) b]) A
+
+def passBAcc (d : Reg) (H : Nat) : List Instr := (passBAccAlloc d H).code.toList
+
 /-- `q` in every word of `ymm15`, and the table's address to `r8`. -/
 def pro : List Instr := yconst .xmm15 0x0D010D01 ++ [.leaSym .r8 tblName]
 
@@ -272,6 +308,9 @@ def passBs (d : Reg) : List Instr := passB d 0 ++ passB d 1
 functions that inline the NTT. -/
 def passBsRdi : List Instr := passBs .rdi
 def passBsR10 : List Instr := passBs .r10
+
+/-- Pass B on both halves, the words to the accumulator at `r10`. -/
+def passBsAccR10 : List Instr := passBAcc .r10 0 ++ passBAcc .r10 1
 
 /-! ## `NTT⁻¹` -/
 

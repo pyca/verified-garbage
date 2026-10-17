@@ -34,6 +34,13 @@ products `Â[i, j] ×_T ŝ[j]` in the accumulator at `scratch + 1024` (in
 `rbp`), the first stored there (`Bodies.mulSet`) and the others added
 (`Bodies.mulAcc`), and adds the sum to `t[i]` (`Bodies.fin`).
 
+With AVX2, `encryptMulY` and `decryptMulY` go row by row instead: a first
+loop computes each `NTT(y[j])` (or `NTT(u'[j])`) to an accumulator at
+`scratch + 1024 + 512 j` (`nttTermY`, with the next accumulator in `r9`);
+then each output, from a row of products of those accumulators with the
+polynomials of a column of `Â`, of `t̂` or of `ŝ` (`rowEY`), stored as an
+accumulator in the output, and `NTT⁻¹` of it in place (`rowInvY`).
+
 Every address and branch depends only on the pointers.
 -/
 
@@ -232,7 +239,61 @@ def midK (B : Bodies) (k : Nat) : List Instr :=
     .alu .sub .r15 (.imm (BitVec.ofNat 32 (1024 * k))), .mov .rbp (.reg .rbx), .alu .add .rbp (.imm 1024),
     .mov .rcx (.reg .rbx)] ++ B.tab ++ [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]
 
+/-! ### `encrypt_mul` and `decrypt_mul` row by row, with AVX2 -/
+
+/-- `NTT` of the polynomial at `rdi` to the accumulator at `r10`, with `S` at
+`rsi + oS`. -/
+def nttAccY : Prog isa := nttR NttR.passBsAccR10
+
+/-- `NTT` of the next polynomial (at `r13`) to the next accumulator (at
+`r9`). -/
+def nttTermY : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbx), .mov .r10 (.reg .r9)])
+    (.seq nttAccY (.block [.alu .add .r13 (.imm 1024), .alu .add .r9 (.imm 512), .alu .sub .r14 (.imm 1)]))
+
+/-- The table of the products, and `r9` at the first accumulator, at
+`scratch + 1024`. -/
+def startY : List Instr :=
+  [.mov .rcx (.reg .rbx)] ++ tabAccY ++ [.mov .r9 (.reg .rbx), .alu .add .r9 (.imm 1024)]
+
+/-- The polynomial at `rbp`: `NTT⁻¹` of the `k` products of the polynomials
+from `f` (`fs`), `o` bytes apart, and the accumulators from
+`scratch + 1024`. -/
+def rowInvY (fs : List Instr) (o k : Nat) : Prog isa :=
+  .seq (.block ([.mov .rdi (.reg .rbp)] ++ fs ++ [.mov .rdx (.reg .rbx), .alu .add .rdx (.imm 1024),
+      .mov .rcx (.reg .rbx)]))
+    (.seq (rowEY o k) (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) nttInvAccY))
+
+/-- Row `i < k` of `encrypt_mul`: `u[i]` (at `rbp`) from column `i` of `Â`
+(at `r12`); then the next `i`. -/
+def rowAY (k : Nat) : Prog isa :=
+  .seq (rowInvY [.mov .rsi (.reg .r12)] (1024 * k) k)
+    (.block [.alu .add .rbp (.imm 1024), .alu .add .r12 (.imm 1024), .alu .sub .r14 (.imm 1)])
+
 end KpkeMul
+
+open KpkeMul in
+/-- `vg_mlkem*_encrypt_mul` of rank `k` with AVX2: `ŷ[j] = NTT(y[j])` to the
+accumulators at `scratch + 1024 + 512 j`, then each `u[i]`, and `v`, from
+them in one row of products (`rowEY`) and `NTT⁻¹`. -/
+def encryptMulY (k : Nat) : Prog isa :=
+  .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
+      .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
+    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop nttTermY .ne)
+      (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop (rowAY k) .ne)
+        (rowInvY [.mov .rsi (.reg .r15)] 1024 k))))))
+    (.block restore))
+
+open KpkeMul in
+/-- `vg_mlkem*_decrypt_mul` of rank `k` with AVX2: `û[j] = NTT(u'[j])` to
+the accumulators at `scratch + 1024 + 512 j`, then `w` from them in one row
+of products (`rowEY`) and `NTT⁻¹`. -/
+def decryptMulY (k : Nat) : Prog isa :=
+  .seq (.block (save ++ [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
+      .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
+    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop nttTermY .ne)
+      (rowInvY [.mov .rsi (.reg .r12)] 1024 k))))
+    (.block restore))
 
 open KpkeMul in
 /-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/

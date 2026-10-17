@@ -135,17 +135,21 @@ def rowMulY (j : Nat) : List Instr :=
     yload4o .rdx (1024 * j) .xmm6 .xmm7 .xmm8 .xmm9 ++ toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) ++
     toY vbaseL
 
-/-- Product `j` of a block, stored to (`j = 0`) or added to the sums in
-`ymm11` and `ymm12`. -/
-def rowProdY (j : Nat) : List Instr :=
-  rowMulY j ++
+/-- Product `j` of a block (`mul j`), stored to (`j = 0`) or added to the
+sums in `ymm11` and `ymm12`. -/
+def rowSum (mul : Nat → List Instr) (j : Nat) : List Instr :=
+  mul j ++
     (if j = 0 then [.vop (.vmovdqa .l256 .xmm11 .xmm1), .vop (.vmovdqa .l256 .xmm12 .xmm2)]
      else [yb .vpaddw .xmm11 .xmm11 .xmm1, yb .vpaddw .xmm12 .xmm12 .xmm2])
 
-/-- The products `0, …, n - 1` of a block. -/
-def rowProdsY : Nat → List Instr
+/-- The products `0, …, n - 1` of a block (`mul`). -/
+def rowSums (mul : Nat → List Instr) : Nat → List Instr
   | 0 => []
-  | n + 1 => rowProdsY n ++ rowProdY n
+  | n + 1 => rowSums mul n ++ rowSum mul n
+
+def rowProdY (j : Nat) : List Instr := rowSum rowMulY j
+
+def rowProdsY (n : Nat) : List Instr := rowSums rowMulY n
 
 /-- A block of row `k`: its `k` products summed in `ymm11` and `ymm12`, the
 sums reduced once (`R² mod q`, then `vcadd`), and added to the `u32`s at
@@ -163,5 +167,30 @@ def rowBodyY (k : Nat) : List Instr :=
 `g = rdx`, with the table of `tabAccY` at `rcx + 3328`. -/
 def rowY (k : Nat) : Prog isa :=
   .seq (.block (yconsts ++ leaR .r8 .rcx oTabY)) (.seq (rcxLoop 8 (rowBodyY k)) (.block [.vop .vzeroupper]))
+
+/-! ### A row of products to an accumulator -/
+
+/-- Product `j` of a block: of the 32 coefficients of `f = rsi + o j` and of
+block of the accumulator `g = rdx + 512 j`, whose words are already in
+`vbase`'s order. -/
+def rowMulEY (o j : Nat) : List Instr :=
+  yload4o .rsi (o * j) .xmm0 .xmm1 .xmm2 .xmm3 ++ toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5) ++
+    [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))] ++
+    toY vbaseL
+
+/-- A block of row `k` to an accumulator: its `k` products summed in `ymm11`
+and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and stored to
+the accumulator at `rdi`. -/
+def rowBodyEY (o k : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0)] ++ rowSums (rowMulEY o) k ++ yconst .xmm13 0x05490549 ++
+    toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++
+    [.vmovdquStore .l256 (at_ .rdi 0) .xmm11, .vmovdquStore .l256 (at_ .rdi 32) .xmm12,
+      .alu .add .rsi (.imm 128), .alu .add .rdx (.imm 64), .alu .add .rdi (.imm 64), .alu .add .r8 (.imm 32)]
+
+/-- The accumulator at `rdi` of the `k` products of the polynomials from
+`f = rsi`, `o` bytes apart, and the accumulators from `g = rdx`, 512 bytes
+apart, with the table of `tabAccY` at `rcx + 3328`. -/
+def rowEY (o k : Nat) : Prog isa :=
+  .seq (.block (yconsts ++ leaR .r8 .rcx oTabY)) (rcxLoop 8 (rowBodyEY o k))
 
 end VG.Impl.MlKem.X86_64

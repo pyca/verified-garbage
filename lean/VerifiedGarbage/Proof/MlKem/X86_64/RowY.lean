@@ -436,7 +436,7 @@ theorem prodsR_ok {fB gB : Addr} {fs gs : List Poly} {b : Nat} (hb : b < 8) {s :
     have e1 : dotP fs gs (0 + 1) = multiplyNTTs fs[0]! gs[0]! := by
       rw [dotP_succ (by omega) (by omega), dotP_zero, zero_add_poly]
     rw [e1]
-    simp only [rowProdsY, rowProdY, List.nil_append, ite_true]
+    simp only [rowProdsY, rowSums, rowSum, List.nil_append, ite_true]
     rw [WP.block_append_iff]
     refine WP.mono (mulR_ok (j := 0) (F := fs[0]!) (G := gs[0]!) hb hrsi hrdx (hF 0 (by decide)) (hG 0 (by decide)) (rF 0 (by decide))
       (rG 0 (by decide)) hc hz) fun s1 ⟨V1, o1⟩ => ?_
@@ -452,7 +452,7 @@ theorem prodsR_ok {fB gB : Addr} {fs gs : List Poly} {b : Nat} (hb : b < 8) {s :
     rw [show rowProdsY (n + 1 + 1) = rowProdsY (n + 1) ++ rowProdY (n + 1) from rfl, WP.block_append_iff]
     refine WP.mono (ih (by omega) (by omega) (by omega) (fun j hj => hF j (by omega)) (fun j hj => hG j (by omega))
       (fun j hj => rF j (by omega)) (fun j hj => rG j (by omega))) fun s1 ⟨A1, o1⟩ => ?_
-    simp only [rowProdY, Nat.add_one_ne_zero, ite_false]
+    simp only [rowProdY, rowSum, Nat.add_one_ne_zero, ite_false]
     rw [WP.block_append_iff]
     refine WP.mono (mulR_ok (j := n + 1) (F := fs[n + 1]!) (G := gs[n + 1]!) hb (by rw [o1.gpr, hrsi]) (by rw [o1.gpr, hrdx])
       (by rw [o1.mem]; exact hF (n + 1) (by omega)) (by rw [o1.mem]; exact hG (n + 1) (by omega))

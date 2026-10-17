@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -65,6 +66,29 @@ def check (pb : List Instr) (d : Reg) : Bool :=
     | none => false
   | none => false
 
+/-! ## To an accumulator -/
+
+/-- The regions of pass B storing to the accumulator at `d` (256 words). -/
+def rsBA (d : Reg) : List Rg := [(.rsi, oS, 256, true), (d, 0, 256, true)]
+
+/-- The registers and `S` after pass A, the accumulator not yet written. -/
+def toBA (σ : St) : St := ⟨σ.regs, [σ.mem.getD 0 [], junks 16]⟩
+
+/-- The accumulator's words are the reduced coefficients, coefficient
+`accIdx w` in word `w`. -/
+def outAccOk (σ : St) : Bool :=
+  (List.range 256).all fun w => E.beq (Y.get ((σ.mem.getD 1 []).getD (w / 16) []) (w % 16)) (.out (accIdx w))
+
+/-- The run of pass A and of pass B `pb` storing to the accumulator at `d`,
+and whether it leaves `NTT` there. -/
+def checkAcc (pb : List Instr) (d : Reg) : Bool :=
+  match initA.run fwdRules rsA passA with
+  | some σ =>
+    match (toBA σ).run fwdRules (rsBA d) pb with
+    | some σ' => outAccOk σ'
+    | none => false
+  | none => false
+
 /-! ## The run in parts -/
 
 theorem St.run_append (R : Rules) (rs : List Rg) (σ : St) (a b : List Instr) :
@@ -88,12 +112,40 @@ def stRdi1 : Option St := stRdi0.bind fun σ => σ.run fwdRules (rsB .rdi) passB
 def stR100 : Option St := stB0 .r10 passBR100
 def stR101 : Option St := stR100.bind fun σ => σ.run fwdRules (rsB .r10) passBR101
 
+/-- The state after half 0 of pass B to the accumulator at `d`. -/
+def stAccB0 (d : Reg) (p₀ : List Instr) : Option St := stA.bind fun σ => (toBA σ).run fwdRules (rsBA d) p₀
+
+def stAccR100 : Option St := stAccB0 .r10 passBAccR100
+def stAccR101 : Option St := stAccR100.bind fun σ => σ.run fwdRules (rsBA .r10) passBAccR101
+
 /-- `check` from the state after the halves of pass B. -/
 theorem check_of {p₀ p₁ : List Instr} {d : Reg}
     (ho : ((stB0 d p₀).bind fun σ => σ.run fwdRules (rsB d) p₁).any outOk = true) :
     check (p₀ ++ p₁) d = true := by
   unfold check
   rw [stB0, stA] at ho
+  split
+  · rename_i σA hA
+    rw [hA, Option.bind_some] at ho
+    split
+    · rename_i σ' h'
+      rw [St.run_append] at h'
+      rw [h', Option.any_some] at ho
+      exact ho
+    · rename_i h'
+      rw [St.run_append] at h'
+      rw [h', Option.any_none] at ho
+      exact ho
+  · rename_i hA
+    rw [hA, Option.bind_none, Option.bind_none, Option.any_none] at ho
+    exact ho
+
+/-- `checkAcc` from the state after the halves of pass B. -/
+theorem checkAcc_of {p₀ p₁ : List Instr} {d : Reg}
+    (ho : ((stAccB0 d p₀).bind fun σ => σ.run fwdRules (rsBA d) p₁).any outAccOk = true) :
+    checkAcc (p₀ ++ p₁) d = true := by
+  unfold checkAcc
+  rw [stAccB0, stA] at ho
   split
   · rename_i σA hA
     rw [hA, Option.bind_some] at ho
