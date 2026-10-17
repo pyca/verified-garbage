@@ -86,11 +86,11 @@
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
 //! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
 //! their own, next to the key context of `vg_aes_gcm_init`, instead of
-//! computing them. A key computes them after `POWERS_AFTER` (8) messages of
-//! at least `POWERS_MIN_LEN` (128) bytes, in the next such message with a
-//! 12-byte nonce and at most 16 bytes of additional data (a TLS record):
-//! its `_store_powers` instance stores them while it hashes the text. The
-//! key uses them for those messages only.
+//! computing them. A key computes them in its `POWERS_AFTER`-th (2nd)
+//! message of at least `POWERS_MIN_LEN` (128) bytes, or the first one after
+//! it with a 12-byte nonce and at most 16 bytes of additional data (a TLS
+//! record): its `_store_powers` instance stores them while it hashes the
+//! text. The key uses them for those messages only.
 //! `encrypt` with them copies its pieces to its output and seals them there,
 //! as `vg_aes_gcm_seal_gather` does. Streaming keeps the plain functions,
 //! and does not count towards them.
@@ -636,12 +636,14 @@ const POWERS_MIN_LEN: usize = 128;
 /// key context of `vg_aes_gcm_init` before it computes the powers of its
 /// hash subkey (`Powers::get`): `vg_aes_gcm_init_prepared` costs about as
 /// much as reading the powers saves over this many calls, so a key used for
-/// a few messages never pays for them. On AArch64, where storing them costs
-/// a few nanoseconds in the call that computes them anyway, 8.
+/// a few messages never pays for them. On AArch64, where the call that
+/// computes them stores them while it hashes the text, 2: that call costs
+/// about the box (some 4.5% of a two-record TLS connection on Neoverse N2),
+/// and every later one saves 4–14%.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-const POWERS_AFTER: u32 = 8;
+const POWERS_AFTER: u32 = 2;
 
 /// `Powers::calls` once the powers are published, for a backend whose
 /// short path reads them.
