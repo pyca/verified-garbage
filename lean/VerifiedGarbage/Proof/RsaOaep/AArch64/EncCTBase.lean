@@ -174,39 +174,44 @@ theorem clearE_pin :
   oaep_fin
 
 include R in
-theorem seedE_pin {H : Hash} {sd : Addr} (hsd : W 29 = sd) (hD' : H.D ≤ 64) :
+theorem seedE_pin {D : Nat} {sd : Addr} (hsd : W 29 = sd) (hl : W 4 = BitVec.ofNat 64 D) :
     WP isa (.block (([.ldrSp .x11 sSeed] : List Instr) ++ scr .x12 (oEm + 1) ++
-      ([.movz .x .x13 (BitVec.ofNat 16 H.D) 0] : List Instr))) u fun u' => u'.sp = u.sp ∧
+      ([.ldrSp .x13 sHl] : List Instr))) u fun u' => u'.sp = u.sp ∧
       ∀ r ∈ [Reg.x11, .x12, .x13], u'.gpr r =
-        ([(Reg.x11, sd), (.x12, off S (oEm + 1)), (.x13, BitVec.ofNat 64 H.D)].lookup r).getD 0 := by
+        ([(Reg.x11, sd), (.x12, off S (oEm + 1)), (.x13, BitVec.ofNat 64 D)].lookup r).getD 0 := by
   have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
   have h232 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 232) 8 := L.ld (d := 232) (by decide)
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := L.ld (d := 32) (by decide)
   have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
   have rsd := R.rd8 (d := 232) (k := 29) rfl (by decide) hsd
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
   refine WP.mono (Q := fun (u' : State) => u'.sp = u.sp ∧ u'.gpr .x11 = sd ∧
-      u'.gpr .x12 = off S (oEm + 1) ∧ u'.gpr .x13 = BitVec.ofNat 64 H.D) ?_
+      u'.gpr .x12 = off S (oEm + 1) ∧ u'.gpr .x13 = BitVec.ofNat 64 D) ?_
     fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, sd), (.x12, off S (oEm + 1)),
-      (.x13, BitVec.ofNat 64 H.D)] hs (by
+      (.x13, BitVec.ofNat 64 D)] hs (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
-  oaep_run [scr, Mgf1.scr, Impl.RsaOaep.AArch64.lay, sScr, sSeed, h96, h232, L.sp, hs, rsd,
-    show oEm + 1 < 4096 by decide, imm16 (show H.D < 65536 by omega)]
+  oaep_run [scr, Mgf1.scr, Impl.RsaOaep.AArch64.lay, sScr, sSeed, sHl, h96, h232, h32, L.sp, hs, rsd, rl,
+    show oEm + 1 < 4096 by decide]
 
-theorem lhE_pin {H : Hash} (hD' : H.D ≤ 64) :
-    WP isa (.block (scr .x11 oDig ++ scr .x12 (oEm + 1 + H.D) ++
-      ([.movz .x .x13 (BitVec.ofNat 16 H.D) 0] : List Instr))) u fun u' => u'.sp = u.sp ∧
+include R in
+theorem lhE_pin {D : Nat} (hl : W 4 = BitVec.ofNat 64 D) :
+    WP isa (.block (scr .x11 oDig ++ ([.ldrSp .x13 sHl] : List Instr) ++ scr .x12 (oEm + 1) ++
+      ([.add .x .x12 .x12 .x13] : List Instr))) u fun u' => u'.sp = u.sp ∧
       ∀ r ∈ [Reg.x11, .x12, .x13], u'.gpr r =
-        ([(Reg.x11, off S oDig), (.x12, off S (oEm + 1 + H.D)), (.x13, BitVec.ofNat 64 H.D)].lookup r).getD 0 := by
+        ([(Reg.x11, off S oDig), (.x12, off S (oEm + 1 + D)), (.x13, BitVec.ofNat 64 D)].lookup r).getD 0 := by
   have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := L.ld (d := 32) (by decide)
   have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
   refine WP.mono (Q := fun (u' : State) => u'.sp = u.sp ∧ u'.gpr .x11 = off S oDig ∧
-      u'.gpr .x12 = off S (oEm + 1 + H.D) ∧ u'.gpr .x13 = BitVec.ofNat 64 H.D) ?_
-    fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, off S oDig), (.x12, off S (oEm + 1 + H.D)),
-      (.x13, BitVec.ofNat 64 H.D)] hs (by
+      u'.gpr .x12 = off S (oEm + 1 + D) ∧ u'.gpr .x13 = BitVec.ofNat 64 D) ?_
+    fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, off S oDig), (.x12, off S (oEm + 1 + D)),
+      (.x13, BitVec.ofNat 64 D)] hs (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
-  oaep_run [scr, Mgf1.scr, Impl.RsaOaep.AArch64.lay, sScr, h96, L.sp, hs, show oDig < 4096 by decide,
-    show oEm + 1 + H.D < 4096 by unfold oEm; omega, imm16 (show H.D < 65536 by omega)]
+  oaep_run [scr, Mgf1.scr, Impl.RsaOaep.AArch64.lay, sScr, sHl, h96, h32, L.sp, hs, rl, show oDig < 4096 by decide,
+    show oEm + 1 < 4096 by decide, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 include R in
 theorem msgE_pin {k mLen : Nat} {msg : Addr} (hk : W 21 = BitVec.ofNat 64 k) (hml : W 28 = BitVec.ofNat 64 mLen)

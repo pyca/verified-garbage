@@ -162,6 +162,15 @@ structure Prologued (L : ELay) (W : Nat → BitVec 64) : Prop where
   ml : W 28 = L.ml
   sd : W 29 = L.sd
 
+theorem Prologued.of {L : ELay} {W W' : Nat → BitVec 64} (h : Prologued L W)
+    (hW : ∀ j, 12 ≤ j → j ≤ 29 → (j = 12 ∨ 19 ≤ j) → W' j = W j) : Prologued L W' :=
+  ⟨(hW 12 (by decide) (by decide) (by decide)).trans h.scr, (hW 19 (by decide) (by decide) (by decide)).trans h.out,
+    (hW 20 (by decide) (by decide) (by decide)).trans h.n, (hW 21 (by decide) (by decide) (by decide)).trans h.k,
+    (hW 22 (by decide) (by decide) (by decide)).trans h.e, (hW 23 (by decide) (by decide) (by decide)).trans h.el,
+    (hW 24 (by decide) (by decide) (by decide)).trans h.sl, (hW 25 (by decide) (by decide) (by decide)).trans h.lab,
+    (hW 26 (by decide) (by decide) (by decide)).trans h.labl, (hW 27 (by decide) (by decide) (by decide)).trans h.msg,
+    (hW 28 (by decide) (by decide) (by decide)).trans h.ml, (hW 29 (by decide) (by decide) (by decide)).trans h.sd⟩
+
 /-- With the hash functions' slots, `Slots`. -/
 theorem Prologued.slots {L : ELay} {W W' : Nat → BitVec 64} (h : Prologued L W)
     (hW : ∀ j, 12 ≤ j → j ≤ 29 → (j = 12 ∨ 19 ≤ j) → W' j = W j) (hs : HSlots W' L.hh.toNat L.D L.gh.toNat L.DG) :
