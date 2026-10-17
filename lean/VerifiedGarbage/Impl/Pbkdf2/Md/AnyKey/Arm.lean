@@ -21,7 +21,10 @@ key the working state (at `stWO`) and its digest (at `hkO`). `r11` is always
 is public.
 
 The digest stays in `scratch`, which the function that allocates it wipes
-(`withStackScratchWiped`).
+(`withStackScratchWiped`). `vg_hmac_<hash>_init` runs that only for a key
+longer than a block (`initEntry`, which compares `key_len` on entry): a key
+of at most a block goes to `init` in a frame of its own as before, smaller
+and not wiped.
 -/
 
 @[expose] public section
@@ -53,5 +56,14 @@ def hmacInitAny : Prog isa :=
     (.block F.L.restore))))
 
 end Fns
+
+/-- `init` for a key of any length, choosing on entry: `long` (`init` for a
+key of any length, cold) if `key_len` (`r3`) is more than `B` bytes, and
+`short` (`init` for a key of at most a block) otherwise. `Z` is whether
+`key_len < B + 1`, as in `Fns.cmpPw`, through `r12`. -/
+def initEntry (B : Nat) (short long : Prog isa) : Prog isa :=
+  .seq (.block [.subs .r12 .r3 (.imm (BitVec.ofNat 32 (B + 1))), .mov .r12 (.imm 0), .adc .r12 .r12 (.imm 0),
+      .cmp .r12 (.imm 0)])
+    (Code.iteCold .ne long short)
 
 end VG.Impl.Pbkdf2.Whole.Arm

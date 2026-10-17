@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -19,7 +19,8 @@ The generic proof (`AnyKeyCT.lean`) at each hash function, with the functions
 `AnyKeySha256.lean`): the taint
 checks are evaluated by the kernel, a state satisfies the contract
 (`Md.Arm.Instances.initSat`), and the function runs in a frame of its own
-(`anyFramed`).
+(`anyFramed`), and `init` chooses on entry between it and the framed `init`
+for a key of at most a block (`initF`, `AnyKeyEntry.lean`).
 -/
 
 @[expose] public section
@@ -55,6 +56,14 @@ theorem md5_anyFramed :
   anyFramed (verified Whole.Arm.md5OKF md5_anyChecks rfl rfl md5_anySat) Proof.Hmac.md5_local (by decide)
     md5_anyFrameSat
 
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`md5_anyFramed`), verified. -/
+theorem md5_initF :
+    Verified Arm.target (initCode Spec.Hmac.md5I Md.Arm.md5Md.hmacInit Whole.Arm.md5F)
+      (Spec.Hmac.md5I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.md5I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.md5_init Md.Arm.md5_initFrameSat) md5_anyFramed
+    (by decide) (by decide) (by decide) md5_anyFrameSat
+
 /-! ## sha1 -/
 
 theorem sha1_anyChecks : AnyChecks Whole.Arm.sha1F := by
@@ -81,6 +90,14 @@ theorem sha1_anyFramed :
       (Spec.Hmac.sha1I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha1I)) :=
   anyFramed (verified Whole.Arm.sha1OKF sha1_anyChecks rfl rfl sha1_anySat) Proof.Hmac.sha1_local (by decide)
     sha1_anyFrameSat
+
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha1_anyFramed`), verified. -/
+theorem sha1_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha1I Md.Arm.sha1Md.hmacInit Whole.Arm.sha1F)
+      (Spec.Hmac.sha1I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha1I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha1_init Md.Arm.sha1_initFrameSat) sha1_anyFramed
+    (by decide) (by decide) (by decide) sha1_anyFrameSat
 
 /-! ## sha384 -/
 
@@ -109,6 +126,14 @@ theorem sha384_anyFramed :
   anyFramed (verified Whole.Arm.sha384OKF sha384_anyChecks rfl rfl sha384_anySat) Proof.Hmac.sha384_local (by decide)
     sha384_anyFrameSat
 
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha384_anyFramed`), verified. -/
+theorem sha384_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha384I Md.Arm.sha384Md.hmacInit Whole.Arm.sha384F)
+      (Spec.Hmac.sha384I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha384I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha384_init Md.Arm.sha384_initFrameSat) sha384_anyFramed
+    (by decide) (by decide) (by decide) sha384_anyFrameSat
+
 /-! ## sha512 -/
 
 theorem sha512_anyChecks : AnyChecks Whole.Arm.sha512F := by
@@ -135,6 +160,14 @@ theorem sha512_anyFramed :
       (Spec.Hmac.sha512I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512I)) :=
   anyFramed (verified Whole.Arm.sha512OKF sha512_anyChecks rfl rfl sha512_anySat) Proof.Hmac.sha512_local (by decide)
     sha512_anyFrameSat
+
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha512_anyFramed`), verified. -/
+theorem sha512_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha512I Md.Arm.sha512Md'.hmacInit Whole.Arm.sha512F)
+      (Spec.Hmac.sha512I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha512_init Md.Arm.sha512_initFrameSat) sha512_anyFramed
+    (by decide) (by decide) (by decide) sha512_anyFrameSat
 
 /-! ## sha512_224 -/
 
@@ -163,6 +196,14 @@ theorem sha512_224_anyFramed :
   anyFramed (verified Whole.Arm.sha512_224OKF sha512_224_anyChecks rfl rfl sha512_224_anySat) Proof.Hmac.sha512_224_local (by decide)
     sha512_224_anyFrameSat
 
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha512_224_anyFramed`), verified. -/
+theorem sha512_224_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha512_224I Md.Arm.sha512_224Md.hmacInit Whole.Arm.sha512_224F)
+      (Spec.Hmac.sha512_224I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512_224I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha512_224_init Md.Arm.sha512_224_initFrameSat) sha512_224_anyFramed
+    (by decide) (by decide) (by decide) sha512_224_anyFrameSat
+
 /-! ## sha512_256 -/
 
 theorem sha512_256_anyChecks : AnyChecks Whole.Arm.sha512_256F := by
@@ -189,5 +230,13 @@ theorem sha512_256_anyFramed :
       (Spec.Hmac.sha512_256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512_256I)) :=
   anyFramed (verified Whole.Arm.sha512_256OKF sha512_256_anyChecks rfl rfl sha512_256_anySat) Proof.Hmac.sha512_256_local (by decide)
     sha512_256_anyFrameSat
+
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha512_256_anyFramed`), verified. -/
+theorem sha512_256_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha512_256I Md.Arm.sha512_256Md.hmacInit Whole.Arm.sha512_256F)
+      (Spec.Hmac.sha512_256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha512_256I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha512_256_init Md.Arm.sha512_256_initFrameSat) sha512_256_anyFramed
+    (by decide) (by decide) (by decide) sha512_256_anyFrameSat
 
 end VG.Proof.Pbkdf2.Whole.Arm.Any

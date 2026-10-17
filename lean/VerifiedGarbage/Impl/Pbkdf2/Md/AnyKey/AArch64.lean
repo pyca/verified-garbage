@@ -21,7 +21,10 @@ key, so that `Hash.key` makes it: `x19` = `key`, `x20` = `key_len`, `x21` =
 `key_len`, which is public.
 
 The digest stays in `scratch`, which the function that allocates it wipes
-(`withStackScratchWiped`).
+(`withStackScratchWiped`). `vg_hmac_<hash>_init` runs that only for a key
+longer than a block (`initEntry`, which compares `key_len` on entry): a key
+of at most a block goes to `init` in a frame of its own as before, smaller
+and not wiped.
 -/
 
 @[expose] public section
@@ -51,5 +54,16 @@ def hmacInitAny : Prog isa :=
     (.block H.exit))))
 
 end Hash
+
+/-- `x9 ← (B ≥ key_len) ? 0 : key_len`: zero exactly when the key (`x3`) is
+at most `B` bytes (`subs` sets C, no borrow, when `B ≥ key_len`). -/
+def entryCmp (B : Nat) : List Instr :=
+  [.movz .x .x10 (BitVec.ofNat 16 B) 0, .movz .x .x12 0 0, .subs .x .x11 .x10 .x3, .csel .x .x9 .x12 .x3]
+
+/-- `init` for a key of any length, choosing on entry: `long` (`init` for a
+key of any length, cold) if `key_len` is more than `B` bytes, and `short`
+(`init` for a key of at most a block) otherwise. -/
+def initEntry (B : Nat) (short long : Prog isa) : Prog isa :=
+  .seq (.block (entryCmp B)) (Code.iteCold (.nonzero .x .x9) long short)
 
 end VG.Impl.Pbkdf2.Md.AArch64

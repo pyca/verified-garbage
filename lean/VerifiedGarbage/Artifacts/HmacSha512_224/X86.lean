@@ -20,14 +20,17 @@ hash, then computes the outer hash with one call of SHA-512/224's verified
 compression function, on a block it lays out word by word in `scratch`: the
 outer key's hash value, the inner digest, its padding and length.
 
-`init` takes a key of any length (`initAnyKeyApi`): a key longer than a block
-is first hashed with SHA-512/224's verified streaming functions into its working
+`init` takes a key of any length (`initAnyKeyApi`): a key of at most a block
+goes straight to `init_scratch`, in a frame of its own holding its working
+space (`Proof/Pbkdf2/Md/X86/Frame.lean`); a longer key (`initCode`) is first
+hashed with SHA-512/224's verified streaming functions into its working
 space, as PBKDF2's `pbkdf2` hashes a long password
 (`Impl/Pbkdf2/Md/AnyKey/X86.lean`), and `init_scratch`, the code above with
-its working space as an argument, is called with the key or its digest.
-`init` keeps its working space in a frame of its own, which it wipes before
-returning (`Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); `finalize` keeps its in a
-frame of its own too (`Proof/Pbkdf2/Md/X86/Frame.lean`). `init_scratch` and
+its working space as an argument, is called with its digest, in a larger
+frame of its own, which it wipes before returning
+(`Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); `stack` is that of the larger.
+`finalize` keeps its working space in a frame of its own too
+(`Proof/Pbkdf2/Md/X86/Frame.lean`). `init_scratch` and
 `finalize_scratch` are what PBKDF2's code calls.
 -/
 
@@ -37,11 +40,10 @@ namespace VG.Artifacts.HmacSha512_224.X86
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_224I.initAnyKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped (Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha512_224I) 4
-      (2 * Spec.Hmac.sha512_224I.initAnyKeyScratch) Proof.Pbkdf2.Whole.X86.sha512_224F.hmacInitAny
+    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha512_224I Proof.Pbkdf2.Md.X86.sha512_224M.hmacInit Proof.Pbkdf2.Whole.X86.sha512_224F
     stack := 76 + Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha512_224I
-    verified := Proof.Pbkdf2.Whole.X86.Any.sha512_224_anyFramed
-    spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_224_anySp },
+    verified := Proof.Pbkdf2.Whole.X86.Any.sha512_224_initF
+    spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_224_initSp },
   Spec.Hmac.sha512_224I.finalizeApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha512_224I) 5
       Proof.Pbkdf2.Md.X86.sha512_224M.hmacFin

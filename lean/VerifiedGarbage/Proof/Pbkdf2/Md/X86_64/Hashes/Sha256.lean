@@ -242,6 +242,10 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by decide)
+    (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF

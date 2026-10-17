@@ -16,7 +16,143 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1632
+        r"subs r12, r3, #65
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+bne 20f
+sub sp, sp, #864
+add r12, sp, #0
+str lr, [r12, #4]
+add lr, sp, #8
+str lr, [r12, #0]
+ldr lr, [sp, #4]
+ldr r12, [sp, #0]
+str r4, [r12, #160]
+str r5, [r12, #164]
+str r6, [r12, #168]
+str r7, [r12, #172]
+str r8, [r12, #176]
+str r9, [r12, #180]
+str r10, [r12, #184]
+str lr, [r12, #188]
+str r11, [r12, #192]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r11, r12
+mov r0, r4
+bl {vg_sha256_init}
+mov r0, r5
+bl {vg_sha256_init}
+movw r1, #13878
+movt r1, #13878
+str r1, [r4, #32]
+str r1, [r4, #36]
+str r1, [r4, #40]
+str r1, [r4, #44]
+str r1, [r4, #48]
+str r1, [r4, #52]
+str r1, [r4, #56]
+str r1, [r4, #60]
+str r1, [r4, #64]
+str r1, [r4, #68]
+str r1, [r4, #72]
+str r1, [r4, #76]
+str r1, [r4, #80]
+str r1, [r4, #84]
+str r1, [r4, #88]
+str r1, [r4, #92]
+mov r8, r4
+cmp r7, #0
+beq 22f
+24:
+ldrb r12, [r6, #0]
+eor r12, r12, #54
+strb r12, [r8, #32]
+add r6, r6, #1
+add r8, r8, #1
+subs r7, r7, #1
+bne 24b
+b 23f
+22:
+23:
+movw r1, #27242
+movt r1, #27242
+ldr r12, [r4, #32]
+eor r12, r12, r1
+str r12, [r5, #32]
+ldr r12, [r4, #36]
+eor r12, r12, r1
+str r12, [r5, #36]
+ldr r12, [r4, #40]
+eor r12, r12, r1
+str r12, [r5, #40]
+ldr r12, [r4, #44]
+eor r12, r12, r1
+str r12, [r5, #44]
+ldr r12, [r4, #48]
+eor r12, r12, r1
+str r12, [r5, #48]
+ldr r12, [r4, #52]
+eor r12, r12, r1
+str r12, [r5, #52]
+ldr r12, [r4, #56]
+eor r12, r12, r1
+str r12, [r5, #56]
+ldr r12, [r4, #60]
+eor r12, r12, r1
+str r12, [r5, #60]
+ldr r12, [r4, #64]
+eor r12, r12, r1
+str r12, [r5, #64]
+ldr r12, [r4, #68]
+eor r12, r12, r1
+str r12, [r5, #68]
+ldr r12, [r4, #72]
+eor r12, r12, r1
+str r12, [r5, #72]
+ldr r12, [r4, #76]
+eor r12, r12, r1
+str r12, [r5, #76]
+ldr r12, [r4, #80]
+eor r12, r12, r1
+str r12, [r5, #80]
+ldr r12, [r4, #84]
+eor r12, r12, r1
+str r12, [r5, #84]
+ldr r12, [r4, #88]
+eor r12, r12, r1
+str r12, [r5, #88]
+ldr r12, [r4, #92]
+eor r12, r12, r1
+str r12, [r5, #92]
+mov r0, r4
+add r6, r4, #32
+mov r3, r11
+mov r1, r6
+mov r2, #1
+bl {vg_sha256_compress}
+mov r0, r5
+add r6, r5, #32
+mov r1, r6
+mov r2, #1
+bl {vg_sha256_compress}
+ldr r4, [r11, #160]
+ldr r5, [r11, #164]
+ldr r6, [r11, #168]
+ldr r7, [r11, #172]
+ldr r8, [r11, #176]
+ldr r9, [r11, #180]
+ldr r10, [r11, #184]
+ldr lr, [r11, #188]
+ldr r11, [r11, #192]
+add sp, sp, #864
+21:
+bx lr
+20:
+sub sp, sp, #1632
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -41,7 +177,7 @@ subs r12, r9, #65
 mov r12, #0
 adc r12, r12, #0
 cmp r12, #0
-beq 20f
+beq 25f
 movw r12, #1156
 add r4, r11, r12
 mov r0, r4
@@ -67,11 +203,11 @@ ldr r1, [sp], #8
 movw r12, #1316
 add r2, r11, r12
 movw r3, #32
-b 21f
-20:
+b 26f
+25:
 mov r2, r8
 mov r3, r9
-21:
+26:
 mov r0, r5
 mov r1, r6
 mov r12, r11
@@ -490,8 +626,9 @@ str r2, [r12, #1588]
 str r2, [r12, #1592]
 str r2, [r12, #1596]
 add sp, sp, #1632
-bx lr",
+b 21b",
         vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,

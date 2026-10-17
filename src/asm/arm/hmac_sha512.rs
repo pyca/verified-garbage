@@ -16,7 +16,207 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #3424
+        r"subs r12, r3, #129
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+bne 20f
+sub sp, sp, #1888
+add r12, sp, #0
+str lr, [r12, #4]
+add lr, sp, #8
+str lr, [r12, #0]
+ldr lr, [sp, #4]
+ldr r12, [sp, #0]
+str r4, [r12, #272]
+str r5, [r12, #276]
+str r6, [r12, #280]
+str r7, [r12, #284]
+str r8, [r12, #288]
+str r9, [r12, #292]
+str r10, [r12, #296]
+str lr, [r12, #300]
+str r11, [r12, #304]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r11, r12
+mov r0, r4
+bl {vg_sha512_init}
+mov r0, r5
+bl {vg_sha512_init}
+movw r1, #13878
+movt r1, #13878
+str r1, [r4, #64]
+str r1, [r4, #68]
+str r1, [r4, #72]
+str r1, [r4, #76]
+str r1, [r4, #80]
+str r1, [r4, #84]
+str r1, [r4, #88]
+str r1, [r4, #92]
+str r1, [r4, #96]
+str r1, [r4, #100]
+str r1, [r4, #104]
+str r1, [r4, #108]
+str r1, [r4, #112]
+str r1, [r4, #116]
+str r1, [r4, #120]
+str r1, [r4, #124]
+str r1, [r4, #128]
+str r1, [r4, #132]
+str r1, [r4, #136]
+str r1, [r4, #140]
+str r1, [r4, #144]
+str r1, [r4, #148]
+str r1, [r4, #152]
+str r1, [r4, #156]
+str r1, [r4, #160]
+str r1, [r4, #164]
+str r1, [r4, #168]
+str r1, [r4, #172]
+str r1, [r4, #176]
+str r1, [r4, #180]
+str r1, [r4, #184]
+str r1, [r4, #188]
+mov r8, r4
+cmp r7, #0
+beq 22f
+24:
+ldrb r12, [r6, #0]
+eor r12, r12, #54
+strb r12, [r8, #64]
+add r6, r6, #1
+add r8, r8, #1
+subs r7, r7, #1
+bne 24b
+b 23f
+22:
+23:
+movw r1, #27242
+movt r1, #27242
+ldr r12, [r4, #64]
+eor r12, r12, r1
+str r12, [r5, #64]
+ldr r12, [r4, #68]
+eor r12, r12, r1
+str r12, [r5, #68]
+ldr r12, [r4, #72]
+eor r12, r12, r1
+str r12, [r5, #72]
+ldr r12, [r4, #76]
+eor r12, r12, r1
+str r12, [r5, #76]
+ldr r12, [r4, #80]
+eor r12, r12, r1
+str r12, [r5, #80]
+ldr r12, [r4, #84]
+eor r12, r12, r1
+str r12, [r5, #84]
+ldr r12, [r4, #88]
+eor r12, r12, r1
+str r12, [r5, #88]
+ldr r12, [r4, #92]
+eor r12, r12, r1
+str r12, [r5, #92]
+ldr r12, [r4, #96]
+eor r12, r12, r1
+str r12, [r5, #96]
+ldr r12, [r4, #100]
+eor r12, r12, r1
+str r12, [r5, #100]
+ldr r12, [r4, #104]
+eor r12, r12, r1
+str r12, [r5, #104]
+ldr r12, [r4, #108]
+eor r12, r12, r1
+str r12, [r5, #108]
+ldr r12, [r4, #112]
+eor r12, r12, r1
+str r12, [r5, #112]
+ldr r12, [r4, #116]
+eor r12, r12, r1
+str r12, [r5, #116]
+ldr r12, [r4, #120]
+eor r12, r12, r1
+str r12, [r5, #120]
+ldr r12, [r4, #124]
+eor r12, r12, r1
+str r12, [r5, #124]
+ldr r12, [r4, #128]
+eor r12, r12, r1
+str r12, [r5, #128]
+ldr r12, [r4, #132]
+eor r12, r12, r1
+str r12, [r5, #132]
+ldr r12, [r4, #136]
+eor r12, r12, r1
+str r12, [r5, #136]
+ldr r12, [r4, #140]
+eor r12, r12, r1
+str r12, [r5, #140]
+ldr r12, [r4, #144]
+eor r12, r12, r1
+str r12, [r5, #144]
+ldr r12, [r4, #148]
+eor r12, r12, r1
+str r12, [r5, #148]
+ldr r12, [r4, #152]
+eor r12, r12, r1
+str r12, [r5, #152]
+ldr r12, [r4, #156]
+eor r12, r12, r1
+str r12, [r5, #156]
+ldr r12, [r4, #160]
+eor r12, r12, r1
+str r12, [r5, #160]
+ldr r12, [r4, #164]
+eor r12, r12, r1
+str r12, [r5, #164]
+ldr r12, [r4, #168]
+eor r12, r12, r1
+str r12, [r5, #168]
+ldr r12, [r4, #172]
+eor r12, r12, r1
+str r12, [r5, #172]
+ldr r12, [r4, #176]
+eor r12, r12, r1
+str r12, [r5, #176]
+ldr r12, [r4, #180]
+eor r12, r12, r1
+str r12, [r5, #180]
+ldr r12, [r4, #184]
+eor r12, r12, r1
+str r12, [r5, #184]
+ldr r12, [r4, #188]
+eor r12, r12, r1
+str r12, [r5, #188]
+mov r0, r4
+add r6, r4, #64
+mov r3, r11
+mov r1, r6
+mov r2, #1
+bl {vg_sha512_compress}
+mov r0, r5
+add r6, r5, #64
+mov r1, r6
+mov r2, #1
+bl {vg_sha512_compress}
+ldr r4, [r11, #272]
+ldr r5, [r11, #276]
+ldr r6, [r11, #280]
+ldr r7, [r11, #284]
+ldr r8, [r11, #288]
+ldr r9, [r11, #292]
+ldr r10, [r11, #296]
+ldr lr, [r11, #300]
+ldr r11, [r11, #304]
+add sp, sp, #1888
+21:
+bx lr
+20:
+sub sp, sp, #3424
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -41,7 +241,7 @@ subs r12, r9, #129
 mov r12, #0
 adc r12, r12, #0
 cmp r12, #0
-beq 20f
+beq 25f
 movw r12, #2484
 add r4, r11, r12
 mov r0, r4
@@ -67,11 +267,11 @@ ldr r1, [sp], #8
 movw r12, #2804
 add r2, r11, r12
 movw r3, #64
-b 21f
-20:
+b 26f
+25:
 mov r2, r8
 mov r3, r9
-21:
+26:
 mov r0, r5
 mov r1, r6
 mov r12, r11
@@ -942,8 +1142,9 @@ str r2, [r12, #3396]
 str r2, [r12, #3400]
 str r2, [r12, #3404]
 add sp, sp, #3424
-bx lr",
+b 21b",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch,

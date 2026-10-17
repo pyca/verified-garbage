@@ -18,7 +18,152 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"lea esp, [esp-1048]
+        r"mov eax, DWORD PTR [esp+16]
+cmp eax, 65
+jae 20f
+lea esp, [esp-408]
+mov eax, DWORD PTR [esp+412]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+416]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+420]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+424]
+mov DWORD PTR [esp+16], eax
+mov eax, esp
+add eax, 24
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [eax+112], ebx
+mov DWORD PTR [eax+116], esi
+mov DWORD PTR [eax+120], edi
+mov DWORD PTR [eax+124], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+push ebx
+call {vg_md5_init}
+pop eax
+push esi
+call {vg_md5_init}
+pop eax
+mov ecx, 909522486
+mov DWORD PTR [ebx+16], ecx
+mov DWORD PTR [ebx+20], ecx
+mov DWORD PTR [ebx+24], ecx
+mov DWORD PTR [ebx+28], ecx
+mov DWORD PTR [ebx+32], ecx
+mov DWORD PTR [ebx+36], ecx
+mov DWORD PTR [ebx+40], ecx
+mov DWORD PTR [ebx+44], ecx
+mov DWORD PTR [ebx+48], ecx
+mov DWORD PTR [ebx+52], ecx
+mov DWORD PTR [ebx+56], ecx
+mov DWORD PTR [ebx+60], ecx
+mov DWORD PTR [ebx+64], ecx
+mov DWORD PTR [ebx+68], ecx
+mov DWORD PTR [ebx+72], ecx
+mov DWORD PTR [ebx+76], ecx
+mov edi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebx
+add edx, 16
+test ecx, ecx
+je 22f
+24:
+movzx eax, BYTE PTR [edi]
+xor eax, 54
+mov BYTE PTR [edx], al
+add edi, 1
+add edx, 1
+sub ecx, 1
+jne 24b
+jmp 23f
+22:
+23:
+mov eax, DWORD PTR [ebx+16]
+xor eax, 1785358954
+mov DWORD PTR [esi+16], eax
+mov eax, DWORD PTR [ebx+20]
+xor eax, 1785358954
+mov DWORD PTR [esi+20], eax
+mov eax, DWORD PTR [ebx+24]
+xor eax, 1785358954
+mov DWORD PTR [esi+24], eax
+mov eax, DWORD PTR [ebx+28]
+xor eax, 1785358954
+mov DWORD PTR [esi+28], eax
+mov eax, DWORD PTR [ebx+32]
+xor eax, 1785358954
+mov DWORD PTR [esi+32], eax
+mov eax, DWORD PTR [ebx+36]
+xor eax, 1785358954
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [ebx+40]
+xor eax, 1785358954
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [ebx+44]
+xor eax, 1785358954
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [ebx+48]
+xor eax, 1785358954
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [ebx+52]
+xor eax, 1785358954
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [ebx+56]
+xor eax, 1785358954
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [ebx+60]
+xor eax, 1785358954
+mov DWORD PTR [esi+60], eax
+mov eax, DWORD PTR [ebx+64]
+xor eax, 1785358954
+mov DWORD PTR [esi+64], eax
+mov eax, DWORD PTR [ebx+68]
+xor eax, 1785358954
+mov DWORD PTR [esi+68], eax
+mov eax, DWORD PTR [ebx+72]
+xor eax, 1785358954
+mov DWORD PTR [esi+72], eax
+mov eax, DWORD PTR [ebx+76]
+xor eax, 1785358954
+mov DWORD PTR [esi+76], eax
+mov eax, ebx
+add eax, 16
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_md5_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, esi
+mov eax, ebx
+add eax, 16
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_md5_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, ebp
+mov ebx, DWORD PTR [eax+112]
+mov esi, DWORD PTR [eax+116]
+mov edi, DWORD PTR [eax+120]
+mov ebp, DWORD PTR [eax+124]
+lea esp, [esp+408]
+21:
+ret
+20:
+lea esp, [esp-1048]
 mov eax, DWORD PTR [esp+1052]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1056]
@@ -38,10 +183,10 @@ mov DWORD PTR [eax+396], ebp
 mov ebp, eax
 mov ecx, DWORD PTR [esp+16]
 cmp ecx, 65
-jae 20f
+jae 25f
 mov edx, DWORD PTR [esp+12]
-jmp 21f
-20:
+jmp 26f
+25:
 mov edi, ebp
 add edi, 640
 push edi
@@ -82,7 +227,7 @@ pop eax
 mov edx, ebp
 add edx, 752
 mov ecx, 16
-21:
+26:
 mov edi, DWORD PTR [esp+4]
 mov esi, DWORD PTR [esp+8]
 push ebp
@@ -359,9 +504,10 @@ mov DWORD PTR [esp+1036], ecx
 mov DWORD PTR [esp+1040], ecx
 mov DWORD PTR [esp+1044], ecx
 lea esp, [esp+1048]
-ret
+jmp 21b
 .p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_compress = sym super::md5::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,

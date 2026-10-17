@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
@@ -21,7 +21,8 @@ functions `pbkdf2` calls (`Sha256.lean`, `Sha224.lean`), as for the other hash
 functions (`AnyKeyInstances.lean`): the taint
 checks are evaluated by the kernel, a state satisfies the contract
 (`Md.Arm.Instances.initSat`), and the function runs in a frame of its own
-(`anyFramed`).
+(`anyFramed`), and `init` chooses on entry between it and the framed `init`
+for a key of at most a block (`initF`, `AnyKeyEntry.lean`).
 -/
 
 @[expose] public section
@@ -57,6 +58,14 @@ theorem sha224_anyFramed :
   anyFramed (verified Whole.Arm.sha224OKF sha224_anyChecks rfl rfl sha224_anySat) Proof.Hmac.sha224_local (by decide)
     sha224_anyFrameSat
 
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha224_anyFramed`), verified. -/
+theorem sha224_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha224I Md.Arm.sha224Md.hmacInit Whole.Arm.sha224F)
+      (Spec.Hmac.sha224I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha224I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha224_init Md.Arm.sha224_initFrameSat) sha224_anyFramed
+    (by decide) (by decide) (by decide) sha224_anyFrameSat
+
 /-! ## sha256 -/
 
 theorem sha256_anyChecks : AnyChecks Whole.Arm.sha256F := by
@@ -83,5 +92,13 @@ theorem sha256_anyFramed :
       (Spec.Hmac.sha256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha256I)) :=
   anyFramed (verified Whole.Arm.sha256OKF sha256_anyChecks rfl rfl sha256_anySat) Proof.Hmac.sha256_local (by decide)
     sha256_anyFrameSat
+
+/-- `init`, choosing on entry between `init` for a key of at most a block
+(`Md.Arm.initFramed`) and for a key of any length (`sha256_anyFramed`), verified. -/
+theorem sha256_initF :
+    Verified Arm.target (initCode Spec.Hmac.sha256I Md.Arm.sha256Md.hmacInit Whole.Arm.sha256F)
+      (Spec.Hmac.sha256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha256I)) :=
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha256_init Md.Arm.sha256_initFrameSat) sha256_anyFramed
+    (by decide) (by decide) (by decide) sha256_anyFrameSat
 
 end VG.Proof.Pbkdf2.Whole.Arm.Any

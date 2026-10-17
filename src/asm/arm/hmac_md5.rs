@@ -16,7 +16,143 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1056
+        r"subs r12, r3, #65
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+bne 20f
+sub sp, sp, #416
+add r12, sp, #0
+str lr, [r12, #4]
+add lr, sp, #8
+str lr, [r12, #0]
+ldr lr, [sp, #4]
+ldr r12, [sp, #0]
+str r4, [r12, #112]
+str r5, [r12, #116]
+str r6, [r12, #120]
+str r7, [r12, #124]
+str r8, [r12, #128]
+str r9, [r12, #132]
+str r10, [r12, #136]
+str lr, [r12, #140]
+str r11, [r12, #144]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r11, r12
+mov r0, r4
+bl {vg_md5_init}
+mov r0, r5
+bl {vg_md5_init}
+movw r1, #13878
+movt r1, #13878
+str r1, [r4, #16]
+str r1, [r4, #20]
+str r1, [r4, #24]
+str r1, [r4, #28]
+str r1, [r4, #32]
+str r1, [r4, #36]
+str r1, [r4, #40]
+str r1, [r4, #44]
+str r1, [r4, #48]
+str r1, [r4, #52]
+str r1, [r4, #56]
+str r1, [r4, #60]
+str r1, [r4, #64]
+str r1, [r4, #68]
+str r1, [r4, #72]
+str r1, [r4, #76]
+mov r8, r4
+cmp r7, #0
+beq 22f
+24:
+ldrb r12, [r6, #0]
+eor r12, r12, #54
+strb r12, [r8, #16]
+add r6, r6, #1
+add r8, r8, #1
+subs r7, r7, #1
+bne 24b
+b 23f
+22:
+23:
+movw r1, #27242
+movt r1, #27242
+ldr r12, [r4, #16]
+eor r12, r12, r1
+str r12, [r5, #16]
+ldr r12, [r4, #20]
+eor r12, r12, r1
+str r12, [r5, #20]
+ldr r12, [r4, #24]
+eor r12, r12, r1
+str r12, [r5, #24]
+ldr r12, [r4, #28]
+eor r12, r12, r1
+str r12, [r5, #28]
+ldr r12, [r4, #32]
+eor r12, r12, r1
+str r12, [r5, #32]
+ldr r12, [r4, #36]
+eor r12, r12, r1
+str r12, [r5, #36]
+ldr r12, [r4, #40]
+eor r12, r12, r1
+str r12, [r5, #40]
+ldr r12, [r4, #44]
+eor r12, r12, r1
+str r12, [r5, #44]
+ldr r12, [r4, #48]
+eor r12, r12, r1
+str r12, [r5, #48]
+ldr r12, [r4, #52]
+eor r12, r12, r1
+str r12, [r5, #52]
+ldr r12, [r4, #56]
+eor r12, r12, r1
+str r12, [r5, #56]
+ldr r12, [r4, #60]
+eor r12, r12, r1
+str r12, [r5, #60]
+ldr r12, [r4, #64]
+eor r12, r12, r1
+str r12, [r5, #64]
+ldr r12, [r4, #68]
+eor r12, r12, r1
+str r12, [r5, #68]
+ldr r12, [r4, #72]
+eor r12, r12, r1
+str r12, [r5, #72]
+ldr r12, [r4, #76]
+eor r12, r12, r1
+str r12, [r5, #76]
+mov r0, r4
+add r6, r4, #16
+mov r3, r11
+mov r1, r6
+mov r2, #1
+bl {vg_md5_compress}
+mov r0, r5
+add r6, r5, #16
+mov r1, r6
+mov r2, #1
+bl {vg_md5_compress}
+ldr r4, [r11, #112]
+ldr r5, [r11, #116]
+ldr r6, [r11, #120]
+ldr r7, [r11, #124]
+ldr r8, [r11, #128]
+ldr r9, [r11, #132]
+ldr r10, [r11, #136]
+ldr lr, [r11, #140]
+ldr r11, [r11, #144]
+add sp, sp, #416
+21:
+bx lr
+20:
+sub sp, sp, #1056
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -41,7 +177,7 @@ subs r12, r9, #65
 mov r12, #0
 adc r12, r12, #0
 cmp r12, #0
-beq 20f
+beq 25f
 movw r12, #660
 add r4, r11, r12
 mov r0, r4
@@ -67,11 +203,11 @@ ldr r1, [sp], #8
 movw r12, #772
 add r2, r11, r12
 movw r3, #16
-b 21f
-20:
+b 26f
+25:
 mov r2, r8
 mov r3, r9
-21:
+26:
 mov r0, r5
 mov r1, r6
 mov r12, r11
@@ -346,8 +482,9 @@ str r2, [r12, #1012]
 str r2, [r12, #1016]
 str r2, [r12, #1020]
 add sp, sp, #1056
-bx lr",
+b 21b",
         vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_compress = sym super::md5::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,

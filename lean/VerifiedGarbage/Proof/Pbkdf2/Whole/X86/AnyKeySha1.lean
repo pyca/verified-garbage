@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -75,5 +75,15 @@ theorem sha1_anySp (v : Backend) :
     (Impl.StackScratch.X86.withStackScratchWiped (anyFrame Spec.Hmac.sha1I) 4 (2 * Spec.Hmac.sha1I.initAnyKeyScratch)
       v.F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha1_anyNoEsp v)
+
+/-- `vg_hmac_sha1_init` with the backend `v`: `init` for a key of at most a
+block, or (cold) for any key, wiped. -/
+theorem sha1_initF (v : Backend) :
+    Verified X86.target (initCode Spec.Hmac.sha1I v.M.hmacInit v.F) (Spec.Hmac.sha1I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha1I)) :=
+  initCode_verified (Md.X86.initFramed v.hmacInit Md.X86.sha1_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
+    (sha1_anyFramed v) (by decide) sha1_anyFrameSat
+
+theorem sha1_initSp (v : Backend) : (initCode Spec.Hmac.sha1I v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe v.initSp (by decide +kernel) (sha1_anySp v)
 
 end VG.Proof.Pbkdf2.Whole.X86.Any

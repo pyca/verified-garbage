@@ -18,9 +18,11 @@ suffix (e.g. `vg_hmac_sha256_init_shani`). `init_scratch` and
 `finalize_scratch`, with their working space as an argument, are what
 PBKDF2's and ECDSA's code calls; `finalize` keeps its working space in a frame
 of its own. `init` takes a key of any length (`Impl/Pbkdf2/Md/AnyKey/X86_64.lean`):
-it hashes a key longer than a block with the streaming functions, as
-`pbkdf2` hashes a long password, and calls `init_scratch` with the key or its
-digest, in a frame of its own that it zeroes before returning.
+it runs `init_scratch` in a frame of its own for a key of at most a block,
+and for a longer key hashes it with the streaming functions, as `pbkdf2`
+hashes a long password, and calls `init_scratch` with its digest, in a larger
+frame of its own that it zeroes before returning (`initCode`). `stack` is
+that of the larger.
 -/
 
 @[expose] public section
@@ -30,11 +32,10 @@ namespace VG.Generic.MdHash.X86_64.Hmac
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
   v.I.initAnyKeyApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratchWiped (Proof.Pbkdf2.Md.X86_64.anyFrame v.I) .r8
-      v.I.initAnyKeyScratch v.H.hmacInitAny
+    code := Proof.Pbkdf2.Md.X86_64.initCode v.H v.I
     stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame v.I
-    verified := v.hmacInitAnyF
-    spSafe := v.hmacInitAnySp
+    verified := v.hmacInitF
+    spSafe := v.hmacInitFSp
     features := v.features },
   v.I.finalizeApi.artifact X86_64.target {
     suffix := v.suffix

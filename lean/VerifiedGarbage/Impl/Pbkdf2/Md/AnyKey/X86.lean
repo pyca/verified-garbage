@@ -22,7 +22,10 @@ Every call passes its arguments in a frame of their own, pushed last to
 first. The only branch is on `key_len`, which is public.
 
 The digest stays in `scratch`, which the function that allocates it wipes
-(`withStackScratchWiped`).
+(`withStackScratchWiped`). `vg_hmac_<hash>_init` runs that only for a key
+longer than a block (`initEntry`, which compares `key_len` on entry): a key
+of at most a block goes to `init` in a frame of its own as before, smaller
+and not wiped.
 -/
 
 @[expose] public section
@@ -80,5 +83,12 @@ def hmacInitAny : Prog isa :=
     (.block F.L.restore))))
 
 end Fns
+
+/-- `init` for a key of any length, choosing on entry: `long` (`init` for a
+key of any length, cold) if `key_len` (argument 3) is more than `B` bytes, and
+`short` (`init` for a key of at most a block) otherwise. -/
+def initEntry (B : Nat) (short long : Prog isa) : Prog isa :=
+  .seq (.block [.mov .eax (Fns.argM 3), .alu .cmp .eax (.imm (BitVec.ofNat 32 (B + 1)))])
+    (Code.iteCold .ae long short)
 
 end VG.Impl.Pbkdf2.Whole.X86

@@ -16,7 +16,132 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1128]
+        r"cmp rcx, 65
+jae 20f
+lea rsp, [rsp-456]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r15, r8
+mov rbp, rdx
+mov r13, rcx
+mov rdi, rbx
+call {vg_sha1_init}
+mov rdi, r12
+call {vg_sha1_init}
+mov eax, 909522486
+mov DWORD PTR [rbx+20], eax
+mov DWORD PTR [rbx+24], eax
+mov DWORD PTR [rbx+28], eax
+mov DWORD PTR [rbx+32], eax
+mov DWORD PTR [rbx+36], eax
+mov DWORD PTR [rbx+40], eax
+mov DWORD PTR [rbx+44], eax
+mov DWORD PTR [rbx+48], eax
+mov DWORD PTR [rbx+52], eax
+mov DWORD PTR [rbx+56], eax
+mov DWORD PTR [rbx+60], eax
+mov DWORD PTR [rbx+64], eax
+mov DWORD PTR [rbx+68], eax
+mov DWORD PTR [rbx+72], eax
+mov DWORD PTR [rbx+76], eax
+mov DWORD PTR [rbx+80], eax
+mov r14d, 0
+test r13, r13
+je 22f
+24:
+movzx eax, BYTE PTR [rbp+r14*1]
+xor eax, 54
+mov BYTE PTR [rbx+r14*1+20], al
+add r14, 1
+cmp r14, r13
+jne 24b
+jmp 23f
+22:
+23:
+mov eax, DWORD PTR [rbx+20]
+xor eax, 1785358954
+mov DWORD PTR [r12+20], eax
+mov eax, DWORD PTR [rbx+24]
+xor eax, 1785358954
+mov DWORD PTR [r12+24], eax
+mov eax, DWORD PTR [rbx+28]
+xor eax, 1785358954
+mov DWORD PTR [r12+28], eax
+mov eax, DWORD PTR [rbx+32]
+xor eax, 1785358954
+mov DWORD PTR [r12+32], eax
+mov eax, DWORD PTR [rbx+36]
+xor eax, 1785358954
+mov DWORD PTR [r12+36], eax
+mov eax, DWORD PTR [rbx+40]
+xor eax, 1785358954
+mov DWORD PTR [r12+40], eax
+mov eax, DWORD PTR [rbx+44]
+xor eax, 1785358954
+mov DWORD PTR [r12+44], eax
+mov eax, DWORD PTR [rbx+48]
+xor eax, 1785358954
+mov DWORD PTR [r12+48], eax
+mov eax, DWORD PTR [rbx+52]
+xor eax, 1785358954
+mov DWORD PTR [r12+52], eax
+mov eax, DWORD PTR [rbx+56]
+xor eax, 1785358954
+mov DWORD PTR [r12+56], eax
+mov eax, DWORD PTR [rbx+60]
+xor eax, 1785358954
+mov DWORD PTR [r12+60], eax
+mov eax, DWORD PTR [rbx+64]
+xor eax, 1785358954
+mov DWORD PTR [r12+64], eax
+mov eax, DWORD PTR [rbx+68]
+xor eax, 1785358954
+mov DWORD PTR [r12+68], eax
+mov eax, DWORD PTR [rbx+72]
+xor eax, 1785358954
+mov DWORD PTR [r12+72], eax
+mov eax, DWORD PTR [rbx+76]
+xor eax, 1785358954
+mov DWORD PTR [r12+76], eax
+mov eax, DWORD PTR [rbx+80]
+xor eax, 1785358954
+mov DWORD PTR [r12+80], eax
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, r12
+mov rsi, r12
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+lea rsp, [rsp+456]
+21:
+ret
+20:
+lea rsp, [rsp-1128]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+448], rbx
@@ -31,11 +156,11 @@ mov rbp, rcx
 mov r12, rdi
 mov r13, rsi
 cmp rbp, 65
-jae 20f
+jae 25f
 mov rdx, rbx
 mov rcx, rbp
-jmp 21f
-20:
+jmp 26f
+25:
 mov rdi, r15
 add rdi, 764
 call {vg_sha1_init}
@@ -56,7 +181,7 @@ call {vg_sha1_finalize_scratch}
 mov rdx, r15
 add rdx, 888
 mov ecx, 20
-21:
+26:
 mov rdi, r12
 mov rsi, r13
 mov r8, r15
@@ -209,9 +334,10 @@ mov QWORD PTR [rsp+1104], r11
 mov QWORD PTR [rsp+1112], r11
 mov QWORD PTR [rsp+1120], r11
 lea rsp, [rsp+1128]
-ret
+jmp 21b
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
@@ -594,7 +720,132 @@ pub(crate) const VG_HMAC_SHA1_INIT_SHANI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1128]
+        r"cmp rcx, 65
+jae 20f
+lea rsp, [rsp-456]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r15, r8
+mov rbp, rdx
+mov r13, rcx
+mov rdi, rbx
+call {vg_sha1_init}
+mov rdi, r12
+call {vg_sha1_init}
+mov eax, 909522486
+mov DWORD PTR [rbx+20], eax
+mov DWORD PTR [rbx+24], eax
+mov DWORD PTR [rbx+28], eax
+mov DWORD PTR [rbx+32], eax
+mov DWORD PTR [rbx+36], eax
+mov DWORD PTR [rbx+40], eax
+mov DWORD PTR [rbx+44], eax
+mov DWORD PTR [rbx+48], eax
+mov DWORD PTR [rbx+52], eax
+mov DWORD PTR [rbx+56], eax
+mov DWORD PTR [rbx+60], eax
+mov DWORD PTR [rbx+64], eax
+mov DWORD PTR [rbx+68], eax
+mov DWORD PTR [rbx+72], eax
+mov DWORD PTR [rbx+76], eax
+mov DWORD PTR [rbx+80], eax
+mov r14d, 0
+test r13, r13
+je 22f
+24:
+movzx eax, BYTE PTR [rbp+r14*1]
+xor eax, 54
+mov BYTE PTR [rbx+r14*1+20], al
+add r14, 1
+cmp r14, r13
+jne 24b
+jmp 23f
+22:
+23:
+mov eax, DWORD PTR [rbx+20]
+xor eax, 1785358954
+mov DWORD PTR [r12+20], eax
+mov eax, DWORD PTR [rbx+24]
+xor eax, 1785358954
+mov DWORD PTR [r12+24], eax
+mov eax, DWORD PTR [rbx+28]
+xor eax, 1785358954
+mov DWORD PTR [r12+28], eax
+mov eax, DWORD PTR [rbx+32]
+xor eax, 1785358954
+mov DWORD PTR [r12+32], eax
+mov eax, DWORD PTR [rbx+36]
+xor eax, 1785358954
+mov DWORD PTR [r12+36], eax
+mov eax, DWORD PTR [rbx+40]
+xor eax, 1785358954
+mov DWORD PTR [r12+40], eax
+mov eax, DWORD PTR [rbx+44]
+xor eax, 1785358954
+mov DWORD PTR [r12+44], eax
+mov eax, DWORD PTR [rbx+48]
+xor eax, 1785358954
+mov DWORD PTR [r12+48], eax
+mov eax, DWORD PTR [rbx+52]
+xor eax, 1785358954
+mov DWORD PTR [r12+52], eax
+mov eax, DWORD PTR [rbx+56]
+xor eax, 1785358954
+mov DWORD PTR [r12+56], eax
+mov eax, DWORD PTR [rbx+60]
+xor eax, 1785358954
+mov DWORD PTR [r12+60], eax
+mov eax, DWORD PTR [rbx+64]
+xor eax, 1785358954
+mov DWORD PTR [r12+64], eax
+mov eax, DWORD PTR [rbx+68]
+xor eax, 1785358954
+mov DWORD PTR [r12+68], eax
+mov eax, DWORD PTR [rbx+72]
+xor eax, 1785358954
+mov DWORD PTR [r12+72], eax
+mov eax, DWORD PTR [rbx+76]
+xor eax, 1785358954
+mov DWORD PTR [r12+76], eax
+mov eax, DWORD PTR [rbx+80]
+xor eax, 1785358954
+mov DWORD PTR [r12+80], eax
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, r12
+mov rsi, r12
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+lea rsp, [rsp+456]
+21:
+ret
+20:
+lea rsp, [rsp-1128]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+448], rbx
@@ -609,11 +860,11 @@ mov rbp, rcx
 mov r12, rdi
 mov r13, rsi
 cmp rbp, 65
-jae 20f
+jae 25f
 mov rdx, rbx
 mov rcx, rbp
-jmp 21f
-20:
+jmp 26f
+25:
 mov rdi, r15
 add rdi, 764
 call {vg_sha1_init}
@@ -634,7 +885,7 @@ call {vg_sha1_finalize_scratch_shani}
 mov rdx, r15
 add rdx, 888
 mov ecx, 20
-21:
+26:
 mov rdi, r12
 mov rsi, r13
 mov r8, r15
@@ -787,9 +1038,10 @@ mov QWORD PTR [rsp+1104], r11
 mov QWORD PTR [rsp+1112], r11
 mov QWORD PTR [rsp+1120], r11
 lea rsp, [rsp+1128]
-ret
+jmp 21b
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,

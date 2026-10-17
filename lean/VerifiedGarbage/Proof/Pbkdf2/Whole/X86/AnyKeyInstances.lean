@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -73,6 +75,16 @@ theorem md5_anySp :
       md5F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact md5_anyNoEsp)
 
+/-- `vg_hmac_md5_init`: `init` for a key of at most a block, or (cold) for any
+key, wiped. -/
+theorem md5_initF :
+    Verified X86.target (initCode Spec.Hmac.md5I Md.X86.md5M.hmacInit md5F) (Spec.Hmac.md5I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.md5I)) :=
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.md5_init Md.X86.md5_initFrameSat) md5_anyFramed (by decide)
+    md5_anyFrameSat
+
+theorem md5_initSp : (initCode Spec.Hmac.md5I Md.X86.md5M.hmacInit md5F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) md5_anySp
+
 /-! ## sha384 -/
 
 theorem sha384_anyChecks : AnyChecks sha384F := by
@@ -116,6 +128,16 @@ theorem sha384_anySp :
     (Impl.StackScratch.X86.withStackScratchWiped (anyFrame Spec.Hmac.sha384I) 4 (2 * Spec.Hmac.sha384I.initAnyKeyScratch)
       sha384F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha384_anyNoEsp)
+
+/-- `vg_hmac_sha384_init`: `init` for a key of at most a block, or (cold) for any
+key, wiped. -/
+theorem sha384_initF :
+    Verified X86.target (initCode Spec.Hmac.sha384I Md.X86.sha384M.hmacInit sha384F) (Spec.Hmac.sha384I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha384I)) :=
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha384_init Md.X86.sha384_initFrameSat) sha384_anyFramed (by decide)
+    sha384_anyFrameSat
+
+theorem sha384_initSp : (initCode Spec.Hmac.sha384I Md.X86.sha384M.hmacInit sha384F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha384_anySp
 
 /-! ## sha512 -/
 
@@ -161,6 +183,16 @@ theorem sha512_anySp :
       sha512F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha512_anyNoEsp)
 
+/-- `vg_hmac_sha512_init`: `init` for a key of at most a block, or (cold) for any
+key, wiped. -/
+theorem sha512_initF :
+    Verified X86.target (initCode Spec.Hmac.sha512I Md.X86.sha512M'.hmacInit sha512F) (Spec.Hmac.sha512I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512I)) :=
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_init Md.X86.sha512_initFrameSat) sha512_anyFramed (by decide)
+    sha512_anyFrameSat
+
+theorem sha512_initSp : (initCode Spec.Hmac.sha512I Md.X86.sha512M'.hmacInit sha512F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha512_anySp
+
 /-! ## sha512_224 -/
 
 theorem sha512_224_anyChecks : AnyChecks sha512_224F := by
@@ -205,6 +237,16 @@ theorem sha512_224_anySp :
       sha512_224F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha512_224_anyNoEsp)
 
+/-- `vg_hmac_sha512_224_init`: `init` for a key of at most a block, or (cold) for any
+key, wiped. -/
+theorem sha512_224_initF :
+    Verified X86.target (initCode Spec.Hmac.sha512_224I Md.X86.sha512_224M.hmacInit sha512_224F) (Spec.Hmac.sha512_224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512_224I)) :=
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_224_init Md.X86.sha512_224_initFrameSat) sha512_224_anyFramed (by decide)
+    sha512_224_anyFrameSat
+
+theorem sha512_224_initSp : (initCode Spec.Hmac.sha512_224I Md.X86.sha512_224M.hmacInit sha512_224F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha512_224_anySp
+
 /-! ## sha512_256 -/
 
 theorem sha512_256_anyChecks : AnyChecks sha512_256F := by
@@ -248,5 +290,15 @@ theorem sha512_256_anySp :
     (Impl.StackScratch.X86.withStackScratchWiped (anyFrame Spec.Hmac.sha512_256I) 4 (2 * Spec.Hmac.sha512_256I.initAnyKeyScratch)
       sha512_256F.hmacInitAny).all (fun i => !isa.writesSp i) = true :=
   withStackScratchWiped_spSafe (by rw [all_writesSp_eq]; exact sha512_256_anyNoEsp)
+
+/-- `vg_hmac_sha512_256_init`: `init` for a key of at most a block, or (cold) for any
+key, wiped. -/
+theorem sha512_256_initF :
+    Verified X86.target (initCode Spec.Hmac.sha512_256I Md.X86.sha512_256M.hmacInit sha512_256F) (Spec.Hmac.sha512_256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512_256I)) :=
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_256_init Md.X86.sha512_256_initFrameSat) sha512_256_anyFramed (by decide)
+    sha512_256_anyFrameSat
+
+theorem sha512_256_initSp : (initCode Spec.Hmac.sha512_256I Md.X86.sha512_256M.hmacInit sha512_256F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha512_256_anySp
 
 end VG.Proof.Pbkdf2.Whole.X86.Any
