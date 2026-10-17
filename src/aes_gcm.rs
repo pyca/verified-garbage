@@ -2708,3 +2708,12 @@ mod tests {
         assert_eq!(d.update_aad(&[1]), Err(Error::InvalidAadLength));
     }
 }
+
+impl AesGcm {
+    /// Measurement only: the key context's address, and `AesGcm`'s size and
+    /// alignment.
+    #[doc(hidden)]
+    pub fn bench_layout(&self) -> [usize; 3] {
+        [self.ctx.as_ptr() as usize, core::mem::size_of::<Self>(), core::mem::align_of::<Self>()]
+    }
+}
