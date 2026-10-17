@@ -189,6 +189,50 @@ mod tmp_inv {
             "ret"
         )
     }
+    /// Ten batches of 59 divsteps, each batch's inputs mixed with the
+    /// last matrix (as the real loop's are), from x1 = d, x2 = f, x3 = g.
+    #[unsafe(naked)]
+    pub unsafe extern "C" fn vg_tmp_our_ds(st: *mut u64) {
+        core::arch::naked_asm!(
+            "stp x19, x20, [sp, #-16]!",
+            "mov x20, x0",
+            "ldp x1, x2, [x20]",
+            "ldr x3, [x20, #16]",
+            "movz x19, #10",
+            "31:",
+            include_str!("tmp_our_ds.s"),
+            "eor x2, x2, x4",
+            "eor x3, x3, x6",
+            "orr x2, x2, #1",
+            "subs x19, x19, #1",
+            "b.ne 31b",
+            "stp x1, x2, [x20]",
+            "str x3, [x20, #16]",
+            "ldp x19, x20, [sp], #16",
+            "ret"
+        )
+    }
+    #[unsafe(naked)]
+    pub unsafe extern "C" fn vg_tmp_s2n_ds(st: *mut u64) {
+        core::arch::naked_asm!(
+            "stp x19, x20, [sp, #-16]!",
+            "mov x20, x0",
+            "ldp x1, x2, [x20]",
+            "ldr x3, [x20, #16]",
+            "movz x19, #10",
+            "32:",
+            include_str!("tmp_s2n_ds.s"),
+            "eor x2, x2, x10",
+            "eor x3, x3, x12",
+            "orr x2, x2, #1",
+            "subs x19, x19, #1",
+            "b.ne 32b",
+            "stp x1, x2, [x20]",
+            "str x3, [x20, #16]",
+            "ldp x19, x20, [sp], #16",
+            "ret"
+        )
+    }
     const P: [u64; 4] = [
         0xffff_ffff_ffff_ffed,
         u64::MAX,
@@ -241,6 +285,21 @@ mod tmp_inv {
             b.iter(|| {
                 unsafe { vg_tmp_s2n_inv(z.as_mut_ptr(), black_box(&x).as_ptr()) };
                 black_box(z[0])
+            })
+        });
+        g.finish();
+        let mut g = c.benchmark_group("x25519_ds590");
+        let mut st = [1u64, 0x1234_5678_9abc_def1, 0x0fed_cba9_8765_4321];
+        g.bench_function(BenchmarkId::new(crate::VG, 32), |b| {
+            b.iter(|| {
+                unsafe { vg_tmp_our_ds(black_box(&mut st).as_mut_ptr()) };
+                black_box(st[0])
+            })
+        });
+        g.bench_function(BenchmarkId::new(crate::AWS_LC, 32), |b| {
+            b.iter(|| {
+                unsafe { vg_tmp_s2n_ds(black_box(&mut st).as_mut_ptr()) };
+                black_box(st[0])
             })
         });
         g.finish();
