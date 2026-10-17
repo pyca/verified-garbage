@@ -25,6 +25,31 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
+    // Measurement only: the cost of `Powers::get`, piece by piece.
+    if std::env::var_os("VG_NO_SWEEP").is_none() {
+        use std::hint::black_box;
+        use verified_garbage::aes_gcm::AesGcm;
+        for key in [&[0x42u8; 16][..], &[0x42u8; 32][..]] {
+            let bits = key.len() * 8;
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-init-breakdown"));
+            g.bench_function("new+drop", |b| b.iter(|| AesGcm::new(black_box(key)).unwrap()));
+            g.bench_function("new+prepare+drop", |b| {
+                b.iter(|| {
+                    let k = AesGcm::new(black_box(key)).unwrap();
+                    assert!(k.__prepare_now());
+                    k
+                })
+            });
+            g.bench_function("alloc+zeroize+free", |b| b.iter(AesGcm::__alloc_zeroize_free));
+            let k = AesGcm::new(key).unwrap();
+            let mut ctx = Box::new([0u64; 128]);
+            g.bench_function("init_prepared", |b| {
+                b.iter(|| assert!(k.__init_only(black_box(&mut ctx))))
+            });
+            g.finish();
+        }
+        return;
+    }
     use std::hint::black_box;
 
     use aws_lc_rs::aead::{AES_128_GCM, Aad, LessSafeKey, Nonce, UnboundKey};

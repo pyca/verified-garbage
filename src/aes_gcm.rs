@@ -813,6 +813,30 @@ pub struct AesGcm {
     powers: Powers,
 }
 
+#[cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
+#[doc(hidden)]
+#[allow(missing_docs)]
+impl AesGcm {
+    // Measurement only: the pieces of `Powers::get`.
+    pub fn __prepare_now(&self) -> bool {
+        self.powers.calls.store(POWERS_AFTER - 1, Ordering::Relaxed);
+        self.powers.get(self.rounds, &self.ctx).is_some()
+    }
+    pub fn __alloc_zeroize_free() {
+        let ctx: Box<[u64; 128]> = Box::new([0; 128]);
+        let p = Box::into_raw(core::hint::black_box(ctx));
+        // SAFETY: from `Box::into_raw`, used once.
+        unsafe { free(p) };
+    }
+    pub fn __init_only(&self, ctx: &mut [u64; 128]) -> bool {
+        let Some(fns) = self.powers.fns else { return false };
+        let init = fns.init;
+        // SAFETY: as in `Powers::get`.
+        unsafe { init(self.ctx.as_ptr().cast(), (self.rounds - 6) * 4, ctx) };
+        true
+    }
+}
+
 impl Drop for AesGcm {
     /// Wipes the key context (`Powers` wipes itself).
     fn drop(&mut self) {
