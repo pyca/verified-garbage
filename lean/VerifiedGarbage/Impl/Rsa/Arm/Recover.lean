@@ -330,8 +330,12 @@ the negated modulus and zero. -/
 def gcdSet : Prog isa := seqs [sub3 0 mY aOne, copy 1 aN, copy aM aN, copy 2 aZ, .block (setOne 2),
   copy 3 aZ, copy aZero aZ, sub3 aNM aZero aM]
 
+/-- The word above the `w` of `[j]` cleared, as the division's divisor needs. -/
+def clrW (j : Nat) : List Instr :=
+  ptr .r0 j ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2), .mov .r1 (.imm 0), .str .r1 .r0 0]
+
 /-- The division of `n` by `p` set up. -/
-def divSet : Prog isa := seqs [copy aQ aN, copy aDv 1, .block (CrtValues.divHdr aQ aRm aDv aDt)]
+def divSet : Prog isa := seqs [copy aQ aN, copy aDv 1, .block (clrW aDv ++ CrtValues.divHdr aQ aRm aDv aDt)]
 
 /-- `p < q` into `sLt`, and the larger into 5, the smaller into 6. -/
 def order : Prog isa := seqs [.block ctxw, sub3 aW 1 aQ, .block [.str .r11 .r8 sLt], sel 5 1 aQ sLt,
