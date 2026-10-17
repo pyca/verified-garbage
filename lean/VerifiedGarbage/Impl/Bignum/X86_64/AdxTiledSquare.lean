@@ -30,10 +30,8 @@ def tail : Prog isa := .seq (.block lastTest)
 def row (a : Nat) : Prog isa := .seq (.block rowInit)
   (.seq (AdxRect8.rowS a a) (.seq tail (.block nextRow)))
 
-/-- The rows, from the second; the loop's head starts a 64-byte line, so that
-the code before it (the triangles, the rows of 16 words) cannot move it. -/
 def rows (a : Nat) : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax,.align 6]) (.loop (row a) .ne)
+  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) (.loop (row a) .ne)
 
 /-- A row of a square of one row (16 words), which has no carry to hand on:
 its carry through the words above. -/

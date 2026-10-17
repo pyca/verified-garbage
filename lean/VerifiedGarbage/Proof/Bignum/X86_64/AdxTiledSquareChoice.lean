@@ -355,7 +355,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
   have nowrap := hs.nowrap
   have iZ : 8*sFn 12+8≤Z := by have := hdr_lt_slot w 8 (show sFn 12<32 by decide); omega_arith
   have hZ15 : 8*sFn 15+8≤Z := by have := hdr_lt_slot w 8 (show sFn 15<32 by decide); omega_arith
-  have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax,.align 6]) s
+  have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) s
       fun t => t.mem=(s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)).writeW (off B (8*sFn 15)) (0 : BitVec 64) ∧
         Keep [.rax] s t := by
     apply WP.keep [.rax] (Q := fun t => t.mem=(s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)).writeW
