@@ -159,7 +159,7 @@ theorem zeros_sub {m : Mem} {p : Addr} {N : Nat} (hz : Spec.Sha256.bytesAt m p N
 theorem prepCaseA_ok (hL : L.Ok) (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hdn : P.H.D ≤ dn)
     (hsi : t.gpr .rsi = L.dg) (hz : Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 240) 72 = List.replicate 72 0) :
     WP isa (.block ((cfgOf P).prepCase P.H.D)) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 240, 72⟩] t.mem t'.mem ∧
+      Frame [⟨L.B + BitVec.ofNat 64 240, 72⟩] t.mem t'.mem ∧ (∀ r, r ≠ .rax → t'.gpr r = t.gpr r) ∧
       Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 240) P.Q =
         xOfDg P.Q (Spec.Sha256.bytesAt t.mem L.dg P.H.D) := by
   obtain ⟨hQ8, h8, hQ64⟩ := P.sizesA hA
@@ -175,8 +175,9 @@ theorem prepCaseA_ok (hL : L.Ok) (hA : P.R.wide = false) {t : State} (hc : Ctx L
     (fun j hj => by rw [Nat.zero_add]; exact hc.inDg (by nums) (by nums))
     (by rw [add_ofNat_zero]
         exact (hL.stk_DG (by simp only [fY]; nums)).symm.sub_left (Region.sub_prefix (by nums))))
-    fun u ⟨hcu, _, hf, hb⟩ => ⟨hcu, hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by simp only [fY]; omega) (by simp only [fY]; nums)⟩, ?_⟩
+    fun u ⟨hcu, hg, hf, hb⟩ => ⟨hcu, hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by simp only [fY]; omega) (by simp only [fY]; nums)⟩,
+      hg, ?_⟩
   simp only [fY] at hf hb
   have hsplit := Proof.Hmac.Common.bytesAt_add u.mem (L.B + BitVec.ofNat 64 240) (P.Q - min P.H.D P.Q) (min P.H.D P.Q)
   rw [show P.Q - min P.H.D P.Q + min P.H.D P.Q = P.Q by omega, Offset.add_add,
