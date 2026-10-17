@@ -16,10 +16,9 @@
 //! or of its decoding) is the one error [`Error::Decryption`]. The message
 //! is returned, and with it its length.
 //!
-//! The hash functions are any of SHA-1, SHA-224, SHA-256, SHA-384,
-//! SHA-512, SHA-512/224 and SHA-512/256, with MGF1 over the same hash
-//! function or over SHA-1 (the pairs in use, and those Wycheproof tests);
-//! other pairs are refused ([`Error::UnsupportedHash`]). On an x86-64 CPU
+//! The hash function and MGF1's are each any of SHA-1, SHA-224, SHA-256,
+//! SHA-384, SHA-512, SHA-512/224 and SHA-512/256; other hash functions are
+//! refused ([`Error::UnsupportedHash`]). On an x86-64 CPU
 //! with the SHA extensions or AVX2, and with BMI2, ADX and AVX2 (and
 //! AVX512_IFMA), and on an AArch64 CPU with the SHA-2 or SHA-3
 //! instructions, it uses the faster compression functions and private-key
@@ -192,10 +191,16 @@ pub fn encrypt(
 }
 
 /// Whether this module supports the hash function `hash` with MGF1 over
-/// `mgf1_hash`: SHA-1 or SHA-2, with MGF1 over itself or SHA-1.
+/// `mgf1_hash`: each SHA-1 or SHA-2, the hash functions the verified
+/// functions take (numbered 1..=7, as `VG.Spec.HashId` numbers them).
 fn supported(hash: Hash, mgf1_hash: Hash) -> bool {
+    sha1_or_sha2(hash) && sha1_or_sha2(mgf1_hash)
+}
+
+/// Whether `h` is SHA-1 or SHA-2.
+fn sha1_or_sha2(h: Hash) -> bool {
     matches!(
-        hash,
+        h,
         Hash::Sha1
             | Hash::Sha224
             | Hash::Sha256
@@ -203,7 +208,7 @@ fn supported(hash: Hash, mgf1_hash: Hash) -> bool {
             | Hash::Sha512
             | Hash::Sha512_224
             | Hash::Sha512_256
-    ) && (mgf1_hash == hash || mgf1_hash == Hash::Sha1)
+    )
 }
 
 /// `f`, a `vg_rsa_oaep_encrypt_precomputed` that this CPU can run, with the
@@ -394,17 +399,18 @@ mod tests {
         let mut n = 0;
         for h in all {
             for g in all {
-                let ok = h != Hash::Md5
-                    && !matches!(
+                let sha3 = |h| {
+                    matches!(
                         h,
                         Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
                     )
-                    && (g == h || g == Hash::Sha1);
+                };
+                let ok = h != Hash::Md5 && g != Hash::Md5 && !sha3(h) && !sha3(g);
                 assert_eq!(supported(h, g), ok);
                 n += usize::from(ok);
             }
         }
-        assert_eq!(n, 13);
+        assert_eq!(n, 49);
     }
 
     #[test]
@@ -415,7 +421,7 @@ mod tests {
             Err(Error::UnsupportedHash)
         );
         assert_eq!(
-            decrypt(&private, &[0; 64], Hash::Sha256, Hash::Sha224, b""),
+            decrypt(&private, &[0; 64], Hash::Sha256, Hash::Sha3_256, b""),
             Err(Error::UnsupportedHash)
         );
         // 64 bytes hold at most 22 bytes of message with SHA-1, none with

@@ -1,6 +1,7 @@
 //! RSAES-OAEP encryption and decryption of a 32-byte message with an empty
-//! label, with each supported pair of hash function and MGF1 hash: every
-//! pair with a 2048-bit modulus, and SHA-256 with MGF1 over SHA-256 with
+//! label, with each pair of hash function and MGF1 hash in use (MGF1 over
+//! the hash function itself or over SHA-1): every pair with a 2048-bit
+//! modulus, and SHA-256 with MGF1 over SHA-256 with
 //! 3072- and 4096-bit moduli too; beside OpenSSL and, for the pairs it has
 //! (SHA-1, SHA-256, SHA-384 and SHA-512, each with MGF1 over itself),
 //! aws-lc-rs.
@@ -76,8 +77,8 @@ pub fn bench(c: &mut Criterion) {
         .map(|bits| Rsa::generate(bits).unwrap())
         .collect();
     let msg = [0x42u8; 32];
-    // Every pair with MGF1 over the hash itself or over SHA-1 (as
-    // `rsa_oaep` supports), in the groups `rsa_oaep_<H>_mgf1_<G>_encrypt`
+    // Every pair with MGF1 over the hash itself or over SHA-1 (the pairs
+    // in use), in the groups `rsa_oaep_<H>_mgf1_<G>_encrypt`
     // and `_decrypt`.
     let pairs = hashes.iter().flat_map(|h| {
         [h, &hashes[0]]

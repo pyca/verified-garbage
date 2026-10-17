@@ -5,10 +5,11 @@
 //! integer) decrypts to its message, and so does that message encrypted
 //! again; an `invalid` one is refused, as of the wrong length if its
 //! ciphertext is, and otherwise with the one error for every failure of
-//! the ciphertext and its decoding. The pairs of hash functions the module
-//! does not support (some of `rsa_oaep_misc_test.json`'s) are refused as
-//! such. The files of three-prime keys are not this module's. And every
-//! pair the module supports encrypts and decrypts with a key of the vectors
+//! the ciphertext and its decoding. Every pair of the vectors' hash
+//! functions is one the module supports (`rsa_oaep_misc_test.json` has
+//! MGF1 over a hash function other than the label's). The files of
+//! three-prime keys are not this module's. And every pair the module
+//! supports encrypts and decrypts with a key of the vectors
 //! (`rsa_oaep_every_pair`).
 
 #![cfg(all(
@@ -90,10 +91,10 @@ fn keys(name: &str, k: &Key) -> (PrivateKey, PublicKey) {
 }
 
 /// Checks every vector of the file `name` with a key that
-/// [`harness::rsa_key_tested`] tests; returns the numbers of decrypted,
-/// refused and unsupported vectors.
-fn check(name: &str) -> (usize, usize, usize) {
-    let (valid, refused, unsupported) = (Count::default(), Count::default(), Count::default());
+/// [`harness::rsa_key_tested`] tests; returns the numbers of decrypted and
+/// refused vectors.
+fn check(name: &str) -> (usize, usize) {
+    let (valid, refused) = (Count::default(), Count::default());
     let mut file: TestFile<Group, Case> = harness::load(name);
     file.test_groups
         .retain(|g| harness::rsa_key_tested(&g.params.private_key.modulus.0));
@@ -105,11 +106,7 @@ fn check(name: &str) -> (usize, usize, usize) {
         let id = test.tc_id;
         let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
         let r = decrypt(key, ct, h, g, label);
-        if r == Err(Error::UnsupportedHash) {
-            let e = encrypt(public, msg, h, g, label);
-            assert_eq!(e, Err(Error::UnsupportedHash), "{name} tcId {id}");
-            unsupported.add();
-        } else if test.result == Expectation::Invalid {
+        if test.result == Expectation::Invalid {
             let e = if ct.len() == n.len() {
                 Error::Decryption
             } else {
@@ -124,7 +121,7 @@ fn check(name: &str) -> (usize, usize, usize) {
             valid.add();
         }
     });
-    (valid.get(), refused.get(), unsupported.get())
+    (valid.get(), refused.get())
 }
 
 #[test]
@@ -137,14 +134,11 @@ fn rsa_oaep_test() {
         .filter(|n| harness::rsa_file_tested(n))
         .collect();
     assert!(!names.is_empty());
-    let mut unsupported = 0;
     for name in &names {
-        let (valid, refused, u) = check(name);
+        let (valid, refused) = check(name);
         assert!(valid > 0, "{name}");
         assert!(refused > 0 || name == "rsa_oaep_misc_test.json", "{name}");
-        unsupported += u;
     }
-    assert!(unsupported > 0);
 }
 
 /// Every pair of hash functions the module supports, with a 2048-bit key of
@@ -162,13 +156,12 @@ fn rsa_oaep_every_pair() {
     let file: TestFile<Group, Case> = harness::load(name);
     let (key, public) = keys(name, &file.test_groups[0].params.private_key);
     let k = public.modulus_len();
-    // Each hash function with MGF1 over itself and over SHA-1.
-    let mut pairs: Vec<(Hash, Hash)> = HASHES
+    // Each hash function with MGF1 over each.
+    let pairs: Vec<(Hash, Hash)> = HASHES
         .iter()
-        .flat_map(|&(_, h)| [(h, h), (h, Hash::Sha1)])
+        .flat_map(|&(_, h)| HASHES.iter().map(move |&(_, g)| (h, g)))
         .collect();
-    pairs.dedup();
-    assert_eq!(pairs.len(), 13);
+    assert_eq!(pairs.len(), 49);
     for (h, g) in pairs {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
         let ct = encrypt(&public, &msg, h, g, b"label").unwrap();
