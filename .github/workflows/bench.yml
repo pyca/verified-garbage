@@ -170,19 +170,20 @@ jobs:
           cd head/bench
           CARGO_TARGET_DIR=$GITHUB_WORKSPACE/t cargo bench --no-run
           BIN=$(ls -t $GITHUB_WORKSPACE/t/release/deps/primitives-* | grep -v '[.]d$' | head -1)
-          EV=cycles,instructions,branches,branch-misses,L1-dcache-loads,L1-dcache-load-misses
-          EXTRA=$($PERF list 2>/dev/null | grep -oE "^ +(de_dis_dispatch_token_stalls[a-z0-9_.]*|ex_ret_ops|ex_ret_instr|de_src_op_disp[a-z0-9_.]*|ls_dispatch[a-z0-9_.]*|uops_issued.any|uops_dispatched.port_[0-9_]+|resource_stalls.any|cycle_activity.stalls_total|topdown[a-z_.-]*)" | tr -d ' ' | head -24 | paste -sd, -)
+          for lib in verified-garbage openssl aws-lc-rs; do
+            VG_BENCH_MODULES=sha512 $BIN --bench --noplot --warm-up-time 2 --measurement-time 6 "^sha(384|512)/$lib/" 2>&1 | grep -E "^sha|time:" || true
+          done
           for lib in verified-garbage openssl aws-lc-rs; do
             for size in 16384 64; do
-              echo "=== $lib sha512/$size"
-              VG_BENCH_MODULES=sha512 $PERF stat -e "$EV" -- $BIN --bench --profile-time 8 "^sha512/$lib/$size\$" 2>&1 | tail -25 || true
-              if [ -n "$EXTRA" ]; then
-                VG_BENCH_MODULES=sha512 $PERF stat -e "$EXTRA" -- $BIN --bench --profile-time 8 "^sha512/$lib/$size\$" 2>&1 | tail -40 || true
-              fi
+              echo "=== record $lib sha512/$size"
+              VG_BENCH_MODULES=sha512 $PERF record -F 20000 -o perf-$lib-$size.data -e cpu-clock -- $BIN --bench --profile-time 8 "^sha512/$lib/$size\$" >/dev/null 2>&1 || true
+              $PERF report -i perf-$lib-$size.data --stdio --sort dso,symbol 2>/dev/null | grep -E "^ +[0-9]" | head -20 || true
             done
-            VG_BENCH_MODULES=sha512 $PERF record -o perf-$lib.data -e cycles -- $BIN --bench --profile-time 8 "^sha512/$lib/16384\$" >/dev/null 2>&1 || true
-            $PERF report -i perf-$lib.data --stdio --sort symbol 2>/dev/null | head -25 || true
-            SYM=$($PERF report -i perf-$lib.data --stdio --sort symbol 2>/dev/null | grep -E "^ +[0-9]" | head -1 | awk '{print $NF}')
+            SYM=$($PERF report -i perf-$lib-16384.data --stdio --sort symbol 2>/dev/null | grep -E "^ +[0-9]" | head -1 | awk '{print $NF}')
             echo "=== annotate $lib $SYM"
-            $PERF annotate -i perf-$lib.data --stdio -s "$SYM" 2>/dev/null | grep -E "^ +[0-9]+[.][0-9]+ +:" | sort -rn | head -80 || true
+            $PERF annotate -i perf-$lib-16384.data --stdio -s "$SYM" 2>/dev/null > ann-$lib.txt || true
+            wc -l ann-$lib.txt
+            grep -E "^ +[0-9]+[.][0-9]+ +:" ann-$lib.txt | sort -rn | head -60 || true
+            echo "--- full annotate $lib"
+            cat ann-$lib.txt | head -2500 || true
           done
