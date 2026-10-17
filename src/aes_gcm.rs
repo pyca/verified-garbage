@@ -829,6 +829,7 @@ macro_rules! assert_tag_length {
 /// one-shot AEAD; [`encryptor`](Self::encryptor) and
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
+#[repr(C, align(64))]
 pub struct AesGcm {
     /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`).
     ctx: [u64; 32],
@@ -2706,5 +2707,14 @@ mod tests {
         assert_eq!(d.update(&mut buf), Err(Error::InvalidTextLength));
         d.stream.aad_len = MAX_AAD;
         assert_eq!(d.update_aad(&[1]), Err(Error::InvalidAadLength));
+    }
+}
+
+impl AesGcm {
+    /// Measurement only: the key context's address, and `AesGcm`'s size and
+    /// alignment.
+    #[doc(hidden)]
+    pub fn bench_layout(&self) -> [usize; 3] {
+        [self.ctx.as_ptr() as usize, core::mem::size_of::<Self>(), core::mem::align_of::<Self>()]
     }
 }
