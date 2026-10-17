@@ -689,28 +689,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ghash_prepared_aes` requires (`Artifact.features`).
-pub(crate) const VG_GHASH_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_ghash_prepared8_aes` requires (`Artifact.features`).
+pub(crate) const VG_GHASH_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// `vg_ghash` with `h` at byte 240 of a 1024-byte context from `vg_aes_gcm_init_prepared`: the hash subkey `H` is the block at `h`, followed by the 48 prepared powers, which it may read. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
+/// `vg_ghash` with `h` at byte 240 of a 384-byte context from `vg_aes_gcm_derive_prepared8`: the hash subkey `H` is the block at `h`, followed by the 8 prepared powers, which it may read. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
 ///
-/// Contract: `VG.Spec.Gcm.ghashPreparedContract`. Constant time: only the pointers and `n` may affect timing.
+/// Contract: `VG.Spec.Gcm.ghashPrepared8Contract`. Constant time: only the pointers and `n` may affect timing.
 ///
 /// Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) instead of computing them.
 ///
 /// # Safety
 ///
-/// * `h` must be valid for reads of 784 bytes.
+/// * `h` must be valid for reads of 144 bytes.
 /// * `y` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * `h` must point at byte 240 of a key context with the prepared format written by `vg_aes_gcm_init_prepared`.
+/// * `h` must point at byte 240 of a key context with the 384-byte format written by `vg_aes_gcm_derive_prepared8`.
 /// * The contents of `scratch` on return are unspecified.
 /// * `y` and `scratch` must not overlap each other, `h` or `data` (distinct Rust objects never do).
 /// * None of `h`, `y`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ghash_prepared_aes(h: *const [u8; 784], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_ghash_prepared8_aes(h: *const [u8; 144], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 ldr q16, [x0, #32]
@@ -5191,59 +5191,57 @@ ret
     )
 }
 
-/// The CPU features `vg_aes_gcm_init_prepared_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_aes_gcm_derive_prepared8_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_DERIVE_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// Writes a 1024-byte AES-GCM key context. The first 256 bytes are the key schedule and hash subkey of `vg_aes_gcm_init`. At byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words. The encoding is `VG.Spec.Gcm.preparedPower`; the context satisfies `KeyRepr` and `PreparedPowersRepr`. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Only the pointers and key length are public. Contract: `VG.Spec.Gcm.initPreparedContract`.
+/// Writes a 384-byte AES-GCM key context from the 256-byte key context at `src` (from `vg_aes_gcm_init`). Copies its 256 bytes, the key schedule and hash subkey `H`, to the first 256 bytes of `*dst`. At byte `256 + 32*k`, for `k` from 0 to 3, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words. This is the layout of the first 384 bytes of `vg_aes_gcm_init_prepared`'s context. The encoding is `VG.Spec.Gcm.preparedPower`; `*dst` satisfies `PreparedPowers8Repr`. Use only the `*_prepared8` APIs, or APIs that read the first 256 bytes, with this format. Only the pointers are public. Contract: `VG.Spec.Gcm.derivePrepared8Contract`.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// This implementation computes `H' = H · x⁻¹` as `vg_ghash_aes` does, then each even power `H'²ᵏ` by squaring `H'ᵏ`, read back from the context, and each odd power by one multiplication by `H'`; `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed.
+/// This implementation copies the key context, then computes `H' = H · x⁻¹` as `vg_ghash_aes` does, then each even power `H'²ᵏ` by squaring `H'ᵏ`, read back from the context, and each odd power by one multiplication by `H'`; `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed.
 ///
 /// # Safety
 ///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 1024 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `src` must be valid for reads of 256 bytes.
+/// * `dst` must be valid for reads and writes of 384 bytes.
+/// * `dst` must not overlap `src` (distinct Rust objects never do).
+/// * Neither `src` nor `dst` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_init_prepared_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 128]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_derive_prepared8_aes(src: *const [u64; 32], dst: *mut [u64; 48]) {
     core::arch::naked_asm!(
         r".arch_extension aes
-sub sp, sp, #2560
-add x3, sp, #0
-str x20, [x3, #136]
-str x21, [x3, #144]
-str x22, [x3, #152]
-str x23, [x3, #160]
-str x24, [x3, #168]
-str x25, [x3, #176]
-str x26, [x3, #184]
-str x27, [x3, #192]
-str x28, [x3, #200]
-str x30, [x3, #208]
-str x19, [x3, #128]
-add x19, x3, #0
-add x21, x2, #0
-lsr x22, x1, #2
-add x22, x22, #6
-add x3, x19, #512
-bl {vg_aes_expand_key_scratch_aes}
-movz x9, #0, lsl #0
-str x9, [x21, #240]
-str x9, [x21, #248]
-str x9, [x19, #96]
-str x9, [x19, #104]
-add x0, x21, #0
-add x1, x22, #0
-add x2, x19, #96
-add x3, x21, #240
-movz x4, #1, lsl #0
-add x5, x19, #512
-bl {vg_aes_ctr32_aes}
-add x0, x21, #240
+ldr q19, [x0, #0]
+str q19, [x1, #0]
+ldr q19, [x0, #16]
+str q19, [x1, #16]
+ldr q19, [x0, #32]
+str q19, [x1, #32]
+ldr q19, [x0, #48]
+str q19, [x1, #48]
+ldr q19, [x0, #64]
+str q19, [x1, #64]
+ldr q19, [x0, #80]
+str q19, [x1, #80]
+ldr q19, [x0, #96]
+str q19, [x1, #96]
+ldr q19, [x0, #112]
+str q19, [x1, #112]
+ldr q19, [x0, #128]
+str q19, [x1, #128]
+ldr q19, [x0, #144]
+str q19, [x1, #144]
+ldr q19, [x0, #160]
+str q19, [x1, #160]
+ldr q19, [x0, #176]
+str q19, [x1, #176]
+ldr q19, [x0, #192]
+str q19, [x1, #192]
+ldr q19, [x0, #208]
+str q19, [x1, #208]
+ldr q19, [x0, #224]
+str q19, [x1, #224]
+ldr q19, [x0, #240]
+str q19, [x1, #240]
+add x0, x1, #240
 ldr q6, [x0, #0]
 rev64 v6.16b, v6.16b
 movz x5, #49664, lsl #48
@@ -5275,14 +5273,14 @@ eor v5.16b, v5.16b, v4.16b
 ext v7.16b, v7.16b, v7.16b, #8
 eor v24.16b, v5.16b, v7.16b
 ext v16.16b, v24.16b, v24.16b, #8
-str q16, [x21, #272]
+str q16, [x1, #272]
 movz x6, #49664, lsl #48
 mov v18.d[0], x6
 movz x6, #1, lsl #0
 mov v18.d[1], x6
-add x9, x21, #256
-add x10, x21, #256
-movz x11, #12, lsl #0
+add x9, x1, #256
+add x10, x1, #256
+movz x11, #2, lsl #0
 20:
 ldr q19, [x9, #16]
 ext v20.16b, v19.16b, v19.16b, #8
@@ -5380,49 +5378,35 @@ add x9, x9, #32
 add x10, x10, #64
 sub x11, x11, #1
 cbnz x11, 20b
-ldr x20, [x19, #136]
-ldr x21, [x19, #144]
-ldr x22, [x19, #152]
-ldr x23, [x19, #160]
-ldr x24, [x19, #168]
-ldr x25, [x19, #176]
-ldr x26, [x19, #184]
-ldr x27, [x19, #192]
-ldr x28, [x19, #200]
-ldr x30, [x19, #208]
-ldr x19, [x19, #128]
-add sp, sp, #2560
 ret
 .arch_extension noaes
 .p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_prepared_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_aes_gcm_seal_prepared8_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_init_prepared`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 8 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared8Contract`.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the lengths block into the hash with PMULL in registers, calling `vg_ghash_prepared_aes` once, on the whole blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the context's first 256 bytes, as `vg_aes_gcm_seal_aes` does.
+/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the lengths block into the hash with PMULL in registers, calling `vg_ghash_prepared8_aes` once, on the whole blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the context's first 256 bytes, as `vg_aes_gcm_seal_aes` does.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 384 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a 1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_prepared_aes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_prepared8_aes(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 sub sp, sp, #2576
@@ -6351,7 +6335,7 @@ add x4, x19, #512
 lsl x9, x3, #4
 add x23, x23, x9
 sub x24, x24, x9
-bl {vg_ghash_prepared_aes}
+bl {vg_ghash_prepared8_aes}
 ldr q16, [x19, #288]
 ldr q24, [x19, #304]
 movz x5, #49664, lsl #48
@@ -6506,20 +6490,20 @@ ret
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_prepared_aes = sym super::gcm::vg_ghash_prepared_aes,
+        vg_ghash_prepared8_aes = sym super::gcm::vg_ghash_prepared8_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_gather_prepared_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_aes_gcm_seal_gather_prepared8_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_init_prepared`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 8 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared8Contract`.
 ///
-/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_prepared_aes`.
+/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_prepared8_aes`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 384 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -6527,12 +6511,12 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED_AES_FEATURES: crate::cpu::Featu
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a 1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_prepared_aes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_prepared8_aes(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 sub sp, sp, #16
@@ -6578,39 +6562,39 @@ b 21f
 21:
 ldr x6, [sp, #16]
 ldr x7, [sp, #24]
-bl {vg_aes_gcm_seal_prepared_aes}
+bl {vg_aes_gcm_seal_prepared8_aes}
 ldr x30, [sp, #8]
 add sp, sp, #16
 ret
 .arch_extension noaes
 .p2align 6",
-        vg_aes_gcm_seal_prepared_aes = sym super::gcm::vg_aes_gcm_seal_prepared_aes,
+        vg_aes_gcm_seal_prepared8_aes = sym super::gcm::vg_aes_gcm_seal_prepared8_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_prepared_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_aes_gcm_open_prepared8_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_OPEN_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_init_prepared`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 8 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared8Contract`.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_seal_prepared_aes` does, calling `vg_ghash_prepared_aes` once, on the whole blocks of the ciphertext, and decrypts only if it matches. Otherwise it reads only the context's first 256 bytes, as `vg_aes_gcm_open_aes` does.
+/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_seal_prepared8_aes` does, calling `vg_ghash_prepared8_aes` once, on the whole blocks of the ciphertext, and decrypts only if it matches. Otherwise it reads only the context's first 256 bytes, as `vg_aes_gcm_open_aes` does.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 384 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a 1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open_prepared_aes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_prepared8_aes(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension aes
 sub sp, sp, #2592
@@ -7609,7 +7593,7 @@ add x4, x19, #512
 lsl x9, x3, #4
 add x23, x23, x9
 sub x24, x24, x9
-bl {vg_ghash_prepared_aes}
+bl {vg_ghash_prepared8_aes}
 ldr q16, [x19, #288]
 ldr q24, [x19, #304]
 movz x5, #49664, lsl #48
@@ -7920,7 +7904,7 @@ ret
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_prepared_aes = sym super::gcm::vg_ghash_prepared_aes,
+        vg_ghash_prepared8_aes = sym super::gcm::vg_ghash_prepared8_aes,
     )
 }
 

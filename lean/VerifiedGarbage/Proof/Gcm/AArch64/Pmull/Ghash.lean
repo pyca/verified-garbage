@@ -726,7 +726,7 @@ theorem ghash_verified :
 
 theorem pm_of_prepared {s₀ : State} (h : Proof.Gcm.ghashPreparedAArch64.pre s₀) : Pm s₀ := by
   obtain ⟨hrd, hwr, -, -, hyd, -, -, -⟩ := h
-  exact ⟨⟨⟨hA s₀, 784⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩, by simp [hrd],
+  exact ⟨⟨⟨hA s₀, 144⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩, by simp [hrd],
     by simp [hwr], hyd⟩
 
 theorem sub240_add (a : Addr) {d : Nat} (hd : 240 ≤ d) :
@@ -738,7 +738,7 @@ theorem sub240_add (a : Addr) {d : Nat} (hd : 240 ≤ d) :
 
 /-- The power `H'ᵏ` at `h + powOff k`, as `tReg k` holds it. -/
 theorem read_powOff {s₀ : State} (h : Proof.Gcm.ghashPreparedAArch64.pre s₀) {k : Nat} (hk1 : 1 ≤ k)
-    (hk : k ≤ 48) :
+    (hk : k ≤ 8) :
     x * φ (s₀.mem.read (hA s₀ + BitVec.ofNat 64 (Impl.Gcm.AArch64.Pmull.powOff k)) 16) =
       φ (H₀ s₀) ^ k := by
   have hr := h.2.2.2.2.2.2.2
@@ -784,7 +784,7 @@ theorem prologueP_ok {s₀ : State} (h : Proof.Gcm.ghashPreparedAArch64.pre s₀
   have hrd := h.1
   simp only [Impl.Gcm.AArch64.Pmull.prologueP, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loadPow_ok 1 s₀ ⟨⟨hA s₀, 784⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩
+  refine WP.mono (loadPow_ok 1 s₀ ⟨⟨hA s₀, 144⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩
     (by decide)) fun s₁ ⟨t₁, w₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   have hcb : WP isa (.block ([.movz .x .x5 0xc200 3, .vop (.dup .d2 C .x5)] : List Instr)) s₁ fun s₂ =>
@@ -830,7 +830,7 @@ theorem loadPowI_ok {s₀ : State} (h : Proof.Gcm.ghashPreparedAArch64.pre s₀)
     WP isa (.block (Impl.Gcm.AArch64.Pmull.loadPow (K + 1))) s (Inv s₀ (K + 1) n) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (Impl.Gcm.AArch64.Pmull.powOff (K + 1))) 16 := by
     rw [hI.rd, hI.wr, hI.x0]
-    refine ⟨⟨hA s₀, 784⟩, by simp [h.1], contains_offset ?_ ?_⟩ <;>
+    refine ⟨⟨hA s₀, 144⟩, by simp [h.1], contains_offset ?_ ?_⟩ <;>
       (unfold Impl.Gcm.AArch64.Pmull.powOff; split <;> omega)
   refine WP.mono (loadPow_ok (K + 1) s hin (by omega)) fun s' ⟨t, w, o⟩ => ?_
   have kv : ∀ r, r ≠ tReg (K + 1) → r ≠ sReg (K + 1) → s'.v r = s.v r := fun r h1 h2 =>
@@ -894,8 +894,8 @@ theorem ghashP_ct : ConstantTime isa Proof.Gcm.ghashPreparedAArch64.pre Proof.Gc
   · exact h4
   · exact h5
 
-/-- Zero memory has the prepared powers of the zero subkey. -/
-theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowersRepr (fun _ => 0) p := by
+/-- Zero memory has the eight prepared powers of the zero subkey. -/
+theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowers8Repr (fun _ => 0) p := by
   intro k hk
   have z : ∀ q : Addr, Spec.Gcm.blockAt (fun _ => 0) q = 0 := fun q => by
     simp [Spec.Gcm.blockAt, Spec.Aes.bytesAt, Spec.Gcm.ofBytes]
@@ -907,22 +907,22 @@ theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowersRepr (fun _ 
   constructor <;> decide
 
 /-- A state satisfying `vg_ghash_prepared`'s precondition, with zero memory. -/
-def satStateP : State := { Proof.Gcm.AArch64.satState with rd := [⟨0x1000, 784⟩, ⟨0x3000, 0⟩] }
+def satStateP : State := { Proof.Gcm.AArch64.satState with rd := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
 
 theorem ghashP_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashP (Spec.Gcm.ghashPreparedContract AArch64.abi) :=
+    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashP (Spec.Gcm.ghashPrepared8Contract AArch64.abi) :=
   Verified.of_correct ghashP_correct ghashP_ct
     { pre := by
-        sig_implies_pre [Spec.Gcm.ghashPreparedContract, Spec.Gcm.ghashPreparedSig,
+        sig_implies_pre [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig,
           Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       post := by
-        sig_implies_post [Spec.Gcm.ghashPreparedContract, Spec.Gcm.ghashPreparedSig,
+        sig_implies_post [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig,
           Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       pub := by
-        sig_implies_pub [Spec.Gcm.ghashPreparedContract, Spec.Gcm.ghashPreparedSig,
+        sig_implies_pub [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig,
           Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
       sat := ⟨satStateP, by
-        sig_pre [Spec.Gcm.ghashPreparedContract, Spec.Gcm.ghashPreparedSig, AArch64.abi, AArch64.argRegs,
+        sig_pre [Spec.Gcm.ghashPrepared8Contract, Spec.Gcm.ghashPrepared8Sig, AArch64.abi, AArch64.argRegs,
           satStateP, Proof.Gcm.AArch64.satState]
         sig_and_intros
         all_goals first

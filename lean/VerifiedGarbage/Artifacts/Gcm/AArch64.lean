@@ -30,7 +30,7 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.AArch64.Pmull.ghash
     verified := Proof.Gcm.AArch64.Pmull.ghash_verified
     features := ["aes"] },
-  Spec.Gcm.ghashPreparedApi.artifact AArch64.target {
+  Spec.Gcm.ghashPrepared8Api.artifact AArch64.target {
     suffix := "_aes"
     notes := ["Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight \
         blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) \

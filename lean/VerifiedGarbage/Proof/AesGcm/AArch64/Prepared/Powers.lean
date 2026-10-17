@@ -13,7 +13,7 @@ import all Init.Data.Vector.Basic
 # AES-GCM on AArch64: the prepared powers
 
 Untrusted: everything here is checked by Lean. `Impl.AesGcm.AArch64.Prepared.powers`
-writes the 48 prepared powers of the hash subkey at `ctx + 256`
+writes the 8 prepared powers of the hash subkey at `ctx + 256`
 (`powers_ok`): slot `j` (the 16 bytes at `ctx + 256 + 16 j`) holds
 `pp H (slotPow j)`, `H^(j+2)` for even `j` and `Hʲ` for odd `j`. Each
 iteration of the loop keeps `Inv`: the slots below `4 i` (and slot 1) are
@@ -48,9 +48,9 @@ def slot (Ctx : Addr) (j : Nat) : Addr := Ctx + BitVec.ofNat 64 (256 + 16 * j)
 
 /-- The slots below `n`, and slot 1, hold their prepared powers. -/
 def Slots (H : Block) (Ctx : Addr) (m : Mem) (n : Nat) : Prop :=
-  ∀ j < 48, (j < n ∨ j = 1) → m.read (slot Ctx j) 16 = pp H (slotPow j)
+  ∀ j < 8, (j < n ∨ j = 1) → m.read (slot Ctx j) 16 = pp H (slotPow j)
 
-theorem read_slot_write (m : Mem) (Ctx : Addr) {j k : Nat} (hj : j < 48) (hk : k < 48) (v : BitVec (8 * 16)) :
+theorem read_slot_write (m : Mem) (Ctx : Addr) {j k : Nat} (hj : j < 8) (hk : k < 8) (v : BitVec (8 * 16)) :
     (m.write (slot Ctx k) 16 v).read (slot Ctx j) 16 = if j = k then v else m.read (slot Ctx j) 16 := by
   by_cases h : j = k
   · subst h; rw [ifp rfl, read_write16]
@@ -127,29 +127,29 @@ theorem st2_ok (a b : VReg) (o : Nat) (s : State) (ho : o % 16 = 0) (ho' : o + 1
 
 /-- After `i` iterations, from `s₀` (the state before `setup`). -/
 structure Inv (H : Block) (Ctx : Addr) (s₀ : State) (i : Nat) (s : State) : Prop where
-  le : i ≤ 12
+  le : i ≤ 2
   x9 : s.gpr .x9 = Ctx + BitVec.ofNat 64 (256 + 32 * i)
   x10 : s.gpr .x10 = Ctx + BitVec.ofNat 64 (256 + 64 * i)
-  x11 : s.gpr .x11 = BitVec.ofNat 64 (12 - i)
+  x11 : s.gpr .x11 = BitVec.ofNat 64 (2 - i)
   gpr : ∀ r ∉ [Reg.x0, .x5, .x6, .x7, .x9, .x10, .x11], s.gpr r = s₀.gpr r
   hk : HKey H s
   ks : s.v KS = ext8 (pp H (4 * i)) (pp H (4 * i))
   slots : Slots H Ctx s.mem (4 * i)
-  frame : Frame [⟨Ctx + BitVec.ofNat 64 256, 768⟩] s₀.mem s.mem
+  frame : Frame [⟨Ctx + BitVec.ofNat 64 256, 128⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
 
 theorem frame_slot {Ctx : Addr} {s₀ : State} {m : Mem}
-    (hf : Frame [⟨Ctx + BitVec.ofNat 64 256, 768⟩] s₀.mem m) {j : Nat} (hj : j < 48) (v : BitVec (8 * 16)) :
-    Frame [⟨Ctx + BitVec.ofNat 64 256, 768⟩] s₀.mem (m.write (slot Ctx j) 16 v) :=
+    (hf : Frame [⟨Ctx + BitVec.ofNat 64 256, 128⟩] s₀.mem m) {j : Nat} (hj : j < 8) (v : BitVec (8 * 16)) :
+    Frame [⟨Ctx + BitVec.ofNat 64 256, 128⟩] s₀.mem (m.write (slot Ctx j) 16 v) :=
   hf.write (List.mem_singleton_self _) v (Offset.contains Ctx (by omega) (by omega) (by omega))
 
 theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat} {s : State}
-    (hc : Covers [⟨Ctx, 1024⟩] s₀.wr) (hi : i < 12) (hI : Inv H Ctx s₀ i s) :
+    (hc : Covers [⟨Ctx, 384⟩] s₀.wr) (hi : i < 2) (hI : Inv H Ctx s₀ i s) :
     WP isa (.block step) s (Inv H Ctx s₀ (i + 1)) := by
-  have cw : Covers [⟨Ctx, 1024⟩] s.wr := by rw [hI.wr]; exact hc
-  have cr : Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) := covers_left cw
+  have cw : Covers [⟨Ctx, 384⟩] s.wr := by rw [hI.wr]; exact hc
+  have cr : Covers [⟨Ctx, 384⟩] (s.rd ++ s.wr) := covers_left cw
   simp only [step, List.append_assoc]
   -- `H'²ⁱ⁺¹`
   rw [WP.block_append_iff]
@@ -180,7 +180,7 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
     rw [g₃, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i) (by omega)]
   have b₁ : s₃.gpr .x10 + BitVec.ofNat 64 (0 + 16) = slot Ctx (4 * i + 1) := by
     rw [g₃, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 1) (by omega)]
-  have cw₃ : Covers [⟨Ctx, 1024⟩] s₃.wr := by rw [o₀₃.wr]; exact cw
+  have cw₃ : Covers [⟨Ctx, 384⟩] s₃.wr := by rw [o₀₃.wr]; exact cw
   refine WP.mono (st2_ok ET OT 0 s₃ (by decide) (by decide)
       (by rw [b₀, slot]; exact in_off cw₃ (by omega) (by decide))
       (by rw [b₁, slot]; exact in_off cw₃ (by omega) (by decide)))
@@ -191,7 +191,7 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   rw [WP.block_append_iff]
   have a₅ : s₄.gpr .x9 + BitVec.ofNat 64 0 = slot Ctx (2 * i) := by
     rw [g₄, g₃, hI.x9, Offset.add_add, slot_off Ctx (j := 2 * i) (by omega)]
-  have cr₄ : Covers [⟨Ctx, 1024⟩] (s₄.rd ++ s₄.wr) := by rw [rd₄, wr₄, o₀₃.rd, o₀₃.wr]; exact cr
+  have cr₄ : Covers [⟨Ctx, 384⟩] (s₄.rd ++ s₄.wr) := by rw [rd₄, wr₄, o₀₃.rd, o₀₃.wr]; exact cr
   refine WP.mono (ld_ok 0 s₄ (by decide) (by decide) (by rw [a₅, slot]; exact in_off cr₄ (by omega) (by decide)))
     fun s₅ ⟨l₅, w₅, o₅⟩ => ?_
   have p₅ : s₅.v PL = pp H (2 * i + 2) := by
@@ -218,7 +218,7 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   have ks₇ : s₇.v KS = ext8 (pp H (4 * (i + 1))) (pp H (4 * (i + 1))) := by
     rw [o₇.v KS (by decide), e₆, show 2 * i + 2 + (2 * i + 2) = 4 * (i + 1) by omega]
   have g₇ : s₇.gpr = s.gpr := by rw [o₅₇.gpr, g₄, g₃]
-  have cw₇ : Covers [⟨Ctx, 1024⟩] s₇.wr := by rw [o₅₇.wr, wr₄]; exact cw₃
+  have cw₇ : Covers [⟨Ctx, 384⟩] s₇.wr := by rw [o₅₇.wr, wr₄]; exact cw₃
   have c₀ : s₇.gpr .x10 + BitVec.ofNat 64 32 = slot Ctx (4 * i + 2) := by
     rw [g₇, hI.x10, Offset.add_add, slot_off Ctx (j := 4 * i + 2) (by omega)]
   have c₁ : s₇.gpr .x10 + BitVec.ofNat 64 48 = slot Ctx (4 * i + 3) := by
@@ -241,7 +241,7 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   · simp only [gpr_write_x, reduceCtorEq, ite_false, ite_true, g₇, hI.x10, Offset.add_add]
     rw [show 256 + 64 * i + 64 = 256 + 64 * (i + 1) by omega]
   · simp only [gpr_write_x, reduceCtorEq, ite_false, ite_true, g₇, hI.x11]
-    rw [ofNat_sub_one (by omega) (by omega), show 12 - i - 1 = 12 - (i + 1) by omega]
+    rw [ofNat_sub_one (by omega) (by omega), show 2 - i - 1 = 2 - (i + 1) by omega]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_write_x, hr.2.2.2.2.2.2, hr.2.2.2.2.2.1, hr.2.2.2.2.1, ite_false, g₇]
     exact hI.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)
@@ -272,24 +272,24 @@ theorem step_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} {i : Nat}
   · simp only [wr_write]; rw [o₅₇.wr, wr₄, o₀₃.wr, hI.wr]
   · show s₇.sp = s₀.sp; rw [o₅₇.sp, sp₄, o₀₃.sp, hI.sp]
 
-theorem bne12 : ∀ i < 12, (BitVec.ofNat 64 (12 - (i + 1)) != 0) = decide (12 - (i + 1) ≠ 0) := by decide
+theorem bne2 : ∀ i < 2, (BitVec.ofNat 64 (2 - (i + 1)) != 0) = decide (2 - (i + 1) ≠ 0) := by decide
 
-theorem loop_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} (hc : Covers [⟨Ctx, 1024⟩] s₀.wr)
+theorem loop_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s₀ : State} (hc : Covers [⟨Ctx, 384⟩] s₀.wr)
     {s : State} (hI : Inv H Ctx s₀ 0 s) :
-    WP isa (.loop (.block step) (.nonzero .x .x11)) s (Inv H Ctx s₀ 12) := by
-  let Inv1 : Nat → State → Prop := fun m s => ∃ i, m = 12 - i ∧ i < 12 ∧ Inv H Ctx s₀ i s
+    WP isa (.loop (.block step) (.nonzero .x .x11)) s (Inv H Ctx s₀ 2) := by
+  let Inv1 : Nat → State → Prop := fun m s => ∃ i, m = 2 - i ∧ i < 2 ∧ Inv H Ctx s₀ i s
   have hstep : ∀ m s, Inv1 m s → WP isa (.block step) s (fun s' =>
-      (eval (.nonzero .x .x11) s' = some false ∧ Inv H Ctx s₀ 12 s') ∨
+      (eval (.nonzero .x .x11) s' = some false ∧ Inv H Ctx s₀ 2 s') ∨
       (eval (.nonzero .x .x11) s' = some true ∧ ∃ m' < m, Inv1 m' s')) := by
     rintro m s ⟨i, rfl, hi, hI⟩
     refine WP.mono (step_ok hP hc hi hI) fun s' hI' => ?_
-    have hev : eval (.nonzero .x .x11) s' = some (decide (12 - (i + 1) ≠ 0)) := by
-      simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hI'.x11, bne12 i hi]
-    by_cases hlast : 12 - (i + 1) = 0
-    · have : i + 1 = 12 := by omega
+    have hev : eval (.nonzero .x .x11) s' = some (decide (2 - (i + 1) ≠ 0)) := by
+      simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hI'.x11, bne2 i hi]
+    by_cases hlast : 2 - (i + 1) = 0
+    · have : i + 1 = 2 := by omega
       exact .inl ⟨by rw [hev]; simp [hlast], this ▸ hI'⟩
-    · exact .inr ⟨by rw [hev, decide_eq_true hlast], 12 - (i + 1), by omega, i + 1, rfl, by omega, hI'⟩
-  exact WP.loop (M := isa) Inv1 hstep 12 s ⟨0, rfl, by decide, hI⟩
+    · exact .inr ⟨by rw [hev, decide_eq_true hlast], 2 - (i + 1), by omega, i + 1, rfl, by omega, hI'⟩
+  exact WP.loop (M := isa) Inv1 hstep 2 s ⟨0, rfl, by decide, hI⟩
 
 /-- `x⁻¹` with its halves swapped, from its two doublewords. -/
 theorem ks_init (H : Block) (v : BitVec 128) :
@@ -297,12 +297,12 @@ theorem ks_init (H : Block) (v : BitVec 128) :
       ext8 (pp H 0) (pp H 0) := by
   rw [setLane_pair, pp_zero]; decide
 
-theorem setup_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s : State} (h21 : s.gpr .x21 = Ctx)
-    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hc : Covers [⟨Ctx, 1024⟩] s.wr) :
+theorem setup_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s : State} (h21 : s.gpr .x1 = Ctx)
+    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hc : Covers [⟨Ctx, 384⟩] s.wr) :
     WP isa (.block setup) s (Inv H Ctx s 0) := by
   simp only [setup, List.append_assoc]
   refine WP.block_cons_iff.mpr ⟨_, exec_addImm (show 240 < 4096 by decide) s, ?_⟩
-  generalize hs₁ : s.write .x .x0 (s.gpr .x21 + BitVec.ofNat 64 240) = s₁
+  generalize hs₁ : s.write .x .x0 (s.gpr .x1 + BitVec.ofNat 64 240) = s₁
   have x0₁ : s₁.gpr .x0 + BitVec.ofNat 64 0 = Ctx + BitVec.ofNat 64 240 := by
     rw [← hs₁, gpr_write_x, ifp rfl, h21]; exact BitVec.add_zero _
   have m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
@@ -315,8 +315,8 @@ theorem setup_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s : State} (h21 : s.gp
   refine WP.mono (Fast.key_ok (H := H)
       (by rw [x0₁, rd₁, wr₁]; exact in_off (covers_left hc) (by decide) (by decide)) (by rw [x0₁, m₁, hH]))
     fun s₂ ⟨hk₂, g₂, v₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
-  have x21₂ : s₂.gpr .x21 = Ctx := by rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide), h21]
-  have w₂ : InRegions s₂.wr (s₂.gpr .x21 + BitVec.ofNat 64 272) 16 := by
+  have x21₂ : s₂.gpr .x1 = Ctx := by rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide), h21]
+  have w₂ : InRegions s₂.wr (s₂.gpr .x1 + BitVec.ofNat 64 272) 16 := by
     rw [x21₂, wr₂, wr₁]; exact in_off hc (by decide) (by decide)
   refine WP.block_cons_iff.mpr ⟨_, exec_strq (by decide) (by decide) w₂, ?_⟩
   apply WP.of_runBlock
@@ -353,10 +353,10 @@ theorem setup_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s : State} (h21 : s.gp
   · simp only [wr_write, wr_setV]; rw [wr₂, wr₁]
   · show s₂.sp = s.sp; rw [sp₂, sp₁]
 
-/-- The 48 prepared powers of the hash subkey at `ctx + 240`. -/
-theorem powers_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s : State} (h21 : s.gpr .x21 = Ctx)
-    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hc : Covers [⟨Ctx, 1024⟩] s.wr) :
-    WP isa powers s (Inv H Ctx s 12) :=
+/-- The 8 prepared powers of the hash subkey at `ctx + 240`. -/
+theorem powers_ok (hP : PrepPow) {H : Block} {Ctx : Addr} {s : State} (h21 : s.gpr .x1 = Ctx)
+    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hc : Covers [⟨Ctx, 384⟩] s.wr) :
+    WP isa powers s (Inv H Ctx s 2) :=
   WP.seq (WP.mono (setup_ok hP h21 hH hc) fun _ hI => loop_ok hP hc hI)
 
 end VG.Proof.AesGcm.AArch64.Prepared
