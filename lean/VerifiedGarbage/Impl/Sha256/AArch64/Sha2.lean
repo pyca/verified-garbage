@@ -15,17 +15,17 @@ original state is reloaded from `state` (stored after every block) into `v2`
 and `v3`.
 
 The sixteen round-constant vectors are loaded into `v16`–`v31` by the first
-block, each just before its group of rounds; later blocks only read them.
-The first block builds each group's four constants in general-purpose
-registers (`movz`/`movk`, two 64-bit words through `x4` and `x5`) two groups
-ahead and stores them in `scratch`, in one of four 16-byte slots (group `k`
-at `16 (k mod 4)`), from which its group loads them with one `ldr q`.
-Moving the constants into vector registers directly (`dup`, `ins`) took
-twelve instructions a group, four of them general-to-vector transfers, which
-are slow on some cores (Neoverse N2; see `Sha512/AArch64/Sha3.lean`). Only
-caller-saved registers are used, and only the first 64 bytes of scratch. The
-count and block pointer control the only branches; message words never affect
-addresses or branches.
+block, each two groups ahead of its rounds; later blocks only read them.
+The first block puts the address of the table of constants `VG_SHA256_K`
+(`adrSym`) in `x4`, and loads each group's four constants from it with one
+`ldr q` (`ldrqTbl`, which carries the table: the emitter writes it as a
+`static`, and no contract mentions it). Building them in general registers
+(`movz`/`movk`) instead took eight instructions and two stores a group, and
+moving them into vector registers directly (`dup`, `ins`) took twelve, four
+of them general-to-vector transfers, which are slow on some cores (Neoverse
+N2; see `Sha512/AArch64/Sha3.lean`). Only caller-saved registers are used,
+and no scratch. The count and block pointer control the only branches;
+message words never affect addresses or branches.
 -/
 
 @[expose] public section
@@ -47,26 +47,20 @@ def kreg (i : Nat) : VReg :=
 and `K₄ₖ₊₃ K₄ₖ₊₂`. -/
 def kWord (k j : Nat) : BitVec 64 := K (4 * k + 2 * j + 1) ++ K (4 * k + 2 * j)
 
-/-- The scratch slot of group `k`. -/
-def slot (k : Nat) : Nat := 16 * (k % 4)
+/-- The name of the table of round constants. -/
+def kName : String := "VG_SHA256_K"
 
-/-- Store the constants of group `k` in its slot, through `x4` and `x5`. -/
-def build (k : Nat) : List Instr :=
-  [.movz .x .x4 ((kWord k 0).extractLsb' 0 16) 0,
-   .movk .x .x4 ((kWord k 0).extractLsb' 16 16) 1,
-   .movk .x .x4 ((kWord k 0).extractLsb' 32 16) 2,
-   .movk .x .x4 ((kWord k 0).extractLsb' 48 16) 3,
-   .str .x .x4 .x3 (slot k),
-   .movz .x .x5 ((kWord k 1).extractLsb' 0 16) 0,
-   .movk .x .x5 ((kWord k 1).extractLsb' 16 16) 1,
-   .movk .x .x5 ((kWord k 1).extractLsb' 32 16) 2,
-   .movk .x .x5 ((kWord k 1).extractLsb' 48 16) 3,
-   .str .x .x5 .x3 (slot k + 8)]
+/-- The table of round constants: group `k`'s as two words, `kWord k 0` and
+`kWord k 1`, at bytes `16 k` to `16 k + 15`. -/
+def kTable : List (BitVec 64) := (List.range 32).map fun j => kWord (j / 2) (j % 2)
 
-/-- In the first block, before group `i`: build group `i + 2`'s constants and
-load group `i`'s. -/
-def kbuild (i : Nat) : List Instr :=
-  (if i + 2 < 16 then build (i + 2) else []) ++ [.ldrq (kreg i) .x3 (slot i)]
+/-- Load group `i`'s constants from the table, whose address is in `x4`. -/
+def kld (i : Nat) : Instr := .ldrqTbl (kreg i) .x4 (16 * i) kName kTable
+
+/-- In the first block, in group `i`: load the constants of group `i + 2`, if
+any, two groups ahead of their rounds, so that the load is not on the chain of
+SHA256H and SHA256H2 that it feeds. -/
+def kbuild (i : Nat) : List Instr := if i + 2 < 16 then [kld (i + 2)] else []
 
 /-- Load the first sixteen words, then expand the schedule in registers. -/
 def schedule (i : Nat) : List Instr :=
@@ -88,7 +82,7 @@ def group (c : Bool) (n : Nat) : List Instr :=
   schedule n ++ ((if c then kbuild n else []) ++ rounds4 n)
 
 def rounds (c : Bool) : Nat → Prog isa
-  | 0 => .block (if c then build 0 ++ build 1 else [])
+  | 0 => .block (if c then [.adrSym .x4 kName, kld 0, kld 1] else [])
   | n + 1 => .seq (rounds c n) (.block (group c n))
 
 def load : List Instr := [.ldrq .v0 .x0 0, .ldrq .v1 .x0 16]
@@ -103,9 +97,14 @@ def store : List Instr :=
 /-- One block, building the constants if `c`. -/
 def oneBlock (c : Bool) : Prog isa := .seq (rounds c 16) (.block store)
 
+/-- The alignment of the loop over the later blocks: its head at a multiple
+of `2 ^ loopAlign` bytes, wherever the first block leaves it. -/
+def loopAlign : Nat := 6
+
 def compress : Prog isa :=
   .ite (.zero .x .x2) (.block [])
     (.seq (.block load) (.seq (oneBlock true)
-      (.ite (.zero .x .x2) (.block []) (.loop (oneBlock false) (.nonzero .x .x2)))))
+      (.ite (.zero .x .x2) (.block [])
+        (.seq (.block [.align loopAlign]) (.loop (oneBlock false) (.nonzero .x .x2))))))
 
 end VG.Impl.Sha256.AArch64.Sha2
