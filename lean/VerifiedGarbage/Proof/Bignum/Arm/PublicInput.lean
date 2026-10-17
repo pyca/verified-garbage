@@ -19,7 +19,7 @@ structure PublicFnInput (base dst np ep xp : BitVec 32) (len k eLen : Nat)
   workspace : Workspace s base (8 * len)
   minLength : 64 ≤ k
   maxLength : k ≤ 1024
-  space : Spec.Rsa.scratchWords k ≤ len
+  space : Spec.Rsa.publicScratchWords k ≤ len
   exponentPositive : 0 < eLen
   exponentFits : eLen ≤ k
   modulus : PublicBytes np k nb s

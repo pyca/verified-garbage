@@ -18,7 +18,7 @@ open VG.Proof.X25519.Arm (Rest)
 
 theorem pcBody_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     (ws : Workspace s base (8 * len)) (stack : PcStack base dst src len k s)
-    (hk : 64 ≤ k) (hk' : k ≤ 1024) (space : Spec.Rsa.scratchWords k ≤ len)
+    (hk : 64 ≤ k) (hk' : k ≤ 1024) (space : Spec.Rsa.publicScratchWords k ≤ len)
     (srcFit : src.toNat + k ≤ 2 ^ 32)
     (read : InRegions (s.rd ++ s.wr) (State.addr src) k)
     (srcSep : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr base, 8 * len⟩)

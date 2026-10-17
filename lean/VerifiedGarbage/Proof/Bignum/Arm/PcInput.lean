@@ -18,7 +18,7 @@ structure PcBuffers (base dst src : BitVec 32) (len k : Nat) (s : State) : Prop 
   workspace : Workspace s base (8 * len)
   minLength : 64 ≤ k
   maxLength : k ≤ 1024
-  space : Spec.Rsa.scratchWords k ≤ len
+  space : Spec.Rsa.publicScratchWords k ≤ len
   sourceFits : src.toNat + k ≤ 2 ^ 32
   readable : InRegions (s.rd ++ s.wr) (State.addr src) k
   sourceSeparate : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr base, 8 * len⟩
