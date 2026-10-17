@@ -124,7 +124,8 @@ theorem failureHead_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base si
 
 theorem failure_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} (signing : Bool)
     (h₁ : Ws s₁ base size₁) (h₂ : Ws s₂ base size₂) (hz₁ : 120 ≤ size₁) (hz₂ : 120 ≤ size₂)
-    (ho : hdr base s₁ 96 = hdr base s₂ 96) (hq : hdr base s₁ 104 = hdr base s₂ 104) :
+    (ho : signing = true → hdr base s₁ 96 = hdr base s₂ 96)
+    (hq : signing = true → hdr base s₁ 104 = hdr base s₂ 104) :
     SameTrace isa (.seq (Entry.failure signing) Tail) s₁ s₂ := by
   cases signing
   · exact SameTrace.of_relCT (RelCT.seq (block_relCT_T0 _ rfl) (RelCT.seq (block_relCT_T0 _ rfl)
@@ -135,6 +136,6 @@ theorem failure_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} 
     exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taint (wsT true true)
       (.seq (.seq (.loop (.block [.strb .r4 .r11 0, .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .lr)]) .ne)
         (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) rfl).mono (fun _ _ h => h) fun _ _ _ => trivial)
-      (agreeWs true true w₁ w₂ (fun _ => by rw [A₁, A₂, ho]) (fun _ => by rw [L₁, L₂, ho, hq]))
+      (agreeWs true true w₁ w₂ (fun _ => by rw [A₁, A₂, ho rfl]) (fun _ => by rw [L₁, L₂, ho rfl, hq rfl]))
 
 end VG.Proof.Dsa.Arm

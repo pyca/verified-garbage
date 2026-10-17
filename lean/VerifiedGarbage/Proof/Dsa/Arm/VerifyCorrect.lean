@@ -52,6 +52,95 @@ theorem verifyBytes_eq {pLen qLen P Q G Y : Nat} {key : List Byte} (m : Mem) (A 
   rw [VG.Proof.Dsa.verifyBytes_compute hv valid hk (by simp [Spec.Rsa.bytesAt]) kv (congrArg _ r)
     (congrArg _ s') (VG.Proof.Dsa.shape_digest_width valid).1]
 
+/-- The key's components, at a state with the environment of verification. -/
+theorem verifyKeyIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) (hb : State.addr (arg s 4) = base)
+    (hsz : (arg s 5).toNat * 8 = size) (E : Env s base size (verifyFields s) t) :
+    Input t base size (.input .p) (s.gpr .r2).toNat
+        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat)) ∧
+      Input t base size (.input .q) (s.gpr .r3).toNat
+        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (s.gpr .r2).toNat)
+          (s.gpr .r3).toNat)) ∧
+      Input t base size (.input .g) (s.gpr .r2).toNat
+        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
+          (State.addr (s.gpr .r0) + BitVec.ofNat 64 ((s.gpr .r2).toNat + (s.gpr .r3).toNat)) (s.gpr .r2).toNat)) ∧
+      Input t base size (.input .y) (s.gpr .r2).toNat
+        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
+          (State.addr (s.gpr .r0) + BitVec.ofNat 64 (2 * (s.gpr .r2).toNat + (s.gpr .r3).toNat))
+          (s.gpr .r2).toNat)) := by
+  subst hb hsz
+  obtain ⟨_, hrd, _, dKS, _, _, _, fK, _, _, _, hv, hr1, _, hsw⟩ := h
+  have v := hv
+  unfold Spec.Dsa.lengthsValid at v
+  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
+    (len := (s.gpr .r2).toNat)
+    (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r0) (by simp)) kr fK (by omega) (.inr rfl) dKS hz
+  rw [BitVec.add_zero] at ip
+  have cg := fun {a : Nat} {xs : List (BitVec 32)} (h : (xs.map BitVec.toNat).sum = a) =>
+    (sum_ofNat (s.gpr .r0) xs).trans (congrArg (fun n => s.gpr .r0 + BitVec.ofNat 32 n) h)
+  refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ kr fK (by omega)
+      (.inl (by omega)) dKS hz,
+    input_of E (p := .input .g) (by decide : Impl.Dsa.Layout.Field.g ≠ .mask) ?_ kr fK (by omega)
+      (.inl (by omega)) dKS hz,
+    input_of E (p := .input .y) (by decide : Impl.Dsa.Layout.Field.y ≠ .mask) ?_ kr fK (by omega)
+      (.inl (by omega)) dKS hz⟩
+  · exact (E.field (d := 68) (v := s.gpr .r0 + s.gpr .r2) (by simp)).trans
+      (cg (xs := [s.gpr .r2]) (by simp))
+  · exact (E.field (d := 72) (v := s.gpr .r0 + s.gpr .r2 + s.gpr .r3) (by simp)).trans
+      (cg (xs := [s.gpr .r2, s.gpr .r3]) (by simp))
+  · exact (E.field (d := 76) (v := s.gpr .r0 + s.gpr .r2 + s.gpr .r3 + s.gpr .r2) (by simp)).trans
+      (cg (xs := [s.gpr .r2, s.gpr .r3, s.gpr .r2]) (by simp; omega))
+
+theorem verifySigIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) (hb : State.addr (arg s 4) = base)
+    (hsz : (arg s 5).toNat * 8 = size) (E : Env s base size (verifyFields s) t) :
+    Input t base size (.input .signature) (s.gpr .r3).toNat
+      (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (arg s 0)) (s.gpr .r3).toNat)) := by
+  subst hb hsz
+  obtain ⟨_, hrd, _, _, dSS, _, _, _, fS, _, _, hv, _, hs1, hsw⟩ := h
+  have v := hv
+  unfold Spec.Dsa.lengthsValid at v
+  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have sr : (⟨State.addr (arg s 0), (arg s 1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  have Ir := input_of E (p := .input .signature) (by decide : Impl.Dsa.Layout.Field.signature ≠ .mask) (o := 0)
+    (len := (s.gpr .r3).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 84) (v := arg s 0) (by simp))
+    sr fS (by omega) (.inr rfl) dSS hz
+  rwa [BitVec.add_zero] at Ir
+
+theorem verifySigSIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) (hb : State.addr (arg s 4) = base)
+    (hsz : (arg s 5).toNat * 8 = size) (E : Env s base size (verifyFields s) t) :
+    Input t base size .signatureS (s.gpr .r3).toNat
+      (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (arg s 0) + BitVec.ofNat 64 (s.gpr .r3).toNat)
+        (s.gpr .r3).toNat)) := by
+  subst hb hsz
+  obtain ⟨_, hrd, _, _, dSS, _, _, _, fS, _, _, hv, _, hs1, hsw⟩ := h
+  have v := hv
+  unfold Spec.Dsa.lengthsValid at v
+  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have sr : (⟨State.addr (arg s 0), (arg s 1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  exact input_of E (p := .signatureS) trivial (o := (s.gpr .r3).toNat) (len := (s.gpr .r3).toNat)
+    (by
+      show hdr (State.addr (arg s 4)) t 84 + hdr (State.addr (arg s 4)) t 104 = _
+      rw [E.field (d := 84) (v := arg s 0) (by simp), E.field (d := 104) (v := s.gpr .r3) (by simp),
+        BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    sr fS (by omega) (.inl (by omega)) dSS hz
+
+theorem verifyDigestIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) (hb : State.addr (arg s 4) = base)
+    (hsz : (arg s 5).toNat * 8 = size) (E : Env s base size (verifyFields s) t) {c : Nat}
+    (hc : c ≤ (arg s 3).toNat) :
+    Input t base size (.input .digest) c
+      (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (arg s 2)) c)) := by
+  subst hb hsz
+  obtain ⟨_, hrd, _, _, _, dDS, _, _, _, fD, _, hv, _, _, hsw⟩ := h
+  have v := hv
+  unfold Spec.Dsa.lengthsValid at v
+  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have dr : (⟨State.addr (arg s 2), (arg s 3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  have Id := input_of E (p := .input .digest) (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (o := 0)
+    (len := c) (by rw [BitVec.add_zero]; exact E.field (d := 92) (v := arg s 2) (by simp))
+    dr fD (by omega) (.inr rfl) dDS hz
+  rwa [BitVec.add_zero] at Id
+
 theorem verify_correct {s : State} (h : verifyPre s) :
     WP isa (Entry.operation false) s fun t => abiPreserved s t ∧ verifyArm.post s t := by
   obtain ⟨hsp, hrd, hwr, dKS, dSS, dDS, _, fK, fS, fD, fW, hv, hr1, hs1, hsw⟩ := id h
@@ -68,39 +157,7 @@ theorem verify_correct {s : State} (h : verifyPre s) :
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
   have hz : 4960 ≤ (arg s 5).toNat * 8 := by omega
-  have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  have keyIn : ∀ {t} (E : Env s (State.addr (arg s 4)) ((arg s 5).toNat * 8) (verifyFields s) t),
-      Input t (State.addr (arg s 4)) ((arg s 5).toNat * 8) (.input .p) (s.gpr .r2).toNat
-        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat)) ∧
-      Input t (State.addr (arg s 4)) ((arg s 5).toNat * 8) (.input .q) (s.gpr .r3).toNat
-        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (s.gpr .r2).toNat)
-          (s.gpr .r3).toNat)) ∧
-      Input t (State.addr (arg s 4)) ((arg s 5).toNat * 8) (.input .g) (s.gpr .r2).toNat
-        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
-          (State.addr (s.gpr .r0) + BitVec.ofNat 64 ((s.gpr .r2).toNat + (s.gpr .r3).toNat)) (s.gpr .r2).toNat)) ∧
-      Input t (State.addr (arg s 4)) ((arg s 5).toNat * 8) (.input .y) (s.gpr .r2).toNat
-        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
-          (State.addr (s.gpr .r0) + BitVec.ofNat 64 (2 * (s.gpr .r2).toNat + (s.gpr .r3).toNat)) (s.gpr .r2).toNat)) := by
-    intro t E
-    have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
-      (len := (s.gpr .r2).toNat)
-      (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r0) (by simp)) kr fK (by omega) (.inr rfl) dKS hz
-    rw [BitVec.add_zero] at ip
-    have cg := fun {a : Nat} {xs : List (BitVec 32)} (h : (xs.map BitVec.toNat).sum = a) =>
-      (sum_ofNat (s.gpr .r0) xs).trans (congrArg (fun n => s.gpr .r0 + BitVec.ofNat 32 n) h)
-    refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ kr fK (by omega)
-        (.inl (by omega)) dKS hz,
-      input_of E (p := .input .g) (by decide : Impl.Dsa.Layout.Field.g ≠ .mask) ?_ kr fK (by omega)
-        (.inl (by omega)) dKS hz,
-      input_of E (p := .input .y) (by decide : Impl.Dsa.Layout.Field.y ≠ .mask) ?_ kr fK (by omega)
-        (.inl (by omega)) dKS hz⟩
-    · exact (E.field (d := 68) (v := s.gpr .r0 + s.gpr .r2) (by simp)).trans
-        (cg (xs := [s.gpr .r2]) (by simp))
-    · exact (E.field (d := 72) (v := s.gpr .r0 + s.gpr .r2 + s.gpr .r3) (by simp)).trans
-        (cg (xs := [s.gpr .r2, s.gpr .r3]) (by simp))
-    · exact (E.field (d := 76) (v := s.gpr .r0 + s.gpr .r2 + s.gpr .r3 + s.gpr .r2) (by simp)).trans
-        (cg (xs := [s.gpr .r2, s.gpr .r3, s.gpr .r2]) (by simp; omega))
-  obtain ⟨Ip₁, Iq₁, -, -⟩ := keyIn E₁
+  obtain ⟨Ip₁, Iq₁, -, -⟩ := verifyKeyIn h rfl rfl E₁
   refine sized_ok false E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value ?_ ?_
   · intro t₂ nv R₂ O₂
     have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
@@ -119,30 +176,17 @@ theorem verify_correct {s : State} (h : verifyPre s) :
     have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
       simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega)
-    obtain ⟨Ip, Iq, Ig, Iy⟩ := keyIn E₂
-    have sr : (⟨State.addr (arg s 0), (arg s 1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-    have dr : (⟨State.addr (arg s 2), (arg s 3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-    have Ir := input_of E₂ (p := .input .signature) (by decide : Impl.Dsa.Layout.Field.signature ≠ .mask) (o := 0)
-      (len := (s.gpr .r3).toNat) (by rw [BitVec.add_zero]; exact E₂.field (d := 84) (v := arg s 0) (by simp))
-      sr fS (by omega) (.inr rfl) dSS hz
-    rw [BitVec.add_zero] at Ir
-    have Is := input_of E₂ (p := .signatureS) trivial (o := (s.gpr .r3).toNat) (len := (s.gpr .r3).toNat)
-      (by
-        show hdr (State.addr (arg s 4)) t₂ 84 + hdr (State.addr (arg s 4)) t₂ 104 = _
-        rw [E₂.field (d := 84) (v := arg s 0) (by simp), E₂.field (d := 104) (v := s.gpr .r3) (by simp),
-          BitVec.ofNat_toNat, BitVec.setWidth_eq])
-      sr fS (by omega) (.inl (by omega)) dSS hz
-    have Id := input_of E₂ (p := .input .digest) (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (o := 0)
-      (len := min (arg s 3).toNat (qWidth (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
-        (State.addr (s.gpr .r0) + BitVec.ofNat 64 (s.gpr .r2).toNat) (s.gpr .r3).toNat))))
-      (by rw [BitVec.add_zero]; exact E₂.field (d := 92) (v := arg s 2) (by simp))
-      dr fD (by omega) (.inr rfl) dDS hz
+    obtain ⟨Ip, Iq, Ig, Iy⟩ := verifyKeyIn h rfl rfl E₂
+    have Ir := verifySigIn h rfl rfl E₂
+    have Is := verifySigSIn h rfl rfl E₂
+    have Id := verifyDigestIn h rfl rfl E₂ (Nat.min_le_left (arg s 3).toNat (qWidth (Spec.Dsa.decodeBE
+      (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (s.gpr .r2).toNat) (s.gpr .r3).toNat))))
     have hc : countValue (State.addr (arg s 4)) t₂ Core.digestPrefix = min (arg s 3).toNat (qWidth
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
           (State.addr (s.gpr .r0) + BitVec.ofNat 64 (s.gpr .r2).toNat) (s.gpr .r3).toNat))) := by
       refine D₂.trans ?_
       rw [E₁.field (d := 108) (v := arg s 3) (by simp)]
-    rw [BitVec.add_zero, VG.Proof.Dsa.bytesAt_prefix, qWidth_of_shape valid] at Id
+    rw [VG.Proof.Dsa.bytesAt_prefix, qWidth_of_shape valid] at Id
     rw [qWidth_of_shape valid] at hc
     obtain ⟨hP, hPo, hQ, hQo⟩ := shape_bounds valid
     refine WP.mono (verifyBody_ok ⟨E₂.ws, by omega, wp, wq, qp, q32⟩ Ip Iq Ig Iy Ir Is Id hc hP hPo hQ hQo hm)

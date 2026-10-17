@@ -199,8 +199,10 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
   have G₂ := F₂.keep (signFields_ok s₂) S₂ (by decide) O₂ kee
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)
   · exact failure_trace true G₁.ws G₂.ws (by omega) (by omega)
-      (by rw [G₁.field (d := 96) (v := s₁.gpr .r0) (by simp), G₂.field (d := 96) (v := s₂.gpr .r0) (by simp), hr0])
-      (by rw [G₁.field (d := 104) (v := arg s₁ 2) (by simp), G₂.field (d := 104) (v := arg s₂ 2) (by simp), a2])
+      (fun _ => by
+        rw [G₁.field (d := 96) (v := s₁.gpr .r0) (by simp), G₂.field (d := 96) (v := s₂.gpr .r0) (by simp), hr0])
+      (fun _ => by
+        rw [G₁.field (d := 104) (v := arg s₁ 2) (by simp), G₂.field (d := 104) (v := arg s₂ 2) (by simp), a2])
   · have valid : shapeValid (operand (State.addr (arg s₁ 5)) t₁ (.input .p) (arg s₁ 0).toNat)
         (operand (State.addr (arg s₁ 5)) t₁ (.input .q) (arg s₁ 2).toNat) := by
       rw [eval_eq, Z₁] at hf
