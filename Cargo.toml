@@ -42,8 +42,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 # `pthread_attr_setstack`, for the residue tests (`tests/residue/`), which
-# run each operation on a stack the test owns.
-[target.'cfg(unix)'.dev-dependencies]
+# run each operation on a stack the test owns (Linux only: the crate does not
+# bind it on Apple's platforms).
+[target.'cfg(target_os = "linux")'.dev-dependencies]
 libc = "0.2"
 
 # The Wycheproof tests parse ~100 MB of JSON; optimize dependencies (but not

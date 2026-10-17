@@ -19,7 +19,7 @@
 //! (a copy of the secret in its own frame) check the measurement itself.
 
 #![cfg(all(
-    unix,
+    target_os = "linux",
     any(
         target_arch = "x86_64",
         target_arch = "aarch64",

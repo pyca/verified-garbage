@@ -468,7 +468,7 @@ jobs:
       # (tests/residue/main.rs). Not measured for coverage: the run above
       # covers them.
       - name: Test the residue of optimized code
-        if: ${{ env.TESTS == 'true' && runner.os != 'Windows' }}
+        if: ${{ env.TESTS == 'true' && runner.os == 'Linux' }}
         env:
           RUSTFLAGS: -D warnings
         run: cargo test --locked --release --test tests residue
