@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
 public import VerifiedGarbage.Proof.Framework.X86.Dispatch
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.NoSp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -157,6 +158,38 @@ theorem calls_wp {P : RfcHash} {L : Lay P.I.hashLen} (hk : Fits P L) {mk : Impl.
     rw [Proof.Dispatch.case_unique (by rw [hkeys]; exact P.nodup) hc' hm]
     exact h u' hr
 
+/-- `esp` is the frame's base, at least 76 bytes up. -/
+theorem F_toNat (hL : L.Ok) : 76 ≤ L.F.toNat := by
+  have := hL.e536; have := hL.e28
+  have hF : L.F.toNat = L.E.toNat - 460 := sub_toNat (by omega_arith)
+  omega
+
+/-- A call of the run's hash function in one frame of its arguments around
+the dispatch on `ebx`: the frame around the call of the run's case, from a
+state with other flags. -/
+theorem framed_wp {P : RfcHash} {L : Lay P.I.hashLen} (hL : L.Ok) (hk : Fits P L) {rs : List Reg}
+    {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} (hne : rs ≠ []) (hrs : .esp ∉ rs) (hlen : rs.length ≤ 19)
+    (hsp : ∀ p ∈ P.fns, NoSp (mk p.2)) {u : State} {Q : State → Prop} (hbx : u.gpr .ebx = L.hs)
+    (hesp : u.gpr .esp = L.F)
+    (h : ∀ u', Proof.Dispatch.X86.FlagsOnly u u' → WP isa (.frame (.push rs) (mk P.F) (.pop .eax rs.length)) u' Q) :
+    WP isa ((cfgOf P).framed rs mk) u Q := by
+  show WP isa (.frame (.push rs) (Impl.Dispatch.X86.chain .ebx (P.fns.map fun p => (p.1, mk p.2)))
+    (.pop .eax rs.length)) u Q
+  have hkeys : Proof.Dispatch.keys (P.fns.map fun p => (p.1, mk p.2)) = P.fns.map (·.1) := by
+    simp only [Proof.Dispatch.keys, List.map_map]; rfl
+  have hm : (P.k, mk P.F) ∈ P.fns.map fun p => (p.1, mk p.2) := List.mem_map.mpr ⟨_, P.mem, rfl⟩
+  have e : Proof.Dispatch.X86.sel .ebx u = P.k := by simp only [Proof.Dispatch.X86.sel]; rw [hbx, hk.hs]
+  refine Proof.Dispatch.X86.frame_chain_wp (cs := P.fns.map fun p => (p.1, mk p.2)) (r := .ebx) (q := .eax) (by decide) (by decide) hne hrs
+    (fun k hk' => ?_)
+    (by rw [hkeys]; exact P.nodup) (by exact calls_nosp P hsp) (by rw [hesp]; have := F_toNat hL; omega)
+    (by rw [e, hkeys]; exact List.mem_map.mpr ⟨_, P.mem, rfl⟩) fun c hc u' hr => ?_
+  · rw [hkeys] at hk'
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hk'
+    exact P.keys_lt p hp
+  · rw [e] at hc
+    rw [Proof.Dispatch.case_unique (by rw [hkeys]; exact P.nodup) hc hm]
+    exact h u' hr
+
 /-! ## HMAC's `init` -/
 
 /-- The arguments of HMAC's `init`, and `hash` in `ebx`. -/
@@ -248,9 +281,10 @@ theorem initA (hL : L.Ok) {u : State} (hcu : Ctx L g m₀ u) (hdi : u.gpr .edi =
       nsc := by rw [hL.scrN (by omega)]; nums }
 
 theorem init_step {L : Lay P.I.hashLen} (hL : L.Ok) (hk : Fits P L) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.seq (.block hmacArgs₁) ((cfgOf P).calls hiCall)) t (Inited P L g m₀ t) := by
+    WP isa (.seq (.block hmacArgs₁) ((cfgOf P).framed hiPush hiCall)) t (Inited P L g m₀ t) := by
   refine WP.seq (WP.mono (initArgs_ok hL hc) fun u₀ ⟨hcu₀, hmu₀, hdi₀, hsi₀, hdx₀, hcx₀, hbp₀, hbx₀⟩ => ?_)
-  refine calls_wp hk hbx₀ fun u hr => ?_
+  refine framed_wp (rs := hiPush) (mk := hiCall) hL hk (by decide) (by decide) (by decide) (fun p hp => NoSp.call (P.fnsSp p hp).1) hbx₀
+    hcu₀.esp fun u hr => ?_
   have hcu := hcu₀.flags hL hr
   have hmu : u.mem = t.mem := hr.mem.trans hmu₀
   have a := initA (P := P) hL hcu (by rw [hr.gpr]; exact hdi₀) (by rw [hr.gpr]; exact hsi₀)
@@ -373,11 +407,12 @@ theorem upd_step {L : Lay P.I.hashLen} (hL : L.Ok) (hk : Fits P L) {t u : State}
     {len : Nat} (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .edx dv))
     (hd : DataOk L dv len) (hlen : len ≤ 256) {i lenS : Nat} (hi : i < 8) (hlS : lenS = 128 + 4 * i)
     (hpv : L.pv i = BitVec.ofNat 32 len) :
-    WP isa (.seq (.block (hmacArgs₂ dataA lenS)) ((cfgOf P).calls updCall)) u
+    WP isa (.seq (.block (hmacArgs₂ dataA lenS)) ((cfgOf P).framed updPush updCall)) u
       (Updated P L g m₀ t dv len) := by
   refine WP.seq (WP.mono (updArgs_ok hL hu.ctx hdA hi hlS)
     fun w₀ ⟨hcw₀, hmw₀, hdi₀, hsi₀, hax₀, hdx₀, hcx₀, hbp₀, hbx₀⟩ => ?_)
-  refine calls_wp hk hbx₀ fun w hr => ?_
+  refine framed_wp (rs := updPush) (mk := updCall) hL hk (by decide) (by decide) (by decide) (fun p hp => NoSp.call (P.fnsSp p hp).2.1) hbx₀
+    hcw₀.esp fun w hr => ?_
   have hcw := hcw₀.flags hL hr
   have hmw : w.mem = u.mem := hr.mem.trans hmw₀
   have hsp : Region.Sub (Proof.Pbkdf2.Stream.X86.stk w) (below L.F 76) := by
@@ -505,11 +540,12 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {len dst : Nat} (hds
 theorem fin_step {L : Lay P.I.hashLen} (hL : L.Ok) (hk : Fits P L) {t u : State} {dv : BitVec 32} {len dst : Nat}
     (hu : Updated P L g m₀ t dv len u) (hlen : len ≤ 256) (hdst : dst + P.F.H.D ≤ 128) {i totS : Nat} (hi : i < 8)
     (htot : totS = 128 + 4 * i) (hpv : L.pv i = BitVec.ofNat 32 (P.F.H.B + len)) :
-    WP isa (.seq (.block (hmacArgs₃ totS dst)) ((cfgOf P).calls hfCall)) u
+    WP isa (.seq (.block (hmacArgs₃ totS dst)) ((cfgOf P).framed hfPush hfCall)) u
       (Done P L g m₀ t dv len dst) := by
   refine WP.seq (WP.mono (finArgs_ok hL hu.ctx hi htot dst)
     fun w₀ ⟨hcw₀, hmw₀, hdx₀, hsi₀, hax₀, hcx₀, hdi₀, hbp₀, hbx₀⟩ => ?_)
-  refine calls_wp hk hbx₀ fun w hr => ?_
+  refine framed_wp (rs := hfPush) (mk := hfCall) hL hk (by decide) (by decide) (by decide) (fun p hp => NoSp.call (P.fnsSp p hp).2.2) hbx₀
+    hcw₀.esp fun w hr => ?_
   have hcw := hcw₀.flags hL hr
   have hmw : w.mem = u.mem := hr.mem.trans hmw₀
   have a := finA (P := P) hL hcw (len := len) hdst (by rw [hr.gpr]; exact hdx₀) (by rw [hr.gpr]; exact hsi₀)

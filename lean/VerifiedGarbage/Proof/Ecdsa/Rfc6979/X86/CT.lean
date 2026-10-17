@@ -32,7 +32,7 @@ release they are related by `Two` (`Two0` before the hash function's sizes
 are stored): both satisfy `Ctx` with that layout (and `Φ`, what the next
 piece needs). The blocks address only the stack and the buffers, from
 registers that agree (the taint analysis); each dispatch on `hash` takes the
-same case in both runs (`calls_ct`, by `Dispatch.chain_relCT`); each call, in
+same case in both runs (`framed_ct`, by `Dispatch.X86.frame_chain_relCT`); each call, in
 a frame of its arguments, is of constant-time code whose public data agree
 (`hi_rel`, `upd_rel`, `hf_rel`, `callWithR_ct`); and the loops' branches
 agree: the candidate's on the count of its `V`s, the same in both runs, and
@@ -191,14 +191,34 @@ theorem calls_gen {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {R Q : State →
     rw [Proof.Dispatch.case_unique hnd hc hm] at e₁ e₂
     exact h _ _ _ _ _ _ (hfl _ _ _ _ hp r₁ r₂) e₁ e₂
 
-/-- The dispatch on `hash` in `ebx`: both runs take the run's hash function's case. -/
-theorem calls_ct {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {Φ : Pred P} {Q : State → State → Prop}
+/-- A call of the run's hash function, in one frame of its arguments around
+the dispatch on `ebx`: both runs run the frame around the call of the run's
+case, from states with other flags. -/
+theorem framed_ct {rs : List Reg} {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {Φ : Pred P}
     (hbx : ∀ L g m₀ t, Φ L g m₀ t → t.gpr .ebx = L.hs) (hst : FlagStable Φ)
-    (h : RelCT isa (Two P Φ) (mk P.F) Q) : RelCT isa (Two P Φ) ((cfgOf P).calls mk) Q :=
-  calls_gen (fun _ _ ⟨_, _, hk, _, _, _, f₁, f₂⟩ => ⟨by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₁, hk.hs],
-      by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₂, hk.hs]⟩)
-    (fun _ _ _ _ ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ r₁ r₂ =>
-      ⟨e, hL, hq, hx, c₁.flags hL r₁, c₂.flags hL r₂, hst _ _ _ _ _ r₁ f₁, hst _ _ _ _ _ r₂ f₂⟩) h
+    (h : RelCT isa (Two P Φ) (.frame (.push rs) (mk P.F) (.pop .eax rs.length)) fun _ _ => True) :
+    RelCT isa (Two P Φ) ((cfgOf P).framed rs mk) fun _ _ => True := by
+  show RelCT isa (Two P Φ) (.frame (.push rs) (Impl.Dispatch.X86.chain .ebx (P.fns.map fun p => (p.1, mk p.2)))
+    (.pop .eax rs.length)) _
+  have hkeys : Proof.Dispatch.keys (P.fns.map fun p => (p.1, mk p.2)) = P.fns.map (·.1) := by
+    simp only [Proof.Dispatch.keys, List.map_map]; rfl
+  have hm : (P.k, mk P.F) ∈ P.fns.map fun p => (p.1, mk p.2) := List.mem_map.mpr ⟨_, P.mem, rfl⟩
+  have hnd : (Proof.Dispatch.keys (P.fns.map fun p => (p.1, mk p.2))).Nodup := by rw [hkeys]; exact P.nodup
+  have hsel : ∀ s₁ s₂, Two P Φ s₁ s₂ → Proof.Dispatch.X86.sel .ebx s₁ = P.k ∧ Proof.Dispatch.X86.sel .ebx s₂ = P.k :=
+    fun _ _ ⟨_, _, hk, _, _, _, f₁, f₂⟩ => ⟨by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₁, hk.hs],
+      by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₂, hk.hs]⟩
+  refine Proof.Dispatch.X86.frame_chain_relCT (by decide) (fun k hk' => ?_) hnd
+    (fun s₁ s₂ hp => ⟨(hsel _ _ hp).1.trans (hsel _ _ hp).2.symm, by
+      rw [(hsel _ _ hp).1, hkeys]; exact List.mem_map.mpr ⟨_, P.mem, rfl⟩⟩) fun k c hc => ?_
+  · rw [hkeys] at hk'
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hk'
+    exact P.keys_lt p hp
+  · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨a₁, a₂, hp, hk₁, r₁, r₂⟩ e₁ e₂
+    rw [(hsel _ _ hp).1] at hk₁
+    subst hk₁
+    rw [Proof.Dispatch.case_unique hnd hc hm] at e₁ e₂
+    obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := hp
+    exact h _ _ _ _ _ _ ⟨e, hL, hq, hx, c₁.flags hL r₁, c₂.flags hL r₂, hst _ _ _ _ _ r₁ f₁, hst _ _ _ _ _ r₂ f₂⟩ e₁ e₂
 
 /-! ## The blocks that set the calls' arguments -/
 
@@ -236,8 +256,8 @@ theorem flagStable_regs {Φ : Pred P} (h : ∀ L g m₀ (t t' : State), (∀ r, 
     FlagStable Φ := fun L g m₀ t t' hr hp => h L g m₀ t t' hr.gpr hp
 
 theorem hinit_ct :
-    RelCT isa (Two P (IA P)) ((cfgOf P).calls hiCall) fun _ _ => True :=
-  calls_ct (fun _ _ _ _ h => h.2.2.2.2.2)
+    RelCT isa (Two P (IA P)) ((cfgOf P).framed hiPush hiCall) fun _ _ => True :=
+  framed_ct (fun _ _ _ _ h => h.2.2.2.2.2)
     (flagStable_regs fun _ _ _ _ _ hr ⟨a, b, c, d, e, f⟩ => ⟨by rw [hr]; exact a, by rw [hr]; exact b, by rw [hr]; exact c,
       by rw [hr]; exact d, by rw [hr]; exact e, by rw [hr]; exact f⟩)
     (two_exists fun e => hi_rel P.ok.hi (sp := e.1.F) fun _ _ ⟨hL, _, _, c₁, c₂, a₁, a₂⟩ =>
@@ -247,8 +267,8 @@ theorem hinit_ct :
 theorem hupd_ct {dv : Lay P.I.hashLen → BitVec 32} {len il : Nat}
     (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (dv L) len) (hlen : len ≤ 256)
     (hpl : ∀ L : Lay P.I.hashLen, Fits P L → L.pv il = BitVec.ofNat 32 len) :
-    RelCT isa (Two P (UA P dv il)) ((cfgOf P).calls updCall) fun _ _ => True :=
-  calls_ct (fun _ _ _ _ h => h.2.2.2.2.2.2)
+    RelCT isa (Two P (UA P dv il)) ((cfgOf P).framed updPush updCall) fun _ _ => True :=
+  framed_ct (fun _ _ _ _ h => h.2.2.2.2.2.2)
     (flagStable_regs fun _ _ _ _ _ hr ⟨a, b, c, d, e, f, k⟩ => ⟨by rw [hr]; exact a, by rw [hr]; exact b,
       by rw [hr]; exact c, by rw [hr]; exact d, by rw [hr]; exact e, by rw [hr]; exact f, by rw [hr]; exact k⟩)
     (two_exists fun e => upd_rel P.ok.hH (sp := e.1.F) fun _ _ ⟨hL, hk, _, c₁, c₂, a₁, a₂⟩ =>
@@ -259,8 +279,8 @@ theorem hupd_ct {dv : Lay P.I.hashLen → BitVec 32} {len il : Nat}
 
 theorem hfin_ct {len it dst : Nat} (hdst : dst + P.F.H.D ≤ 128)
     (hpt : ∀ L : Lay P.I.hashLen, Fits P L → L.pv it = BitVec.ofNat 32 (P.F.H.B + len)) :
-    RelCT isa (Two P (FA P it dst)) ((cfgOf P).calls hfCall) fun _ _ => True :=
-  calls_ct (fun _ _ _ _ h => h.2.2.2.2.2.2)
+    RelCT isa (Two P (FA P it dst)) ((cfgOf P).framed hfPush hfCall) fun _ _ => True :=
+  framed_ct (fun _ _ _ _ h => h.2.2.2.2.2.2)
     (flagStable_regs fun _ _ _ _ _ hr ⟨a, b, c, d, e, f, k⟩ => ⟨by rw [hr]; exact a, by rw [hr]; exact b,
       by rw [hr]; exact c, by rw [hr]; exact d, by rw [hr]; exact e, by rw [hr]; exact f, by rw [hr]; exact k⟩)
     (two_exists fun e => hf_rel P.ok.hf (sp := e.1.F) fun _ _ ⟨hL, hk, _, c₁, c₂, a₁, a₂⟩ =>
@@ -277,7 +297,7 @@ def Upt (P : RfcHash) (dv : Lay P.I.hashLen → BitVec 32) (len : Nat) : Pred P 
   fun L g m₀ u => ∃ t, Updated P L g m₀ t (dv L) len u
 
 theorem initS_ct {Φ : Pred P} :
-    RelCT isa (Two P Φ) (.seq (.block hmacArgs₁) ((cfgOf P).calls hiCall)) (Two P (Ini P)) :=
+    RelCT isa (Two P Φ) (.seq (.block hmacArgs₁) ((cfgOf P).framed hiPush hiCall)) (Two P (Ini P)) :=
   two_wp ((two_wp (Ψ := IA P) (two_blk [.esp] espOnly init_blk) fun _ _ _ _ hL _ hc _ =>
       WP.mono (initArgs_ok hL hc) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq hinit_ct)
     fun _ _ _ t hL hk hc _ => WP.mono (init_step hL hk hc) fun _ h => ⟨h.ctx, t, h⟩
@@ -288,7 +308,7 @@ theorem updS_ct {dataA : List Instr} {dv : Lay P.I.hashLen → BitVec 32} {len i
     (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (dv L) len) (hlen : len ≤ 256) (hil : il < 8)
     (hlS : lenS = 128 + 4 * il) (hpl : ∀ L : Lay P.I.hashLen, Fits P L → L.pv il = BitVec.ofNat 32 len)
     (t₂ : TaintOk [.esp] (hmacArgs₂ dataA lenS)) :
-    RelCT isa (Two P (Ini P)) (.seq (.block (hmacArgs₂ dataA lenS)) ((cfgOf P).calls updCall))
+    RelCT isa (Two P (Ini P)) (.seq (.block (hmacArgs₂ dataA lenS)) ((cfgOf P).framed updPush updCall))
       (Two P (Upt P dv len)) :=
   two_wp ((two_wp (Ψ := UA P dv il) (two_blk [.esp] espOnly t₂) fun L g m₀ _ hL hk hc _ =>
       WP.mono (updArgs_ok hL hc (fun u hu => hdA L g m₀ u hL hk hu) hil hlS) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq
@@ -301,7 +321,7 @@ theorem finS_ct {dv : Lay P.I.hashLen → BitVec 32} {len dst it totS : Nat} (hd
     (hit : it < 8) (htS : totS = 128 + 4 * it)
     (hpt : ∀ L : Lay P.I.hashLen, Fits P L → L.pv it = BitVec.ofNat 32 (P.F.H.B + len))
     (t₃ : TaintOk [.esp] (hmacArgs₃ totS dst)) :
-    RelCT isa (Two P (Upt P dv len)) (.seq (.block (hmacArgs₃ totS dst)) ((cfgOf P).calls hfCall))
+    RelCT isa (Two P (Upt P dv len)) (.seq (.block (hmacArgs₃ totS dst)) ((cfgOf P).framed hfPush hfCall))
       fun _ _ => True :=
   (two_wp (Ψ := FA P it dst) (two_blk [.esp] espOnly t₃) fun _ _ _ _ hL _ hc _ =>
     WP.mono (finArgs_ok hL hc hit htS dst) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq (hfin_ct hdst hpt)

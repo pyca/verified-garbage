@@ -745,6 +745,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 212f
 cmp ebx, 2
@@ -757,101 +762,36 @@ cmp ebx, 5
 je 220f
 cmp ebx, 6
 je 222f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 223f
 222:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 223:
 jmp 221f
 220:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 221:
 jmp 219f
 218:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 219:
 jmp 217f
 216:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 217:
 jmp 215f
 214:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 215:
 jmp 213f
 212:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 213:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -862,6 +802,12 @@ mov ecx, DWORD PTR [esp+140]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 224f
 cmp ebx, 2
@@ -874,115 +820,37 @@ cmp ebx, 5
 je 232f
 cmp ebx, 6
 je 234f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 235f
 234:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 235:
 jmp 233f
 232:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 233:
 jmp 231f
 230:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 231:
 jmp 229f
 228:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 229:
 jmp 227f
 226:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 227:
 jmp 225f
 224:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 225:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -994,6 +862,12 @@ add edi, 0
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 236f
 cmp ebx, 2
@@ -1006,115 +880,37 @@ cmp ebx, 5
 je 244f
 cmp ebx, 6
 je 246f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 247f
 246:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 247:
 jmp 245f
 244:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 245:
 jmp 243f
 242:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 243:
 jmp 241f
 240:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 241:
 jmp 239f
 238:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 239:
 jmp 237f
 236:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 237:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+480]
@@ -1125,6 +921,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 248f
 cmp ebx, 2
@@ -1137,101 +938,36 @@ cmp ebx, 5
 je 256f
 cmp ebx, 6
 je 258f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 259f
 258:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 259:
 jmp 257f
 256:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 257:
 jmp 255f
 254:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 255:
 jmp 253f
 252:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 253:
 jmp 251f
 250:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 251:
 jmp 249f
 248:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 249:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -1242,6 +978,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 260f
 cmp ebx, 2
@@ -1254,115 +996,37 @@ cmp ebx, 5
 je 268f
 cmp ebx, 6
 je 270f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 271f
 270:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 271:
 jmp 269f
 268:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 269:
 jmp 267f
 266:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 267:
 jmp 265f
 264:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 265:
 jmp 263f
 262:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 263:
 jmp 261f
 260:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 261:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -1374,6 +1038,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 272f
 cmp ebx, 2
@@ -1386,115 +1056,37 @@ cmp ebx, 5
 je 280f
 cmp ebx, 6
 je 282f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 283f
 282:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 283:
 jmp 281f
 280:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 281:
 jmp 279f
 278:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 279:
 jmp 277f
 276:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 277:
 jmp 275f
 274:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 275:
 jmp 273f
 272:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 273:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 mov esi, DWORD PTR [esp+468]
 mov eax, DWORD PTR [esp+64]
@@ -1606,6 +1198,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 284f
 cmp ebx, 2
@@ -1618,101 +1215,36 @@ cmp ebx, 5
 je 292f
 cmp ebx, 6
 je 294f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 295f
 294:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 295:
 jmp 293f
 292:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 293:
 jmp 291f
 290:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 291:
 jmp 289f
 288:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 289:
 jmp 287f
 286:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 287:
 jmp 285f
 284:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 285:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -1723,6 +1255,12 @@ mov ecx, DWORD PTR [esp+140]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 296f
 cmp ebx, 2
@@ -1735,115 +1273,37 @@ cmp ebx, 5
 je 2104f
 cmp ebx, 6
 je 2106f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2107f
 2106:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2107:
 jmp 2105f
 2104:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2105:
 jmp 2103f
 2102:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2103:
 jmp 2101f
 2100:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2101:
 jmp 299f
 298:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 299:
 jmp 297f
 296:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 297:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -1855,6 +1315,12 @@ add edi, 0
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2108f
 cmp ebx, 2
@@ -1867,115 +1333,37 @@ cmp ebx, 5
 je 2116f
 cmp ebx, 6
 je 2118f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2119f
 2118:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2119:
 jmp 2117f
 2116:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2117:
 jmp 2115f
 2114:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2115:
 jmp 2113f
 2112:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2113:
 jmp 2111f
 2110:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2111:
 jmp 2109f
 2108:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2109:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+480]
@@ -1986,6 +1374,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2120f
 cmp ebx, 2
@@ -1998,101 +1391,36 @@ cmp ebx, 5
 je 2128f
 cmp ebx, 6
 je 2130f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2131f
 2130:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2131:
 jmp 2129f
 2128:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2129:
 jmp 2127f
 2126:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2127:
 jmp 2125f
 2124:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2125:
 jmp 2123f
 2122:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2123:
 jmp 2121f
 2120:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2121:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -2103,6 +1431,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2132f
 cmp ebx, 2
@@ -2115,115 +1449,37 @@ cmp ebx, 5
 je 2140f
 cmp ebx, 6
 je 2142f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2143f
 2142:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2143:
 jmp 2141f
 2140:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2141:
 jmp 2139f
 2138:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2139:
 jmp 2137f
 2136:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2137:
 jmp 2135f
 2134:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2135:
 jmp 2133f
 2132:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2133:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -2235,6 +1491,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2144f
 cmp ebx, 2
@@ -2247,115 +1509,37 @@ cmp ebx, 5
 je 2152f
 cmp ebx, 6
 je 2154f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2155f
 2154:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2155:
 jmp 2153f
 2152:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2153:
 jmp 2151f
 2150:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2151:
 jmp 2149f
 2148:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2149:
 jmp 2147f
 2146:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2147:
 jmp 2145f
 2144:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2145:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov eax, 128
 mov DWORD PTR [esp+176], eax
 2156:
@@ -2374,6 +1558,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2158f
 cmp ebx, 2
@@ -2386,101 +1575,36 @@ cmp ebx, 5
 je 2166f
 cmp ebx, 6
 je 2168f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2169f
 2168:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2169:
 jmp 2167f
 2166:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2167:
 jmp 2165f
 2164:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2165:
 jmp 2163f
 2162:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2163:
 jmp 2161f
 2160:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2161:
 jmp 2159f
 2158:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2159:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -2491,6 +1615,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2170f
 cmp ebx, 2
@@ -2503,115 +1633,37 @@ cmp ebx, 5
 je 2178f
 cmp ebx, 6
 je 2180f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2181f
 2180:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2181:
 jmp 2179f
 2178:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2179:
 jmp 2177f
 2176:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2177:
 jmp 2175f
 2174:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2175:
 jmp 2173f
 2172:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2173:
 jmp 2171f
 2170:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2171:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -2623,6 +1675,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2182f
 cmp ebx, 2
@@ -2635,115 +1693,37 @@ cmp ebx, 5
 je 2190f
 cmp ebx, 6
 je 2192f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2193f
 2192:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2193:
 jmp 2191f
 2190:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2191:
 jmp 2189f
 2188:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2189:
 jmp 2187f
 2186:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2187:
 jmp 2185f
 2184:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2185:
 jmp 2183f
 2182:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2183:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, esp
 add edi, 332
 add edi, DWORD PTR [esp+160]
@@ -2864,6 +1844,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2196f
 cmp ebx, 2
@@ -2876,101 +1861,36 @@ cmp ebx, 5
 je 2204f
 cmp ebx, 6
 je 2206f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2207f
 2206:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2207:
 jmp 2205f
 2204:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2205:
 jmp 2203f
 2202:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2203:
 jmp 2201f
 2200:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2201:
 jmp 2199f
 2198:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2199:
 jmp 2197f
 2196:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2197:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -2981,6 +1901,12 @@ mov ecx, DWORD PTR [esp+136]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2208f
 cmp ebx, 2
@@ -2993,115 +1919,37 @@ cmp ebx, 5
 je 2216f
 cmp ebx, 6
 je 2218f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2219f
 2218:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2219:
 jmp 2217f
 2216:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2217:
 jmp 2215f
 2214:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2215:
 jmp 2213f
 2212:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2213:
 jmp 2211f
 2210:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2211:
 jmp 2209f
 2208:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2209:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -3113,6 +1961,12 @@ add edi, 0
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2220f
 cmp ebx, 2
@@ -3125,115 +1979,37 @@ cmp ebx, 5
 je 2228f
 cmp ebx, 6
 je 2230f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2231f
 2230:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2231:
 jmp 2229f
 2228:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2229:
 jmp 2227f
 2226:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2227:
 jmp 2225f
 2224:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2225:
 jmp 2223f
 2222:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2223:
 jmp 2221f
 2220:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2221:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+480]
@@ -3244,6 +2020,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2232f
 cmp ebx, 2
@@ -3256,101 +2037,36 @@ cmp ebx, 5
 je 2240f
 cmp ebx, 6
 je 2242f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2243f
 2242:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2243:
 jmp 2241f
 2240:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2241:
 jmp 2239f
 2238:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2239:
 jmp 2237f
 2236:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2237:
 jmp 2235f
 2234:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2235:
 jmp 2233f
 2232:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2233:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -3361,6 +2077,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2244f
 cmp ebx, 2
@@ -3373,115 +2095,37 @@ cmp ebx, 5
 je 2252f
 cmp ebx, 6
 je 2254f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2255f
 2254:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2255:
 jmp 2253f
 2252:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2253:
 jmp 2251f
 2250:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2251:
 jmp 2249f
 2248:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2249:
 jmp 2247f
 2246:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2247:
 jmp 2245f
 2244:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2245:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -3493,6 +2137,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2256f
 cmp ebx, 2
@@ -3505,115 +2155,37 @@ cmp ebx, 5
 je 2264f
 cmp ebx, 6
 je 2266f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2267f
 2266:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2267:
 jmp 2265f
 2264:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2265:
 jmp 2263f
 2262:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2263:
 jmp 2261f
 2260:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2261:
 jmp 2259f
 2258:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2259:
 jmp 2257f
 2256:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2257:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, 1
 test edx, edx
 2195:
@@ -4492,6 +3064,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 212f
 cmp ebx, 2
@@ -4504,101 +3081,36 @@ cmp ebx, 5
 je 220f
 cmp ebx, 6
 je 222f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 223f
 222:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 223:
 jmp 221f
 220:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 221:
 jmp 219f
 218:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 219:
 jmp 217f
 216:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 217:
 jmp 215f
 214:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 215:
 jmp 213f
 212:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 213:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -4609,6 +3121,12 @@ mov ecx, DWORD PTR [esp+140]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 224f
 cmp ebx, 2
@@ -4621,115 +3139,37 @@ cmp ebx, 5
 je 232f
 cmp ebx, 6
 je 234f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 235f
 234:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 235:
 jmp 233f
 232:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 233:
 jmp 231f
 230:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 231:
 jmp 229f
 228:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 229:
 jmp 227f
 226:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 227:
 jmp 225f
 224:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 225:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -4741,6 +3181,12 @@ add edi, 0
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 236f
 cmp ebx, 2
@@ -4753,115 +3199,37 @@ cmp ebx, 5
 je 244f
 cmp ebx, 6
 je 246f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 247f
 246:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 247:
 jmp 245f
 244:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 245:
 jmp 243f
 242:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 243:
 jmp 241f
 240:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 241:
 jmp 239f
 238:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 239:
 jmp 237f
 236:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 237:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+480]
@@ -4872,6 +3240,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 248f
 cmp ebx, 2
@@ -4884,101 +3257,36 @@ cmp ebx, 5
 je 256f
 cmp ebx, 6
 je 258f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 259f
 258:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 259:
 jmp 257f
 256:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 257:
 jmp 255f
 254:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 255:
 jmp 253f
 252:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 253:
 jmp 251f
 250:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 251:
 jmp 249f
 248:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 249:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -4989,6 +3297,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 260f
 cmp ebx, 2
@@ -5001,115 +3315,37 @@ cmp ebx, 5
 je 268f
 cmp ebx, 6
 je 270f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 271f
 270:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 271:
 jmp 269f
 268:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 269:
 jmp 267f
 266:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 267:
 jmp 265f
 264:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 265:
 jmp 263f
 262:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 263:
 jmp 261f
 260:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 261:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -5121,6 +3357,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 272f
 cmp ebx, 2
@@ -5133,115 +3375,37 @@ cmp ebx, 5
 je 280f
 cmp ebx, 6
 je 282f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 283f
 282:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 283:
 jmp 281f
 280:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 281:
 jmp 279f
 278:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 279:
 jmp 277f
 276:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 277:
 jmp 275f
 274:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 275:
 jmp 273f
 272:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 273:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 mov esi, DWORD PTR [esp+468]
 mov eax, DWORD PTR [esp+64]
@@ -5353,6 +3517,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 284f
 cmp ebx, 2
@@ -5365,101 +3534,36 @@ cmp ebx, 5
 je 292f
 cmp ebx, 6
 je 294f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 295f
 294:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 295:
 jmp 293f
 292:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 293:
 jmp 291f
 290:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 291:
 jmp 289f
 288:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 289:
 jmp 287f
 286:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 287:
 jmp 285f
 284:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 285:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -5470,6 +3574,12 @@ mov ecx, DWORD PTR [esp+140]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 296f
 cmp ebx, 2
@@ -5482,115 +3592,37 @@ cmp ebx, 5
 je 2104f
 cmp ebx, 6
 je 2106f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2107f
 2106:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2107:
 jmp 2105f
 2104:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2105:
 jmp 2103f
 2102:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2103:
 jmp 2101f
 2100:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2101:
 jmp 299f
 298:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 299:
 jmp 297f
 296:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 297:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -5602,6 +3634,12 @@ add edi, 0
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2108f
 cmp ebx, 2
@@ -5614,115 +3652,37 @@ cmp ebx, 5
 je 2116f
 cmp ebx, 6
 je 2118f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2119f
 2118:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2119:
 jmp 2117f
 2116:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2117:
 jmp 2115f
 2114:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2115:
 jmp 2113f
 2112:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2113:
 jmp 2111f
 2110:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2111:
 jmp 2109f
 2108:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2109:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+480]
@@ -5733,6 +3693,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2120f
 cmp ebx, 2
@@ -5745,101 +3710,36 @@ cmp ebx, 5
 je 2128f
 cmp ebx, 6
 je 2130f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2131f
 2130:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2131:
 jmp 2129f
 2128:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2129:
 jmp 2127f
 2126:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2127:
 jmp 2125f
 2124:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2125:
 jmp 2123f
 2122:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2123:
 jmp 2121f
 2120:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2121:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -5850,6 +3750,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2132f
 cmp ebx, 2
@@ -5862,115 +3768,37 @@ cmp ebx, 5
 je 2140f
 cmp ebx, 6
 je 2142f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2143f
 2142:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2143:
 jmp 2141f
 2140:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2141:
 jmp 2139f
 2138:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2139:
 jmp 2137f
 2136:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2137:
 jmp 2135f
 2134:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2135:
 jmp 2133f
 2132:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2133:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -5982,6 +3810,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2144f
 cmp ebx, 2
@@ -5994,115 +3828,37 @@ cmp ebx, 5
 je 2152f
 cmp ebx, 6
 je 2154f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2155f
 2154:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2155:
 jmp 2153f
 2152:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2153:
 jmp 2151f
 2150:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2151:
 jmp 2149f
 2148:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2149:
 jmp 2147f
 2146:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2147:
 jmp 2145f
 2144:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2145:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov eax, 128
 mov DWORD PTR [esp+176], eax
 2156:
@@ -6121,6 +3877,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2158f
 cmp ebx, 2
@@ -6133,101 +3894,36 @@ cmp ebx, 5
 je 2166f
 cmp ebx, 6
 je 2168f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2169f
 2168:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2169:
 jmp 2167f
 2166:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2167:
 jmp 2165f
 2164:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2165:
 jmp 2163f
 2162:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2163:
 jmp 2161f
 2160:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2161:
 jmp 2159f
 2158:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2159:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -6238,6 +3934,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2170f
 cmp ebx, 2
@@ -6250,115 +3952,37 @@ cmp ebx, 5
 je 2178f
 cmp ebx, 6
 je 2180f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2181f
 2180:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2181:
 jmp 2179f
 2178:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2179:
 jmp 2177f
 2176:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2177:
 jmp 2175f
 2174:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2175:
 jmp 2173f
 2172:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2173:
 jmp 2171f
 2170:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2171:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -6370,6 +3994,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2182f
 cmp ebx, 2
@@ -6382,115 +4012,37 @@ cmp ebx, 5
 je 2190f
 cmp ebx, 6
 je 2192f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2193f
 2192:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2193:
 jmp 2191f
 2190:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2191:
 jmp 2189f
 2188:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2189:
 jmp 2187f
 2186:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2187:
 jmp 2185f
 2184:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2185:
 jmp 2183f
 2182:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2183:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, esp
 add edi, 332
 add edi, DWORD PTR [esp+160]
@@ -6611,6 +4163,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2196f
 cmp ebx, 2
@@ -6623,101 +4180,36 @@ cmp ebx, 5
 je 2204f
 cmp ebx, 6
 je 2206f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2207f
 2206:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2207:
 jmp 2205f
 2204:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2205:
 jmp 2203f
 2202:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2203:
 jmp 2201f
 2200:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2201:
 jmp 2199f
 2198:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2199:
 jmp 2197f
 2196:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2197:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -6728,6 +4220,12 @@ mov ecx, DWORD PTR [esp+136]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2208f
 cmp ebx, 2
@@ -6740,115 +4238,37 @@ cmp ebx, 5
 je 2216f
 cmp ebx, 6
 je 2218f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2219f
 2218:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2219:
 jmp 2217f
 2216:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2217:
 jmp 2215f
 2214:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2215:
 jmp 2213f
 2212:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2213:
 jmp 2211f
 2210:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2211:
 jmp 2209f
 2208:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2209:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -6860,6 +4280,12 @@ add edi, 0
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2220f
 cmp ebx, 2
@@ -6872,115 +4298,37 @@ cmp ebx, 5
 je 2228f
 cmp ebx, 6
 je 2230f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2231f
 2230:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2231:
 jmp 2229f
 2228:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2229:
 jmp 2227f
 2226:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2227:
 jmp 2225f
 2224:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2225:
 jmp 2223f
 2222:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2223:
 jmp 2221f
 2220:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2221:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+480]
@@ -6991,6 +4339,11 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push esi
+push edi
 cmp ebx, 1
 je 2232f
 cmp ebx, 2
@@ -7003,101 +4356,36 @@ cmp ebx, 5
 je 2240f
 cmp ebx, 6
 je 2242f
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_256_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2243f
 2242:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_224_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2243:
 jmp 2241f
 2240:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha512_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2241:
 jmp 2239f
 2238:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha384_init_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2239:
 jmp 2237f
 2236:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha256_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2237:
 jmp 2235f
 2234:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha224_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2235:
 jmp 2233f
 2232:
-push ebp
-push ecx
-push edx
-push esi
-push edi
 call {vg_hmac_sha1_init_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2233:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edi, DWORD PTR [esp+480]
 add edi, 0
 mov esi, DWORD PTR [esp+132]
@@ -7108,6 +4396,12 @@ mov ecx, DWORD PTR [esp+128]
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push ecx
+push edx
+push eax
+push esi
+push edi
 cmp ebx, 1
 je 2244f
 cmp ebx, 2
@@ -7120,115 +4414,37 @@ cmp ebx, 5
 je 2252f
 cmp ebx, 6
 je 2254f
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2255f
 2254:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2255:
 jmp 2253f
 2252:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2253:
 jmp 2251f
 2250:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha512_update_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2251:
 jmp 2249f
 2248:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2249:
 jmp 2247f
 2246:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha256_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2247:
 jmp 2245f
 2244:
-push ebp
-push ecx
-push edx
-push eax
-push esi
-push edi
 call {vg_sha1_update_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2245:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, DWORD PTR [esp+480]
 add edx, 0
 mov esi, DWORD PTR [esp+480]
@@ -7240,6 +4456,12 @@ add edi, 64
 mov ebp, DWORD PTR [esp+480]
 add ebp, 384
 mov ebx, DWORD PTR [esp+484]
+push ebp
+push edi
+push ecx
+push eax
+push esi
+push edx
 cmp ebx, 1
 je 2256f
 cmp ebx, 2
@@ -7252,115 +4474,37 @@ cmp ebx, 5
 je 2264f
 cmp ebx, 6
 je 2266f
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_256_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 jmp 2267f
 2266:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_224_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2267:
 jmp 2265f
 2264:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha512_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2265:
 jmp 2263f
 2262:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha384_finalize_scratch}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2263:
 jmp 2261f
 2260:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha256_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2261:
 jmp 2259f
 2258:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha224_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2259:
 jmp 2257f
 2256:
-push ebp
-push edi
-push ecx
-push eax
-push esi
-push edx
 call {vg_hmac_sha1_finalize_scratch_shani}
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
-pop eax
 2257:
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
 mov edx, 1
 test edx, edx
 2195:

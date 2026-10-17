@@ -194,11 +194,16 @@ def hmacArgs₃ (totS dst : Nat) : List Instr :=
   scr .edx sInner ++ scr .esi sOuter ++
     ([.mov .eax (.mem (stk totS)), .mov .ecx (.imm 0)] : List Instr) ++ fr .edi dst ++ scr .ebp sWork ++ selArg
 
+/-- The arguments of HMAC's `init`, `update` and `finalize`, pushed last
+to first, once around the dispatch (`Cfg.framed`). -/
+abbrev hiPush : List Reg := [.ebp, .ecx, .edx, .esi, .edi]
+abbrev updPush : List Reg := [.ebp, .ecx, .edx, .eax, .esi, .edi]
+abbrev hfPush : List Reg := [.ebp, .edi, .ecx, .eax, .esi, .edx]
+
 /-- The calls of HMAC's `init`, `update` and `finalize` of a hash function. -/
-def hiCall (F : Fns) : Prog isa := .frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call F.hiN F.hiC) (.pop .eax 5)
-def updCall (F : Fns) : Prog isa :=
-  .frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call F.H.updN F.H.updC) (.pop .eax 6)
-def hfCall (F : Fns) : Prog isa := .frame (.push [.ebp, .edi, .ecx, .eax, .esi, .edx]) (.call F.hfN F.hfC) (.pop .eax 6)
+def hiCall (F : Fns) : Prog isa := .call F.hiN F.hiC
+def updCall (F : Fns) : Prog isa := .call F.H.updN F.H.updC
+def hfCall (F : Fns) : Prog isa := .call F.hfN F.hfC
 
 /-- `V` copied at `esp + o`, 64 bytes, from the frame, with `dst` its base. -/
 def copyV (dst : Reg) (d : Nat) : List Instr := copyN 16 .esp fV dst d
@@ -276,14 +281,18 @@ variable (c : Cfg)
 /-- The case of `fns` of the hash function in `ebx`, each made by `mk`. -/
 def calls (mk : Fns → Prog isa) : Prog isa := Dispatch.X86.chain .ebx (c.fns.map fun p => (p.1, mk p.2))
 
+/-- The call of the hash function in `ebx` that `mk` makes, in one frame of
+the arguments `rs` around the dispatch, whose cases are bare calls. -/
+def framed (rs : List Reg) (mk : Fns → Prog isa) : Prog isa := .frame (.push rs) (c.calls mk) (.pop .eax rs.length)
+
 /-- `HMAC_K(data)` into the frame at `dst`, for the data at the address
 `dataA` sets `edx` to, of the length at `[esp + lenS]` (the bytes the inner
 state then holds at `[esp + totS]`): HMAC's `init` with the key `K`,
 `update` on the inner state, and `finalize`. -/
 def hmac (dataA : List Instr) (lenS totS dst : Nat) : Prog isa :=
-  .seq (.block hmacArgs₁) (.seq (c.calls hiCall)
-  (.seq (.block (hmacArgs₂ dataA lenS)) (.seq (c.calls updCall)
-  (.seq (.block (hmacArgs₃ totS dst)) (c.calls hfCall)))))
+  .seq (.block hmacArgs₁) (.seq (c.framed hiPush hiCall)
+  (.seq (.block (hmacArgs₂ dataA lenS)) (.seq (c.framed updPush updCall)
+  (.seq (.block (hmacArgs₃ totS dst)) (c.framed hfPush hfCall)))))
 
 /-- `V = HMAC_K(V)`. -/
 def hmacV : Prog isa := c.hmac (fr .edx fV) pD pF0 fV

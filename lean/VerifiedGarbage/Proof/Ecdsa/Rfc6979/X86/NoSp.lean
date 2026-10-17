@@ -78,10 +78,10 @@ theorem hmac_nosp (dataA : List Instr) (hd : dataA.all (fun i => !Taint.clobbers
   have blk : ∀ is : List Instr, is.all (fun i => !Taint.clobbers i .esp) = true → NoSp (.block is) := fun _ h =>
     NoSp.block h
   refine NoSp.seq (blk _ (by simp [hmacArgs₁, scr, fr, selArg, argM, Taint.clobbers, Taint.dst]))
-    (NoSp.seq (calls_nosp P fun p hp => NoSp.frame rfl rfl (NoSp.call (P.fnsSp p hp).1))
-    (NoSp.seq (blk _ ?_) (NoSp.seq (calls_nosp P fun p hp => NoSp.frame rfl rfl (NoSp.call (P.fnsSp p hp).2.1))
+    (NoSp.seq (NoSp.frame rfl rfl (calls_nosp P fun p hp => NoSp.call (P.fnsSp p hp).1))
+    (NoSp.seq (blk _ ?_) (NoSp.seq (NoSp.frame rfl rfl (calls_nosp P fun p hp => NoSp.call (P.fnsSp p hp).2.1))
     (NoSp.seq (blk _ (by simp [hmacArgs₃, scr, fr, selArg, argM, Taint.clobbers, Taint.dst]))
-      (calls_nosp P fun p hp => NoSp.frame rfl rfl (NoSp.call (P.fnsSp p hp).2.2))))))
+      (NoSp.frame rfl rfl (calls_nosp P fun p hp => NoSp.call (P.fnsSp p hp).2.2))))))
   simp only [hmacArgs₂, List.all_append, hd]
   simp [scr, selArg, argM, Taint.clobbers, Taint.dst]
 
