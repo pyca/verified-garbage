@@ -85,14 +85,14 @@ theorem St.psetWd {j o x : Nat} (cert : Cert (.block (setWd j o x))) (hj : j ∈
 theorem St.psetHi {j sh c x : Nat} {i : KP → Nat} (cert : Cert (.block (setHi j sh c x))) (hj : j ∈ L)
     (hsh : 1 ≤ sh ∧ sh ≤ 2) (hc : encodable (BitVec.ofNat 32 c) = true) (hx : encodable (BitVec.ofNat 32 x) = true)
     (hi : ∀ σ, E σ → In P σ → P.W * 2 ^ sh = 4 * i P + c ∧ i P < P.W)
-    (hl : ∀ σ, E σ → A σ j < 2 ^ (32 * i P)) :
+    (hl : ∀ σ, E σ → In P σ → A σ j < 2 ^ (32 * i P)) :
     VP (St P E A L V LS) (.block (setHi j sh c x))
       (St P E (fun σ => upd (A σ) j (A σ j + 2 ^ (32 * i P) * (x % 2 ^ 32))) (j :: L) V LS) :=
   VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by
     rw [← List.append_nil (setHi j sh c x)]
     have hj' := h.live_lt j hj
     obtain ⟨i1, i2⟩ := hi σ e h.pre
-    refine setHi_ok hw hj' (by decide) hsh hc hx i1 i2 (by rw [h.arrs j hj]; exact hl σ e)
+    refine setHi_ok hw hj' (by decide) hsh hc hx i1 i2 (by rw [h.arrs j hj]; exact hl σ e h.pre)
       fun t ht k v r => WP.block_nil ⟨e, h.write1 k hj' (by simp) r.sp r.rd r.wr (by rw [v, h.arrs j hj]) (by simp),
         ht⟩
 

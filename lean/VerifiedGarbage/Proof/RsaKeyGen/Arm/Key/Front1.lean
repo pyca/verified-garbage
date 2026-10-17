@@ -146,10 +146,10 @@ theorem consts_vp {E : State → Prop} :
       (by decide) fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine VP.block_append (l₁ := setHi aMod 2 4 0x80000000) (St.psetHi (i := fun P => P.W - 1) mod_taint (by simp)
       (by decide) (by decide) (by decide) (fun σ _ pre => by have := pre.wge; omega)
-      fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
+      fun σ _ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine VP.block_append (l₁ := setHi aTop 2 20 0x80000000) (St.psetHi (i := fun P => P.W - 5) top_taint (by simp)
       (by decide) (by decide) (by decide) (fun σ _ pre => by have := pre.wge; omega)
-      fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
+      fun σ _ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine (St.psetWd c33_taint (by simp) (by decide) (by decide) (by decide)
       fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _).mono
       (fun _ _ h => h) fun σ s h => h.mono (fun j hj => ⟨by mem_sub, ?_⟩)
