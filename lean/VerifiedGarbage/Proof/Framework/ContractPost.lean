@@ -19,7 +19,7 @@ the kernel only syntactically equal terms to compare.
 
 namespace VG
 
-theorem Contract.post_mk {M : ISA} (pre : M.State → Prop) (post pub : M.State → M.State → Prop) :
-    (Contract.mk pre post pub).post = post := rfl
+theorem Contract.post_mk {M : ISA} (pre : M.State → Prop) (post pub ctx : M.State → M.State → Prop) :
+    (Contract.mk pre post pub ctx).post = post := rfl
 
 end VG

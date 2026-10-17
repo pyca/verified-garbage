@@ -68,6 +68,11 @@ structure Contract (M : ISA) where
   /-- When two entry states agree on everything public (e.g. lengths and
   pointers, but not keys or plaintexts). -/
   pub : M.State → M.State → Prop
+  /-- When two entry states differ only in what is secret to the function:
+  the contents of the memory its caller gives it, and its secret arguments
+  (`NoResidue`). A contract that `Sig.contract` does not build relates no
+  states; every artifact's contract is one it builds (`Artifact.ofSig`). -/
+  ctx : M.State → M.State → Prop := fun _ _ => False
 
 /-- The contract of a function with signature `sig` under the calling
 convention `A`: the obligations the signature implies (see `TCB/Sig.lean`),
@@ -130,7 +135,19 @@ def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
           ((vals s₁).getD i 0).setWidth (widths.getD i 64) =
             ((vals s₂).getD i 0).setWidth (widths.getD i 64)) ∧
         ∀ r ∈ Sig.descs A.ptrBits sig.params (vals s₁), ∀ i < r.len,
-          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i) }
+          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i)
+    -- As `pub` without `leak`, and with everything else equal but the memory the function
+    -- may access: what it declares it may leak through its timing is not public here.
+    ctx s₁ s₂ := match A.args widths with
+      | none => False
+      | some vals =>
+        A.pub s₁ s₂ ∧ A.ctx widths pubs s₁ s₂ ∧
+        (∀ i, pubs.getD i false = true →
+          ((vals s₁).getD i 0).setWidth (widths.getD i 64) =
+            ((vals s₂).getD i 0).setWidth (widths.getD i 64)) ∧
+        (∀ r ∈ Sig.descs A.ptrBits sig.params (vals s₁), ∀ i < r.len,
+          A.mem s₁ (r.base + BitVec.ofNat 64 i) = A.mem s₂ (r.base + BitVec.ofNat 64 i)) ∧
+        ∀ a, (∀ r ∈ A.rd s₁ ++ A.wr s₁, ¬ r.Contains a 1) → A.mem s₁ a = A.mem s₂ a }
 
 /-! ## Documenting the obligations `Sig.contract` implies
 
@@ -352,5 +369,16 @@ structure Artifact where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin (target.abi.withConsts consts) sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- The function leaves no residue outside the memory its caller gives it
+  (`noResidueOk`): once it returns, the stack below the stack pointer holds
+  nothing secret of its inputs. The emitter documents it. Transitional: it
+  becomes part of `Verified` once every artifact proves it
+  (`ci/check_residue.py` keeps the artifacts without it from growing). -/
+  noResidue : Bool := false
+  noResidueOk : noResidue = true →
+      NoResidue target.isa contract.pre contract.ctx
+        (fun s => (target.abi.withConsts consts).rd s ++ (target.abi.withConsts consts).wr s)
+        (target.abi.withConsts consts).mem code := by
+    exact fun h => Bool.noConfusion h
 
 end VG

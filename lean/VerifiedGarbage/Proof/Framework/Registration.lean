@@ -22,6 +22,8 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   `Sig.contract` (e.g. `nttInvContract A` to `inPlaceContract A nttInv` to
   `Sig.contract A (inPlaceSig "f") …`), and then `⟨_, _, _, rfl⟩`, whose
   unification does not always find the arguments of `Sig.contract` itself.
+* `no_residue` proves `noResidueOk`: trivially, without `noResidue`; with
+  it, by `residue_auto`, which each ISA's `Residue.lean` extends.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
@@ -99,5 +101,20 @@ elab_rules : tactic
         fun _ => do
           s.restore
           evalTactic (← `(tactic| exact Code.all_of_allInstrs (by decide +kernel)))
+
+/-- Proves a residue goal of an artifact that sets `noResidue`; each ISA's
+`Proof/Framework/<ISA>/Residue.lean` adds the cases it can prove from the
+code alone (`macro_rules`). -/
+syntax "residue_auto" : tactic
+
+elab_rules : tactic
+  | `(tactic| no_residue) => do
+    let s ← saveState
+    try evalTactic (← `(tactic| exact fun h => Bool.noConfusion h))
+    catch _ =>
+      s.restore
+      try evalTactic (← `(tactic| intro _; residue_auto))
+      catch e => throwError "no_residue: give `noResidueOk` (the code is not one `residue_auto` \
+        proves): {e.toMessageData}"
 
 end VG.RegistrationTactics

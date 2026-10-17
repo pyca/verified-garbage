@@ -95,6 +95,15 @@ def firstNarrowStack (ws : List Nat) : Bool :=
   | 32 :: 64 :: rest => rest.all (· = 64)
   | _ => false
 
+/-- The registers holding the secret arguments, for arguments of the widths
+`ws`, of which those flagged `true` in `pubs` are public. -/
+def secretRegs (ws : List Nat) (pubs : List Bool) : List Reg :=
+  ((argRegs.take ws.length).zip pubs).filterMap fun (r, p) => if p then none else some r
+
+/-- `s₂` is `s₁` but for its memory and the registers `rs` (`Abi.ctx`). -/
+def sameBut (rs : List Reg) (s₁ s₂ : State) : Prop :=
+  s₂ = { s₁ with mem := s₂.mem, gpr := fun r => if r ∈ rs then s₂.gpr r else s₁.gpr r }
+
 def abi : Abi isa where
   ptrBits := 64
   args ws := if ws.length ≤ argRegs.length then
@@ -118,6 +127,7 @@ def abi : Abi isa where
       | 0 => True
       | n => n ≤ s.sp.toNat) ∧ s.sp.toNat + 8 * (ws.length - argRegs.length) ≤ 2 ^ 64
   pub s₁ s₂ := s₁.sp = s₂.sp
+  ctx ws pubs := sameBut (secretRegs ws pubs)
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr

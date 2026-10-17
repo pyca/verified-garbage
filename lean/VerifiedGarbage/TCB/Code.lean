@@ -65,6 +65,15 @@ The leakage trace records every memory address accessed and every branch
 decision: the standard constant-time leakage model. Instructions whose timing
 depends on their operand values (e.g. division) must not be part of any ISA
 model.
+
+## Residue
+
+A function's frames, and the return addresses of its calls, are below the
+stack pointer once it returns, where they keep what the function stored
+there until something else overwrites them. `NoResidue` says that what the
+function leaves in memory outside the memory its caller gave it depends
+only on what is public to it (`ConstantTime`'s notion, for memory instead of
+the trace), so no secret of its inputs is left there.
 -/
 
 @[expose] public section
@@ -216,5 +225,19 @@ from states that agree on public data produce identical leakage traces. -/
 def ConstantTime (Pre : M.State → Prop) (Pub : M.State → M.State → Prop) (c : Prog M) : Prop :=
   ∀ s₁ s₂ t₁ t₂ s₁' s₂', Pre s₁ → Pre s₂ → Pub s₁ s₂ →
     Exec M c s₁ t₁ s₁' → Exec M c s₂ t₂ s₂' → t₁ = t₂
+
+/-- `c` leaves no residue under `Pre`, outside the memory `vis`: any two
+terminating runs from states that `Ctx` relates ("the two initial states
+differ only in what is secret to the function") end with the same memory
+at every address outside the regions `vis` gives the first state. So what
+the function leaves outside `vis` (e.g. in the stack below the stack
+pointer, at any depth, once it has returned) is a function of what `Ctx`
+holds equal, and of nothing secret. The bytes may be anything else: zeros,
+return addresses, or the caller's own registers that the function saved. -/
+def NoResidue (Pre : M.State → Prop) (Ctx : M.State → M.State → Prop)
+    (vis : M.State → List Region) (mem : M.State → Mem) (c : Prog M) : Prop :=
+  ∀ s₁ s₂ t₁ t₂ s₁' s₂', Pre s₁ → Pre s₂ → Ctx s₁ s₂ →
+    Exec M c s₁ t₁ s₁' → Exec M c s₂ t₂ s₂' →
+    ∀ a, (∀ r ∈ vis s₁, ¬ r.Contains a 1) → mem s₁' a = mem s₂' a
 
 end VG

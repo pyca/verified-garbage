@@ -164,6 +164,13 @@ structure Abi (M : ISA) where
   /-- The part of the state other than the arguments that is public (the
   stack pointer). -/
   pub : M.State → M.State → Prop
+  /-- For arguments of the given widths, of which those flagged `true` are
+  public: the two states are the same but for their memory and the
+  registers holding the secret arguments. What the caller's state holds
+  besides the function's inputs (its callee-saved registers, the return
+  address, what the stack below the stack pointer held) is not secret to
+  the function, which may leave a copy of it behind (`NoResidue`). -/
+  ctx : List Nat → List Bool → M.State → M.State → Prop
   /-- The memory of a state, and the regions it permits reading and writing. -/
   mem : M.State → Mem
   rd : M.State → List Region

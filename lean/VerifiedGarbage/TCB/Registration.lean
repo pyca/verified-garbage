@@ -30,13 +30,18 @@ syntax (name := spSafe) "sp_safe" : tactic
 implements it; how it is proven is not trusted. -/
 syntax (name := ofSig) "of_sig" : tactic
 
+/-- Proves `Registration.noResidueOk`, by default: nothing, if `noResidue` is
+`false`. `Proof/Framework/Registration.lean` implements it; how it is proven
+is not trusted. -/
+syntax (name := noResidue) "no_residue" : tactic
+
 /-- `api`'s contract under the calling convention `A`, for an implementation
 whose calls and frames use `stack` bytes of stack (`Api.contracts`), or, if
 `api` has none, one that no state satisfies, which `Verified` rejects. -/
 def Api.contract {M : ISA} (api : Api) (A : Abi M) (stack : Nat) : Contract M :=
   match api.contracts with
   | some f => f A stack
-  | none => ⟨fun _ => False, fun _ _ => False, fun _ _ => False⟩
+  | none => { pre _ := False, post _ _ := False, pub _ _ := False }
 
 /-- An implementation of `api` on `target`: what a registration file states
 of a function made from `api` (see `Api.artifact`). -/
@@ -71,6 +76,14 @@ structure Registration (api : Api) (target : Target) where
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin (target.abi.withConsts consts) api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
+  /-- `Artifact.noResidue`. -/
+  noResidue : Bool := false
+  /-- `Artifact.noResidueOk`. -/
+  noResidueOk : noResidue = true →
+      NoResidue target.isa contract.pre contract.ctx
+        (fun s => (target.abi.withConsts consts).rd s ++ (target.abi.withConsts consts).wr s)
+        (target.abi.withConsts consts).mem code := by
+    no_residue
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -98,5 +111,7 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) : A
   features := r.features
   written := r.written
   writtenOk := r.writtenOk
+  noResidue := r.noResidue
+  noResidueOk := r.noResidueOk
 
 end VG

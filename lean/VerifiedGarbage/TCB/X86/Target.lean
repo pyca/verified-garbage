@@ -80,6 +80,8 @@ def abi : Abi isa where
     | 0 => (s.gpr .esp).toNat + 4 + argBytes ws ≤ 2 ^ 32
     | n => n ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 + argBytes ws ≤ 2 ^ 32
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp
+  -- Every argument is in memory, on the stack: no register holds a secret one.
+  ctx _ _ s₁ s₂ := s₂ = { s₁ with mem := s₂.mem }
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr

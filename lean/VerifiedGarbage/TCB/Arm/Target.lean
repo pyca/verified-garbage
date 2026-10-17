@@ -94,6 +94,21 @@ def Loc.val (s : State) : Loc → BitVec 64
   | .stack off 64 => stackArg s (off / 4 + 1) ++ stackArg s (off / 4)
   | .stack off _ => (stackArg s (off / 4)).setWidth 64
 
+/-- The registers an argument at `l` is in. -/
+def Loc.regs : Loc → List Reg
+  | .reg r => [r]
+  | .pair lo hi => [lo, hi]
+  | .stack .. => []
+
+/-- The registers holding the secret arguments, for arguments of the widths
+`ws`, of which those flagged `true` in `pubs` are public. -/
+def secretRegs (ws : List Nat) (pubs : List Bool) : List Reg :=
+  ((classify ws 0 0).1.zip pubs).flatMap fun (l, p) => if p then [] else l.regs
+
+/-- `s₂` is `s₁` but for its memory and the registers `rs` (`Abi.ctx`). -/
+def sameBut (rs : List Reg) (s₁ s₂ : State) : Prop :=
+  s₂ = { s₁ with mem := s₂.mem, gpr := fun r => if r ∈ rs then s₂.gpr r else s₁.gpr r }
+
 def abi : Abi isa where
   ptrBits := 32
   args ws := if ws.all (fun w => w = 32 ∨ w = 64) then
@@ -105,6 +120,7 @@ def abi : Abi isa where
     | 0 => s.sp.toNat + (classify ws 0 0).2 ≤ 2 ^ 32
     | n => n ≤ s.sp.toNat ∧ s.sp.toNat + (classify ws 0 0).2 ≤ 2 ^ 32
   pub s₁ s₂ := s₁.sp = s₂.sp
+  ctx ws pubs := sameBut (secretRegs ws pubs)
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr

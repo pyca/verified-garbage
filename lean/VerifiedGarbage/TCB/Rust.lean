@@ -238,6 +238,15 @@ def writtenDoc (name : String) (written : List (String × Nat)) : List String :=
     s!"It writes at most the first {n} bytes of `{p}` (`{writtenName name p}`): no byte of \
       `{p}` beyond them changes."
 
+/-- The paragraph documenting that the function leaves no residue
+(`Artifact.noResidue`), if it proves it. -/
+def residueDoc (noResidue : Bool) : List String :=
+  if noResidue then
+    ["It leaves nothing secret in memory outside its buffers: once it returns, what it \
+      left in the stack below the stack pointer depends only on its public arguments and on \
+      what the caller's registers and stack held (`Artifact.noResidue`)."]
+  else []
+
 /-- The features that the function `name`, with documentation `doc`, declares
 (`declared`) are exactly those its code requires (`required`, with
 repetitions); and if there are any, `doc` ends with its `# Safety`
@@ -350,13 +359,14 @@ def prependSafety (doc : String) : List String → String
 /-- The documentation of `a` as emitted: its `doc`, with what its signature's
 contract requires of the memory each buffer is valid for and of where its
 buffers are (`Sig.layoutNote` before its `# Safety` section, `Sig.validDoc`
-first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
-(`featureDoc`). -/
+first in it and `Sig.layoutDoc` at the end), whether it leaves no residue
+(`residueDoc`), and the CPU features it needs (`featureDoc`). -/
 def fullDoc (a : Artifact) : String :=
   let A := a.target.abi
   let items := Sig.layoutDoc A a.sig a.writeArgs a.stack
   featureDoc (prependSafety (insertNotes a.doc
-      (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written))
+      (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written ++
+        residueDoc a.noResidue))
     (Sig.validDoc a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
 
 /-- If the emitter adds anything to the documentation of `a` from its
