@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -164,9 +166,36 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     verified := Fast.openPw_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features }]
 
+/-- How the `*_store_powers` functions store the powers. -/
+def storePowersNote (v : GcmImpl) (g : GhashStoreImpl) (name : String) : String :=
+  "It computes as `" ++ name ++ v.suffix ++ "` does on the path for TLS records (a 12-byte nonce and at most \
+    16 bytes of additional data), calling `" ++ g.fn.name ++ "` once, on the whole blocks of the text, which \
+    also stores the powers of `H` to `pw`."
+
+/-- `vg_aes_gcm_seal_store_powers` and `vg_aes_gcm_open_store_powers`, calling
+`g` on the path for TLS records, the only one their contracts allow. -/
+def storePowersArtifacts (v : GcmImpl) (g : GhashStoreImpl) : List Artifact :=
+  [Spec.Gcm.sealStorePowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, storePowersNote v g Spec.Gcm.sealApi.name]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
+      (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
+    stack := 2592
+    verified := Fast.sealSt_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features },
+  Spec.Gcm.openStorePowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, storePowersNote v g Spec.Gcm.openApi.name]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3
+      (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
+    stack := 2592
+    verified := Fast.openSt_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   artifactsOf v.impl ++ artifactsGather v.impl ++
-    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
+    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD [] ++
+    (v.impl.gh.storePowers.map (storePowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm
