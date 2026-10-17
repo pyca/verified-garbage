@@ -89,7 +89,8 @@ fn cases() -> Vec<Case> {
             if name == "Key" {
                 case.key_len = key_len(&rest[1..]);
             }
-        } else if indent > 3 && !case.fields.is_empty() {
+        } else {
+            assert!(indent > 3, "{l}");
             let (name, v) = case.fields.last_mut().unwrap();
             v.push_str(words[0]);
             if name == "Key" {
