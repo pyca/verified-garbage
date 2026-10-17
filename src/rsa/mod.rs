@@ -65,7 +65,7 @@
 ))]
 
 mod precomputed;
-use precomputed::{Precomputed, modulus_valid};
+use precomputed::{Precomputed, modulus_valid, precompute_into, precomputed_words};
 mod scratch;
 pub(crate) use scratch::Scratch;
 use scratch::VerifyScratch;
@@ -191,8 +191,48 @@ pub(crate) fn scratch_words(n_len: usize) -> usize {
 /// The words of working space the public-key operation and its
 /// precomputation need for an `n_len`-byte modulus
 /// (`VG.Spec.Rsa.publicScratchWords`).
-pub(crate) fn public_scratch_words(n_len: usize) -> usize {
+pub(crate) const fn public_scratch_words(n_len: usize) -> usize {
     8 * n_len.div_ceil(8) + 48
+}
+
+/// The longest modulus, in bytes (4096 bits), whose one-shot operations
+/// ([`with_once`]) keep their working space on the stack.
+pub(crate) const ONCE_STACK_N_LEN: usize = 512;
+
+/// `f` of one operation with the public key `(n, e)`, checked as
+/// [`PublicKey::new`] checks it, without keeping a key: `f` is given `n`,
+/// `e` without its leading zero bytes, the values of `n`
+/// (`VG.Spec.Rsa.publicPrecompute`) and a working space of
+/// `public_scratch_words(n_len) + extra` words, which holds only values of
+/// `n` (it computed them). For a modulus of up to [`ONCE_STACK_N_LEN`]
+/// bytes, both are arrays on the stack, the working space of `S` words (at
+/// least `public_scratch_words(ONCE_STACK_N_LEN) + extra`); for a longer
+/// one, they are allocated.
+pub(crate) fn with_once<const S: usize, R>(
+    n: &[u8],
+    e: &[u8],
+    extra: usize,
+    f: impl FnOnce(&[u8], &[u8], &[u64], &mut [u64]) -> R,
+) -> Result<R, Error> {
+    if !modulus_valid(n) {
+        return Err(Error::InvalidModulus);
+    }
+    let e = exponent(e)?;
+    let k = n.len();
+    let words = public_scratch_words(k) + extra;
+    let run = |pre: &mut [u64], scratch: &mut [u64]| {
+        // `vg_rsa_public_precompute` refuses only moduli that
+        // `modulus_valid` refuses (`VG.Spec.Rsa.modulusValid`).
+        assert_eq!(precompute_into(n, scratch, pre), 1);
+        f(n, e, pre, scratch)
+    };
+    Ok(if k <= ONCE_STACK_N_LEN {
+        let mut pre = [0u64; precomputed_words(ONCE_STACK_N_LEN)];
+        let mut scratch = [0u64; S];
+        run(&mut pre[..precomputed_words(k)], &mut scratch[..words])
+    } else {
+        run(&mut vec![0; precomputed_words(k)], &mut vec![0; words])
+    })
 }
 
 /// `x` without its leading zero bytes.

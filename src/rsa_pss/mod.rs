@@ -18,6 +18,9 @@
 //! hash function, the lengths and the expected salt length, but not on the
 //! signature, the hash value or anything computed from them but the result.
 //! Verification reuses the public-key values cached by [`PublicKey::new`].
+//! [`verify_once`] verifies with a key given as `(n, e)`, for a single
+//! verification: it computes the modulus' values as a key's first operation
+//! does, in working space on the stack for moduli of up to 4096 bits.
 //!
 //! Each function runs the implementation of the hash function's compression
 //! function that the CPU is best at (as [`crate::hashes`] does), and for
@@ -47,7 +50,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::cpu::detected;
-use crate::rsa::{PrivateKey, PublicKey};
+use crate::rsa::{ONCE_STACK_N_LEN, PrivateKey, PublicKey, with_once};
 use crate::zeroize::zeroize;
 
 /// A hash function RSASSA-PSS can use (`VG.Spec.Mgf1.Hash`).
@@ -264,7 +267,7 @@ pub(crate) fn scratch_words(n_len: usize) -> usize {
 
 /// The words of working space verification needs for an `n_len`-byte
 /// modulus (`VG.Spec.RsaPss.publicScratchWords`).
-pub(crate) fn public_scratch_words(n_len: usize) -> usize {
+pub(crate) const fn public_scratch_words(n_len: usize) -> usize {
     crate::rsa::public_scratch_words(n_len) + 1024
 }
 
@@ -337,9 +340,12 @@ pub fn verify(
         SaltLength::Any => (0, 1),
     };
     let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
+    let pre = key.pre(&mut scratch);
     let r = with_functions!(hash, |fns| call_verify(
         fns.1,
-        key,
+        &key.n,
+        &key.e,
+        pre,
         signature,
         digest,
         salt_len,
@@ -348,6 +354,37 @@ pub fn verify(
     ));
     // The encoding is public: ScratchLease returns the buffer to the key unwiped.
     r == 1
+}
+
+/// [`verify`] with the public key `(n, e)` (big-endian, checked as
+/// [`PublicKey::new`] checks them), for a single verification: it computes
+/// the modulus' values as a key's first operation does, but keeps no key,
+/// and for a modulus of up to 4096 bits allocates nothing. The key's error
+/// ([`crate::rsa::Error`]) if `(n, e)` is not a valid public key.
+///
+/// The working space holds only public values (the key's, the
+/// signature's and those of the encoding it recovers) and is not wiped.
+pub fn verify_once(
+    n: &[u8],
+    e: &[u8],
+    signature: &[u8],
+    digest: &[u8],
+    hash: Hash,
+    mgf1_hash: Hash,
+    salt_length: SaltLength,
+) -> Result<bool, crate::rsa::Error> {
+    with_once::<{ public_scratch_words(ONCE_STACK_N_LEN) }, _>(n, e, 1024, |n, e, pre, scratch| {
+        if mgf1_hash != hash || digest.len() != hash.digest_len() || signature.len() != n.len() {
+            return false;
+        }
+        let (salt_len, any) = match salt_length {
+            SaltLength::Len(l) => (l, 0),
+            SaltLength::Any => (0, 1),
+        };
+        with_functions!(hash, |fns| call_verify(
+            fns.1, n, e, pre, signature, digest, salt_len, any, scratch
+        )) == 1
+    })
 }
 
 /// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_sign` that this CPU can run, on the
@@ -399,12 +436,16 @@ fn call_sign<const N: usize>(
 }
 
 /// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed` that this CPU can run, on the
-/// key, the modulus-long signature, the hash value (as long as `H`'s
+/// key `(n, e)` (`64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`) and the values
+/// `pre` of `n`, the modulus-long signature, the hash value (as long as `H`'s
 /// values), the salt length and whether any is allowed, and the working
 /// space.
+#[allow(clippy::too_many_arguments)]
 fn call_verify<const N: usize>(
     f: VerifyFn<N>,
-    key: &PublicKey,
+    n: &[u8],
+    e: &[u8],
+    pre: &[u64],
     signature: &[u8],
     digest: &[u8],
     salt_len: usize,
@@ -412,21 +453,21 @@ fn call_verify<const N: usize>(
     scratch: &mut [u64],
 ) -> u32 {
     let digest: &[u8; N] = digest.try_into().unwrap();
-    assert!(signature.len() == key.n.len() && scratch.len() == public_scratch_words(key.n.len()));
-    let pre = key.pre(scratch);
+    assert!(signature.len() == n.len() && scratch.len() == public_scratch_words(n.len()));
     // SAFETY: each pointer is valid for its length (`scratch` for writes,
     // `digest` for the hash function's values), and none overlaps another or
-    // wraps around, as they are distinct Rust allocations; `PublicKey::new`
-    // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
-    // and `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; and the CPU has the features of
-    // the function `functions` chose. `pre` holds the verified precomputed
-    // values for `key.n`, with their required length.
+    // wraps around, as they are distinct Rust slices (`scratch` borrowed
+    // exclusively); `PublicKey::new` (or `with_once`, which checks the key
+    // the same way) gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`;
+    // `sig_len = n_len` and `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; and the CPU
+    // has the features of the function `functions` chose. `pre` holds the
+    // verified precomputed values for `n`, with their required length.
     unsafe {
         f(
-            key.n.as_ptr(),
-            key.n.len(),
-            key.e.as_ptr(),
-            key.e.len(),
+            n.as_ptr(),
+            n.len(),
+            e.as_ptr(),
+            e.len(),
             digest,
             signature.as_ptr(),
             signature.len(),
@@ -591,6 +632,35 @@ mod tests {
         assert!(!v(&sig, &[0; 19], Hash::Sha1, Hash::Sha1));
         assert!(!v(&sig[..63], &[0; 20], Hash::Sha1, Hash::Sha1));
         assert!(!v(&sig, &[0; 20], Hash::Sha1, Hash::Sha1));
+        // And so does `verify_once`, which also refuses an invalid key.
+        let (n, e) = (&public.n, &public.e);
+        let once = |n: &[u8], e: &[u8], s: &[u8], d: &[u8], h, g| {
+            verify_once(n, e, s, d, h, g, SaltLength::Any)
+        };
+        assert_eq!(
+            once(n, e, &sig, &[0; 20], Hash::Sha1, Hash::Sha256),
+            Ok(false)
+        );
+        assert_eq!(
+            once(n, e, &sig, &[0; 19], Hash::Sha1, Hash::Sha1),
+            Ok(false)
+        );
+        assert_eq!(
+            once(n, e, &sig[..63], &[0; 20], Hash::Sha1, Hash::Sha1),
+            Ok(false)
+        );
+        assert_eq!(
+            once(n, e, &sig, &[0; 20], Hash::Sha1, Hash::Sha1),
+            Ok(false)
+        );
+        assert_eq!(
+            once(&n[1..], e, &sig, &[0; 20], Hash::Sha1, Hash::Sha1),
+            Err(crate::rsa::Error::InvalidModulus)
+        );
+        assert_eq!(
+            once(n, &[2], &sig, &[0; 20], Hash::Sha1, Hash::Sha1),
+            Err(crate::rsa::Error::InvalidExponent)
+        );
     }
 
     #[test]

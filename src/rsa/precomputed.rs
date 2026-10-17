@@ -18,7 +18,7 @@ use crate::cpu::detected;
 
 /// The words of a modulus' precomputed values for an `n_len`-byte modulus
 /// (`VG.Spec.Rsa.precomputedWords`).
-pub(super) fn precomputed_words(n_len: usize) -> usize {
+pub(super) const fn precomputed_words(n_len: usize) -> usize {
     2 * n_len.div_ceil(8)
 }
 
@@ -34,9 +34,21 @@ pub(super) fn modulus_valid(n: &[u8]) -> bool {
 /// What `vg_rsa_public_precompute` writes for `n` and returns, computed in
 /// `scratch`, which has at least `public_scratch_words(n.len())` words.
 fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
+    let mut pre = vec![0u64; precomputed_words(n.len())];
+    let r = precompute_into(n, scratch, &mut pre);
+    (pre, r)
+}
+
+/// What `vg_rsa_public_precompute` returns for `n`, having written its
+/// values to `pre`, of `precomputed_words(n.len())` words, computed in
+/// `scratch`, which has at least `public_scratch_words(n.len())` words.
+pub(super) fn precompute_into(n: &[u8], scratch: &mut [u64], pre: &mut [u64]) -> u32 {
     let k = n.len();
-    assert!((64..=1024).contains(&k) && scratch.len() >= public_scratch_words(k));
-    let mut pre = vec![0u64; precomputed_words(k)];
+    assert!(
+        (64..=1024).contains(&k)
+            && scratch.len() >= public_scratch_words(k)
+            && pre.len() == precomputed_words(k)
+    );
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_public_precompute,
         // `select` chose it because the CPU has the features it needs.
@@ -45,11 +57,11 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
     };
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
-    // distinct Rust allocations (`scratch` borrowed exclusively); the check
+    // distinct Rust slices (`pre` and `scratch` borrowed exclusively); the check
     // above gives `64 ≤ n_len ≤ 1024` and `scratch_len ≥ 8 ⌈n_len / 8⌉ + 48`, and
     // `pre_len = 2 ⌈n_len / 8⌉`; and the CPU has the features of the
     // function `select` chose.
-    let r = unsafe {
+    unsafe {
         f(
             pre.as_mut_ptr(),
             pre.len(),
@@ -58,8 +70,7 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
             scratch.as_mut_ptr(),
             scratch.len(),
         )
-    };
-    (pre, r)
+    }
 }
 
 /// The precomputed values of a key's modulus, once an operation has

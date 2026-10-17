@@ -48,6 +48,8 @@ pub const USES: &[&str] = &[
 /// up an `EVP_PKEY_CTX` in every operation and take a salt as long as the
 /// hash value, from a key loaded from its components). Signatures are
 /// randomized, so aws-lc-rs and verified-garbage verify each other's.
+/// SHA-256's `rsa_pss_sha256_mgf1_sha256_verify_once` loads the key in
+/// each measurement (see there).
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
@@ -64,7 +66,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::rsa::{Padding, Rsa};
     use openssl::sign::RsaPssSaltlen;
     use verified_garbage::rsa::{PrivateKey, PublicKey};
-    use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify};
+    use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify, verify_once};
 
     use crate::{AWS_LC, OPENSSL, VG};
 
@@ -254,6 +256,59 @@ pub fn bench(c: &mut Criterion) {
                         black_box(aws_public)
                             .verify_digest_sig(&digest, black_box(sig))
                             .unwrap()
+                    })
+                });
+            }
+        }
+        g.finish();
+
+        if name != "sha256" {
+            continue;
+        }
+        // The same signatures, each verified with a key loaded in the
+        // measurement, as a TLS client verifies a certificate's signature
+        // with the key it has just parsed: the key's setup (its Montgomery
+        // values) is counted. verified-garbage verifies once from `(n, e)`
+        // (`verify_once`), which the caller has parsed; OpenSSL and
+        // aws-lc-rs load the key from the DER `SubjectPublicKeyInfo`, as
+        // rustls gives it to them.
+        let mut g = c.benchmark_group(format!("rsa_pss_{name}_mgf1_{name}_verify_once"));
+        for ((pkey, .., (n, e)), sig) in sizes.iter().zip(&sigs) {
+            let k = sig.len();
+            let spki = pkey.public_key_to_der().unwrap();
+            let salt = SaltLength::Len(digest.len());
+            g.bench_function(BenchmarkId::new(VG, k), |b| {
+                b.iter(|| {
+                    let ok = verify_once(
+                        black_box(n),
+                        black_box(e),
+                        black_box(sig),
+                        &digest,
+                        hash,
+                        hash,
+                        salt,
+                    );
+                    assert!(ok.unwrap())
+                })
+            });
+            g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+                b.iter(|| {
+                    let pkey = PKey::public_key_from_der(black_box(&spki)).unwrap();
+                    let mut c = PkeyCtx::new(&pkey).unwrap();
+                    c.verify_init().unwrap();
+                    c.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
+                    c.set_signature_md(&md).unwrap();
+                    c.set_rsa_mgf1_md(&md).unwrap();
+                    c.set_rsa_pss_saltlen(RsaPssSaltlen::DIGEST_LENGTH).unwrap();
+                    assert!(c.verify(black_box(&digest), black_box(sig)).unwrap())
+                })
+            });
+            if let Some((alg, _, params)) = aws_lc {
+                g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+                    b.iter(|| {
+                        let key = ParsedPublicKey::new(params, black_box(&spki)).unwrap();
+                        let digest = Digest::import_less_safe(black_box(&digest), alg).unwrap();
+                        key.verify_digest_sig(&digest, black_box(sig)).unwrap()
                     })
                 });
             }

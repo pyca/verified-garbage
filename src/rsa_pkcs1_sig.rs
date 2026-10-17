@@ -22,7 +22,10 @@
 //! on x86-64, which reuses the key's precomputed values as [`verify`] does
 //! and returns the hash value a signature signs, as BoringSSL's
 //! `EVP_PKEY_verify_recover` does. Everything they read is public and their
-//! timing may depend on it.
+//! timing may depend on it. [`verify_once`] verifies with a key given as
+//! `(n, e)`, for a single verification: it computes the modulus' values as a
+//! key's first operation does, in working space on the stack for moduli of
+//! up to 4096 bits.
 //!
 //! This module only checks the lengths and allocates the memory the
 //! functions work in.
@@ -45,7 +48,10 @@ use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_verify_precomputed_adx,
 };
 use crate::cpu::detected;
-use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
+use crate::rsa::{
+    Backend, ONCE_STACK_N_LEN, PrivateKey, PublicKey, public_scratch_words, scratch_words,
+    with_once,
+};
 
 /// The hash function of a hash value (`VG.Spec.RsaPkcs1Sig.Hash`), each with
 /// the number the verified functions take (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
@@ -186,9 +192,47 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
 /// Reuses the public key's verification buffer, which holds only public
 /// values and is not wiped.
 pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
-    let k = key.n.len();
-    let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
+    let mut scratch = key
+        .verify_scratch
+        .take(public_scratch_words(key.n.len()), false);
     let pre = key.pre(&mut scratch);
+    call_verify(&key.n, &key.e, pre, &mut scratch, signature, digest, hash)
+}
+
+/// [`verify`] with the public key `(n, e)` (big-endian, checked as
+/// [`PublicKey::new`] checks them), for a single verification: it computes
+/// the modulus' values as a key's first operation does, but keeps no key,
+/// and for a modulus of up to 4096 bits allocates nothing. The key's
+/// error ([`crate::rsa::Error`]) if `(n, e)` is not a valid public key.
+///
+/// The working space holds only public values (the key's, the
+/// signature's and those of the encoding it recovers) and is not wiped.
+pub fn verify_once(
+    n: &[u8],
+    e: &[u8],
+    signature: &[u8],
+    digest: &[u8],
+    hash: Hash,
+) -> Result<bool, crate::rsa::Error> {
+    with_once::<{ public_scratch_words(ONCE_STACK_N_LEN) }, _>(n, e, 0, |n, e, pre, scratch| {
+        call_verify(n, e, pre, scratch, signature, digest, hash)
+    })
+}
+
+/// `vg_rsa_pkcs1_verify_precomputed`, or the variant the CPU selects, with
+/// the key `(n, e)` (`64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`), the
+/// values `pre` of `n` and the working space `scratch`, of
+/// `public_scratch_words(n_len)` words: whether `signature` is valid.
+fn call_verify(
+    n: &[u8],
+    e: &[u8],
+    pre: &[u64],
+    scratch: &mut [u64],
+    signature: &[u8],
+    digest: &[u8],
+    hash: Hash,
+) -> bool {
+    assert!(scratch.len() == public_scratch_words(n.len()));
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
         #[cfg(target_arch = "x86_64")]
@@ -196,16 +240,18 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
     };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
-    // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; and `pre`
-    // holds the verified precomputation for `key.n`, with `2 * ceil(n_len / 8)`
-    // words. The CPU supports the selected function's features.
+    // slices (`scratch` borrowed exclusively); `PublicKey::new` (or
+    // `with_once`, which checks the key the same way) gives
+    // `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`;
+    // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; and `pre` holds the verified
+    // precomputation for `n`, with `2 * ceil(n_len / 8)` words. The CPU
+    // supports the selected function's features.
     let r = unsafe {
         f(
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
+            n.as_ptr(),
+            n.len(),
+            e.as_ptr(),
+            e.len(),
             hash as u32,
             digest.as_ptr(),
             digest.len(),
@@ -217,7 +263,6 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
             pre.len(),
         )
     };
-    // ScratchLease wipes the working space before returning it to the key.
     r == 1
 }
 
@@ -325,6 +370,20 @@ mod tests {
             );
         }
         assert!(!verify(&public, &[], &[0; 20], Hash::Sha1));
+    }
+
+    /// `verify_once` refuses an invalid key, and rejects what `verify`
+    /// rejects with a valid one.
+    #[test]
+    fn verify_once_refused() {
+        use crate::rsa::Error as KeyError;
+        let (_, public) = composite_key();
+        let (n, e) = (&public.n, &public.e);
+        let once = |n: &[u8], e: &[u8], s: &[u8]| verify_once(n, e, s, &[0; 20], Hash::Sha1);
+        assert_eq!(once(&n[1..], e, &[0; 64]), Err(KeyError::InvalidModulus));
+        assert_eq!(once(n, &[2], &[0; 64]), Err(KeyError::InvalidExponent));
+        assert_eq!(once(n, e, &[0; 64]), Ok(false));
+        assert_eq!(once(n, e, &[]), Ok(false));
     }
 
     #[test]

@@ -22,7 +22,7 @@ use verified_garbage::hashes::{
     sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify};
+use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify, verify_once};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
@@ -141,19 +141,31 @@ fn digest(h: Hash, msg: &[u8]) -> Vec<u8> {
     }
 }
 
+/// A public key, with its modulus and exponent.
+type Key = (PublicKey, Vec<u8>, Vec<u8>);
+
+/// The public key of the modulus `n` (with any leading zero bytes) and the
+/// exponent `e`.
+fn key(n: &[u8], e: &[u8]) -> Key {
+    let n = trim(n).to_vec();
+    (PublicKey::new(&n, e).unwrap(), n, e.to_vec())
+}
+
 /// Checks `sig` for the hash value `d` against the expectation `result`:
-/// returns whether it verifies. `recover` returns `d` exactly when it
-/// verifies, and otherwise either nothing or a value it verifies for.
+/// returns whether it verifies. Verifying it once, with the key's
+/// components, agrees; `recover` returns `d` exactly when it verifies, and
+/// otherwise either nothing or a value it verifies for.
 fn check(
     name: &str,
     id: u64,
-    key: &PublicKey,
+    (key, n, e): &Key,
     h: Hash,
     d: &[u8],
     sig: &[u8],
     result: Expectation,
 ) -> bool {
     let ok = verify(key, sig, d, h);
+    assert_eq!(verify_once(n, e, sig, d, h), Ok(ok), "{name} tcId {id}");
     match result {
         Expectation::Valid => assert!(ok, "{name} tcId {id}"),
         Expectation::Invalid => assert!(!ok, "{name} tcId {id}"),
@@ -183,7 +195,7 @@ fn rsa_signature_test() {
         let (accepted, rejected) = (Count::default(), Count::default());
         let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
             let p = &group.params.public_key;
-            PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0).unwrap()
+            key(&p.modulus.0, &p.public_exponent.0)
         };
         file.par_tests_with(keys, |group, key, test| {
             let h = hash(&group.params.sha);
@@ -208,7 +220,7 @@ fn rsa_pkcs1_sig_gen_test() {
         let file = harness::load::<GenGroup, SigCase>(&name);
         let keys = |group: &harness::TestGroup<GenGroup, SigCase>| {
             let p = &group.params.private_key;
-            PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0).unwrap()
+            key(&p.modulus.0, &p.public_exponent.0)
         };
         file.par_tests_with(keys, |group, key, test| {
             let h = hash(&group.params.sha);
@@ -252,14 +264,15 @@ fn rsa_pkcs1_sign_test() {
                 &k.coefficient.0,
             )
             .unwrap_or_else(|e| panic!("{name}: {e}"));
-            let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
+            let full = key(n, &k.public_exponent.0);
+            let public = full.0.clone();
             for (test, h) in group.tests.iter().take(4).zip(HASHES.iter().cycle()) {
                 let id = test.tc_id;
                 let d = digest(*h, &test.case.msg.0);
                 let sig =
                     sign(&private, &d, *h).unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
                 assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
-                assert!(check(&name, id, &public, *h, &d, &sig, Expectation::Valid));
+                assert!(check(&name, id, &full, *h, &d, &sig, Expectation::Valid));
                 assert_eq!(sign(&private, &d, *h), Ok(sig), "{name} tcId {id}");
             }
             // Signature verification and OAEP encryption lease the same key's
@@ -319,7 +332,7 @@ fn rsa_pkcs1_sign_test() {
             for h in HASHES {
                 let d = digest(h, b"");
                 let sig = sign(&private, &d, h).unwrap();
-                assert!(check(&name, 0, &public, h, &d, &sig, Expectation::Valid));
+                assert!(check(&name, 0, &full, h, &d, &sig, Expectation::Valid));
                 let mut other = d.clone();
                 other[0] ^= 1;
                 assert!(!verify(&public, &sig, &other, h), "{name}");
