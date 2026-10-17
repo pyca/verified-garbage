@@ -30,6 +30,8 @@
     target_arch = "aarch64"
 ))]
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::x25519::VG_X25519_BASE_SCRATCH_WRITTEN;
 use crate::arch::x25519::vg_x25519;
 #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::x25519::vg_x25519_base;
@@ -154,8 +156,16 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // callee's stack or wraps around the address space. The selected backend
     // has the required CPU features.
     unsafe { f(&mut out, scalar, scratch.as_mut_ptr()) };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    // The bytes of `scratch` the function may have written: on AArch64 its
+    // first `VG_X25519_BASE_SCRATCH_WRITTEN` (`Artifact.written`), elsewhere
+    // all of it.
+    #[cfg(target_arch = "aarch64")]
+    let written = VG_X25519_BASE_SCRATCH_WRITTEN;
+    #[cfg(not(target_arch = "aarch64"))]
+    let written = size_of::<[u64; 1024]>();
+    // SAFETY: `scratch` is writable for its whole length, which `written`
+    // does not exceed.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), written) };
     out
 }
 
