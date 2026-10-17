@@ -58,7 +58,7 @@ def oHB : Nat := oP L.pW + Sample4.oHB
 def nb : Nat := (L.ekLen / 136 + 1) / 3
 
 /-- The sponge's state zeroed. -/
-def hzero : List Instr := .mov32 .rax (.imm 0) :: (List.range 25).map fun i => .store (at_ .rbx (oHS L + 8 * i)) .rax
+def hzero : List Instr := .mov32 .rax (.imm 0) :: zeroSt .rbx (oHS L)
 
 /-- The rest of the last 408 bytes of `pad(ek)`, after the `len` bytes of
 `ek`: zeros, and the suffix and the last bit of the padding. -/
