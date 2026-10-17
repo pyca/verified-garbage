@@ -40,7 +40,7 @@ structure Ws (s : State) (B : BitVec 32) (Z w N : Nat) : Prop where
   writable : (⟨State.addr B, Z⟩ : Region) ∈ s.wr
   fits : arr w N ≤ Z
   wpos : 0 < w
-  wle : w ≤ 256
+  wle : w ≤ 1024
   r7 : s.gpr .r7 = BitVec.ofNat 32 (S w)
   r8 : s.gpr .r8 = B
   r9 : s.gpr .r9 = BitVec.ofNat 32 w
