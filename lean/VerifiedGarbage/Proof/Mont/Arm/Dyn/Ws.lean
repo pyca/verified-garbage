@@ -42,6 +42,12 @@ theorem Ws.ea {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {r : 
     State.addr (s.gpr r + BitVec.ofNat 32 d) = off base (K + d) := by
   rw [hr, Offset.add_add, VG.Arm.addr_add (by have := hs.nowrap; have := hs.wb_toNat; omega), hs.wb]
 
+/-- `[r12 + d]`. -/
+theorem Ws.ea12 {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {d : Nat} (hd : d < size) :
+    State.addr (s.gpr .r12 + BitVec.ofNat 32 d) = off base d := by
+  have := hs.ea (r := .r12) (K := 0) (d := d) (BitVec.add_zero _).symm (by omega)
+  rwa [Nat.zero_add] at this
+
 theorem Ws.read {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
   have ⟨_, hl, hl', hR⟩ := hs.wr
