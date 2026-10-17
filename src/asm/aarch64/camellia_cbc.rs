@@ -2,22 +2,22 @@
 //! Verified `camellia_cbc` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Camellia-CBC encryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added.
+/// Camellia-CBC encryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added.
 ///
-/// Contract: `VG.Spec.Camellia.cbcEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Camellia.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline AArch64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/AArch64/`, over Camellia's ECB core.
+/// Baseline AArch64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/AArch64/`, over Camellia's ECB core. The IV's address is kept in a register the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_cbc_encrypt(schedule: *const [u8; 272], rounds: usize, iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3248
 add x5, sp, #0
@@ -32,6 +32,7 @@ str x25, [x5, #3200]
 str x26, [x5, #3208]
 str x27, [x5, #3216]
 str x28, [x5, #3224]
+add x19, x2, #0
 cbz x4, 20f
 ldr x6, [x3, #0]
 ldr x7, [x2, #0]
@@ -46,6 +47,7 @@ b 21f
 21:
 add x2, x3, #0
 add x3, x4, #0
+dup v31.2d, x19
 movz x21, #255, lsl #0
 movk x21, #255, lsl #16
 movk x21, #255, lsl #32
@@ -285,12 +287,14 @@ add x1, x1, #64
 add x0, x0, #8
 sub x22, x22, #1
 cbnz x22, 24b
+umov x19, v31.d[0]
 cbz x3, 25f
 27:
 ldr x6, [x2, #0]
 str x6, [x5, #3024]
 ldr x6, [x2, #8]
 str x6, [x5, #3032]
+dup v31.2d, x19
 add x1, x5, #0
 add x1, x1, #768
 ldr x6, [x5, #3032]
@@ -2222,6 +2226,7 @@ str x10, [x5, #3088]
 str x11, [x5, #3104]
 str x12, [x5, #3120]
 str x13, [x5, #3136]
+umov x19, v31.d[0]
 ldr x6, [x5, #3024]
 str x6, [x2, #0]
 ldr x6, [x5, #3032]
@@ -2241,6 +2246,10 @@ b 213f
 213:
 add x2, x2, #16
 cbnz x3, 27b
+ldr x6, [x5, #3024]
+str x6, [x19, #0]
+ldr x6, [x5, #3032]
+str x6, [x19, #8]
 b 26f
 25:
 26:
@@ -2668,22 +2677,22 @@ ret
     )
 }
 
-/// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
+/// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
 ///
-/// Contract: `VG.Spec.Camellia.cbcDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline AArch64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over Camellia's ECB core.
+/// Baseline AArch64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over Camellia's ECB core. The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_cbc_decrypt(schedule: *const [u8; 272], rounds: usize, iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_camellia_cbc_decrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3248
 add x5, sp, #0
@@ -2702,6 +2711,17 @@ ldr x6, [x2, #0]
 str x6, [x5, #3232]
 ldr x6, [x2, #8]
 str x6, [x5, #3240]
+cbz x4, 20f
+sub x7, x4, #1
+lsl x7, x7, #4
+add x7, x7, x3
+ldr x6, [x7, #0]
+str x6, [x2, #0]
+ldr x6, [x7, #8]
+str x6, [x2, #8]
+b 21f
+20:
+21:
 add x2, x3, #0
 add x3, x4, #0
 movz x21, #255, lsl #0
@@ -2726,18 +2746,18 @@ movk x21, #65280, lsl #16
 movk x21, #255, lsl #32
 str x21, [x5, #416]
 sub x21, x1, #18
-cbz x21, 20f
+cbz x21, 22f
 add x4, x5, #0
 add x4, x4, #2816
 add x0, x0, #256
 movz x22, #30, lsl #0
-b 21f
-20:
+b 23f
+22:
 add x4, x5, #0
 add x4, x4, #2304
 add x0, x0, #192
 movz x22, #22, lsl #0
-21:
+23:
 add x1, x5, #0
 add x1, x1, #768
 ldr x6, [x0, #0]
@@ -3143,7 +3163,7 @@ str x12, [x1, #48]
 str x13, [x1, #56]
 add x1, x1, #64
 sub x0, x0, #8
-22:
+24:
 ldr x6, [x0, #0]
 add x7, x6, #0
 add x8, x6, #0
@@ -3347,7 +3367,7 @@ str x13, [x1, #56]
 add x1, x1, #64
 sub x0, x0, #8
 sub x22, x22, #1
-cbnz x22, 22b
+cbnz x22, 24b
 sub x0, x0, #8
 ldr x6, [x0, #0]
 add x7, x6, #0
@@ -3751,20 +3771,20 @@ str x11, [x1, #40]
 str x12, [x1, #48]
 str x13, [x1, #56]
 add x1, x1, #64
-cbz x3, 23f
-25:
-lsr x13, x3, #3
-cbnz x13, 26f
-add x16, x3, #0
-b 27f
-26:
-movz x16, #8, lsl #0
+cbz x3, 25f
 27:
+lsr x13, x3, #3
+cbnz x13, 28f
+add x16, x3, #0
+b 29f
+28:
+movz x16, #8, lsl #0
+29:
 add x14, x5, #0
 add x14, x14, #3024
 add x15, x2, #0
 add x17, x16, #0
-28:
+210:
 ldr x8, [x15, #0]
 str x8, [x14, #0]
 ldr x8, [x15, #8]
@@ -3772,7 +3792,7 @@ str x8, [x14, #8]
 add x14, x14, #16
 add x15, x15, #16
 sub x17, x17, #1
-cbnz x17, 28b
+cbnz x17, 210b
 add x1, x5, #0
 add x1, x1, #768
 ldr x6, [x5, #3032]
@@ -4224,9 +4244,9 @@ ldr x23, [x1, #120]
 eor x21, x21, x23
 str x21, [x5, #632]
 add x1, x1, #128
-29:
+211:
 add x0, x1, #384
-210:
+212:
 ldr x21, [x1, #0]
 eor x6, x6, x21
 ldr x21, [x1, #8]
@@ -5073,11 +5093,11 @@ eor x13, x13, x21
 str x13, [x5, #568]
 add x1, x1, #128
 sub x21, x1, x0
-cbnz x21, 210b
+cbnz x21, 212b
 sub x21, x1, x4
-cbnz x21, 211f
-b 212f
-211:
+cbnz x21, 213f
+b 214f
+213:
 ldr x6, [x5, #576]
 ldr x7, [x5, #584]
 ldr x8, [x5, #592]
@@ -5277,9 +5297,9 @@ str x11, [x5, #552]
 str x12, [x5, #560]
 str x13, [x5, #568]
 add x1, x1, #128
-212:
+214:
 sub x21, x1, x4
-cbnz x21, 29b
+cbnz x21, 211b
 ldr x21, [x1, #64]
 eor x6, x6, x21
 ldr x21, [x1, #72]
@@ -5705,17 +5725,17 @@ str x11, [x5, #3104]
 str x12, [x5, #3120]
 str x13, [x5, #3136]
 lsr x13, x3, #3
-cbnz x13, 213f
+cbnz x13, 215f
 add x16, x3, #0
-b 214f
-213:
+b 216f
+215:
 movz x16, #8, lsl #0
-214:
+216:
 add x14, x5, #0
 add x14, x14, #3024
 add x15, x2, #0
 add x17, x16, #0
-215:
+217:
 ldr x8, [x14, #0]
 ldr x9, [x5, #3232]
 eor x8, x8, x9
@@ -5735,13 +5755,13 @@ str x8, [x15, #8]
 add x14, x14, #16
 add x15, x15, #16
 sub x17, x17, #1
-cbnz x17, 215b
+cbnz x17, 217b
 add x2, x15, #0
 sub x3, x3, x16
-cbnz x3, 25b
-b 24f
-23:
-24:
+cbnz x3, 27b
+b 26f
+25:
+26:
 ldr x19, [x5, #3152]
 ldr x20, [x5, #3160]
 ldr x21, [x5, #3168]
