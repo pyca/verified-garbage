@@ -93,6 +93,7 @@ structure Pick (hs : List Hash) (s : State) where
   hGh : ∀ x, Gs.hash x = hG.SH.H.hash x
   hGl : Gs.len = G.D
   hGv : Proof.Mgf1.Valid Gs
+  hHv : Proof.Mgf1.Valid Hs
 
 /-- The encoding: `EM` holds `encEm`. -/
 theorem enc_ok {hs : List Hash} {K : Nat} {s w : State} (P : Pick hs s)

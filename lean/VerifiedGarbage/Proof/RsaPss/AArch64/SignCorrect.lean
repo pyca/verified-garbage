@@ -71,6 +71,8 @@ theorem fail_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hm : Mid s t) (h23 
         rw [List.mem_singleton.mp hr]; exact (hp.ko.sub_left (frame_sub K s (d := 96) (n := 152) (by decide))))
       (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact (hp.ko.sub_left (frame_sub K s (d := 288) (n := 16) (by decide))))
+      (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact (hp.ko.sub_left (frame_sub K s (d := 328) (n := 24) (by decide))))
   · rw [o.mem, mv]
     have := bytesAt_writeBytes u.mem (s.gpr .x0) (List.replicate (s.gpr .x3).toNat 0) (by simp; omega)
     rwa [List.length_replicate] at this

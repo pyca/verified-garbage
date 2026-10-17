@@ -57,20 +57,21 @@ theorem mid_frame {s t t' : State} (hm : Mid s t) {rs : List Reg} (k : Keep rs t
   have f : Frame [⟨fb s + BitVec.ofNat 64 d₁, 8⟩, ⟨fb s + BitVec.ofNat 64 d₂, 8⟩] t.mem
       ((t.mem.writeW (fb s + BitVec.ofNat 64 d₁) v₁).writeW (fb s + BitVec.ofNat 64 d₂) v₂) :=
     ((Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)).writeW (by simp) _ (Region.contains_self _ _)
-  refine hm.fr.frame f (fun r hr => ?_) (fun r hr => ?_) <;>
+  refine hm.fr.frame f (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) <;>
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega) (by decide) (by omega)
 
-theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PrivChecked) {K : Nat} {s u : State}
-    (hp : PreS H.D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K) (hu : AtChk s u) :
-    WP isa (.ite (.zero .x .x10) signFail (seqs [.block smear, emLen H,
-      .ite (.nonzero .x .x10) signFail (seqs [.block ([ld .x12 sSaltLen] ++ saltFits H),
-        .ite (.nonzero .x .x10) signFail (signMain H c.name c.code)])])) u fun t => Mid s t ∧
-      Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32) (signOut G s) := by
+theorem body_ok {hs : List Hash} (c : PrivChecked) {K : Nat} {s u : State} (P : Pick hs s)
+    (hp : PreS P.H.D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K) (hu : AtChk s u) :
+    WP isa (.ite (.zero .x .x10) signFail (seqs [.block smear, emLen,
+      .ite (.nonzero .x .x10) signFail (seqs [.block ([ld .x12 sSaltLen] ++ saltFits),
+        .ite (.nonzero .x .x10) signFail (signMain hs c.name c.code)])])) u fun t => Mid s t ∧
+      Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32)
+        (signOut P.Hs P.Gs s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
-  have hD := hH.sizes.DN
-  have hN := hH.N_le
+  have hD := P.hH.sizes.DN
+  have hN := P.hH.N_le
+  have hGl := P.hHl
   have hk : 1 ≤ (s.gpr .x3).toNat := by omega
   have Mu : Mid s u := ⟨hu.sp, hu.rd, hu.wr, hu.v, hu.fr⟩
   have hx10 : u.gpr .x10 = BitVec.ofNat 64 (s.mem (s.gpr .x2)).toNat := by rw [hu.x10, setWidth_byte]
@@ -83,7 +84,7 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
       have := congrArg BitVec.toNat hb
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
       exact this
-    exact WP.mono (fail_ok hp Mu hu.x23) fun t ⟨m, r⟩ => ⟨m, by rw [signOut_zero G hk h0]; exact r⟩
+    exact WP.mono (fail_ok hp Mu hu.x23) fun t ⟨m, r⟩ => ⟨m, by rw [signOut_zero P.Hs P.Gs hk h0]; exact r⟩
   have h0 : s.mem (s.gpr .x2) ≠ 0 := fun h => by
     rw [hx10, h] at hb; exact absurd hb (by decide)
   have h0' : (s.mem (s.gpr .x2)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
@@ -95,8 +96,10 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
   unfold seqs seqs seqs
   -- `smear` and `emLen`.
   refine WP.seq (WP.mono (smear_ok u (x := x) hn₀ h0' hx10) fun u₁ ⟨O₁, h11⟩ => ?_)
-  refine WP.seq (WP.mono (emLen_ok H (by omega) (F := fb s) (by rw [O₁.sp, hu.sp]) hn₀ h0'
+  refine WP.seq (WP.mono (emLen_ok (D := P.H.D) (by omega) (F := fb s) (by rw [O₁.sp, hu.sp]) hn₀ h0'
     (by rw [O₁.wr, hu.wr]; exact in_frame s _ (by decide)) (by rw [O₁.wr, hu.wr]; exact in_frame s _ (by decide))
+    (hrsl (by rw [O₁.sp, hu.sp]) (by rw [O₁.rd, hu.rd]) (by rw [O₁.wr, hu.wr]) (by decide))
+    (by rw [O₁.mem, hu.fr.hl, ← hp.dl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
     (k := (s.gpr .x3).toNat) (by rw [O₁.get .x23, hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hk (by omega) h11)
     fun u₂ ⟨K₂, m₂, x9₂, x10₂⟩ => ?_)
   have M₂ : Mid s u₂ := mid_frame Mu (O₁.keep.trans K₂) (d₁ := sC) (d₂ := sLo) (by decide) (by decide)
@@ -106,13 +109,15 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
   · -- `emLen < hLen + 2`.
     rw [x10₂, decide_eq_true_eq] at hb₂
     refine WP.mono (fail_ok hp M₂ x23₂) fun t ⟨m, r⟩ => ⟨m, ?_⟩
-    rw [signOut_long G hk h0 (by rw [hx, hGl]; omega)]; exact r
+    rw [signOut_long P.Hs P.Gs hk h0 (by rw [hx, hGl]; omega)]; exact r
   rw [x10₂, decide_eq_false_iff_not] at hb₂
   unfold seqs seqs
-  refine WP.seq (WP.mono (saltFits_ok H (by omega) (F := fb s) (by rw [K₂.sp, O₁.sp, hu.sp])
+  refine WP.seq (WP.mono (saltFits_ok (D := P.H.D) (by omega) (F := fb s) (by rw [K₂.sp, O₁.sp, hu.sp])
     (hrsl (by rw [K₂.sp, O₁.sp, hu.sp]) (by rw [K₂.rd, O₁.rd, hu.rd]) (by rw [K₂.wr, O₁.wr, hu.wr]) (by decide))
-    (a := (s.gpr .x3).toNat - loV x) (sl := (stackArg s 10).toNat) (by omega) (by omega) x9₂
-    (by rw [M₂.fr.sl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (stackArg s 10).isLt)
+    (hrsl (by rw [K₂.sp, O₁.sp, hu.sp]) (by rw [K₂.rd, O₁.rd, hu.rd]) (by rw [K₂.wr, O₁.wr, hu.wr]) (by decide))
+    (by rw [M₂.fr.hl, ← hp.dl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    (a := (s.gpr .x3).toNat - loV x) (sl := (stackArg s 11).toNat) (by omega) (by omega) x9₂
+    (by rw [M₂.fr.sl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (stackArg s 11).isLt)
     fun u₃ ⟨O₃, x9₃, x10₃⟩ => ?_)
   have M₃ : Mid s u₃ := ⟨O₃.sp.trans M₂.sp, O₃.rd.trans M₂.rd, O₃.wr.trans M₂.wr,
     fun r hr => (O₃.vcs r hr).trans (M₂.v r hr), O₃.mem ▸ M₂.fr⟩
@@ -120,11 +125,11 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
   · -- The salt does not fit.
     rw [x10₃, decide_eq_true_eq] at hb₃
     refine WP.mono (fail_ok hp M₃ (by rw [O₃.get .x23, x23₂])) fun t ⟨m, r⟩ => ⟨m, ?_⟩
-    rw [signOut_long G hk h0 (by rw [hx, hGl]; omega)]; exact r
+    rw [signOut_long P.Hs P.Gs hk h0 (by rw [hx, hGl]; omega)]; exact r
   rw [x10₃, decide_eq_false_iff_not] at hb₃
   have hm₃ : u₃.mem = (u.mem.writeW (fb s + BitVec.ofNat 64 sC) (maskV x)).writeW (fb s + BitVec.ofNat 64 sLo)
       (BitVec.ofNat 64 (loV x)) := by rw [O₃.mem, m₂, O₁.mem]
-  have hA : AtMain H.D s (loV x) ((maskV x).setWidth 8) u₃ := {
+  have hA : AtMain P.H.D s (loV x) ((maskV x).setWidth 8) u₃ := {
     sp := M₃.sp
     rd := M₃.rd
     wr := M₃.wr
@@ -143,8 +148,8 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
     c := by
       rw [hm₃, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self64, ← maskV_setWidth x hn₀] }
-  refine WP.mono (main_ok hH hGh hGl hG c hp hK hcK hA hlo (by omega)) fun t ⟨m, r⟩ => ⟨m, ?_⟩
-  have := signOut_eq G hG hk h0 (by rw [hx, hGl]; omega)
+  refine WP.mono (main_ok c P hp hK hcK hA hlo (by omega)) fun t ⟨m, r⟩ => ⟨m, ?_⟩
+  have := signOut_eq P.Hs P.Gs P.hHv P.hGv hk h0 (by rw [hx, hGl]; omega)
   rw [hx, hGl] at this
   rw [this]; exact r
 
