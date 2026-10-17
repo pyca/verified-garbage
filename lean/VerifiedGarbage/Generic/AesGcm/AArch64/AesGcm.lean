@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPrepared
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -200,8 +201,35 @@ def artifactsPrepared (v : GcmImpl) : List Artifact :=
       features := ["aes"] }] ++ ((v.gh.prepared.map (sealPreparedArtifacts v)).getD [])
   else []
 
+/-- How the `*_with_powers` functions use the powers. -/
+def withPowersNote (v : GcmImpl) (g : GhashWithImpl) (name : String) : String :=
+  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `" ++
+    name ++ v.suffix ++ "` does, calling `" ++ g.fn.name ++ "` once, on the whole blocks of the text, which reads \
+    the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `" ++ name ++ v.suffix ++ "` does."
+
+/-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
+`g` on the path for TLS records. -/
+def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
+  [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, withPowersNote v g Spec.Gcm.sealApi.name]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
+      (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
+    stack := 2592
+    verified := Fast.sealPw_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features },
+  Spec.Gcm.openWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, withPowersNote v g Spec.Gcm.openApi.name]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3
+      (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
+    stack := 2592
+    verified := Fast.openPw_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsPrepared v.impl
+  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsPrepared v.impl ++
+    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm
