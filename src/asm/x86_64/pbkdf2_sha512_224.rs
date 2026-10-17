@@ -73,13 +73,15 @@ mov r12d, 156
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov r12, rdi
 test r14, r14
 je 20f
@@ -521,13 +523,15 @@ mov r12d, 156
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov r12, rdi
 test r14, r14
 je 20f
@@ -973,13 +977,15 @@ mov r12d, 156
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov r12, rdi
 test r14, r14
 je 20f
