@@ -223,6 +223,7 @@ def Instr.asm : Instr → List String
   | .alloc bytes => [s!"sub sp, sp, #{bytes}"]
   | .free bytes => [s!"add sp, sp, #{bytes}"]
   | .ldrSp t off => [s!"ldr {t.name .x}, [sp, #{off}]"]
+  | .strSp t off => [s!"str {t.name .x}, [sp, #{off}]"]
   | .vop op => [op.asm]
   | .ldrq t n off => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
   | .ldrqTbl t n off .. => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]

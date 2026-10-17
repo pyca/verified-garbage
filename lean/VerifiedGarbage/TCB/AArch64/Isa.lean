@@ -35,7 +35,7 @@ Modelling choices:
 * The stack pointer is separate. Only frame delimiters (`push`/`pop` and
   `alloc`/`free`) write it. `addSp` computes a stack-relative pointer, and
   `ldrSp` loads a 64-bit word from `[sp, #off]` (including arguments passed
-  on the stack). Register number 31, SP or the zero register, is otherwise
+  on the stack), and `strSp` stores one there (into a frame). Register number 31, SP or the zero register, is otherwise
   never an operand.
   Each operand is a 32-bit (`w`) or a 64-bit (`x`) register; a 32-bit
   result is zero-extended into the 64-bit register (DDI 0487, the pseudocode
@@ -500,6 +500,9 @@ inductive Instr
   /-- `ldr xt, [sp, #off]` (LDR (immediate), 64-bit, unsigned offset, base
   register SP: a multiple of 8, less than 32768) -/
   | ldrSp (t : Reg) (off : Nat)
+  /-- `str xt, [sp, #off]` (STR (immediate), 64-bit, unsigned offset, base
+  register SP: a multiple of 8, less than 32768) -/
+  | strSp (t : Reg) (off : Nat)
   /-- `add xd, sp, #imm`, 64-bit ADD (immediate), without shifting. -/
   | addSp (d : Reg) (imm : Nat)
   /-- `sub sp, sp, #bytes`, opening an aligned frame (only `push`). -/
@@ -1042,6 +1045,8 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
 * "LDR (immediate)" with `n == 31` (`ldrSp`): `address = SP[]`, then as
   above, `address + offset` with `offset = LSL(imm12, 3)`; `data = Mem[address,
   8]`; `X[t, 64] = data`;
+* "STR (immediate)" with `n == 31` (`strSp`): the same address; `data =
+  X[t, 64]`; `Mem[address, 8] = data`;
 * "LDRB (immediate)": `data = Mem[address, 1]; X[t, 32] = ZeroExtend(data,
   32)` (hence zero-extended to 64 bits); "STRB (immediate)": `data = X[t,
   8]; Mem[address, 1] = data`, the low byte of `t`;
@@ -1169,6 +1174,10 @@ def exec : Instr → State → Option State
     if off % 8 = 0 ∧ off < 32768 then
       (s.load (s.sp + BitVec.ofNat 64 off) 8).map fun v => s.write .x t (v.setWidth 64)
     else none
+  | .strSp t off, s =>
+    if off % 8 = 0 ∧ off < 32768 then
+      s.store (s.sp + BitVec.ofNat 64 off) 8 ((s.read .x t).setWidth 64)
+    else none
   | .addSp d imm, s =>
     if imm < 4096 then some (s.write .x d (s.sp + BitVec.ofNat 64 imm)) else none
   | .vop op, s => (op.eval s).map fun (d, x) => s.setV d x
@@ -1207,7 +1216,7 @@ def addrs : Instr → State → List Addr
   -- The offset in the table: the static's address does not depend on the
   -- data (see the module docs).
   | .ldrqTbl _ _ off .., _ => [BitVec.ofNat 64 off]
-  | .ldrSp _ off, s => [s.sp + BitVec.ofNat 64 off]
+  | .ldrSp _ off, s | .strSp _ off, s => [s.sp + BitVec.ofNat 64 off]
   | .push _, s => [s.sp - 16]
   | .pop _, s => [s.sp]
   | _, _ => []
@@ -1256,9 +1265,12 @@ time, while the model keeps it until a store. This is harmless: the
 contract says nothing of those bytes (they are in the stack below the
 caller's stack pointer, `Abi.reserved`, which no buffer overlaps), so a
 proof holds whatever they contain and learns nothing from reading them;
-it could only rely on two reads agreeing. `ldrSp` can read the frame
-directly, and `addSp` can form a pointer to it. Neither grants permission
-below the currently allocated stack.
+it could only rely on two reads agreeing. `ldrSp` and `strSp` can read
+and write the frame directly, and `addSp` can form a pointer to it. None
+grants permission below the currently allocated stack: `strSp` stores
+through `State.store`, which faults outside the writable regions, so it
+reaches only a frame's bytes (or a writable buffer that happens to lie at
+or above the stack pointer).
 
 DDI 0602, ADD/SUB (immediate), `sf=1`, `sh=0`, `Rn=Rd=31`:
 `operand1 = SP[64]`, and the non-flag-setting result is written to `SP[64]`.
@@ -1341,7 +1353,7 @@ abbrev isa : ISA where
   ret := ret
   retAddrs _ := []
   -- No modelled instruction writes the stack pointer, other than the push
-  -- and pop of a frame (`ldrSp` only reads it).
+  -- and pop of a frame (`ldrSp` and `strSp` only read it).
   writesSp _ := false
   push := push
   pop := pop
