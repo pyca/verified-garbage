@@ -277,7 +277,7 @@ def padW : List Instr :=
 
 /-- EXPERIMENT: which copies of `finMid` are 16 bytes at a time. -/
 def wideState : Bool := true
-def wideDigest : Bool := true
+def wideDigest : Bool := false
 
 /-- The outer hash value over the inner state's, the inner digest into its
 buffer, then the padding after it (`padW`), and the block's address for

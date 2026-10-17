@@ -735,12 +735,30 @@ movdqu xmm0, XMMWORD PTR [r12+32]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r12+48]
 movdqu XMMWORD PTR [rbx+48], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1424]
-movdqu XMMWORD PTR [rbx+64], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1440]
-movdqu XMMWORD PTR [rbx+80], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1456]
-movdqu XMMWORD PTR [rbx+96], xmm0
+mov eax, DWORD PTR [r15+1424]
+mov DWORD PTR [rbx+64], eax
+mov eax, DWORD PTR [r15+1428]
+mov DWORD PTR [rbx+68], eax
+mov eax, DWORD PTR [r15+1432]
+mov DWORD PTR [rbx+72], eax
+mov eax, DWORD PTR [r15+1436]
+mov DWORD PTR [rbx+76], eax
+mov eax, DWORD PTR [r15+1440]
+mov DWORD PTR [rbx+80], eax
+mov eax, DWORD PTR [r15+1444]
+mov DWORD PTR [rbx+84], eax
+mov eax, DWORD PTR [r15+1448]
+mov DWORD PTR [rbx+88], eax
+mov eax, DWORD PTR [r15+1452]
+mov DWORD PTR [rbx+92], eax
+mov eax, DWORD PTR [r15+1456]
+mov DWORD PTR [rbx+96], eax
+mov eax, DWORD PTR [r15+1460]
+mov DWORD PTR [rbx+100], eax
+mov eax, DWORD PTR [r15+1464]
+mov DWORD PTR [rbx+104], eax
+mov eax, DWORD PTR [r15+1468]
+mov DWORD PTR [rbx+108], eax
 mov rbp, rbx
 add rbp, 64
 mov eax, 128
@@ -1058,12 +1076,30 @@ movdqu xmm0, XMMWORD PTR [r12+32]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r12+48]
 movdqu XMMWORD PTR [rbx+48], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1424]
-movdqu XMMWORD PTR [rbx+64], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1440]
-movdqu XMMWORD PTR [rbx+80], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1456]
-movdqu XMMWORD PTR [rbx+96], xmm0
+mov eax, DWORD PTR [r15+1424]
+mov DWORD PTR [rbx+64], eax
+mov eax, DWORD PTR [r15+1428]
+mov DWORD PTR [rbx+68], eax
+mov eax, DWORD PTR [r15+1432]
+mov DWORD PTR [rbx+72], eax
+mov eax, DWORD PTR [r15+1436]
+mov DWORD PTR [rbx+76], eax
+mov eax, DWORD PTR [r15+1440]
+mov DWORD PTR [rbx+80], eax
+mov eax, DWORD PTR [r15+1444]
+mov DWORD PTR [rbx+84], eax
+mov eax, DWORD PTR [r15+1448]
+mov DWORD PTR [rbx+88], eax
+mov eax, DWORD PTR [r15+1452]
+mov DWORD PTR [rbx+92], eax
+mov eax, DWORD PTR [r15+1456]
+mov DWORD PTR [rbx+96], eax
+mov eax, DWORD PTR [r15+1460]
+mov DWORD PTR [rbx+100], eax
+mov eax, DWORD PTR [r15+1464]
+mov DWORD PTR [rbx+104], eax
+mov eax, DWORD PTR [r15+1468]
+mov DWORD PTR [rbx+108], eax
 mov rbp, rbx
 add rbp, 64
 mov eax, 128
@@ -1877,12 +1913,30 @@ movdqu xmm0, XMMWORD PTR [r12+32]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r12+48]
 movdqu XMMWORD PTR [rbx+48], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1424]
-movdqu XMMWORD PTR [rbx+64], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1440]
-movdqu XMMWORD PTR [rbx+80], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1456]
-movdqu XMMWORD PTR [rbx+96], xmm0
+mov eax, DWORD PTR [r15+1424]
+mov DWORD PTR [rbx+64], eax
+mov eax, DWORD PTR [r15+1428]
+mov DWORD PTR [rbx+68], eax
+mov eax, DWORD PTR [r15+1432]
+mov DWORD PTR [rbx+72], eax
+mov eax, DWORD PTR [r15+1436]
+mov DWORD PTR [rbx+76], eax
+mov eax, DWORD PTR [r15+1440]
+mov DWORD PTR [rbx+80], eax
+mov eax, DWORD PTR [r15+1444]
+mov DWORD PTR [rbx+84], eax
+mov eax, DWORD PTR [r15+1448]
+mov DWORD PTR [rbx+88], eax
+mov eax, DWORD PTR [r15+1452]
+mov DWORD PTR [rbx+92], eax
+mov eax, DWORD PTR [r15+1456]
+mov DWORD PTR [rbx+96], eax
+mov eax, DWORD PTR [r15+1460]
+mov DWORD PTR [rbx+100], eax
+mov eax, DWORD PTR [r15+1464]
+mov DWORD PTR [rbx+104], eax
+mov eax, DWORD PTR [r15+1468]
+mov DWORD PTR [rbx+108], eax
 mov rbp, rbx
 add rbp, 64
 mov eax, 128
@@ -2208,12 +2262,30 @@ movdqu xmm0, XMMWORD PTR [r12+32]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r12+48]
 movdqu XMMWORD PTR [rbx+48], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1424]
-movdqu XMMWORD PTR [rbx+64], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1440]
-movdqu XMMWORD PTR [rbx+80], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1456]
-movdqu XMMWORD PTR [rbx+96], xmm0
+mov eax, DWORD PTR [r15+1424]
+mov DWORD PTR [rbx+64], eax
+mov eax, DWORD PTR [r15+1428]
+mov DWORD PTR [rbx+68], eax
+mov eax, DWORD PTR [r15+1432]
+mov DWORD PTR [rbx+72], eax
+mov eax, DWORD PTR [r15+1436]
+mov DWORD PTR [rbx+76], eax
+mov eax, DWORD PTR [r15+1440]
+mov DWORD PTR [rbx+80], eax
+mov eax, DWORD PTR [r15+1444]
+mov DWORD PTR [rbx+84], eax
+mov eax, DWORD PTR [r15+1448]
+mov DWORD PTR [rbx+88], eax
+mov eax, DWORD PTR [r15+1452]
+mov DWORD PTR [rbx+92], eax
+mov eax, DWORD PTR [r15+1456]
+mov DWORD PTR [rbx+96], eax
+mov eax, DWORD PTR [r15+1460]
+mov DWORD PTR [rbx+100], eax
+mov eax, DWORD PTR [r15+1464]
+mov DWORD PTR [rbx+104], eax
+mov eax, DWORD PTR [r15+1468]
+mov DWORD PTR [rbx+108], eax
 mov rbp, rbx
 add rbp, 64
 mov eax, 128
@@ -3027,12 +3099,30 @@ movdqu xmm0, XMMWORD PTR [r12+32]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r12+48]
 movdqu XMMWORD PTR [rbx+48], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1424]
-movdqu XMMWORD PTR [rbx+64], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1440]
-movdqu XMMWORD PTR [rbx+80], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1456]
-movdqu XMMWORD PTR [rbx+96], xmm0
+mov eax, DWORD PTR [r15+1424]
+mov DWORD PTR [rbx+64], eax
+mov eax, DWORD PTR [r15+1428]
+mov DWORD PTR [rbx+68], eax
+mov eax, DWORD PTR [r15+1432]
+mov DWORD PTR [rbx+72], eax
+mov eax, DWORD PTR [r15+1436]
+mov DWORD PTR [rbx+76], eax
+mov eax, DWORD PTR [r15+1440]
+mov DWORD PTR [rbx+80], eax
+mov eax, DWORD PTR [r15+1444]
+mov DWORD PTR [rbx+84], eax
+mov eax, DWORD PTR [r15+1448]
+mov DWORD PTR [rbx+88], eax
+mov eax, DWORD PTR [r15+1452]
+mov DWORD PTR [rbx+92], eax
+mov eax, DWORD PTR [r15+1456]
+mov DWORD PTR [rbx+96], eax
+mov eax, DWORD PTR [r15+1460]
+mov DWORD PTR [rbx+100], eax
+mov eax, DWORD PTR [r15+1464]
+mov DWORD PTR [rbx+104], eax
+mov eax, DWORD PTR [r15+1468]
+mov DWORD PTR [rbx+108], eax
 mov rbp, rbx
 add rbp, 64
 mov eax, 128
@@ -3358,12 +3448,30 @@ movdqu xmm0, XMMWORD PTR [r12+32]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r12+48]
 movdqu XMMWORD PTR [rbx+48], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1424]
-movdqu XMMWORD PTR [rbx+64], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1440]
-movdqu XMMWORD PTR [rbx+80], xmm0
-movdqu xmm0, XMMWORD PTR [r15+1456]
-movdqu XMMWORD PTR [rbx+96], xmm0
+mov eax, DWORD PTR [r15+1424]
+mov DWORD PTR [rbx+64], eax
+mov eax, DWORD PTR [r15+1428]
+mov DWORD PTR [rbx+68], eax
+mov eax, DWORD PTR [r15+1432]
+mov DWORD PTR [rbx+72], eax
+mov eax, DWORD PTR [r15+1436]
+mov DWORD PTR [rbx+76], eax
+mov eax, DWORD PTR [r15+1440]
+mov DWORD PTR [rbx+80], eax
+mov eax, DWORD PTR [r15+1444]
+mov DWORD PTR [rbx+84], eax
+mov eax, DWORD PTR [r15+1448]
+mov DWORD PTR [rbx+88], eax
+mov eax, DWORD PTR [r15+1452]
+mov DWORD PTR [rbx+92], eax
+mov eax, DWORD PTR [r15+1456]
+mov DWORD PTR [rbx+96], eax
+mov eax, DWORD PTR [r15+1460]
+mov DWORD PTR [rbx+100], eax
+mov eax, DWORD PTR [r15+1464]
+mov DWORD PTR [rbx+104], eax
+mov eax, DWORD PTR [r15+1468]
+mov DWORD PTR [rbx+108], eax
 mov rbp, rbx
 add rbp, 64
 mov eax, 128

@@ -367,8 +367,14 @@ mov rcx, r15
 call {vg_md5_finalize_scratch}
 movdqu xmm0, XMMWORD PTR [r12]
 movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r15+160]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r15+160]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r15+164]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+168]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+172]
+mov DWORD PTR [rbx+28], eax
 mov rbp, rbx
 add rbp, 16
 mov eax, 128
@@ -588,8 +594,14 @@ mov rcx, r15
 call {vg_md5_finalize_scratch}
 movdqu xmm0, XMMWORD PTR [r12]
 movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r15+160]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r15+160]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r15+164]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+168]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+172]
+mov DWORD PTR [rbx+28], eax
 mov rbp, rbx
 add rbp, 16
 mov eax, 128

@@ -381,8 +381,14 @@ movdqu xmm0, XMMWORD PTR [r12]
 movdqu XMMWORD PTR [rbx], xmm0
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
@@ -616,8 +622,14 @@ movdqu xmm0, XMMWORD PTR [r12]
 movdqu XMMWORD PTR [rbx], xmm0
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
@@ -1061,8 +1073,14 @@ movdqu xmm0, XMMWORD PTR [r12]
 movdqu XMMWORD PTR [rbx], xmm0
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
@@ -1304,8 +1322,14 @@ movdqu xmm0, XMMWORD PTR [r12]
 movdqu XMMWORD PTR [rbx], xmm0
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
