@@ -504,8 +504,11 @@ fn tls_records(c: &mut Criterion) {
     /// The payloads: a full record, a common web record, and smaller ones,
     /// each next to sizes that are not a multiple of 16 (as most records'
     /// are), since the end of a record costs differently from its blocks.
-    const TLS_SIZES: [usize; 15] = [
-        255, 256, 257, 1023, 1024, 1025, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
+    // Measurement only: whole-block counts around 624 and 1024, with and
+    // without a partial block, multiples of 8 and not.
+    const TLS_SIZES: [usize; 22] = [
+        9968, 9983, 9984, 9985, 9992, 9999, 10000, 10001, 10008, 10015, 10016, 10111, 10112, 10113,
+        16256, 16271, 16368, 16383, 16384, 16385, 16392, 16400,
     ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
