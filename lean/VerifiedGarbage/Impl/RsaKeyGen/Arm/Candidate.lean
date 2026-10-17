@@ -42,15 +42,14 @@ takes, from the candidate `c` in its array 0.
 5. `gcd(c − 1, e)`: 3 if `e` is even; nothing for `e = 1`; otherwise
    `inverse` modulo `e` from `c − 1` (`Impl/Rsa/Arm/Inverse.lean`), whose `v`
    ends as the gcd; 3 unless it is 1.
-6. Montgomery multiplication's working space: its header (`setup`, and the
-   stride), `−c⁻¹ mod 2^64` and `R² mod c` (`precomputeInverse`, `r2`),
-   `R mod c` (from `1 · R²`) and `c − R mod c`: the Montgomery forms of 1 and
-   `−1`. Then the exponent the round's contract takes: `t`, the exponent of
-   2 in `c − 1`, by `64 w` halvings of `c − 1` under masks; `E = c / 2^σ`
-   for the shift `σ ∈ [1, 4]` with `σ ≡ t (mod 4)` (halvings under the
-   masks of `σ > 1`, `σ > 2` and `σ > 3`), followed by the word
-   `2^(t mod 64)`, built by five shifts under the masks of the bits of
-   `t`.
+6. The exponent the round's contract takes: `t`, the exponent of 2 in
+   `c − 1`, by `64 w` halvings of `c − 1` under masks; `E = c / 2^σ` for the
+   shift `σ ∈ [1, 4]` with `σ ≡ t (mod 4)` (halvings under the masks of
+   `σ > 1`, `σ > 2` and `σ > 3`), followed by the word `2^(t mod 64)`, built
+   by five shifts under the masks of the bits of `t`. Then Montgomery
+   multiplication's working space: its header (`setup`, and the stride),
+   `−c⁻¹ mod 2^64` and `R² mod c` (`precomputeInverse`, `r2`), `R mod c`
+   (from `1 · R²`) and `c − R mod c`: the Montgomery forms of 1 and `−1`.
 7. Miller–Rabin, one witness an iteration, while fewer than 16 witnesses or
    fewer uniform ones than `BN_prime_checks_for_size` have passed: 0 if
    `rand` has fewer than `out_len` octets left; else the witness `x`, the
@@ -482,7 +481,7 @@ def mrResult : Prog isa :=
 
 /-- Once the candidate passed trial division and `gcd(c − 1, e) = 1`. -/
 def mrPart (name : String) (round : Prog isa) : Prog isa :=
-  seqs ([montA, montB] ++ expSetup ++ [millerRabin name round, mrResult])
+  seqs (expSetup ++ [montA, montB, millerRabin name round, mrResult])
 
 /-- Once `rand` has the candidate's octets. -/
 def main (name : String) (round : Prog isa) : Prog isa :=
