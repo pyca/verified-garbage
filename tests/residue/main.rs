@@ -139,15 +139,15 @@ fn residue(op: fn()) -> Vec<usize> {
 /// Measures `op`, which must leave no residue if `name` is in `CLEAN`.
 pub(crate) fn check(name: &str, op: fn()) {
     let r = residue(op);
-    eprintln!("residue of {name}: {} bytes", r.len());
+    let n = r.len();
+    eprintln!("residue of {name}: {n} bytes");
     // Debug builds keep a copy of what they move, in temporaries of their
     // own: only optimized code is held to `CLEAN` (ci.yml runs these tests
     // with `--release` too).
-    assert!(
-        r.is_empty() || !CLEAN.contains(&name) || cfg!(debug_assertions),
-        "{name} leaves {} bytes of its secret on the stack, at these distances below its top: {r:?}",
-        r.len()
-    );
+    let held = CLEAN.contains(&name) && !cfg!(debug_assertions);
+    // On a failure, the name and where its bytes are, below the stack's top.
+    let left: &[usize] = if held { &r } else { &[] };
+    assert_eq!((name, left), (name, &[][..]));
 }
 
 /// Uses no secret: leaves no residue on any platform.
