@@ -108,6 +108,10 @@ theorem coreOK : CoreOK coreH := by
     fitF := ?_ }
   taint_decide_all
 
+theorem anyOK : Any.AnyOK coreH := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  taint_decide_all
+
 variable (v : Compress)
 
 theorem callees : Callees (hash v) where
@@ -176,6 +180,10 @@ theorem satT : ∃ s, (Spec.Hmac.sha224I.iterateContract X86_64.abi 8).pre s := 
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 96 28 104
 
+theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha224I.S Spec.Hmac.sha224I.initAnyKeyScratch).pre s := by
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha224I, Spec.Hmac.initScratchSig,
+    Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using initSat 96 200
+
 theorem satP : ∃ s, (Spec.Hmac.sha224I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
   inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
     Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi,
@@ -209,9 +217,10 @@ carries, and its `finalize` its own (`stream v`); `v` itself, for the
 functions built on SHA-224 alone (`MdHash.sha224`). -/
 def variant : MdHash :=
   { MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha224 rfl rfl satI satF satT satP (by decide)
+    anyOK satA (by decide) Proof.Hmac.sha224_local
     (by
-      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
