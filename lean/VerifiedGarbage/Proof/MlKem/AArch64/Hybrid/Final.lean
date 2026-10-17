@@ -12,8 +12,8 @@ import all Init.Data.Vector.Basic
 /-!
 # The hashing encapsulations meet `Spec.MlKem.encapsContract` with 128 bytes of stack
 
-As `Optimized/Contracts.lean`, `ContractSat.lean` and
-`FixedHash/EncapsVerified.lean`, for the stack of the x3 calls.
+As `Optimized/Contracts.lean` and `ContractSat.lean`, for the stack of the
+x3 calls.
 -/
 
 @[expose] public section

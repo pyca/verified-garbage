@@ -17,7 +17,7 @@ import all Init.Data.Vector.Basic
 the x3 calls use (rather than 16) apart from the buffers, and
 `entryContractS`: with the constant tables apart from them too. `encapsH_ct`:
 the first phase and the rest by the taint analyses, the matrix by
-`matrixH_relCT` (as `Optimized.encaps_using_ct`); `encapsH_correct`: from
+`matrixH_relCT`; `encapsH_correct`: from
 `using_correctH`.
 -/
 

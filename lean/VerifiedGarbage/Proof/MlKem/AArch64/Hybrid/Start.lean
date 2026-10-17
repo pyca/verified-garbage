@@ -12,7 +12,7 @@ import all Init.Data.Vector.Basic
 # The hashing encapsulation's first phase
 
 `startH_ok`: the prologue, `m`, the all-zero third state and `ρ`
-(`Hybrid.startH`), as `Encaps.a_using_ok` without `H` and `G`.
+(`Hybrid.startH`).
 -/
 
 @[expose] public section
