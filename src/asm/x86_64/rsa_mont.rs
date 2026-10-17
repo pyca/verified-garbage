@@ -2171,6 +2171,7 @@ cmp rbp, rax
 jne 232f
 jmp 233f
 232:
+.p2align 5
 234:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1
@@ -4734,6 +4735,7 @@ cmp rbp, rax
 jne 232f
 jmp 233f
 232:
+.p2align 5
 234:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1

@@ -3228,6 +3228,7 @@ cmp rbp, rax
 jne 244f
 jmp 245f
 244:
+.p2align 5
 246:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1
@@ -5700,6 +5701,7 @@ cmp rbp, rax
 jne 2106f
 jmp 2107f
 2106:
+.p2align 5
 2108:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1
@@ -7012,6 +7014,7 @@ cmp rbp, rax
 jne 2138f
 jmp 2139f
 2138:
+.p2align 5
 2140:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1
@@ -9462,6 +9465,7 @@ cmp rbp, rax
 jne 2195f
 jmp 2196f
 2195:
+.p2align 5
 2197:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1
@@ -10755,6 +10759,7 @@ cmp rbp, rax
 jne 2222f
 jmp 2223f
 2222:
+.p2align 5
 2224:
 mov rdx, QWORD PTR [rcx-8]
 add rdx, -1
