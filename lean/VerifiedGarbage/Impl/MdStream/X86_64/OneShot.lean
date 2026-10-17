@@ -65,14 +65,20 @@ def setup : List Instr :=
 /-- `rsi` = the block. -/
 def blkArg : List Instr := [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 P.N))]
 
+/-- The number of whole blocks of the message, in `r14`, and whether it is 0. -/
+def wholeHead : List Instr :=
+  [.mov .r14 (.reg .r12), .shift .shr .r14 (Nat.log2 P.B), .alu .test .r14 (.reg .r14)]
+
+/-- `data` (in `r13`) past the whole blocks. -/
+def wholeEnd : List Instr :=
+  [.mov .rax (.reg .r14), .shift .shl .rax (Nat.log2 P.B), .alu .add .r13 (.reg .rax)]
+
 /-- Every whole block of the message (`r14` of them), straight from `data`
 (in `r13`), which then points past them. -/
 def whole (name : String) (code : Prog isa) : Prog isa :=
-  .seq (.block [.mov .r14 (.reg .r12), .shift .shr .r14 (Nat.log2 P.B), .alu .test .r14 (.reg .r14)])
+  .seq (.block (wholeHead P))
     (.ite .e (.block [])
-      (.seq (.block [.mov .rsi (.reg .r13)])
-      (.seq (compressN name code)
-        (.block [.mov .rax (.reg .r14), .shift .shl .rax (Nat.log2 P.B), .alu .add .r13 (.reg .rax)]))))
+      (.seq (.block [.mov .rsi (.reg .r13)]) (.seq (compressN name code) (.block (wholeEnd P)))))
 
 /-- Zero the block, 16 bytes at a time, through `xmm0`. -/
 def zeroBuf : List Instr :=
@@ -102,12 +108,15 @@ def copyTail : Prog isa :=
   (.seq (.ite .e (.block []) (.loop (.block (copy1 P)) .ne))
     (.block [.mov32 .r8 (.imm 0x80), .store8 (blkByte P) .r8]))))
 
+/-- Whether the length field fits after the bytes left and `0x80`. -/
+def cmpLen : List Instr := [.alu .cmp .r10 (.imm (BitVec.ofNat 32 (P.B - P.L)))]
+
 /-- The last block or two: the bytes left, `0x80`, zeros and the length field.
 It takes two blocks iff `len mod B ≥ B - L`. -/
 def tail (name : String) (code : Prog isa) : Prog isa :=
   .seq (.block (zeroBuf P))
   (.seq (copyTail P)
-  (.seq (.block [.alu .cmp .r10 (.imm (BitVec.ofNat 32 (P.B - P.L)))])
+  (.seq (.block (cmpLen P))
   (.seq (.ite .ae (.seq (.block (blkArg P)) (.seq (compressAt name code) (.block (zeroBuf P)))) (.block []))
   (.seq (.block (P.len ++ blkArg P))
     (compressAt name code)))))
