@@ -35,12 +35,14 @@ other multiplications:
   doubled, and the squares `a_i²` added; reduced as `mul`;
 * `mulSmallAdd`: an element plus another by a one-word constant (`a24`),
   folded as for `mul`;
-* `cswap`: with the mask `-swap`, as RFC 7748 §5 describes;
+* `cswap`: with the mask `-swap`, as RFC 7748 §5 describes (once, after
+  the ladder); `mux`: with `cmove`, choosing the point an iteration doubles;
 * `freeze`: the full reduction of the result, by folding bit 255 in as 19,
   then selecting `x + 19 - 2²⁵⁵` with a mask if it is not negative.
 
-The ladder follows RFC 7748 §5 (in another order, `step`), over the bits of `k`
-from 254 down to 0 (the counter `rbx`, which indexes `BITS`), and the
+The ladder is s2n-bignum's `curve25519_x25519`'s (`step`): RFC 7748 §5's,
+but with no swap of the points in its iterations, over the bits of `k` from
+254 down to 0 (the counter `rbx`, which indexes `BITS`), and the
 inversion `z2^(p-2)` is by Bernstein–Yang divsteps (`invertDS`), a call of
 `vg_gf25519_r64_invert` (`invertCall`).
 
