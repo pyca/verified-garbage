@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.GhashPw
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
