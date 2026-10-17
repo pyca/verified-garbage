@@ -22,6 +22,8 @@ import VerifiedGarbage.Impl.MdStream.AArch64
 meta import VerifiedGarbage.Impl.MdStream.AArch64
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! Correctness of SHA-256 compression with the AArch64 SHA-2 instructions. -/
 
@@ -101,148 +103,24 @@ theorem hi_append (a b : BitVec 32) : (b ++ a).extractLsb' 32 32 = b := by
   rw [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
   simp [hi, BitVec.getLsbD_eq_getElem]
 
-/-- Group `k`'s constants, stored as `kWord k 0` and `kWord k 1` at `a` and
-`a + 8`, read back as one vector. -/
-theorem read_slot (m : Mem) (a : Addr) (k : Nat) :
-    ((m.writeW a (kWord k 0)).writeW (a + BitVec.ofNat 64 8) (kWord k 1)).read a 16 = kQuad k := by
-  rw [read16]
-  have r0 : ((m.writeW a (kWord k 0)).writeW (a + BitVec.ofNat 64 8) (kWord k 1)).readW
-      (a + BitVec.ofNat 64 (4 * 0)) 32 = K (4 * k) := by
-    rw [Mem.readW_writeW_sep (Offset.sep a (by omega) (by omega) (by omega)) (by decide),
-      show a + BitVec.ofNat 64 (4 * 0) = a by simp, ← readW64_lo, Mem.readW_writeW_self64, kWord,
-      lo_append]
-    rfl
-  have r1 : ((m.writeW a (kWord k 0)).writeW (a + BitVec.ofNat 64 8) (kWord k 1)).readW
-      (a + BitVec.ofNat 64 (4 * 1)) 32 = K (4 * k + 1) := by
-    rw [Mem.readW_writeW_sep (Offset.sep a (by omega) (by omega) (by omega)) (by decide),
-      ← readW64_hi, Mem.readW_writeW_self64, kWord, hi_append]
-  have r2 : ((m.writeW a (kWord k 0)).writeW (a + BitVec.ofNat 64 8) (kWord k 1)).readW
-      (a + BitVec.ofNat 64 (4 * 2)) 32 = K (4 * k + 2) := by
-    rw [show a + BitVec.ofNat 64 (4 * 2) = a + BitVec.ofNat 64 8 from rfl, ← readW64_lo,
-      Mem.readW_writeW_self64, kWord, lo_append]
-  have r3 : ((m.writeW a (kWord k 0)).writeW (a + BitVec.ofNat 64 8) (kWord k 1)).readW
-      (a + BitVec.ofNat 64 (4 * 3)) 32 = K (4 * k + 3) := by
-    rw [show a + BitVec.ofNat 64 (4 * 3) = a + BitVec.ofNat 64 8 + BitVec.ofNat 64 4 from
-      (Offset.add_add _ _ _).symm, ← readW64_hi, Mem.readW_writeW_self64, kWord, hi_append]
-  rw [r0, r1, r2, r3]
-  rfl
+/-- Group `n`'s constants, as `ldrqTbl` reads them from the table. -/
+theorem kTable_quad : ∀ n < 16, kTable.getD (16 * n / 8 + 1) 0 ++ kTable.getD (16 * n / 8) 0 = kQuad n := by
+  decide
 
-/-- `movz_movk64'` with its shift amounts reduced, as `simp` leaves them. -/
-theorem movz_movk64r (x : BitVec 64) :
-    (((x.extractLsb' 0 16).setWidth 64 <<< 0 &&& ~~~((65535 : BitVec 64) <<< 16) |||
-      (x.extractLsb' 16 16).setWidth 64 <<< 16) &&& ~~~((65535 : BitVec 64) <<< 32) |||
-      (x.extractLsb' 32 16).setWidth 64 <<< 32) &&& ~~~((65535 : BitVec 64) <<< 48) |||
-      (x.extractLsb' 48 16).setWidth 64 <<< 48 = x := movz_movk64' x
+theorem kTable_length : kTable.length = 32 := by simp [kTable]
 
-theorem build_ok (k : Nat) (s : State)
-    (h1 : InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (slot k)) 8)
-    (h2 : InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (slot k + 8)) 8) :
-    WP isa (.block (build k)) s fun s' =>
-      s'.mem = (s.mem.writeW (s.gpr .x3 + BitVec.ofNat 64 (slot k)) (kWord k 0)).writeW
-        (s.gpr .x3 + BitVec.ofNat 64 (slot k + 8)) (kWord k 1) ∧
-      s'.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hs : slot k % 8 = 0 ∧ slot k < 4096 * 8 ∧ (slot k + 8) % 8 = 0 ∧ slot k + 8 < 4096 * 8 := by
-    simp only [slot]; omega
-  apply WP.of_runBlock
-  simp only [build, runBlock_cons, runStep_some, runBlock_nil, exec, reduceCtorEq, ↓reduceIte,
-    Nat.reduceMul, Nat.reduceLT, ne_eq, not_false_eq_true, addr, State.store, Option.bind_some, and_self, isa, State.read, Size.bits,
-    Size.bytes, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
-    RegUpd.wr_write, RegUpd.v_write, BitVec.setWidth_eq, movz_movk64r,
-    hs.1, hs.2.1, hs.2.2.1, hs.2.2.2, h1, h2, Option.some.injEq, exists_eq_left']
-  refine ⟨by rw [writeW64, writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
-  simp only [RegUpd.gpr_write_of_ne, h4, h5, not_false_eq_true]
-
-/-- The groups whose constants wait in their slots, at `p`: those from `n` to
-`n + 1`. -/
-def Slots (m : Mem) (p : Addr) (n : Nat) : Prop :=
-  ∀ k, n ≤ k → k < n + 2 → k < 16 → m.read (p + BitVec.ofNat 64 (slot k)) 16 = kQuad k
-
-/-- The first 64 bytes of scratch, the four slots. -/
-abbrev slotsR (p : Addr) : Region := ⟨p, 112⟩
-
-theorem slot_lt (k : Nat) : slot k + 16 ≤ 64 := by simp only [slot]; omega
-
-/-- The two stores of group `k`'s constants. -/
-abbrev buildMem (m : Mem) (p : Addr) (k : Nat) : Mem :=
-  (m.writeW (p + BitVec.ofNat 64 (slot k)) (kWord k 0)).writeW (p + BitVec.ofNat 64 (slot k + 8)) (kWord k 1)
-
-/-- Storing group `k`'s constants keeps a slot of another residue. -/
-theorem buildMem_keep (m : Mem) (p : Addr) {j k : Nat} (hjk : j % 4 ≠ k % 4) :
-    (buildMem m p k).read (p + BitVec.ofNat 64 (slot j)) 16 = m.read (p + BitVec.ofNat 64 (slot j)) 16 := by
-  have e : ∀ (m' : Mem) (d : Nat) (v : BitVec 64), d + 8 ≤ 64 → (slot j + 16 ≤ d ∨ d + 8 ≤ slot j) →
-      (m'.writeW (p + BitVec.ofNat 64 d) v).read (p + BitVec.ofNat 64 (slot j)) 16 =
-        m'.read (p + BitVec.ofNat 64 (slot j)) 16 := fun m' d v hd hs => by
-    have := slot_lt j
-    rw [writeW64]
-    exact Mem.read_write_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
-  have := slot_lt k
-  have hne : slot j + 16 ≤ slot k ∨ slot k + 16 ≤ slot j := by simp only [slot]; omega
-  rw [buildMem, e _ _ _ (by omega) (by omega), e _ _ _ (by omega) (by omega)]
-
-/-- Storing group `k`'s constants puts them in its slot. -/
-theorem buildMem_read (m : Mem) (p : Addr) (k : Nat) :
-    (buildMem m p k).read (p + BitVec.ofNat 64 (slot k)) 16 = kQuad k := by
-  rw [buildMem, show p + BitVec.ofNat 64 (slot k + 8) = p + BitVec.ofNat 64 (slot k) + BitVec.ofNat 64 8 from
-    (Offset.add_add _ _ _).symm]
-  exact read_slot _ _ _
-
-/-- The two stores are within the slots. -/
-theorem buildMem_frame (m : Mem) (p : Addr) (k : Nat) : Frame [slotsR p] m (buildMem m p k) := by
-  have := slot_lt k
-  exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-    (Offset.contains_base _ (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-    (Offset.contains_base _ (by omega) (by omega))
-
-theorem exec_ldrq' {s : State} {t : VReg} {n : Reg} {off : Nat}
-    (ho : off % 16 = 0 ∧ off < 65536)
-    (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 16) :
-    exec (.ldrq t n off) s = some (s.setV t (s.mem.read (s.gpr n + BitVec.ofNat 64 off) 16)) := by
-  simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.load,
-    h, Option.bind_some, Option.map_some]
-
-/-- Building group `n + 2` (if any) and loading group `n`, in the first block. -/
-theorem kbuild_ok (n : Nat) (hn : n < 16) (s : State) (p : Addr) (hx3 : s.gpr .x3 = p)
-    (hw : ∀ d, d + 8 ≤ 64 → InRegions s.wr (p + BitVec.ofNat 64 d) 8)
-    (hr : ∀ k, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (slot k)) 16)
-    (hs : Slots s.mem p n) :
+/-- Loading group `n`, in the first block, from the table at `x4`. -/
+theorem kbuild_ok (n : Nat) (hn : n < 16) (s : State) (hx4 : s.gpr .x4 = s.syms kName) :
     WP isa (.block (kbuild n)) s fun s' =>
-      s'.v (kreg n) = kQuad n ∧
-      (∀ r, r ≠ kreg n → s'.v r = s.v r) ∧
-      (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧
-      Frame [slotsR p] s.mem s'.mem ∧ Slots s'.mem p (n + 1) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  rw [kbuild, WP.block_append_iff]
-  have hpart : WP isa (.block (if n + 2 < 16 then build (n + 2) else [])) s fun s₁ =>
-      s₁.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧
-      Frame [slotsR p] s.mem s₁.mem ∧ Slots s₁.mem p n ∧
-      (n + 2 < 16 → s₁.mem.read (p + BitVec.ofNat 64 (slot (n + 2))) 16 = kQuad (n + 2)) := by
-    by_cases h2 : n + 2 < 16
-    · simp only [h2, ite_true]
-      have := slot_lt (n + 2)
-      refine (build_ok (n + 2) s (by rw [hx3]; exact hw _ (by omega))
-        (by rw [hx3]; exact hw _ (by omega))).mono fun s₁ ⟨hm, hv, hg, hrd, hwr⟩ => ?_
-      rw [hx3] at hm
-      refine ⟨hv, hg, hrd, hwr, by rw [hm]; exact buildMem_frame _ _ _,
-        fun j hj hj' hj16 => ?_, fun _ => by rw [hm]; exact buildMem_read _ _ _⟩
-      rw [hm, buildMem_keep _ _ (by omega)]
-      exact hs j hj hj' hj16
-    · simp only [h2, ite_false]
-      exact WP.block_nil (M := isa) ⟨rfl, fun _ _ _ => rfl, rfl, rfl, Frame.refl _ _, hs,
-        fun h => absurd (by simp at h) h2⟩
-  refine WP.mono hpart fun s₁ ⟨hv, hg, hrd, hwr, hf, hs₁, hk₂⟩ => ?_
-  have ho : slot n % 16 = 0 ∧ slot n < 65536 := by simp only [slot]; omega
-  have hx3' : s₁.gpr .x3 = p := by rw [hg .x3 (by decide) (by decide), hx3]
-  refine WP.block_cons_iff.mpr ⟨_, exec_ldrq' ho (by rw [hx3', hrd, hwr]; exact hr n),
-    WP.block_nil (M := isa) ⟨?_, fun r hr' => ?_, fun r h4 h5 => ?_, hf, ?_, hrd, hwr⟩⟩
-  · rw [RegUpd.v_setV_self, hx3']; exact hs₁ n (Nat.le_refl _) (by omega) hn
-  · rw [RegUpd.v_setV_of_ne _ _ hr', hv]
-  · rw [RegUpd.gpr_setV, hg r h4 h5]
-  · intro k hk hk' hk16
-    rw [RegUpd.mem_setV]
-    by_cases e : k = n + 2
-    · subst e; exact hk₂ hk16
-    · exact hs₁ k (by omega) (by omega) hk16
+      s'.v (kreg n) = kQuad n ∧ (∀ r, r ≠ kreg n → s'.v r = s.v r) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hc : s.gpr .x4 = s.syms kName ∧ 16 * n % 16 = 0 ∧ 16 * n < 65536 ∧ 16 * n / 8 + 2 ≤ kTable.length :=
+    ⟨hx4, by omega, by omega, by rw [kTable_length]; omega⟩
+  have e : exec (.ldrqTbl (kreg n) .x4 (16 * n) kName kTable) s =
+      some (s.setV (kreg n) (kQuad n)) := by
+    simp only [exec, ite_eq_left_of_eq_true _ _ (eq_true hc), kTable_quad n hn]
+  refine WP.block_cons_iff.mpr ⟨_, e, WP.block_nil (M := isa) ⟨RegUpd.v_setV_self _ _ _,
+    fun r hr => RegUpd.v_setV_of_ne _ _ hr, rfl, rfl, rfl, rfl⟩⟩
 
 theorem rounds4_ok (n : Nat) (s : State) (v : HashValue) (q : BitVec 128)
     (h0 : s.v .v0 = abcd v) (h1 : s.v .v1 = efgh v) (hq : s.v (msg n) = q)
@@ -327,10 +205,9 @@ structure RInv (c : Bool) (H : HashValue) (M : Block) (sB : State) (n : Nat) (s 
   v1 : s.v .v1 = efgh (Spec.Sha256.rounds H M (4 * n))
   msgs : ∀ k < n, n ≤ k + 4 → s.v (msg k) = quad M k
   k : ∀ j < 16, (c = false ∨ j < n) → s.v (kreg j) = kQuad j
-  gpr : ∀ r, r ≠ .x4 → r ≠ .x5 → s.gpr r = sB.gpr r
-  frame : Frame [slotsR (sB.gpr .x3)] sB.mem s.mem
-  same : c = false → s.mem = sB.mem
-  slots : c = true → Slots s.mem (sB.gpr .x3) n
+  gpr : ∀ r, r ≠ .x4 → s.gpr r = sB.gpr r
+  mem : s.mem = sB.mem
+  tbl : c = true → s.gpr .x4 = s.syms kName
   rd : s.rd = sB.rd
   wr : s.wr = sB.wr
 
@@ -380,12 +257,8 @@ theorem load_quad (M : Block) (m : Mem) (bp : Addr) {n : Nat} (hn : n < 4)
 theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State)
     (hrsi : sB.gpr .x1 = bp)
     (hin : ∀ n : Nat, n < 4 → InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofNat 64 (16 * n)) 16)
-    (R : Region) (hR : ∀ n : Nat, n < 4 → R.Contains (bp + BitVec.ofNat 64 (16 * n)) 16)
-    (hRd : R.Disjoint (slotsR (sB.gpr .x3)))
     (hblk : ∀ t : Nat, t < 16 →
       rev32 (sB.mem.readW (bp + BitVec.ofNat 64 (4 * t)) 32) = W M t)
-    (hw : ∀ d, d + 8 ≤ 64 → InRegions sB.wr (sB.gpr .x3 + BitVec.ofNat 64 d) 8)
-    (hr : ∀ k, InRegions (sB.rd ++ sB.wr) (sB.gpr .x3 + BitVec.ofNat 64 (slot k)) 16)
     (h1 : sB.v .v0 = abcd H) (h2 : sB.v .v1 = efgh H)
     (hk : c = false → ∀ j < 16, sB.v (kreg j) = kQuad j) :
     ∀ n ≤ 16, WP isa (rounds c n) sB (RInv c H M sB n) := by
@@ -395,33 +268,17 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
     cases c with
     | false =>
       exact WP.block_nil (M := isa) ⟨h1, h2, fun _ h => absurd h (by omega),
-        fun j hj _ => hk rfl j hj, fun _ _ _ => rfl, Frame.refl _ _, fun _ => rfl,
-        fun h => absurd h (by decide), rfl, rfl⟩
+        fun j hj _ => hk rfl j hj, fun _ _ => rfl, rfl, fun h => absurd h (by decide), rfl, rfl⟩
     | true =>
       simp only [rounds, ite_true]
-      rw [WP.block_append_iff]
-      have := slot_lt 0
-      have := slot_lt 1
-      refine (build_ok 0 sB (hw _ (by omega)) (hw _ (by omega))).mono
-        fun s₁ ⟨hm₁, hv₁, hg₁, hrd₁, hwr₁⟩ => ?_
-      have hx3 : s₁.gpr .x3 = sB.gpr .x3 := hg₁ .x3 (by decide) (by decide)
-      refine (build_ok 1 s₁ (by rw [hx3, hwr₁]; exact hw _ (by omega))
-        (by rw [hx3, hwr₁]; exact hw _ (by omega))).mono fun s₂ ⟨hm₂, hv₂, hg₂, hrd₂, hwr₂⟩ => ?_
-      rw [hx3] at hm₂
-      refine ⟨by rw [hv₂, hv₁]; exact h1, by rw [hv₂, hv₁]; exact h2, fun _ h => absurd h (by omega),
+      refine WP.block_cons_iff.mpr ⟨_, exec_adrSym, WP.block_nil (M := isa) ⟨h1, h2,
+        fun _ h => absurd h (by omega),
         fun _ _ h => h.elim (fun h => absurd h (by decide)) (fun h => absurd h (by omega)),
-        fun r h4 h5 => by rw [hg₂ r h4 h5, hg₁ r h4 h5],
-        by rw [hm₂, hm₁]; exact (buildMem_frame _ _ 0).trans (buildMem_frame _ _ 1),
-        fun h => absurd h (by decide), fun _ k hk hk' _ => ?_, by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁]⟩
-      rw [hm₂, hm₁]
-      rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
-      · rw [buildMem_keep _ _ (by decide)]; exact buildMem_read _ _ _
-      · exact buildMem_read _ _ _
+        fun r h4 => RegUpd.gpr_write_of_ne _ _ _ h4, rfl, fun _ => RegUpd.gpr_write_self _ _ _ _, rfl, rfl⟩⟩
   | succ n ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
     rw [group, WP.block_append_iff]
-    have hs_rsi : s.gpr .x1 = bp := (hs.gpr .x1 (by decide) (by decide)).trans hrsi
-    have hs_x3 : s.gpr .x3 = sB.gpr .x3 := hs.gpr .x3 (by decide) (by decide)
+    have hs_rsi : s.gpr .x1 = bp := (hs.gpr .x1 (by decide)).trans hrsi
     -- The schedule replaces `msg n` with `quad M n`, preserving the other registers.
     have hsched : WP isa (.block (schedule n)) s fun s₁ =>
         s₁.v (msg n) = quad M n ∧ (∀ r, r ≠ msg n → s₁.v r = s.v r) ∧
@@ -429,7 +286,7 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
       by_cases hlo : n < 4
       · refine WP.mono (schedule_lo n hlo s (by rw [hs.rd, hs.wr, hs_rsi]; exact hin n hlo))
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
-        rw [e, hs_rsi, hs.frame.read (hR n hlo) (by simpa using hRd) (by decide)]
+        rw [e, hs_rsi, hs.mem]
         exact load_quad M sB.mem bp hlo hblk
       · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega⟩
         refine WP.mono (schedule_hi (i + 4) (by omega) s (quad M i) (quad M (i + 1)) (quad M (i + 2))
@@ -439,42 +296,34 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
         · rw [show i + 4 + 2 = i + 2 + 4 by omega, msg_add4]; exact hs.msgs (i + 2) (by omega) (by omega)
         · rw [show i + 4 + 3 = i + 3 + 4 by omega, msg_add4]; exact hs.msgs (i + 3) (by omega) (by omega)
         · rw [e]; exact schedule_eq M i
-    refine WP.mono hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_
+    refine AArch64.WP.mono_syms hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ hy₁ => ?_
     rw [WP.block_append_iff]
     have hn16 : n < 16 := by omega
-    -- The constants: loaded by the first block (building those two groups ahead), kept by the others.
+    -- The constants: loaded by the first block from the table, kept by the others.
     have hmid : WP isa (.block (if c then kbuild n else [])) s₁ fun s₁' =>
         s₁'.v (kreg n) = kQuad n ∧ (∀ r, r ≠ kreg n → s₁'.v r = s₁.v r) ∧
-        (∀ r, r ≠ .x4 → r ≠ .x5 → s₁'.gpr r = s₁.gpr r) ∧
-        Frame [slotsR (sB.gpr .x3)] s₁.mem s₁'.mem ∧ (c = false → s₁'.mem = s₁.mem) ∧
-        (c = true → Slots s₁'.mem (sB.gpr .x3) (n + 1)) ∧ s₁'.rd = s₁.rd ∧ s₁'.wr = s₁.wr := by
+        s₁'.gpr = s₁.gpr ∧ s₁'.mem = s₁.mem ∧ s₁'.rd = s₁.rd ∧ s₁'.wr = s₁.wr := by
       cases c with
       | true =>
         simp only [ite_true]
-        refine (kbuild_ok n hn16 s₁ (sB.gpr .x3) (by rw [hg₁, hs_x3])
-          (fun d hd => by rw [hwr₁, hs.wr]; exact hw d hd)
-          (fun k => by rw [hrd₁, hwr₁, hs.rd, hs.wr]; exact hr k)
-          (by rw [hm₁]; exact hs.slots rfl)).mono
-          fun s' ⟨e, hv, hg, hf, hsl, hrd, hwr⟩ => ⟨e, hv, hg, hf, fun h => absurd h (by decide),
-            fun _ => hsl, hrd, hwr⟩
+        exact kbuild_ok n hn16 s₁ (by rw [hg₁, hy₁]; exact hs.tbl rfl)
       | false =>
-        refine WP.block_nil (M := isa) ⟨?_, fun _ _ => rfl, fun _ _ _ => rfl, Frame.refl _ _,
-          fun _ => rfl, fun h => absurd h (by decide), rfl, rfl⟩
+        refine WP.block_nil (M := isa) ⟨?_, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
         rw [hx₁ _ (Ne.symm (msg_kreg n hn16))]
         exact hs.k n hn16 (.inl rfl)
-    refine WP.mono hmid fun s₁' ⟨hk₁, hx₁', hg₁', hf₁', hsame₁', hsl₁', hrd₁', hwr₁'⟩ => ?_
+    refine AArch64.WP.mono_syms hmid fun s₁' ⟨hk₁, hx₁', hg₁', hm₁', hrd₁', hwr₁'⟩ hy₁' => ?_
     have o1 := msg_other n .v0 (by simp)
     have o2 := msg_other n .v1 (by simp)
     have kn := kreg_ne n hn16
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at kn
-    refine WP.mono (rounds4_step H M n s₁'
+    refine AArch64.WP.mono_syms (rounds4_step H M n s₁'
       (by rw [hx₁' _ (Ne.symm kn.1), hx₁ _ (Ne.symm o1)]; exact hs.v0)
       (by rw [hx₁' _ (Ne.symm kn.2.1), hx₁ _ (Ne.symm o2)]; exact hs.v1)
       (by rw [hx₁' _ (msg_kreg n hn16)]; exact hq) hk₁)
-      fun s₂ ⟨e1, e2, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_
-    refine ⟨e1, e2, fun k hk hk' => ?_, fun j hj hcj => ?_, fun r h4 h5 => ?_,
-      by rw [hm₂]; exact hs.frame.trans (by rw [← hm₁]; exact hf₁'),
-      fun hc => by rw [hm₂, hsame₁' hc, hm₁, hs.same hc], fun hc => by rw [hm₂]; exact hsl₁' hc,
+      fun s₂ ⟨e1, e2, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ hy₂ => ?_
+    refine ⟨e1, e2, fun k hk hk' => ?_, fun j hj hcj => ?_, fun r h4 => ?_,
+      by rw [hm₂, hm₁', hm₁, hs.mem],
+      fun hc => by rw [hg₂, hg₁', hg₁, hy₂, hy₁', hy₁]; exact hs.tbl hc,
       by rw [hrd₂, hrd₁', hrd₁, hs.rd], by rw [hwr₂, hwr₁', hwr₁, hs.wr]⟩
     · have n0 := msg_other k .v2 (by simp)
       have n1 := msg_other k .v0 (by simp)
@@ -492,7 +341,7 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
       · subst hjn; exact hk₁
       · rw [hx₁' _ (fun h => hjn (kreg_inj j hj n hn16 h)), hx₁ _ (Ne.symm (msg_kreg n hj))]
         exact hs.k j hj (hcj.imp_right fun h => by omega)
-    · rw [hg₂, hg₁' r h4 h5, hg₁, hs.gpr r h4 h5]
+    · rw [hg₂, hg₁', hg₁, hs.gpr r h4]
 
 theorem read_abcd (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 0) 16 = abcd (stateAt m p) := by
   rw [read16]
@@ -584,53 +433,39 @@ theorem block_ok (c : Bool) {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat} (hi
   have hlt := hp.nb_lt
   refine WP.seq ((rounds_ok c _ (blk s₀ i) (blkAddr s₀ i) s hL.x1
     (fun n hn => by rw [hL.rd, hL.wr]; exact Pre.in_blk16 hp hi hn)
-    (blR s₀) (fun n hn => by
-      rw [show blkAddr s₀ i + BitVec.ofNat 64 (16 * n) =
-        bp s₀ + BitVec.ofNat 64 (64 * i + 16 * n) from Offset.add_add _ _ _]
-      exact contains_offset (by omega) (by omega))
-    (by rw [hx3]; exact hp.blk_scr)
-    hblk
-    (fun d hd => ⟨scrR s₀, by simp [hL.wr, hp.wr], by rw [hx3]; exact contains_offset (by omega) (by omega)⟩)
-    (fun k => ⟨scrR s₀, by simp [hL.wr, hp.wr], by
-      have := slot_lt k
-      rw [hx3]; exact contains_offset (by omega) (by omega)⟩)
-    hL.v0 hL.v1 hk 16 (Nat.le_refl _)).mono fun s₂ hR => ?_)
-  have hg₂ : ∀ r, r ≠ .x4 → r ≠ .x5 → s₂.gpr r = s.gpr r := fun r h4 h5 => hR.gpr r h4 h5
-  have hf₂ : Frame [scrR s₀] s.mem s₂.mem := by
-    have := hR.frame; rw [hx3] at this; exact this
+    hblk hL.v0 hL.v1 hk 16 (Nat.le_refl _)).mono fun s₂ hR => ?_)
+  have hg₂ : ∀ r, r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h4 => hR.gpr r h4
   have hout : ∀ d, d ≤ 16 → InRegions s₂.wr (s₂.gpr .x0 + BitVec.ofNat 64 d) 16 := by
     intro d hd
     refine ⟨stR s₀, by simp [hR.wr, hL.wr, hp.wr], ?_⟩
-    rw [hg₂ .x0 (by decide) (by decide), hL.x0]; exact contains_offset (by omega) (by omega)
-  have hst₂ : stateAt s₂.mem (st s₀) = stateAt s.mem (st s₀) :=
-    VG.Proof.Sha256.Stream.stateAt_congr fun j hj =>
-      hf₂.bytes (R := stR s₀) (by simpa using hp.st_scr) (by simp) hj
+    rw [hg₂ .x0 (by decide), hL.x0]; exact contains_offset (by omega) (by omega)
+  have hst₂ : stateAt s₂.mem (st s₀) = stateAt s.mem (st s₀) := by rw [hR.mem]
   refine (store_ok s₂ _ (stateAt s.mem (st s₀)) hR.v0 hR.v1
-    (by rw [hg₂ .x0 (by decide) (by decide), hL.x0, hst₂])
+    (by rw [hg₂ .x0 (by decide), hL.x0, hst₂])
     (hout 0 (by decide)) (hout 16 (by decide))).mono
     fun s₃ ⟨hv0₃, hv1₃, hv₃, hm₃, hx1₃, hx2₃, hg₃, hrd₃, hwr₃⟩ => ?_
   have hx2 : s₂.gpr .x2 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
-    rw [hg₂ .x2 (by decide) (by decide), hL.x2]
+    rw [hg₂ .x2 (by decide), hL.x2]
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
   have hst : stateAt s₃.mem (st s₀) = Vector.zipWith (· + ·) (Spec.Sha256.rounds (stateAt s.mem (st s₀))
       (blk s₀ i) (4 * 16)) (stateAt s.mem (st s₀)) := by
-    rw [hm₃, hg₂ .x0 (by decide) (by decide), hL.x0, stateAt_writeState]
+    rw [hm₃, hg₂ .x0 (by decide), hL.x0, stateAt_writeState]
   have hframe : Frame [stR s₀, scrR s₀] s₀.mem s₃.mem := by
-    refine hL.frame.trans (Frame.trans (hf₂.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩) ?_)
-    rw [hm₃, hg₂ .x0 (by decide) (by decide), hL.x0]
+    refine hL.frame.trans ?_
+    rw [hm₃, hg₂ .x0 (by decide), hL.x0, hR.mem]
     exact (frame_writeState (Frame.refl _ _) _).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   refine ⟨VInv.mk (LInv.mk (Common.mk ?_ ?_ ?_ (by rw [hrd₃, hR.rd, hL.rd])
     (by rw [hwr₃, hR.wr, hL.wr]) hframe ?_) ?_ ?_) (by rw [hv0₃, hst]) (by rw [hv1₃, hst]),
     fun j hj => ?_⟩
-  · rw [hg₃ .x0 (by decide) (by decide), hg₂ .x0 (by decide) (by decide), hL.x0]
-  · rw [hg₃ .x3 (by decide) (by decide), hg₂ .x3 (by decide) (by decide), hL.x3]
+  · rw [hg₃ .x0 (by decide) (by decide), hg₂ .x0 (by decide), hL.x0]
+  · rw [hg₃ .x3 (by decide) (by decide), hg₂ .x3 (by decide), hL.x3]
   · intro r hr
-    have key : ∀ r ∈ preserved, r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x4 ∧ r ≠ .x5 := by decide
+    have key : ∀ r ∈ preserved, r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x4 := by decide
     have hn := key r hr
-    rw [hg₃ r hn.1 hn.2.1, hg₂ r hn.2.2.1 hn.2.2.2, hL.kept r hr]
+    rw [hg₃ r hn.1 hn.2.1, hg₂ r hn.2.2, hL.kept r hr]
   · rw [hst, compressBlocks_succ, ← hL.state]
     rfl
-  · rw [hx1₃, hg₂ .x1 (by decide) (by decide), hL.x1]
+  · rw [hx1₃, hg₂ .x1 (by decide), hL.x1]
     exact (Offset.add_add _ _ 64).trans
       (congrArg (bp s₀ + ·) (congrArg (BitVec.ofNat 64) (by omega)))
   · rw [hx2₃, hx2]
