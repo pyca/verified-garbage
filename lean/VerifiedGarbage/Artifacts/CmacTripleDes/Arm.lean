@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Frame
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -48,6 +49,21 @@ def artifacts : List Artifact := [
     notes := [desNote]
     code := Impl.StackScratch.Arm.withStackScratch 648 0 Impl.CmacTripleDes.Arm.finalize
     stack := 648
-    verified := finalize_framed }]
+    verified := finalize_framed },
+  Spec.Cmac.tdesStreamInitApi.artifact Arm.target {
+    notes := [desNote]
+    code := Impl.StackScratch.Arm.withRegScratch 640 .r3 Impl.CmacTripleDes.Stream.Arm.streamInit
+    stack := 640
+    verified := Proof.CmacTripleDes.Stream.Arm.init_framed },
+  Spec.Cmac.tdesAbsorbApi.artifact Arm.target {
+    notes := [desNote]
+    code := Impl.StackScratch.Arm.withStackScratch 704 2 Impl.CmacTripleDes.Stream.Arm.absorb
+    stack := 708
+    verified := Proof.CmacTripleDes.Stream.Arm.absorb_framed },
+  Spec.Cmac.tdesFinishApi.artifact Arm.target {
+    notes := [desNote]
+    code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.CmacTripleDes.Stream.Arm.finish
+    stack := 660
+    verified := Proof.CmacTripleDes.Stream.Arm.finish_framed }]
 
 end VG.Artifacts.CmacTripleDes.Arm
