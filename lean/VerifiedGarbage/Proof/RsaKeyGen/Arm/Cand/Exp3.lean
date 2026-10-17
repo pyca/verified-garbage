@@ -21,8 +21,8 @@ open VG.Impl.RsaKeyGen.Arm.Key (notS)
 section
 variable {P : CP}
 
-theorem halfBit_eq : halfBit = bitOf sBit aHm ++ (notS sBit sBit ++ [.ldr .r2 .r8 sTc,
-    .dp .add .r2 .r2 (.reg .r1), .str .r2 .r8 sTc]) := rfl
+theorem halfBit_eq : halfBit = bitOf sBit aHm ++ (notS sBit sBit ++ ([.ldr .r2 .r8 sTc,
+    .dp .add .r2 .r2 (.reg .r1), .str .r2 .r8 sTc] : List Instr)) := rfl
 
 /-- Whether `m` is even, after `k` halvings. -/
 def evb (P : CP) (k : Nat) (σ : State) : Bool := decide ((hv P σ k).1 % 2 = 0)

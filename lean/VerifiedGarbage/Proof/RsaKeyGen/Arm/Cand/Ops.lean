@@ -111,7 +111,7 @@ theorem St.porTwo {j : Nat} (cert : Cert (.block (orTwo j))) (hj : j ∈ L) :
 /-- A word op on word `i` of `[j]`, at byte `4 W − c`: the number becomes `g`. -/
 theorem St.phiOp {j c : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32 → BitVec 32} {g : State → Nat}
     (cert : Cert (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
-      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ [.str .r1 .r0 0]))))
+      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ ([.str .r1 .r0 0] : List Instr)))))
     (hj : j ∈ L) (hc : encodable (BitVec.ofNat 32 c) = true)
     (hi : ∀ σ, E σ → In P σ → P.W * 4 = 4 * i P + c ∧ i P < P.W)
     (hops : ∀ u : State, ∀ R : State → Prop, (∀ u', Upd u u' .r1 (f (u.gpr .r1)) → R u') →
@@ -120,7 +120,7 @@ theorem St.phiOp {j c : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32 
         2 ^ (32 * i P) * (f (BitVec.ofNat 32 (A σ j / 2 ^ (32 * i P) % 2 ^ 32))).toNat +
         2 ^ (32 * (i P + 1)) * (A σ j / 2 ^ (32 * (i P + 1))) = g σ) :
     VP (St P E A L V LS) (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
-      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ [.str .r1 .r0 0])))
+      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ ([.str .r1 .r0 0] : List Instr))))
       (St P E (fun σ => upd (A σ) j (g σ)) (j :: L) V LS) :=
   VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by
     have hj' := h.live_lt j hj

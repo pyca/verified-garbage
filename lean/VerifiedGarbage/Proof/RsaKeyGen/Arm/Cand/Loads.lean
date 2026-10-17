@@ -111,9 +111,9 @@ theorem Bk.ldrSp (h : Bk P σ s) {o : Nat} (ho : FwOk o) {t : Reg} {rest : List 
 
 /-- `setupC` after the base and `out_len` are loaded. -/
 theorem setupTail_ok (h : Bk P σ s) (r8 : s.gpr .r8 = P.B) (r9 : s.gpr .r9 = BitVec.ofNat 32 P.L) :
-    WP isa (.block ([.mov .r9 (.shifted .r9 .lsr 2), .dp .add .r9 .r9 (.imm 2)] ++ stride ++
-      [.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)), .mov .lr (.imm (BitVec.ofNat 32 nArr)),
-        .mul .lr .lr .r7, .mov .lr (.shifted .lr .lsr 2), .mov .r3 (.imm 0)])) s fun t =>
+    WP isa (.block (([.mov .r9 (.shifted .r9 .lsr 2), .dp .add .r9 .r9 (.imm 2)] : List Instr) ++ stride ++
+      ([.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)), .mov .lr (.imm (BitVec.ofNat 32 nArr)),
+        .mul .lr .lr .r7, .mov .lr (.shifted .lr .lsr 2), .mov .r3 (.imm 0)] : List Instr))) s fun t =>
       Bk P σ t ∧ Ws t P.B P.Z P.W nArr ∧ slot t.mem P.B 16 = P.W ∧
       t.gpr .r0 = P.B + BitVec.ofNat 32 hdr ∧ t.gpr .lr = BitVec.ofNat 32 (nArr * (P.W + 2)) ∧
       t.gpr .r3 = 0 := by

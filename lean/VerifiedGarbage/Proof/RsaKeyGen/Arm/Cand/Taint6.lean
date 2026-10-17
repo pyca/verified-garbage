@@ -14,7 +14,7 @@ import all Init.Data.Vector.Basic
 namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate
 
-theorem montHead_taint : Cert (.block (ptr .r0 mBase ++ [.dp .sub .r0 .r0 (.imm 256)])) := ⟨_, by taint_decide⟩
+theorem montHead_taint : Cert (.block (ptr .r0 mBase ++ ([.dp .sub .r0 .r0 (.imm 256)] : List Instr))) := ⟨_, by taint_decide⟩
 theorem ctxW_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r8]) (.block ctxW) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 theorem clrTopC_taint : Cert (.block (clrTop mBase)) := ⟨_, by taint_decide⟩

@@ -121,7 +121,7 @@ theorem hk_le (P : KP) (σ : State) (k : Nat) :
 theorem halvingStart_vp {E : State → Prop} {c : Prog isa} {G : State → State → Prop}
     (hc : VP (IH P E (8 * P.K)) c G) :
     VP (S1 P E) (seqs [mulFrom aF aPm aQm aZero cnt8, copy aU aPm, copy aV aQm,
-      .seq (.block (cnt8 ++ [.str .r6 .r8 sHc])) c]) G := by
+      .seq (.block (cnt8 ++ ([.str .r6 .r8 sHc] : List Instr))) c]) G := by
   simp only [seqs]
   have m1 : ∀ σ : State, A1 P σ aMod = 2 ^ (32 * P.W - 1) := fun σ => by
     simp (config := {decide := true}) only [A1, A0, upd, ↓reduceIte]

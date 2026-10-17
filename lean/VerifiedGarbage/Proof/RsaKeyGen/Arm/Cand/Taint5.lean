@@ -23,8 +23,8 @@ theorem copyH2_taint : Cert (copy aH2 aHm) := ⟨_, by taint_decide⟩
 theorem mov11_taint : Cert (.block [.mov .r11 (.imm 0)]) := ⟨_, by taint_decide⟩
 theorem halfH2_taint : Cert (half aH2) := ⟨_, by taint_decide⟩
 theorem bitHm_taint : Cert (.block (bitOf sBit aHm)) := ⟨_, by taint_decide⟩
-theorem notAdd_taint : Cert (.block (notS sBit sBit ++ [.ldr .r2 .r8 sTc, .dp .add .r2 .r2 (.reg .r1),
-    .str .r2 .r8 sTc])) := ⟨_, by taint_decide⟩
+theorem notAdd_taint : Cert (.block (notS sBit sBit ++ ([.ldr .r2 .r8 sTc, .dp .add .r2 .r2 (.reg .r1),
+    .str .r2 .r8 sTc] : List Instr))) := ⟨_, by taint_decide⟩
 theorem selHm_taint : Cert (sel aHm aH1 aH2 sBit) := ⟨_, by taint_decide⟩
 theorem cntNext_taint : Cert (.block cntNext) := ⟨_, by taint_decide⟩
 theorem sigPow_taint : Cert (.block (sigMasks ++ powWord)) := ⟨_, by taint_decide⟩

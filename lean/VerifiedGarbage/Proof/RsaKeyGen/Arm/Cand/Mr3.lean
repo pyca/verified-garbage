@@ -72,8 +72,8 @@ theorem In.witIn {σ : State} (pre : In P σ) {u : Nat} (hu : u + P.L ≤ P.rl) 
 
 theorem wlBlock_eq : ([.ldrSp .r4 aoR, .ldr .r1 .r8 sUsed, .dp .add .r4 .r4 (.reg .r1), .ldrSp .r6 foL,
     .dp .add .r1 .r1 (.reg .r6), .str .r1 .r8 sUsed] : List Instr) =
-    ([(Reg.r4, aoR)].map fun p => Instr.ldrSp p.1 p.2) ++ ([.ldr .r1 .r8 sUsed, .dp .add .r4 .r4 (.reg .r1)] ++
-      (([(Reg.r6, foL)].map fun p => Instr.ldrSp p.1 p.2) ++ [.dp .add .r1 .r1 (.reg .r6), .str .r1 .r8 sUsed])) :=
+    ([(Reg.r4, aoR)].map fun p => Instr.ldrSp p.1 p.2) ++ (([.ldr .r1 .r8 sUsed, .dp .add .r4 .r4 (.reg .r1)] : List Instr) ++
+      (([(Reg.r6, foL)].map fun p => Instr.ldrSp p.1 p.2) ++ ([.dp .add .r1 .r1 (.reg .r6), .str .r1 .r8 sUsed] : List Instr))) :=
   rfl
 
 /-- The witness's octets into `[aX]`, and `used` advanced. -/
