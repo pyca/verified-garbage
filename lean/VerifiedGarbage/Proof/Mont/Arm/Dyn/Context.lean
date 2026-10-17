@@ -135,6 +135,20 @@ theorem Context.keep {n size m o : Nat} {base : Addr} {s t : State} (h : Context
       simpa only [val32, Nat.mul_zero, Nat.add_zero, invO] using hv
     rw [e]; exact h.inverse
 
+/-- A context, after code that changed only a slot from 6 on. -/
+theorem Context.of_slot {n size m i : Nat} {base : Addr} {s t : State} (h : Context n m base size s)
+    (w : Ws t base size) (O : Outside base (slot n i) (8 * n) s.mem t.mem) (hi : 6 ≤ i) :
+    Context n m base size t := by
+  have nw := h.ws.nowrap
+  have b0 := slot_bound (n := n) (i := 0) (by decide)
+  have l0 := slot_le (n := n) (i := 0) (j := i) (by omega)
+  have hd := slot_header n 0
+  have sz := h.size_le
+  simp only [stride] at *
+  refine ⟨w, h.size_le, h.small, h.n0, ?_, h.gt_one, ?_⟩
+  · rw [O.val32 (by omega) (by omega)]; exact h.modulus
+  · rw [O.w32 (by simp only [invO]; omega) (by decide)]; exact h.inverse
+
 theorem context_mul_ok {n size m o a b : Nat} {base : Addr} {s : State} (h : Context n m base size s)
     (ho : 6 ≤ o ∧ o < 12) (ha : 6 ≤ a ∧ a < 12) (hb : 6 ≤ b ∧ b < 12)
     (hB : val32 s.mem base (slot n b) (2 * n) < m) :
