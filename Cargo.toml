@@ -17,7 +17,7 @@ autotests = false
 [features]
 default = ["alloc"]
 # Everything that allocates, through the `alloc` crate: Argon2, scrypt, RSA,
-# DSA, FFDH, and AES-GCM's tables of powers on x86-64.
+# DSA, FFDH, and AES-GCM's tables of powers on x86-64 and AArch64.
 alloc = []
 # Links `std`, so that the CPU features are detected at run time on every
 # target: on AArch64, by asking the operating system (see `src/cpu.rs`);
