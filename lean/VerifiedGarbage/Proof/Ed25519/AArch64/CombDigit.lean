@@ -12,13 +12,11 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
-# The comb's digits, signs and masks
+# The comb's digits and signs
 
 Step `i` reads the nibble `i` of the scalar from its bits,
 expanded one per byte at byte 768 of the workspace, by Horner's rule;
-`combSign` turns it into the magnitude `|n - 8|` and the mask of its sign;
-`combMasks` sets the register for `k` to all ones exactly if the magnitude is
-`k`, for `k = 1 … 8`, and another to `1` exactly if it is `0`.
+`combSign` turns it into the magnitude `|n - 8|` and the mask of its sign.
 -/
 
 @[expose] public section
@@ -130,77 +128,5 @@ theorem combSign_ok (s : State) {n : Nat} (hn : n < 16) (hx : s.gpr .x2 = BitVec
       by simp only [RegUpd.sp_write]⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
-
-/-! ## The masks -/
-
-/-- The bit of `|d| = 0`. -/
-def zeroBit (a : Nat) : BitVec 64 := if a = 0 then 1 else 0
-
-private theorem less_fact : ∀ a < 9, ∀ k < 8,
-    (BitVec.ofNat 64 a - BitVec.ofNat 64 (k + 1)) >>> 63 -
-      (BitVec.ofNat 64 a - BitVec.ofNat 64 (k + 2)) >>> 63 = mask (decide (a = k + 1)) := by
-  decide +kernel
-
-private theorem last_fact : ∀ a < 9,
-    (BitVec.ofNat 64 a - BitVec.ofNat 64 8) >>> 63 - BitVec.ofNat 64 1 = mask (decide (a = 8)) ∧
-    (BitVec.ofNat 64 a - BitVec.ofNat 64 1) >>> 63 = zeroBit a := by
-  decide +kernel
-
-theorem masks_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.ofNat 64 a) :
-    WP isa (.block combMasks) s fun t =>
-      (∀ k, 1 ≤ k → k ≤ 8 → t.gpr (magReg k) = mask (decide (a = k))) ∧ t.gpr .x22 = zeroBit a ∧
-      Keeps [.x22, .x12, .x13, .x14, .x15, .x16, .x17, .x20, .x21] s t := by
-  have l := less_fact a ha
-  apply WP.of_runBlock
-  simp only [combMasks, magRegs, magReg, List.range, List.range.loop,
-    List.flatMap_cons, List.flatMap_nil, List.map_cons, List.map_nil, List.cons_append,
-    List.nil_append, List.append_nil, List.getD_cons_zero, List.getD_cons_succ,
-    Nat.reduceAdd, Nat.reduceLT, ↓reduceIte,
-    runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
-    show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega,
-    RegUpd.gpr_write, BitVec.setWidth_eq, hx, reduceCtorEq,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨fun k hk1 hk8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
-      by simp only [RegUpd.rd_write],
-      by simp only [RegUpd.wr_write],
-      by simp only [RegUpd.sp_write]⟩⟩
-  · have : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega
-    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [List.getD_cons_zero, List.getD_cons_succ, Nat.reduceSub, ite_true, ite_false,
-        reduceCtorEq] <;>
-      first
-      | exact (last_fact a ha).1
-      | exact l _ (by decide)
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
-      hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2, ite_false]
-
-/-! ## The digit -/
-
-/-- What `combDigit` leaves for digit `i`. -/
-structure DigitOut (s : State) (S i : Nat) (t : State) : Prop where
-  mask : ∀ k, 1 ≤ k → k ≤ 8 → t.gpr (magReg k) = mask (decide (mag (nib S i) = k))
-  zero : t.gpr .x22 = zeroBit (mag (nib S i))
-  sign : t.gpr .x1 = Word64.mask (decide (nib S i < 8))
-  keeps : Keeps (clob ++ [.x1]) s t
-
-theorem combDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S i : Nat} (hi : i < 64)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 i)
-    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
-    WP isa (.block combDigit) s (DigitOut s S i) := by
-  have hn : nib S i < 16 := nib_lt _ _
-  simp only [combDigit, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (combIndex_ok s hs hi hc) fun a ⟨a8, ka⟩ => ?_
-  have hsa := hs.of_keeps ka (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (combNibble_ok hsa (S := S) (i := i) hi a8 (by omega) (by decide)
-    (by rw [ka.mem]; exact hb)) fun b ⟨b2, kb⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (combSign_ok b hn b2) fun c ⟨c2, c1, kc⟩ => ?_
-  refine WP.mono (masks_ok _ (mag_lt hn) c2) fun t ⟨tm, tz, kt⟩ =>
-    ⟨tm, tz, (kt.gpr _ (by decide)).trans c1, ?_⟩
-  exact (((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kc.mono (by decide))).trans
-    (kt.mono (by decide))
 
 end VG.Proof.Ed25519.AArch64
