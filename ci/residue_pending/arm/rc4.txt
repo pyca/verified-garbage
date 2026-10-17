@@ -1,0 +1,2 @@
+vg_rc4_init
+vg_rc4_apply

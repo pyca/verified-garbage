@@ -1,0 +1,2 @@
+vg_ed25519_r16_point_add
+vg_ed25519_r16_point_double

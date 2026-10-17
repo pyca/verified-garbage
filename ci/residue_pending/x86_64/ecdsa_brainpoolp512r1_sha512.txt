@@ -1,0 +1,3 @@
+vg_ecdsa_brainpoolp512r1_sha512_sign
+vg_ecdsa_brainpoolp512r1_sha512_sign_avx2
+vg_ecdsa_brainpoolp512r1_sha512_sign_shani

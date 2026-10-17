@@ -1,0 +1,2 @@
+vg_secp256k1_point_add
+vg_secp256k1_point_double

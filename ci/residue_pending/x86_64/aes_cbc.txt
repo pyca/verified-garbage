@@ -1,0 +1,6 @@
+vg_aes_cbc_encrypt_aesni
+vg_aes_cbc_decrypt_aesni
+vg_aes_cbc_encrypt
+vg_aes_cbc_decrypt
+vg_aes_cbc_encrypt_vaes
+vg_aes_cbc_decrypt_vaes

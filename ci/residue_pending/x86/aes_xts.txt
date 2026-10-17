@@ -1,0 +1,8 @@
+vg_aes_xts_encrypt_aesni
+vg_aes_xts_decrypt_aesni
+vg_aes_xts_encrypt_unit_aesni
+vg_aes_xts_decrypt_unit_aesni
+vg_aes_xts_encrypt
+vg_aes_xts_decrypt
+vg_aes_xts_encrypt_unit
+vg_aes_xts_decrypt_unit

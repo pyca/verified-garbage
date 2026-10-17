@@ -1,0 +1,6 @@
+vg_aes_siv_init_aesni
+vg_aes_siv_encrypt_aesni
+vg_aes_siv_decrypt_aesni
+vg_aes_siv_init
+vg_aes_siv_encrypt
+vg_aes_siv_decrypt

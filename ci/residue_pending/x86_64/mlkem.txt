@@ -1,0 +1,17 @@
+vg_mlkem_add
+vg_mlkem_sub
+vg_mlkem_add_avx2
+vg_mlkem_sub_avx2
+vg_mlkem_sample_ntt
+vg_mlkem_encode12
+vg_mlkem_decode12
+vg_mlkem_decode12_avx2
+vg_mlkem_encode12_avx2
+vg_mlkem_cbd2
+vg_mlkem_compress_encode
+vg_mlkem_decode_decompress
+vg_mlkem_compress_encode_avx2
+vg_mlkem_decode_decompress_avx2
+vg_mlkem_sample_ntt4
+vg_mlkem_sample_ntt4_avx2
+vg_mlkem_sample_ntt4_avx512

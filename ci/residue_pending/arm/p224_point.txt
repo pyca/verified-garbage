@@ -1,0 +1,2 @@
+vg_p224_point_add
+vg_p224_point_double

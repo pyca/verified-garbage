@@ -1,0 +1,4 @@
+vg_sm3_compress
+vg_sm3_init
+vg_sm3_update
+vg_sm3_finalize

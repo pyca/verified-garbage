@@ -1,0 +1,2 @@
+vg_ecdsa_brainpoolp512r1_sign
+vg_ecdsa_brainpoolp512r1_verify

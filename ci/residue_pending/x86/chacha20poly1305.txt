@@ -1,0 +1,6 @@
+vg_chacha20_poly1305_seal
+vg_chacha20_poly1305_open
+vg_chacha20_poly1305_seal_gather
+vg_chacha20_poly1305_seal_ssse3
+vg_chacha20_poly1305_open_ssse3
+vg_chacha20_poly1305_seal_gather_ssse3

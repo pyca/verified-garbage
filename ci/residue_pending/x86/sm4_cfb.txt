@@ -1,0 +1,2 @@
+vg_sm4_cfb128_encrypt
+vg_sm4_cfb128_decrypt

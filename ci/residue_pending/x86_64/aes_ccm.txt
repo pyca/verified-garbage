@@ -1,0 +1,8 @@
+vg_aes_ccm_seal_aesni
+vg_aes_ccm_open_aesni
+vg_aes_ccm_seal_aesni_cbc
+vg_aes_ccm_open_aesni_cbc
+vg_aes_ccm_seal
+vg_aes_ccm_open
+vg_aes_ccm_seal_vaes
+vg_aes_ccm_open_vaes

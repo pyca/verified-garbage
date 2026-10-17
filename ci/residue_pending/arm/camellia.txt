@@ -1,0 +1,3 @@
+vg_camellia_expand_key
+vg_camellia_ecb_encrypt
+vg_camellia_ecb_decrypt

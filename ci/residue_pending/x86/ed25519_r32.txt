@@ -1,0 +1,3 @@
+vg_ed25519_r32_point_add
+vg_ed25519_r32_add_affine
+vg_ed25519_r32_double

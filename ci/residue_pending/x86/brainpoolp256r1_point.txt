@@ -1,0 +1,2 @@
+vg_brainpoolp256r1_point_add
+vg_brainpoolp256r1_point_double

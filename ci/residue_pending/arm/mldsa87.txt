@@ -1,0 +1,5 @@
+vg_mldsa87_keygen
+vg_mldsa87_sign
+vg_mldsa87_sign_message
+vg_mldsa87_verify
+vg_mldsa87_verify_message

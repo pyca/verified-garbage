@@ -1,0 +1,7 @@
+vg_keccak_f1600
+vg_keccak_absorb
+vg_keccak_absorb_scratch
+vg_keccak_pad
+vg_keccak_pad_scratch
+vg_keccak_squeeze
+vg_keccak_squeeze_scratch

@@ -1,0 +1,4 @@
+vg_sm4_expand_key
+vg_sm4_ecb
+vg_sm4_ecb_encrypt
+vg_sm4_ecb_decrypt

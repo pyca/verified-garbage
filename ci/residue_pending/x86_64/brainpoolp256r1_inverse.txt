@@ -1,0 +1,2 @@
+vg_brainpoolp256r1_inv_mod_p
+vg_brainpoolp256r1_inv_mod_n

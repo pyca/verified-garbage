@@ -1,0 +1,3 @@
+vg_aes_ocb_init
+vg_aes_ocb_seal
+vg_aes_ocb_open

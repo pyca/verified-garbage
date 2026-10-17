@@ -1,0 +1,3 @@
+vg_cmac_triple_des_stream_init
+vg_cmac_triple_des_absorb
+vg_cmac_triple_des_finish

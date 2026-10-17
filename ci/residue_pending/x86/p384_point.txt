@@ -1,0 +1,2 @@
+vg_p384_point_add
+vg_p384_point_double

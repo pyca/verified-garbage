@@ -1,0 +1,8 @@
+vg_hmac_sha224_init
+vg_hmac_sha224_finalize
+vg_hmac_sha224_init_scratch
+vg_hmac_sha224_finalize_scratch
+vg_hmac_sha224_init_sha2
+vg_hmac_sha224_finalize_sha2
+vg_hmac_sha224_init_scratch_sha2
+vg_hmac_sha224_finalize_scratch_sha2

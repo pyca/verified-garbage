@@ -1,0 +1,16 @@
+vg_mlkem768_encrypt_mul
+vg_mlkem768_encrypt_mul_avx2
+vg_mlkem768_decrypt_mul
+vg_mlkem768_decrypt_mul_avx2
+vg_mlkem768_keygen_mul
+vg_mlkem768_keygen_mul_avx2
+vg_mlkem768_check_ek
+vg_mlkem768_keygen_avx2
+vg_mlkem768_encaps_h_avx2
+vg_mlkem768_decaps_avx2
+vg_mlkem768_keygen_avx512
+vg_mlkem768_encaps_h_avx512
+vg_mlkem768_decaps_avx512
+vg_mlkem768_keygen
+vg_mlkem768_encaps_h
+vg_mlkem768_decaps

@@ -1,0 +1,15 @@
+vg_keccak_f1600_sha3
+vg_keccak_f1600
+vg_keccak_f1600_x2
+vg_keccak_f1600_x2_sha3
+vg_keccak_f1600_x3_sha3
+vg_keccak_absorb_scratch
+vg_keccak_pad
+vg_keccak_pad_scratch
+vg_keccak_squeeze
+vg_keccak_squeeze_scratch
+vg_keccak_absorb_scratch_sha3
+vg_keccak_pad_sha3
+vg_keccak_pad_scratch_sha3
+vg_keccak_squeeze_sha3
+vg_keccak_squeeze_scratch_sha3

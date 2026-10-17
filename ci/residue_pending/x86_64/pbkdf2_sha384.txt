@@ -1,0 +1,6 @@
+vg_pbkdf2_hmac_sha384_iterate
+vg_pbkdf2_hmac_sha384
+vg_pbkdf2_hmac_sha384_iterate_avx2
+vg_pbkdf2_hmac_sha384_avx2
+vg_pbkdf2_hmac_sha384_iterate_shani
+vg_pbkdf2_hmac_sha384_shani

@@ -1,0 +1,6 @@
+vg_ecdsa_p256_sha256_sign
+vg_ecdsa_p256_sha256_sign_adx
+vg_ecdsa_p256_sha256_sign_avx2
+vg_ecdsa_p256_sha256_sign_avx2_adx
+vg_ecdsa_p256_sha256_sign_shani
+vg_ecdsa_p256_sha256_sign_shani_adx

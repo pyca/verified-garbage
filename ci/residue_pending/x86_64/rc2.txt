@@ -1,0 +1,8 @@
+vg_rc2_cbc_init
+vg_rc2_cbc_encrypt_update
+vg_rc2_cbc_decrypt_update
+vg_rc2_cbc_encrypt
+vg_rc2_cbc_decrypt
+vg_rc2_expand_key
+vg_rc2_encrypt_block
+vg_rc2_decrypt_block

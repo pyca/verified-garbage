@@ -1,0 +1,7 @@
+vg_ed448_public_key
+vg_ed448_scalar_reduce
+vg_ed448_scalar_mul_add
+vg_ed448_scalar_base
+vg_ed448_sign_cached
+vg_ed448_verify
+vg_ed448_verify_equation

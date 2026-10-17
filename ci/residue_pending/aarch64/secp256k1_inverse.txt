@@ -1,0 +1,2 @@
+vg_secp256k1_inv_mod_p
+vg_secp256k1_inv_mod_n

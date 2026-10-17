@@ -1,0 +1,5 @@
+vg_seed_expand_key
+vg_seed_ecb_encrypt
+vg_seed_ecb_decrypt
+vg_seed_encrypt_blocks
+vg_seed_decrypt_blocks

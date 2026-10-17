@@ -1,0 +1,2 @@
+vg_ed25519_r64_double_ext
+vg_ed25519_r64_add_affine_ext

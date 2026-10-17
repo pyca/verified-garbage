@@ -1,0 +1,6 @@
+vg_mlkem1024_compress_encode
+vg_mlkem1024_decode_decompress
+vg_mlkem1024_check_ek
+vg_mlkem1024_keygen
+vg_mlkem1024_encaps
+vg_mlkem1024_decaps

@@ -1,0 +1,6 @@
+vg_brainpoolp256r1_mul_mod_p
+vg_brainpoolp256r1_add_mod_p
+vg_brainpoolp256r1_sub_mod_p
+vg_brainpoolp256r1_mul_mod_n
+vg_brainpoolp256r1_add_mod_n
+vg_brainpoolp256r1_sub_mod_n

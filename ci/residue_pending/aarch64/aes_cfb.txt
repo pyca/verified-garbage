@@ -1,0 +1,4 @@
+vg_aes_cfb128_encrypt_aes
+vg_aes_cfb128_decrypt_aes
+vg_aes_cfb128_encrypt
+vg_aes_cfb128_decrypt

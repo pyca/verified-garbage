@@ -1,0 +1,4 @@
+vg_hmac_md5_init
+vg_hmac_md5_finalize
+vg_hmac_md5_init_scratch
+vg_hmac_md5_finalize_scratch

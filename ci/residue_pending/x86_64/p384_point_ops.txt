@@ -1,0 +1,4 @@
+vg_p384_jac_add_cached
+vg_p384_jac_add_affine
+vg_p384_jac_add_cached_adx
+vg_p384_jac_add_affine_adx

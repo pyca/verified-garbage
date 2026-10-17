@@ -1,0 +1,6 @@
+vg_ecdsa_p521_sha512_sign
+vg_ecdsa_p521_sha512_sign_adx
+vg_ecdsa_p521_sha512_sign_avx2
+vg_ecdsa_p521_sha512_sign_avx2_adx
+vg_ecdsa_p521_sha512_sign_shani
+vg_ecdsa_p521_sha512_sign_shani_adx

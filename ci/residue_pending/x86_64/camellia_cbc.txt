@@ -1,0 +1,2 @@
+vg_camellia_cbc_encrypt_chained
+vg_camellia_cbc_decrypt_chained

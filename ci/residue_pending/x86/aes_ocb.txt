@@ -1,0 +1,6 @@
+vg_aes_ocb_init_aesni
+vg_aes_ocb_seal_aesni
+vg_aes_ocb_open_aesni
+vg_aes_ocb_init
+vg_aes_ocb_seal
+vg_aes_ocb_open

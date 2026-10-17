@@ -1,0 +1,6 @@
+vg_blake2b_compress
+vg_blake2b_init
+vg_blake2b_update
+vg_blake2b_finalize
+vg_blake2b_update_scratch
+vg_blake2b_finalize_scratch

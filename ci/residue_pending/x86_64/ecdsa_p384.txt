@@ -1,0 +1,4 @@
+vg_ecdsa_p384_sign
+vg_ecdsa_p384_verify
+vg_ecdsa_p384_sign_adx
+vg_ecdsa_p384_verify_adx

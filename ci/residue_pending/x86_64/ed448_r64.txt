@@ -1,0 +1,4 @@
+vg_ed448_r64_point_double_adx
+vg_ed448_r64_point_add_affine_adx
+vg_ed448_r64_point_double
+vg_ed448_r64_point_add_affine

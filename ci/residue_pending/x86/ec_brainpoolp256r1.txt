@@ -1,0 +1,1 @@
+vg_ec_brainpoolp256r1_public_key

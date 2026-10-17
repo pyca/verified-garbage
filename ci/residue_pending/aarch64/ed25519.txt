@@ -1,0 +1,10 @@
+vg_ed25519_scalar_mul_add
+vg_ed25519_scalar_reduce
+vg_ed25519_scalar_base
+vg_ed25519_verify_equation
+vg_ed25519_public_key
+vg_ed25519_sign_cached
+vg_ed25519_verify
+vg_ed25519_public_key_sha3
+vg_ed25519_sign_cached_sha3
+vg_ed25519_verify_sha3

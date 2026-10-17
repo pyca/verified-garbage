@@ -1,0 +1,6 @@
+vg_poly1305_init
+vg_poly1305_blocks
+vg_poly1305_update
+vg_poly1305_update_neon
+vg_poly1305_finalize
+vg_poly1305_finalize_scratch

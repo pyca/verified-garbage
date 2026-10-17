@@ -1,0 +1,4 @@
+vg_hmac_sha512_224_init
+vg_hmac_sha512_224_finalize
+vg_hmac_sha512_224_init_scratch
+vg_hmac_sha512_224_finalize_scratch

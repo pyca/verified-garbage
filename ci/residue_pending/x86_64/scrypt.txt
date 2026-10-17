@@ -1,0 +1,5 @@
+vg_scrypt_blockmix
+vg_scrypt_romix
+vg_scrypt
+vg_scrypt_avx2
+vg_scrypt_shani

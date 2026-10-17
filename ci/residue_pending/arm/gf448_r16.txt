@@ -1,0 +1,4 @@
+vg_gf448_r16_mul
+vg_gf448_r16_add
+vg_gf448_r16_sub
+vg_gf448_r16_mul_a24

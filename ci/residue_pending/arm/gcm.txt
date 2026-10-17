@@ -1,0 +1,11 @@
+vg_aes_gcm_init
+vg_aes_gcm_seal
+vg_aes_gcm_open
+vg_aes_gcm_stream_init
+vg_aes_gcm_stream_aad
+vg_aes_gcm_stream_encrypt
+vg_aes_gcm_stream_decrypt
+vg_aes_gcm_stream_finish
+vg_aes_gcm_stream_verify
+vg_aes_gcm_seal_gather
+vg_ghash

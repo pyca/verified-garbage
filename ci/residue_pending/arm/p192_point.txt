@@ -1,0 +1,2 @@
+vg_p192_point_add
+vg_p192_point_double

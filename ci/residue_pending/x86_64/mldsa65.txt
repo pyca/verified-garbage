@@ -1,0 +1,10 @@
+vg_mldsa65_keygen_avx2
+vg_mldsa65_sign_avx2
+vg_mldsa65_sign_message_avx2
+vg_mldsa65_verify_avx2
+vg_mldsa65_verify_message_avx2
+vg_mldsa65_keygen
+vg_mldsa65_sign
+vg_mldsa65_sign_message
+vg_mldsa65_verify
+vg_mldsa65_verify_message

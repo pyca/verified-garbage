@@ -1,0 +1,10 @@
+vg_mlkem768_check_ek
+vg_mlkem768_keygen
+vg_mlkem768_encaps
+vg_mlkem768_decaps
+vg_mlkem768_keygen_x2_sha3
+vg_mlkem768_encaps_x2_sha3
+vg_mlkem768_decaps_x2_sha3
+vg_mlkem768_keygen_x2_sha3_keccak_sha3
+vg_mlkem768_encaps_x2_sha3_keccak_sha3
+vg_mlkem768_decaps_x2_sha3_keccak_sha3

@@ -1,0 +1,12 @@
+vg_chacha20_block
+vg_chacha20_xor
+vg_chacha20_xor_avx2
+vg_chacha20_xor_avx512
+vg_chacha20_xor_avx512vl
+vg_chacha20_init
+vg_chacha20_set_nonce
+vg_chacha20_apply_avx2
+vg_chacha20_apply_avx512
+vg_chacha20_apply_avx512vl
+vg_chacha20_apply_ifma
+vg_chacha20_apply

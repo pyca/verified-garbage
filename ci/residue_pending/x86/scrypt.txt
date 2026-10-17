@@ -1,0 +1,5 @@
+vg_salsa20_8
+vg_scrypt_blockmix
+vg_scrypt_romix
+vg_scrypt
+vg_scrypt_shani

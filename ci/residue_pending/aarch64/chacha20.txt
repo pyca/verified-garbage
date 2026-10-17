@@ -1,0 +1,9 @@
+vg_chacha20_block
+vg_chacha20_init
+vg_chacha20_set_nonce
+vg_chacha20_xor_neon
+vg_chacha20_apply_neon
+vg_chacha20_xor
+vg_chacha20_apply
+vg_chacha20_xor_sve2
+vg_chacha20_apply_sve2

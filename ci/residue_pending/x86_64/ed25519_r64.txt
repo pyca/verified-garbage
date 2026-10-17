@@ -1,0 +1,8 @@
+vg_ed25519_r64_double_ext
+vg_ed25519_r64_add_cached_ext
+vg_ed25519_r64_add_cached_proj
+vg_ed25519_r64_double_ext_adx
+vg_ed25519_r64_add_cached_ext_adx
+vg_ed25519_r64_add_cached_proj_adx
+vg_ed25519_r64_add_affine_ext
+vg_ed25519_r64_add_affine_ext_adx

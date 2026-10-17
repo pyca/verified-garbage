@@ -1,0 +1,14 @@
+vg_cmac_aes_update_aes_cbc
+vg_cmac_aes_subkeys_aes
+vg_cmac_aes_update_aes
+vg_cmac_aes_finalize_aes
+vg_cmac_aes_init_aes
+vg_cmac_aes_finish_aes
+vg_cmac_aes_subkeys
+vg_cmac_aes_update
+vg_cmac_aes_finalize
+vg_cmac_aes_init
+vg_cmac_aes_finish
+vg_cmac_aes_absorb_aes
+vg_cmac_aes_absorb_aes_cbc
+vg_cmac_aes_absorb

@@ -1,0 +1,12 @@
+vg_sha512_compress
+vg_sha384_init
+vg_sha512_init
+vg_sha512_224_init
+vg_sha512_256_init
+vg_sha512_update
+vg_sha512_finalize
+vg_sha512_update_scratch
+vg_sha512_finalize_scratch
+vg_sha384_finalize
+vg_sha512_256_finalize
+vg_sha512_224_finalize

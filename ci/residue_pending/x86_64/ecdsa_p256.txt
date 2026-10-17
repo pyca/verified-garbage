@@ -1,0 +1,4 @@
+vg_ecdsa_p256_sign
+vg_ecdsa_p256_verify
+vg_ecdsa_p256_sign_adx
+vg_ecdsa_p256_verify_adx

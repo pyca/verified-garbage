@@ -1,0 +1,11 @@
+vg_sha1_init
+vg_sha1_compress
+vg_sha1_update
+vg_sha1_finalize
+vg_sha1_update_scratch
+vg_sha1_finalize_scratch
+vg_sha1_compress_shani
+vg_sha1_update_shani
+vg_sha1_finalize_shani
+vg_sha1_update_scratch_shani
+vg_sha1_finalize_scratch_shani

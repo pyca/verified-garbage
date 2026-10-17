@@ -1,0 +1,6 @@
+vg_cmac_aes_subkeys
+vg_cmac_aes_update
+vg_cmac_aes_finalize
+vg_cmac_aes_init
+vg_cmac_aes_absorb
+vg_cmac_aes_finish

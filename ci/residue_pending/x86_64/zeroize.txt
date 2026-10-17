@@ -1,0 +1,2 @@
+vg_zeroize
+vg_zeroize_avx

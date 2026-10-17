@@ -1,0 +1,2 @@
+vg_sm4_cbc_encrypt_chained
+vg_sm4_cbc_decrypt_chained

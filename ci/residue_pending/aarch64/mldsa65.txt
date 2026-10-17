@@ -1,0 +1,10 @@
+vg_mldsa65_keygen
+vg_mldsa65_sign
+vg_mldsa65_sign_message
+vg_mldsa65_verify
+vg_mldsa65_verify_message_cached
+vg_mldsa65_keygen_sha3
+vg_mldsa65_sign_sha3
+vg_mldsa65_sign_message_sha3
+vg_mldsa65_verify_sha3
+vg_mldsa65_verify_message_cached_sha3

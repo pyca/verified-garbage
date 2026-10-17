@@ -1,0 +1,3 @@
+vg_cast5_expand_key
+vg_cast5_ecb_encrypt
+vg_cast5_ecb_decrypt

@@ -1,0 +1,10 @@
+vg_aes_expand_key
+vg_aes_expand_key_scratch
+vg_aes_ctr32
+vg_aes_ctr32_aesni
+vg_aes_expand_key_aesni
+vg_aes_expand_key_scratch_aesni
+vg_aes_encrypt_blocks
+vg_aes_decrypt_blocks
+vg_aes_encrypt_blocks_aesni
+vg_aes_decrypt_blocks_aesni

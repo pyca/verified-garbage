@@ -1,0 +1,6 @@
+vg_aes_cfb8_encrypt_aesni
+vg_aes_cfb8_decrypt_aesni
+vg_aes_cfb8_encrypt
+vg_aes_cfb8_decrypt
+vg_aes_cfb8_encrypt_vaes
+vg_aes_cfb8_decrypt_vaes

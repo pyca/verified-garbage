@@ -1,0 +1,15 @@
+vg_argon2_compress
+vg_argon2_compress_avx2
+vg_argon2_compress_avx512
+vg_argon2_hprime_avx2
+vg_argon2_hprime_avx512
+vg_argon2_hprime
+vg_argon2_blake2b_avx2_g_avx2
+vg_argon2_blake2b_avx2_g_avx512
+vg_argon2_blake2b_avx2
+vg_argon2_blake2b_avx512_g_avx2
+vg_argon2_blake2b_avx512_g_avx512
+vg_argon2_blake2b_avx512
+vg_argon2_g_avx2
+vg_argon2_g_avx512
+vg_argon2

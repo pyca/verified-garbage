@@ -1,0 +1,4 @@
+vg_hmac_sha384_init
+vg_hmac_sha384_finalize
+vg_hmac_sha384_init_scratch
+vg_hmac_sha384_finalize_scratch

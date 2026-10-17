@@ -1,0 +1,10 @@
+vg_mldsa87_keygen_avx2
+vg_mldsa87_sign_avx2
+vg_mldsa87_sign_message_avx2
+vg_mldsa87_verify_avx2
+vg_mldsa87_verify_message_avx2
+vg_mldsa87_keygen
+vg_mldsa87_sign
+vg_mldsa87_sign_message
+vg_mldsa87_verify
+vg_mldsa87_verify_message

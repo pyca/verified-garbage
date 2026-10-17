@@ -1,0 +1,3 @@
+vg_chacha20_poly1305_seal
+vg_chacha20_poly1305_open
+vg_chacha20_poly1305_seal_gather

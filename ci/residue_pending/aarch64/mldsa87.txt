@@ -1,0 +1,10 @@
+vg_mldsa87_keygen
+vg_mldsa87_sign
+vg_mldsa87_sign_message
+vg_mldsa87_verify
+vg_mldsa87_verify_message_cached
+vg_mldsa87_keygen_sha3
+vg_mldsa87_sign_sha3
+vg_mldsa87_sign_message_sha3
+vg_mldsa87_verify_sha3
+vg_mldsa87_verify_message_cached_sha3

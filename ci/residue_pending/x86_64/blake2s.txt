@@ -1,0 +1,7 @@
+vg_blake2s_init
+vg_blake2s_compress_avx
+vg_blake2s_update_avx
+vg_blake2s_finalize_avx
+vg_blake2s_compress
+vg_blake2s_update
+vg_blake2s_finalize
