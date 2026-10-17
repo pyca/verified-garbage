@@ -233,6 +233,19 @@ mod tmp_inv {
             "ret"
         )
     }
+    #[unsafe(naked)]
+    pub unsafe extern "C" fn vg_tmp_new_inv(ws: *mut u64) {
+        core::arch::naked_asm!(
+            "stp x19, x20, [sp, #-16]!",
+            include_str!("new_init.s"),
+            "41:",
+            include_str!("new_batch.s"),
+            "cbnz x19, 41b",
+            include_str!("new_finish.s"),
+            "ldp x19, x20, [sp], #16",
+            "ret"
+        )
+    }
     const P: [u64; 4] = [
         0xffff_ffff_ffff_ffed,
         u64::MAX,
@@ -279,6 +292,26 @@ mod tmp_inv {
                 ws[16..20].copy_from_slice(black_box(&x));
                 unsafe { vg_tmp_our_inv(ws.as_mut_ptr()) };
                 black_box(ws[68])
+            })
+        });
+        g.bench_function(BenchmarkId::new(crate::AWS_LC, 32), |b| {
+            b.iter(|| {
+                unsafe { vg_tmp_s2n_inv(z.as_mut_ptr(), black_box(&x).as_ptr()) };
+                black_box(z[0])
+            })
+        });
+        g.finish();
+        let mut ws2 = vec![0u64; 512];
+        ws2[16..20].copy_from_slice(&x);
+        unsafe { vg_tmp_new_inv(ws2.as_mut_ptr()) };
+        let new: [u64; 4] = ws2[68..72].try_into().unwrap();
+        assert_eq!(reduce(new), reduce(z));
+        let mut g = c.benchmark_group("x25519_inv_new");
+        g.bench_function(BenchmarkId::new(crate::VG, 32), |b| {
+            b.iter(|| {
+                ws2[16..20].copy_from_slice(black_box(&x));
+                unsafe { vg_tmp_new_inv(ws2.as_mut_ptr()) };
+                black_box(ws2[68])
             })
         });
         g.bench_function(BenchmarkId::new(crate::AWS_LC, 32), |b| {
