@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
-public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-public import VerifiedGarbage.Impl.Modes.AArch64.Fb
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on AArch64
 
-`cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
-(schedule = x0, iv = x1, data = x2, n = x3, scratch = x4): the modes'
-generic CBC, OFB and CFB (`Impl/Modes/AArch64/Cbc.lean`, `CbcEnc.lean`,
-`Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
+`cfbDecrypt` (schedule = x0, iv = x1, data = x2, n = x3, scratch = x4): the
+modes' generic CBC that updates the chaining value, OFB and CFB
+(`Impl/Modes/AArch64/CbcChained.lean`, `Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
 (`batch`), with the working space in the scratch buffer, which the artifact
 allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
 the other modes encipher one block per batch, of which the other fifteen
@@ -25,8 +23,8 @@ no vector register: `crypt` keeps the data's address and the blocks left
 (`x23`, `x24`) in `v29` and `v30` (`dup`, back by `umov`), which the taint
 analysis keeps public across the batch, points `x1`, `x2` and `x0` at the
 buffer, its sixteen blocks and the copy's first round key, and runs the
-batch. The feedback modes keep the IV's address in `x25`, which `fbCore`
-keeps in `v31` (`Core.viaV`).
+batch. CBC encryption and the feedback modes keep the IV's address in
+`x25`, which `fbCore` keeps in `v31` (`Core.viaV`).
 -/
 
 @[expose] public section
@@ -83,15 +81,15 @@ def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x1, .x2, .x3, .x4⟩
 
-/-- SEED encryption's core for the feedback modes: `x25` kept in `v31`
+/-- SEED encryption's core for CBC encryption and the feedback modes: `x25` kept in `v31`
 around its code. -/
 abbrev fbCore : Impl.Modes.AArch64.Core := (dirCore .encrypt).viaV .x25 .v31
 
-/-- `vg_seed_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (dirCore .encrypt).cbcEncrypt modeRegs
+/-- `vg_seed_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := fbCore.cbcEncryptChained modeRegs .x25
 
-/-- `vg_seed_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore .decrypt).cbcDecrypt modeRegs
+/-- `vg_seed_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained modeRegs
 
 /-- `vg_seed_ofb`. -/
 def ofb : Prog isa := fbCore.fb .ofb modeRegs .x25

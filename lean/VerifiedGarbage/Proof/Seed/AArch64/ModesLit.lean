@@ -17,8 +17,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 namespace VG
 
-materialize_code Impl.Seed.AArch64.cbcEncrypt
-materialize_code Impl.Seed.AArch64.cbcDecrypt
+materialize_code Impl.Seed.AArch64.cbcEncryptChained
+materialize_code Impl.Seed.AArch64.cbcDecryptChained
 materialize_code Impl.Seed.AArch64.ofb
 materialize_code Impl.Seed.AArch64.cfbEncrypt
 materialize_code Impl.Seed.AArch64.cfbDecrypt
