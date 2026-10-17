@@ -71,7 +71,7 @@ theorem CombKeep.bit {base : Addr} {s t : State} (h : CombKeep base s t) {q : Na
   h.mem _ (by rw [ofs_off' base (by omega)]; omega)
 
 theorem CombKeep.powers {base : Addr} {s t : State} (h : CombKeep base s t) :
-    PowersKeep base 56 7368 s t :=
+    PowersKeep base 56 968 s t :=
   ⟨fun r a b c => h.gpr r a b c, h.rd, h.wr, h.sp, TableFrame.workspace h.mem⟩
 
 /-- What a field program whose results are in slots 0–15 leaves: every slot from 16 on. -/

@@ -5250,11 +5250,16 @@ ret
     )
 }
 
+/// The bytes of `scratch` that `vg_x25519_base` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
+
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
 ///
 /// `X25519(k, 9)` is the u-coordinate `(1 + y) / (1 - y)` of `[k] B` on edwards25519, `B` Ed25519's base point (RFC 7748 §4.1's birational map), which the function computes with `vg_ed25519_scalar_base`'s comb rather than the ladder: the scalar's bits are expanded one per byte in `scratch` and clamped there (bits 0-2 and 255 cleared, bit 254 set), the comb's 64 additions accumulate `[k] B` in extended coordinates, and `(Z + Y) / (Z - Y)` takes one inversion. The function saves the callee-saved registers it uses (`x19`-`x24`) in `scratch`.
+///
+/// It writes at most the first 1024 bytes of `scratch` (`VG_X25519_BASE_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///

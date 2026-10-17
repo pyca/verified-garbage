@@ -42,8 +42,20 @@ def baseLocal : Contract isa where
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
     s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.syms combSym = t.syms combSym
 
+/-- The bytes of `scratch` (at `base`) from 1024 on keep their values: the function writes only
+its first 1024 bytes. -/
+def ScratchTail (base : Addr) (m m' : Mem) : Prop :=
+  ∀ i, 1024 ≤ i → i < 8192 → m' (base + BitVec.ofNat 64 i) = m (base + BitVec.ofNat 64 i)
+
+/-- A byte of `scratch` beyond 1024 is outside the bytes a step changes. -/
+theorem outside_tail {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
+    (hon : o + n ≤ 1024) {i : Nat} (hi : 1024 ≤ i) (hi' : i < 8192) :
+    m' (base + BitVec.ofNat 64 i) = m (base + BitVec.ofNat 64 i) :=
+  h _ (Or.inr (by rw [show base + BitVec.ofNat 64 i = off base i from rfl, ofs_off' base (by omega)]; omega))
+
 theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : baseLocal.pre s) :
-    WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
+    WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t ∧
+      (Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x2, 8192⟩ → ScratchTail (s.gpr .x2) s.mem t.mem) := by
   apply WP.withPreservedV (hc := by lit_decide)
   obtain ⟨hr, hw, hd, hn, hct⟩ := hs
   have hws : (⟨s.gpr .x2, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
@@ -86,7 +98,7 @@ theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} 
   have hwo : (⟨s.gpr .x0, 32⟩ : Region) ∈ e.wr := by rw [ke.wr, wd, hw]; simp
   refine WP.mono (scalarOut_ok x0e hwo) fun t ht => ?_
   subst t
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, fun hD i hi hi' => ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact re (.x19, 0) (by decide)
@@ -106,5 +118,18 @@ theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} 
     rw [ke.gpr .x4 (by decide), ke.gpr .x5 (by decide), ke.gpr .x6 (by decide), ke.gpr .x7 (by decide),
       kd.gpr .x4 (by decide), kd.gpr .x5 (by decide), kd.gpr .x6 (by decide), kd.gpr .x7 (by decide)]
     exact vc
+
+  · -- `out` is outside `scratch`, and every step before it wrote below byte 1024
+    have hx : ¬ (⟨s.gpr .x0, 32⟩ : Region).Contains (s.gpr .x2 + BitVec.ofNat 64 i) 1 :=
+      fun hc => hD _ hc (by
+        have e := ofs_off' (s.gpr .x2) (d := i) (by omega)
+        simp only [ofs, off] at e
+        simp only [Region.Contains, e]; omega)
+    simp only [Region.Contains] at hx
+    have ho := st4_outside e.mem (s.gpr .x0) (o := 0) (by decide) (e.gpr .x4) (e.gpr .x5) (e.gpr .x6)
+      (e.gpr .x7) (s.gpr .x2 + BitVec.ofNat 64 i) (Or.inr (by simp only [ofs]; omega))
+    change st4 e.mem (s.gpr .x0) 0 _ _ _ _ _ = _
+    rw [ho, ke.mem, kd.mem, outside_tail mc (by decide) hi hi', outside_tail mb (by decide) hi hi',
+      outside_tail ma (by decide) hi hi']
 
 end VG.Proof.X25519.AArch64.Base

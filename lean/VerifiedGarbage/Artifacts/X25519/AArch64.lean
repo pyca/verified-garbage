@@ -40,7 +40,9 @@ def artifacts : List Artifact := [
       extended coordinates, and `(Z + Y) / (Z - Y)` takes one inversion. The function saves the \
       callee-saved registers it uses (`x19`-`x24`) in `scratch`."]
     consts := Impl.Ed25519.AArch64.combConsts
+    written := [("scratch", 1024)]
     code := Impl.X25519.AArch64.Base.x25519Base
-    verified := Proof.X25519.AArch64.Base.x25519Base_verified }]
+    verified := Proof.X25519.AArch64.Base.x25519Base_verified
+    writtenOk := Proof.X25519.AArch64.Base.x25519Base_written }]
 
 end VG.Artifacts.X25519.AArch64
