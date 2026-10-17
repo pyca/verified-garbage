@@ -2756,3 +2756,26 @@ pub fn bench_box128_zeroed() {
     core::hint::black_box(&mut *b);
     zeroize(&mut *b);
 }
+
+/// Measurement only: GHASH of `blocks` blocks of `data` with the PMULL
+/// implementations, by `which`: 0 `vg_ghash_aes`, 1
+/// `vg_ghash_store_powers_aes` (computing and storing the powers to `pw`), 2
+/// `vg_ghash_with_powers_aes` (reading them from `pw`).
+#[cfg(target_arch = "aarch64")]
+#[doc(hidden)]
+pub fn bench_ghash(key: &AesGcm, which: u32, data: &[[u8; 16]], pw: &mut [u64; 16]) {
+    use crate::arch::gcm::{vg_ghash_aes, vg_ghash_store_powers_aes, vg_ghash_with_powers_aes};
+    let h = key.ctx[30..32].as_ptr().cast::<[u8; 16]>();
+    let mut y = [0u8; 16];
+    let mut scratch = [0u64; 32];
+    // SAFETY: the buffers are valid and separate; the CPU has AES (the
+    // caller checks); `pw` holds the powers for 2 once a call of 1 wrote them.
+    unsafe {
+        match which {
+            0 => vg_ghash_aes(h, &mut y, data.as_ptr(), data.len(), &mut scratch),
+            1 => vg_ghash_store_powers_aes(h, &mut y, data.as_ptr(), data.len(), &mut scratch, pw),
+            _ => vg_ghash_with_powers_aes(h, &mut y, data.as_ptr(), data.len(), &mut scratch, pw),
+        }
+    }
+    core::hint::black_box(&y);
+}

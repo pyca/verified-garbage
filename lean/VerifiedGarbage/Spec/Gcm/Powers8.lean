@@ -58,10 +58,6 @@ def storePowersSummary (name contract : String) : String :=
   name ++ "`. The powers are secret, as the hash subkey is: they may not affect timing. " ++
   "Contract: `VG.Spec.Gcm." ++ contract ++ "`."
 
-/-- `*pw`'s validity for the `*_store_powers` functions. -/
-def storePowersSafety : String :=
-  "`pw` must be valid for writes of 128 bytes, and must not overlap any other buffer."
-
 /-- Documentation shared by the `*_with_powers` functions. -/
 def withPowersSummary (name contract : String) : String :=
   "`" ++ name ++ "` with the 8 prepared powers of the hash subkey of the key context at `*pw` " ++
@@ -70,11 +66,10 @@ def withPowersSummary (name contract : String) : String :=
   "affect timing; all other memory, aliasing and constant-time requirements are unchanged. " ++
   "Contract: `VG.Spec.Gcm." ++ contract ++ "`."
 
-/-- `*pw`'s validity for the `*_with_powers` functions. -/
+/-- What `*pw` must hold for the `*_with_powers` functions. -/
 def withPowersSafety : String :=
   "`*pw` must be what a `*_store_powers` function wrote for the same key context (the \
-    contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey), and be \
-    valid for reads of 128 bytes."
+    contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey)."
 
 /-! ## Writing the powers -/
 
@@ -104,7 +99,7 @@ def sealStorePowersApi : Api where
   writeArgs := true
   contracts := some fun A stack => sealStorePowersContract A stack
   summary := storePowersSummary "vg_aes_gcm_seal" "sealStorePowersContract"
-  safety := sealApi.safety ++ [storePowersSafety]
+  safety := sealApi.safety
 
 /-- `vg_aes_gcm_open_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *mut [u64; 16]) -> u32`:
 `openSig` and the powers' buffer. -/
@@ -137,7 +132,7 @@ def openStorePowersApi : Api where
   contracts := some fun A stack => openStorePowersContract A stack
   summary := storePowersSummary "vg_aes_gcm_open" "openStorePowersContract" ++
     " It writes the powers whether or not the tag matches: they depend only on the key."
-  safety := openApi.safety ++ [storePowersSafety]
+  safety := openApi.safety
 
 /-- `vg_aes_gcm_seal_gather_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *mut [u64; 16])`:
 `sealGatherSig` and the powers' buffer. -/
@@ -165,7 +160,7 @@ def sealGatherStorePowersApi : Api where
   writeArgs := true
   contracts := some fun A stack => sealGatherStorePowersContract A stack
   summary := storePowersSummary "vg_aes_gcm_seal_gather" "sealGatherStorePowersContract"
-  safety := sealGatherApi.safety ++ [storePowersSafety]
+  safety := sealGatherApi.safety
 
 /-! ## Reading the powers -/
 
@@ -295,7 +290,7 @@ def ghashStorePowersApi : Api where
   contracts := some fun A stack => ghashStorePowersContract A stack
   summary := storePowersSummary "vg_ghash" "ghashStorePowersContract" ++
     " Only the pointers and `n` may affect timing."
-  safety := ghashApi.safety ++ [storePowersSafety]
+  safety := ghashApi.safety
 
 /-- `vg_ghash_with_powers(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *const [u64; 16])`:
 `ghashSig` and the powers' buffer. `scratch` is working space. -/
@@ -326,6 +321,6 @@ def ghashWithPowersApi : Api where
     may affect timing."
   safety := ghashApi.safety ++ ["`*pw` must be what a `*_store_powers` function wrote for the \
       hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and \
-      that subkey), and be valid for reads of 128 bytes."]
+      that subkey)."]
 
 end VG.Spec.Gcm

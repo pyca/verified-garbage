@@ -48,6 +48,22 @@ pub fn bench(c: &mut Criterion) {
         g.bench_function(criterion::BenchmarkId::new(crate::VG, 5), |b| {
             b.iter(verified_garbage::aes_gcm::bench_box128_zeroed)
         });
+        // 1000 * which + blocks: 0 vg_ghash_aes, 1 store_powers, 2 with_powers.
+        let data = [[0x5au8; 16]; 64];
+        let mut pw = [0u64; 16];
+        verified_garbage::aes_gcm::bench_ghash(&k, 1, &data[..0], &mut pw);
+        for (which, blocks) in [(1, 0), (0, 8), (1, 8), (2, 8), (0, 64), (1, 64), (2, 64)] {
+            g.bench_function(criterion::BenchmarkId::new(crate::VG, 1000 * which + blocks), |b| {
+                b.iter(|| {
+                    verified_garbage::aes_gcm::bench_ghash(
+                        std::hint::black_box(&k),
+                        which as u32,
+                        std::hint::black_box(&data[..blocks]),
+                        &mut pw,
+                    )
+                })
+            });
+        }
         g.finish();
     }
     use std::hint::black_box;
