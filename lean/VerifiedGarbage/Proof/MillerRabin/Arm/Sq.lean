@@ -90,8 +90,7 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
   refine VP.seq (G := St P E A2 (aY :: L) V1 LS) ?_
     (VP.seq (G := St P E A2 (aY :: L) V3 (sE2 :: LS)) ?_ ?_)
   -- `y²`.
-  · exact St.pmulY (.inl rfl) hYL h2 h3 (List.mem_cons_self) (fun σ e => by rw [a1Y]; exact lt σ e _)
-      (fun σ e => by rw [a1Y]; exact lt σ e _)
+  · exact St.psqY hYL h2 h3 (fun σ e => by rw [a1Y]; exact lt σ e _)
   -- `y = −1`.
   · exact St.peqS eq2_taint List.mem_cons_self (List.mem_cons_of_mem _ hM) (by decide) (by decide)
       (fun h => (List.mem_cons.mp h).elim (fun e => absurd e (by decide)) hX) hT (by decide)

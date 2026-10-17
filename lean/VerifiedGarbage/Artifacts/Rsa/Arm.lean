@@ -22,7 +22,9 @@ def artifacts : List Artifact := [
         of the working space (coarsely integrated operand scanning, each 32 × 32-bit product from \
         four 16 × 16-bit `mul`s, since `umull` is not in the model), the final subtraction \
         selected under a mask. `e` and `n` are checked first; then R² mod n by constant-time \
-        doublings, and binary exponentiation. The input's range check gives a mask: an input \
+        doublings, and binary exponentiation, its squarings by a dedicated Montgomery square \
+        (each cross product once, doubled, the words' squares added, then reduced in place). The \
+        input's range check gives a mask: an input \
         out of range takes the same arithmetic, and the output is cleared under the mask."]
     code := Impl.Bignum.Arm.PublicFn.code
     stack := 56
@@ -49,7 +51,8 @@ def artifacts : List Artifact := [
         input modulo the prime by two Montgomery products; a narrow working space then takes the \
         prime, its own Montgomery constants and the reduced input at the prime's width \
         (`max(2, ⌈len/8⌉)` limbs of 64 bits for its public length), where the exponentiation \
-        follows a fixed schedule over 32-bit limbs. `qInv` is reduced as a signed coefficient \
+        follows a fixed schedule over 32-bit limbs, its squarings by a dedicated Montgomery \
+        square. `qInv` is reduced as a signed coefficient \
         and the result recombined in a double-width product, at the width of `n`."]
     code := Impl.Bignum.Arm.CrtFn.code
     stack := 56
