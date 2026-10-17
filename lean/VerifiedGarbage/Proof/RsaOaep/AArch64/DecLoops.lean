@@ -25,7 +25,6 @@ namespace VG.Proof.RsaOaep.AArch64
 
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 
 /-! ## `lHash'` against `lHash` -/
 
@@ -33,17 +32,19 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 abbrev accL (V : Nat → Byte) (D j : Nat) : BitVec 64 := accG (V oEm) (fun i => V (oLh + i)) (fun i => V (1 + D + i)) j
 
 theorem accHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {H : Hash} (hD : H.D < 1024) (ws : List Region) :
-    WP isa (.block (scr .x11 oLh ++ scr .x12 (oEm + 1 + H.D) ++ scr .x13 oEm ++
-      ([.ldrb .x14 .x13 0, .movz .x .x13 (BitVec.ofNat 16 H.D) 0] : List Instr))) u fun u' =>
-      Step F S ws u u' ∧ u'.mem = u.mem ∧ u'.gpr .x11 = off S oLh ∧ u'.gpr .x12 = off S (1 + H.D) ∧
-      u'.gpr .x13 = BitVec.ofNat 64 H.D ∧ u'.gpr .x14 = accL V H.D 0 := by
+    (R : Rep u.mem F S V W) {D : Nat} (hl : W 4 = BitVec.ofNat 64 D) (ws : List Region) :
+    WP isa (.block (scr .x11 oLh ++ scr .x13 oEm ++ ([.ldrb .x14 .x13 0, .ldrSp .x13 sHl] : List Instr) ++
+      scr .x12 (oEm + 1) ++ ([.add .x .x12 .x12 .x13] : List Instr))) u fun u' =>
+      Step F S ws u u' ∧ u'.mem = u.mem ∧ u'.gpr .x11 = off S oLh ∧ u'.gpr .x12 = off S (1 + D) ∧
+      u'.gpr .x13 = BitVec.ofNat 64 D ∧ u'.gpr .x14 = accL V D 0 := by
   have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
   have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
   have r0 : InRegions (u.rd ++ u.wr) S 1 := by simpa [off] using L.sld (o := 0) (n := 1) (by decide)
   have v0 : u.mem S = V oEm := by simpa [off, oEm] using R.scr 0 (by decide)
-  oaep_run [scr, Mgf1.scr, lay, sScr, oLh, oEm, h96, L.sp, hs, show 1 + H.D < 4096 by omega,
-    show 0 + 1 + H.D = 1 + H.D by omega, BitVec.add_zero, r0, read_one, v0, byte64, imm16 (show H.D < 65536 by omega)]
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := L.ld (d := 32) (by decide)
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
+  oaep_run [scr, Mgf1.scr, lay, sScr, sHl, oLh, oEm, h96, h32, L.sp, hs, rl, BitVec.add_zero, r0, read_one, v0,
+    byte64, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   oaep_fin
 
 /-- One byte of the comparison. -/
@@ -109,9 +110,9 @@ theorem stSlot_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   rw [show sScr = 8 * 12 from rfl, R''.fr 12 (by decide), R.fr 12 (by decide), upd, ifn (by omega)]
 
 theorem accLh_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {H : Hash} (hD : H.D < 1024) (hD0 : 0 < H.D) :
-    WP isa (accLh H) u fun u' => Lay u' F S ∧ Step F S [] u u' ∧ Rep u'.mem F S V (upd W 29 (accL V H.D H.D)) := by
-  refine WP.seq (WP.mono (accHead_ok L R hD []) fun u1 ⟨S1, hm1, x11, x12, x13, x14⟩ => ?_)
+    (R : Rep u.mem F S V W) {D : Nat} (hl : W 4 = BitVec.ofNat 64 D) (hD : D < 1024) (hD0 : 0 < D) :
+    WP isa accLh u fun u' => Lay u' F S ∧ Step F S [] u u' ∧ Rep u'.mem F S V (upd W 29 (accL V D D)) := by
+  refine WP.seq (WP.mono (accHead_ok L R hl []) fun u1 ⟨S1, hm1, x11, x12, x13, x14⟩ => ?_)
   have L1 : Lay u1 F S := L.congr S1.sp S1.wr (by rw [hm1])
   have R1 : Rep u1.mem F S V W := hm1 ▸ R
   refine WP.seq (WP.mono (accLoop_ok R1 hD hD0 ⟨L1, Step.refl _ _ _ _, rfl, by rw [x11, Nat.add_zero],
@@ -170,27 +171,30 @@ theorem scanLoop_ok {u₀ : State} {F S : Addr} {V : Nat → Byte} {W : Nat → 
   · rw [x12, I.x12, counter_step hj (by omega)]; exact counter_ne hj (by omega)
 
 theorem scanHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 * H.D + 2 ≤ k)
-    (hk' : k ≤ 1024) :
-    WP isa (.block (tArgs H ++ ([.movz .x .x13 0 0, .subImm .x .x13 .x13 1, .movz .x .x8 0 0, .ldrSp .x14 sAcc,
+    (R : Rep u.mem F S V W) {D : Nat} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hl : W 4 = BitVec.ofNat 64 D)
+    (hD : 2 * D + 2 ≤ k) :
+    WP isa (.block (tArgs ++ ([.movz .x .x13 0 0, .subImm .x .x13 .x13 1, .movz .x .x8 0 0, .ldrSp .x14 sAcc,
       .movz .x .x9 0 0, .movz .x .x17 1 0] : List Instr))) u
-      (ScanI u F S V W H.D (k - 2 * H.D - 1) (W 29) 0) := by
+      (ScanI u F S V W D (k - 2 * D - 1) (W 29) 0) := by
   have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
   have h168 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 168) 8 := L.ld (d := 168) (by decide)
   have h232 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 232) 8 := L.ld (d := 232) (by decide)
   have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
   have rk := R.rdK hk
   have ra := R.rd8 (d := 232) (k := 29) rfl (by decide) rfl
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := L.ld (d := 32) (by decide)
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
   refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧
-      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x11 = off S (1 + 2 * H.D) ∧
-      u'.gpr .x12 = BitVec.ofNat 64 (k - (2 * H.D + 1)) ∧ u'.gpr .x9 = BitVec.ofNat 64 0 ∧ u'.gpr .x17 = 1 ∧
+      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x11 = off S (1 + 2 * D) ∧
+      u'.gpr .x12 = BitVec.ofNat 64 (k - (2 * D + 1)) ∧ u'.gpr .x9 = BitVec.ofNat 64 0 ∧ u'.gpr .x17 = 1 ∧
       u'.gpr .x13 = BitVec.allOnes 64 ∧ u'.gpr .x8 = 0 ∧ u'.gpr .x14 = W 29) ?_
     fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x9, x17, x13, x8, x14⟩ =>
       ⟨L.congr hsp hwr (by rw [hm]), Step.blk _ hrd hwr hsp hv hcs hm, hm, x11, by rw [x12]; congr 1, x9, x17, x13,
         x8, x14⟩
-  oaep_run [tArgs, scr, Mgf1.scr, lay, sScr, sK, sAcc, oEm, h96, h168, h232, L.sp, hs, rk, ra,
-    Nat.zero_add, show 1 + 2 * H.D < 4096 by omega, show 2 * H.D + 1 < 4096 by omega,
-    Offset.ofNat_sub_ofNat (show 2 * H.D + 1 ≤ k by omega)]
+  oaep_run [tArgs, scr, Mgf1.scr, lay, sScr, sK, sAcc, sHl, oEm, h96, h168, h232, h32, L.sp, hs, rk, ra, rl,
+    Nat.zero_add, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 1 + (D + D) = 1 + 2 * D by omega,
+    Offset.ofNat_sub_ofNat (show D + D ≤ k by omega), Offset.ofNat_sub_ofNat (show 1 ≤ k - (D + D) by omega),
+    show k - (D + D) - 1 = k - (2 * D + 1) by omega]
   oaep_fin
 
 theorem scanTail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -219,12 +223,12 @@ theorem scanTail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
 /-- The scan of `T` (`t = k - 2 hLen - 1` bytes): `acc` ORed with the scan's
 mask and whether no `0x01` was found, and `idx`, in their slots. -/
 theorem scan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 * H.D + 2 ≤ k)
-    (hk' : k ≤ 1024) :
-    WP isa (scan H) u fun u' => Lay u' F S ∧ Step F S [] u u' ∧
-      Rep u'.mem F S V (upd (upd W 29 ((scanS (tF V H.D) (W 29) (k - 2 * H.D - 1)).2.2 |||
-        (scanS (tF V H.D) (W 29) (k - 2 * H.D - 1)).1)) 30 (scanS (tF V H.D) (W 29) (k - 2 * H.D - 1)).2.1) := by
-  refine WP.seq (WP.mono (scanHead_ok L R hk hD hk') fun u1 I => ?_)
+    (R : Rep u.mem F S V W) {D : Nat} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hl : W 4 = BitVec.ofNat 64 D)
+    (hD : 2 * D + 2 ≤ k) (hk' : k ≤ 1024) :
+    WP isa scan u fun u' => Lay u' F S ∧ Step F S [] u u' ∧
+      Rep u'.mem F S V (upd (upd W 29 ((scanS (tF V D) (W 29) (k - 2 * D - 1)).2.2 |||
+        (scanS (tF V D) (W 29) (k - 2 * D - 1)).1)) 30 (scanS (tF V D) (W 29) (k - 2 * D - 1)).2.1) := by
+  refine WP.seq (WP.mono (scanHead_ok L R hk hl hD) fun u1 I => ?_)
   refine WP.seq (WP.mono (scanLoop_ok R (by unfold oRsa; omega) (by omega) I) fun u2 I2 => ?_)
   refine WP.mono (scanTail_ok I2.L (I2.mem ▸ R) []) fun u3 ⟨L3, S3, R3⟩ => ⟨L3, I2.st.trans S3, ?_⟩
   rw [I2.x14, I2.x13, I2.x8] at R3; exact R3
@@ -247,28 +251,31 @@ theorem clearBuf_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
 
 /-- `T` (`t = k - 2 hLen - 1` bytes at `1 + 2 hLen`) to the buffer. -/
 theorem copyT_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 * H.D + 2 ≤ k)
-    (hk' : k ≤ 1024) :
-    WP isa (copyT H) u fun u' => Lay u' F S ∧ Step F S [] u u' ∧
-      Rep u'.mem F S (cpV V oBuf (k - 2 * H.D - 1) (tF V H.D)) W := by
+    (R : Rep u.mem F S V W) {D : Nat} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hl : W 4 = BitVec.ofNat 64 D)
+    (hD : 2 * D + 2 ≤ k) (hk' : k ≤ 1024) :
+    WP isa copyT u fun u' => Lay u' F S ∧ Step F S [] u u' ∧
+      Rep u'.mem F S (cpV V oBuf (k - 2 * D - 1) (tF V D)) W := by
   have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
   have h168 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 168) 8 := L.ld (d := 168) (by decide)
   have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
   have rk := R.rdK hk
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := L.ld (d := 32) (by decide)
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
   refine WP.seq (WP.mono (Q := fun (u' : State) => u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧
-      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x11 = off S (1 + 2 * H.D) ∧
-      u'.gpr .x12 = off S oBuf ∧ u'.gpr .x13 = BitVec.ofNat 64 (k - (2 * H.D + 1))) ?_
+      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x11 = off S (1 + 2 * D) ∧
+      u'.gpr .x12 = off S oBuf ∧ u'.gpr .x13 = BitVec.ofNat 64 (k - (2 * D + 1))) ?_
     fun u1 ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x13⟩ => ?_)
-  · oaep_run [copyT, tArgs, mov, scr, Mgf1.scr, lay, sScr, sK, oBuf, oEm, h96, h168, L.sp, hs, rk, Nat.zero_add,
-      show 1 + 2 * H.D < 4096 by omega, show 2 * H.D + 1 < 4096 by omega,
-      Offset.ofNat_sub_ofNat (show 2 * H.D + 1 ≤ k by omega), BitVec.or_self]
+  · oaep_run [copyT, tArgs, mov, scr, Mgf1.scr, lay, sScr, sK, sHl, oBuf, oEm, h96, h168, h32, L.sp, hs, rk, rl,
+      Nat.zero_add, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 1 + (D + D) = 1 + 2 * D by omega,
+      Offset.ofNat_sub_ofNat (show D + D ≤ k by omega), Offset.ofNat_sub_ofNat (show 1 ≤ k - (D + D) by omega),
+      show k - (D + D) - 1 = k - (2 * D + 1) by omega, BitVec.or_self]
     oaep_fin
   have S1 : Step F S [] u u1 := Step.blk _ hrd hwr hsp hv hcs hm
   have L1 : Lay u1 F S := L.congr hsp hwr (by rw [hm])
   have R1 : Rep u1.mem F S V W := hm ▸ R
   have c : oRsa = 8192 := rfl
   have cb : oBuf = 1024 := rfl
-  refine WP.mono (copyLoop_ok L1 R1 (A := off S (1 + 2 * H.D)) (b := oBuf) (n := k - 2 * H.D - 1) (by omega)
+  refine WP.mono (copyLoop_ok L1 R1 (A := off S (1 + 2 * D)) (b := oBuf) (n := k - 2 * D - 1) (by omega)
     (by omega) (fun i hi => by rw [off_off]; exact L1.sld (by omega))
     (fun i hi j hj => by rw [off_off]; exact Offset.add_ofNat_ne S (by omega) (by omega) (by omega))
     x11 x12 (by rw [x13]; congr 1) []) fun u2 ⟨L2, S2, R2⟩ => ⟨L2, S1.trans S2, ?_⟩

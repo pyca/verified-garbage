@@ -18,7 +18,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 arguments in MGF1's slots: each round from two runs at the same counter
 (`MX`) by its blocks and calls (`round_tr`), the counter's bytes stored
 through a pointer the block loads, so it is split there; the rounds, whose
-number is fixed by the lengths, by `count_ct` (`mgfXor_tr`).
+number is fixed by the lengths, by `count_ct` (`mgfXor_tr`). Each call is
+dispatched on the hash function's number, the same in both runs
+(`lr_hcall`).
 -/
 
 @[expose] public section
@@ -27,14 +29,15 @@ namespace VG.Proof.RsaOaep.AArch64
 
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs round xorOut xorHead xorBody nextCtr initArgs updSrcArgs updCtrArgs finArgs
-  mgfXor)
+  mgfXor initC updC finC)
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
 
-/-- MGF1's slots, and the counter `c` and `done` in theirs. -/
-def MX (S : Addr) (src srcLen dst dstLen D c : Nat) (W : Nat → BitVec 64) (_ : State) : Prop :=
-  MArgs W S src srcLen dst dstLen ∧ W 17 = BitVec.ofNat 64 c ∧ W 18 = BitVec.ofNat 64 (c * D)
+/-- MGF1's slots, the counter `c` and `done` in theirs, and the hash
+function `k`'s number and `hLen`, `D`, in theirs. -/
+def MX (S : Addr) (src srcLen dst dstLen k D c : Nat) (W : Nat → BitVec 64) (_ : State) : Prop :=
+  MArgs W S src srcLen dst dstLen ∧ W 17 = BitVec.ofNat 64 c ∧ W 18 = BitVec.ofNat 64 (c * D) ∧ MSel W k D
 
 theorem lt_ceil {a D j : Nat} (hD : 0 < D) : j < (a + D - 1) / D ↔ j * D < a := by
   rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]; omega
@@ -45,13 +48,13 @@ theorem updCtrArgs_eq : updCtrArgs lay = Mgf1.scr lay .x2 lay.oCtr ++ (([.ldrSp 
     List Instr) ++ Mgf1.scr lay .x4 lay.oW) := by
   simp only [updCtrArgs, List.append_assoc]
 
-variable {G : Hash} (hG : StreamOK G.stream)
+variable {hs : List Hash} {kG : Nat} {G : Hash} (hn : Num hs kG G) (hG : StreamOK G.stream)
 
-include hG in
+include hn hG in
 theorem round_tr {F S : Addr} {src srcLen dst dstLen c : Nat} (hf : MFit src srcLen dst dstLen)
     (hc : c * G.D < dstLen) :
-    RelCT isa (LR F S (MX S src srcLen dst dstLen G.D c)) (round lay G)
-      (LR F S fun W t => MX S src srcLen dst dstLen G.D (c + 1) W t ∧
+    RelCT isa (LR F S (MX S src srcLen dst dstLen kG G.D c)) (round lay hs)
+      (LR F S fun W t => MX S src srcLen dst dstLen kG G.D (c + 1) W t ∧
         (t.gpr .x12 != 0) = decide ((c + 1) * G.D < dstLen)) := by
   obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hG
   have eD : G.stream.D = G.D := rfl
@@ -67,23 +70,29 @@ theorem round_tr {F S : Addr} {src srcLen dst dstLen c : Nat} (hf : MFit src src
   have hcD : c ≤ c * G.D := Nat.le_mul_of_pos_right c hzD
   unfold round seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- `init`.
-  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen G.D c W t ∧ t.gpr .x0 = off S oSt)
+  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen kG G.D c W t ∧ t.gpr .x0 = off S oSt)
     (lr_taint [] (by taint_decide) nopin) fun t V W L R hx => WP.mono (initArgs_ok L []) fun u ⟨Su, hm, x0⟩ =>
       ⟨V, W, L.congr Su.sp Su.wr (by rw [hm]), hm ▸ R, hx, x0⟩).seq ?_
-  refine (lr_wp (X' := MX S src srcLen dst dstLen G.D c) (lr_init hG fun _ _ h => h.2)
-    fun t V W L R ⟨hx, x0⟩ => WP.mono (init_ok hG L R x0 []) fun u ⟨Lu, _, Ru, _⟩ => ⟨_, W, Lu, Ru, hx⟩).seq ?_
+  refine (lr_wp (X' := MX S src srcLen dst dstLen kG G.D c) (lr_hcall hn initC (j := 3) rfl (by decide)
+      (by taint_decide) (fun _ _ h => h.1.2.2.2.sel)
+      (lr_init hG fun _ _ ⟨_, h, hs⟩ => (hs.gpr .x0 (by decide) (by decide)).trans h.2))
+    fun t V W L R ⟨hx, x0⟩ => WP.mono (dinit_ok hn hG L R (SelAt.of_lay L R (j := 3) rfl (by decide) hx.2.2.2.sel)
+      x0 []) fun u ⟨Lu, _, Ru, _⟩ => ⟨_, W, Lu, Ru, hx⟩).seq ?_
   -- `update` with `src`.
-  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen G.D c W t ∧ t.gpr .x0 = off S oSt ∧
+  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen kG G.D c W t ∧ t.gpr .x0 = off S oSt ∧
       t.gpr .x1 = BitVec.ofNat 64 0 ∧ t.gpr .x2 = off S src ∧ t.gpr .x3 = BitVec.ofNat 64 srcLen ∧
       t.gpr .x4 = off S oW) (lr_taint [] (by taint_decide) nopin)
     fun t V W L R hx => WP.mono (updSrc_ok L R hx.1 []) fun u ⟨Su, hm, x0, x1, x2, x3, x4⟩ =>
       ⟨V, W, L.congr Su.sp Su.wr (by rw [hm]), hm ▸ R, hx, x0, x1, x2, x3, x4⟩).seq ?_
-  refine (lr_wp (X' := MX S src srcLen dst dstLen G.D c) (lr_upd hG (BitVec.ofNat 64 0) (a := src) (len := srcLen)
-      (by omega) (by omega) (by omega) fun _ _ h => h.2)
-    fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (upd_ok hG L R (by omega) (by omega) (by omega) x0 x2 x3 x4 [])
+  refine (lr_wp (X' := MX S src srcLen dst dstLen kG G.D c) (lr_hcall hn updC (j := 3) rfl (by decide)
+      (by taint_decide) (fun _ _ h => h.1.2.2.2.sel)
+      (lr_upd hG (BitVec.ofNat 64 0) (a := src) (len := srcLen) (by omega) (by omega) (by omega)
+        fun _ _ ⟨_, h, hs⟩ => Same.regs5 hs h.2))
+    fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (dupd_ok hn hG L R
+      (SelAt.of_lay L R (j := 3) rfl (by decide) hx.2.2.2.sel) (by omega) (by omega) (by omega) x0 x2 x3 x4 [])
       fun u ⟨Lu, _, Ru, _⟩ => ⟨_, W, Lu, Ru, hx⟩).seq ?_
   -- The counter, and `update` with it.
-  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen G.D c W t ∧ t.gpr .x0 = off S oSt ∧
+  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen kG G.D c W t ∧ t.gpr .x0 = off S oSt ∧
       t.gpr .x1 = BitVec.ofNat 64 srcLen ∧ t.gpr .x2 = off S oCtr ∧ t.gpr .x3 = BitVec.ofNat 64 4 ∧
       t.gpr .x4 = off S oW) (by
         rw [updCtrArgs_eq]
@@ -92,58 +101,65 @@ theorem round_tr {F S : Addr} {src srcLen dst dstLen c : Nat} (hf : MFit src src
             ⟨hs, fun r hr => by rw [List.mem_singleton.mp hr]; exact x2⟩))
     fun t V W L R hx => WP.mono (updCtr_ok L R hx.1.hsl hx.2.1 (by omega) [])
       fun u ⟨Lu, _, Ru, x0, x1, x2, x3, x4⟩ => ⟨_, W, Lu, Ru, hx, x0, x1, x2, x3, x4⟩).seq ?_
-  refine (lr_wp (X' := MX S src srcLen dst dstLen G.D c) (lr_upd hG (BitVec.ofNat 64 srcLen) (a := oCtr) (len := 4)
-      (by omega) (by omega) (by omega) fun _ _ h => h.2)
-    fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (upd_ok hG L R (a := oCtr) (len := 4) (by omega) (by omega)
+  refine (lr_wp (X' := MX S src srcLen dst dstLen kG G.D c) (lr_hcall hn updC (j := 3) rfl (by decide)
+      (by taint_decide) (fun _ _ h => h.1.2.2.2.sel)
+      (lr_upd hG (BitVec.ofNat 64 srcLen) (a := oCtr) (len := 4) (by omega) (by omega) (by omega)
+        fun _ _ ⟨_, h, hs⟩ => Same.regs5 hs h.2))
+    fun t V W L R ⟨hx, x0, _, x2, x3, x4⟩ => WP.mono (dupd_ok hn hG L R
+      (SelAt.of_lay L R (j := 3) rfl (by decide) hx.2.2.2.sel) (a := oCtr) (len := 4) (by omega) (by omega)
       (by omega) x0 x2 x3 x4 []) fun u ⟨Lu, _, Ru, _⟩ => ⟨_, W, Lu, Ru, hx⟩).seq ?_
   -- `finalize`.
-  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen G.D c W t ∧ t.gpr .x0 = off S oSt ∧
+  refine (lr_wp (X' := fun W t => MX S src srcLen dst dstLen kG G.D c W t ∧ t.gpr .x0 = off S oSt ∧
       t.gpr .x1 = BitVec.ofNat 64 (srcLen + 4) ∧ t.gpr .x2 = off S oDig ∧ t.gpr .x3 = off S oW)
     (lr_taint [] (by taint_decide) nopin)
     fun t V W L R hx => WP.mono (finA_ok L R hx.1.hsl []) fun u ⟨Su, hm, x0, x1, x2, x3⟩ =>
       ⟨V, W, L.congr Su.sp Su.wr (by rw [hm]), hm ▸ R, hx, x0, x1, x2, x3⟩).seq ?_
-  refine (lr_wp (X' := MX S src srcLen dst dstLen G.D c) (lr_fin hG (BitVec.ofNat 64 (srcLen + 4)) (o := oDig)
-      (.inr (by decide)) fun _ _ h => h.2)
-    fun t V W L R ⟨hx, x0, _, x2, x3⟩ => WP.mono (fin_ok hG L R (o := oDig) (.inr (by decide)) x0 x2 x3 [])
+  refine (lr_wp (X' := MX S src srcLen dst dstLen kG G.D c) (lr_hcall hn finC (j := 3) rfl (by decide)
+      (by taint_decide) (fun _ _ h => h.1.2.2.2.sel)
+      (lr_fin hG (BitVec.ofNat 64 (srcLen + 4)) (o := oDig) (.inr (by decide))
+        fun _ _ ⟨_, h, hs⟩ => Same.regs4 hs h.2))
+    fun t V W L R ⟨hx, x0, _, x2, x3⟩ => WP.mono (dfin_ok hn hG L R
+      (SelAt.of_lay L R (j := 3) rfl (by decide) hx.2.2.2.sel) (o := oDig) (.inr (by decide)) x0 x2 x3 [])
       fun u ⟨Lu, _, Ru, _⟩ => ⟨_, W, Lu, Ru, hx⟩).seq ?_
   -- Into `dst`.
-  refine (lr_wp (X' := MX S src srcLen dst dstLen G.D c) (lr_seq_tr [.x11, .x12, .x14]
+  refine (lr_wp (X' := MX S src srcLen dst dstLen kG G.D c) (lr_seq_tr [.x11, .x12, .x14]
       (fun r => if r = .x11 then off S oDig else if r = .x12 then off S (dst + c * G.D)
         else BitVec.ofNat 64 (min G.D (dstLen - c * G.D)))
-      (check_of_zImm (τ := Taint.ofRegs []) (c := .block (xorHead lay G)) (c' := .block (xorHead lay gH)) rfl
-        (by taint_decide)) (by taint_decide)
-      fun t V W L R hx => WP.mono (xorHead_ok L R (G := G) (by omega) (by omega) hx.1.hdst hx.1.hdl hx.2.2 hc [])
+      (by taint_decide) (by taint_decide)
+      fun t V W L R hx => WP.mono (xorHead_ok L R (D := G.D) (by omega) (by omega) hx.1.hdst hx.1.hdl hx.2.2.1
+        hx.2.2.2.len hc [])
         fun u ⟨Su, _, x11, x12, x14⟩ => ⟨Su.sp, by
           simp only [List.mem_cons, List.not_mem_nil, or_false]
           rintro r (rfl | rfl | rfl) <;> simp [x11, x12, x14]⟩)
-    fun t V W L R hx => WP.mono (xorOut_ok L R hfd hzD (by omega) hx.1.hdst hx.1.hdl hx.2.2 hc [])
+    fun t V W L R hx => WP.mono (xorOut_ok L R hfd hzD (by omega) hx.1.hdst hx.1.hdl hx.2.2.1 hx.2.2.2.len hc [])
       fun u ⟨Lu, _, Ru⟩ => ⟨_, W, Lu, Ru, hx⟩).seq ?_
   -- The next counter.
-  refine lr_wp (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c := .block (nextCtr lay G))
-      (c' := .block (nextCtr lay gH)) rfl (by taint_decide)) nopin)
-    fun t V W L R hx => WP.mono (nextCtr_ok L R (G := G) hx.2.1 hx.2.2 hx.1.hdl (by omega) (by omega) (by omega) [])
-      fun u ⟨Lu, _, x12, Ru⟩ => ⟨_, _, Lu, Ru, ⟨hx.1.of_eq fun k h1 h2 => by
-        simp only [upd]; rw [ifn (by omega), ifn (by omega)], by simp [upd], by simp [upd, Nat.succ_mul]⟩,
-        by rw [x12, Nat.succ_mul]⟩
+  refine lr_wp (lr_taint [] (by taint_decide) nopin)
+    fun t V W L R hx => WP.mono (nextCtr_ok L R (D := G.D) hx.2.1 hx.2.2.1 hx.1.hdl hx.2.2.2.len (by omega) (by omega)
+      []) fun u ⟨Lu, _, x12, Ru⟩ => ⟨_, _, Lu, Ru, ⟨hx.1.of_eq fun k h1 h2 => by
+        simp only [upd]; rw [ifn (by omega), ifn (by omega)], by simp [upd], by simp [upd, Nat.succ_mul],
+        hx.2.2.2.of_eq (by simp [upd]) (by simp [upd])⟩, by rw [x12, Nat.succ_mul]⟩
 
-include hG in
+include hn hG in
 theorem mgfXor_tr {F S : Addr} {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen)
-    {X : (Nat → BitVec 64) → State → Prop} (hX : ∀ W t, X W t → MArgs W S src srcLen dst dstLen) :
-    RelCT isa (LR F S X) (mgfXor lay G) fun _ _ => True := by
+    {X : (Nat → BitVec 64) → State → Prop}
+    (hX : ∀ W t, X W t → MArgs W S src srcLen dst dstLen ∧ MSel W kG G.D) :
+    RelCT isa (LR F S X) (mgfXor lay hs) fun _ _ => True := by
   obtain ⟨-, -, -, -, hzD⟩ := sizes hG
   replace hzD : 0 < G.D := hzD
   have hN : 0 < (dstLen + G.D - 1) / G.D := (lt_ceil hzD).mpr (by have := hf.pos; omega)
-  refine (lr_wp (X' := MX S src srcLen dst dstLen G.D 0) (lr_taint [] (by taint_decide) nopin)
+  refine (lr_wp (X' := MX S src srcLen dst dstLen kG G.D 0) (lr_taint [] (by taint_decide) nopin)
     fun t V W L R hx => WP.mono (mgfHead_ok L R [] dst dstLen G.D) fun u I => ?_).seq
-    ((count_ct hN (fun c => LR F S (MX S src srcLen dst dstLen G.D c)) fun c hc =>
-      (round_tr hG hf ((lt_ceil hzD).mp hc)).mono (fun _ _ h => h)
+    ((count_ct hN (fun c => LR F S (MX S src srcLen dst dstLen kG G.D c)) fun c hc =>
+      (round_tr hn hG hf ((lt_ceil hzD).mp hc)).mono (fun _ _ h => h)
         fun a b ⟨⟨Va, Wa, La, Ra, xa, ca⟩, ⟨Vb, Wb, Lb, Rb, xb, cb⟩⟩ =>
           ⟨⟨⟨Va, Wa, La, Ra, xa⟩, ⟨Vb, Wb, Lb, Rb, xb⟩⟩,
             by rw [ca]; exact decide_eq_decide.mpr (by rw [← lt_ceil hzD]; omega),
             by rw [cb]; exact decide_eq_decide.mpr (by rw [← lt_ceil hzD]; omega)⟩).mono
       (fun _ _ h => h) fun _ _ _ => trivial)
   obtain ⟨V', W', R', h17, h18, hW, -⟩ := I.rep
-  exact ⟨V', W', I.L, R', (hX W t hx).of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega) (by omega)
-    (by omega), h17, by rw [h18, Nat.zero_mul]⟩
+  exact ⟨V', W', I.L, R', (hX W t hx).1.of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega) (by omega)
+    (by omega), h17, by rw [h18, Nat.zero_mul], (hX W t hx).2.of_eq (hW 3 (by decide) (by decide) (by decide))
+      (hW 5 (by decide) (by decide) (by decide))⟩
 
 end VG.Proof.RsaOaep.AArch64

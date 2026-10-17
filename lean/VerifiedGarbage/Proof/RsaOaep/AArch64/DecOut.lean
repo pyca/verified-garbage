@@ -22,7 +22,6 @@ namespace VG.Proof.RsaOaep.AArch64
 
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 
 /-- A region apart from the frame, our working space and the stack below
 the frame. -/
@@ -153,10 +152,10 @@ theorem outLoop_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
 def fltW (W : Nat → BitVec 64) : BitVec 64 := zM (W 28 ^^^ 2) &&& 2
 
 theorem decRet_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {H : Hash} {ml : Addr} {k : Nat} (hml : W 27 = ml) (hk : W 21 = BitVec.ofNat 64 k)
-    (hD : 2 * H.D + 2 < 4096) (hw : Covers [⟨ml, 8⟩] u.wr) (ha : Apart F S ⟨ml, 8⟩) :
-    WP isa (.block (decRet H)) u fun u' => Lay u' F S ∧ Step F S [⟨ml, 8⟩] u u' ∧ Rep u'.mem F S V W ∧
-      u'.mem.readW ml 64 = (BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * H.D + 2) - W 30) &&& W 31 ∧
+    (R : Rep u.mem F S V W) {D : Nat} {ml : Addr} {k : Nat} (hml : W 27 = ml) (hk : W 21 = BitVec.ofNat 64 k)
+    (hl : W 4 = BitVec.ofNat 64 D) (hw : Covers [⟨ml, 8⟩] u.wr) (ha : Apart F S ⟨ml, 8⟩) :
+    WP isa (.block decRet) u fun u' => Lay u' F S ∧ Step F S [⟨ml, 8⟩] u u' ∧ Rep u'.mem F S V W ∧
+      u'.mem.readW ml 64 = (BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * D + 2) - W 30) &&& W 31 ∧
       u'.gpr .x0 = fltW W ||| (W 31 &&& 1) := by
   have h168 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 168) 8 := L.ld (d := 168) (by decide)
   have h216 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 216) 8 := L.ld (d := 216) (by decide)
@@ -168,19 +167,25 @@ theorem decRet_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have rr := R.rd8 (d := 224) (k := 28) rfl (by decide) rfl
   have ri := R.rd8 (d := 240) (k := 30) rfl (by decide) rfl
   have rok := R.rd8 (d := 248) (k := 31) rfl (by decide) rfl
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := L.ld (d := 32) (by decide)
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
+  have e2 : ∀ x : BitVec 64, x - BitVec.ofNat 64 D - BitVec.ofNat 64 D - BitVec.ofNat 64 2 =
+      x - BitVec.ofNat 64 (2 * D + 2) := fun x => by
+    rw [BitVec.sub_sub, BitVec.sub_sub, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat,
+      show D + (D + 2) = 2 * D + 2 by omega]
   have cm : Region.Contains ⟨ml, 8⟩ ml 8 := Region.contains_self _ _
   have w1 : InRegions u.wr (ml + BitVec.ofNat 64 0) 8 := by
     rw [BitVec.add_zero]; exact hw _ _ ⟨_, List.mem_singleton_self _, cm⟩
   have R1 : Rep (u.mem.write (ml + BitVec.ofNat 64 0) 8
-      ((BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * H.D + 2) - W 30) &&& W 31)) F S V W :=
+      ((BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * D + 2) - W 30) &&& W 31)) F S V W :=
     R.apart L.geo ha (by rw [BitVec.add_zero]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ cm)
   have rr1 := R1.rd8 (d := 224) (k := 28) rfl (by decide) rfl
   refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (ml + BitVec.ofNat 64 0) 8
-      ((BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * H.D + 2) - W 30) &&& W 31) ∧
+      ((BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * D + 2) - W 30) &&& W 31) ∧
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
       u'.gpr .x0 = fltW W ||| (W 31 &&& 1)) ?_ fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x0⟩ => ?_
-  · oaep_run [decRet, faultBit, isZero, sOk, sK, sIdx, sMl, sR, h168, h216, h224, h240, h248, L.sp, rk, rml, rr, ri,
-      rok, w1, rr1, sbc_one, fltW, hD, show BitVec.setWidth 64 (1 : BitVec 16) <<< 0 = 1 by decide,
+  · oaep_run [decRet, faultBit, isZero, sOk, sK, sIdx, sMl, sR, sHl, h168, h216, h224, h240, h248, h32, L.sp, rk,
+      rml, rr, ri, rok, rl, e2, w1, rr1, sbc_one, fltW, show BitVec.setWidth 64 (1 : BitVec 16) <<< 0 = 1 by decide,
       show BitVec.setWidth 64 (2 : BitVec 16) <<< 0 = 2 by decide]
     and_intros <;> first | trivial | exact cs_rfl | exact BitVec.or_comm _ _
   have hf : Frame [⟨ml, 8⟩] u.mem u'.mem := by
@@ -190,7 +195,7 @@ theorem decRet_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   · rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), R.fr 12 (by decide)]
   · rw [hm, BitVec.add_zero]
     simpa only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq] using Mem.readW_writeW_self64 u.mem ml
-      ((BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * H.D + 2) - W 30) &&& W 31)
+      ((BitVec.ofNat 64 k - BitVec.ofNat 64 (2 * D + 2) - W 30) &&& W 31)
 
 /-! ## Zeros to `out` -/
 

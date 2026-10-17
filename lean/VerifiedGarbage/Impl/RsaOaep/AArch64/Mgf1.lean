@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Impl.Dispatch.AArch64
 
 /-!
 # MGF1 (RFC 8017 Appendix B.2.1) for RSAES-OAEP on AArch64
@@ -13,6 +14,12 @@ frame slots, and the hash function's state, the counter, the digest and the
 working space of `update` and `finalize` in its working space (`scratch`,
 whose address is in a slot), at the offsets of a `Layout`. Every length is
 public.
+
+The hash function is an argument: its number (`Spec/HashId.lean`, 1 to 7)
+and its digest's length `hLen` are in slots of the frame. Each call of one
+of its functions is `hcall`: the number loaded into `x16`, then the call of
+that function of the hash function it names, of `hs` (MD5 to SHA-512/256, by
+number), through `Dispatch.AArch64.chain` (`x17` the scratch register).
 
 For each counter `c` from 0, while `done = c hLen` is below `dstLen`: the
 state is set by `init`, `update` absorbs `src` (`srcLen` bytes) and
@@ -39,9 +46,10 @@ def seqs : List (Prog isa) → Prog isa
 
 /-- Where the caller keeps what `mgfXor` uses: the frame slots (offsets
 from `sp`) of `scratch`, `src`, `srcLen`, `dst`, `dstLen`, the counter and
-`done`; and the offsets in `scratch` (each below 4096) of the hash
-function's streaming state, the counter's four bytes, the digest, and the
-working space of `update` and `finalize`. -/
+`done`, and of the hash function's number and `hLen`; and the offsets in
+`scratch` (each below 4096) of the hash function's streaming state, the
+counter's four bytes, the digest, and the working space of `update` and
+`finalize`. -/
 structure Layout where
   sScr : Nat
   sSrc : Nat
@@ -50,12 +58,33 @@ structure Layout where
   sDstLen : Nat
   sCtr : Nat
   sDone : Nat
+  sSel : Nat
+  sLen : Nat
   oSt : Nat
   oCtr : Nat
   oDig : Nat
   oW : Nat
 
-variable (L : Layout) (G : Hash)
+/-! ## The hash function by its number -/
+
+/-- The case of each hash function these functions take (1, SHA-1, to 7,
+SHA-512/256), `f` of the `i`th of `hs`. -/
+def cases (hs : List Hash) (f : Hash → Prog isa) : List (Nat × Prog isa) :=
+  match hs with
+  | _ :: h1 :: h2 :: h3 :: h4 :: h5 :: h6 :: h7 :: _ =>
+    [(1, f h1), (2, f h2), (3, f h3), (4, f h4), (5, f h5), (6, f h6), (7, f h7)]
+  | _ => []
+
+/-- `f` of the hash function whose number is in the slot `sel`. -/
+def hcall (sel : Nat) (hs : List Hash) (f : Hash → Prog isa) : Prog isa :=
+  .seq (.block [.ldrSp .x16 sel]) (Dispatch.AArch64.chain .x17 .x16 (cases hs f))
+
+/-- Its `init`, `update` and `finalize`. -/
+def initC (G : Hash) : Prog isa := .call G.initN G.initC
+def updC (G : Hash) : Prog isa := .call G.updN G.updC
+def finC (G : Hash) : Prog isa := .call G.finN G.finC
+
+variable (L : Layout) (hs : List Hash)
 
 /-- `d ← scratch + o`. -/
 def scr (d : Reg) (o : Nat) : List Instr := [.ldrSp d L.sScr, .addImm .x d d o]
@@ -85,7 +114,7 @@ def finArgs : List Instr :=
 does not borrow. -/
 def xorHead : List Instr :=
   scr L .x11 L.oDig ++ [.ldrSp .x10 L.sDone, .ldrSp .x12 L.sDst, .add .x .x12 .x12 .x10,
-    .ldrSp .x13 L.sDstLen, .sub .x .x13 .x13 .x10, .movz .x .x14 (BitVec.ofNat 16 G.D) 0,
+    .ldrSp .x13 L.sDstLen, .sub .x .x13 .x13 .x10, .ldrSp .x14 L.sLen,
     .subs .x .x15 .x13 .x14, .csel .x .x14 .x14 .x13]
 
 /-- A byte of the digest XORed into `dst`. -/
@@ -95,24 +124,24 @@ def xorBody : List Instr :=
 
 /-- The first `min(hLen, dstLen - done)` bytes of the digest XORed into
 `dst + done`. -/
-def xorOut : Prog isa := .seq (.block (xorHead L G)) (.loop (.block xorBody) (.nonzero .x .x14))
+def xorOut : Prog isa := .seq (.block (xorHead L)) (.loop (.block xorBody) (.nonzero .x .x14))
 
 /-- The next counter and `done`, and in `x12` all ones while `done < dstLen`
 (the borrow of `done - dstLen`), zero after. -/
 def nextCtr : List Instr :=
   [.addSp .x9 0, .ldrSp .x10 L.sCtr, .addImm .x .x10 .x10 1, .str .x .x10 .x9 L.sCtr, .ldrSp .x10 L.sDone,
-    .addImm .x .x10 .x10 G.D, .str .x .x10 .x9 L.sDone, .ldrSp .x11 L.sDstLen, .subs .x .x12 .x10 .x11,
+    .ldrSp .x13 L.sLen, .add .x .x10 .x10 .x13, .str .x .x10 .x9 L.sDone, .ldrSp .x11 L.sDstLen, .subs .x .x12 .x10 .x11,
     .sbc .x .x12 .x12 .x12]
 
 /-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`. -/
 def round : Prog isa :=
-  seqs [.block (initArgs L), .call G.initN G.initC, .block (updSrcArgs L), .call G.updN G.updC,
-    .block (updCtrArgs L), .call G.updN G.updC, .block (finArgs L), .call G.finN G.finC, xorOut L G,
-    .block (nextCtr L G)]
+  seqs [.block (initArgs L), hcall L.sSel hs initC, .block (updSrcArgs L), hcall L.sSel hs updC,
+    .block (updCtrArgs L), hcall L.sSel hs updC, .block (finArgs L), hcall L.sSel hs finC, xorOut L,
+    .block (nextCtr L)]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`. -/
 def mgfXor : Prog isa :=
   .seq (.block [.addSp .x9 0, .movz .x .x10 0 0, .str .x .x10 .x9 L.sCtr, .str .x .x10 .x9 L.sDone])
-    (.loop (round L G) (.nonzero .x .x12))
+    (.loop (round L hs) (.nonzero .x .x12))
 
 end VG.Impl.RsaOaep.AArch64.Mgf1

@@ -159,6 +159,80 @@ theorem pin_list {u t : State} (l : List (Reg × BitVec 64)) (hs : u.sp = t.sp) 
       simp only [List.lookup, hb]
       exact ih (fun q hq => h q (List.mem_cons_of_mem _ hq)) r hr'
 
+/-! ## The dispatch on a hash function's number -/
+
+theorem Same.trans {a b c : State} (h₁ : Same a b) (h₂ : Same b c) : Same a c :=
+  ⟨h₂.mem.trans h₁.mem, h₂.sp.trans h₁.sp, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.v.trans h₁.v,
+    fun r a b => (h₂.gpr r a b).trans (h₁.gpr r a b)⟩
+
+theorem Same.write17 (t : State) (v : BitVec 64) : Same t (t.write .x .x17 v) :=
+  ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ h => RegUpd.gpr_write_of_ne _ _ _ h⟩
+
+/-- The registers of a call's arguments, through `Same`. -/
+theorem Same.regs5 {t u : State} (h : Same t u) {a0 a1 a2 a3 a4 : BitVec 64}
+    (hx : t.gpr .x0 = a0 ∧ t.gpr .x1 = a1 ∧ t.gpr .x2 = a2 ∧ t.gpr .x3 = a3 ∧ t.gpr .x4 = a4) :
+    u.gpr .x0 = a0 ∧ u.gpr .x1 = a1 ∧ u.gpr .x2 = a2 ∧ u.gpr .x3 = a3 ∧ u.gpr .x4 = a4 :=
+  ⟨(h.gpr _ (by decide) (by decide)).trans hx.1, (h.gpr _ (by decide) (by decide)).trans hx.2.1,
+    (h.gpr _ (by decide) (by decide)).trans hx.2.2.1, (h.gpr _ (by decide) (by decide)).trans hx.2.2.2.1,
+    (h.gpr _ (by decide) (by decide)).trans hx.2.2.2.2⟩
+
+theorem Same.regs4 {t u : State} (h : Same t u) {a0 a1 a2 a3 : BitVec 64}
+    (hx : t.gpr .x0 = a0 ∧ t.gpr .x1 = a1 ∧ t.gpr .x2 = a2 ∧ t.gpr .x3 = a3) :
+    u.gpr .x0 = a0 ∧ u.gpr .x1 = a1 ∧ u.gpr .x2 = a2 ∧ u.gpr .x3 = a3 :=
+  ⟨(h.gpr _ (by decide) (by decide)).trans hx.1, (h.gpr _ (by decide) (by decide)).trans hx.2.1,
+    (h.gpr _ (by decide) (by decide)).trans hx.2.2.1, (h.gpr _ (by decide) (by decide)).trans hx.2.2.2⟩
+
+/-- `LR` of states differing from those `X` holds of only in `x16` and `x17`. -/
+def LRSame (F S : Addr) (X : (Nat → BitVec 64) → State → Prop) : State → State → Prop :=
+  LR F S fun W u => ∃ t, X W t ∧ Same t u
+
+theorem LR.same {F S : Addr} {X : (Nat → BitVec 64) → State → Prop} {a b a' b' : State}
+    (h : LR F S (fun W u => ∃ t, X W t ∧ Same t u) a b) (ha : Same a a') (hb : Same b b') : LRSame F S X a' b' := by
+  obtain ⟨⟨Va, Wa, La, Ra, ta, xa, sa⟩, ⟨Vb, Wb, Lb, Rb, tb, xb, sb⟩⟩ := h
+  exact ⟨⟨Va, Wa, ha.lay La, ha.mem ▸ Ra, ta, xa, sa.trans ha⟩, ⟨Vb, Wb, hb.lay Lb, hb.mem ▸ Rb, tb, xb, sb.trans hb⟩⟩
+
+/-- `f` of the hash function `k`, whose number `X` puts in the frame's word
+`j`: its code from two runs that differ from those before only in `x16` and
+`x17`. The load of the number is checked by the taint analysis (`ht`). -/
+theorem lr_hcall {hs : List Impl.Pbkdf2.Md.AArch64.Hash} {k : Nat} {G : Impl.Pbkdf2.Md.AArch64.Hash}
+    (hn : Num hs k G) (f : Impl.Pbkdf2.Md.AArch64.Hash → Prog isa) {F S : Addr}
+    {X : (Nat → BitVec 64) → State → Prop} {sel j : Nat} (hj : sel = 8 * j) (hjn : j < nW)
+    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs []) (.block [.ldrSp .x16 sel]) hc).isSome = true)
+    (hx : ∀ W t, X W t → W j = BitVec.ofNat 64 k) {Q : State → State → Prop}
+    (h : RelCT isa (LRSame F S X) (f G) Q) :
+    RelCT isa (LR F S X) (Mgf1.hcall sel hs f) Q := by
+  have hk : k < 2 ^ 64 := by have := hn.k7; omega
+  refine (lr_wp (X' := fun W u => (∃ t, X W t ∧ Same t u) ∧ u.gpr .x16 = BitVec.ofNat 64 k)
+    (lr_taint [] ht nopin) fun t V W L R hxt => ?_).seq ?_
+  · have hv : t.mem.read (t.sp + BitVec.ofNat 64 sel) 8 = BitVec.ofNat 64 k := by
+      rw [L.sp, ← hx W t hxt, ← R.fr j hjn, hj]; rfl
+    have hld : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 sel) 8 := by
+      rw [L.sp]; exact L.ld (by subst hj; unfold nW frameBytes at *; omega)
+    refine WP.mono (Q := fun (u : State) => Same t u ∧ u.gpr .x16 = BitVec.ofNat 64 k) ?_
+      fun u ⟨hu, h16⟩ => ⟨V, W, hu.lay L, hu.mem ▸ R, ⟨t, hxt, hu⟩, h16⟩
+    have hsel : sel % 8 = 0 ∧ sel < 32768 := by subst hj; unfold nW frameBytes at *; omega
+    oaep_run [hld, hv, hsel.1, hsel.2]
+    exact ⟨⟨rfl, rfl, rfl, rfl, rfl, fun r h16 _ => RegUpd.gpr_write_of_ne _ _ _ h16⟩, trivial⟩
+  refine Proof.Dispatch.chain_relCT (Proof.Dispatch.AArch64.tests .x17 .x16 (by decide)) (cases_lt hn.len f)
+    (by rw [cases_keys hn.len]; decide) (fun s₁ s₂ hp => ?_) fun k' c hc' => ?_
+  · obtain ⟨⟨_, _, _, _, _, a16⟩, ⟨_, _, _, _, _, b16⟩⟩ := hp
+    have e₁ : Proof.Dispatch.AArch64.sel .x16 s₁ = k := by
+      show (s₁.gpr .x16).toNat = k; rw [a16, BitVec.toNat_ofNat]; omega
+    have e₂ : Proof.Dispatch.AArch64.sel .x16 s₂ = k := by
+      show (s₂.gpr .x16).toNat = k; rw [b16, BitVec.toNat_ofNat]; omega
+    exact ⟨e₁.trans e₂.symm, e₁ ▸ cases_key hn f⟩
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨a₁, a₂, hp, hk', ⟨v₁, hv₁⟩, ⟨v₂, hv₂⟩, _, _⟩ e₁ e₂
+  obtain ⟨⟨_, _, _, _, _, a16⟩, _⟩ := id hp
+  have : k' = k := by
+    rw [← hk']; show (a₁.gpr .x16).toNat = k; rw [a16, BitVec.toNat_ofNat]; omega
+  subst this
+  rw [cases_eq hn f hc'] at e₁ e₂
+  obtain ⟨⟨Va, Wa, La, Ra, xa, _⟩, ⟨Vb, Wb, Lb, Rb, xb, _⟩⟩ := hp
+  subst hv₁ hv₂
+  exact h _ _ _ _ _ _ (LR.same ⟨⟨Va, Wa, La, Ra, xa⟩, ⟨Vb, Wb, Lb, Rb, xb⟩⟩ (Same.write17 _ _) (Same.write17 _ _))
+    e₁ e₂
+
 /-! ## The calls -/
 
 variable {G : Stream} (hG : StreamOK G)

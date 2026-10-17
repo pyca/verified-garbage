@@ -64,16 +64,18 @@ theorem OutAt.congr {u u' : State} {F S : Addr} {W W' : Nat → BitVec 64} {o ml
 theorem Step.nil {F S : Addr} {ws : List Region} {t t' : State} (h : Step F S [] t t') : Step F S ws t t' :=
   h.weaken fun _ h => absurd h List.not_mem_nil
 
-variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
+variable {hs : List Hash} {kH kG : Nat} {Hl Gm : Hash} (hnH : Num hs kH Hl) (hnG : Num hs kG Gm)
+  (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
 
-include hH hG in
+include hnH hnG hH hG in
 theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
     (hGv : Proof.Mgf1.Valid Gs) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
     {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k : Nat} (hk : W 21 = BitVec.ofNat 64 k)
     (hD : 2 * Hl.D + 2 ≤ k) (hk' : k ≤ 1024) {lab : Addr} {labLen : Nat} (A : LabAt u F S W lab labLen)
-    {o ml : Addr} (O : OutAt u F S W o ml k) {res : Spec.Rsa.Outcome} (hres : ResD V W k res) :
-    WP isa (decMain Hl Gm) u fun u' => Lay u' F S ∧ Step F S [⟨o, k⟩, ⟨ml, 8⟩] u u' ∧
+    {o ml : Addr} (O : OutAt u F S W o ml k) {res : Spec.Rsa.Outcome} (hres : ResD V W k res)
+    (Hk : HSlots W kH Hl.D kG Gm.D) :
+    WP isa (decMain hs) u fun u' => Lay u' F S ∧ Step F S [⟨o, k⟩, ⟨ml, 8⟩] u u' ∧
       Spec.RsaOaep.writtenDecrypt u'.mem o ml k ((u'.gpr .x0).setWidth 32)
         (decOut Hs Gs (Spec.Rsa.bytesAt u.mem lab labLen) res) := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
@@ -83,29 +85,35 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have cR : oRsa = 8192 := rfl
   unfold decMain seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- The label's hash.
-  refine WP.seq (WP.mono (hashLabel_ok hH hHh L R A (Or.inr rfl)) fun u1 ⟨L1, S1, V1, R1, hV1, hV1'⟩ => ?_)
+  refine WP.seq (WP.mono (hashLabel_ok hnH hH hHh L R A Hk.hsel (Or.inr rfl)) fun u1 ⟨L1, S1, V1, R1, hV1, hV1'⟩ => ?_)
   -- The seed unmasked.
-  refine WP.seq (WP.mono (seedArgs_ok L1 R1 hk hD (by omega_using [hD64]) hk' []) fun u2 ⟨L2, S2, R2⟩ => ?_)
+  refine WP.seq (WP.mono (seedArgs_ok L1 R1 hk Hk.hlen hD (by omega_using [hD64]) hk' []) fun u2 ⟨L2, S2, R2⟩ => ?_)
   have f2 : MFit (1 + Hl.D) (k - Hl.D - 1) 1 Hl.D :=
     ⟨by rw [cSt]; omega_using [hk', hD64], by rw [cSt]; omega_using [hD64], by omega_using [], by omega_using [hD0], by omega_using [hD64]⟩
-  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv L2 R2 f2 (mW_args _ _ _ _ _ _))
+  refine WP.seq (WP.mono (mgfXor_ok hnG hG hGh hGl hGv L2 R2 f2 (mW_args _ _ _ _ _ _)
+      (Hk.msel.of_eq (mW_eq _ _ _ _ _ _ (by decide)) (mW_eq _ _ _ _ _ _ (by decide))))
     fun u3 ⟨L3, S3, V3, W3, R3, hW3, hV3⟩ => ?_)
   have W3e : ∀ j < nW, (j < 13 ∨ 18 < j) → W3 j = W j := fun j hj h =>
     (hW3 j hj (by omega_using [h]) (by omega_using [h])).trans (mW_eq _ _ _ _ _ _ (by omega_using [h]))
   -- `DB` unmasked.
-  refine WP.seq (WP.mono (dbArgs_ok L3 R3 ((W3e 21 (by decide) (by omega_using [])).trans hk) hD (by omega_using [hD64]) hk' [])
+  refine WP.seq (WP.mono (dbArgs_ok L3 R3 ((W3e 21 (by decide) (by omega_using [])).trans hk)
+    ((W3e 4 (by decide) (by omega_using [])).trans Hk.hlen) hD (by omega_using [hD64]) hk' [])
     fun u4 ⟨L4, S4, R4⟩ => ?_)
   have f4 : MFit 1 Hl.D (1 + Hl.D) (k - Hl.D - 1) :=
     ⟨by rw [cSt]; omega_using [hD64], by rw [cSt]; omega_using [hk', hD64], by omega_using [], by omega_using [hD], by omega_using [hk']⟩
-  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv L4 R4 f4 (mW_args _ _ _ _ _ _))
+  refine WP.seq (WP.mono (mgfXor_ok hnG hG hGh hGl hGv L4 R4 f4 (mW_args _ _ _ _ _ _)
+      ((Hk.msel.of_eq (W3e 3 (by decide) (by omega_using [])) (W3e 5 (by decide) (by omega_using []))).of_eq
+        (mW_eq _ _ _ _ _ _ (by decide)) (mW_eq _ _ _ _ _ _ (by decide))))
     fun u5 ⟨L5, S5, V5, W5, R5, hW5, hV5⟩ => ?_)
   have W5e : ∀ j < nW, (j < 13 ∨ 18 < j) → W5 j = W j := fun j hj h =>
     (hW5 j hj (by omega_using [h]) (by omega_using [h])).trans ((mW_eq _ _ _ _ _ _ (by omega_using [h])).trans (W3e j hj h))
   -- `lHash'` against `lHash`, and the scan.
-  refine WP.seq (WP.mono (accLh_ok L5 R5 (by omega_using [hD64]) hD0) fun u6 ⟨L6, S6, R6⟩ => ?_)
+  refine WP.seq (WP.mono (accLh_ok L5 R5 ((W5e 4 (by decide) (by omega_using [])).trans Hk.hlen) (by omega_using [hD64]) hD0) fun u6 ⟨L6, S6, R6⟩ => ?_)
   have w6k : upd W5 29 (accL V5 Hl.D Hl.D) 21 = BitVec.ofNat 64 k := by
     simp only [upd]; rw [ifn (by decide)]; exact (W5e 21 (by decide) (by omega_using [])).trans hk
-  refine WP.seq (WP.mono (scan_ok L6 R6 w6k hD hk') fun u7 ⟨L7, S7, R7⟩ => ?_)
+  have w6l : upd W5 29 (accL V5 Hl.D Hl.D) 4 = BitVec.ofNat 64 Hl.D := by
+    simp only [upd]; rw [ifn (by decide)]; exact (W5e 4 (by decide) (by omega_using [])).trans Hk.hlen
+  refine WP.seq (WP.mono (scan_ok L6 R6 w6k w6l hD hk') fun u7 ⟨L7, S7, R7⟩ => ?_)
   generalize hsc : scanS (tF V5 Hl.D) (upd W5 29 (accL V5 Hl.D Hl.D) 29) (k - 2 * Hl.D - 1) = sc at R7
   obtain ⟨W7, R7, w7e, w729, w730⟩ : ∃ W7, Rep u7.mem F S V5 W7 ∧ (∀ j, j ≠ 29 → j ≠ 30 → W7 j = W5 j) ∧
       W7 29 = sc.2.2 ||| sc.1 ∧ W7 30 = sc.2.1 :=
@@ -113,9 +121,11 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have W7e : ∀ j < nW, (j < 13 ∨ 18 < j) → j ≠ 29 → j ≠ 30 → W7 j = W j := fun j hj h h1 h2 =>
     (w7e j h1 h2).trans (W5e j hj h)
   have w7k : W7 21 = BitVec.ofNat 64 k := (W7e 21 (by decide) (by omega_using []) (by omega_using []) (by omega_using [])).trans hk
+  have w7l : W7 4 = BitVec.ofNat 64 Hl.D :=
+    (W7e 4 (by decide) (by omega_using []) (by omega_using []) (by omega_using [])).trans Hk.hlen
   -- The buffer.
   refine WP.seq (WP.mono (clearBuf_ok L7 R7) fun u8 ⟨L8, S8, R8⟩ => ?_)
-  refine WP.seq (WP.mono (copyT_ok L8 R8 w7k hD hk') fun u9 ⟨L9, S9, R9⟩ => ?_)
+  refine WP.seq (WP.mono (copyT_ok L8 R8 w7k w7l hD hk') fun u9 ⟨L9, S9, R9⟩ => ?_)
   -- The shift.
   obtain ⟨idx, hidx, hidx'⟩ := scan_idx (tF V5 Hl.D) (upd W5 29 (accL V5 Hl.D Hl.D) 29) (k - 2 * Hl.D - 1)
   rw [hsc] at hidx
@@ -138,7 +148,9 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   refine WP.seq (WP.mono (outLoop_ok L11 R11 O11.ho w11k (by omega_using [hD]) hk' O11.hw O11.hnw O11.ha)
     fun u12 ⟨L12, S12, R12, ho12⟩ => ?_)
   -- The length and the result.
-  refine WP.mono (decRet_ok L12 R12 O11.hml w11k (by omega_using [hD64]) (S12.wr ▸ O11.hwm) O11.ham)
+  refine WP.mono (decRet_ok L12 R12 O11.hml w11k
+      ((W11e 4 (by decide) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])).trans Hk.hlen)
+      (S12.wr ▸ O11.hwm) O11.ham)
     fun u13 ⟨L13, S13, _, hml13, hx13⟩ => ?_
   refine ⟨L13, (S11.nil.trans (S12.weaken fun r h => by
     rw [List.mem_singleton.mp h]; exact List.mem_cons_self ..)).trans (S13.weaken fun r h => by
