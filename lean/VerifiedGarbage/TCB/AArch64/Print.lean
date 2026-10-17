@@ -8,6 +8,19 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** Emits the GNU/LLVM assembler syntax used by Rust's
 `asm!`/`naked_asm!` on AArch64.
+
+`align k` (`Isa.lean`) prints as `.p2align k`, which the assembler fills, in
+a code section, with NOPs (`HINT #0`, `0xD503201F`: every A64 instruction is
+four bytes, and every offset in a function a multiple of four, so NOPs
+cover any padding). Unlike the padding after a function's `ret`
+(`funcAlign`), this padding is executed when the code before it falls
+through, so `align` is a NOP in the model: DDI 0487 C6.2, "NOP": "No
+Operation does nothing, other than advance the value of the program counter
+by 4. This instruction can be used for instruction alignment purposes." NOP
+is in the base A64 instruction set, so `align` requires no feature. The
+printer refuses any `k` but 4, 5 and 6 (16-, 32- and 64-byte boundaries):
+padding to more than a function's own 64-byte alignment (`funcAlign`) would
+not align anything relative to it.
 -/
 
 @[expose] public section
@@ -202,6 +215,7 @@ def Instr.asm : Instr → List String
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
+  | .align k => [s!".p2align {k}"]
 
 def printer : Printer isa where
   instr := Instr.asm
@@ -233,5 +247,9 @@ def printer : Printer isa where
   fixed by the function alone: a change to other code cannot move them,
   and with them its performance. -/
   funcAlign := [".p2align 6"]
+  unencodable
+    | .align k =>
+      if k ∈ [4, 5, 6] then none else some s!"`.p2align {k}`: only 4, 5 and 6 are allowed"
+    | _ => none
 
 end VG.AArch64

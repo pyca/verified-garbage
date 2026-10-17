@@ -499,6 +499,11 @@ inductive Instr
   | ldrqTbl (t : VReg) (n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
   /-- `umov wd, vn.s[i]` / `umov xd, vn.d[i]` (UMOV) -/
   | umov (sz : Size) (d : Reg) (n : VReg) (i : Nat)
+  /-- Padding to the next multiple of `2 ^ k` bytes with NOPs (NOP, `HINT
+  #0`), printed as `.p2align k` for `k` 4, 5 or 6 only: it has no effect,
+  accesses no memory and requires no feature (DDI 0487 C6.2, "NOP"; see
+  `Print.lean`). -/
+  | align (k : Nat)
   deriving DecidableEq, Repr
 
 /-- Branch conditions. -/
@@ -1132,6 +1137,9 @@ def exec : Instr → State → Option State
   | .umov sz d n i, s =>
     if i * sz.bits < 128 then some (s.write sz d ((s.v n).extractLsb' (sz.bits * i) sz.bits))
     else none
+  -- DDI 0487 C6.2, "NOP": no effect but on the PC, which the model does not
+  -- have.
+  | .align _, s => some s
   -- Frame delimiters execute only through `push` and `pop`.
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
 
