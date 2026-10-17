@@ -537,7 +537,7 @@ def callSample : Prog X86_64.isa :=
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 #guard PPC64LE.printer.function (.call "vg_f" (.block []) : Prog PPC64LE.isa) ==
   [.call "vg_f", .text "blr"]
-#guard Rust.line PPC64LE.printer.call (.call "vg_f") == "        \"bl {vg_f}\",\n"
+#guard Rust.line PPC64LE.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 
 #guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
 #guard Rust.line Arm.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
