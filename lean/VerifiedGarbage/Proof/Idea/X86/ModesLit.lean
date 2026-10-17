@@ -23,8 +23,8 @@ than build the code again.
 
 namespace VG.Proof.Idea.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Idea.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Idea.X86.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Idea.X86.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Idea.X86.cbcDecryptChained
 materialize_flat_code ofbCode := Impl.Idea.X86.ofb
 materialize_flat_code cfbEncryptCode := Impl.Idea.X86.cfbEncrypt
 materialize_flat_code cfbDecryptCode := Impl.Idea.X86.cfbDecrypt
