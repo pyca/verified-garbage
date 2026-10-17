@@ -91,8 +91,9 @@ theorem diffBody_ok {u : State} {base : Addr} {size : Nat} (hs : Ws u base size)
     (h8 : u.gpr .r8 = u.gpr .r12 + BitVec.ofNat 32 Tp)
     (hS : S + 8 ≤ size) (hM : Mo + 4 ≤ size) (hT : Tp + 4 ≤ size)
     (hx0 : w32 u.mem base S < 2 ^ 16) (hx1 : w32 u.mem base (S + 4) < 2 ^ 16) :
-    WP isa (.block ([.ldr .r7 .r1 0] ++ diffDigitD 0 ++ [.dp .and .r2 .r5 (.reg .r6)] ++ diffDigitD 1 ++
-      [.dp .orr .r2 .r2 (.shifted .r5 .lsl 16), .str .r2 .r8 0, bump .r10 8, bump .r1 4, bump .r8 4])) u fun v =>
+    WP isa (.block (([.ldr .r7 .r1 0] : List Instr) ++ diffDigitD 0 ++ ([.dp .and .r2 .r5 (.reg .r6)] : List Instr) ++
+      diffDigitD 1 ++ ([.dp .orr .r2 .r2 (.shifted .r5 .lsl 16), .str .r2 .r8 0, bump .r10 8, bump .r1 4,
+        bump .r8 4] : List Instr))) u fun v =>
       ∃ w : BitVec 32, v.mem = u.mem.writeW (off base Tp) w ∧ (v.gpr .r3).toNat ≤ 1 ∧
         w.toNat + 2 ^ 32 * (v.gpr .r3).toNat + w32 u.mem base Mo =
           w32 u.mem base S + 2 ^ 16 * w32 u.mem base (S + 4) + (2 ^ 32 - 1) + (u.gpr .r3).toNat ∧

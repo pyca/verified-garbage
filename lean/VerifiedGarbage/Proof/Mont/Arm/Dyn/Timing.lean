@@ -119,18 +119,19 @@ theorem shiftT_noBase (p : Bool) : Taint.NoBase (shiftT p) := Taint.noBase_ofReg
 
 /-- A word of the shift, which leaves its taint as it was. -/
 theorem shiftWord_check (p : Bool) (k j : Nat) :
-    taint.checkBlock (shiftT p) ([.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] ++
+    taint.checkBlock (shiftT p) (([.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] : List Instr) ++
       ((if k = 0 then [] else [.ldr .r5 .r1 (4 * j + 4), .mov .r5 (.shifted .r5 .lsl 31),
-        .dp .orr .r4 .r4 (.reg .r5)]) ++ [.str .r4 .r1 (4 * j)])) = some (shiftT p) := by
+        .dp .orr .r4 .r4 (.reg .r5)] : List Instr) ++ ([.str .r4 .r1 (4 * j)] : List Instr))) = some (shiftT p) := by
   rw [← Taint.checkBlock_eraseOff (shiftT_noBase p)]
   cases k <;> cases p <;> rfl
 
 theorem shiftWords_check (p : Bool) : ∀ k j, taint.checkBlock (shiftT p) (shiftWords k j) = some (shiftT p)
   | 0, _ => rfl
   | k + 1, j => by
-    have e : shiftWords (k + 1) j = ([.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] ++
+    have e : shiftWords (k + 1) j = (([.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] : List Instr) ++
         ((if k = 0 then [] else [.ldr .r5 .r1 (4 * j + 4), .mov .r5 (.shifted .r5 .lsl 31),
-          .dp .orr .r4 .r4 (.reg .r5)]) ++ [.str .r4 .r1 (4 * j)])) ++ shiftWords k (j + 1) := by
+          .dp .orr .r4 .r4 (.reg .r5)] : List Instr) ++ ([.str .r4 .r1 (4 * j)] : List Instr))) ++
+          shiftWords k (j + 1) := by
       rw [shiftWords]; simp only [List.append_assoc]
     rw [e, checkBlock_append taint, shiftWord_check, Option.bind_some, shiftWords_check p k (j + 1)]
 

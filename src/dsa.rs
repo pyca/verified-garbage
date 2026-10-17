@@ -14,7 +14,12 @@
 //! Private keys, nonces and scratch are wiped when their owners are dropped.
 
 #![cfg(all(
-    any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 

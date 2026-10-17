@@ -80,7 +80,8 @@ theorem store_relCT (len output : Nat) : RelCT isa (VG.Arm.Taint.Agree T0) (Core
 /-- A constant's words: each stored through `r10`, which stays public. -/
 theorem setConstWords_relCT (k x : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T10) (.block ((List.range k).flatMap fun j =>
-      if x >>> (32 * j) % 2 ^ 32 = 0 then [] else movImm (x >>> (32 * j)) ++ [.str .r4 .r10 (4 * j)]))
+      if x >>> (32 * j) % 2 ^ 32 = 0 then [] else movImm (x >>> (32 * j)) ++
+        ([.str .r4 .r10 (4 * j)] : List Instr)))
       (VG.Arm.Taint.Agree T10) := by
   refine flatMap_relCT _ _ fun j => ?_
   split
@@ -178,7 +179,7 @@ theorem block_relCT_T0 (is : List Instr) (h : (taint.checkBlock T0 is).map (tain
 
 theorem outBlock_relCT (qLen : Nat) (second : Bool) :
     RelCT isa (VG.Arm.Taint.Agree T0)
-      (.block (SignVerify.outputPointer qLen second ++ [.ldr .r3 .r12 (Layout.field .mask)]))
+      (.block (SignVerify.outputPointer qLen second ++ ([.ldr .r3 .r12 (Layout.field .mask)] : List Instr)))
       (VG.Arm.Taint.Agree T0) := by
   cases second
   · exact erased_relCT (c₀ := .block (SignVerify.outputPointer 0 false ++ [.ldr .r3 .r12 0]))

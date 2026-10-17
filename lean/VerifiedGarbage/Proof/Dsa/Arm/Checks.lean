@@ -530,7 +530,8 @@ theorem constWords_ok {u : State} {base : Addr} {size : Nat} (hs : Ws u base siz
     (h10 : u.gpr .r10 = u.gpr .r12 + BitVec.ofNat 32 o) (ho : o + 4 * k ≤ size) (hk4 : 4 * k ≤ 4096)
     (hz : ∀ i < k, w32 u.mem base (o + 4 * i) = 0) :
     ∀ j ≤ k, WP isa (.block ((List.range j).flatMap fun i =>
-        if x >>> (32 * i) % 2 ^ 32 = 0 then [] else movImm (x >>> (32 * i)) ++ [.str .r4 .r10 (4 * i)])) u fun t =>
+        if x >>> (32 * i) % 2 ^ 32 = 0 then [] else movImm (x >>> (32 * i)) ++
+          ([.str .r4 .r10 (4 * i)] : List Instr))) u fun t =>
       Rest [.r4] u t ∧ (∀ i < k, w32 t.mem base (o + 4 * i) = if i < j then x >>> (32 * i) % 2 ^ 32 else 0) ∧
       Outside base o (4 * k) u.mem t.mem
   | 0, _ => WP.block_nil ⟨Rest.refl _ _, fun i hi => by rw [hz i hi]; rfl, Outside.refl _ _ _ _⟩

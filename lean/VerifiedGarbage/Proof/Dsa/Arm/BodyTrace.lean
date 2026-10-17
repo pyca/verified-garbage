@@ -150,7 +150,8 @@ theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : N
 /-- The output's pointer, and the flag in `r3`. -/
 theorem outBlock_ok {u : State} {base : Addr} {size qLen : Nat} (wu : Ws u base size) (hz : 120 ≤ size)
     (hq : qLen < 2 ^ 16) (second : Bool) :
-    WP isa (.block (SignVerify.outputPointer qLen second ++ [.ldr .r3 .r12 (Impl.Dsa.Arm.Layout.field .mask)])) u
+    WP isa (.block (SignVerify.outputPointer qLen second ++
+      ([.ldr .r3 .r12 (Impl.Dsa.Arm.Layout.field .mask)] : List Instr))) u
       fun w => w.gpr .r11 = pointerValue base u (.input .out) + BitVec.ofNat 32 (if second then qLen else 0) ∧
         Rest [.r3, .r4, .r11] u w ∧ w.mem = u.mem := by
   have fm : Impl.Dsa.Arm.Layout.field .mask = 116 := rfl
