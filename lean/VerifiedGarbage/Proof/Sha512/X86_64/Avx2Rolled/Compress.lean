@@ -287,7 +287,7 @@ theorem groupsR_ok (H : HashValue) (M₀ M₁ : Block) (scr kb : Addr) (sB : Sta
   | zero => exact WP.block_nil h₀
   | succ n ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s ⟨hv, hs, hI⟩ => ?_)
-    refine VG.Interleave.WP.weave (group_indeps (by omega)) ?_
+    refine VG.Interleave.WP.weave (group_indeps (by omega)) trivial ?_
     refine WP.mono (schedR_step hrcx hR (by omega) (by omega) hI hs) fun s₁ ⟨hs₁, hg₁⟩ => ?_
     have hv₁ : Vars (2 * n) s₁ (Spec.Sha512.rounds H M₀ (16 * j + 2 * n)) := by
       simp only [Vars, hg₁]; exact hv

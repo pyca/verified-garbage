@@ -33,7 +33,7 @@ theorem group_check : ∀ n < 8,
   decide +kernel
 
 theorem group_indeps {n : Nat} (hn : n < 8) :
-    VG.Interleave.Indeps isa (scheduleR (n + 8)) (roundR 0 (2 * n) ++ roundR 0 (2 * n + 1)) :=
+    VG.Interleave.Indeps isa fps.Inv (scheduleR (n + 8)) (roundR 0 (2 * n) ++ roundR 0 (2 * n + 1)) :=
   fps.indeps_of_check (group_check n hn)
 
 end VG.Proof.Sha512.X86_64.Avx2.Rolled
