@@ -28,21 +28,19 @@ each decided once, for every Keccak backend.
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64.Optimized
 
-/-- The summaries of the calls of the permutation `c` for the analysis with
+/-- The summaries of the calls of the permutation of `v` for the analysis with
 public table addresses, from those of the vector analysis. -/
-abbrev SymSums (c : Impl.Sha3.AArch64.Callee) : Prop :=
-  Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)
-
-theorem symSums (v : Proof.Sha3.AArch64.Permutation) : SymSums v.callee :=
+theorem symSums (v : Proof.Sha3.AArch64.Permutation) :
+    Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums v.callee) :=
   VectorSymbols.allOk_of_vector restSymbols v.callerSums
 
 theorem kgA768_depth (v : Proof.Sha3.AArch64.Permutation) :
     (FixedHashCallers.kgAUsing (fixedHash v.callee) lay768).aarch64Depth≤1 :=
-  Code.aarch64Depth_le_of_fillHoles (e := FixedHashCallers.kgAUsing (fixedHash hole) lay768)
+  Code.aarch64Depth_le_of_fillHoles (n := v.callee.name) (e := FixedHashCallers.kgAUsing (fixedHash hole) lay768)
     (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel)
 theorem kgA1024_depth (v : Proof.Sha3.AArch64.Permutation) :
     (FixedHashCallers.kgAUsing (fixedHash v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth≤1 :=
-  Code.aarch64Depth_le_of_fillHoles (e := FixedHashCallers.kgAUsing (fixedHash hole) Impl.MlKem1024.AArch64.lay1024)
+  Code.aarch64Depth_le_of_fillHoles (n := v.callee.name) (e := FixedHashCallers.kgAUsing (fixedHash hole) Impl.MlKem1024.AArch64.lay1024)
     (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel)
 
 theorem kgA768_taint (c : Impl.Sha3.AArch64.Callee)
@@ -56,11 +54,11 @@ theorem kgA1024_taint (c : Impl.Sha3.AArch64.Callee)
       (FixedHashCallers.kgAUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
   taint_decide_generic c := hole using hS
 
-theorem kgRest768_taint (c : Impl.Sha3.AArch64.Callee) (hS : SymSums c) :
+theorem kgRest768_taint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (FixedHashCallers.kgRestUsing (fixedHash c) lay768) h).isSome=true := by
   taint_decide_generic c := hole using hS
-theorem kgRest1024_taint (c : Impl.Sha3.AArch64.Callee) (hS : SymSums c) :
+theorem kgRest1024_taint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (FixedHashCallers.kgRestUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
   taint_decide_generic c := hole using hS

@@ -5,11 +5,11 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64.Optimized
 
-theorem keyGen768_final : Verified AArch64.target
- (FixedHashCallers.keyGenUsing fixedHash lay768) keyGen768Contract :=
- keyGen768_verified kgG768_correct kgH768_correct
+theorem keyGen768_final (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
+ (FixedHashCallers.keyGenUsing (fixedHash v.callee) lay768) keyGen768Contract :=
+ keyGen768_verified v (kgG768_correct v) (kgH768_correct v)
 
-theorem keyGen1024_final : Verified AArch64.target
- (FixedHashCallers.keyGenUsing fixedHash Impl.MlKem1024.AArch64.lay1024) keyGen1024Contract :=
- keyGen1024_verified kgG1024_correct kgH1024_correct
+theorem keyGen1024_final (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
+ (FixedHashCallers.keyGenUsing (fixedHash v.callee) Impl.MlKem1024.AArch64.lay1024) keyGen1024Contract :=
+ keyGen1024_verified v (kgG1024_correct v) (kgH1024_correct v)
 end VG.Proof.MlKem.AArch64.FixedHash

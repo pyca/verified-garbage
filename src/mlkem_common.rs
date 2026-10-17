@@ -39,10 +39,17 @@ pub(crate) enum Backend {
     /// time; elsewhere, one entry of the matrix at a time), with scalar
     /// Keccak.
     Scalar,
-    /// AArch64 with the SHA-3 extension: paired SHAKE, and arithmetic with
-    /// NEON.
+    /// AArch64 with the SHA-3 extension: paired SHAKE with
+    /// `vg_keccak_f1600_x2_sha3`, and arithmetic with NEON, hashing one
+    /// state at a time with the scalar permutation `vg_keccak_f1600` (the
+    /// `_x2_sha3` instances): faster on Arm's cores, such as Neoverse N2.
     #[cfg(target_arch = "aarch64")]
-    Sha3,
+    X2Sha3,
+    /// The same, hashing one state at a time with the SHA-3 extension's
+    /// permutation `vg_keccak_f1600_sha3` (the `_x2_sha3_keccak_sha3`
+    /// instances): faster on Apple's cores.
+    #[cfg(target_arch = "aarch64")]
+    X2Sha3KeccakSha3,
     /// AVX2: four instances of SHAKE128 at once.
     #[cfg(target_arch = "x86_64")]
     Avx2,
@@ -52,9 +59,13 @@ pub(crate) enum Backend {
 }
 
 impl Backend {
-    /// Select the best implementation supported by all three KEM operations.
-    /// On x86-64, prefer the AVX-512VL sampler, then AVX2. On AArch64,
-    /// select paired SHAKE independently of standalone hashing.
+    /// Select the best implementation supported by all three KEM operations,
+    /// on a CPU with the features `f`, which is one of Apple's if `apple`.
+    /// On x86-64, prefer the AVX-512VL sampler, then AVX2. On AArch64, with
+    /// the SHA-3 extension, paired SHAKE, with the single-state permutation
+    /// that is faster on the CPU: no CPU feature tells which, so the SHA-3
+    /// extension's on Apple's cores, and the scalar one elsewhere (1.79
+    /// times as fast as the SHA-3 extension's on Arm's Neoverse N2).
     // Each target uses only some of the arguments.
     #[allow(unused_variables)]
     pub(crate) fn select(
@@ -62,10 +73,15 @@ impl Backend {
         avx2: crate::cpu::Features,
         avx512: crate::cpu::Features,
         sha3: crate::cpu::Features,
+        apple: bool,
     ) -> Backend {
         #[cfg(target_arch = "aarch64")]
         if f.contains(sha3) {
-            return Backend::Sha3;
+            return if apple {
+                Backend::X2Sha3KeccakSha3
+            } else {
+                Backend::X2Sha3
+            };
         }
         #[cfg(target_arch = "x86_64")]
         if f.contains(avx512) {
@@ -81,8 +97,9 @@ impl Backend {
 
 /// Defines the API of one ML-KEM parameter set: its `EncapsulationKey` and
 /// `DecapsulationKey`, over its verified `check_ek`, `keygen`, `encaps` and
-/// `decaps` functions (and their SHA-3 and AVX2 instances, with the
-/// features they need), its sizes, and the number of `SampleNTT` calls in
+/// `decaps` functions (and their instances on AArch64 with the SHA-3
+/// extension and on x86-64 with AVX2 and AVX-512, with the features they
+/// need), its sizes, and the number of `SampleNTT` calls in
 /// each operation with the bound on the probability that one reaches its
 /// loop's bound (for the comments). On x86-64, encapsulation is `encaps_h`
 /// (and its instances), which takes the hash `H(ek)` the key keeps.
@@ -96,9 +113,12 @@ macro_rules! ml_kem {
         encaps: $encaps:path,
         decaps: $decaps:path,
         encaps_h: $encaps_h:path,
-        keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
-        encaps_sha3: ($encaps_sha3:path, $encaps_sha3_features:path),
-        decaps_sha3: ($decaps_sha3:path, $decaps_sha3_features:path),
+        keygen_x2_sha3: ($keygen_x2_sha3:path, $keygen_x2_sha3_features:path),
+        encaps_x2_sha3: ($encaps_x2_sha3:path, $encaps_x2_sha3_features:path),
+        decaps_x2_sha3: ($decaps_x2_sha3:path, $decaps_x2_sha3_features:path),
+        keygen_x2_sha3_keccak_sha3: ($keygen_x2_sha3_keccak_sha3:path, $keygen_x2_sha3_keccak_sha3_features:path $(,)?),
+        encaps_x2_sha3_keccak_sha3: ($encaps_x2_sha3_keccak_sha3:path, $encaps_x2_sha3_keccak_sha3_features:path $(,)?),
+        decaps_x2_sha3_keccak_sha3: ($decaps_x2_sha3_keccak_sha3:path, $decaps_x2_sha3_keccak_sha3_features:path $(,)?),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         encaps_h_avx2: ($encaps_h_avx2:path, $encaps_h_avx2_features:path),
@@ -114,29 +134,36 @@ macro_rules! ml_kem {
         use $crate::mlkem_common::Backend;
         use $crate::zeroize::zeroize;
 
+        /// The features of the instances of key generation, encapsulation and
+        /// decapsulation of each implementation but the baseline's.
+        #[cfg(target_arch = "x86_64")]
+        const AVX2: &[$crate::cpu::Features] =
+            &[$keygen_avx2_features, $encaps_h_avx2_features, $decaps_avx2_features];
+        #[cfg(not(target_arch = "x86_64"))]
+        const AVX2: &[$crate::cpu::Features] = &[];
+        #[cfg(target_arch = "x86_64")]
+        const AVX512: &[$crate::cpu::Features] =
+            &[$keygen_avx512_features, $encaps_h_avx512_features, $decaps_avx512_features];
+        #[cfg(not(target_arch = "x86_64"))]
+        const AVX512: &[$crate::cpu::Features] = &[];
+        #[cfg(target_arch = "aarch64")]
+        const SHA3: &[$crate::cpu::Features] = &[
+            $keygen_x2_sha3_features, $encaps_x2_sha3_features, $decaps_x2_sha3_features,
+            $keygen_x2_sha3_keccak_sha3_features, $encaps_x2_sha3_keccak_sha3_features,
+            $decaps_x2_sha3_keccak_sha3_features,
+        ];
+        #[cfg(not(target_arch = "aarch64"))]
+        const SHA3: &[$crate::cpu::Features] = &[];
+
         /// The implementation to call: the best one whose instances of key
         /// generation, encapsulation and decapsulation the CPU can all run.
         fn backend() -> Backend {
-            #[cfg(target_arch = "x86_64")]
-            const AVX2: &[$crate::cpu::Features] =
-                &[$keygen_avx2_features, $encaps_h_avx2_features, $decaps_avx2_features];
-            #[cfg(not(target_arch = "x86_64"))]
-            const AVX2: &[$crate::cpu::Features] = &[];
-            #[cfg(target_arch = "x86_64")]
-            const AVX512: &[$crate::cpu::Features] =
-                &[$keygen_avx512_features, $encaps_h_avx512_features, $decaps_avx512_features];
-            #[cfg(not(target_arch = "x86_64"))]
-            const AVX512: &[$crate::cpu::Features] = &[];
-            #[cfg(target_arch = "aarch64")]
-            const SHA3: &[$crate::cpu::Features] =
-                &[$keygen_sha3_features, $encaps_sha3_features, $decaps_sha3_features];
-            #[cfg(not(target_arch = "aarch64"))]
-            const SHA3: &[$crate::cpu::Features] = &[];
             Backend::select(
                 $crate::cpu::detected(),
                 const { $crate::cpu::Features::all(AVX2) },
                 const { $crate::cpu::Features::all(AVX512) },
                 const { $crate::cpu::Features::all(SHA3) },
+                cfg!(target_vendor = "apple"),
             )
         }
 
@@ -207,6 +234,19 @@ macro_rules! ml_kem {
             /// [`encapsulate`](Self::encapsulate) draws.
             #[doc(hidden)]
             pub fn encapsulate_internal(&self, m: &[u8; 32]) -> Result<([u8; 32], [u8; $ct]), Error> {
+                // SAFETY: `backend()` chose an implementation whose features
+                // the CPU has.
+                unsafe { self.encapsulate_with(m, backend()) }
+            }
+
+            /// `encapsulate_internal`, with the implementation `backend`.
+            ///
+            /// # Safety
+            ///
+            /// The CPU has the features of `backend`'s instances.
+            unsafe fn encapsulate_with(
+                &self, m: &[u8; 32], backend: Backend,
+            ) -> Result<([u8; 32], [u8; $ct]), Error> {
                 let mut key = [0u8; 32];
                 let mut ct = [0u8; $ct];
                 // The verified contract accepts arbitrary initial scratch bytes.
@@ -219,16 +259,20 @@ macro_rules! ml_kem {
                 // passed the encapsulation key check, and `self.h` is its
                 // SHA3-256 hash `H(ek)`: `from_bytes` computes it, and the
                 // key generation writes it in the decapsulation key, from
-                // which `from_seed` takes it. `backend()` chose an
-                // implementation whose features the CPU has.
+                // which `from_seed` takes it. The caller ensures the CPU has
+                // the features of `backend`.
                 let r = unsafe {
-                    match backend() {
+                    match backend {
                         #[cfg(not(target_arch = "x86_64"))]
                         Backend::Scalar => $encaps(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Scalar => $encaps_h(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $encaps_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
+                        Backend::X2Sha3 => $encaps_x2_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::X2Sha3KeccakSha3 => {
+                            $encaps_x2_sha3_keccak_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr())
+                        }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $encaps_h_avx2(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
@@ -292,6 +336,17 @@ macro_rules! ml_kem {
             /// approved RBG (FIPS 203 §3.3, Algorithm 19), or a seed so
             /// generated before.
             pub fn from_seed(seed: &[u8; 64]) -> Result<Self, Error> {
+                // SAFETY: `backend()` chose an implementation whose features
+                // the CPU has.
+                unsafe { Self::from_seed_with(seed, backend()) }
+            }
+
+            /// `from_seed`, with the implementation `backend`.
+            ///
+            /// # Safety
+            ///
+            /// The CPU has the features of `backend`'s instances.
+            unsafe fn from_seed_with(seed: &[u8; 64], backend: Backend) -> Result<Self, Error> {
                 let mut key = $DecapsulationKey {
                     seed: *seed,
                     ek: $EncapsulationKey {
@@ -307,13 +362,17 @@ macro_rules! ml_kem {
                 // valid for reads (and, for the last three, writes) of their
                 // sizes; they are distinct Rust objects, so they do not
                 // overlap each other or the stack, or wrap around the end of
-                // the address space. `backend()` chose an implementation
-                // whose features the CPU has.
+                // the address space. The caller ensures the CPU has the
+                // features of `backend`.
                 let r = unsafe {
-                    match backend() {
+                    match backend {
                         Backend::Scalar => $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $keygen_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        Backend::X2Sha3 => $keygen_x2_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::X2Sha3KeccakSha3 => {
+                            $keygen_x2_sha3_keccak_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr())
+                        }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $keygen_avx2(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
@@ -358,6 +417,17 @@ macro_rules! ml_kem {
             /// `J(z ‖ ct)` if `ct` is not a ciphertext of this key (in
             /// constant time: nothing tells whether it was rejected).
             pub fn decapsulate(&self, ct: &[u8; $ct]) -> Result<[u8; 32], Error> {
+                // SAFETY: `backend()` chose an implementation whose features
+                // the CPU has.
+                unsafe { self.decapsulate_with(ct, backend()) }
+            }
+
+            /// `decapsulate`, with the implementation `backend`.
+            ///
+            /// # Safety
+            ///
+            /// The CPU has the features of `backend`'s instances.
+            unsafe fn decapsulate_with(&self, ct: &[u8; $ct], backend: Backend) -> Result<[u8; 32], Error> {
                 let mut key = [0u8; 32];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -365,14 +435,17 @@ macro_rules! ml_kem {
                 // reads (and, for the last two, writes) of their sizes; they
                 // are distinct Rust objects, so they do not overlap each
                 // other or the stack, or wrap around the end of the address
-                // space. `self.dk` was written by the key generation.
-                // `backend()` chose an implementation whose features the CPU
-                // has.
+                // space. `self.dk` was written by the key generation. The
+                // caller ensures the CPU has the features of `backend`.
                 let r = unsafe {
-                    match backend() {
+                    match backend {
                         Backend::Scalar => $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $decaps_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        Backend::X2Sha3 => $decaps_x2_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::X2Sha3KeccakSha3 => {
+                            $decaps_x2_sha3_keccak_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr())
+                        }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $decaps_avx2(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
@@ -398,6 +471,49 @@ macro_rules! ml_kem {
                 Ok(key)
             }
         }
+
+        #[cfg(all(test, target_arch = "aarch64"))]
+        mod backend_tests {
+            use super::{Backend, $DecapsulationKey, SHA3};
+
+            /// With the SHA-3 extension, both paired instances (whichever
+            /// `backend()` chooses, which the known-answer tests run) agree
+            /// with the baseline's on keys, shared keys and ciphertexts, and
+            /// on the implicit rejection of a modified ciphertext.
+            #[test]
+            fn paired_instances_agree() {
+                if !$crate::cpu::detected().contains(const { $crate::cpu::Features::all(SHA3) }) {
+                    return;
+                }
+                for i in 0..2u8 {
+                    let seed: [u8; 64] = core::array::from_fn(|j| (j as u8).wrapping_mul(29) ^ i);
+                    let m: [u8; 32] = core::array::from_fn(|j| (j as u8).wrapping_mul(13) ^ i);
+                    // SAFETY: the baseline needs no feature.
+                    let base = unsafe { $DecapsulationKey::from_seed_with(&seed, Backend::Scalar) }.unwrap();
+                    let ek = base.encapsulation_key();
+                    // SAFETY: as above.
+                    let (k, mut ct) = unsafe { ek.encapsulate_with(&m, Backend::Scalar) }.unwrap();
+                    for backend in [Backend::X2Sha3, Backend::X2Sha3KeccakSha3] {
+                        // SAFETY: the CPU has the SHA-3 extension, which
+                        // every paired instance needs (`SHA3`).
+                        let dk = unsafe { $DecapsulationKey::from_seed_with(&seed, backend) }.unwrap();
+                        assert!(dk.ek == base.ek && dk.dk == base.dk, "{backend:?}");
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { ek.encapsulate_with(&m, backend) }.unwrap(), (k, ct));
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { dk.decapsulate_with(&ct, backend) }.unwrap(), k);
+                    }
+                    ct[i as usize] ^= 1;
+                    // SAFETY: as above.
+                    let rejected = unsafe { base.decapsulate_with(&ct, Backend::Scalar) }.unwrap();
+                    assert_ne!(rejected, k);
+                    for backend in [Backend::X2Sha3, Backend::X2Sha3KeccakSha3] {
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { base.decapsulate_with(&ct, backend) }.unwrap(), rejected);
+                    }
+                }
+            }
+        }
     };
 }
 
@@ -413,20 +529,28 @@ mod tests {
         let avx2 = Features::of(&["avx", "avx2"]);
         let avx512 = Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
         let sha3 = Features::of(&[]);
-        assert_eq!(Backend::select(avx512, avx2, avx512, sha3), Backend::Avx512);
+        for apple in [false, true] {
+            assert_eq!(
+                Backend::select(avx512, avx2, avx512, sha3, apple),
+                Backend::Avx512
+            );
+        }
         for features in [
             avx2,
             Features::of(&["avx", "avx2", "avx512f"]),
             Features::of(&["avx", "avx2", "avx512vl"]),
         ] {
-            assert_eq!(Backend::select(features, avx2, avx512, sha3), Backend::Avx2);
+            assert_eq!(
+                Backend::select(features, avx2, avx512, sha3, false),
+                Backend::Avx2
+            );
         }
         for features in [
             Features::of(&[]),
             Features::of(&["avx", "avx512f", "avx512vl"]),
         ] {
             assert_eq!(
-                Backend::select(features, avx2, avx512, sha3),
+                Backend::select(features, avx2, avx512, sha3, false),
                 Backend::Scalar
             );
         }
@@ -442,15 +566,23 @@ mod aarch64_tests {
     fn selects_complete_feature_sets() {
         let empty = Features::of(&[]);
         let required = Features::of(&["neon", "sha3"]);
+        // The SHA-3 extension's single-state permutation on Apple's cores,
+        // the scalar one elsewhere.
         assert_eq!(
-            Backend::select(required, empty, empty, required),
-            Backend::Sha3
+            Backend::select(required, empty, empty, required, true),
+            Backend::X2Sha3KeccakSha3
+        );
+        assert_eq!(
+            Backend::select(required, empty, empty, required, false),
+            Backend::X2Sha3
         );
         for available in [empty, Features::of(&["neon"]), Features::of(&["sha3"])] {
-            assert_eq!(
-                Backend::select(available, empty, empty, required),
-                Backend::Scalar
-            );
+            for apple in [false, true] {
+                assert_eq!(
+                    Backend::select(available, empty, empty, required, apple),
+                    Backend::Scalar
+                );
+            }
         }
     }
 }

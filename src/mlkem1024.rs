@@ -29,6 +29,14 @@
 //! four entries of the matrix at once, and each operation calls the best one
 //! the CPU can run.
 //!
+//! On AArch64 with the SHA-3 extension, key generation, encapsulation and
+//! decapsulation sample the matrix two entries at a time with
+//! `vg_keccak_f1600_x2_sha3`, and have an instance for each single-state
+//! Keccak permutation they hash with otherwise: the `_x2_sha3` instances
+//! call the scalar `vg_keccak_f1600`, faster on Arm's cores, and the
+//! `_x2_sha3_keccak_sha3` ones the SHA-3 extension's
+//! `vg_keccak_f1600_sha3`, faster on Apple's, on which they are chosen.
+//!
 //! On x86-64, encapsulation is `vg_mlkem1024_encaps_h` (contract
 //! `encapsHContract`), which takes the hash `H(ek)` of the encapsulation key
 //! (FIPS 203 §4.1) rather than computing it each time: an
@@ -51,9 +59,21 @@ crate::mlkem_common::ml_kem! {
     encaps: crate::arch::mlkem1024::vg_mlkem1024_encaps,
     decaps: crate::arch::mlkem1024::vg_mlkem1024_decaps,
     encaps_h: crate::arch::mlkem1024::vg_mlkem1024_encaps_h,
-    keygen_sha3: (crate::arch::mlkem1024::vg_mlkem1024_keygen_sha3, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_SHA3_FEATURES),
-    encaps_sha3: (crate::arch::mlkem1024::vg_mlkem1024_encaps_sha3, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_SHA3_FEATURES),
-    decaps_sha3: (crate::arch::mlkem1024::vg_mlkem1024_decaps_sha3, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_SHA3_FEATURES),
+    keygen_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_keygen_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_FEATURES),
+    encaps_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_encaps_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_FEATURES),
+    decaps_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_decaps_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_FEATURES),
+    keygen_x2_sha3_keccak_sha3: (
+        crate::arch::mlkem1024::vg_mlkem1024_keygen_x2_sha3_keccak_sha3,
+        crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES,
+    ),
+    encaps_x2_sha3_keccak_sha3: (
+        crate::arch::mlkem1024::vg_mlkem1024_encaps_x2_sha3_keccak_sha3,
+        crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES,
+    ),
+    decaps_x2_sha3_keccak_sha3: (
+        crate::arch::mlkem1024::vg_mlkem1024_decaps_x2_sha3_keccak_sha3,
+        crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES,
+    ),
     keygen_avx2: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx2, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX2_FEATURES),
     keygen_avx512: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx512, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX512_FEATURES),
     encaps_h_avx2: (crate::arch::mlkem1024::vg_mlkem1024_encaps_h_avx2, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES),
