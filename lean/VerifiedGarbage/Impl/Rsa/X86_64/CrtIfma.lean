@@ -33,10 +33,13 @@ temporary: `2 R + 6` of the thirty-two, named through `VReg` and the
 * The bases and 1 in Montgomery form (`R_I = 2^(52 S)`) from those of
   `vg_rsa_private_crt` (`R_X = 2^(64 W)`) by a multiplication by
   `2^(104 S - 64 W) mod X` (`R_X` doubled `104 S - 128 W` times); a table
-  of the 16 powers; four squares and a multiplication by the masked
-  selection of an entry per window of 4 bits, with the exponents padded with
-  zero bytes at the top to `8 W` bytes; then a multiplication by 1, which
-  leaves the result out of Montgomery form, reduced in 64-bit words.
+  of the `2^w` powers; `w` squares and a multiplication by the masked
+  selection of an entry per window of `w` bits (4 for 2048-bit keys, 5
+  otherwise), the exponents padded with zero bytes at the top to whole
+  groups of `w` bytes and recoded into digits of `w` bits, a byte each,
+  from the first digit with a bit of the exponent; then a multiplication
+  by 1, which leaves the result out of Montgomery form, reduced in 64-bit
+  words.
 -/
 
 @[expose] public section
@@ -50,11 +53,13 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 def oM : Nat := 0
 
 /-- The sizes: `R` registers per number, primes of `W` words, `S` steps
-of a multiplication (`S ≤ 4 R`): the Montgomery radix is `2^(52 S)`. -/
+of a multiplication (`S ≤ 4 R`): the Montgomery radix is `2^(52 S)`; and
+windows of `w` bits. -/
 structure Lay where
   R : Nat
   W : Nat
   S : Nat
+  w : Nat
   deriving DecidableEq, Repr
 
 namespace Lay
@@ -65,19 +70,32 @@ variable (l : Lay)
 def L : Nat := 4 * l.R
 /-- The bytes of a number. -/
 def NB : Nat := 32 * l.R
-/-- The bytes of the padded exponent. -/
+/-- The bytes of the exponent, a prime's. -/
 def E : Nat := 8 * l.W
+/-- The entries of the table. -/
+def T : Nat := 2 ^ l.w
+/-- The bytes of the padded exponent: `E` and the fewest zero bytes before
+it that make it a whole number of groups of `w` bytes. -/
+def P : Nat := l.E + (l.w - l.E % l.w) % l.w
+/-- The digits of `w` bits of the padded exponent, 8 per group. -/
+def ND : Nat := 8 * (l.P / l.w)
+/-- The first digit with a bit of the exponent (those before are zero). -/
+def k0 : Nat := 8 * (l.P - l.E) / l.w
+/-- The bytes of the padded exponent and of its digits, each a whole number
+of 32 bytes. -/
+def XE : Nat := (l.P + 31) / 32 * 32 + (l.ND + 31) / 32 * 32
 
 /-! In a prime's region: the modulus, `k₀` in each quadword, `Y`, the base
-`X`, the selected entry, the table, the padded exponent, `2^(104 S - 64 W)
-mod X`, the bytes of the exponent being read, the last multiplier. -/
+`X`, the selected entry, the table, the padded exponent, its digits (a byte
+each), `2^(104 S - 64 W) mod X`, the digit being read, the last multiplier. -/
 def oK0 : Nat := l.NB
 def oY : Nat := l.NB + 32
 def oX : Nat := l.oY + l.NB
 def oS : Nat := l.oX + l.NB
 def oTab : Nat := l.oS + l.NB
-def oE : Nat := l.oTab + 16 * l.NB
-def oK1 : Nat := l.oE + l.E
+def oE : Nat := l.oTab + l.T * l.NB
+def oD : Nat := l.oE + (l.P + 31) / 32 * 32
+def oK1 : Nat := l.oE + l.XE
 def oV : Nat := l.oK1 + l.NB
 /-- The last multiplier: 1 for `q`, `R mod p` for `p`. -/
 def oFin : Nat := l.oV + 32
@@ -96,13 +114,16 @@ def off (j : Nat) : Nat := 32 * (j % l.R) + 8 * (j / l.R)
 
 end Lay
 
-/-- 2048-bit keys: primes of 16 words, numbers of 20 limbs. -/
-def lay2048 : Lay := ⟨5, 16, 20⟩
+/-- 2048-bit keys: primes of 16 words, numbers of 20 limbs, windows of 4
+bits. -/
+def lay2048 : Lay := ⟨5, 16, 20, 4⟩
 /-- 3072-bit keys: primes of 24 words, numbers of 32 limbs, of which 30
-hold the primes' 1536 bits and a multiplication's 30 steps. -/
-def lay3072 : Lay := ⟨8, 24, 30⟩
-/-- 4096-bit keys: primes of 32 words, numbers of 40 limbs. -/
-def lay4096 : Lay := ⟨10, 32, 40⟩
+hold the primes' 1536 bits and a multiplication's 30 steps, windows of 5
+bits. -/
+def lay3072 : Lay := ⟨8, 24, 30, 5⟩
+/-- 4096-bit keys: primes of 32 words, numbers of 40 limbs, windows of 5
+bits. -/
+def lay4096 : Lay := ⟨10, 32, 40, 5⟩
 
 /-- In the prime workspaces: the base of the IFMA area, and a counter. -/
 def sIfma : Nat := sFn 13
@@ -271,9 +292,9 @@ def k0St (p : Nat) : List Instr :=
     .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] : List Instr) ++
   (List.range 4).map (fun i => .store (at_ .r11 (l.oK0 + 8 * i)) .rax)
 
-/-- Zeros where the exponent goes. -/
+/-- Zeros where the padded exponent goes. -/
 def eZero : List Instr :=
-  .mov32 .rax (.imm 0) :: (List.range l.W).map (fun i => .store (at_ .r11 (l.oE + 8 * i)) .rax)
+  .mov32 .rax (.imm 0) :: (List.range ((l.P + 7) / 8)).map (fun i => .store (at_ .r11 (l.oE + 8 * i)) .rax)
 
 /-- `q`'s last multiplier, 1 (`rax` is 0). -/
 def finOne : List Instr :=
@@ -281,36 +302,54 @@ def finOne : List Instr :=
     ([.mov32 .rax (.imm 1), .store (at_ .r11 l.oFin) .rax] : List Instr)
 
 /-- The exponent's bytes (pointer and length in `n`'s slots `slotPtr`,
-`slotLen`) at the end of the `E` at `oE`. -/
+`slotLen`) at the end of the `P` at `oE`. -/
 def eCopy (slotPtr slotLen : Nat) : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax slotPtr)), .mov .rcx (.mem (ws .rax slotLen)),
-      .alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.E))), .alu .sub .r11 (.reg .rcx)],
+      .alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)],
     .loop (.block [.movzx8 .rax (at0 .rsi), .store8 (at0 .r11) .rax, .alu .add .rsi (.imm 1),
       .alu .add .r11 (.imm 1), .alu .sub .rcx (.imm 1)]) .ne]
 
+/-- A group of `w` bytes of the padded exponent at `r8` (most significant
+first) into its 8 digits of `w` bits at `r9`, a byte each; then the next
+group. -/
+def recodeBody : List Instr :=
+  ([.mov32 .rax (.imm 0)] : List Instr) ++
+  (List.range l.w).flatMap (fun j => [.shift .shl .rax 8, .movzx8 .rdx (at_ .r8 j), .alu .or .rax (.reg .rdx)]) ++
+  (List.range 8).flatMap (fun t => [.mov .rdx (.reg .rax)] ++
+    (if t = 7 then [] else [.shift .shr .rdx (l.w * (7 - t))]) ++
+    [.alu .and .rdx (.imm (BitVec.ofNat 32 (l.T - 1))), .store8 (at_ .r9 t) .rdx]) ++
+  ([.alu .add .r8 (.imm (BitVec.ofNat 32 l.w)), .alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr)
+
+/-- The padded exponent of region `p` into its `ND` digits at `oD`. -/
+def recode (p : Nat) : List (Prog isa) :=
+  [.block [.mov .r8 (.mem (hdr sIfma)), .alu .add .r8 (.imm (BitVec.ofNat 32 (l.D * p + l.oE))),
+      .mov .r9 (.mem (hdr sIfma)), .alu .add .r9 (.imm (BitVec.ofNat 32 (l.D * p + l.oD))),
+      .mov32 .rcx (.imm (BitVec.ofNat 32 (l.P / l.w)))],
+    .loop (.block (recodeBody l)) .ne]
+
 /-- A prime's region (`p` 0 or 1): the modulus, `2^(104 S - 64 W) mod X`,
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
-exponent. -/
+exponent and its digits. -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
   k1 l ++ [arrLoop l p] ++
     [.block (k0St l p), .block (eZero l)] ++
-    (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen
+    (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen ++ recode l p
 
 /-! ## The vector code (`rbx` the area) -/
 
-/-- `[S] := T_v` for each prime, `v` the top 4 bits of the quadword at `oV`:
+/-- `[S] := T_v` for each prime, `v` the digit at `oV`:
 for each entry `j`, OR'ed in under the mask of `j = v` (one `vpternlogq`
 per register), in registers `0`–`R - 1`, with the mask in `R` and a
 temporary in `R + 1`. -/
 def select (p : Nat) : List (Prog isa) :=
   [.block (([.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 (l.D * p + l.oTab))),
-      .mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))), .shift .shr .rdx 60,
-      .mov32 .rcx (.imm 0)] : List Instr) ++ (List.range l.R).map fun k => .eop (.bin .vpxorq (vreg k) (vreg k) (vreg k))),
+      .mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))), .mov32 .rcx (.imm 0)] : List Instr) ++ (List.range l.R).map fun k => .eop (.bin .vpxorq (vreg k) (vreg k) (vreg k))),
     .loop (.block (([.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
         .alu .sbb .rax (.reg .rax), .eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] : List Instr) ++
       ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
         .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)]) ++
-      ([.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)] : List Instr))) .ne,
+      ([.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1),
+        .alu .cmp .rcx (.imm (BitVec.ofNat 32 l.T))] : List Instr))) .ne,
     .block ((List.range l.R).map fun k => .evStore (at_ .rbx (l.D * p + l.oS + 32 * k)) (vreg k))]
 
 /-- `[o] := [a]` (a number) in both regions. -/
@@ -341,7 +380,7 @@ def convTabBody : Prog isa :=
         (.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.NB)))])
           (.seq (.ite .e (.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX)) (.block []))
             (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
-              .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 16 * l.NB)))])))))
+              .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.T * l.NB)))])))))
 
 /-- `Y` and `X` into Montgomery form (times `[oK1] 2^(-52 S)`), and the
 table `T_0 = Y`, `T_1 = X`, `T_i = T_(i-1) X 2^(-52 S)`, in one loop. -/
@@ -354,30 +393,28 @@ def winSetup (b : Nat) : List Instr :=
    .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx),
    .alu .add .r11 (.imm (BitVec.ofNat 32 l.oY))]
 
-/-- A window: `Y := Y¹⁶ T_v 2^(-52 S)` for each prime, `v` the top 4 bits
-of its byte at `oV`, which moves up 4 bits. `S := T_v` first, then one loop
-of five multiplications (`r15` counting them down): four squarings of `Y`,
-then `Y S`. After the last byte (`r13 = E`), instead `S := Fin` and the one
-multiplication `Y S`, the last window (`r14 := 1`). -/
+/-- A window: `Y := Y^(2^w) T_v 2^(-52 S)` for each prime, `v` its digit
+`r13` (at `oD`, into `oV`). `S := T_v` first, then one loop of `w + 1`
+multiplications (`r15` counting them down): `w` squarings of `Y`, then
+`Y S`. After the last digit (`r13 = ND`), instead `S := Fin` and the one
+multiplication `Y S`. -/
 def window : List (Prog isa) :=
-  [.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))])
-      (.ite .e (.block (copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1), .mov32 .r14 (.imm 1)]))
-        (seqs (select l 0 ++ select l 1 ++
-          [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
-            .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)])]))),
+  [.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.ND))])
+      (.ite .e (.block (copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1)]))
+        (seqs ([.block ((List.range 2).flatMap fun p =>
+            [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oD : Nat) : Int) },
+              .store (at_ .rbx (l.D * p + l.oV)) .rax])] ++ select l 0 ++ select l 1 ++
+          [.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (l.w + 1)))]]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
         (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
-/-- The exponentiations, a byte of each exponent (`r13`) at a time, and
-after the last, `Y := Y Fin 2^(-52 S)` (`window`). -/
+/-- The exponentiations, a digit of each exponent (`r13`, from the first
+that holds a bit of it, `k0`) at a time, and after the last,
+`Y := Y Fin 2^(-52 S)` (`window`). -/
 def expLoop : List (Prog isa) :=
-  convTab l ++ [.block [.mov32 .r13 (.imm 0)],
-    .loop (seqs ([.block ((List.range 2).flatMap fun p =>
-        [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oE : Nat) : Int) },
-          .shift .ror .rax 8, .store (at_ .rbx (l.D * p + l.oV)) .rax]), .block [.mov32 .r14 (.imm 2)],
-      .loop (seqs (window l ++ [.block [.alu .sub .r14 (.imm 1)]])) .ne,
-      .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.E + 1)))]])) .ne]
+  convTab l ++ [.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.k0))],
+    .loop (seqs (window l ++ [.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.ND + 1)))]])) .ne]
 
 /-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
 `TCB/X86_64/Isa.lean`), the slots at `oMx`. -/
