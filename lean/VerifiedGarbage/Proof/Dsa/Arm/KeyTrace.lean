@@ -117,7 +117,8 @@ theorem domain_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins 
   refine SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.u) (count := .imm pLen)
       (X₃.C₁.opPre mq X.C₁.S.wq (by have := D₁.hQ; omega) D₁.hQo)
       (X₃.C₂.opPre mq X.C₁.S.wq (by have := D₂.hQ; omega) D₂.hQo) (show PtrOk (.local Impl.Dsa.Layout.t) from (by decide : Impl.Dsa.Layout.t < 2 ^ 16))
-      (show pLen < 2 ^ 16 by omega) (X₃.E _ mq) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _) rfl)
+      (show pLen < 2 ^ 16 by omega) (X₃.E _ mq) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _) rfl
+      (localReady X₃.C₁.S.ws (by decide) (by simp only [countValue]; omega) (by decide)) (localReady X₃.C₂.S.ws (by decide) (by simp only [countValue]; omega) (by decide)) D₁.hQ D₂.hQ)
     (reduce_ok (output := Impl.Dsa.Layout.u) X₃.C₁.S.ws (by omega) X.C₁.S.wq (X₃.C₁.inp mq).toReady
       (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega)
       (localReady X₃.C₁.S.ws (by decide) (by simp only [countValue]; omega) (by decide))

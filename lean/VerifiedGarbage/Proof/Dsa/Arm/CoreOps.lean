@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreBase
-public import VerifiedGarbage.Proof.Dsa.Arm.PowCall
+public import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -166,47 +166,51 @@ theorem productMod_ok {s : State} {base : Addr} {size len n m output : Nat} {a b
         Spec.Dsa.encodeBE len (operand base s a len * operand base s b len % m) ∧
       Stage base s t output len := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
+  have s0 := slot_lt (i := 0) n48 (by decide)
   have s8 := slot_lt (i := 8) n48 (by decide)
   have s9 := slot_lt (i := 9) n48 (by decide)
   have s11 := slot_lt (i := 11) n48 (by decide)
   have nw := hs.nowrap
+  have cb := contextBytes_le n48
   have mlt : m < 256 ^ len := hm ▸ operand_lt base s _ len
   unfold Core.productMod
   dsimp only
   rw [← w.n_eq]
-  refine WP.seq (WP.mono (setup_ok hs hz w Rq hm hm1 hodd) fun u ⟨cu, _, rru, Ou, Ru⟩ => ?_)
-  have Rau := Ra.keep_rest Ru (O := Ou) (hO := arith_hdr)
-  have Rbu := Rb.keep_rest Ru (O := Ou) (hO := arith_hdr)
-  refine WP.seq (WP.seq (WP.mono (load_ok (n := n) (dst := baseS n) cu.ws (by omega) Rau
+  refine WP.seq (WP.mono (load_ok (n := n) (dst := modS n) hs (by omega) Rq (by simp only [modS]; omega)
+    (by simp only [modS]; omega) (by omega) w.four hl w.word (by simp only [modS]; omega))
+    fun u ⟨wu, Vu, Ru, Ou⟩ => ?_)
+  have Ou' := Outs.of_slot (i := 0) Ou (by decide) n48
+  have Rau := Ra.keep_rest Ru (O := Ou') (hO := arith_hdr)
+  have Rbu := Rb.keep_rest Ru (O := Ou') (hO := arith_hdr)
+  refine WP.seq (WP.seq (WP.mono (load_ok (n := n) (dst := baseS n) wu (by omega) Rau
     (by simp only [baseS]; omega) (by simp only [baseS]; omega) (by omega) w.four hl w.word
     (by simp only [baseS]; omega)) fun u₁ ⟨w₁, A₁, R₁, O₁⟩ => ?_))
-  have c₁ := cu.of_slot w₁ O₁ (by decide)
   have Rb₁ := Rbu.keep_rest R₁ (O := Outs.of_slot (i := 8) O₁ (by decide) n48) (hO := arith_hdr)
-  refine WP.mono (load_ok (n := n) (dst := expS n) c₁.ws (by omega) Rb₁
+  refine WP.mono (load_ok (n := n) (dst := expS n) w₁ (by omega) Rb₁
     (by simp only [expS]; omega) (by simp only [expS]; omega) (by omega) w.four hl w.word
     (by simp only [expS]; omega)) fun u₂ ⟨w₂, B₂, R₂, O₂⟩ => ?_
-  have c₂ := c₁.of_slot w₂ O₂ (by decide)
   have K₂ : Outs base arithRanges s.mem u₂.mem :=
-    (Ou.trans (Outs.of_slot (i := 8) O₁ (by decide) n48)).trans (Outs.of_slot (i := 11) O₂ (by decide) n48)
-  have R₂' : Rest coreClob s u₂ := (Ru.trans (R₁.mono (by decide))).trans (R₂.mono (by decide))
+    (Ou'.trans (Outs.of_slot (i := 8) O₁ (by decide) n48)).trans (Outs.of_slot (i := 11) O₂ (by decide) n48)
+  have R₂' : Rest coreClob s u₂ := ((Ru.mono (by decide)).trans (R₁.mono (by decide))).trans (R₂.mono (by decide))
+  have M₂ : val32 u₂.mem base (slot n 0) (2 * n) = m := by
+    rw [O₂.val32 (by simp only [expS, slot, stride]; omega) (by simp only [slot, stride]; omega),
+      O₁.val32 (by simp only [baseS, slot, stride]; omega) (by simp only [slot, stride]; omega)]
+    exact Vu.trans hm
   have A₂ : val32 u₂.mem base (slot n 8) (2 * n) = operand base s a len := by
     rw [O₂.val32 (by simp only [expS, slot, stride]; omega) (by simp only [slot, stride]; omega)]
-    exact A₁.trans (Ra.arith (Ru.gpr .r12 (by decide)) Ou)
+    exact A₁.trans (Ra.arith (Ru.gpr .r12 (by decide)) Ou')
   have B₂' : val32 u₂.mem base (slot n 11) (2 * n) = operand base s b len := by
     refine B₂.trans ?_
     rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr Rbu.ok,
       Rbu.bytes (Outs.of_slot (i := 8) O₁ (by decide) n48) (by decide)]
-    exact Rb.arith (Ru.gpr .r12 (by decide)) Ou
-  have rr₂ : val32 u₂.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m := by
-    rw [O₂.val32 (by simp only [expS, slot, stride]; omega) (by simp only [slot, stride]; omega),
-      O₁.val32 (by simp only [baseS, slot, stride]; omega) (by simp only [slot, stride]; omega), rru]
-  refine WP.seq (WP.mono (ordinaryMul_ok c₂ rr₂) fun u₃ ⟨c₃, V₃, O₃, R₃⟩ => ?_)
-  refine WP.mono (store_ok (output := output) c₃.ws w.n_eq.symm w.four w.word (by omega) (by omega) ho'
+    exact Rb.arith (Ru.gpr .r12 (by decide)) Ou'
+  refine WP.seq (WP.mono (Pow.mulCall_ok w₂ (by omega) n0 n48 M₂ hm1 hodd) fun u₃ ⟨w₃, V₃, O₃, R₃⟩ => ?_)
+  refine WP.mono (store_ok (output := output) w₃ w.n_eq.symm w.four w.word (by omega) (by omega) ho'
     h16o (by omega)) fun t ⟨Vt, Rt, Ot⟩ => ⟨?_, R₂'.trans ((R₃.mono (by decide)).trans (Rt.mono (by decide))),
-      ((Outs.arith_out K₂ _ _).trans (Outs.arith_out (Outs.arith O₃ (streamRanges_arith n48)) _ _)).trans
+      ((Outs.arith_out K₂ _ _).trans (Outs.arith_out (Outs.arith O₃ (scratch_arith n48)) _ _)).trans
         (Outs.out Ot)⟩
   have lt₃ : val32 u₃.mem base (slot n 9) (2 * n) < m := by rw [V₃]; exact Nat.mod_lt _ (by omega)
-  rw [Vt, result_bytes w.word hl mlt lt₃, V₃, A₂, B₂', Nat.mul_comm]
+  rw [Vt, result_bytes w.word hl mlt lt₃, V₃, A₂, B₂']
 
 theorem sum_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Pointer}
     (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n)
@@ -311,6 +315,7 @@ theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count :
         Spec.Dsa.encodeBE len (operand base s input (countValue base s count) % m) ∧
       Stage base s t output len := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
+  have s0 := slot_lt (i := 0) n48 (by decide)
   have s9 := slot_lt (i := 9) n48 (by decide)
   have cb := contextBytes_le n48
   have nw := hs.nowrap
@@ -318,14 +323,17 @@ theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count :
   unfold Core.reduce
   dsimp only
   rw [← w.n_eq]
-  refine WP.seq (WP.mono (setup_ok hs hz w Rq hm (by omega) hodd) fun u ⟨cu, _, _, Ou, Ru⟩ => ?_)
-  have Riu := Ri.keep_rest Ru (O := Ou) (hO := arith_hdr)
-  have Cu := countValue_keep Ou arith_hdr hc
+  refine WP.seq (WP.mono (load_ok (n := n) (dst := modS n) hs (by omega) Rq (by simp only [modS]; omega)
+    (by simp only [modS]; omega) (by omega) w.four hl w.word (by simp only [modS]; omega))
+    fun u ⟨wu, Vu, Ru, Ou⟩ => ?_)
+  have Ou' := Outs.of_slot (i := 0) Ou (by decide) n48
+  have Riu := Ri.keep_rest Ru (O := Ou') (hO := arith_hdr)
+  have Cu := countValue_keep Ou' arith_hdr hc
   rw [← Cu] at Riu
-  refine WP.seq (VG.Proof.X25519.Arm.WP.append (pointer_ok cu.ws (by omega) Riu.ok) fun v ⟨Pv, Rv, Mv⟩ =>
-    WP.mono (countEnd_ok (cu.ws.of_rest Rv (by decide)) (by omega) hc) fun x ⟨Lx, Rx, Mx⟩ => ?_)
+  refine WP.seq (VG.Proof.X25519.Arm.WP.append (pointer_ok wu (by omega) Riu.ok) fun v ⟨Pv, Rv, Mv⟩ =>
+    WP.mono (countEnd_ok (wu.of_rest Rv (by decide)) (by omega) hc) fun x ⟨Lx, Rx, Mx⟩ => ?_)
   have Rux : Rest [.r4, .r11, .lr] u x := (Rv.mono (by decide)).trans (Rx.mono (by decide))
-  have cx := cu.of_rest Rux (by decide) (by rw [Mx, Mv])
+  have wx := wu.of_rest Rux (by decide)
   have Cv : countValue base v count = countValue base u count :=
     countValue_keep (rs := []) (fun x _ => by rw [Mv]) (by simp) hc
   have r11 : x.gpr .r11 = pointerValue base u input := by rw [Rx.gpr .r11 (by decide), Pv]
@@ -334,16 +342,20 @@ theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count :
     cases count with
     | imm len => exact Nat.lt_trans hc (by decide)
     | field f => exact BitVec.isLt _
-  refine WP.seq (WP.mono (reduceStream_ok cx (by omega) Riu.fits (by rw [Cu]; exact cl) r11 Lx
-    (fun i hi => by rw [Rux.rd, Rux.wr]; exact Riu.reads i 1 (by omega))
-    (Riu.apart.sub_right (Offset.sub_base base (by omega)))) fun y ⟨cy, Vy, Oy, Ry⟩ => ?_)
-  refine WP.mono (store_ok (output := output) cy.ws w.n_eq.symm w.four w.word (by omega) (by omega) ho'
-    h16o (by omega)) fun t ⟨Vt, Rt, Ot⟩ => ⟨?_, ((Ru.trans (Rux.mono (by decide))).trans (Ry.mono (by decide))).trans
-      (Rt.mono (by decide)),
-      ((Outs.arith_out Ou _ _).trans (Outs.arith_out (Outs.arith (by rw [Mx, Mv] at Oy; exact Oy)
-        (streamRanges_arith n48)) _ _)).trans (Outs.out Ot)⟩
+  have Vx : val32 x.mem base (slot n 0) (2 * n) = m := by rw [Mx, Mv]; exact Vu.trans hm
+  have hrx : InRegions (x.rd ++ x.wr) (State.addr (pointerValue base u input)) (countValue base u count) := by
+    have := Riu.reads 0 (countValue base u count) (by omega)
+    rw [Rux.rd, Rux.wr]
+    simpa only [BitVec.add_zero] using this
+  refine WP.seq (WP.mono (Pow.reduceCall_ok wx (by omega) n0 n48 Vx hm255 hodd r11 Lx Riu.fits
+    (by rw [Cu]; exact cl) hrx (Riu.apart.sub_right (Region.sub_prefix cb))) fun y ⟨wy, Vy, Oy, Ry⟩ => ?_)
+  refine WP.mono (store_ok (output := output) wy w.n_eq.symm w.four w.word (by omega) (by omega) ho'
+    h16o (by omega)) fun t ⟨Vt, Rt, Ot⟩ => ⟨?_, ((Ru.mono (by decide)).trans (Rux.mono (by decide))).trans
+      ((Ry.mono (by decide)).trans (Rt.mono (by decide))),
+      ((Outs.arith_out Ou' _ _).trans (Outs.arith_out (Outs.arith (by rw [Mx, Mv] at Oy; exact Oy)
+        (scratch_arith n48)) _ _)).trans (Outs.out Ot)⟩
   have lt : val32 y.mem base (slot n 9) (2 * n) < m := by rw [Vy]; exact Nat.mod_lt _ (by omega)
   rw [Vt, result_bytes w.word hl mlt lt, Vy, Mx, Mv, Cu]
-  exact congrArg (fun v => Spec.Dsa.encodeBE len (v % m)) (Ri.arith (Ru.gpr .r12 (by decide)) Ou)
+  exact congrArg (fun v => Spec.Dsa.encodeBE len (v % m)) (Ri.arith (Ru.gpr .r12 (by decide)) Ou')
 
 end VG.Proof.Dsa.Arm

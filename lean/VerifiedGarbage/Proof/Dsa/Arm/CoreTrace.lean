@@ -142,15 +142,18 @@ theorem twoLoads_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len ex
     pointerValue_keep (R₂.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₂ (by decide) n48) arith_hdr Rb₁.ok]
   exact heb
 
-theorem power_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLen n m₁ m₂ output : Nat} {modulus : Field}
+/-- An operation's three loads, then code whose two runs leak the same trace
+from the same working space and the modulus in slot 0. -/
+theorem opLoads_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLen n m₁ m₂ : Nat} {modulus : Field}
     {a b : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ modulus) (P₂ : OpPre s₂ base size₂ len n m₂ modulus)
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b expLen)
     (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
-    (Rb₂ : Ready s₂ base b expLen) (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0) :
-    SameTrace isa (Core.power len expLen modulus a b output) s₁ s₂ := by
-  unfold Core.power
-  dsimp only
-  rw [← P₁.w.n_eq]
+    (Rb₂ : Ready s₂ base b expLen) (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0)
+    {rest : Prog isa}
+    (k : ∀ x₁ x₂ : State, Ws x₁ base size₁ → Ws x₂ base size₂ → val32 x₁.mem base (slot n 0) (2 * n) = m₁ →
+      val32 x₂.mem base (slot n 0) (2 * n) = m₂ → SameTrace isa rest x₁ x₂) :
+    SameTrace isa (.seq (Core.load n len (modS n) (.input modulus))
+      (.seq (.seq (Core.load n len (baseS n) a) (Core.load n expLen (expS n) b)) rest)) s₁ s₂ := by
   obtain ⟨n0, n48, hl, hl'⟩ := P₁.w.bounds
   have s0 := slot_lt (i := 0) n48 (by decide)
   have s8 := slot_lt (i := 8) n48 (by decide)
@@ -205,28 +208,53 @@ theorem power_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLe
     rw [pointerValue_keep (Q₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) N₁ (by decide) n48) arith_hdr Rb₁.ok,
       pointerValue_keep (Q₂.gpr .r12 (by decide)) (Outs.of_slot (i := 8) N₂ (by decide) n48) arith_hdr Rb₁.ok]
     exact pe Rb₁.ok heb
-  · have m₁ := P₁.hm1
-    have m₂ := P₂.hm1
-    refine SameTrace.seq (Pow.call_trace x₁ x₂ (by omega) (by omega) n0 n48 (by omega) ek
-        (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂))
-      (Pow.call_ok x₁ (by omega) n0 n48 (by omega) ek V₁ m₁ P₁.hodd)
-      (Pow.call_ok x₂ (by omega) n0 n48 (by omega) ek V₂ m₂ P₂.hodd) fun t₁ t₂ ⟨y₁, _⟩ ⟨y₂, _⟩ => ?_
-    exact SameTrace.of_relCT (store_relCT len output) (agree0 y₁ y₂)
+  · exact k v₁ v₂ x₁ x₂ V₁ V₂
+
+theorem power_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLen n m₁ m₂ output : Nat} {modulus : Field}
+    {a b : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ modulus) (P₂ : OpPre s₂ base size₂ len n m₂ modulus)
+    (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b expLen)
+    (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
+    (Rb₂ : Ready s₂ base b expLen) (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0) :
+    SameTrace isa (Core.power len expLen modulus a b output) s₁ s₂ := by
+  unfold Core.power
+  dsimp only
+  rw [← P₁.w.n_eq]
+  obtain ⟨n0, n48, hl, hl'⟩ := P₁.w.bounds
+  have z₁ := P₁.hz
+  have z₂ := P₂.hz
+  have cb := contextBytes_le n48
+  have ek : (expLen + 3) / 4 ≤ 2 * n := by omega
+  refine opLoads_trace P₁ P₂ Ra₁ Ra₂ Rb₁ hem hea heb Rb₂ he4 he hwe fun x₁ x₂ w₁ w₂ V₁ V₂ => ?_
+  have m₁ := P₁.hm1
+  have m₂ := P₂.hm1
+  refine SameTrace.seq (Pow.call_trace w₁ w₂ (by omega) (by omega) n0 n48 (by omega) ek
+      (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂))
+    (Pow.call_ok w₁ (by omega) n0 n48 (by omega) ek V₁ m₁ P₁.hodd)
+    (Pow.call_ok w₂ (by omega) n0 n48 (by omega) ek V₂ m₂ P₂.hodd) fun t₁ t₂ ⟨y₁, _⟩ ⟨y₂, _⟩ => ?_
+  exact SameTrace.of_relCT (store_relCT len output) (agree0 y₁ y₂)
 
 theorem productMod_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m₁ m₂ output : Nat} {modulus : Field}
     {a b : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ modulus) (P₂ : OpPre s₂ base size₂ len n m₂ modulus)
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b len)
-    (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b) :
+    (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
+    (Rb₂ : Ready s₂ base b len) :
     SameTrace isa (Core.productMod len modulus a b output) s₁ s₂ := by
   unfold Core.productMod
   dsimp only
   rw [← P₁.w.n_eq]
-  refine SameTrace.seq (setup_trace P₁ P₂ hem) (setup_ok P₁.ws P₁.hz P₁.w P₁.R P₁.hm P₁.hm1 P₁.hodd)
-    (setup_ok P₂.ws P₂.hz P₁.w P₂.R P₂.hm P₂.hm1 P₂.hodd) fun u₁ u₂ ⟨c₁, _, _, O₁, R₁⟩ ⟨c₂, _, _, O₂, R₂⟩ => ?_
-  exact twoLoads_trace c₁.ws c₂.ws P₁.hz P₂.hz P₁.w (Ra₁.keep_rest R₁ (O := O₁) (hO := arith_hdr))
-    (Ra₂.keep_rest R₂ (O := O₂) (hO := arith_hdr)) (Rb₁.keep_rest R₁ (O := O₁) (hO := arith_hdr))
-    (ptrEq_setup Ra₁.ok hea R₁ O₁ R₂ O₂) (ptrEq_setup Rb₁.ok heb R₁ O₁ R₂ O₂)
-    ((RelCT.seq (ordinaryMul_relCT n) (store_relCT len output)).mono (fun _ _ h => h) fun _ _ _ => trivial)
+  obtain ⟨n0, n48, hl, hl'⟩ := P₁.w.bounds
+  have z₁ := P₁.hz
+  have z₂ := P₂.hz
+  have cb := contextBytes_le n48
+  refine opLoads_trace P₁ P₂ Ra₁ Ra₂ Rb₁ hem hea heb Rb₂ P₁.w.four (Nat.le_refl _) P₁.w.word
+    fun x₁ x₂ w₁ w₂ V₁ V₂ => ?_
+  have m₁ := P₁.hm1
+  have m₂ := P₂.hm1
+  refine SameTrace.seq (Pow.mulCall_trace w₁ w₂ (by omega) (by omega) n0 n48
+      (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂))
+    (Pow.mulCall_ok w₁ (by omega) n0 n48 V₁ m₁ P₁.hodd)
+    (Pow.mulCall_ok w₂ (by omega) n0 n48 V₂ m₂ P₂.hodd) fun t₁ t₂ ⟨y₁, _⟩ ⟨y₂, _⟩ => ?_
+  exact SameTrace.of_relCT (store_relCT len output) (agree0 y₁ y₂)
 
 theorem sum_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m₁ m₂ output : Nat}
     {a b : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ .q) (P₂ : OpPre s₂ base size₂ len n m₂ .q)
@@ -263,24 +291,70 @@ theorem reduce_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m�
     {input : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ .q) (P₂ : OpPre s₂ base size₂ len n m₂ .q)
     (hp : PtrOk input) (hc : CountOk count)
     (hem : PtrEq base s₁ s₂ (.input .q)) (hei : PtrEq base s₁ s₂ input)
-    (hec : countValue base s₁ count = countValue base s₂ count) :
+    (hec : countValue base s₁ count = countValue base s₂ count)
+    (Ri₁ : Ready s₁ base input (countValue base s₁ count)) (Ri₂ : Ready s₂ base input (countValue base s₂ count))
+    (h255₁ : 255 < m₁) (h255₂ : 255 < m₂) :
     SameTrace isa (Core.reduce len count input output) s₁ s₂ := by
   unfold Core.reduce
   dsimp only
   rw [← P₁.w.n_eq]
+  obtain ⟨n0, n48, hl, hl'⟩ := P₁.w.bounds
+  have s0 := slot_lt (i := 0) n48 (by decide)
   have z₁ := P₁.hz
   have z₂ := P₂.hz
-  refine SameTrace.seq (setup_trace P₁ P₂ hem) (setup_ok P₁.ws P₁.hz P₁.w P₁.R P₁.hm P₁.hm1 P₁.hodd)
-    (setup_ok P₂.ws P₂.hz P₁.w P₂.R P₂.hm P₂.hm1 P₂.hodd) fun u₁ u₂ ⟨c₁, _, _, O₁, R₁⟩ ⟨c₂, _, _, O₂, R₂⟩ => ?_
-  have pe := ptrEq_setup hp hei R₁ O₁ R₂ O₂
-  have ce : countValue base u₁ count = countValue base u₂ count := by
-    rw [countValue_keep O₁ arith_hdr hc, countValue_keep O₂ arith_hdr hc]; exact hec
-  refine SameTrace.seq (SameTrace.of_relCT (reduceHead_relCT input count) (agree0 c₁.ws c₂.ws))
-    (reduceHead_ok c₁.ws (by omega) hp hc) (reduceHead_ok c₂.ws (by omega) hp hc)
-    fun x₁ x₂ ⟨A₁, L₁, Q₁, _⟩ ⟨A₂, L₂, Q₂, _⟩ => ?_
-  exact SameTrace.of_relCT (RelCT.seq (reduceStream_relCT n)
-      ((store_relCT len output).mono (fun _ _ A => agree_weaken rfl A) fun _ _ h => h))
-    (agreeWs true true (c₁.ws.of_rest Q₁ (by decide)) (c₂.ws.of_rest Q₂ (by decide))
-      (fun _ => by rw [A₁, A₂, pe]) (fun _ => by rw [L₁, L₂, pe, ce]))
+  have cb := contextBytes_le n48
+  have loadMod : ∀ {s : State} {size m : Nat}, OpPre s base size len n m .q →
+      WP isa (Core.load n len (modS n) (.input .q)) s fun u => Ws u base size ∧
+        val32 u.mem base (slot n 0) (2 * n) = m ∧ Rest [.r4, .r8, .r9, .r10, .r11] s u ∧
+        Outs base arithRanges s.mem u.mem := fun P => by
+    have := P.hz
+    exact WP.mono (load_ok (n := n) (dst := modS n) P.ws (by omega) P.R (by simp only [modS]; omega)
+      (by simp only [modS]; omega) (by omega) P.w.four hl P.w.word (by simp only [modS]; omega))
+      fun u ⟨wu, Vu, Ru, Ou⟩ => ⟨wu, Vu.trans P.hm, Ru, Outs.of_slot (i := 0) Ou (by decide) n48⟩
+  refine SameTrace.seq (load_trace P₁.ws P₂.ws (by omega) (by omega) P₁.R.ok hem) (loadMod P₁) (loadMod P₂)
+    fun u₁ u₂ ⟨w₁, V₁, R₁, O₁⟩ ⟨w₂, V₂, R₂, O₂⟩ => ?_
+  have pe : PtrEq base u₁ u₂ input := by
+    unfold PtrEq
+    rw [pointerValue_keep (R₁.gpr .r12 (by decide)) O₁ arith_hdr hp,
+      pointerValue_keep (R₂.gpr .r12 (by decide)) O₂ arith_hdr hp]
+    exact hei
+  have Cu₁ := countValue_keep O₁ arith_hdr hc
+  have Cu₂ := countValue_keep O₂ arith_hdr hc
+  have ce : countValue base u₁ count = countValue base u₂ count := by rw [Cu₁, Cu₂]; exact hec
+  have Ri₁' := Ri₁.keep_rest R₁ (O := O₁) (hO := arith_hdr)
+  have Ri₂' := Ri₂.keep_rest R₂ (O := O₂) (hO := arith_hdr)
+  rw [← Cu₁] at Ri₁'
+  rw [← Cu₂] at Ri₂'
+  refine SameTrace.seq (SameTrace.of_relCT (reduceHead_relCT input count) (agree0 w₁ w₂))
+    (reduceHead_ok w₁ (by omega) hp hc) (reduceHead_ok w₂ (by omega) hp hc)
+    fun x₁ x₂ ⟨A₁, L₁, Q₁, M₁⟩ ⟨A₂, L₂, Q₂, M₂⟩ => ?_
+  have wx₁ := w₁.of_rest Q₁ (by decide)
+  have wx₂ := w₂.of_rest Q₂ (by decide)
+  have cl : ∀ {s : State}, countValue base s count < 2 ^ 32 := by
+    intro s
+    cases count with
+    | imm len => exact Nat.lt_trans hc (by decide)
+    | field f => exact BitVec.isLt _
+  have Vx₁ : val32 x₁.mem base (slot n 0) (2 * n) = m₁ := by rw [M₁]; exact V₁
+  have Vx₂ : val32 x₂.mem base (slot n 0) (2 * n) = m₂ := by rw [M₂]; exact V₂
+  have hr : ∀ {u x : State}, Ready u base input (countValue base u count) → Rest [.r4, .r11, .lr] u x →
+      InRegions (x.rd ++ x.wr) (State.addr (pointerValue base u input)) (countValue base u count) := by
+    intro u x R Q
+    have := R.reads 0 (countValue base u count) (by omega)
+    rw [Q.rd, Q.wr]
+    simpa only [BitVec.add_zero] using this
+  have A₂' : x₂.gpr .r11 = pointerValue base u₁ input := A₂.trans pe.symm
+  have L₂' : x₂.gpr .lr = pointerValue base u₁ input + BitVec.ofNat 32 (countValue base u₁ count) := by
+    rw [L₂, pe, ce]
+  have hr₂ : InRegions (x₂.rd ++ x₂.wr) (State.addr (pointerValue base u₁ input)) (countValue base u₁ count) := by
+    rw [pe, ce]; exact hr Ri₂' Q₂
+  refine SameTrace.seq (Pow.reduceCall_trace wx₁ wx₂ (by omega) (by omega) n0 n48
+      (by rw [Vx₁]; exact P₁.hodd) (by rw [Vx₁]; exact h255₁) (by rw [Vx₂]; exact P₂.hodd) (by rw [Vx₂]; exact h255₂)
+      A₁ L₁ A₂' L₂' Ri₁'.fits cl (hr Ri₁' Q₁) hr₂ (Ri₁'.apart.sub_right (Region.sub_prefix cb)))
+    (Pow.reduceCall_ok wx₁ (by omega) n0 n48 Vx₁ h255₁ P₁.hodd A₁ L₁ Ri₁'.fits cl (hr Ri₁' Q₁)
+      (Ri₁'.apart.sub_right (Region.sub_prefix cb)))
+    (Pow.reduceCall_ok wx₂ (by omega) n0 n48 Vx₂ h255₂ P₂.hodd A₂ L₂ Ri₂'.fits cl (hr Ri₂' Q₂)
+      (Ri₂'.apart.sub_right (Region.sub_prefix cb))) fun t₁ t₂ ⟨y₁, _⟩ ⟨y₂, _⟩ => ?_
+  exact SameTrace.of_relCT (store_relCT len output) (agree0 y₁ y₂)
 
 end VG.Proof.Dsa.Arm

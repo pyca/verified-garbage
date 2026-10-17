@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Layout
 public import VerifiedGarbage.Impl.Dsa.Arm.Stream
-public import VerifiedGarbage.Impl.Dsa.Arm.Pow
+public import VerifiedGarbage.Impl.Dsa.Arm.Arith
 
 /-! # DSA arithmetic composition on 32-bit ARM
 
@@ -45,11 +45,12 @@ def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : 
   (.seq (.seq (load n len (baseS n) a) (load n expLen (expS n) e))
   (.seq (Pow.call n ((expLen + 3) / 4)) (store len output)))
 
+/-- As `power`, calling `vg_dsa_mulmod_{n}` (`Arith.lean`). -/
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
-  .seq (setup len modulus)
+  .seq (load n len (modS n) (.input modulus))
   (.seq (.seq (load n len (baseS n) a) (load n len (expS n) b))
-  (.seq (ordinaryMul n) (store len output)))
+  (.seq (Arith.mulCall n) (store len output)))
 
 def product (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
   productMod len .q a b output
@@ -71,12 +72,12 @@ def countEnd : Count → List Instr
   | .imm len => [.movw .lr (BitVec.ofNat 16 len), .dp .add .lr .lr (.reg .r11)]
   | .field f => [.ldr .lr .r12 (Layout.field f), .dp .add .lr .lr (.reg .r11)]
 
-/-- Reduce `count` bytes at `input` modulo q. -/
+/-- Reduce `count` bytes at `input` modulo q, by a call of `vg_dsa_reduce_{n}`. -/
 def reduce (qLen : Nat) (count : Count) (input : Pointer) (output : Nat) : Prog isa :=
   let n := (qLen + 7) / 8
-  .seq (setup qLen .q)
+  .seq (load n qLen (modS n) (.input .q))
   (.seq (.block (pointer input ++ countEnd count))
-  (.seq (reduceStream n) (store qLen output)))
+  (.seq (Arith.reduceCall n) (store qLen output)))
 
 /-- The digest prefix the shape check saved. -/
 def digestPrefix : Count := .field .digestPrefixLen
