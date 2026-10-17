@@ -293,9 +293,11 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
     (hst : slot t.mem (rBase s₀) oStatus = 4) :
     WP isa draw t fun u => Ready s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Keeps sampleRegs t u ∧
       ((slot u.mem (rBase s₀) oStatus = 4 ∧ 2 ≤ draws ∧ Smp s₀ (used + rWidth s₀) (draws - 1) u ∧
-          ∀ S' base, SampleRel s₀ S' base used draws → SampleRel s₀ S' base (used + rWidth s₀) (draws - 1)) ∨
+          (∀ S' base, SampleRel s₀ S' base used draws → SampleRel s₀ S' base (used + rWidth s₀) (draws - 1)) ∧
+          (spl s₀ draws used).trace = 0 :: (spl s₀ (draws - 1) (used + rWidth s₀)).trace) ∨
         (slot u.mem (rBase s₀) oStatus ≠ 4 ∧
-          ∀ S' base, SampleRel s₀ S' base used draws → SampleOut s₀ base S' u)) := by
+          (∀ S' base, SampleRel s₀ S' base used draws → SampleOut s₀ base S' u) ∧
+          ((spl s₀ draws used).trace.head? ≠ some 0 ∨ draws = 1))) := by
   have hF : Random.frameBytes = 120 := rfl
   have hql := rQBytes_le A
   have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
@@ -324,7 +326,8 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
       (by rw [hm₅, slot_write_ne _ _ _ (by decide) (by decide) (by decide)])
     have hspl : spl s₀ (d' + 1) used = ⟨none, 0, [2]⟩ :=
       VG.Proof.Dsa.Random.sample_short _ _ _ hq (by rw [hdw, hrlen]; exact hshort)
-    refine ⟨h₅, by rw [hm₅]; exact store_outs _ _ _ (by decide), k₅, .inr ⟨?_, fun S' base R => ⟨?_, ?_, ?_⟩⟩⟩
+    refine ⟨h₅, by rw [hm₅]; exact store_outs _ _ _ (by decide), k₅, .inr ⟨?_, fun S' base R => ⟨?_, ?_, ?_⟩,
+      .inl (by rw [hspl]; simp)⟩⟩
     · rw [hm₅, slot_write_self]; decide
     · exact ⟨d' + 1, by rw [R.usedEq, hspl]; exact S₅⟩
     · rw [hm₅, slot_write_self, R.statusEq, hspl]; rfl
@@ -389,7 +392,8 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
           ⟨some (Spec.Dsa.Random.candidate (rq s₀) (drawBytes s₀ used)), rWidth s₀, [1]⟩ := by
         rw [spl, VG.Proof.Dsa.Random.sample_accept _ _ _ hq (by rw [hdw, hrlen]; omega) (by rw [htake]; exact hk),
           htake, hdw]
-      refine ⟨h₉, outs, keeps, .inr ⟨by rw [st₉]; decide, fun S' base R => ⟨?_, ?_, ?_⟩⟩⟩
+      refine ⟨h₉, outs, keeps, .inr ⟨by rw [st₉]; decide, fun S' base R => ⟨?_, ?_, ?_⟩,
+        .inl (by rw [hspl]; simp)⟩⟩
       · exact ⟨d' + 1, by rw [R.usedEq, hspl]; exact S₉⟩
       · rw [st₉, R.statusEq, hspl]; rfl
       · intro k hk'
@@ -419,13 +423,14 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
       by_cases h0 : d' = 0
       · subst h0
         refine ⟨h₉, outs, keeps, .inr ⟨by rw [st₉]; simp only [Nat.add_sub_cancel, ↓reduceIte]; decide,
-          fun S' base R => ?_⟩⟩
+          fun S' base R => ?_, .inr rfl⟩⟩
         have R' := rel S' base R
         have h0s : spl s₀ 0 (used + rWidth s₀) = ⟨none, 0, [3]⟩ := rfl
         refine ⟨⟨0, by rw [R'.usedEq, h0s]; exact S₉⟩, ?_, ?_⟩
         · rw [st₉, R'.statusEq, h0s]; simp only [Nat.add_sub_cancel, ↓reduceIte]; rfl
         · intro k hk'; rw [R'.scalarEq, h0s] at hk'; simp at hk'
-      · refine ⟨h₉, outs, keeps, .inl ⟨?_, by omega, by simpa using S₉, fun S' base R => by simpa using rel S' base R⟩⟩
+      · refine ⟨h₉, outs, keeps, .inl ⟨?_, by omega, by simpa using S₉, fun S' base R => by simpa using rel S' base R,
+          by rw [hspl, Nat.add_sub_cancel]⟩⟩
         rw [st₉]; simp only [Nat.add_sub_cancel, h0, ↓reduceIte]; exact st₈
 
 end VG.Proof.Dsa.X86

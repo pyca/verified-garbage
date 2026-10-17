@@ -29,14 +29,13 @@ theorem SampleOut.mem {s₀ v u : State} (A : RandomSignABI s₀) {base : Nat} {
     (O : SampleOut s₀ base S v) (hr : Ready s₀ u) (hm : u.mem = v.mem) : SampleOut s₀ base S u :=
   ⟨let ⟨d, Sd⟩ := O.smp; ⟨d, Sd.mem A hr hm⟩, by rw [hm]; exact O.status, by rw [hm]; exact O.nonce⟩
 
-theorem sample_ok {s₀ t : State} (A : RandomSignABI s₀) {used d₀ : Nat} (S : Smp s₀ used d₀ t)
-    (hq : 1 < rq s₀) :
-    WP isa sample t fun u => SampleOut s₀ used (spl s₀ 128 used) u ∧
-      u.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 used)) ∧
-      Ready s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Keeps sampleRegs t u := by
+/-- A new budget of 128 draws. -/
+theorem sampleInit_ok {s₀ t : State} (A : RandomSignABI s₀) {used d₀ : Nat} (S : Smp s₀ used d₀ t) :
+    WP isa (.block [.mov .eax (.imm 128), .store (sp oDraws) .eax, .mov .eax (.imm 4), .store (sp oStatus) .eax]) t
+      fun u => Smp s₀ used 128 u ∧ slot u.mem (rBase s₀) oStatus = 4 ∧
+        Outs (rBase s₀) [(oDraws, 4), (oStatus, 4)] t.mem u.mem ∧ Keeps sampleRegs t u := by
   have h := S.ready
-  unfold sample
-  refine WP.seq (wp_movS rfl fun t₁ u₁ _ => wp_slot (h.rf.of_keeps u₁.keeps) (by decide) u₁.gpr
+  refine (wp_movS rfl fun t₁ u₁ _ => wp_slot (h.rf.of_keeps u₁.keeps) (by decide) u₁.gpr
     fun t₂ f₂ m₂ g₂ r₂ w₂ _ _ => wp_movS rfl fun t₃ u₃ _ => wp_slot (f₂.of_keeps u₃.keeps) (by decide) u₃.gpr
     fun t₄ f₄ m₄ g₄ r₄ w₄ _ _ => WP.block_nil ?_)
   have hm₄ : t₄.mem = (t.mem.writeW (off (rBase s₀) oDraws) (128 : BitVec 32)).writeW
@@ -54,6 +53,15 @@ theorem sample_ok {s₀ t : State} (A : RandomSignABI s₀) {used d₀ : Nat} (S
       slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.usedW)
     (by rw [hm₄, slot_write_ne _ _ _ (by decide) (by decide) (by decide), slot_write_self]; rfl) S.usedBound
   have st₄ : slot t₄.mem (rBase s₀) oStatus = 4 := by rw [hm₄, slot_write_self]
+  exact ⟨S₄, st₄, o₄, k₄⟩
+
+theorem sample_ok {s₀ t : State} (A : RandomSignABI s₀) {used d₀ : Nat} (S : Smp s₀ used d₀ t)
+    (hq : 1 < rq s₀) :
+    WP isa sample t fun u => SampleOut s₀ used (spl s₀ 128 used) u ∧
+      u.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (spl s₀ 128 used)) ∧
+      Ready s₀ u ∧ Outs (rBase s₀) sampleRanges t.mem u.mem ∧ Keeps sampleRegs t u := by
+  unfold sample
+  refine WP.seq (WP.mono (sampleInit_ok A S) fun t₄ ⟨S₄, st₄, o₄, k₄⟩ => ?_)
   let S₀ := spl s₀ 128 used
   refine WP.seq (WP.loop (M := isa) (fun (n : Nat) (u : State) => ∃ used', 1 ≤ n ∧ n ≤ 128 ∧
       Smp s₀ used' n u ∧ slot u.mem (rBase s₀) oStatus = 4 ∧ SampleRel s₀ S₀ used used' n ∧
@@ -67,7 +75,7 @@ theorem sample_ok {s₀ t : State} (A : RandomSignABI s₀) {used d₀ : Nat} (S
   have mv₂ : v₂.mem = v.mem := by rw [fv₂.mem, uv₁.mem]
   have kv₂ : Keeps sampleRegs t v₂ := ((ku.trans kv).trans (uv₁.keeps.mono (by decide))).trans (fv₂.keeps _)
   have ov₂ : Outs (rBase s₀) sampleRanges t.mem v₂.mem := by rw [mv₂]; exact ou.trans ov
-  rcases hcase with ⟨stv, h2, Sv, rel⟩ | ⟨stv, out⟩
+  rcases hcase with ⟨stv, h2, Sv, rel, _⟩ | ⟨stv, out, _⟩
   · right
     refine ⟨by simp only [eval, zv₂, uv₁.gpr, stv]; rfl, n - 1, by omega, used' + rWidth s₀, by omega, by omega,
       Sv.mem A hv₂ mv₂, by rw [mv₂]; exact stv, rel S₀ used R, ov₂, kv₂⟩
