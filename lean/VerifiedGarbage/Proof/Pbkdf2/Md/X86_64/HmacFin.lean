@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFinInner
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
@@ -131,50 +132,47 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   obtain ⟨hN4, hD4, hL4, hB4, hDL, hD0, hDN, hNL, hB, -, h8, hSB⟩ := sizes hH hp
   have hS : H.stream.S = H.P.N + H.P.B := rfl
   have hbuf : H.stream.buf + H.P.N ≤ 8 * sc := hp.fits
-  have eN : 4 * (H.P.N / 4) = H.P.N := by omega_using [hN4]
-  have eD : 4 * (H.D / 4) = H.D := by omega_using [hD4]
   obtain ⟨sR, iR, _⟩ := wr_mem hp
   have oR : outerR (H := H.stream) s₀ ∈ s.rd ++ s.wr := by rw [hk.rd, hp.rd]; simp
   have z : ∀ p : Addr, p + BitVec.ofNat 64 0 = p := BitVec.add_zero
   have tsub : Region.Sub ⟨T (H := H.stream) s₀, H.D⟩ (scR sc s₀) := Offset.sub_base _ (by omega_using [hbuf, hDN])
   simp only [Hash.finMid, List.append_assoc]
-  refine copy32_ok (src := .r12) (dst := .rbx) (by decide) (by decide) 0 0 (H.P.N / 4) _ s _
-    (fun j hj => by
+  refine copyW_ok (src := .r12) (dst := .rbx) (by decide) (by decide) 0 0 H.P.N hN4 _ s _
+    (fun a w _ h => by
       rw [hk.r12, add_ofNat]
-      exact ⟨_, oR, Offset.contains_base _ (by omega_using [hj, hS]) (by omega_using [hj, hB, hNL])⟩)
-    (fun j hj => by
+      exact ⟨_, oR, Offset.contains_base _ (by omega_using [h, hS]) (by omega_using [h, hB, hNL])⟩)
+    (fun a w _ h => by
       rw [hk.rbx, add_ofNat, hk.wr]
-      exact ⟨_, iR, Offset.contains_base _ (by omega_using [hS, hj]) (by omega_using [hSB, hj])⟩)
+      exact ⟨_, iR, Offset.contains_base _ (by omega_using [hS, h]) (by omega_using [hSB, h])⟩)
     (by
-      rw [hk.r12, hk.rbx, eN]
+      rw [hk.r12, hk.rbx]
       exact hp.i_o.symm.sep (Offset.contains_base _ (by omega_using [hS]) (by omega_using []))
         (Offset.contains_base _ (by omega_using [hS]) (by omega_using [])))
     (by omega_using [hB, hNL]) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
-  rw [hk.r12, hk.rbx, eN, z, z] at m₁
+  rw [hk.r12, hk.rbx, z, z] at m₁
   have r15 : s₁.gpr .r15 = scr s₀ := by rw [g₁ _ (by decide), hk.r15]
   have rbx : s₁.gpr .rbx = inn s₀ := by rw [g₁ _ (by decide), hk.rbx]
-  refine copy32_ok (src := .r15) (dst := .rbx) (by decide) (by decide) H.stream.buf H.P.N (H.D / 4) _ s₁ _
-    (fun j hj => by
+  refine copyW_ok (src := .r15) (dst := .rbx) (by decide) (by decide) H.stream.buf H.P.N H.D hD4 _ s₁ _
+    (fun a w hw h => by
       rw [r15, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]
-      exact ⟨_, List.mem_append_right _ sR, Offset.contains_base _ (by omega_using [hj, hbuf, hDN]) (by omega_using [hj, hbuf, h8, hDN])⟩)
-    (fun j hj => by
+      exact ⟨_, List.mem_append_right _ sR, Offset.contains_base _ (by omega_using [h, hbuf, hDN]) (by omega_using [hw, h, hbuf, h8, hDN])⟩)
+    (fun a w _ h => by
       rw [rbx, add_ofNat, wr₁, hk.wr]
-      exact ⟨_, iR, Offset.contains_base _ (by omega_using [hj, hS, hDL]) (by omega_using [hj, hB, hNL, hDL])⟩)
+      exact ⟨_, iR, Offset.contains_base _ (by omega_using [h, hS, hDL]) (by omega_using [h, hB, hNL, hDL])⟩)
     (by
-      rw [r15, rbx, eD]
+      rw [r15, rbx]
       exact hp.i_s.symm.sep (Offset.contains_base _ (by omega_using [hDN, hbuf]) (by omega_using [hbuf, h8, hDN, hD0]))
         (Offset.contains_base _ (by omega_using [hS, hDL]) (by omega_using [hB, hNL])))
     (by omega_using [hB, hDL]) fun s₂ g₂ rd₂ wr₂ m₂ => ?_
-  rw [r15, rbx, eD] at m₂
+  rw [r15, rbx] at m₂
   simp only [List.cons_append, List.nil_append]
   refine wp_mov fun s₃ u₃ _ _ => wp_addi fun s₄ u₄ => ?_
   have rbp₄ : s₄.gpr .rbp = blk H s₀ := by
     rw [u₄.gpr, u₃.gpr, g₂ _ (by decide), rbx, sx_ofNat (by omega_using [hB, hNL])]
   have G₄ : ∀ r, r ≠ .rax → r ≠ .rbp → s₄.gpr r = s₁.gpr r := fun r h1 h2 => by
     rw [u₄.other r h2, u₃.other r h2, g₂ r h1]
-  refine padLen_ok hH.shape (hH.lenOk _ (by omega_using [hB, hDL])) hD4 hL4 hB4 (by omega_using [hDL]) hB (s := s₄) rbp₄
-    (by rw [G₄ _ (by decide) (by decide), rbx, add_ofNat,
-      show H.P.N + (H.P.B - H.P.L) = H.P.N + H.P.B - H.P.L by omega_using [hDL]])
+  have hB16 : H.P.B % 16 = 0 := by rcases hH.dims.B with h | h <;> omega_using [h]
+  refine padW_ok hH.shape (hH.lenOk _ (by omega_using [hB, hDL])) hD4 hB16 hH.dims.L hH.hPad hB (s := s₄) rbp₄
     (fun a n h' => by
       rw [u₄.wr, u₃.wr, wr₂, wr₁, hk.wr, add_ofNat]
       exact ⟨_, iR, Offset.contains_base _ (by omega_using [h', hS]) (by omega_using [h', hB, hNL])⟩) fun s₅ g₅ rd₅ wr₅ f₅ p₅ d₅ => ?_
@@ -322,19 +320,19 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (hbp : s.gpr .rbp = blk H s₀) :
     have b₁ : bytesAt s₁.mem (blk H s₀) H.D = (hH.md.digest (hH.md.stateAt s.mem (inn s₀))).take H.D := by
       rw [bytesAt_take _ _ (Nat.le_of_lt hDN'), m₁, bytesAt_writeBytes_self' hdl (by omega_using [hSB])]
     have rbp₁ : s₁.gpr .rbp = blk H s₀ := by rw [g₁ _ (by decide), hbp]
-    refine copy32_ok (src := .rbp) (dst := .r13) (by decide) (by decide) 0 0 (H.D / 4) _ s₁ _
-      (fun j hj => by
+    refine copyW_ok (src := .rbp) (dst := .r13) (by decide) (by decide) 0 0 H.D hD4 _ s₁ _
+      (fun a w hw h => by
         rw [rbp₁, add_ofNat, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]
-        exact ⟨_, List.mem_append_right _ iR, Offset.contains_base _ (by omega_using [hj, hS, hDL]) (by omega_using [hj, hB, hNL, hDL])⟩)
-      (fun j hj => by
+        exact ⟨_, List.mem_append_right _ iR, Offset.contains_base _ (by omega_using [h, hS, hDL]) (by omega_using [hw, h, hB, hNL, hDL])⟩)
+      (fun a w hw h => by
         rw [k₁.r13, add_ofNat, k₁.wr]
-        exact ⟨_, pR, Offset.contains_base _ (by show 0 + 4 * j + 4 ≤ H.D; omega_using [hj]) (by omega_using [hj, hB, hDL])⟩)
+        exact ⟨_, pR, Offset.contains_base _ (by show 0 + a + w ≤ H.D; omega_using [h]) (by omega_using [hw, h, hB, hDL])⟩)
       (by
-        rw [rbp₁, k₁.r13, eD, add_ofNat]
+        rw [rbp₁, k₁.r13, add_ofNat]
         exact hp.i_p.sep (Offset.contains_base _ (by omega_using [hS, hDL]) (by omega_using [hB, hNL]))
           (Offset.contains_base _ (by show 0 + H.D ≤ H.D; omega_using []) (by omega_using [])))
       (by omega_using [hB, hDL]) fun s₂ g₂ rd₂ wr₂ m₂ => ?_
-    rw [rbp₁, k₁.r13, eD, z, z] at m₂
+    rw [rbp₁, k₁.r13, z, z] at m₂
     refine fin s₂ (k₁.keep rd₂ wr₂ (fun r hr => g₂ r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> decide))

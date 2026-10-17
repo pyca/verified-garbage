@@ -72,6 +72,9 @@ structure HashOK (H : Hash) where
   hDL : H.D + H.P.L + 4 ≤ H.P.B
   hL4 : H.P.L % 4 = 0
   hNL : H.P.N + H.P.L ≤ H.P.B
+  /-- The outer block's padding has room for its 16-byte words after `0x80`
+  (`Hash.padA`, `Hash.padW`). -/
+  hPad : 16 * (H.D / 16 + 1) + 16 ≤ H.P.B
   hso : H.P.so % 8 = 0 ∧ H.P.so + 48 ≤ 8 * 256
   /-- The working space our functions get holds `iterate`'s. -/
   fits : H.P.so + 48 + H.P.N + H.P.B ≤ 8 * H.W

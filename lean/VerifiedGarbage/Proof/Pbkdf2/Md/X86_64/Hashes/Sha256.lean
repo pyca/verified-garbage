@@ -155,6 +155,7 @@ def ok : HashOK (hash v) where
   hDL := by simp only [hash] <;> decide
   hL4 := by simp only [hash] <;> decide
   hNL := by simp only [hash] <;> decide
+  hPad := by simp only [hash] <;> decide
   hso := by simp only [hash] <;> decide
   fits := by simp only [hash] <;> decide
   hW := by simp only [hash] <;> decide
