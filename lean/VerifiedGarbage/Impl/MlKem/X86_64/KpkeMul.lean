@@ -67,6 +67,12 @@ structure Bodies where
   /-- The accumulator at `rdi` of `f = rsi ×_T g = rdx`, with what `mulAcc`
   has. -/
   mulSet : Prog isa
+  /-- A row of `keygen_mul` of its own, if the backend has one: given `k`,
+  the polynomial at `rdi` plus the sum of the `k` products of the
+  polynomials from `rsi` and from `rdx` (1024 bytes apart), with what `tab`
+  left at `rcx + 3328`; without one, the row goes through the accumulator
+  (`mulSet`, `mulAcc`, `fin`). -/
+  kgRow : Option (Nat → Prog isa)
 
 /-- `vg_mlkem_ntt`'s code, storing to `r10`. -/
 def nttOB : Prog isa :=
@@ -98,9 +104,9 @@ def mulAccB (o : Nat) : Prog isa :=
 /-- `vg_mlkem_ntt_avx2`'s code, storing to `r10`. -/
 def nttOBY : Prog isa := nttR NttR.passBsR10
 
-def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB, X86_64.add, mulB⟩
+def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB, X86_64.add, mulB, none⟩
 
-def Bodies.avx2 : Bodies := ⟨nttOBY, nttInvAccY, zeroAccY, tabAccY, fun _ => mulAccY, finAccY, mulSetY⟩
+def Bodies.avx2 : Bodies := ⟨nttOBY, nttInvAccY, zeroAccY, tabAccY, fun _ => mulAccY, finAccY, mulSetY, some rowY⟩
 
 namespace KpkeMul
 
@@ -204,6 +210,21 @@ def rowK (B : Bodies) (k : Nat) : Prog isa :=
       (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
         .alu .sub .r14 (.imm 1)])))
 
+/-- Row `i` with the backend's own row `r`: `t[i]` (at `r15`) plus the
+products of row `i` of `Â` (at `r13`) and `ŝ` (at `r12`); then the next
+`i`. -/
+def rowKR (r : Nat → Prog isa) (k : Nat) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .r13), .mov .rdx (.reg .r12), .mov .rcx (.reg .rbx)])
+    (.seq (r k) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
+      .alu .sub .r14 (.imm 1)]))
+
+/-- Row `i` of `keygen_mul`: the backend's own row, or through the
+accumulator. -/
+def rowOf (B : Bodies) (k : Nat) : Prog isa :=
+  match B.kgRow with
+  | some r => rowKR r k
+  | none => rowK B k
+
 /-- Between the loops: `ŝ` at `r12` and `t` at `r15` again, the accumulator
 at `rbp = scratch + 1024`, and the table of the products. -/
 def midK (B : Bodies) (k : Nat) : List Instr :=
@@ -218,7 +239,7 @@ open KpkeMul in
 def keygenMul (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov .r15 (.reg .rcx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop (rowK B k) .ne))))
+    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop (rowOf B k) .ne))))
     (.block restore))
 
 open KpkeMul in

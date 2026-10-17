@@ -596,11 +596,25 @@ theorem rowStep_ok {i : Nat} (hi : i < k) {s : State} (hI : RInv k s₀ R T i s)
 
 end
 
+/-- A row of `B`'s `keygen_mul`, for the representations `R` and `T` of its
+bodies: from `RInv i` to `RInv (i + 1)`, counting `r14` down. -/
+def RowOk (B : Bodies) (R : AccRep) (T : TabRep) : Prop :=
+  ∀ {k : Nat} {s₀ : State}, (kgMulK k).pre s₀ → k ≤ 4 → ∀ {i : Nat}, i < k → ∀ {s : State}, RInv k s₀ R T i s →
+    WP isa (KpkeMul.rowOf B k) s fun s' => RInv k s₀ R T (i + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
+      s'.zf = some (s.gpr .r14 - 1 == 0)
+
+/-- A backend without a row of its own: its row through the accumulator. -/
+theorem RowOk.ofAcc {B : Bodies} {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) (hn : B.kgRow = none) :
+    RowOk B R T := fun hp hk _ hi _ hI => by
+  unfold KpkeMul.rowOf
+  rw [hn]
+  exact rowStep_ok hp hk hB hi hI
+
 /-! ## The whole function -/
 
 /-- The code inside the MXCSR region. -/
 abbrev inner (B : Bodies) (k : Nat) : Prog isa :=
-  .seq (.loop (KpkeMul.nttK B) .ne) (.seq (.block (KpkeMul.midK B k)) (.loop (KpkeMul.rowK B k) .ne))
+  .seq (.loop (KpkeMul.nttK B) .ne) (.seq (.block (KpkeMul.midK B k)) (.loop (KpkeMul.rowOf B k) .ne))
 
 theorem tgt_eq (m : Mem) (aP : Addr) {k i : Nat} (hi : i < k) (v w : List Poly) (hw : w.length = k) :
     (addVec (mulMatVec (matAt m aP k) v) w).getD i zero =
@@ -679,7 +693,7 @@ variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) (hk : k ≤ 4) {B :
   (hB : BodiesOk B R T)
 include hp hk hB
 
-theorem wp_all (hk0 : 0 < k)
+theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (inner B k) = true) :
     WP isa (keygenMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (kgMulK k).post s₀ s' := by
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
@@ -735,7 +749,7 @@ theorem wp_all (hk0 : 0 < k)
       (by rw [k2.gpr (by decide), h114]))
     refine WP.seq (WP.mono (mid_ok hp hk hB (R := R) (T := T) hN) fun u2 ⟨hR0, h14⟩ => ?_)
     exact wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (RInv k s₀ R T)
-      (fun i hi u hR _ => rowStep_ok hp hk hB hi hR) (fun u hR => ⟨hR.toBase, hR.shat, hR.tdone⟩) hR0 h14
+      (fun i hi u hR _ => hrow hp hk hi hR) (fun u hR => ⟨hR.toBase, hR.shat, hR.tdone⟩) hR0 h14
   · -- the epilogue
     have h5bx : s5.gpr .rbx = cP s₀ := by rw [k5.gpr (by decide), hb4.rbx]
     have hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem s5.mem :=
