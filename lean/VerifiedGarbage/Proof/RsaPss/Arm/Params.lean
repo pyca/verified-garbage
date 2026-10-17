@@ -53,6 +53,12 @@ theorem loW_byte (b : Byte) : loW (b.setWidth 32) = BitVec.ofNat 32 (if b.toNat 
   rw [setWidth_byte, (params_table b.toNat b.isLt).1]
   split <;> rfl
 
+theorem dbW_byte (K D : Nat) (b : Byte) :
+    dbW K D (b.setWidth 32) = BitVec.ofNat 32 K - BitVec.ofNat 32 (if b.toNat ≤ 1 then 1 else 0) -
+      BitVec.ofNat 32 (D + 1) := by
+  show BitVec.ofNat 32 K - loW (b.setWidth 32) - _ = _
+  rw [loW_byte]
+
 /-- The mask of a byte not zero: the specification's `0xFF >>> z`. -/
 theorem cW_byte {b : Byte} (h0 : b ≠ 0) (rest : List Byte) :
     (cW (b.setWidth 32)).setWidth 8 =

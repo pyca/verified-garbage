@@ -116,12 +116,6 @@ abbrev C1 (P : EP) (σ s : State) : Prop :=
 theorem par_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r1, .r2, .r11, .r12])
     (.block (params ++ saltFits)) hc).isSome = true := ⟨_, by taint_decide⟩
 
-theorem dbW_byte (K D : Nat) (b : Byte) :
-    dbW K D (b.setWidth 32) = BitVec.ofNat 32 K - BitVec.ofNat 32 (if b.toNat ≤ 1 then 1 else 0) -
-      BitVec.ofNat 32 (D + 1) := by
-  show BitVec.ofNat 32 K - loW (b.setWidth 32) - _ = _
-  rw [loW_byte]
-
 /-- The modulus' first byte, in a state of the body. -/
 theorem n0_at {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) :
     s.mem (State.addr P.n) = n0 P ∧ InRegions (s.rd ++ s.wr) (State.addr P.n) 1 := by
