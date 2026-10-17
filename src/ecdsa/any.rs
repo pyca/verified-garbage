@@ -23,35 +23,35 @@ use crate::zeroize::zeroize;
 /// A hash function and its number, as the verified functions take it
 /// (`VG.Spec.HashId.hmac`).
 pub(super) trait Id: HashFunction {
-    const ID: u32;
+    const ID: usize;
 }
 
 impl Id for Sha1 {
-    const ID: u32 = 1;
+    const ID: usize = 1;
 }
 
 impl Id for Sha224 {
-    const ID: u32 = 2;
+    const ID: usize = 2;
 }
 
 impl Id for Sha256 {
-    const ID: u32 = 3;
+    const ID: usize = 3;
 }
 
 impl Id for Sha384 {
-    const ID: u32 = 4;
+    const ID: usize = 4;
 }
 
 impl Id for Sha512 {
-    const ID: u32 = 5;
+    const ID: usize = 5;
 }
 
 impl Id for Sha512_224 {
-    const ID: u32 = 6;
+    const ID: usize = 6;
 }
 
 impl Id for Sha512_256 {
-    const ID: u32 = 7;
+    const ID: usize = 7;
 }
 
 /// A verified `vg_ecdsa_<curve>_rfc6979_sign`, for scalars of `Q` bytes and
@@ -62,7 +62,7 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" 
     *const u8,
     usize,
     *mut [u64; 1024],
-    u32,
+    usize,
 ) -> u32;
 
 /// The signature `r ‖ s` of `digest`, a hash with `H`, with the key `d`, by

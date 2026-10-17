@@ -47,7 +47,7 @@ def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.I
     let scratch : Region := ⟨s.gpr .r8, 8192⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 S, S⟩
-    (s.gpr .r9).setWidth 32 = BitVec.ofNat 32 k ∧
+    s.gpr .r9 = BitVec.ofNat 64 k ∧
     S ≤ (s.gpr .rsp).toNat ∧ s.rd = [d, digest] ++ Abi.constRegions (fun n => s.syms n) cs ∧
       s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧

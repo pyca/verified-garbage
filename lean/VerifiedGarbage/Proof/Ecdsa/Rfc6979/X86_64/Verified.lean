@@ -135,17 +135,6 @@ theorem noSp_of_ns (i : Instr) (h : (!Taint.clobbers i .rsp) = true) : (!isa.wri
   | pop r k => simp [Taint.clobbers] at h
   | _ => first | rfl | (simp only [Taint.clobbers, Taint.dstOf] at h; simp only [Instr.dst]; exact h)
 
-/-- A dispatch: its tests and its cases. -/
-theorem chain_allInstrs {p : Instr → Bool}
-    (ht : ∀ k, (Code.block (Impl.Dispatch.X86_64.test k) : Prog isa).allInstrs p = true) :
-    ∀ cs : List (Nat × Prog isa), (∀ c ∈ cs, c.2.allInstrs p = true) →
-      (Impl.Dispatch.X86_64.chain cs).allInstrs p = true
-  | [], _ => rfl
-  | [(_, _)], h => h _ (List.mem_singleton_self _)
-  | (k, _) :: c' :: cs, h =>
-    ai_seq (ht k) (ai_ite (h _ List.mem_cons_self)
-      (chain_allInstrs ht (c' :: cs) fun d hd => h d (List.mem_cons_of_mem _ hd)))
-
 /-- The cases of a dispatch on the hash function, each the code `f` makes
 of a hash function of the tier. -/
 theorem cases_all {T : Tier} {α : Type} {g : α → Prog isa} {f : Impl.Pbkdf2.Md.X86_64.Hash → α}
@@ -206,7 +195,7 @@ theorem sign_allInstrs (R : RfcCurve) (T : Tier) (tries : Nat) {p : Instr → Bo
   have callH : ∀ (f : Impl.Pbkdf2.Md.X86_64.Hash → String × Prog isa),
       (∀ k v, k ∈ Spec.Ecdsa.Rfc6979.hashIds → T.hashes[k]? = some v → (f v.H).2.allInstrs p = true) →
       ((cfgRT R T tries).callH f).allInstrs p = true := fun f h =>
-    chain_allInstrs hG.test _ (cases_all (g := fun x : String × Prog isa => Code.call x.1 x.2) h)
+    Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : String × Prog isa => Code.call x.1 x.2) h)
   have hmac : ∀ dataA e dst, (Code.block (Cfg.hmacArgs₂ dataA e) : Prog isa).allInstrs p = true →
       ((cfgRT R T tries).hmac dataA e dst).allInstrs p = true := fun _ e dst h₂ =>
     ai_seq hG.a₁ (ai_seq (callH _ fun k v hk hv => (hI.hash k v hk hv).1) (ai_seq h₂
@@ -228,11 +217,11 @@ theorem sign_allInstrs (R : RfcCurve) (T : Tier) (tries : Nat) {p : Instr → Bo
     · exact hG.zero₁
     · exact hG.zero₀
   have prep : (cfgRT R T tries).prep.allInstrs p = true :=
-    ai_seq zero (ai_seq (chain_allInstrs hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
+    ai_seq zero (ai_seq (Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
       (f := fun H => (cfgRT R T tries).prepCase H.D) fun k v hk hv => ai_block (hcv.1 _ (dims_mem' hv hk)))) (ai_block hcv.2.1))
   have tryOne : (cfgRT R T tries).tryOne.allInstrs p = true :=
     ai_seq cand (ai_seq hG.args (ai_seq hI.core (ai_seq hG.go (ai_ite (ai_seq rekey hG.again) hG.stop))))
-  exact ai_seq hG.entry (ai_seq (chain_allInstrs hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
+  exact ai_seq hG.entry (ai_seq (Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
     (f := fun H => Cfg.sizes H.D H.P.B) fun _ _ _ _ => hG.sizes _ _)) (ai_frame hG.push (ai_seq hG.dg (ai_seq prep (ai_seq hG.kv
       (ai_seq (rekeyF 0 hcv.2.2.2.1) (ai_seq (rekeyF 1 hcv.2.2.2.2.1) (ai_seq (hG.cnt _)
         (ai_seq tryOne hG.wipe))))))) hG.pop))
@@ -343,7 +332,7 @@ theorem ct (k : Nat) (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) :
   sign_ct (P := A.hashAt k hk)
 
 /-- The hash function of a call: `hash`'s 32 bits. -/
-abbrev hashOf (s : State) : Nat := ((s.gpr .r9).setWidth 32).toNat
+abbrev hashOf (s : State) : Nat := (s.gpr .r9).toNat
 
 /-- `anyResult` is, for the hash function `k`, the instance's result. -/
 theorem anyResult_eq {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) (m : Mem) (d dg : Addr) :
@@ -385,7 +374,7 @@ theorem any_len (hcs : TblShape A.R.E.combConsts) {s : State} (h : A.contract.pr
   rw [hks] at hl
   exact A.digestLen hk hl
 
-theorem r9_eq {s : State} {k : Nat} (hks : hashOf s = k) : (s.gpr .r9).setWidth 32 = BitVec.ofNat 32 k := by
+theorem r9_eq {s : State} {k : Nat} (hks : hashOf s = k) : s.gpr .r9 = BitVec.ofNat 64 k := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, ← hks]
   exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm
@@ -431,7 +420,7 @@ theorem any_post (hcs : TblShape A.R.E.combConsts) {s s' : State} {k : Nat}
   rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] <;>
     sig_post [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
       X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] <;>
-    rw [show ((s.gpr .r9).setWidth 32).toNat = k from hks, hD, A.anyResult_eq hk] <;>
+    rw [show (s.gpr .r9).toNat = k from hks, hD, A.anyResult_eq hk] <;>
     generalize result (A.hashAt k hk).I s.mem (s.gpr .rsi) (s.gpr .rdx) = r <;>
     obtain ⟨o, c⟩ := r <;> cases o <;> exact id
 
@@ -439,12 +428,12 @@ theorem any_res {s₁ s₂ : State} {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.has
     (hk₂ : hashOf s₂ = k) (hD₁ : (s₁.gpr .rcx).toNat = (A.hashAt k hk).H.D)
     (hD₂ : (s₂.gpr .rcx).toNat = (A.hashAt k hk).H.D)
     (hl : [(Option.map (fun x => x.snd) (A.I0.anyResult s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx) (s₁.gpr .rcx).toNat
-        ((s₁.gpr .r9).setWidth 32).toNat)).getD 0] =
+        (s₁.gpr .r9).toNat)).getD 0] =
       [(Option.map (fun x => x.snd) (A.I0.anyResult s₂.mem (s₂.gpr .rsi) (s₂.gpr .rdx) (s₂.gpr .rcx).toNat
-        ((s₂.gpr .r9).setWidth 32).toNat)).getD 0]) :
+        (s₂.gpr .r9).toNat)).getD 0]) :
     (result (A.hashAt k hk).I s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 =
       (result (A.hashAt k hk).I s₂.mem (s₂.gpr .rsi) (s₂.gpr .rdx)).2 := by
-  rw [show ((s₁.gpr .r9).setWidth 32).toNat = k from hk₁, show ((s₂.gpr .r9).setWidth 32).toNat = k from hk₂,
+  rw [show (s₁.gpr .r9).toNat = k from hk₁, show (s₂.gpr .r9).toNat = k from hk₂,
     hD₁, hD₂, A.anyResult_eq hk, A.anyResult_eq hk] at hl
   exact (List.cons.inj hl).1
 
@@ -460,11 +449,11 @@ theorem any_pub (hcs : TblShape A.R.E.combConsts) {s₁ s₂ : State} (h₁ : A.
     sig_pub [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
       X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at hp
   · obtain ⟨hsp, hl, hdi, hsi, hdx, -, h8, h9⟩ := hp
-    have hks : hashOf s₂ = hashOf s₁ := by show ((s₂.gpr .r9).setWidth 32).toNat = _; rw [← h9]
+    have hks : hashOf s₂ = hashOf s₁ := by show (s₂.gpr .r9).toNat = _; rw [← h9]
     exact ⟨hk, p₁, A.any_pre hcs hk hks h₂, hsp, hdi, hsi, hdx, h8,
       A.any_res hk rfl hks hD₁ (A.any_len hcs h₂ hk hks) hl, fun c hc => by rw [h0] at hc; cases hc⟩
   · obtain ⟨hsp, hsy, hl, hdi, hsi, hdx, -, h8, h9⟩ := hp
-    have hks : hashOf s₂ = hashOf s₁ := by show ((s₂.gpr .r9).setWidth 32).toNat = _; rw [← h9]
+    have hks : hashOf s₂ = hashOf s₁ := by show (s₂.gpr .r9).toNat = _; rw [← h9]
     refine ⟨hk, p₁, A.any_pre hcs hk hks h₂, hsp, hdi, hsi, hdx, h8,
       A.any_res hk rfl hks hD₁ (A.any_len hcs h₂ hk hks) hl, fun c hc => ?_⟩
     rw [h0] at hc
@@ -476,8 +465,8 @@ theorem any_pre_of (hcs : TblShape A.R.E.combConsts) {s : State} {k : Nat} (hk :
     (hD : (s.gpr .rcx).toNat = (A.hashAt k hk).H.D) (h : (A.K k hk).pre s) : A.contract.pre s := by
   have hsc := A.scratch
   have hks : hashOf s = k := by
-    have h9 : (s.gpr .r9).setWidth 32 = BitVec.ofNat 32 k := h.1
-    show ((s.gpr .r9).setWidth 32).toNat = k
+    have h9 : s.gpr .r9 = BitVec.ofNat 64 k := h.1
+    show (s.gpr .r9).toNat = k
     rw [h9, BitVec.toNat_ofNat]
     exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (hashIds_lt hk) (by decide))
   have hl : ∀ H, Spec.HashId.mgf1 k = some H → (A.hashAt k hk).H.D = H.len := fun H hH => by
@@ -487,7 +476,7 @@ theorem any_pre_of (hcs : TblShape A.R.E.combConsts) {s : State} {k : Nat} (hk :
   unfold RfcAny.contract
   obtain ⟨-, hsp, hrd, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, held, ht⟩ := h
   rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] at hrd held ht ⊢ <;> any_eval <;>
-    simp only [hsc, Nat.reduceMul, hD, show ((s.gpr .r9).setWidth 32).toNat = k from hks]
+    simp only [hsc, Nat.reduceMul, hD, show (s.gpr .r9).toNat = k from hks]
   · refine ⟨hsp, by rw [hrd, Abi.constRegions_nil]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no,
       nd, ng, nc, hk, hl⟩
   · rw [Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single] at ht

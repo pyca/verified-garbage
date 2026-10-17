@@ -383,8 +383,8 @@ def body : Prog isa :=
 def pushRs : List Reg :=
   [.rax, .r10, .r11] ++ List.replicate extra .rax ++ [.rdi, .rsi, .rdx, .rcx] ++ List.replicate 23 .rax
 
-/-- `scratch` in `rcx`, `hash` (zero-extended from 32 bits) in `rax`. -/
-def entry : List Instr := [.mov .rcx (.reg .r8), .mov32 .rax (.reg .r9)]
+/-- `scratch` in `rcx`, `hash` in `rax`. -/
+def entry : List Instr := [.mov .rcx (.reg .r8), .mov .rax (.reg .r9)]
 
 /-- `D` in `r10` and `B` in `r11`, for a hash function of output length `D`
 and block size `B`. -/

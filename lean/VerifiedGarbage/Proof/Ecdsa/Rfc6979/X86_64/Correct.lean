@@ -391,13 +391,11 @@ def EntryBlk (k : Nat) (s s₁ : State) : Prop :=
 
 theorem entryBlk_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s) :
     WP isa (.block Cfg.entry) s (EntryBlk P.k s) := by
-  have hk32 : P.k < 2 ^ 32 := by
-    have := P.hk; simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons, List.not_mem_nil, or_false] at this; omega
-  have hr9 : (s.gpr .r9).setWidth 32 = BitVec.ofNat 32 P.k := h.1
+  have hr9 : s.gpr .r9 = BitVec.ofNat 64 P.k := h.1
   apply WP.of_runBlock
-  simp only [EntryBlk, Cfg.entry, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, State.setReg32,
-    Option.map_some, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
-    reduceCtorEq, ite_true, ite_false, hr9, zx32 hk32, Option.some.injEq, exists_eq_left']
+  simp only [EntryBlk, Cfg.entry, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    Option.map_some, RegUpd.gpr_setReg, reduceCtorEq, ite_true, ite_false, hr9, Option.some.injEq,
+    exists_eq_left']
   refine ⟨by triv, by triv, by triv, by triv, trivial, trivial, fun r h₁ h₂ => ?_⟩
   simp only [h₁, h₂, ite_false]
 
