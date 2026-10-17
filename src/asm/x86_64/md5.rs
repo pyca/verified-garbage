@@ -6,6 +6,8 @@
 ///
 /// Contract: `VG.Spec.Md5.compressContract`. Constant time: only the pointers and `n` may affect timing, not the MD buffer or the blocks.
 ///
+/// It leaves nothing secret in memory outside its buffers: once it returns, what it left in the stack below the stack pointer depends only on its public arguments and on what the caller's registers and stack held (`Artifact.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 16 bytes.

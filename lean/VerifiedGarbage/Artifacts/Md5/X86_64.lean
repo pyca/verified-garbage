@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.X86_64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Residue
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
 
 /-! # MD5 (RFC 1321) on x86-64 -/
@@ -13,7 +14,8 @@ namespace VG.Artifacts.Md5.X86_64
 def artifacts : List Artifact := [
   Spec.Md5.compressApi.artifact X86_64.target {
     code := Impl.Md5.X86_64.compress
-    verified := Proof.Md5.X86_64.Shared.compress },
+    verified := Proof.Md5.X86_64.Shared.compress
+    noResidue := true },
   Spec.Md5.initApi.artifact X86_64.target {
     code := Impl.Md5.X86_64.Stream.init
     verified := Proof.Md5.X86_64.Shared.init },
