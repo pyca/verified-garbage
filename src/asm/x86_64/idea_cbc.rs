@@ -2,21 +2,23 @@
 //! Verified `idea_cbc` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// IDEA-CBC encryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is IDEA under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them. No padding is added.
+/// IDEA-CBC encryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is IDEA under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them. No padding is added.
 ///
-/// Contract: `VG.Spec.Idea.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline x86-64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `mul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
+///
+/// The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_idea_cbc_encrypt(schedule: *const [u8; 104], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_cbc_encrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-184]
 mov r8, rsp
@@ -28,6 +30,7 @@ mov QWORD PTR [r9+128], r12
 mov QWORD PTR [r9+136], r13
 mov QWORD PTR [r9+144], r14
 mov QWORD PTR [r9+152], r15
+movq xmm15, rsi
 test rcx, rcx
 je 20f
 mov rax, QWORD PTR [rdx]
@@ -944,6 +947,9 @@ jmp 26f
 add r12, 8
 test r13, r13
 jne 24b
+movq rax, xmm15
+mov rbp, QWORD PTR [r9]
+mov QWORD PTR [rax], rbp
 jmp 23f
 22:
 23:
@@ -982,21 +988,23 @@ ret
     )
 }
 
-/// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
+/// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
-/// Contract: `VG.Spec.Idea.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline x86-64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `mul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
+///
+/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_idea_cbc_decrypt(schedule: *const [u8; 104], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_cbc_decrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-184]
 mov r8, rsp
@@ -1010,6 +1018,17 @@ mov QWORD PTR [r9+144], r14
 mov QWORD PTR [r9+152], r15
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [r9+160], rax
+test rcx, rcx
+je 20f
+mov rax, rcx
+sub rax, 1
+shl rax, 3
+add rax, rdx
+mov rbx, QWORD PTR [rax]
+mov QWORD PTR [rsi], rbx
+jmp 21f
+20:
+21:
 mov r12, rdx
 mov r13, rcx
 mov rax, QWORD PTR [rdi]
@@ -1039,26 +1058,26 @@ mov QWORD PTR [r9+96], rax
 mov rax, QWORD PTR [rdi+96]
 mov QWORD PTR [r9+104], rax
 test r13, r13
-je 20f
-22:
+je 22f
+24:
 movabs rcx, 1
 cmp r13, 1
-jb 23f
-jmp 24f
-23:
+jb 25f
+jmp 26f
+25:
 mov rcx, r13
-24:
+26:
 mov rax, r9
 add rax, 0
 mov rbx, r12
 mov r10, rcx
-25:
+27:
 mov rbp, QWORD PTR [rbx]
 mov QWORD PTR [rax], rbp
 add rax, 8
 add rbx, 8
 sub rcx, 1
-jne 25b
+jne 27b
 mov rcx, r9
 mov rdi, r9
 add rdi, 8
@@ -1923,16 +1942,16 @@ mov BYTE PTR [rsi+6], al
 mov r9, rcx
 movabs rcx, 1
 cmp r13, 1
-jb 26f
-jmp 27f
-26:
+jb 28f
+jmp 29f
+28:
 mov rcx, r13
-27:
+29:
 mov rax, r9
 add rax, 0
 mov rbx, r12
 mov r10, rcx
-28:
+210:
 mov rbp, QWORD PTR [rax]
 xor rbp, QWORD PTR [r9+160]
 mov QWORD PTR [rax], rbp
@@ -1943,13 +1962,13 @@ mov QWORD PTR [rbx], rbp
 add rax, 8
 add rbx, 8
 sub rcx, 1
-jne 28b
+jne 210b
 mov r12, rbx
 sub r13, r10
-jne 22b
-jmp 21f
-20:
-21:
+jne 24b
+jmp 23f
+22:
+23:
 mov rbx, QWORD PTR [r9+112]
 mov rbp, QWORD PTR [r9+120]
 mov r12, QWORD PTR [r9+128]
