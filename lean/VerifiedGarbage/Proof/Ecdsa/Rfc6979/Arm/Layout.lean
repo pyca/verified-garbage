@@ -355,4 +355,7 @@ theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcArm I 456)
   obtain ⟨-, -, od, og, oc, oa, dc, gc, ca, ko, kd, kg, kc, no, nd, ng, nc, hsp, hA, -⟩ := h
   exact ⟨od, og, oc, oa, dc, gc, ca, ko, kd, kg, kc, no, nd, ng, nc, hsp, hA⟩
 
+theorem lay_ok' {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} {dn : Nat} (h : (rfcArm I 456).pre s)
+    (hd : (s.gpr .r3).toNat = dn) : (lay dn I.ecdsa.curve.len s).Ok := hd ▸ lay_ok h
+
 end VG.Proof.Ecdsa.Rfc6979.Arm

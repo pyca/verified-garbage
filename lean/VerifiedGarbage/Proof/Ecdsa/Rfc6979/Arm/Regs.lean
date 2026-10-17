@@ -33,6 +33,15 @@ theorem wp_addSp {d : Reg} {imm : Nat} (h : imm < 256)
   VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d (s.sp + BitVec.ofNat 32 imm))
     (by simp only [exec, h, ↓reduceIte]) (k _ (Upd.setReg _ _ _))
 
+/-- `ldr t, [sp, #off]`. -/
+theorem wp_ldrSp {t : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
+    (ha : State.addr (s.sp + BitVec.ofNat 32 off) = a) (hin : InRegions (s.rd ++ s.wr) a 4)
+    (k : ∀ s', Upd s s' t (s.mem.readW a 32) → WP isa (.block is) s' Q) :
+    WP isa (.block (.ldrSp t off :: is)) s Q := by
+  subst ha
+  exact VG.Proof.X25519.Arm.WP.cons (s' := s.setReg t (s.mem.readW _ 32))
+    (by simp only [exec, ho, ↓reduceIte, State.load32, hin, Option.map_some]) (k _ (Upd.setReg _ _ _))
+
 end
 
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
