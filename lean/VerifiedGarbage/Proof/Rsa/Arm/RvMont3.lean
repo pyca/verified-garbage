@@ -53,10 +53,10 @@ theorem zero_of_sub {X n w b : Nat} (hX : X < 2 ^ (32 * w)) (h : X + n = n + 2 ^
   rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> omega
 
 theorem montA_vp {E : State → Prop} :
-    VP (fun σ s => E σ ∧ HI P σ P.c s) (seqs [.block ctxw, sub3 aZ aN aN, copy aOne aZ, .block (setOne aOne ++ montSet)])
+    VP (fun σ s => E σ ∧ HI P σ P.c s) montA
       (fun σ s => E σ ∧ K01 P σ s ∧ s.gpr .r0 = P.M0 ∧ s.gpr .r7 = BitVec.ofNat 32 P.w6 ∧ s.gpr .r3 = 0 ∧
         s.mem.readW (State.addr P.sp) 32 = P.M0) := by
-  simp only [seqs]
+  simp only [montA, seqs]
   let K1 := fun σ s => E σ ∧ KS P σ (Aload P σ) [aN] (AWh P σ P.c) [wR] (Vh P σ P.c) [sTc, sCnt] s ∧
     Ws s P.B P.Z P.w nArr
   let K2 := fun σ s => E σ ∧ KS P σ (upd (Aload P σ) aZ 0) [aZ, aN] (AWh P σ P.c) [wR] (Vh P σ P.c) [sTc, sCnt] s ∧

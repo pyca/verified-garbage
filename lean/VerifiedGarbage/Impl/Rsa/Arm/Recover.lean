@@ -245,11 +245,17 @@ def clrTop (j : Nat) : List Instr :=
 then the context and `[o]`'s top words cleared. -/
 def mmul (o a b : Nat) : List (Prog isa) := [.block mont0, montOp o a b, .block (ctx ++ clrTop (mBase + o))]
 
-/-- The numbers 0 (`n - n`) and 1, the working space, `n` and `R² mod n`
-(with its top words cleared); `R mod n` (from `1 · R²`) and `n - R mod n`. -/
-def mont : Prog isa := seqs ([.block ctxw, sub3 aZ aN aN, copy aOne aZ, .block (setOne aOne ++ montSet), setup,
-  .block [.ldrSp .r4 aoN, .ldrSp .r6 aoK], precompute, .block (ctx ++ clrTop mR2), copy mXm aOne,
-  seqs (mmul iXm iXm iR2), copy aO mXm, sub3 aNg aN aO])
+/-- The numbers 0 (`n - n`) and 1, and the base of the working space. -/
+def montA : Prog isa := seqs [.block ctxw, sub3 aZ aN aN, copy aOne aZ, .block (setOne aOne ++ montSet)]
+
+/-- `R² mod n` with its top words cleared; `R mod n` (from `1 · R²`) and
+`n - R mod n`. -/
+def montC : Prog isa := seqs [.block (ctx ++ clrTop mR2), copy mXm aOne, seqs (mmul iXm iXm iR2), copy aO mXm,
+  sub3 aNg aN aO]
+
+/-- The numbers 0 and 1, the working space, `n` and `R² mod n`, `R mod n`
+and `n - R mod n`. -/
+def mont : Prog isa := seqs [montA, setup, .block [.ldrSp .r4 aoN, .ldrSp .r6 aoK], precompute, montC]
 
 /-! ## A candidate -/
 
