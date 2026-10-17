@@ -28,7 +28,6 @@ open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz eval_zero eval_nonzero)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PrivChecked Two Pins two_taint two_post two_ite wp_ldrSp wp_mov)
-open VG.Proof.RsaPkcs1Sig.AArch64.Sgn (stackArgs_thirteen)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off loV maskV smear_ok emLen_ok saltFits_ok two_taintE zH)
@@ -40,7 +39,7 @@ pointers and lengths, and the bytes of `n` and `e`. -/
 structure PubS (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ argRegs, s.gpr r = a.gpr r
-  args : ∀ i < 13, stackArg s i = stackArg a i
+  args : ∀ i < 16, stackArg s i = stackArg a i
   bn : Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .x2) (a.gpr .x3).toNat
   be : Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .x4) (a.gpr .x5).toNat
 
@@ -51,21 +50,23 @@ theorem leak_eq2 {a b a' b' : List Byte} (ha : a.length = a'.length)
     (h : (a ++ b).map (·.toNat) = (a' ++ b').map (·.toNat)) : a = a' ∧ b = b' :=
   List.append_inj ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h) ha
 
-theorem pubS_of (G : Spec.Mgf1.Hash) {S : Nat} {s₁ s₂ : State} (h : (Spec.RsaPss.signContract G G abi S).pub s₁ s₂) :
+theorem pubS_of {S : Nat} {s₁ s₂ : State} (h : (Spec.RsaPss.signAnyContract abi S).pub s₁ s₂) :
     PubS s₁ s₂ := by
-  sig_pub [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen,
+  sig_pub [Spec.RsaPss.signAnyContract, Spec.RsaPss.signAnySig, abi, argRegs, stackArgs_sixteen,
     List.append_eq] at h
   simp only [List.getD_cons_succ] at h
-  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := h
+  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
+    a14, a15⟩ := h
   obtain ⟨hn, he⟩ := leak_eq2 (by rw [bytesAt_length, bytesAt_length, h3]) hl
   refine ⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, hn.symm, he.symm⟩
   · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm]
   · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
-      i = 10 ∨ i = 11 ∨ i = 12) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm,
-      a10.symm, a11.symm, a12.symm]
+      a10.symm, a11.symm, a12.symm, a13.symm, a14.symm, a15.symm]
 
 /-- An entry state with the anchor's public data. -/
 def E (D K : Nat) (a s : State) : Prop := PreS D K s ∧ PubS a s
@@ -90,7 +91,7 @@ theorem n0 : s.mem (s.gpr .x2) = a.mem (a.gpr .x2) := by
     bytesAt_cons a.mem (a.gpr .x2) (k := (a.gpr .x3).toNat) (by rw [← e3]; omega)] at this
   exact (List.cons.inj this).1
 
-theorem scr : scr s = scr a := h.2.args 11 (by decide)
+theorem scr : scr s = scr a := h.2.args 12 (by decide)
 
 end E
 
@@ -114,16 +115,19 @@ structure AtE (D : Nat) (s u : State) : Prop where
   x9 : u.gpr .x9 = BitVec.ofNat 64 ((s.gpr .x3).toNat - loV (nx s))
   x10 : (u.gpr .x10 != 0) = decide ((s.gpr .x3).toNat - loV (nx s) < D + 2)
 
-theorem chk1_ok (H : Hash) (hD : H.D + 2 < 4096) {K : Nat} {s u : State} (hp : PreS H.D K s) (hu : AtChk s u)
+theorem chk1_ok {D : Nat} (hD : D + 2 < 4096) {K : Nat} {s u : State} (hp : PreS D K s) (hu : AtChk s u)
     (h0 : nx s ≠ 0) :
-    WP isa (.seq (.block smear) (emLen H)) u (AtE H.D s) := by
+    WP isa (.seq (.block smear) emLen) u (AtE D s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have Mu : Mid s u := ⟨hu.sp, hu.rd, hu.wr, hu.v, hu.fr⟩
   have hx10 : u.gpr .x10 = BitVec.ofNat 64 (nx s) := by rw [hu.x10, setWidth_byte]
   have hn₀ := (s.mem (s.gpr .x2)).isLt
   refine WP.seq (WP.mono (smear_ok u (x := nx s) hn₀ h0 hx10) fun u₁ ⟨O₁, h11⟩ => ?_)
-  refine WP.mono (emLen_ok H hD (F := fb s) (by rw [O₁.sp, hu.sp]) hn₀ h0
+  refine WP.mono (emLen_ok hD (F := fb s) (by rw [O₁.sp, hu.sp]) hn₀ h0
     (by rw [O₁.wr, hu.wr]; exact in_frame s _ (by decide)) (by rw [O₁.wr, hu.wr]; exact in_frame s _ (by decide))
+    (by rw [O₁.rd, O₁.wr, hu.rd, hu.wr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide)
+      (by decide))))
+    (by rw [O₁.mem, hu.fr.hl, ← hp.dl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
     (k := (s.gpr .x3).toNat) (by rw [O₁.get .x23, hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega)
     (by omega) h11) fun u₂ ⟨K₂, m₂, x9₂, x10₂⟩ => ?_
   have hm₂ : u₂.mem = (u.mem.writeW (fb s + BitVec.ofNat 64 sC) (maskV (nx s))).writeW (fb s + BitVec.ofNat 64 sLo)
@@ -151,18 +155,21 @@ structure AtS (D : Nat) (s w : State) : Prop where
   m : AtMain D s (loV (nx s)) ((maskV (nx s)).setWidth 8) w
   h0 : nx s ≠ 0
   hk : ¬ (s.gpr .x3).toNat - loV (nx s) < D + 2
-  x10 : (w.gpr .x10 != 0) = decide ((s.gpr .x3).toNat - loV (nx s) - (D + 2) < (stackArg s 10).toNat)
+  x10 : (w.gpr .x10 != 0) = decide ((s.gpr .x3).toNat - loV (nx s) - (D + 2) < (stackArg s 11).toNat)
 
-theorem chk2_ok (H : Hash) (hD : H.D + 2 < 4096) {K : Nat} {s u : State} (hp : PreS H.D K s) (hu : AtE H.D s u)
-    (hk : ¬ (s.gpr .x3).toNat - loV (nx s) < H.D + 2) :
-    WP isa (.block ([ld .x12 sSaltLen] ++ saltFits H)) u (AtS H.D s) := by
+theorem chk2_ok {D : Nat} (hD : D + 2 < 4096) {K : Nat} {s u : State} (hp : PreS D K s) (hu : AtE D s u)
+    (hk : ¬ (s.gpr .x3).toNat - loV (nx s) < D + 2) :
+    WP isa (.block ([ld .x12 sSaltLen] ++ saltFits)) u (AtS D s) := by
   have hk2 := hp.k2
   have hn₀ := (s.mem (s.gpr .x2)).isLt
-  refine WP.mono (saltFits_ok H hD (F := fb s) hu.m.sp
+  refine WP.mono (saltFits_ok hD (F := fb s) hu.m.sp
     (by rw [hu.m.rd, hu.m.wr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide)
       (by decide))))
-    (a := (s.gpr .x3).toNat - loV (nx s)) (sl := (stackArg s 10).toNat) (by omega) (by omega) hu.x9
-    (by rw [hu.m.fr.sl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (stackArg s 10).isLt)
+    (by rw [hu.m.rd, hu.m.wr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide)
+      (by decide))))
+    (by rw [hu.m.fr.hl, ← hp.dl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    (a := (s.gpr .x3).toNat - loV (nx s)) (sl := (stackArg s 11).toNat) (by omega) (by omega) hu.x9
+    (by rw [hu.m.fr.sl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (stackArg s 11).isLt)
     fun u₃ ⟨O₃, x9₃, x10₃⟩ => ⟨{
       sp := O₃.sp.trans hu.m.sp
       rd := O₃.rd.trans hu.m.rd
