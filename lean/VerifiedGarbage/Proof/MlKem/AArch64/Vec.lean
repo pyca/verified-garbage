@@ -368,7 +368,7 @@ end
 
 /-- Whether an instruction writes a vector register. -/
 def writesV : Instr → Bool
-  | .vop _ | .ldrq .. => true
+  | .vop _ | .ldrq .. | .ldrqTbl .. => true
   | _ => false
 
 theorem exec_v {i : Instr} (hi : writesV i = false) {s s' : State} (h : exec i s = some s') :

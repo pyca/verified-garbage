@@ -198,6 +198,7 @@ def Instr.asm : Instr → List String
   | .ldrSp t off => [s!"ldr {t.name .x}, [sp, #{off}]"]
   | .vop op => [op.asm]
   | .ldrq t n off => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
+  | .ldrqTbl t n off .. => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
@@ -216,6 +217,9 @@ def printer : Printer isa where
     | .adrSym d name => some [.sym s!"adrp {d.name .x}, " .page name,
         .sym s!"add {d.name .x}, {d.name .x}, " .pageOff name]
     | _ => none
+  tables
+    | .ldrqTbl _ _ _ name ws => [(name, ws)]
+    | _ => []
   -- LLVM's AArch64 assembler rejects, e.g., `aese` unless the `aes` extension
   -- is enabled, and a directive in a naked function stays in effect for the
   -- rest of the module, so each function disables what it enabled.

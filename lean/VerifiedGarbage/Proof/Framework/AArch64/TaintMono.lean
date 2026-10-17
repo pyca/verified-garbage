@@ -156,15 +156,18 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : taint.le τ σ = true) (hs : 
   | umov sz d n k =>
     simp only [step, Option.some.injEq] at hs; subst hs
     exact ⟨_, rfl, le_iff.mpr ⟨Taint.set_mono h.1 d (RegSet.mem_mono h.2), h.2⟩⟩
+  | ldrqTbl t n off name ws =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    exact ⟨_, rfl, le_iff.mpr ⟨h.1, setV_mono h.2 t fun _ => rfl⟩⟩
   | _ => exact ordinary hs
 
 theorem le_refl (τ : T) : taint.le τ τ = true := le_iff.mpr ⟨RegSet.subset_refl _, RegSet.subset_refl _⟩
 
-/-- What of the vector registers `F` an instruction keeps public: a `dup` all
-but its destination, a `umov` and a scalar instruction all of them, any other
+/-- What of the vector registers `F` an instruction keeps public: a `dup` and
+an `ldrqTbl` all but its destination, a `umov` and a scalar instruction all of them, any other
 instruction none. -/
 def vkeeps (F : RegSet VReg) : Instr → Bool
-  | .vop (.dup _ d _) => !F.mem d
+  | .vop (.dup _ d _) | .ldrqTbl d .. => !F.mem d
   | .umov .. => true
   | i => scalar i
 
@@ -224,6 +227,15 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keeps F i = true) (hΦF :
     simp only [Taint.keepsI, Taint.gprDst, Bool.not_eq_true'] at hg
     exact le_iff.mpr ⟨Taint.set_keeps hΦF' hΦ' hg _, hΦv⟩
   | ldrq => exact ordinary hs (none rfl)
+  | ldrqTbl t n off name ws =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    refine le_iff.mpr ⟨hΦ', ?_⟩
+    rcases hk' with h0 | hv
+    · exact vec_sub hΦF h0 _
+    · simp only [vkeeps, Bool.not_eq_true'] at hv
+      unfold setV; split
+      · exact RegSet.subset_insert_of hΦv t
+      · exact RegSet.subset_erase_of (le_iff.mp hΦF).2 hΦv hv
   | _ => exact ordinary hs (keepsAll rfl)
 
 /-- A call writes `x16`, `x17` and `x30`. -/
