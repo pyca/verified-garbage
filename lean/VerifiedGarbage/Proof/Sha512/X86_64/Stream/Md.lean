@@ -70,34 +70,19 @@ theorem lenOf_split (x : BitVec 64) :
     md.lenOf x = bytes64 true (x >>> 61) ++ bytes64 true (BitVec.ofNat 64 (8 * x.toNat)) :=
   Proof.Sha512.lenOf_split x
 
-/-- The length field: `count >> 61`, then `8 count`, big-endian. -/
+/-- The length field: `count >> 61`, then `8 count`, big-endian, built in
+`xmm7` and stored with one 16-byte store. -/
 theorem len_ok (s : State) (hout : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 176) 16) :
     WP isa (.block params.len) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (md.lenOf (s.gpr .r12)) := by
-  have h176 : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 176) 8 := by
-    obtain ⟨R, hR, hc⟩ := hout
-    exact ⟨R, hR, by unfold Region.Contains at *; omega⟩
-  have e184 : s.gpr .rbx + BitVec.ofNat 64 176 + BitVec.ofNat 64 8 = s.gpr .rbx + BitVec.ofNat 64 184 := by
-    rw [BitVec.add_assoc]; rfl
-  have h184 : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 184) 8 := by
-    rw [← e184]; exact InRegions.offset hout (by omega) (by omega)
-  show WP isa (.block (.mov .rax (.reg .r12) :: .shift .shr .rax 61 :: .bswap .rax ::
-    .store (at_ .rbx 176) .rax :: (len64 184 true ++ []))) s _
-  refine wp_mov fun s₁ u₁ _ _ => wp_shri (by decide) fun s₂ u₂ => wp_bswap fun s₃ u₃ =>
-    wp_store (a := s.gpr .rbx + BitVec.ofNat 64 176)
-      (by rw [ea_at, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), ofInt_natCast])
-      (by rw [u₃.wr, u₂.wr, u₁.wr]; exact h176) fun s₄ g₄ m₄ rd₄ wr₄ => ?_
-  have k₄ : ∀ r, r ≠ .rax → s₄.gpr r = s.gpr r := fun r h => by
-    rw [g₄, u₃.other r h, u₂.other r h, u₁.other r h]
-  have e₄ : s₄.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (bytes64 true (s.gpr .r12 >>> 61)) := by
-    rw [m₄, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr, ← writeW64 _ _ true]; rfl
-  refine len64_ok (by rw [wr₄, u₃.wr, u₂.wr, u₁.wr, k₄ _ (by decide)]; exact h184)
-    fun s' g rd wr m => WP.block_nil ⟨fun r h => by rw [g r h, k₄ r h], by rw [rd, rd₄, u₃.rd, u₂.rd, u₁.rd],
-      by rw [wr, wr₄, u₃.wr, u₂.wr, u₁.wr], ?_⟩
-  have e' : s.gpr .rbx + BitVec.ofNat 64 176 + BitVec.ofNat 64 (bytes64 true (s.gpr .r12 >>> 61)).length =
-      s.gpr .rbx + BitVec.ofNat 64 184 := by rw [bytes64_length]; exact e184
-  rw [m, e₄, k₄ _ (by decide), k₄ _ (by decide), ← e',
-    writeBytes_append _ _ _ _ (by rw [bytes64_length, bytes64_length]; decide), lenOf_split]
+  show WP isa (.block (Impl.MdStream.X86_64.lenV128 ++ ([.movdquStore (at_ .rbx 176) .xmm7] : List Instr))) s _
+  rw [WP.block_append_iff]
+  refine (lenV128_ok s).mono fun s₁ ⟨g₁, rd₁, wr₁, m₁, _, x₁⟩ => ?_
+  refine wp_movdquStore (a := s.gpr .rbx + BitVec.ofNat 64 176)
+    (by rw [ea_at, g₁ _ (by decide), ofInt_natCast]) (by rw [wr₁]; exact hout)
+    fun s₂ g₂ m₂ rd₂ wr₂ => WP.block_nil ⟨fun r h => by rw [g₂, g₁ r h], by rw [rd₂, rd₁], by rw [wr₂, wr₁], ?_⟩
+  rw [m₂, m₁, Mem.writeW, Proof.Sha256.Stream.write_eq_writeBytes, lenOf_split, ← x₁]
+  rfl
 
 theorem digest_eq (mem : Mem) (p : Addr) :
     md.digest (md.stateAt mem p) = (List.range 8).flatMap fun k =>

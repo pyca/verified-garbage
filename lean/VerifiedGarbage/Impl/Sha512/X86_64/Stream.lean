@@ -40,7 +40,7 @@ namespace VG.Impl.Sha512.X86_64.Stream
 
 open VG.X86_64
 open VG.Impl.Sha512.X86_64 (at_ compress)
-open VG.Impl.MdStream.X86_64 (Params len64 out64)
+open VG.Impl.MdStream.X86_64 (Params out64)
 
 /-- A compression function to call: its symbol and its code. -/
 structure Callee where
@@ -54,14 +54,16 @@ def Callee.shani : Callee := ⟨"vg_sha512_compress_shani", ShaNi.compress⟩
 def init (iv : Spec.Sha512.HashValue) : Prog isa :=
   .block ((List.range 8).flatMap fun k => [.movImm64 .rax iv[k]!, .store (at_ .rdi (8 * k)) .rax])
 
-/-- The sizes, the length field and the digest. -/
+/-- The sizes, the length field and the digest. The length field is built in
+`xmm7` (`lenV128`) and stored with one 16-byte store: the compression
+function loads it with one 16-byte load, which a core forwards from one
+store but not from two 8-byte ones. -/
 def params : Params where
   N := 64
   B := 128
   L := 16
   so := 1328
-  len := ([.mov .rax (.reg .r12), .shift .shr .rax 61, .bswap .rax, .store (at_ .rbx 176) .rax] : List Instr) ++
-    len64 184 true
+  len := MdStream.X86_64.lenV128 ++ ([.movdquStore (at_ .rbx 176) .xmm7] : List Instr)
   lenV := MdStream.X86_64.lenV128
   out := out64 8
 
