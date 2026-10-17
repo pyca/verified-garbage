@@ -56,11 +56,15 @@ structure Context (n m : Nat) (base : Addr) (size : Nat) (s : State) : Prop wher
   gt_one : 1 < m
   inverse : (m * w32 s.mem base invO + 1) % 2 ^ 16 = 0
 
+/-- The memory an operation on slot `o` may change: the slot, the temporary
+slot and the accumulator. -/
+abbrev opRanges (n o : Nat) : List (Nat × Nat) := [(slot n o, 8 * n), (slot n 1, 8 * n), (slot n 2, 4 * (8 * n + 2))]
+
 /-- What an operation writing slot `o` keeps: the registers but `dclob`, the
-regions, and the memory but slot `o`, the temporary slot and the accumulator. -/
+regions, and the memory but `opRanges n o`. -/
 structure OpKeep (n : Nat) (base : Addr) (o : Nat) (s t : State) : Prop where
   rest : Rest dclob s t
-  mem : Outs base [(slot n o, 8 * n), (slot n 1, 8 * n), (slot n 2, 4 * (8 * n + 2))] s.mem t.mem
+  mem : Outs base (opRanges n o) s.mem t.mem
 
 /-- The layout of an operation on slots 6 to 11. -/
 theorem context_lay {n size o a b : Nat} (hs : contextBytes n ≤ size) (h16 : contextBytes n < 2 ^ 16)
@@ -82,7 +86,7 @@ theorem context_lay {n size o a b : Nat} (hs : contextBytes n ≤ size) (h16 : c
   have e5 : slot n 6 = slot n 5 + (8 * n + 8) := by simp only [slot, stride]; omega
   constructor <;> (try simp only [accLen, digits, Impl.Mont.Arm.words, contextMod, accS, modS, tmpS, invO]) <;> omega
 
-theorem OpKeep.val32 {n o i k : Nat} {base : Addr} {s t : State} (K : OpKeep n base o s t)
+theorem slot_val32 {n o i k : Nat} {base : Addr} {s t : State} (K : Outs base (opRanges n o) s.mem t.mem)
     (hi : i < 12) (hk : k ≤ 2 * n) (hio : i ≠ o) (hi1 : i ≠ 1) (hi2 : 6 ≤ i ∨ i = 0)
     (hn : base.toNat + contextBytes n ≤ 2 ^ 32) :
     val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k := by
@@ -98,7 +102,7 @@ theorem OpKeep.val32 {n o i k : Nat} {base : Addr} {s t : State} (K : OpKeep n b
     · rw [h]
   simp only [stride] at *
   have e6 : slot n 6 = slot n 2 + 4 * (8 * n + 8) := by simp only [slot, stride]; omega
-  apply K.mem.val32
+  apply K.val32
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hi2 with hi2 | rfl
@@ -106,6 +110,12 @@ theorem OpKeep.val32 {n o i k : Nat} {base : Addr} {s t : State} (K : OpKeep n b
       rcases hr with rfl | rfl | rfl <;> omega
     · rcases hr with rfl | rfl | rfl <;> omega
   · omega
+
+theorem OpKeep.val32 {n o i k : Nat} {base : Addr} {s t : State} (K : OpKeep n base o s t)
+    (hi : i < 12) (hk : k ≤ 2 * n) (hio : i ≠ o) (hi1 : i ≠ 1) (hi2 : 6 ≤ i ∨ i = 0)
+    (hn : base.toNat + contextBytes n ≤ 2 ^ 32) :
+    val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k :=
+  slot_val32 K.mem hi hk hio hi1 hi2 hn
 
 theorem Context.keep {n size m o : Nat} {base : Addr} {s t : State} (h : Context n m base size s) (ho0 : o ≠ 0)
     (w : Ws t base size) (K : OpKeep n base o s t) : Context n m base size t := by
