@@ -212,8 +212,8 @@ theorem vladder_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} (hs : Scr s�
     simp only [X2] at this
     rw [show 32 * (3 + m) = 96 + 32 * m by omega]
     exact this
-  refine ⟨⟨by rw [g₈]; exact hs₆.rdi, by rw [k₈.wr]; exact hs₆.wr, hs.nowrap⟩, fun r hr hb => ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_⟩
+  refine LPost.of ⟨by rw [g₈]; exact hs₆.rdi, by rw [k₈.wr]; exact hs₆.wr, hs.nowrap⟩
+    (fun r hr hb => ?_) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · have h1 : r ∉ cregs := fun h => hr (by simp only [cregs, clob, List.mem_cons] at h ⊢; grind)
     have h2 : r ≠ .r11 := fun h => hr (by subst h; decide)
     have h3 : r ≠ .rax := fun h => hr (by subst h; decide)

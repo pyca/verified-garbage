@@ -346,11 +346,25 @@ def step (F : Field) : List Instr :=
   F.mul C A B ++ bitCmp ++ mux D B Z2 ++ mux X2 Z3 A ++
   F.mul X3 Z3 Z2 ++ F.sqr D D ++ subCmov Z3 C X3 ++ F.sqr X2 X2 ++ addCmov X3 C X3 ++
   F.sqr Z3 Z3 ++ subCmov C X2 D ++ F.sqr X3 X3 ++ F.a24add Z2 X2 C ++
-  F.mul X2 X2 D ++ F.mul Z3 Z3 X1 ++ F.mul Z2 C Z2 ++ [.alu .test .rbx (.reg .rbx)]
+  F.mul X2 X2 D ++ F.mul Z3 Z3 X1 ++ F.mul Z2 C Z2 ++ [.alu .cmp .rbx (.imm 3)]
 
-/-- The 255 iterations, for `t` from 254 down to 0. -/
+/-- A doubling of `(x_2, z_2)` in place: `s = x_2 + z_2`, `d = x_2 - z_2`,
+`p = s² - d²`, then `x_2 = s² d²` and `z_2 = p (s² + a24 p)`. -/
+def dbl (F : Field) : List Instr :=
+  addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ F.sqr A A ++ F.sqr B B ++ subCmov C A B ++
+  F.a24add Z2 A C ++ F.mul X2 A B ++ F.mul Z2 C Z2
+
+/-- The iterations for bits 2, 1 and 0, which clamping clears, as
+s2n-bignum's: each doubles the point the swap chooses and leaves the swap
+clear, so the point is chosen once (`mux`, ZF set if `swap = 0`) and doubled
+three times, and `swap` is cleared, which leaves `lastSwap` nothing to swap. -/
+def tail (F : Field) : List Instr :=
+  [.mov .rax (.mem (sc SWAP)), .alu .cmp .rax (.imm 0)] ++ mux X2 X3 X2 ++ mux Z2 Z3 Z2 ++
+    dbl F ++ dbl F ++ dbl F ++ [.mov32 .rax (.imm 0), .store (sc SWAP) .rax]
+
+/-- The iterations for `t` from 254 down to 3, then `tail`. -/
 def ladder (F : Field) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 255)]) (.loop (.block (step F)) .ne)
+  .seq (.block [.mov32 .rbx (.imm 255)]) (.seq (.loop (.block (step F)) .ne) (.block (tail F)))
 
 /-- `[rdi + 8 rbx + BITS + j]`: bit `j` of byte `rbx` of the scalar. -/
 def bitAt (j : Nat) : MemOp :=
