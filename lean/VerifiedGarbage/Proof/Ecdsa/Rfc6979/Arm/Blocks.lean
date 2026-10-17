@@ -291,8 +291,8 @@ theorem zeroH_ok (hL : L.Ok) {u : State} (hwr : u.wr = [L.FR, L.OUT, L.SCR]) (h1
     rw [v₂.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
 
-theorem zerosHigh_map (wide : Bool) : (Cfg.zerosHigh wide).map (fun p => Instr.str p.1 .r12 p.2) =
-    (List.range (extra wide)).map fun j => .str .r1 .r12 (fX + 4 * j) := by
+theorem zerosHigh_map (wide hHigh : Bool) : (Cfg.zerosHigh wide hHigh).map (fun p => Instr.str p.1 .r12 p.2) =
+    (List.range (extra wide hHigh)).map fun j => .str .r1 .r12 (fX + 4 * j) := by
   simp only [Cfg.zerosHigh, List.map_map]; rfl
 
 theorem saved_nodup : (Impl.Ecdsa.Rfc6979.Arm.saved.map Prod.fst).Nodup := by decide
@@ -300,7 +300,7 @@ theorem saved_nodup : (Impl.Ecdsa.Rfc6979.Arm.saved.map Prod.fst).Nodup := by de
 /-- The frame cleared, its top words too, and our caller's registers back:
 the result and `out` kept. -/
 theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.wipe L.wide)) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
+    WP isa (.block (Cfg.wipe L.wide L.hHigh)) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
       (∀ p ∈ Impl.Ecdsa.Rfc6979.Arm.saved, t'.gpr p.1 = g p.1) ∧ t'.gpr .r0 = t.gpr .r0 ∧
       Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 4 * L.e⟩] t.mem t'.mem := by
   simp only [Cfg.wipe, zeros_map, zerosHigh_map, ← L.ew, List.cons_append, List.nil_append, List.append_assoc]

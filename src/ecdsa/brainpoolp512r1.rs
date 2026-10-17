@@ -2,7 +2,7 @@
 //! (`vg_ecdsa_brainpoolp512r1_sha512_sign`, which calls `vg_ecdsa_brainpoolp512r1_sign`), public
 //! keys (`vg_ec_brainpoolp512r1_public_key`), and verification (`vg_ecdsa_brainpoolp512r1_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key;

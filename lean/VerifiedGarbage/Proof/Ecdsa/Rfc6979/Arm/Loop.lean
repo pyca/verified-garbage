@@ -97,7 +97,7 @@ theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn 
   exact List.map_congr_left fun i hi => hc.dg_byte hL (by have := List.mem_range.mp hi; omega)
 
 theorem hok_of (hk : CoreOk P L) : HOk P L :=
-  ⟨hk.2.2, by rw [hk.1], fun _ => by rw [P.len]⟩
+  ⟨hk.2.2, by rw [hk.1], fun _ => by rw [P.len], hk.e_eq⟩
 
 /-- What a candidate changes: `scratch`, the stack below the frame, `K` and
 `V`, and, if two `V`s make it, the candidate at the frame's top. -/
@@ -126,7 +126,7 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
   have hb := hL.B_fit
   cases hw : P.R.wide
   · have hLw : L.wide = false := hk.2.2.trans hw
-    have hn := hk.2.1 hLw
+    have hn := hk.2.1.1 hLw
     simp only [dgAddr, hLw, Bool.false_eq_true, ite_false]
     have hD : Region.Sub ⟨State.addr L.dg, P.Q⟩ L.DG := Region.sub_prefix hn
     rcases h with rfl | rfl | rfl | rfl | ⟨h, -⟩
