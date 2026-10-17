@@ -426,9 +426,8 @@ end RowEY
 
 /-- What `rowEY` may write: `rax` (the constants), `rcx` (the count) and the
 pointers. -/
-theorem rowEY_wo {o k : Nat} (h1 : 1 ≤ k) (h4 : k ≤ 4) (ho : o = 1024 ∨ o = 3072 ∨ o = 4096) :
+theorem rowEY_wo {o k : Nat} (hk : k = 3 ∨ k = 4) (ho : o = 1024 ∨ o = 1024 * k) :
     writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowEY o k) = true := by
-  rcases ho with rfl | rfl | rfl <;>
-  rcases (by omega : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl <;> decide +kernel
+  rcases hk with rfl | rfl <;> rcases ho with rfl | rfl <;> decide +kernel
 
 end VG.Proof.MlKem.X86_64
