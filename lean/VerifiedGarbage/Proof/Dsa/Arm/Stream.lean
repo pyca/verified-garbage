@@ -108,7 +108,8 @@ theorem val32_low_write {m : Mem} {base : Addr} {d k : Nat} (hk : 0 < k) (hn : b
   omega
 
 theorem streamStep_ok {n size m i len : Nat} {base : Addr} {s : State} {p : BitVec 32}
-    (h : Context n m base size s) (hm : 255 < m) (hi : i < len) (hlen : p.toNat + len < 2 ^ 32)
+    (h : Context n m base size s) (hm : 255 < m) (hi : i < len) (hlen : p.toNat + len ≤ 2 ^ 32)
+    (hl : len < 2 ^ 32)
     (hc : s.gpr .r11 = p + BitVec.ofNat 32 i) (he : s.gpr .lr = p + BitVec.ofNat 32 len)
     (hr : InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1)
     (hv : val32 s.mem base (slot n 9) (2 * n) < m) (hpad : val32 s.mem base (slot n 10) (2 * n) < 2 ^ 32) :
@@ -177,7 +178,7 @@ theorem streamStep_ok {n size m i len : Nat} {base : Addr} {s : State} {p : BitV
 /-- The bytes from `r11 = p` to `lr = p + len`, reduced modulo `m` into the
 result slot. -/
 theorem reduceStream_ok {n size m len : Nat} {base : Addr} {s : State} {p : BitVec 32}
-    (h : Context n m base size s) (hm : 255 < m) (hlen : p.toNat + len < 2 ^ 32)
+    (h : Context n m base size s) (hm : 255 < m) (hlen : p.toNat + len ≤ 2 ^ 32) (hl : len < 2 ^ 32)
     (hc : s.gpr .r11 = p) (he : s.gpr .lr = p + BitVec.ofNat 32 len)
     (hr : ∀ i < len, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1)
     (hd : Region.Disjoint ⟨State.addr p, len⟩ ⟨off base 0, contextBytes n⟩) :
@@ -235,7 +236,7 @@ theorem reduceStream_ok {n size m len : Nat} {base : Addr} {s : State} {p : BitV
     ⟨0, by omega, hpos, c₃, by rw [f₃.gpr, r11]; exact p0, by rw [f₃.gpr, lr], by rw [f₃.mem, Y₂, dec0],
       by rw [f₃.mem, P₂]; decide, K₃, R₃⟩
   rintro k u ⟨i, rfl, hi, cu, r11u, lru, Vu, Pu, Ou, Ru⟩
-  refine WP.mono (streamStep_ok cu hm hi hlen r11u lru (by rw [Ru.rd, Ru.wr]; exact hr i hi)
+  refine WP.mono (streamStep_ok cu hm hi hlen hl r11u lru (by rw [Ru.rd, Ru.wr]; exact hr i hi)
     (by rw [Vu]; exact Nat.mod_lt _ m0) Pu) fun t ⟨ct, r11t, lrt, zt, Vt, Pt, Ot, Rt⟩ => ?_
   have byte : u.mem (State.addr p + BitVec.ofNat 64 i) = s.mem (State.addr p + BitVec.ofNat 64 i) :=
     VG.Proof.Weierstrass.keep_of_disjoint (Outs.outside Ou inside) hd (by omega) hi (by omega)

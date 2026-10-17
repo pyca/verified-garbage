@@ -107,7 +107,7 @@ def PtrOk : Pointer → Prop
 /-- An operand of `len` bytes that can be read and lies apart from the arithmetic. -/
 structure Ready (s : State) (base : Addr) (p : Pointer) (len : Nat) : Prop where
   ok : PtrOk p
-  fits : (pointerValue base s p).toNat + len < 2 ^ 32
+  fits : (pointerValue base s p).toNat + len ≤ 2 ^ 32
   reads : ∀ e k, e + k ≤ len → InRegions (s.rd ++ s.wr) (State.addr (pointerValue base s p) + BitVec.ofNat 64 e) k
   apart : Region.Disjoint ⟨State.addr (pointerValue base s p), len⟩ ⟨base, 4960⟩
 

@@ -326,7 +326,11 @@ theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count :
     countValue_keep (rs := []) (fun x _ => by rw [Mv]) (by simp) hc
   have r11 : x.gpr .r11 = pointerValue base u input := by rw [Rx.gpr .r11 (by decide), Pv]
   rw [Cv, Pv] at Lx
-  refine WP.seq (WP.mono (reduceStream_ok cx (by omega) Riu.fits r11 Lx
+  have cl : countValue base s count < 2 ^ 32 := by
+    cases count with
+    | imm len => exact Nat.lt_trans hc (by decide)
+    | field f => exact BitVec.isLt _
+  refine WP.seq (WP.mono (reduceStream_ok cx (by omega) Riu.fits (by rw [Cu]; exact cl) r11 Lx
     (fun i hi => by rw [Rux.rd, Rux.wr]; exact Riu.reads i 1 (by omega))
     (Riu.apart.sub_right (Offset.sub_base base (by omega)))) fun y ⟨cy, Vy, Oy, Ry⟩ => ?_)
   refine WP.mono (store_ok (output := output) cy.ws w.n_eq.symm w.four w.word (by omega) (by omega) ho'
