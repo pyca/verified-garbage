@@ -235,7 +235,8 @@ theorem middles_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
     (hZ : slot w 8 ≤ Z) (hw : w = 8 * (n + 1))
     (he : hdrBytes + 16 ≤ e) (heZ : e + 8 * (w + 8) ≤ Z)
     (hsep : slot w aN + 8 * w ≤ e - 8) :
-    WP isa (.ite .ne (.loop AdxRotate8.middle .ne) (.block [])) s (MiddleInv s B Z w e n mi) := by
+    WP isa (.ite .ne (.seq (.block [.align 5]) (.loop AdxRotate8.middle .ne)) (.block []))
+      s (MiddleInv s B Z w e n mi) := by
   have h0 : MiddleInv s B Z w e 0 mi s := ⟨hs, hH, hdi, hc,
     by simpa only [Nat.zero_add, Nat.mul_one] using hp,
     by simpa only [Nat.zero_add, Nat.mul_one] using ho,
@@ -244,7 +245,7 @@ theorem middles_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   by_cases hn : n = 0
   · refine WP.ite false (by simp [eval, hz, hn]) (by simp) (fun _ => WP.block_nil ?_)
     rw [hn]; exact h0
-  · refine WP.ite true (by simp [eval, hz, hn]) (fun _ => ?_) (by simp)
+  · refine WP.ite true (by simp [eval, hz, hn]) (fun _ => WP.seq (WP.block ⟨(s, []), rfl, ?_⟩)) (by simp)
     exact wp_upto (a := 0) (N := n) (by omega_arith) (MiddleInv s B Z w e · mi)
       (fun _ _ hi _ h => middleStep_ok hZ hw hi he heZ hsep h) (fun _ h => h) h0
 end VG.Proof.Bignum.X86_64.AdxRotate8

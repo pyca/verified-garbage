@@ -118,7 +118,7 @@ def tileFront : Prog isa :=
   .seq tileBegin (.seq (headN 8) (.seq (.block clearCarry) (.block nextBlock)))
 
 def tileCompute : Prog isa :=
-  .seq tileFront (.seq (.ite .ne (.loop middle .ne) (.block [])) tailCore)
+  .seq tileFront (.seq (.ite .ne (.seq (.block [.align 5]) (.loop middle .ne)) (.block [])) tailCore)
 
 /-- One eight-word cancellation tile. Carries occupy discarded words below
 its digit table, within the existing accumulator arrays. -/

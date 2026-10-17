@@ -186,10 +186,22 @@ theorem middle_loop_ct : RelCT isa
     · simp [he]; omega
   · simpa only [← he] using ht
 
+/-- Alignment padding changes no state and leaks nothing. -/
+theorem align_ct {P : State → State → Prop} (k : Nat) : RelCT isa P (.block [.align k]) P := by
+  intro x y t₁ t₂ x' y' hp e₁ e₂
+  cases e₁ with
+  | block h₁ =>
+    cases e₂ with
+    | block h₂ =>
+      simp only [execBlock, exec_align, Option.map_some, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+      obtain ⟨rfl, rfl⟩ := h₁; obtain ⟨rfl, rfl⟩ := h₂
+      exact ⟨rfl, hp⟩
+
 theorem middles_ct : RelCT isa (Two AfterFront)
-    (.ite .ne (.loop AdxRotate8.middle .ne) (.block [])) (Two fun L s => TileBit L (L.n + 1) s) := by
+    (.ite .ne (.seq (.block [.align 5]) (.loop AdxRotate8.middle .ne)) (.block []))
+    (Two fun L s => TileBit L (L.n + 1) s) := by
   refine two_ite (fun L s t hs ht => by simp only [eval, hs.2, ht.2]) ?_ ?_
-  · refine middle_loop_ct.mono ?_ (fun _ _ h => h)
+  · refine RelCT.seq (align_ct 5) (middle_loop_ct.mono ?_ (fun _ _ h => h))
     rintro s t ⟨L, ⟨hs, he⟩, ⟨ht, _⟩⟩
     have hn : 0 < L.n := by
       simp only [eval, hs.2, Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at he
