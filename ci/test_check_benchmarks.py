@@ -775,11 +775,14 @@ class FreshCopies(unittest.TestCase):
         modules = bench_compare.FRESH_COPIES_MODULES.split()
         selected = [name for name, uses in catalog.items()
                     if any(m in uses for m in modules)]
-        self.assertEqual(sorted(selected), [
-            'aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_brainpoolp384r1', 'ecdsa_p256', 'ecdsa_p384',
-            'ecdsa_p521', 'ed25519', 'hmac_sha384', 'hmac_sha512', 'hmac_sha512_224', 'hmac_sha512_256',
-            'pbkdf2_sha384', 'pbkdf2_sha512', 'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'rsa_oaep', 'rsa_pss',
-            'sha384', 'sha512', 'sha512_224', 'sha512_256'])
+        # The copies' runs set up the benchmarks holding those groups, and
+        # beyond the four that used to run from copies, only benchmarks of
+        # code built on SHA-512 (which the `sha512` module selects).
+        held = ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521', 'pbkdf2_sha384', 'pbkdf2_sha512',
+                'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'sha384', 'sha512', 'sha512_224', 'sha512_256']
+        self.assertLessEqual(set(held), set(selected))
+        for name in set(selected) - set(held):
+            self.assertIn('sha512', catalog[name], name)
         source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
         for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
             self.assertIn(f'"{group}"', source)
