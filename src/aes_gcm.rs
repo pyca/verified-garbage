@@ -692,6 +692,15 @@ impl Powers {
             self.calls.store(calls + 1, Ordering::Relaxed);
             return None;
         }
+        Some((self.compute(rounds, key, fns), fns))
+    }
+
+    /// `get`'s call that computes the powers, with `fns`'s key setup, and
+    /// publishes them. Out of line on AArch64, so that `get`, without it, is
+    /// small enough to be inlined into the calls that find the powers ready.
+    #[cfg_attr(target_arch = "aarch64", cold, inline(never))]
+    #[cfg_attr(target_arch = "x86_64", inline(always))]
+    fn compute(&self, rounds: usize, key: &[u64; 32], fns: &'static Prepared) -> &Ctx {
         let mut ctx = Box::new([0; size_of::<Ctx>() / 8]);
         let init = fns.init;
         // SAFETY: on x86-64, the key is the first `key_len` bytes (16, 24 or
@@ -714,7 +723,7 @@ impl Powers {
         // (The hash subkey is the same for every key length.)
         #[cfg(target_arch = "aarch64")]
         let _ = rounds;
-        Some((self.publish(ctx), fns))
+        self.publish(ctx)
     }
 
     /// Whether messages shorter than `POWERS_MIN_LEN` sealed take the
