@@ -25,13 +25,6 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Ecdsa.Rfc6979.X86
 open VG.Proof.Mont.X86 (wp_movS)
 
-/-- Argument `i` of the layout. -/
-def Lay.a {dn : Nat} (L : Lay dn) : Nat → BitVec 32
-  | 0 => L.a0
-  | 1 => L.a1
-  | 2 => L.a2
-  | _ => L.a3
-
 /-- The bytes of a region a frame of writes misses. -/
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
@@ -50,8 +43,8 @@ theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
   rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt h]
 
 /-- The 76 bytes below the frame, which the calls use. -/
-theorem Ctx.below_eq {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} {u : State} (hL : L.Ok)
-    (hc : Ctx L g m₀ u) : below (u.gpr .esp) 76 = ⟨L.B, 76⟩ := by
+theorem Ctx0.below_eq {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} {u : State} (hL : L.Ok)
+    (hc : Ctx0 L g m₀ u) : below (u.gpr .esp) 76 = ⟨L.B, 76⟩ := by
   rw [hc.esp, hL.below_F]
 
 theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
@@ -60,26 +53,24 @@ theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e 
 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
-/-- Our arguments, in the frame's body. -/
-theorem Ctx.argv {u : State} (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
-    u.mem.readW (L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i)) 32 = L.a i := by
-  match i, hi with
-  | 0, _ => rw [show 276 + 4 * L.e + 4 * 0 = 276 + 4 * L.e by omega]; exact hc.pOut
-  | 1, _ => rw [show 276 + 4 * L.e + 4 * 1 = 280 + 4 * L.e by omega]; exact hc.pD
-  | 2, _ => rw [show 276 + 4 * L.e + 4 * 2 = 284 + 4 * L.e by omega]; exact hc.pDg
-  | 3, _ => rw [show 276 + 4 * L.e + 4 * 3 = 288 + 4 * L.e by omega]; exact hc.pScr
+theorem argM_eq (i : Nat) : argM i = .mem ⟨.esp, 464 + 4 * i⟩ := by
+  simp only [argM, Impl.Ecdsa.Rfc6979.X86.frameBytes, stk]
 
-theorem argM_eq (wide hHigh : Bool) (i : Nat) : argM wide hHigh i = .mem ⟨.esp, 200 + 4 * extra wide hHigh + 4 * i⟩ := by
-  simp only [argM, Impl.Ecdsa.Rfc6979.X86.frameBytes, stk]; congr 2; omega
+/-- `argM i` reads our argument `i`. -/
+theorem Ctx0.readArg {u : State} (hL : L.Ok) (hc : Ctx0 L g m₀ u) {i : Nat} (hi : i < 6) :
+    readSrc u (argM i) = some (L.a i) := by
+  have e : addr L.F (464 + 4 * i) = L.B + BitVec.ofNat 64 (540 + 4 * i) := by
+    rw [hL.addrF (by omega), show 76 + (464 + 4 * i) = 540 + 4 * i by omega]
+  rw [argM_eq, readSrc_mem hc.esp (by rw [e]; exact hc.inArgs hi hL), e, hc.args i hi]
 
-/-- `argM L.wide L.hHigh i` reads our argument `i`. -/
-theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
-    readSrc u (argM L.wide L.hHigh i) = some (L.a i) := by
-  have := L.he
-  have e : addr L.F (200 + 4 * extra L.wide L.hHigh + 4 * i) = L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i) := by
-    rw [hL.addrF (by rw [L.ew]; omega), L.ew, show 76 + (200 + 4 * extra L.wide L.hHigh + 4 * i) =
-      276 + 4 * extra L.wide L.hHigh + 4 * i by omega]
-  rw [argM_eq, readSrc_mem hc.esp (by rw [e]; exact hc.inArgs hi hL), e, hc.argv hi]
+/-- `[esp + 128 + 4 i]` reads the hash function's size `i`. -/
+theorem Ctx.readPrm {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i o : Nat} (hi : i < 8) (ho : o = 128 + 4 * i) :
+    readSrc u (.mem (stk o)) = some (L.pv i) := by
+  subst ho
+  have e : addr L.F (128 + 4 * i) = L.B + BitVec.ofNat 64 (204 + 4 * i) := by
+    rw [hL.addrF (by omega), show 76 + (128 + 4 * i) = 204 + 4 * i by omega]
+  rw [show (.mem (stk (128 + 4 * i)) : Src) = .mem ⟨.esp, 128 + 4 * i⟩ from rfl,
+    readSrc_mem hc.esp (by rw [e]; exact hc.inFr (by omega) (by omega) hL), e, hc.prm i hi]
 
 /-! ## Code that sets one register -/
 
@@ -110,14 +101,14 @@ theorem Upd.trans {u u' u'' : State} {d : Reg} {v w : BitVec 32} (hL : L.Ok) (hd
 
 /-- `d ← scratch + a`. -/
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) (a : Nat) :
-    WP isa (.block (Cfg.scr L.wide L.hHigh d a)) u (Upd L g m₀ u d (L.a3 + BitVec.ofNat 32 a)) := by
-  refine wp_movS (hc.readArg hL (i := 3) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
+    WP isa (.block (scr d a)) u (Upd L g m₀ u d (L.a3 + BitVec.ofNat 32 a)) := by
+  refine wp_movS (hc.readArg hL (i := 4) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
   rw [v₁.gpr] at v₂
   exact Upd.trans hL hd v₁ v₂ hc
 
 /-- `d ← esp + o`, an address in the frame. -/
 theorem fr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) (o : Nat) :
-    WP isa (.block (Cfg.fr d o)) u (Upd L g m₀ u d (L.F + BitVec.ofNat 32 o)) := by
+    WP isa (.block (fr d o)) u (Upd L g m₀ u d (L.F + BitVec.ofNat 32 o)) := by
   refine wp_mov fun _ v₁ => wp_addi fun u₂ v₂ => WP.block_nil ?_
   rw [v₁.gpr, hc.esp] at v₂
   exact Upd.trans hL hd v₁ v₂ hc
@@ -128,9 +119,14 @@ theorem movi_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d 
   wp_movi fun _ v₁ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- `d ← argument i`. -/
-theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 4) :
-    WP isa (.block [.mov d (argM L.wide L.hHigh i)]) u (Upd L g m₀ u d (L.a i)) :=
+theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 6) :
+    WP isa (.block [.mov d (argM i)]) u (Upd L g m₀ u d (L.a i)) :=
   wp_movS (hc.readArg hL hi) fun _ v₁ _ => WP.block_nil (Upd.of_wp hL hc hd v₁)
+
+/-- `d ← size i`. -/
+theorem prm_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i o : Nat} (hi : i < 8)
+    (ho : o = 128 + 4 * i) : WP isa (.block [.mov d (.mem (stk o))]) u (Upd L g m₀ u d (L.pv i)) :=
+  wp_movS (hc.readPrm hL hi ho) fun _ v₁ _ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- Two pieces of code, each setting one register. -/
 theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 32}

@@ -53,13 +53,13 @@ theorem copyN_ok {src dst : Reg} {S D : BitVec 32} {SA DA : Addr} {so d K : Nat}
     ∀ k ≤ K, ∀ u : State, u.gpr src = S → u.gpr dst = D →
       (∀ j < K, InRegions (u.rd ++ u.wr) (SA + BitVec.ofNat 64 (4 * j)) 4) →
       (∀ j < K, InRegions u.wr (DA + BitVec.ofNat 64 (4 * j)) 4) →
-      WP isa (.block (Cfg.copyN k src so dst d)) u fun u' =>
+      WP isa (.block (copyN k src so dst d)) u fun u' =>
         u'.rd = u.rd ∧ u'.wr = u.wr ∧ (∀ r, r ≠ .eax → u'.gpr r = u.gpr r) ∧
         Frame [⟨DA, 4 * K⟩] u.mem u'.mem ∧
         Spec.Sha256.bytesAt u'.mem DA (4 * k) = Spec.Sha256.bytesAt u.mem SA (4 * k)
   | 0, _, u, _, _, _, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, rfl⟩
   | k + 1, hk, u, hs, hd, hr, hw => by
-    rw [Cfg.copyN, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    rw [copyN, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (copyN_ok hdr hsr hSA hDA hsep hK k (by omega) u hs hd hr hw)
       fun u₁ ⟨hrd₁, hwr₁, hg₁, hf₁, hb₁⟩ => ?_
     refine WP.mono (copyW_ok (u := u₁) (so := so + 4 * k) (d := d + 4 * k) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd)
@@ -101,10 +101,10 @@ theorem copyBytes_ok {src dst : Reg} {S D : BitVec 32} {SA DA : Addr} {so d Q : 
     (hs : u.gpr src = S) (hd : u.gpr dst = D)
     (hr : ∀ j, j + 4 ≤ Q → InRegions (u.rd ++ u.wr) (SA + BitVec.ofNat 64 j) 4)
     (hw : ∀ j, j + 4 ≤ Q → InRegions u.wr (DA + BitVec.ofNat 64 j) 4) :
-    WP isa (.block (Cfg.copyBytes Q src so dst d)) u fun u' =>
+    WP isa (.block (copyBytes Q src so dst d)) u fun u' =>
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ (∀ r, r ≠ .eax → u'.gpr r = u.gpr r) ∧
       Frame [⟨DA, Q⟩] u.mem u'.mem ∧ Spec.Sha256.bytesAt u'.mem DA Q = Spec.Sha256.bytesAt u.mem SA Q := by
-  rw [Cfg.copyBytes, WP.block_append_iff]
+  rw [copyBytes, WP.block_append_iff]
   have hK : 4 * (Q / 4) ≤ Q := Nat.mul_div_le Q 4
   refine WP.mono (copyN_ok (S := S) (D := D) (SA := SA) (DA := DA) (so := so) (d := d) (K := Q / 4) hdr hsr
       (fun j hj => hSA (4 * j) (by omega)) (fun j hj => hDA (4 * j) (by omega))
