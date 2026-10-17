@@ -15,10 +15,14 @@ emitted once for each variant (`Variants/MdHash/AArch64/`), named with its
 suffix.
 
 `stack` is the 16 bytes below the stack pointer that the streaming
-functions may use for a frame saving `x30`. `init` and `finalize` keep their
-working space in a frame of their own, above those; `init_scratch` and
-`finalize_scratch`, the same code with it as an argument, are what PBKDF2's
-code calls.
+functions may use for a frame saving `x30`. `init_scratch` and
+`finalize_scratch`, with their working space as an argument, are what
+PBKDF2's code calls; `finalize` keeps its working space in a frame of its own,
+above those. `init` takes a key of any length
+(`Impl/Pbkdf2/Md/AnyKey/AArch64.lean`): it hashes a key longer than a block
+with the streaming functions, as `pbkdf2` hashes a long password, and calls
+`init_scratch` with the key or its digest, in a frame of its own that it
+zeroes before returning.
 -/
 
 @[expose] public section
@@ -26,11 +30,12 @@ code calls.
 namespace VG.Generic.MdHash.AArch64.Hmac
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
-  v.I.initApi.artifact AArch64.target {
+  v.I.initAnyKeyApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacInit
-    stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
-    verified := v.hmacInitF
+    code := Impl.StackScratch.AArch64.withStackScratchWiped (Proof.Pbkdf2.Md.AArch64.anyFrame v.I) .x4
+      v.I.initAnyKeyScratch v.H.hmacInitAny
+    stack := 16 + Proof.Pbkdf2.Md.AArch64.anyFrame v.I
+    verified := v.hmacInitAnyF
     features := v.features },
   v.I.finalizeApi.artifact AArch64.target {
     suffix := v.suffix
