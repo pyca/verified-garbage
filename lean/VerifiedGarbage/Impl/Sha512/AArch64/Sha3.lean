@@ -14,9 +14,10 @@ block), and v31 is zero throughout. All registers are caller-saved.
 
 The round constants are a table in `scratch[0..640)`, `Kₜ` at `8t`: each
 pair of rounds loads its two with one `ldr q`. The first block builds the
-table as it goes, two pairs of rounds ahead (`build`: four `movz`/`movk` and
-a `str` per constant, in general-purpose registers), and later blocks only
-load from it. Building a constant and moving it into a vector register
+table as it goes, two pairs of rounds ahead (`build`: four `movz`/`movk` per
+constant, in general-purpose registers, and an `stp` per pair, or two `str`s
+for the last eight, beyond `stp`'s offsets), and later blocks only load from
+it. Building a constant and moving it into a vector register
 (`dup`/`ins`) instead costs ten instructions per pair of rounds, and those
 moves are slow on some cores (Neoverse N2).
 
@@ -50,18 +51,19 @@ def reg (i k : Nat) : VReg :=
   ([[.v0, .v1, .v2, .v3, .v4, .v5], [.v4, .v0, .v5, .v2, .v1, .v3],
     [.v1, .v4, .v3, .v5, .v0, .v2]].getD (i % 3) []).getD k .v0
 
-/-- Store `K₂ⱼ` and `K₂ⱼ₊₁` at `scratch + 16j`. -/
+/-- Store `K₂ⱼ` and `K₂ⱼ₊₁` at `scratch + 16j`: with one `stp` where its
+offset reaches (`16j ≤ 504`), else with two `str`s. -/
 def build (j : Nat) : List Instr :=
   [.movz .x .x4 ((K (2 * j)).extractLsb' 0 16) 0,
    .movk .x .x4 ((K (2 * j)).extractLsb' 16 16) 1,
    .movk .x .x4 ((K (2 * j)).extractLsb' 32 16) 2,
    .movk .x .x4 ((K (2 * j)).extractLsb' 48 16) 3,
-   .str .x .x4 .x3 (16 * j),
    .movz .x .x5 ((K (2 * j + 1)).extractLsb' 0 16) 0,
    .movk .x .x5 ((K (2 * j + 1)).extractLsb' 16 16) 1,
    .movk .x .x5 ((K (2 * j + 1)).extractLsb' 32 16) 2,
-   .movk .x .x5 ((K (2 * j + 1)).extractLsb' 48 16) 3,
-   .str .x .x5 .x3 (16 * j + 8)]
+   .movk .x .x5 ((K (2 * j + 1)).extractLsb' 48 16) 3] ++
+  if 16 * j ≤ 504 then [.stp .x4 .x5 .x3 (16 * j)]
+  else [.str .x .x4 .x3 (16 * j), .str .x .x5 .x3 (16 * j + 8)]
 
 def schedule (i : Nat) : List Instr :=
   if i < 8 then

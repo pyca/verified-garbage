@@ -275,16 +275,28 @@ theorem build_ok (j : Nat) (hj : j < 40) (s : State)
         (s.gpr .x3 + BitVec.ofNat 64 (16 * j + 8)) (K (2 * j + 1)) ∧
       s'.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have h2' : s.gpr .x3 + BitVec.ofNat 64 (16 * j) + 8 = s.gpr .x3 + BitVec.ofNat 64 (16 * j + 8) := by
+    rw [BitVec.ofNat_add, BitVec.add_assoc]; rfl
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [build, runBlock_cons, runStep_some, runBlock_nil, exec,
-    addr, State.store, Option.bind_some, and_self, ite_true, isa, State.read, Size.bits,
-    Size.bytes, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
-    RegUpd.wr_write, RegUpd.v_write, RegUpd.sp_write, BitVec.setWidth_eq, movz_movk64',
-    show (16 * j) % 8 = 0 by omega, show 16 * j < 4096 * 8 by omega,
-    show (16 * j + 8) % 8 = 0 by omega, show 16 * j + 8 < 4096 * 8 by omega,
-    h1, h2, Option.some.injEq, exists_eq_left']
-  refine ⟨by rw [writeW64, writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
-  simp only [RegUpd.gpr_write_of_ne, h4, h5, not_false_eq_true]
+  by_cases hs : 16 * j ≤ 504
+  · simp (config := {decide := true}) only [build, hs, ite_true, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil, exec,
+      State.store, Option.bind_some, and_self, isa, State.read, Size.bits,
+      RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
+      RegUpd.wr_write, RegUpd.v_write, RegUpd.sp_write, BitVec.setWidth_eq, movz_movk64',
+      show (16 * j) % 8 = 0 by omega, h2', h1, h2, Option.some.injEq, exists_eq_left']
+    refine ⟨by rw [writeW64, writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
+    simp only [RegUpd.gpr_write_of_ne, h4, h5, not_false_eq_true]
+  · simp (config := {decide := true}) only [build, hs, ite_false, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil, exec,
+      addr, State.store, Option.bind_some, and_self, ite_true, isa, State.read, Size.bits,
+      Size.bytes, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
+      RegUpd.wr_write, RegUpd.v_write, RegUpd.sp_write, BitVec.setWidth_eq, movz_movk64',
+      show (16 * j) % 8 = 0 by omega, show 16 * j < 4096 * 8 by omega,
+      show (16 * j + 8) % 8 = 0 by omega, show 16 * j + 8 < 4096 * 8 by omega,
+      h1, h2, Option.some.injEq, exists_eq_left']
+    refine ⟨by rw [writeW64, writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
+    simp only [RegUpd.gpr_write_of_ne, h4, h5, not_false_eq_true]
 
 /-- The scratch space the table occupies. -/
 abbrev tabR (scr : Addr) : Region := ⟨scr, 640⟩
