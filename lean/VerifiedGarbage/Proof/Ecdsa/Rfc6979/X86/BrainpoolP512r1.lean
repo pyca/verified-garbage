@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.X25519.X86.Column
 # Deterministic ECDSA on x86 (32-bit): brainpoolP512r1
 
 brainpoolP512r1 as the proof's curve (`brainpoolp512r1`): scalars of 8 64-bit words, the order
-`n` of exactly 512 bits with `2^512 < 2 n`, `h` kept at the frame's top (`hHigh`), and `vg_ecdsa_brainpoolp512r1_sign`, proven
+`n` of exactly 512 bits with `2^512 < 2 n`, and `vg_ecdsa_brainpoolp512r1_sign`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at brainpoolP512r1's sizes, which is `Proof.Ecdsa.X86.BrainpoolP512r1.signX86`).
 -/
