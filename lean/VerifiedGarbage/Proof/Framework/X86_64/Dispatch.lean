@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dispatch.X86_64
 public import VerifiedGarbage.Proof.Framework.Dispatch
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Choosing code by a public selector on x86-64: proofs
@@ -9,7 +10,8 @@ public import VerifiedGarbage.Proof.Framework.Dispatch
 The tests of `Dispatch.X86_64.chain` (`cmp rax, k`) for keys below `2^31`
 (`tests`): each leaks nothing, sets `ZF` to whether `rax` is `k`, and
 changes only the flags (`FlagsOnly`), so `Dispatch.chain_wp`,
-`chain_exec` and `chain_relCT` apply with the selector `rax`.
+`chain_exec` and `chain_relCT` apply with the selector `rax`; the chain's
+calls nest as deep as its cases' (`chain_depth`, `chain_x86_64Depth`).
 -/
 
 @[expose] public section
@@ -63,5 +65,26 @@ theorem tests : Proof.Dispatch.Tests (M := isa) test Cond.e sel FlagsOnly (2 ^ 3
     · intro h; apply BitVec.eq_of_toNat_eq; rw [h, BitVec.toNat_ofNat]; omega
   refl := FlagsOnly.refl
   trans := FlagsOnly.trans
+
+/-- The calls of the chain nest as deep as those of its cases. -/
+theorem chain_depth {n : Nat} : ∀ cs : List (Nat × Prog isa), (∀ c ∈ cs, c.2.depth ≤ n) → (chain cs).depth ≤ n
+  | [], _ => Nat.zero_le _
+  | [(_, c)], h => h _ List.mem_cons_self
+  | (k, c) :: c' :: cs, h => by
+    have h₁ : c.depth ≤ n := h _ List.mem_cons_self
+    have h₂ := chain_depth (c' :: cs) fun c hc => h c (List.mem_cons_of_mem _ hc)
+    show max 0 (max c.depth (chain (c' :: cs)).depth) ≤ n
+    omega
+
+/-- The stack the chain's calls and frames use is the most its cases' use. -/
+theorem chain_x86_64Depth {n : Nat} : ∀ cs : List (Nat × Prog isa), (∀ c ∈ cs, c.2.x86_64Depth ≤ n) →
+    (chain cs).x86_64Depth ≤ n
+  | [], _ => Nat.zero_le _
+  | [(_, c)], h => h _ List.mem_cons_self
+  | (k, c) :: c' :: cs, h => by
+    have h₁ : c.x86_64Depth ≤ n := h _ List.mem_cons_self
+    have h₂ := chain_x86_64Depth (c' :: cs) fun c hc => h c (List.mem_cons_of_mem _ hc)
+    show max 0 (max c.x86_64Depth (chain (c' :: cs)).x86_64Depth) ≤ n
+    omega
 
 end VG.Proof.Dispatch.X86_64

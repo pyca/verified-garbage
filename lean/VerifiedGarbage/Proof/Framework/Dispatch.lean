@@ -17,7 +17,9 @@ a state related to the one before by `R`, with the same selector):
 * `chain_exec`: a run of the chain is a run of that case, after the
   branches the tests decide (`trace`), which depend on the selector alone;
 * `chain_relCT`: two runs with the same selector are constant time if each
-  case is, from states related by `R` to the runs' states before.
+  case is, from states related by `R` to the runs' states before;
+* `chain_all`, `chain_allInstrs`: a property of every instruction holds of
+  the chain if it holds of the tests' and of each case's.
 
 The keys are distinct (`Nodup`), and the selector one of them.
 -/
@@ -146,5 +148,27 @@ theorem chain_relCT (T : Tests test eq sel R B) {cs : List (Nat × Prog M)} (hB 
   rw [case_unique hnd m₂ m₁] at x₂
   obtain ⟨rfl, hq⟩ := h _ _ m₁ _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, r₁, r₂, q₁, q₂⟩ x₁ x₂
   exact ⟨rfl, hq⟩
+
+/-- A property of every instruction of the tests and of each case holds of
+the chain's. -/
+theorem chain_all (p : M.Instr → Bool) (ht : ∀ k, (test k).all p = true) :
+    ∀ cs : List (Nat × Prog M), (∀ c ∈ cs, c.2.all p = true) → (chain test eq cs).all p = true
+  | [], _ => rfl
+  | [(_, c)], h => h _ List.mem_cons_self
+  | (k, c) :: c' :: cs, h => by
+    simp only [chain, Code.all, ht k, h _ List.mem_cons_self, Bool.true_and,
+      chain_all p ht (c' :: cs) fun c hc => h c (List.mem_cons_of_mem _ hc)]
+
+/-- As `chain_all`, for `Code.allInstrs`. -/
+theorem chain_allInstrs (p : M.Instr → Bool) (ht : ∀ k, (Code.block (test k) : Prog M).allInstrs p = true) :
+    ∀ cs : List (Nat × Prog M), (∀ c ∈ cs, c.2.allInstrs p = true) →
+      (chain test eq cs).allInstrs p = true
+  | [], _ => rfl
+  | [(_, c)], h => h _ List.mem_cons_self
+  | (k, c) :: c' :: cs, h => by
+    show ((Code.block (test k) : Prog M).allInstrs p &&
+      (c.allInstrs p && (chain test eq (c' :: cs)).allInstrs p)) = true
+    rw [ht k, h _ List.mem_cons_self, chain_allInstrs p ht (c' :: cs) fun c hc => h c (List.mem_cons_of_mem _ hc)]
+    rfl
 
 end VG.Proof.Dispatch
