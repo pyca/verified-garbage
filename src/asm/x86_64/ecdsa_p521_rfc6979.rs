@@ -9,7 +9,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -21,7 +21,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_FEATURES: crate::cpu::Feat
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_avx2(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -535,44 +535,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch_avx2}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch_avx2}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_avx2}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_avx2}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -582,44 +546,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch_avx2}
-jmp 247f
-246:
-call {vg_sha512_update_scratch_avx2}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch_avx2}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch_avx2}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_avx2}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_avx2}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -631,44 +559,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -678,44 +570,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch_avx2}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch_avx2}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_avx2}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_avx2}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -725,44 +581,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch_avx2}
-jmp 283f
-282:
-call {vg_sha512_update_scratch_avx2}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch_avx2}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch_avx2}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_avx2}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_avx2}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -774,44 +594,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -879,44 +663,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch_avx2}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch_avx2}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_avx2}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_avx2}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -926,44 +674,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch_avx2}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch_avx2}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch_avx2}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch_avx2}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_avx2}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_avx2}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -975,44 +687,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1022,44 +698,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch_avx2}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch_avx2}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_avx2}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_avx2}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -1069,44 +709,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch_avx2}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch_avx2}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch_avx2}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch_avx2}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_avx2}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_avx2}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1118,50 +722,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1171,44 +739,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch_avx2}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch_avx2}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_avx2}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_avx2}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -1218,44 +750,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch_avx2}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch_avx2}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch_avx2}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch_avx2}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_avx2}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_avx2}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1267,44 +763,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -1327,7 +787,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -1473,10 +933,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -1508,44 +968,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch_avx2}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch_avx2}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_avx2}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_avx2}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -1555,44 +979,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch_avx2}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch_avx2}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch_avx2}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch_avx2}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_avx2}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_avx2}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1604,44 +992,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1651,44 +1003,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch_avx2}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch_avx2}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_avx2}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_avx2}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -1698,44 +1014,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch_avx2}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch_avx2}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch_avx2}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch_avx2}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_avx2}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_avx2}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1747,48 +1027,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -1914,23 +1158,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx2,
-        vg_hmac_sha512_224_init_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_avx2,
-        vg_hmac_sha512_init_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_avx2,
-        vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2,
-        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2,
-        vg_hmac_sha224_init_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_avx2,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_hmac_sha512_256_finalize_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_avx2,
-        vg_hmac_sha512_224_finalize_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_avx2,
-        vg_hmac_sha512_finalize_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_avx2,
-        vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2,
-        vg_hmac_sha224_finalize_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_avx2,
-        vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch,
+        vg_hmac_init_scratch_avx2 = sym super::hash_any::vg_hmac_init_scratch_avx2,
+        vg_hash_update_scratch_avx2 = sym super::hash_any::vg_hash_update_scratch_avx2,
+        vg_hmac_finalize_scratch_avx2 = sym super::hash_any::vg_hmac_finalize_scratch_avx2,
         vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
     )
 }
@@ -1942,7 +1172,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES: crate::cpu::
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -1954,7 +1184,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES: crate::cpu::
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_avx2_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -2468,44 +1698,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch_avx2}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch_avx2}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_avx2}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_avx2}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -2515,44 +1709,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch_avx2}
-jmp 247f
-246:
-call {vg_sha512_update_scratch_avx2}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch_avx2}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch_avx2}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_avx2}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_avx2}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -2564,44 +1722,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -2611,44 +1733,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch_avx2}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch_avx2}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_avx2}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_avx2}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -2658,44 +1744,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch_avx2}
-jmp 283f
-282:
-call {vg_sha512_update_scratch_avx2}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch_avx2}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch_avx2}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_avx2}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_avx2}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -2707,44 +1757,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -2812,44 +1826,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch_avx2}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch_avx2}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_avx2}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_avx2}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -2859,44 +1837,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch_avx2}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch_avx2}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch_avx2}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch_avx2}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_avx2}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_avx2}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -2908,44 +1850,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -2955,44 +1861,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch_avx2}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch_avx2}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_avx2}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_avx2}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -3002,44 +1872,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch_avx2}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch_avx2}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch_avx2}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch_avx2}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_avx2}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_avx2}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3051,50 +1885,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3104,44 +1902,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch_avx2}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch_avx2}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_avx2}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_avx2}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -3151,44 +1913,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch_avx2}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch_avx2}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch_avx2}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch_avx2}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_avx2}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_avx2}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3200,44 +1926,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -3260,7 +1950,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -3406,10 +2096,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -3441,44 +2131,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch_avx2}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch_avx2}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_avx2}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_avx2}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -3488,44 +2142,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch_avx2}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch_avx2}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch_avx2}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch_avx2}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_avx2}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_avx2}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3537,44 +2155,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3584,44 +2166,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch_avx2}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch_avx2}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_avx2}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_avx2}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -3631,44 +2177,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch_avx2}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch_avx2}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch_avx2}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch_avx2}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_avx2}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_avx2}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3680,48 +2190,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_avx2}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_avx2}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_avx2}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -3847,23 +2321,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx2,
-        vg_hmac_sha512_224_init_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_avx2,
-        vg_hmac_sha512_init_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_avx2,
-        vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2,
-        vg_hmac_sha256_init_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_avx2,
-        vg_hmac_sha224_init_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_avx2,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_hmac_sha512_256_finalize_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_avx2,
-        vg_hmac_sha512_224_finalize_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_avx2,
-        vg_hmac_sha512_finalize_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_avx2,
-        vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_avx2 = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_avx2,
-        vg_hmac_sha224_finalize_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_avx2,
-        vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch,
+        vg_hmac_init_scratch_avx2 = sym super::hash_any::vg_hmac_init_scratch_avx2,
+        vg_hash_update_scratch_avx2 = sym super::hash_any::vg_hash_update_scratch_avx2,
+        vg_hmac_finalize_scratch_avx2 = sym super::hash_any::vg_hmac_finalize_scratch_avx2,
         vg_ecdsa_p521_sign_adx = sym super::ecdsa_p521::vg_ecdsa_p521_sign_adx,
     )
 }
@@ -3872,7 +2332,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -3884,7 +2344,7 @@ ret
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
     core::arch::naked_asm!(
@@ -4397,44 +2857,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -4444,44 +2868,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch}
-jmp 247f
-246:
-call {vg_sha512_update_scratch}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4493,44 +2881,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4540,44 +2892,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -4587,44 +2903,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch}
-jmp 283f
-282:
-call {vg_sha512_update_scratch}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4636,44 +2916,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -4741,44 +2985,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -4788,44 +2996,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4837,44 +3009,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4884,44 +3020,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -4931,44 +3031,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4980,50 +3044,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -5033,44 +3061,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -5080,44 +3072,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -5129,44 +3085,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -5189,7 +3109,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -5335,10 +3255,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -5370,44 +3290,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -5417,44 +3301,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -5466,44 +3314,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -5513,44 +3325,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -5560,44 +3336,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -5609,48 +3349,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -5776,23 +3480,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
-        vg_hmac_sha512_224_init_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch,
-        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_hmac_sha512_256_finalize_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch,
-        vg_hmac_sha512_224_finalize_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch,
-        vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch,
-        vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch,
+        vg_hmac_init_scratch = sym super::hash_any::vg_hmac_init_scratch,
+        vg_hash_update_scratch = sym super::hash_any::vg_hash_update_scratch,
+        vg_hmac_finalize_scratch = sym super::hash_any::vg_hmac_finalize_scratch,
         vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
     )
 }
@@ -5804,7 +3494,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_ADX_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -5816,7 +3506,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_ADX_FEATURES: crate::cpu::Features =
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -6330,44 +4020,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -6377,44 +4031,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch}
-jmp 247f
-246:
-call {vg_sha512_update_scratch}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6426,44 +4044,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6473,44 +4055,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -6520,44 +4066,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch}
-jmp 283f
-282:
-call {vg_sha512_update_scratch}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6569,44 +4079,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -6674,44 +4148,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -6721,44 +4159,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6770,44 +4172,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6817,44 +4183,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -6864,44 +4194,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6913,50 +4207,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6966,44 +4224,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -7013,44 +4235,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -7062,44 +4248,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -7122,7 +4272,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -7268,10 +4418,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -7303,44 +4453,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -7350,44 +4464,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -7399,44 +4477,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -7446,44 +4488,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -7493,44 +4499,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -7542,48 +4512,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -7709,23 +4643,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
-        vg_hmac_sha512_224_init_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch,
-        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
-        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
-        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
-        vg_hmac_sha512_256_finalize_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch,
-        vg_hmac_sha512_224_finalize_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
-        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch,
-        vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch,
-        vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch,
+        vg_hmac_init_scratch = sym super::hash_any::vg_hmac_init_scratch,
+        vg_hash_update_scratch = sym super::hash_any::vg_hash_update_scratch,
+        vg_hmac_finalize_scratch = sym super::hash_any::vg_hmac_finalize_scratch,
         vg_ecdsa_p521_sign_adx = sym super::ecdsa_p521::vg_ecdsa_p521_sign_adx,
     )
 }
@@ -7737,7 +4657,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -7749,7 +4669,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_FEATURES: crate::cpu::Fea
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_shani(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -8263,44 +5183,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_shani}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_shani}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch_shani}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -8310,44 +5194,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch}
-jmp 247f
-246:
-call {vg_sha512_update_scratch}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_shani}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_shani}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch_shani}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8359,44 +5207,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_shani}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_shani}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch_shani}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8406,44 +5218,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_shani}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_shani}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch_shani}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -8453,44 +5229,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch}
-jmp 283f
-282:
-call {vg_sha512_update_scratch}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_shani}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_shani}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch_shani}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8502,44 +5242,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_shani}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_shani}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch_shani}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -8607,44 +5311,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_shani}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_shani}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch_shani}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -8654,44 +5322,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_shani}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_shani}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch_shani}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8703,44 +5335,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8750,44 +5346,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_shani}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_shani}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch_shani}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -8797,44 +5357,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_shani}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_shani}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch_shani}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8846,50 +5370,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8899,44 +5387,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_shani}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_shani}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch_shani}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -8946,44 +5398,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_shani}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_shani}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch_shani}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8995,44 +5411,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -9055,7 +5435,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -9201,10 +5581,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -9236,44 +5616,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_shani}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_shani}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch_shani}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -9283,44 +5627,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_shani}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_shani}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch_shani}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -9332,44 +5640,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -9379,44 +5651,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_shani}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_shani}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch_shani}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -9426,44 +5662,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_shani}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_shani}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch_shani}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -9475,48 +5675,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -9642,23 +5806,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
-        vg_hmac_sha512_224_init_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch,
-        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch,
-        vg_hmac_sha512_224_finalize_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_hmac_sha1_finalize_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_shani,
+        vg_hmac_init_scratch_shani = sym super::hash_any::vg_hmac_init_scratch_shani,
+        vg_hash_update_scratch_shani = sym super::hash_any::vg_hash_update_scratch_shani,
+        vg_hmac_finalize_scratch_shani = sym super::hash_any::vg_hmac_finalize_scratch_shani,
         vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
     )
 }
@@ -9670,7 +5820,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES: crate::cpu:
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -9682,7 +5832,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES: crate::cpu:
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_shani_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -10196,44 +6346,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_shani}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_shani}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch_shani}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -10243,44 +6357,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch}
-jmp 247f
-246:
-call {vg_sha512_update_scratch}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_shani}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_shani}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch_shani}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10292,44 +6370,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_shani}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_shani}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch_shani}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10339,44 +6381,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_shani}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_shani}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch_shani}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -10386,44 +6392,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch}
-jmp 283f
-282:
-call {vg_sha512_update_scratch}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_shani}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_shani}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch_shani}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10435,44 +6405,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_shani}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_shani}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch_shani}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -10540,44 +6474,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_shani}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_shani}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch_shani}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -10587,44 +6485,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_shani}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_shani}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch_shani}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10636,44 +6498,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10683,44 +6509,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_shani}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_shani}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch_shani}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -10730,44 +6520,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_shani}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_shani}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch_shani}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10779,50 +6533,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10832,44 +6550,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_shani}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_shani}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch_shani}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -10879,44 +6561,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_shani}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_shani}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch_shani}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -10928,44 +6574,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -10988,7 +6598,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -11134,10 +6744,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -11169,44 +6779,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_shani}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_shani}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch_shani}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -11216,44 +6790,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_shani}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_shani}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch_shani}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -11265,44 +6803,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -11312,44 +6814,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_shani}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_shani}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch_shani}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -11359,44 +6825,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_shani}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_shani}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch_shani}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -11408,48 +6838,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -11575,23 +6969,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
-        vg_hmac_sha512_224_init_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch,
-        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch,
-        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch,
-        vg_hmac_sha512_224_finalize_scratch = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch,
-        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch,
-        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_hmac_sha1_finalize_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_shani,
+        vg_hmac_init_scratch_shani = sym super::hash_any::vg_hmac_init_scratch_shani,
+        vg_hash_update_scratch_shani = sym super::hash_any::vg_hash_update_scratch_shani,
+        vg_hmac_finalize_scratch_shani = sym super::hash_any::vg_hmac_finalize_scratch_shani,
         vg_ecdsa_p521_sign_adx = sym super::ecdsa_p521::vg_ecdsa_p521_sign_adx,
     )
 }
@@ -11603,7 +6983,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES: crate::cpu
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -11615,7 +6995,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES: crate::cpu
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_shani_avx2(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -12129,44 +7509,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch_avx2}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch_avx2}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_shani}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_shani}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch_shani}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -12176,44 +7520,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch_avx2}
-jmp 247f
-246:
-call {vg_sha512_update_scratch_avx2}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch_avx2}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch_avx2}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_shani}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_shani}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch_shani}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12225,44 +7533,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_shani}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_shani}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch_shani}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12272,44 +7544,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch_avx2}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch_avx2}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_shani}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_shani}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch_shani}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -12319,44 +7555,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch_avx2}
-jmp 283f
-282:
-call {vg_sha512_update_scratch_avx2}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch_avx2}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch_avx2}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_shani}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_shani}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch_shani}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12368,44 +7568,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_shani}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_shani}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch_shani}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -12473,44 +7637,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch_avx2}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch_avx2}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_shani}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_shani}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch_shani}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -12520,44 +7648,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch_avx2}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch_avx2}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch_avx2}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch_avx2}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_shani}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_shani}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch_shani}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12569,44 +7661,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12616,44 +7672,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch_avx2}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch_avx2}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_shani}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_shani}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch_shani}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -12663,44 +7683,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch_avx2}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch_avx2}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch_avx2}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch_avx2}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_shani}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_shani}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch_shani}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12712,50 +7696,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12765,44 +7713,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch_avx2}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch_avx2}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_shani}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_shani}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch_shani}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -12812,44 +7724,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch_avx2}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch_avx2}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch_avx2}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch_avx2}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_shani}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_shani}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch_shani}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -12861,44 +7737,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -12921,7 +7761,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -13067,10 +7907,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -13102,44 +7942,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch_avx2}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch_avx2}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_shani}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_shani}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch_shani}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -13149,44 +7953,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch_avx2}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch_avx2}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch_avx2}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch_avx2}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_shani}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_shani}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch_shani}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -13198,44 +7966,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -13245,44 +7977,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch_avx2}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch_avx2}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_shani}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_shani}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch_shani}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -13292,44 +7988,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch_avx2}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch_avx2}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch_avx2}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch_avx2}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_shani}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_shani}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch_shani}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -13341,48 +8001,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -13508,23 +8132,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx2,
-        vg_hmac_sha512_224_init_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_avx2,
-        vg_hmac_sha512_init_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_avx2,
-        vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_avx2,
-        vg_hmac_sha512_224_finalize_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_avx2,
-        vg_hmac_sha512_finalize_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_avx2,
-        vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_hmac_sha1_finalize_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_shani,
+        vg_hmac_init_scratch_shani_avx2 = sym super::hash_any::vg_hmac_init_scratch_shani_avx2,
+        vg_hash_update_scratch_shani_avx2 = sym super::hash_any::vg_hash_update_scratch_shani_avx2,
+        vg_hmac_finalize_scratch_shani_avx2 = sym super::hash_any::vg_hmac_finalize_scratch_shani_avx2,
         vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
     )
 }
@@ -13536,7 +8146,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES: crate:
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -13548,7 +8158,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES: crate:
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_shani_avx2_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -14062,44 +8672,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch_avx2}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch_avx2}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_shani}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_shani}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch_shani}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -14109,44 +8683,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch_avx2}
-jmp 247f
-246:
-call {vg_sha512_update_scratch_avx2}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch_avx2}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch_avx2}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_shani}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_shani}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch_shani}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14158,44 +8696,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_shani}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_shani}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch_shani}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14205,44 +8707,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch_avx2}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch_avx2}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_shani}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_shani}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch_shani}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -14252,44 +8718,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch_avx2}
-jmp 283f
-282:
-call {vg_sha512_update_scratch_avx2}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch_avx2}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch_avx2}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_shani}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_shani}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch_shani}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14301,44 +8731,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_shani}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_shani}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch_shani}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -14406,44 +8800,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch_avx2}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch_avx2}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_shani}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_shani}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch_shani}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -14453,44 +8811,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch_avx2}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch_avx2}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch_avx2}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch_avx2}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_shani}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_shani}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch_shani}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14502,44 +8824,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14549,44 +8835,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch_avx2}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch_avx2}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_shani}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_shani}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch_shani}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -14596,44 +8846,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch_avx2}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch_avx2}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch_avx2}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch_avx2}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_shani}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_shani}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch_shani}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14645,50 +8859,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14698,44 +8876,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch_avx2}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch_avx2}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_shani}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_shani}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch_shani}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -14745,44 +8887,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch_avx2}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch_avx2}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch_avx2}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch_avx2}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_shani}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_shani}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch_shani}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -14794,44 +8900,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -14854,7 +8924,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -15000,10 +9070,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -15035,44 +9105,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch_avx2}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch_avx2}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_shani}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_shani}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch_shani}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -15082,44 +9116,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch_avx2}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch_avx2}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch_avx2}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch_avx2}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_shani}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_shani}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch_shani}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -15131,44 +9129,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -15178,44 +9140,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch_avx2}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch_avx2}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch_avx2}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch_avx2}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_shani}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_shani}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch_shani}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -15225,44 +9151,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch_avx2}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch_avx2}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch_avx2}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch_avx2}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_shani}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_shani}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch_shani}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_avx2}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -15274,48 +9164,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch_avx2}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch_avx2}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch_avx2}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch_avx2}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_avx2}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -15441,23 +9295,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_avx2,
-        vg_hmac_sha512_224_init_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_avx2,
-        vg_hmac_sha512_init_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_avx2,
-        vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch_avx2 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_avx2,
-        vg_hmac_sha512_224_finalize_scratch_avx2 = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_avx2,
-        vg_hmac_sha512_finalize_scratch_avx2 = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_avx2,
-        vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_hmac_sha1_finalize_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_shani,
+        vg_hmac_init_scratch_shani_avx2 = sym super::hash_any::vg_hmac_init_scratch_shani_avx2,
+        vg_hash_update_scratch_shani_avx2 = sym super::hash_any::vg_hash_update_scratch_shani_avx2,
+        vg_hmac_finalize_scratch_shani_avx2 = sym super::hash_any::vg_hmac_finalize_scratch_shani_avx2,
         vg_ecdsa_p521_sign_adx = sym super::ecdsa_p521::vg_ecdsa_p521_sign_adx,
     )
 }
@@ -15469,7 +9309,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES: crate::c
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -15481,7 +9321,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES: crate::c
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_shani_sha512(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -15995,44 +9835,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch_shani}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch_shani}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch_shani}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_shani}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_shani}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch_shani}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -16042,44 +9846,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch_shani}
-jmp 247f
-246:
-call {vg_sha512_update_scratch_shani}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch_shani}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch_shani}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_shani}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_shani}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch_shani}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16091,44 +9859,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch_shani}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch_shani}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_shani}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_shani}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch_shani}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16138,44 +9870,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch_shani}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch_shani}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch_shani}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_shani}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_shani}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch_shani}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -16185,44 +9881,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch_shani}
-jmp 283f
-282:
-call {vg_sha512_update_scratch_shani}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch_shani}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch_shani}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_shani}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_shani}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch_shani}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16234,44 +9894,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch_shani}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch_shani}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_shani}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_shani}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch_shani}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -16339,44 +9963,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch_shani}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch_shani}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_shani}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_shani}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch_shani}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -16386,44 +9974,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch_shani}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch_shani}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch_shani}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch_shani}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_shani}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_shani}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch_shani}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16435,44 +9987,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16482,44 +9998,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch_shani}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch_shani}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_shani}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_shani}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch_shani}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -16529,44 +10009,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch_shani}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch_shani}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch_shani}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch_shani}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_shani}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_shani}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch_shani}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16578,50 +10022,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16631,44 +10039,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch_shani}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch_shani}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_shani}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_shani}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch_shani}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -16678,44 +10050,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch_shani}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch_shani}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch_shani}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch_shani}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_shani}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_shani}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch_shani}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -16727,44 +10063,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -16787,7 +10087,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -16933,10 +10233,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -16968,44 +10268,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch_shani}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch_shani}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_shani}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_shani}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch_shani}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -17015,44 +10279,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch_shani}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch_shani}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch_shani}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch_shani}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_shani}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_shani}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch_shani}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -17064,44 +10292,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -17111,44 +10303,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch_shani}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch_shani}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_shani}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_shani}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch_shani}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -17158,44 +10314,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch_shani}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch_shani}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch_shani}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch_shani}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_shani}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_shani}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch_shani}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -17207,48 +10327,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -17374,23 +10458,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_shani,
-        vg_hmac_sha512_224_init_scratch_shani = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_shani,
-        vg_hmac_sha512_init_scratch_shani = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_shani,
-        vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_shani,
-        vg_hmac_sha512_224_finalize_scratch_shani = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_shani,
-        vg_hmac_sha512_finalize_scratch_shani = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_shani,
-        vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_hmac_sha1_finalize_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_shani,
+        vg_hmac_init_scratch_shani_sha512 = sym super::hash_any::vg_hmac_init_scratch_shani_sha512,
+        vg_hash_update_scratch_shani_sha512 = sym super::hash_any::vg_hash_update_scratch_shani_sha512,
+        vg_hmac_finalize_scratch_shani_sha512 = sym super::hash_any::vg_hmac_finalize_scratch_shani_sha512,
         vg_ecdsa_p521_sign = sym super::ecdsa_p521::vg_ecdsa_p521_sign,
     )
 }
@@ -17402,7 +10472,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES: crat
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), and each candidate `k`, the leftmost 521 bits of successive `V`s, and the digest for the signature are shifted into 66 bytes with word loads, shifts and stores. Each candidate is tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -17414,7 +10484,7 @@ pub(crate) const VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES: crat
 /// * `digest_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 544 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_rfc6979_sign_hash_shani_sha512_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hash: usize) -> u32 {
@@ -17928,44 +10998,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 224f
-cmp rax, 2
-je 226f
-cmp rax, 3
-je 228f
-cmp rax, 4
-je 230f
-cmp rax, 5
-je 232f
-cmp rax, 6
-je 234f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 235f
-234:
-call {vg_hmac_sha512_224_init_scratch_shani}
-235:
-jmp 233f
-232:
-call {vg_hmac_sha512_init_scratch_shani}
-233:
-jmp 231f
-230:
-call {vg_hmac_sha384_init_scratch_shani}
-231:
-jmp 229f
-228:
-call {vg_hmac_sha256_init_scratch_shani}
-229:
-jmp 227f
-226:
-call {vg_hmac_sha224_init_scratch_shani}
-227:
-jmp 225f
-224:
-call {vg_hmac_sha1_init_scratch_shani}
-225:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -17975,44 +11009,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 236f
-cmp rax, 2
-je 238f
-cmp rax, 3
-je 240f
-cmp rax, 4
-je 242f
-cmp rax, 5
-je 244f
-cmp rax, 6
-je 246f
-call {vg_sha512_update_scratch_shani}
-jmp 247f
-246:
-call {vg_sha512_update_scratch_shani}
-247:
-jmp 245f
-244:
-call {vg_sha512_update_scratch_shani}
-245:
-jmp 243f
-242:
-call {vg_sha512_update_scratch_shani}
-243:
-jmp 241f
-240:
-call {vg_sha256_update_scratch_shani}
-241:
-jmp 239f
-238:
-call {vg_sha256_update_scratch_shani}
-239:
-jmp 237f
-236:
-call {vg_sha1_update_scratch_shani}
-237:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18024,44 +11022,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 248f
-cmp rax, 2
-je 250f
-cmp rax, 3
-je 252f
-cmp rax, 4
-je 254f
-cmp rax, 5
-je 256f
-cmp rax, 6
-je 258f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 259f
-258:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-259:
-jmp 257f
-256:
-call {vg_hmac_sha512_finalize_scratch_shani}
-257:
-jmp 255f
-254:
-call {vg_hmac_sha384_finalize_scratch_shani}
-255:
-jmp 253f
-252:
-call {vg_hmac_sha256_finalize_scratch_shani}
-253:
-jmp 251f
-250:
-call {vg_hmac_sha224_finalize_scratch_shani}
-251:
-jmp 249f
-248:
-call {vg_hmac_sha1_finalize_scratch_shani}
-249:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18071,44 +11033,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 260f
-cmp rax, 2
-je 262f
-cmp rax, 3
-je 264f
-cmp rax, 4
-je 266f
-cmp rax, 5
-je 268f
-cmp rax, 6
-je 270f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 271f
-270:
-call {vg_hmac_sha512_224_init_scratch_shani}
-271:
-jmp 269f
-268:
-call {vg_hmac_sha512_init_scratch_shani}
-269:
-jmp 267f
-266:
-call {vg_hmac_sha384_init_scratch_shani}
-267:
-jmp 265f
-264:
-call {vg_hmac_sha256_init_scratch_shani}
-265:
-jmp 263f
-262:
-call {vg_hmac_sha224_init_scratch_shani}
-263:
-jmp 261f
-260:
-call {vg_hmac_sha1_init_scratch_shani}
-261:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -18118,44 +11044,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 272f
-cmp rax, 2
-je 274f
-cmp rax, 3
-je 276f
-cmp rax, 4
-je 278f
-cmp rax, 5
-je 280f
-cmp rax, 6
-je 282f
-call {vg_sha512_update_scratch_shani}
-jmp 283f
-282:
-call {vg_sha512_update_scratch_shani}
-283:
-jmp 281f
-280:
-call {vg_sha512_update_scratch_shani}
-281:
-jmp 279f
-278:
-call {vg_sha512_update_scratch_shani}
-279:
-jmp 277f
-276:
-call {vg_sha256_update_scratch_shani}
-277:
-jmp 275f
-274:
-call {vg_sha256_update_scratch_shani}
-275:
-jmp 273f
-272:
-call {vg_sha1_update_scratch_shani}
-273:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18167,44 +11057,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 284f
-cmp rax, 2
-je 286f
-cmp rax, 3
-je 288f
-cmp rax, 4
-je 290f
-cmp rax, 5
-je 292f
-cmp rax, 6
-je 294f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 295f
-294:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-295:
-jmp 293f
-292:
-call {vg_hmac_sha512_finalize_scratch_shani}
-293:
-jmp 291f
-290:
-call {vg_hmac_sha384_finalize_scratch_shani}
-291:
-jmp 289f
-288:
-call {vg_hmac_sha256_finalize_scratch_shani}
-289:
-jmp 287f
-286:
-call {vg_hmac_sha224_finalize_scratch_shani}
-287:
-jmp 285f
-284:
-call {vg_hmac_sha1_finalize_scratch_shani}
-285:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -18272,44 +11126,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 296f
-cmp rax, 2
-je 298f
-cmp rax, 3
-je 2100f
-cmp rax, 4
-je 2102f
-cmp rax, 5
-je 2104f
-cmp rax, 6
-je 2106f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2107f
-2106:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2107:
-jmp 2105f
-2104:
-call {vg_hmac_sha512_init_scratch_shani}
-2105:
-jmp 2103f
-2102:
-call {vg_hmac_sha384_init_scratch_shani}
-2103:
-jmp 2101f
-2100:
-call {vg_hmac_sha256_init_scratch_shani}
-2101:
-jmp 299f
-298:
-call {vg_hmac_sha224_init_scratch_shani}
-299:
-jmp 297f
-296:
-call {vg_hmac_sha1_init_scratch_shani}
-297:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -18319,44 +11137,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 133
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2108f
-cmp rax, 2
-je 2110f
-cmp rax, 3
-je 2112f
-cmp rax, 4
-je 2114f
-cmp rax, 5
-je 2116f
-cmp rax, 6
-je 2118f
-call {vg_sha512_update_scratch_shani}
-jmp 2119f
-2118:
-call {vg_sha512_update_scratch_shani}
-2119:
-jmp 2117f
-2116:
-call {vg_sha512_update_scratch_shani}
-2117:
-jmp 2115f
-2114:
-call {vg_sha512_update_scratch_shani}
-2115:
-jmp 2113f
-2112:
-call {vg_sha256_update_scratch_shani}
-2113:
-jmp 2111f
-2110:
-call {vg_sha256_update_scratch_shani}
-2111:
-jmp 2109f
-2108:
-call {vg_sha1_update_scratch_shani}
-2109:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18368,44 +11150,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2120f
-cmp rax, 2
-je 2122f
-cmp rax, 3
-je 2124f
-cmp rax, 4
-je 2126f
-cmp rax, 5
-je 2128f
-cmp rax, 6
-je 2130f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2131f
-2130:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2131:
-jmp 2129f
-2128:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2129:
-jmp 2127f
-2126:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2127:
-jmp 2125f
-2124:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2125:
-jmp 2123f
-2122:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2123:
-jmp 2121f
-2120:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2121:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18415,44 +11161,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2132f
-cmp rax, 2
-je 2134f
-cmp rax, 3
-je 2136f
-cmp rax, 4
-je 2138f
-cmp rax, 5
-je 2140f
-cmp rax, 6
-je 2142f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2143f
-2142:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2143:
-jmp 2141f
-2140:
-call {vg_hmac_sha512_init_scratch_shani}
-2141:
-jmp 2139f
-2138:
-call {vg_hmac_sha384_init_scratch_shani}
-2139:
-jmp 2137f
-2136:
-call {vg_hmac_sha256_init_scratch_shani}
-2137:
-jmp 2135f
-2134:
-call {vg_hmac_sha224_init_scratch_shani}
-2135:
-jmp 2133f
-2132:
-call {vg_hmac_sha1_init_scratch_shani}
-2133:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -18462,44 +11172,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2144f
-cmp rax, 2
-je 2146f
-cmp rax, 3
-je 2148f
-cmp rax, 4
-je 2150f
-cmp rax, 5
-je 2152f
-cmp rax, 6
-je 2154f
-call {vg_sha512_update_scratch_shani}
-jmp 2155f
-2154:
-call {vg_sha512_update_scratch_shani}
-2155:
-jmp 2153f
-2152:
-call {vg_sha512_update_scratch_shani}
-2153:
-jmp 2151f
-2150:
-call {vg_sha512_update_scratch_shani}
-2151:
-jmp 2149f
-2148:
-call {vg_sha256_update_scratch_shani}
-2149:
-jmp 2147f
-2146:
-call {vg_sha256_update_scratch_shani}
-2147:
-jmp 2145f
-2144:
-call {vg_sha1_update_scratch_shani}
-2145:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18511,50 +11185,14 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2156f
-cmp rax, 2
-je 2158f
-cmp rax, 3
-je 2160f
-cmp rax, 4
-je 2162f
-cmp rax, 5
-je 2164f
-cmp rax, 6
-je 2166f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2167f
-2166:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2167:
-jmp 2165f
-2164:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2165:
-jmp 2163f
-2162:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2163:
-jmp 2161f
-2160:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2161:
-jmp 2159f
-2158:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2159:
-jmp 2157f
-2156:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2157:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-2168:
+224:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-2169:
+225:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18564,44 +11202,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2170f
-cmp rax, 2
-je 2172f
-cmp rax, 3
-je 2174f
-cmp rax, 4
-je 2176f
-cmp rax, 5
-je 2178f
-cmp rax, 6
-je 2180f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2181f
-2180:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2181:
-jmp 2179f
-2178:
-call {vg_hmac_sha512_init_scratch_shani}
-2179:
-jmp 2177f
-2176:
-call {vg_hmac_sha384_init_scratch_shani}
-2177:
-jmp 2175f
-2174:
-call {vg_hmac_sha256_init_scratch_shani}
-2175:
-jmp 2173f
-2172:
-call {vg_hmac_sha224_init_scratch_shani}
-2173:
-jmp 2171f
-2170:
-call {vg_hmac_sha1_init_scratch_shani}
-2171:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -18611,44 +11213,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2182f
-cmp rax, 2
-je 2184f
-cmp rax, 3
-je 2186f
-cmp rax, 4
-je 2188f
-cmp rax, 5
-je 2190f
-cmp rax, 6
-je 2192f
-call {vg_sha512_update_scratch_shani}
-jmp 2193f
-2192:
-call {vg_sha512_update_scratch_shani}
-2193:
-jmp 2191f
-2190:
-call {vg_sha512_update_scratch_shani}
-2191:
-jmp 2189f
-2188:
-call {vg_sha512_update_scratch_shani}
-2189:
-jmp 2187f
-2186:
-call {vg_sha256_update_scratch_shani}
-2187:
-jmp 2185f
-2184:
-call {vg_sha256_update_scratch_shani}
-2185:
-jmp 2183f
-2182:
-call {vg_sha1_update_scratch_shani}
-2183:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18660,44 +11226,8 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2194f
-cmp rax, 2
-je 2196f
-cmp rax, 3
-je 2198f
-cmp rax, 4
-je 2200f
-cmp rax, 5
-je 2202f
-cmp rax, 6
-je 2204f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2205f
-2204:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2205:
-jmp 2203f
-2202:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2203:
-jmp 2201f
-2200:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2201:
-jmp 2199f
-2198:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2199:
-jmp 2197f
-2196:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2197:
-jmp 2195f
-2194:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2195:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdx, QWORD PTR [rsp+128]
 add rdx, rsp
 mov rax, QWORD PTR [rsp+64]
@@ -18720,7 +11250,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 66
-jb 2169b
+jb 225b
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, rsp
 add rsi, 360
@@ -18866,10 +11396,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 2206f
+jne 226f
 xor edx, edx
-jmp 2207f
-2206:
+jmp 227f
+226:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -18901,44 +11431,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2208f
-cmp rax, 2
-je 2210f
-cmp rax, 3
-je 2212f
-cmp rax, 4
-je 2214f
-cmp rax, 5
-je 2216f
-cmp rax, 6
-je 2218f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2219f
-2218:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2219:
-jmp 2217f
-2216:
-call {vg_hmac_sha512_init_scratch_shani}
-2217:
-jmp 2215f
-2214:
-call {vg_hmac_sha384_init_scratch_shani}
-2215:
-jmp 2213f
-2212:
-call {vg_hmac_sha256_init_scratch_shani}
-2213:
-jmp 2211f
-2210:
-call {vg_hmac_sha224_init_scratch_shani}
-2211:
-jmp 2209f
-2208:
-call {vg_hmac_sha1_init_scratch_shani}
-2209:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -18948,44 +11442,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 1
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2220f
-cmp rax, 2
-je 2222f
-cmp rax, 3
-je 2224f
-cmp rax, 4
-je 2226f
-cmp rax, 5
-je 2228f
-cmp rax, 6
-je 2230f
-call {vg_sha512_update_scratch_shani}
-jmp 2231f
-2230:
-call {vg_sha512_update_scratch_shani}
-2231:
-jmp 2229f
-2228:
-call {vg_sha512_update_scratch_shani}
-2229:
-jmp 2227f
-2226:
-call {vg_sha512_update_scratch_shani}
-2227:
-jmp 2225f
-2224:
-call {vg_sha256_update_scratch_shani}
-2225:
-jmp 2223f
-2222:
-call {vg_sha256_update_scratch_shani}
-2223:
-jmp 2221f
-2220:
-call {vg_sha1_update_scratch_shani}
-2221:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -18997,44 +11455,8 @@ mov rcx, rsp
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2232f
-cmp rax, 2
-je 2234f
-cmp rax, 3
-je 2236f
-cmp rax, 4
-je 2238f
-cmp rax, 5
-je 2240f
-cmp rax, 6
-je 2242f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2243f
-2242:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2243:
-jmp 2241f
-2240:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2241:
-jmp 2239f
-2238:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2239:
-jmp 2237f
-2236:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2237:
-jmp 2235f
-2234:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2235:
-jmp 2233f
-2232:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2233:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -19044,44 +11466,8 @@ add rdx, 0
 mov rcx, QWORD PTR [rsp+504]
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2244f
-cmp rax, 2
-je 2246f
-cmp rax, 3
-je 2248f
-cmp rax, 4
-je 2250f
-cmp rax, 5
-je 2252f
-cmp rax, 6
-je 2254f
-call {vg_hmac_sha512_256_init_scratch_shani}
-jmp 2255f
-2254:
-call {vg_hmac_sha512_224_init_scratch_shani}
-2255:
-jmp 2253f
-2252:
-call {vg_hmac_sha512_init_scratch_shani}
-2253:
-jmp 2251f
-2250:
-call {vg_hmac_sha384_init_scratch_shani}
-2251:
-jmp 2249f
-2248:
-call {vg_hmac_sha256_init_scratch_shani}
-2249:
-jmp 2247f
-2246:
-call {vg_hmac_sha224_init_scratch_shani}
-2247:
-jmp 2245f
-2244:
-call {vg_hmac_sha1_init_scratch_shani}
-2245:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_init_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+496]
@@ -19091,44 +11477,8 @@ mov rcx, QWORD PTR [rsp+504]
 add rcx, 0
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2256f
-cmp rax, 2
-je 2258f
-cmp rax, 3
-je 2260f
-cmp rax, 4
-je 2262f
-cmp rax, 5
-je 2264f
-cmp rax, 6
-je 2266f
-call {vg_sha512_update_scratch_shani}
-jmp 2267f
-2266:
-call {vg_sha512_update_scratch_shani}
-2267:
-jmp 2265f
-2264:
-call {vg_sha512_update_scratch_shani}
-2265:
-jmp 2263f
-2262:
-call {vg_sha512_update_scratch_shani}
-2263:
-jmp 2261f
-2260:
-call {vg_sha256_update_scratch_shani}
-2261:
-jmp 2259f
-2258:
-call {vg_sha256_update_scratch_shani}
-2259:
-jmp 2257f
-2256:
-call {vg_sha1_update_scratch_shani}
-2257:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hash_update_scratch_shani_sha512}
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -19140,48 +11490,12 @@ mov rcx, rsp
 add rcx, 64
 mov r8, QWORD PTR [rsp+184]
 add r8, 512
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 2268f
-cmp rax, 2
-je 2270f
-cmp rax, 3
-je 2272f
-cmp rax, 4
-je 2274f
-cmp rax, 5
-je 2276f
-cmp rax, 6
-je 2278f
-call {vg_hmac_sha512_256_finalize_scratch_shani}
-jmp 2279f
-2278:
-call {vg_hmac_sha512_224_finalize_scratch_shani}
-2279:
-jmp 2277f
-2276:
-call {vg_hmac_sha512_finalize_scratch_shani}
-2277:
-jmp 2275f
-2274:
-call {vg_hmac_sha384_finalize_scratch_shani}
-2275:
-jmp 2273f
-2272:
-call {vg_hmac_sha256_finalize_scratch_shani}
-2273:
-jmp 2271f
-2270:
-call {vg_hmac_sha224_finalize_scratch_shani}
-2271:
-jmp 2269f
-2268:
-call {vg_hmac_sha1_finalize_scratch_shani}
-2269:
+mov r9, QWORD PTR [rsp+512]
+call {vg_hmac_finalize_scratch_shani_sha512}
 mov edx, 1
 test rdx, rdx
-2207:
-jne 2168b
+227:
+jne 224b
 xor ecx, ecx
 mov QWORD PTR [rsp], rcx
 mov QWORD PTR [rsp+8], rcx
@@ -19307,23 +11621,9 @@ pop rcx
 pop rcx
 ret
 .p2align 6",
-        vg_hmac_sha512_256_init_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_shani,
-        vg_hmac_sha512_224_init_scratch_shani = sym super::hmac_sha512_224::vg_hmac_sha512_224_init_scratch_shani,
-        vg_hmac_sha512_init_scratch_shani = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_shani,
-        vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani,
-        vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani,
-        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
-        vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
-        vg_hmac_sha512_256_finalize_scratch_shani = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_shani,
-        vg_hmac_sha512_224_finalize_scratch_shani = sym super::hmac_sha512_224::vg_hmac_sha512_224_finalize_scratch_shani,
-        vg_hmac_sha512_finalize_scratch_shani = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch_shani,
-        vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani,
-        vg_hmac_sha256_finalize_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
-        vg_hmac_sha1_finalize_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_shani,
+        vg_hmac_init_scratch_shani_sha512 = sym super::hash_any::vg_hmac_init_scratch_shani_sha512,
+        vg_hash_update_scratch_shani_sha512 = sym super::hash_any::vg_hash_update_scratch_shani_sha512,
+        vg_hmac_finalize_scratch_shani_sha512 = sym super::hash_any::vg_hmac_finalize_scratch_shani_sha512,
         vg_ecdsa_p521_sign_adx = sym super::ecdsa_p521::vg_ecdsa_p521_sign_adx,
     )
 }
