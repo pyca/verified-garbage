@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Rsa.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -66,7 +65,7 @@ structure PdArgs (s : State) (out pre e inp scr : BitVec 32) (K el rl sl : Nat) 
   rlK : rl = Spec.Rsa.precomputedWords K
   el1 : 1 ≤ el
   elK : el ≤ K
-  slK : Spec.Rsa.scratchWords K ≤ sl
+  slK : Spec.Rsa.publicScratchWords K ≤ sl
   sl32 : sl < 2 ^ 32
 
 /-- The callee's buffers. -/
@@ -117,7 +116,7 @@ theorem pd_pre {sp : BitVec 32} (h : PdArgs s out pre e inp scr K el rl sl) (hsp
     l _ (.inr (List.mem_cons_of_mem _ List.mem_cons_self)),
     l _ (.inl (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))),
     fOut, fPre, fE, fInp, fScr, h.kv, h.rlK, trivial, h.el1, h.elK,
-    VG.Proof.Rsa.publicScratch_le h.kv h.slK⟩
+    h.slK⟩
 
 theorem pd_pub {s₁ s₂ : State} (h₁ : PdArgs s₁ out pre e inp scr K el rl sl)
     (h₂ : PdArgs s₂ out pre e inp scr K el rl sl) (hsp : s₁.sp = s₂.sp)

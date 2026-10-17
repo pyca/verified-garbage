@@ -84,7 +84,7 @@ structure In (P : EP) (σ : State) : Prop where
   elK : P.el ≤ P.K
   mlK : P.ml + 11 ≤ P.K
   plK : P.pl = P.K - P.ml - 3
-  slK : Spec.Rsa.scratchWords P.K ≤ P.sl
+  slK : Spec.Rsa.publicScratchWords P.K ≤ P.sl
   rlK : P.rl = Spec.Rsa.precomputedWords P.K
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.e) P.el = P.eB
   pw : Spec.Rsa.wordsAt σ.mem (State.addr P.pre) P.rl = P.pw
