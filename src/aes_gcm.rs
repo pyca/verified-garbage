@@ -407,7 +407,9 @@ struct Prepared {
     stream_decrypt: StreamPrepared,
     /// Whether `seal` and `seal_gather` have a short path that copies its
     /// powers from the key context, so that messages shorter than
-    /// `POWERS_MIN_LEN` sealed gain from it too once it is ready.
+    /// `POWERS_MIN_LEN` sealed gain from it too once it is ready. None on
+    /// AArch64.
+    #[cfg(target_arch = "x86_64")]
     short: bool,
 }
 
@@ -588,7 +590,6 @@ static PREPARED_AES: Prepared = Prepared {
     open_store: vg_aes_gcm_open_store_powers_aes,
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
-    short: false,
 };
 
 #[cfg(all(
@@ -794,6 +795,8 @@ impl Powers {
                 q
             }
         };
+        // Only x86-64 has backends with a short path.
+        #[cfg(target_arch = "x86_64")]
         if self.fns.is_some_and(|f| f.short) {
             self.calls.store(SHORT_READY, Ordering::Relaxed);
         }
