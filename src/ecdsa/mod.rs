@@ -11,8 +11,8 @@
 //! `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
-//! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`), or on x86 for the
-//! curve, with the hash function as an argument
+//! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`), or on x86 and 32-bit
+//! ARM for the curve, with the hash function as an argument
 //! (`vg_ecdsa_<curve>_rfc6979_sign`, contract
 //! `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`). That code
 //! derives the per-message secret number `k` from the key and the hash with
@@ -56,6 +56,7 @@ mod p256;
 mod p384;
 mod p521;
 mod rfc6979;
+mod rfc6979_arm;
 mod rfc6979_x86;
 mod secp256k1;
 

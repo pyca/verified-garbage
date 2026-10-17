@@ -10,7 +10,7 @@
 //! file of its own, `rfc6979_<arch>.rs`, whose `<curve>(f)` gives the
 //! function a CPU with the features `f` runs best.
 
-#![cfg(target_arch = "x86")]
+#![cfg(any(target_arch = "x86", target_arch = "arm"))]
 
 use super::Error;
 use crate::hashes::HashFunction;

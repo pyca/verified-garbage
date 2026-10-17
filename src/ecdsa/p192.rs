@@ -12,7 +12,7 @@
 use super::{Error, P192, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p192::vg_ec_p192_public_key;
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_avx2;
@@ -21,7 +21,7 @@ use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_sha2;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_shani;
 use crate::hashes::sha256::Sha256;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::hashes::sha256::Sha256Backend;
 use crate::zeroize::zeroize;
 
@@ -60,7 +60,16 @@ impl sealed::Functions<P192> for Sha256 {
         )
     }
 
-    #[cfg(not(target_arch = "x86"))]
+    #[cfg(target_arch = "arm")]
+    fn sign(d: &[u8; 24], digest: &[u8; 32]) -> Result<[u8; 48], Error> {
+        super::rfc6979::sign::<Sha256, 24, 48>(
+            super::rfc6979_arm::p192(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
     fn sign(d: &[u8; 24], digest: &[u8; 32]) -> Result<[u8; 48], Error> {
         let sign = match Sha256Backend::select(crate::cpu::detected()) {
             Sha256Backend::Scalar => vg_ecdsa_p192_sha256_sign,

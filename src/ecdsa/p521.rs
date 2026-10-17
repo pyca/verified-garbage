@@ -15,7 +15,7 @@ use super::{Error, P521, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify_adx;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign_sha3;
@@ -28,9 +28,9 @@ use crate::arch::ecdsa_p521_sha512::{
 use crate::cpu::detected;
 use crate::ec::p521::{Mul, public_key};
 use crate::hashes::sha512::Sha512;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::hashes::sha512::Sha512Backend;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P521> {
@@ -67,7 +67,16 @@ impl sealed::Functions<P521> for Sha512 {
         )
     }
 
-    #[cfg(not(target_arch = "x86"))]
+    #[cfg(target_arch = "arm")]
+    fn sign(d: &[u8; 66], digest: &[u8; 64]) -> Result<[u8; 132], Error> {
+        super::rfc6979::sign::<Sha512, 66, 132>(
+            super::rfc6979_arm::p521(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
     fn sign(d: &[u8; 66], digest: &[u8; 64]) -> Result<[u8; 132], Error> {
         let f = detected();
         let sign = match (Sha512Backend::select(f), Mul::select(f)) {

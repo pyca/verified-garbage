@@ -15,7 +15,7 @@ use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_adx;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
@@ -26,7 +26,7 @@ use crate::arch::ecdsa_p256_sha256::{
     vg_ecdsa_p256_sha256_sign_adx, vg_ecdsa_p256_sha256_sign_avx2,
     vg_ecdsa_p256_sha256_sign_avx2_adx, vg_ecdsa_p256_sha256_sign_shani_adx,
 };
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
@@ -39,12 +39,12 @@ use crate::arch::ecdsa_p256_sha384::{
 use crate::cpu::detected;
 use crate::ec::p256::{Mul, public_key};
 use crate::hashes::sha256::Sha256;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::hashes::sha256::Sha256Backend;
 use crate::hashes::sha384::Sha384;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::hashes::sha384::Sha384Backend;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P256> {
@@ -68,7 +68,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u64; 1024],
 ) -> u32;
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(target_arch = "aarch64")]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 
@@ -77,7 +77,7 @@ type SignFn<const N: usize> =
 /// # Safety
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 unsafe fn sign_with<const N: usize>(
     sign: SignFn<N>,
     d: &[u8; 32],
@@ -136,7 +136,16 @@ impl sealed::Functions<P256> for Sha256 {
         )
     }
 
-    #[cfg(not(target_arch = "x86"))]
+    #[cfg(target_arch = "arm")]
+    fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha256, 32, 64>(
+            super::rfc6979_arm::p256(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign = match (Sha256Backend::select(f), Mul::select(f)) {
@@ -176,7 +185,16 @@ impl sealed::Functions<P256> for Sha384 {
         )
     }
 
-    #[cfg(not(target_arch = "x86"))]
+    #[cfg(target_arch = "arm")]
+    fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha384, 32, 64>(
+            super::rfc6979_arm::p256(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
     fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign = match (Sha384Backend::select(f), Mul::select(f)) {

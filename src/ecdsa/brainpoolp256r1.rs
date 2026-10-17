@@ -12,7 +12,7 @@
 use super::{BrainpoolP256r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key;
 use crate::arch::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign_avx2;
@@ -21,7 +21,7 @@ use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_s
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign_shani;
 use crate::hashes::sha256::Sha256;
-#[cfg(not(target_arch = "x86"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
 use crate::hashes::sha256::Sha256Backend;
 use crate::zeroize::zeroize;
 
@@ -60,7 +60,16 @@ impl sealed::Functions<BrainpoolP256r1> for Sha256 {
         )
     }
 
-    #[cfg(not(target_arch = "x86"))]
+    #[cfg(target_arch = "arm")]
+    fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha256, 32, 64>(
+            super::rfc6979_arm::brainpoolp256r1(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(any(target_arch = "x86", target_arch = "arm")))]
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let sign = match Sha256Backend::select(crate::cpu::detected()) {
             Sha256Backend::Scalar => vg_ecdsa_brainpoolp256r1_sha256_sign,
