@@ -365,42 +365,25 @@ mov rdx, r15
 add rdx, 160
 mov rcx, r15
 call {vg_md5_finalize_scratch}
-mov eax, DWORD PTR [r12]
-mov DWORD PTR [rbx], eax
-mov eax, DWORD PTR [r12+4]
-mov DWORD PTR [rbx+4], eax
-mov eax, DWORD PTR [r12+8]
-mov DWORD PTR [rbx+8], eax
-mov eax, DWORD PTR [r12+12]
-mov DWORD PTR [rbx+12], eax
-mov eax, DWORD PTR [r15+160]
-mov DWORD PTR [rbx+16], eax
-mov eax, DWORD PTR [r15+164]
-mov DWORD PTR [rbx+20], eax
-mov eax, DWORD PTR [r15+168]
-mov DWORD PTR [rbx+24], eax
-mov eax, DWORD PTR [r15+172]
-mov DWORD PTR [rbx+28], eax
+movdqu xmm0, XMMWORD PTR [r12]
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu xmm0, XMMWORD PTR [r15+160]
+movdqu XMMWORD PTR [rbx+16], xmm0
 mov rbp, rbx
 add rbp, 16
 mov eax, 128
-mov DWORD PTR [rbp+16], eax
-mov eax, 0
-mov DWORD PTR [rbp+20], eax
-mov DWORD PTR [rbp+24], eax
-mov DWORD PTR [rbp+28], eax
-mov DWORD PTR [rbp+32], eax
-mov DWORD PTR [rbp+36], eax
-mov DWORD PTR [rbp+40], eax
-mov DWORD PTR [rbp+44], eax
-mov DWORD PTR [rbp+48], eax
-mov DWORD PTR [rbp+52], eax
+movq xmm1, rax
+movdqu XMMWORD PTR [rbp+16], xmm1
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbp+32], xmm0
 mov r12d, 80
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
-mov QWORD PTR [rbx+72], rax
+movq xmm7, rax
+pslldq xmm7, 8
+movdqu XMMWORD PTR [rbp+48], xmm7
 mov rsi, rbp
 mov rdi, rbx
 mov edx, 1
@@ -603,42 +586,25 @@ mov rdx, r15
 add rdx, 160
 mov rcx, r15
 call {vg_md5_finalize_scratch}
-mov eax, DWORD PTR [r12]
-mov DWORD PTR [rbx], eax
-mov eax, DWORD PTR [r12+4]
-mov DWORD PTR [rbx+4], eax
-mov eax, DWORD PTR [r12+8]
-mov DWORD PTR [rbx+8], eax
-mov eax, DWORD PTR [r12+12]
-mov DWORD PTR [rbx+12], eax
-mov eax, DWORD PTR [r15+160]
-mov DWORD PTR [rbx+16], eax
-mov eax, DWORD PTR [r15+164]
-mov DWORD PTR [rbx+20], eax
-mov eax, DWORD PTR [r15+168]
-mov DWORD PTR [rbx+24], eax
-mov eax, DWORD PTR [r15+172]
-mov DWORD PTR [rbx+28], eax
+movdqu xmm0, XMMWORD PTR [r12]
+movdqu XMMWORD PTR [rbx], xmm0
+movdqu xmm0, XMMWORD PTR [r15+160]
+movdqu XMMWORD PTR [rbx+16], xmm0
 mov rbp, rbx
 add rbp, 16
 mov eax, 128
-mov DWORD PTR [rbp+16], eax
-mov eax, 0
-mov DWORD PTR [rbp+20], eax
-mov DWORD PTR [rbp+24], eax
-mov DWORD PTR [rbp+28], eax
-mov DWORD PTR [rbp+32], eax
-mov DWORD PTR [rbp+36], eax
-mov DWORD PTR [rbp+40], eax
-mov DWORD PTR [rbp+44], eax
-mov DWORD PTR [rbp+48], eax
-mov DWORD PTR [rbp+52], eax
+movq xmm1, rax
+movdqu XMMWORD PTR [rbp+16], xmm1
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rbp+32], xmm0
 mov r12d, 80
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
-mov QWORD PTR [rbx+72], rax
+movq xmm7, rax
+pslldq xmm7, 8
+movdqu XMMWORD PTR [rbp+48], xmm7
 mov rsi, rbp
 mov rdi, rbx
 mov edx, 1
