@@ -85,7 +85,14 @@ and SHA-224's digests, HMACs and PBKDF2's: eight copies of one binary on an
 Arm Neoverse N2 spread by up to 3.5% for `sha256` at 32 bytes
 (47.22–48.85 ns), 2.1% for `sha224` at 32, 8.6% for `pbkdf2-hmac-sha224`
 at 64 (5.16–5.60 µs) and 1.6% for `hmac-sha256` at 32, more than the 0.7%
-by which a pull request's code layout already moves them.
+by which a pull request's code layout already moves them. So do HMAC's
+with the SHA-512 family's hashes, which run the same compression function
+as their digests: on an EPYC 9V45, one function's 16 KiB time (HMAC-SHA-384,
+-512, -512/224 or -512/256) sat at 13.55–13.64 µs from some call sites and
+at 14.00–14.28 µs from others in one binary, and the other side's binary
+drew only the slower level (14.04–14.18 µs at every call site), 3–4% slower,
+where the PBKDF2 groups' fastest copies were within 0.4%; in a second run
+on an EPYC 9V45 every call site of both sides was within 1%.
 
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
@@ -119,12 +126,13 @@ TARGET = pathlib.Path("bench-target").resolve()
 # The benchmark groups (`<primitive>`s) whose time depends on the physical
 # pages that hold the binary (see the module docstring): those that read a
 # comb's table of hundreds of kilobytes, ChaCha20-Poly1305's, AES-GCM's,
-# the SHA-512 family's digests and PBKDF2's, ML-KEM's, and SHA-256's and
+# the SHA-512 family's digests, HMAC's and PBKDF2's, ML-KEM's, and SHA-256's and
 # SHA-224's digests, HMACs and PBKDF2's.
 # They run from `--copies` copies of each binary.
 FRESH_COPIES = re.compile(
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
     r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_"
+    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$"
     r"|sha(?:224|256)$|(?:hmac|pbkdf2-hmac)-sha(?:224|256)(?:-verify)?$)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
