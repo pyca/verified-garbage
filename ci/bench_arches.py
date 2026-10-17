@@ -814,6 +814,20 @@ def asm_users(arch, module, root="."):
     return names or None
 
 
+def own_uses(name, catalog):
+    """The modules of the benchmark `name`'s `USES` that select it alone:
+    those no other benchmark uses, or all of them if every one is shared.
+    A change to the benchmark changes only its own measurements, so its
+    other modules' benchmarks (e.g. every hash's, for RSA-PSS) need not run;
+    `run_requirements` still chooses the configurations from all of them.
+    None if it has no `USES`."""
+    uses = bench_uses(f"bench/benches/primitives/{name}.rs")
+    if not uses:
+        return None
+    others = set().union(*(u for n, u in (catalog or {}).items() if n != name))
+    return (uses - others) or uses
+
+
 def helper_uses(name, catalog):
     """The `USES` of the benchmarks that call the helper
     `bench/benches/primitives/<name>.rs` (a module of `main.rs` without
@@ -992,7 +1006,7 @@ def arches(changed, base=None):
                 for name in names:
                     need(a, name)
         elif (bench := BENCH.match(path) or BENCH_TEST.match(path)) and (
-                uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")
+                uses := own_uses(bench[1], catalogs[-1])
                 or helper_uses(bench[1], catalogs[-1])):
             for a in targets:
                 for m in uses:

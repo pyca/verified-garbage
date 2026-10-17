@@ -231,6 +231,22 @@ class Selection(unittest.TestCase):
         rows = self.rows(['src/asm/x86_64/x448.rs'])
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', *planner.CPU_FEATURES['x86_64']])
 
+    def test_a_benchmark_selects_only_the_modules_no_other_benchmark_uses(self):
+        # Its shared `sha256` would run `sha256`'s benchmark too; its
+        # configurations still follow every module it uses.
+        self.catalog.update({'sha256': {'sha256'}, 'rsa_pss': {'rsa_pss', 'sha256', 'keccak'}})
+        self.files['bench/benches/primitives/rsa_pss.rs'] = (
+            'pub const USES: &[&str] = &["rsa_pss", "sha256", "keccak"];')
+        rows = self.rows(['bench/benches/primitives/rsa_pss.rs'])
+        self.assertEqual({r['modules'] for r in rows}, {'rsa_pss'})
+        self.assertEqual(self.configurations(rows, 'aarch64'), ['', 'sha3'])
+        # One whose modules are all shared selects them all.
+        self.files['bench/benches/primitives/hmac_sha256.rs'] = (
+            'pub const USES: &[&str] = &["hmac_sha256", "sha256"];')
+        self.catalog['other'] = {'hmac_sha256'}
+        self.assertEqual({r['modules'] for r in self.rows(['bench/benches/primitives/hmac_sha256.rs'])},
+                         {'hmac_sha256 sha256'})
+
     def test_family_code_and_benchmark_tests_select_their_modules(self):
         # Its members, and the modules using it.
         self.assertEqual({r['modules'] for r in self.rows(['src/hmac/mod.rs'])}, {'hmac_sha256 poly'})
