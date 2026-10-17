@@ -161,9 +161,10 @@ fn rsa_pss_test() {
 /// the hash value's length: the signature verifies with its salt length and
 /// with any, and not with another; and two signatures with random salts
 /// differ. Every size of key, even where the other RSA tests leave out
-/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`). Then PSS and
-/// PKCS #1 v1.5 verification and OAEP encryption, which lease the public
-/// key's buffer, alternated on threads sharing the key.
+/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`). Then, on the
+/// sizes the other RSA tests run, PSS and PKCS #1 v1.5 verification and OAEP
+/// encryption, which lease the public key's buffer, alternated on threads
+/// sharing the key.
 #[test]
 fn rsa_pss_sign_test() {
     require_vectors!();
@@ -206,6 +207,9 @@ fn rsa_pss_sign_test() {
                 let a = sign(&private, &d, *h, *h, 16).unwrap();
                 let b = sign(&private, &d, *h, *h, 16).unwrap();
                 assert_ne!(a, b, "{name} tcId {id}");
+            }
+            if !harness::rsa_bits_tested(bits) {
+                return;
             }
             // Signature verification and OAEP encryption lease the same key's
             // buffer, with different workspace lengths. Alternate them, including
