@@ -370,7 +370,8 @@ constant time, for a `gh` that hashes as `vg_ghash` and leaks the same in two
 runs, called with memory changed since the entry only in the working space and
 the text. -/
 theorem sealWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw : w = 1 ∨ w = 2)
-    {extra : State → List Region} {pre : State → Prop} (hpre : ∀ s, pre s → sealPreXW w (extra s) s)
+    {extra extraW : State → List Region} {pre : State → Prop}
+    (hpre : ∀ s, pre s → sealPreXW w (extra s) s (extraW s))
     {ex : State → List Region}
     (hexW : ∀ {σ : State}, pre σ → ∀ r ∈ ex σ, (workR (stackArg σ w)).Disjoint r)
     (hexC : ∀ {σ : State}, pre σ → ∀ r ∈ ex σ, (⟨σ.gpr .x0, 256⟩ : Region).Disjoint r)

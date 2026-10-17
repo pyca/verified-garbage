@@ -216,14 +216,14 @@ def sealPreX (extra : List Region) (s : State) : Prop :=
 /-- `sealPreX`, with `work` the stack argument `w` (after `tag` and `w - 1`
 others, such as `pw` for `vg_aes_gcm_seal_with_powers`): `sealPreX` is
 `sealPreXW 1`. -/
-def sealPreXW (w : Nat) (extra : List Region) (s : State) : Prop :=
+def sealPreXW (w : Nat) (extra : List Region) (s : State) (extraW : List Region := []) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
   let work : Region := ⟨stackArg s w, 2560⟩
-  s.rd = [ctx, nonce, aad, args s (w + 1)] ++ extra ∧ s.wr = [data, tag, work] ∧
+  s.rd = [ctx, nonce, aad, args s (w + 1)] ++ extra ∧ s.wr = data :: tag :: work :: extraW ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ data.Disjoint tag ∧
     data.Disjoint work ∧ data.Disjoint (args s (w + 1)) ∧ tag.Disjoint work ∧ work.Disjoint (args s (w + 1)) ∧
@@ -272,14 +272,14 @@ def openPreX (extra : List Region) (s : State) : Prop :=
 /-- `openPreX`, with `work` the stack argument `w` (after `tag`, `tag_len`
 and `w - 2` others, such as `pw` for `vg_aes_gcm_open_with_powers`):
 `openPreX` is `openPreXW 2`. -/
-def openPreXW (w : Nat) (extra : List Region) (s : State) : Prop :=
+def openPreXW (w : Nat) (extra : List Region) (s : State) (extraW : List Region := []) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
   let work : Region := ⟨stackArg s w, 2560⟩
-  s.rd = [ctx, nonce, aad, tag, args s (w + 1)] ++ extra ∧ s.wr = [data, work] ∧
+  s.rd = [ctx, nonce, aad, tag, args s (w + 1)] ++ extra ∧ s.wr = data :: work :: extraW ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s (w + 1)) ∧ tag.Disjoint work ∧ work.Disjoint (args s (w + 1)) ∧
