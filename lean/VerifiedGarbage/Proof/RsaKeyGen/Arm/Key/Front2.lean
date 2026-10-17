@@ -53,7 +53,7 @@ theorem primes_vp {E : State → Prop} : VP (S0 P E) primes (S1 P E) := by
   refine VP.assoc (VP.seq (St.pltS ltQ1_taint (by simp) (by simp) (by decide) (by decide) (by decide)) ?_)
   refine (St.psel selQm_taint (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)
     fun _ _ => by simp only [upd_self]; exact b2n_le' _).mono (fun _ _ h => h) fun σ s h =>
-      h.mono (fun j hj => ⟨by simp only [List.mem_cons] at hj ⊢; tauto, ?_⟩) (fun d _ => absurd ‹d ∈ []› (by simp))
+      h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d _ => absurd ‹d ∈ []› (by simp))
   have pv' := pv_lt P σ; have qv' := qv_lt P σ
   have p8 : 2 ^ (8 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj

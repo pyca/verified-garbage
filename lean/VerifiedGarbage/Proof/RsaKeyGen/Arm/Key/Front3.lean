@@ -142,7 +142,7 @@ theorem halvingStart_vp {E : State → Prop} {c : Prog isa} {G : State → State
   refine VP.seq (St.pcopy vQm_taint (by decide) (by simp) (by decide)) ?_
   refine VP.seq ?_ hc
   refine (VP.block_append (l₁ := cnt8) St.pcnt8 St.pstrHc).mono (fun _ _ h => h) fun σ s h =>
-    ⟨h.mono (fun j hj => ⟨by simp only [List.mem_cons] at hj ⊢; tauto, ?_⟩) (fun d hd => ⟨hd, ?_⟩), Nat.le_refl _⟩
+    ⟨h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d hd => ⟨hd, ?_⟩), Nat.le_refl _⟩
   · have phi : (0 + qm P σ % 2 ^ (8 * P.K) * pm P σ) % 2 ^ (32 * P.W - 1) = pm P σ * qm P σ := by
       rw [Nat.zero_add, Nat.mod_eq_of_lt (qm_lt P σ), Nat.mul_comm]
       refine Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (phi_lt P σ) (Nat.pow_le_pow_right (by decide) ?_))
@@ -177,7 +177,7 @@ theorem halfStep_vp {E : State → Prop} (n : Nat) :
   refine (St.pcntDown (n := n) (by simp) (by omega) fun _ _ => by
     simp (config := {decide := true}) only [upd, ↓reduceIte]).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
   have st : St P E (fun σ => AH P σ (8 * P.K - n)) LH (fun _ => upd (fun _ => 0) sHc n) [sHc] σ s := by
-    refine h.mono (fun j hj => ⟨by simp only [List.mem_cons] at hj ⊢; tauto, ?_⟩) (fun d hd => ⟨by simp only [List.mem_singleton] at hd; simp [hd], ?_⟩)
+    refine h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d hd => ⟨by simp only [List.mem_singleton] at hd; simp [hd], ?_⟩)
     · have e : 8 * P.K - n = (8 * P.K - (n + 1)) + 1 := by omega
       rw [e]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj

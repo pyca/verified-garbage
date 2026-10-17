@@ -152,7 +152,7 @@ theorem consts_vp {E : State → Prop} :
       fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine (St.psetWd c33_taint (by simp) (by decide) (by decide) (by decide)
       fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _).mono
-      (fun _ _ h => h) fun σ s h => h.mono (fun j hj => ⟨by simp only [List.mem_cons] at hj ⊢; tauto, ?_⟩)
+      (fun _ _ h => h) fun σ s h => h.mono (fun j hj => ⟨by mem_sub, ?_⟩)
         (fun d hd => ⟨hd, rfl⟩)
     have k1 := h.2.1.pre.k1
     have k8 := h.2.1.pre.k8
