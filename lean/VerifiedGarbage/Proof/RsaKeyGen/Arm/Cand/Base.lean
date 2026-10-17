@@ -58,10 +58,12 @@ abbrev Z (P : CP) : Nat := P.SL * 8
 
 /-- Montgomery multiplication's working space: its offset in the working
 space (256 bytes before the key array `mBase`), its base and its 64-bit
-words. -/
+words: those of its eight arrays (the round's are the rest of the working
+space, `lenR`). -/
 abbrev oM (P : CP) : Nat := 8 * (21 * P.w + 30)
 abbrev M0 (P : CP) : BitVec 32 := P.B + BitVec.ofNat 32 P.oM
-abbrev lenM (P : CP) : Nat := P.SL - (21 * P.w + 30)
+abbrev lenM (P : CP) : Nat := 8 * P.w + 48
+abbrev lenR (P : CP) : Nat := P.SL - (21 * P.w + 30)
 
 abbrev rS (P : CP) : Region := ⟨State.addr P.B, P.Z⟩
 abbrev rM (P : CP) : Region := ⟨State.addr P.M0, 8 * P.lenM⟩
@@ -195,15 +197,18 @@ theorem In.rM_mem (h : In P σ) : P.rM ∈ σ.wr := by rw [h.wr]; simp
 theorem In.oM_eq (h : In P σ) : P.oM + 256 = arr P.W mBase := by
   have := h.W_eq; simp only [arr, S, hdr, mBase, CP.oM]; omega
 
-theorem In.lenM_fit (h : In P σ) : P.oM + 8 * P.lenM = P.Z := by
-  have := h.scr; have := h.w4; have := h.L_eq
-  simp only [Spec.Rsa.scratchWords] at *
-  simp only [CP.oM, CP.lenM, CP.Z]; omega
+theorem In.endM (h : In P σ) : P.oM + 8 * P.lenM = arr P.W (mBase + 8) := by
+  have := h.W_eq; simp only [arr, S, hdr, mBase, CP.oM, CP.lenM]; omega
 
-theorem In.lenM_ge (h : In P σ) : 49 * P.w + 118 ≤ P.lenM := by
+theorem In.lenR_fit (h : In P σ) : P.oM + 8 * P.lenR = P.Z := by
   have := h.scr; have := h.w4; have := h.L_eq
   simp only [Spec.Rsa.scratchWords] at *
-  simp only [CP.lenM]; omega
+  simp only [CP.oM, CP.lenR, CP.Z]; omega
+
+theorem In.lenR_ge (h : In P σ) : 49 * P.w + 118 ≤ P.lenR := by
+  have := h.scr; have := h.w4; have := h.L_eq
+  simp only [Spec.Rsa.scratchWords] at *
+  simp only [CP.lenR]; omega
 
 end
 
