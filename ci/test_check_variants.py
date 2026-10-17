@@ -46,6 +46,43 @@ class Composition(unittest.TestCase):
                       errors[0])
 
 
+class Tiers(unittest.TestCase):
+    # `g` calls `f` and `h`, which have variants with the same suffix but
+    # different CPU features (`f_s` needs `a`, `h_s` needs `b`), and has
+    # variants by tiers of features: `g_s` (`a`) calls `f_s` and `h`, `g_t`
+    # (`a` and `b`) calls `f_s` and `h_s`.
+    BASE = {
+        "vg_f": [], "vg_f_s": [], "vg_h": [], "vg_h_s": [],
+        "vg_g": ["vg_f", "vg_h"], "vg_g_s": ["vg_f_s", "vg_h"], "vg_g_t": ["vg_f_s", "vg_h_s"],
+    }
+    FEATS = {"vg_f_s": {"a"}, "vg_h_s": {"b"}, "vg_g_s": {"a"}, "vg_g_t": {"a", "b"}}
+    RUST = "vg_g vg_g_s vg_g_t"
+
+    def check(self, calls, feats):
+        return check_variants.check(
+            fns(calls), self.RUST, {"x": {n: frozenset(f) for n, f in feats.items()}})
+
+    def test_tiers(self):
+        self.assertEqual(self.check(self.BASE, self.FEATS), [])
+
+    def test_without_features_names_decide(self):
+        errors = check_variants.check(fns(self.BASE), self.RUST)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("vg_g_s, the variant of vg_g for vg_h_s, calls the baseline vg_h", errors[0])
+
+    def test_tier_with_the_features_calls_baseline(self):
+        errors = self.check(self.BASE, dict(self.FEATS, vg_g_s={"a", "b"}))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("vg_g_s, the variant of vg_g for vg_h_s, calls the baseline vg_h", errors[0])
+
+    def test_variant_no_tier_calls(self):
+        calls = dict(self.BASE, vg_g_t=["vg_f_s", "vg_h"])
+        errors = self.check(calls, self.FEATS)
+        self.assertEqual(len(errors), 3)
+        self.assertIn("vg_g_s, the variant of vg_g for vg_h_s, calls the baseline vg_h", errors[0])
+        self.assertIn("the variant vg_h_s is neither called", errors[2])
+
+
 class Flow(unittest.TestCase):
     # `g` calls `f`, which has the variant `f_s`.
     BASE = {"vg_f": [], "vg_f_s": [], "vg_g": ["vg_f"]}
