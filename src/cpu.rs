@@ -258,65 +258,73 @@ fn parse(names: &str) -> Option<u32> {
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn runtime() -> u32 {
     #[cfg(target_arch = "x86")]
-    use core::arch::x86::{__cpuid, __cpuid_count, _xgetbv};
+    use core::arch::x86::{__cpuid_count, _xgetbv};
     #[cfg(target_arch = "x86_64")]
-    use core::arch::x86_64::{__cpuid, __cpuid_count, _xgetbv};
+    use core::arch::x86_64::{__cpuid_count, _xgetbv};
     // SAFETY: the i686 and x86-64 target baselines have `cpuid`, and leaves
-    // 0 and 1; leaf 7 is read only if leaf 0 says it exists (and its
+    // 0 and 1; `decode` reads leaf 7 only if leaf 0 says it exists (and its
     // sub-leaf 1 only if sub-leaf 0 says that exists), and `xgetbv` only if
     // OSXSAVE says the operating system has enabled it.
     #[allow(unused_unsafe)]
-    unsafe {
-        let max = __cpuid(0).eax;
-        let ecx = __cpuid(1).ecx;
-        let ssse3 = (ecx >> 9) & 1;
-        let aes = (ecx >> 25) & 1;
-        let pclmulqdq = (ecx >> 1) & 1;
-        let osxsave = (ecx >> 27) & 1 == 1;
-        let xcr0 = if osxsave { _xgetbv(0) } else { 0 };
-        let ymm = u32::from(xcr0 & 0b110 == 0b110);
-        let zmm = u32::from(xcr0 & 0b1110_0110 == 0b1110_0110);
-        let avx = (ecx >> 28) & ymm;
-        let (sub, ebx, ecx7) = if max >= 7 {
-            let l = __cpuid_count(7, 0);
-            (l.eax, l.ebx, l.ecx)
-        } else {
-            (0, 0, 0)
-        };
-        let eax1 = if max >= 7 && sub >= 1 {
-            __cpuid_count(7, 1).eax
-        } else {
-            0
-        };
-        let sha = (ebx >> 29) & 1;
-        let avx2 = (ebx >> 5) & avx;
-        let bmi1 = (ebx >> 3) & 1;
-        let bmi2 = (ebx >> 8) & 1;
-        let avx512f = (ebx >> 16) & avx & zmm;
-        let sha512 = eax1 & avx;
-        let adx = (ebx >> 19) & 1;
-        let avx512ifma = (ebx >> 21) & avx & zmm;
-        let avx512vl = (ebx >> 31) & avx & zmm;
-        let vaes = (ecx7 >> 9) & avx;
-        let vpclmulqdq = (ecx7 >> 10) & avx;
-        let avx512bw = (ebx >> 30) & avx & zmm;
-        ssse3
-            | (sha << 1)
-            | (aes << 2)
-            | (pclmulqdq << 3)
-            | (avx << 4)
-            | (avx2 << 5)
-            | (bmi1 << 6)
-            | (bmi2 << 7)
-            | (avx512f << 8)
-            | (sha512 << 9)
-            | (adx << 12)
-            | (avx512ifma << 13)
-            | (avx512vl << 14)
-            | (vaes << 17)
-            | (vpclmulqdq << 18)
-            | (avx512bw << 19)
-    }
+    decode(
+        |leaf, sub| {
+            let r = unsafe { __cpuid_count(leaf, sub) };
+            [r.eax, r.ebx, r.ecx, r.edx]
+        },
+        || unsafe { _xgetbv(0) },
+    )
+}
+
+/// The features of a CPU whose `cpuid` (of a leaf and sub-leaf, as `[eax,
+/// ebx, ecx, edx]`) and `xgetbv(0)` return these, as [`runtime`] reads
+/// them: apart from the instructions, so that the tests run it on CPUs
+/// without leaf 7 too.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32 {
+    let max = cpuid(0, 0)[0];
+    let ecx = cpuid(1, 0)[2];
+    let ssse3 = (ecx >> 9) & 1;
+    let aes = (ecx >> 25) & 1;
+    let pclmulqdq = (ecx >> 1) & 1;
+    let osxsave = (ecx >> 27) & 1 == 1;
+    let xcr0 = if osxsave { xgetbv() } else { 0 };
+    let ymm = u32::from(xcr0 & 0b110 == 0b110);
+    let zmm = u32::from(xcr0 & 0b1110_0110 == 0b1110_0110);
+    let avx = (ecx >> 28) & ymm;
+    let [sub, ebx, ecx7, _] = if max >= 7 { cpuid(7, 0) } else { [0; 4] };
+    let eax1 = if max >= 7 && sub >= 1 {
+        cpuid(7, 1)[0]
+    } else {
+        0
+    };
+    let sha = (ebx >> 29) & 1;
+    let avx2 = (ebx >> 5) & avx;
+    let bmi1 = (ebx >> 3) & 1;
+    let bmi2 = (ebx >> 8) & 1;
+    let avx512f = (ebx >> 16) & avx & zmm;
+    let sha512 = eax1 & avx;
+    let adx = (ebx >> 19) & 1;
+    let avx512ifma = (ebx >> 21) & avx & zmm;
+    let avx512vl = (ebx >> 31) & avx & zmm;
+    let vaes = (ecx7 >> 9) & avx;
+    let vpclmulqdq = (ecx7 >> 10) & avx;
+    let avx512bw = (ebx >> 30) & avx & zmm;
+    ssse3
+        | (sha << 1)
+        | (aes << 2)
+        | (pclmulqdq << 3)
+        | (avx << 4)
+        | (avx2 << 5)
+        | (bmi1 << 6)
+        | (bmi2 << 7)
+        | (avx512f << 8)
+        | (sha512 << 9)
+        | (adx << 12)
+        | (avx512ifma << 13)
+        | (avx512vl << 14)
+        | (vaes << 17)
+        | (vpclmulqdq << 18)
+        | (avx512bw << 19)
 }
 
 /// AArch64 feature groups, using the same Rust names as the generated
@@ -454,6 +462,51 @@ mod tests {
     #[should_panic(expected = "a CPU feature this library does not know")]
     fn of_unknown() {
         Features::of(&["sha", "avx512vbmi"]);
+    }
+
+    /// A CPU without leaf 7 (the oldest x86-64 ones; no runner's CPU lacks
+    /// it) has none of its features, and leaf 7 is not read: whatever the
+    /// runners' CPUs, every architecture tests each branch of `decode`.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_without_leaf_7() {
+        // Leaf 1: SSSE3, AES, PCLMULQDQ, OSXSAVE and AVX.
+        let leaves = [
+            [1, 0, 0, 0],
+            [0, 0, 1 << 9 | 1 << 25 | 1 << 1 | 1 << 27 | 1 << 28, 0],
+        ];
+        let f = decode(|leaf, _| leaves[leaf as usize], || 0b111);
+        assert_eq!(
+            Features(f),
+            Features::of(&["ssse3", "aes", "pclmulqdq", "avx"])
+        );
+    }
+
+    /// Leaf 7's sub-leaf 1 is read if, and only if, sub-leaf 0 says it
+    /// exists.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_sub_leaf_1() {
+        for subs in [0, 1] {
+            let mut leaves = [[[0; 4]; 2]; 8];
+            leaves[0][0][0] = 7;
+            leaves[1][0][2] = 1 << 27 | 1 << 28;
+            // Sub-leaf 0: the last sub-leaf, SHA and AVX2; sub-leaf 1: SHA512.
+            leaves[7] = [[subs, 1 << 29 | 1 << 5, 0, 0], [1, 0, 0, 0]];
+            let f = decode(
+                |leaf, sub| {
+                    assert!(sub <= subs);
+                    leaves[leaf as usize][sub as usize]
+                },
+                || 0b111,
+            );
+            let want = if subs == 1 {
+                Features::of(&["sha", "avx", "avx2", "sha512"])
+            } else {
+                Features::of(&["sha", "avx", "avx2"])
+            };
+            assert_eq!(Features(f), want);
+        }
     }
 
     /// Detection returns the CPU's features, restricted as

@@ -589,7 +589,8 @@ jobs:
             # never chooses; and XTS's VAES instances calling the block
             # functions, which a runner with VPCLMULQDQ never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
-            # baseline code; and `vg_zeroize_avx`, and `vg_zeroize` without
+            # baseline code (and P-256's signatures with SHA-256's SHA
+            # extensions and the baseline multiplication); and `vg_zeroize_avx`, and `vg_zeroize` without
             # AVX. And RSAES-OAEP with SHA-1's and SHA-256's SHA extensions
             # and with SHA-512's baseline code and RSA's ADX code, or with
             # SHA-512's AVX2 code and RSA's baseline or ADX code (whatever
@@ -603,7 +604,7 @@ jobs:
               aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,ssse3,vaes | aes_xts cpu
-              sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep cpu
+              sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
               avx,avx2,bmi2,adx,sha,ssse3 | rsa_oaep cpu
               avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
               adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
@@ -657,12 +658,13 @@ jobs:
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           # Ubuntu 26.04's x86-64 userspace is built for x86-64-v3 (AVX2), so
           # SDE stops on its dynamic loader's AVX instructions: this CPU runs
-          # on 24.04, whose userspace is the baseline ISA's.
+          # on 24.04, whose userspace is the baseline ISA's. The only x86-64 CPU
+          # here to choose AES-CCM's baseline AES.
           - chip: p4p
             arch: x86_64
             runner: ubuntu-24.04
             runs: |
-              - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
           # it, and P-256's and P-384's signatures with SHA-384 and P-521's

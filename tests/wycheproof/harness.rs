@@ -7,7 +7,10 @@
 //! consistent, so a test can never silently run on fewer vectors than the
 //! file contains.
 
-// Each algorithm test module uses a different subset of the harness.
+// Each algorithm test module uses a different subset of the harness. A
+// function only some architectures' tests call is built only for those (as
+// RSA's are, `ci/check_arch_gates.py`), so that each architecture runs every
+// line it builds.
 #![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashSet};
@@ -54,6 +57,10 @@ pub const HOST_WITHOUT_IFMA_VAR: &str = "VG_TEST_HOST_WITHOUT_IFMA";
 /// where only `rsa_pss::rsa_pss_sign_test` tests the 3072- and 4096-bit keys
 /// (each of the other tests calls the same IFMA code with them). A CPU with
 /// AVX512_IFMA tests them all.
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 pub fn rsa_bits_tested(bits: usize) -> bool {
     #[cfg(target_arch = "x86_64")]
     let ifma = std::arch::is_x86_feature_detected!("avx512ifma");
@@ -63,6 +70,10 @@ pub fn rsa_bits_tested(bits: usize) -> bool {
 }
 
 /// Whether to test the RSA key with the modulus `n` (as [`rsa_bits_tested`]).
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 pub fn rsa_key_tested(n: &[u8]) -> bool {
     let n = &n[n.iter().take_while(|&&b| b == 0).count()..];
     rsa_bits_tested(n.len() * 8 - n.first().map_or(0, |b| b.leading_zeros() as usize))
@@ -70,6 +81,10 @@ pub fn rsa_key_tested(n: &[u8]) -> bool {
 
 /// Whether to test the RSA vector file `name`, whose name gives its keys'
 /// size, if it has one size (`rsa_oaep_3072_…`; as [`rsa_bits_tested`]).
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 pub fn rsa_file_tested(name: &str) -> bool {
     name.split('_')
         .all(|part| part.parse().map_or(true, rsa_bits_tested))
@@ -189,6 +204,10 @@ impl<P, T> TestFile<P, T> {
     /// Calls `f` on every test, with its group and what `setup` made of the
     /// group (e.g. its key, made once for all its tests), as [`par_each`]
     /// does.
+    #[cfg(all(
+        any(target_arch = "x86_64", target_arch = "aarch64"),
+        feature = "alloc"
+    ))]
     pub fn par_tests_with<S: Sync>(
         &self,
         setup: impl Fn(&TestGroup<P, T>) -> S,

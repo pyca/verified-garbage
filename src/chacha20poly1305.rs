@@ -422,9 +422,11 @@ mod tests {
         assert_eq!(check_len(0), Ok(()));
         let max = usize::try_from(P_MAX).unwrap_or(usize::MAX);
         assert_eq!(check_len(max), Ok(()));
-        if let Ok(len) = usize::try_from(P_MAX + 1) {
-            assert_eq!(check_len(len), Err(Error::InvalidTextLength));
-        }
+        // Only a 64-bit `usize` holds a longer length (a `cfg` rather than a
+        // test of the width, so that each architecture runs every line it
+        // builds).
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(check_len(P_MAX as usize + 1), Err(Error::InvalidTextLength));
         assert_eq!(add_len(P_MAX - 1, 1), Ok(P_MAX));
         assert_eq!(add_len(P_MAX, 1), Err(Error::InvalidTextLength));
         assert_eq!(add_len(u64::MAX, 1), Err(Error::InvalidTextLength));
