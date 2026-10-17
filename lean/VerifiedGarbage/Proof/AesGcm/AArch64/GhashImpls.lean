@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.GhashPw
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
