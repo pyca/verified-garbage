@@ -93,6 +93,11 @@ theorem assoc_left {a b c : Prog M} {s₁ s₂ : M.State} (h : SameTrace M (.seq
           have H := h _ _ _ _ (.seq a₁ (.seq b₁ c₁)) (.seq a₂ (.seq b₂ c₂))
           simpa only [List.append_assoc] using H
 
+theorem nil_seq {c : Prog M} {s₁ s₂ : M.State} (h : SameTrace M c s₁ s₂) :
+    SameTrace M (.seq (.block []) c) s₁ s₂ :=
+  seq block_nil (WP.block_nil (Q := fun t => t = s₁) rfl) (WP.block_nil (Q := fun t => t = s₂) rfl)
+    fun _ _ e₁ e₂ => e₁ ▸ e₂ ▸ h
+
 theorem constantTime {Pre : M.State → Prop} {Pub : M.State → M.State → Prop} {c : Prog M}
     (h : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → SameTrace M c s₁ s₂) : ConstantTime M Pre Pub c :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => h _ _ h₁ h₂ hp _ _ _ _ e₁ e₂
