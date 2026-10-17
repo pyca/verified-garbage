@@ -21,7 +21,6 @@ mod x86_64 {
         BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, Curve, Error, P192, P224, P256, P384,
         P521, Secp256k1, SignatureHash, SigningKey, VerifyingKey,
     };
-    use verified_garbage::hashes::HashFunction;
     use verified_garbage::hashes::sha1::Sha1;
     use verified_garbage::hashes::sha224::Sha224;
     use verified_garbage::hashes::sha256::Sha256;
