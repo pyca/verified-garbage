@@ -157,7 +157,7 @@ theorem pub_pre {s t : State} (hp : PreR s) (hsig : stackArg s 2 = s.gpr .rcx) (
   refine ⟨by omega, rfl, rfl, hp.dKn.sub_left sM, hp.dKe.sub_left sM, dKg.sub_left sM, hp.dKs.sub_left sM, dMA,
     hp.dns, hp.des, dgs, (hp.dKs.sub_left sA).symm, dRM, hp.dKn.sub_left sR, hp.dKe.sub_left sR,
     dKg.sub_left sR, hp.dKs.sub_left sR, dRA, wM, hp.wN, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, trivial, trivial, hp.L1,
-    hp.L2, VG.Proof.Rsa.publicScratch_le ⟨hk1, hk2⟩ hp.hsl⟩
+    hp.L2, hp.hsl⟩
 
 /-! ## Memory across the call -/
 

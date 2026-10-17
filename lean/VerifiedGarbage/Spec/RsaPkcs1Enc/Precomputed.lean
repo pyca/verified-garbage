@@ -19,7 +19,7 @@ unchanged.
 
 namespace VG.Spec.RsaPkcs1Enc
 
-open Rsa (bytesAt lenValid scratchWords written)
+open Rsa (bytesAt lenValid publicScratchWords written)
 
 /-- `encryptSig` with a final read-only slice of precomputed `u64` words. -/
 def encryptPrecomputedSig : Sig where
@@ -38,7 +38,7 @@ def encryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
     (pre := fun _out outLen _n nLen _e eLen _msg msgLen _ps psLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
         eLen.toNat ≤ nLen.toNat ∧ msgLen.toNat + 11 ≤ nLen.toNat ∧
-        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out _outLen n nLen e eLen msg msgLen ps psLen _scratch _scratchLen pre preLen m m' r =>
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →

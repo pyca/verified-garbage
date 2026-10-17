@@ -93,7 +93,7 @@ theorem call_pre {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (
   refine ⟨by omega, rfl, rfl, hp.preStack.symm.sub_left sM, hp.dKe.sub_left sM, dKg.sub_left sM, hp.dKs.sub_left sM, dMA,
     hp.preScr, hp.des, dgs, (hp.dKs.sub_left sA).symm, dRM, hp.preStack.symm.sub_left sR, hp.dKe.sub_left sR,
     dKg.sub_left sR, hp.dKs.sub_left sR, dRA, wM, hp.preWrap, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1,
-    hp.L2, VG.Proof.Rsa.publicScratch_le ⟨hk1, hk2⟩ hp.hsl⟩
+    hp.L2, hp.hsl⟩
 
 
 theorem call_covers {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (he : Env s t) :

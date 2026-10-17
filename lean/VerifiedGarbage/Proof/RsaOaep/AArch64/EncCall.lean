@@ -121,7 +121,7 @@ theorem sl_sub (hL : L.Ok) : (L.sl - BitVec.ofNat 64 1024).toNat = L.sl.toNat - 
 theorem scr8192 (hL : L.Ok) : (L.scr + BitVec.ofNat 64 8192).toNat = L.scr.toNat + 8192 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8192) (by decide)]
   have := hL.k64
-  exact Nat.mod_eq_of_lt (by have := hL.bS; have := hL.s8192; unfold Spec.Rsa.scratchWords at *; omega)
+  exact Nat.mod_eq_of_lt (by have := hL.bS; have := hL.s8192; unfold Spec.Rsa.publicScratchWords at *; omega)
 
 /-- The call's stack arguments in the frame's first two words. -/
 structure CallArgs (L : ELay) (W : Nat → BitVec 64) : Prop where
@@ -271,7 +271,7 @@ theorem pd_ok (hL : L.Ok) {K : Nat} (hK : K ≤ L.P) (hc : Ctx L g vv m₀ t) {m
   · rw [hr.x1, hr.x7]
   · rw [hr.x5]; exact hL.el1
   · rw [hr.x1, hr.x5]; exact hL.elk
-  · rw [hr.x1, a1, hsl]; have := hL.slk; unfold Spec.RsaPss.scratchWords at this; omega
+  · rw [hr.x1, a1, hsl]; have := hL.slk; unfold Spec.RsaPss.publicScratchWords at this; omega
 
 /-- Whether `pre` holds the values for `n`. -/
 def Consistent (L : ELay) (m₀ : Mem) : Prop :=

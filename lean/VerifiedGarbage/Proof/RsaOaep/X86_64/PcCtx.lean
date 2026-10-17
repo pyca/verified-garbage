@@ -57,7 +57,7 @@ theorem pre_of {H G : Spec.Mgf1.Hash} {s : State}
   refine ⟨⟨sp1, by omega, ?_, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOa.sub_right ha, dns, des, dls, dms, dsds,
     dsa.sub_right ha, dRo, dRn, dRe, dRl, dRm, dRsd, dRs, dRa.sub_right ha, dKo, dKn, dKe, dKl, dKm, dKsd, dKs,
     dKa.sub_right ha, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2,
-    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩,
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩,
     sp3, ?_, ?_, dOa.symm, dsa.symm, dKa.symm, dOq.symm, dsq.symm, dKq.symm, wQ, pl⟩
   · rw [hrd]
     apply Covers.of_sub

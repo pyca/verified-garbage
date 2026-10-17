@@ -65,7 +65,7 @@ def pubK (S : Nat) : Contract isa where
       (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .x3).toNat ∧ (s.gpr .x1).toNat = (s.gpr .x3).toNat ∧
       (s.gpr .x7).toNat = (s.gpr .x3).toNat ∧ 1 ≤ (s.gpr .x5).toNat ∧
-      (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧ Spec.Rsa.scratchWords (s.gpr .x3).toNat ≤ (stackArg s 1).toNat
+      (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧ Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 1).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .x0) (s.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
       (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
@@ -89,7 +89,6 @@ theorem pub_pre {S : Nat} {s : State} (h : (pubK S).pre s) :
   all_goals first
     | with_reducible assumption
     | with_reducible exact Region.Disjoint.symm ‹_›
-    | exact VG.Proof.Rsa.publicScratch_le ‹_› ‹_›
 
 theorem pub_post {S : Nat} {s s' : State}
     (h : (Spec.Rsa.publicCheckedContract AArch64.abi (S + 1)).post s s') : (pubK S).post s s' := by

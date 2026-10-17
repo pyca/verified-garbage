@@ -116,7 +116,7 @@ structure PubOk (K : Nat) (t : State) : Prop where
   h7 : (t.gpr .x7).toNat = (t.gpr .x3).toNat
   he1 : 1 ≤ (t.gpr .x5).toNat
   he2 : (t.gpr .x5).toNat ≤ (t.gpr .x3).toNat
-  hs : Spec.Rsa.scratchWords (t.gpr .x3).toNat ≤ (stackArg t 1).toNat
+  hs : Spec.Rsa.publicScratchWords (t.gpr .x3).toNat ≤ (stackArg t 1).toNat
 
 theorem PubOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PubOk K t) :
     (Spec.Rsa.publicCheckedContract abi K).pre (t.callEntry.withRegions (pubRd t) (pubWr t)) := by
@@ -128,7 +128,7 @@ theorem PubOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PubOk K t) :
     List.append_nil, sa0]
   exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa⟩,
     hl.ko, hl.kn, hl.ke, hl.ki, hl.ks, hl.ka, hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h1, h.h7, h.he1,
-    h.he2, VG.Proof.Rsa.publicScratch_le h.hk h.hs⟩
+    h.he2, h.hs⟩
 
 /-- A call of `vg_rsa_public_checked`. -/
 theorem pubCall (c : PubChecked) {t : State} {Q : State → Prop} (h : PubOk c.stack t)
@@ -198,7 +198,7 @@ structure PdOk (K : Nat) (t : State) : Prop where
   h7 : (t.gpr .x7).toNat = (t.gpr .x1).toNat
   he1 : 1 ≤ (t.gpr .x5).toNat
   he2 : (t.gpr .x5).toNat ≤ (t.gpr .x1).toNat
-  hs : Spec.Rsa.scratchWords (t.gpr .x1).toNat ≤ (stackArg t 1).toNat
+  hs : Spec.Rsa.publicScratchWords (t.gpr .x1).toNat ≤ (stackArg t 1).toNat
 
 theorem PdOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PdOk K t) :
     (Spec.Rsa.publicPrecomputedCheckedContract abi K).pre (t.callEntry.withRegions (pdRd t) (pubWr t)) := by
@@ -211,7 +211,7 @@ theorem PdOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PdOk K t) :
     List.append_nil, sa0]
   exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa⟩,
     hl.ko, hl.kn, hl.ke, hl.ki, hl.ks, hl.ka, hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h3, h.h7, h.he1,
-    h.he2, VG.Proof.Rsa.publicScratch_le h.hk h.hs⟩
+    h.he2, h.hs⟩
 
 /-- A call of a precomputed public operation. Its result is that of any
 modulus whose values `pre` holds. -/

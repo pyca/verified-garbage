@@ -34,8 +34,10 @@ and the signature, and so whether the signature is valid, may all affect
 timing (`leak`), as in BoringSSL ("This is part of signature verification
 and thus does not need to run in constant-time", `padding.cc.inc`).
 
-`scratch` is working space of at least `16 n_len + 32` `u64`s, whose contents on
-return are unspecified, and `stack` the number of bytes below the stack
+`scratch` is working space of at least `16 n_len + 32` `u64`s when signing
+and `8 ⌈n_len / 8⌉ + 48` (`Rsa.publicScratchWords`, the public-key
+operation's) when verifying or recovering, whose contents on return are
+unspecified, and `stack` the number of bytes below the stack
 pointer that an implementation's calls and frames use, as for the RSA
 primitives. The functions may overwrite their arguments passed in memory,
 where the calling convention allows it (`writeArgs`).
@@ -121,7 +123,7 @@ def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   verifySig.contract A
     (pre := fun _n nLen _e eLen _hash _digest _digestLen _sig _sigLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat)
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun n nLen e eLen hash digest digestLen sig sigLen _scratch _scratchLen m _m' r =>
       r = if verifyId (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) hash.toNat
           (bytesAt m digest digestLen.toNat) (bytesAt m sig sigLen.toNat) then 1 else 0)
@@ -182,7 +184,8 @@ def verifyApi : Api where
     parsed. {hashIdsDoc}.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.verifyContract`. Not constant time: timing may depend \
     on the pointers, the lengths, `hash` and the contents of `n`, `e`, `digest` and `sig`."
-  safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`."] ++ scratchSafety
+  safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`."] ++
+    publicScratchSafety
 
 /-! ## `vg_rsa_pkcs1_recover` -/
 
@@ -203,7 +206,7 @@ def recoverContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _out outLen _n nLen _e eLen hash _sig _sigLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         (∃ h, Hash.ofId hash.toNat = some h ∧ outLen.toNat = h.len) ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat)
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out outLen n nLen e eLen hash sig sigLen _scratch _scratchLen m m' r =>
       ∀ h, Hash.ofId hash.toNat = some h →
         written m' out outLen.toNat r
@@ -234,6 +237,6 @@ def recoverApi : Api where
     on the pointers, the lengths, `hash` and the contents of `n`, `e` and `sig`."
   safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`.",
     "`hash` must be in 0..=11, and `out_len` the length of its hash function's values."] ++
-    scratchSafety
+    publicScratchSafety
 
 end VG.Spec.RsaPkcs1Sig

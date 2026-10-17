@@ -1887,7 +1887,7 @@ ret
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -2252,7 +2252,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_MGF1_SHA2_FEAT
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -2620,7 +2620,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA224_SHA2_FE
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -2988,7 +2988,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA224_SHA2_MG
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).

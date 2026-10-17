@@ -21,7 +21,7 @@ namespace VG.Spec.RsaOaep
 
 open Mgf1 (Hash)
 open Rsa (bytesAt lenValid written)
-open RsaPss (scratchWords)
+open RsaPss (publicScratchWords)
 
 variable (H G : Hash)
 
@@ -42,7 +42,7 @@ def encryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed _scratch
         scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
-        eLen.toNat ≤ nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _scratch _scratchLen
         pre preLen m m' r =>

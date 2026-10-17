@@ -64,7 +64,7 @@ structure PreR (K : Nat) (s : State) : Prop where
   e1 : 1 ≤ (s.gpr .x5).toNat
   e2 : (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat
   hh : ∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h ∧ (s.gpr .x1).toNat = h.len
-  hs : 16 * (s.gpr .x3).toNat + 32 ≤ (stackArg s 2).toNat
+  hs : Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 2).toNat
 
 theorem preR_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.recoverContract abi (stk K)).pre s) : PreR K s := by
@@ -79,7 +79,7 @@ theorem preR_of {K : Nat} {s : State}
   rw [← e] at sp1 ko kn ke kg ks ka
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, og, os, oa,
     ns, es, gs, sa, ko, kn, ke, kg, ks, ka, wo, wn, we, wg, ws, k1, k2, e1, e2, hh,
-    by unfold Spec.Rsa.scratchWords at hs; omega⟩
+    hs⟩
 
 /-- The length of the hash value is at most `k`, and not 0. -/
 theorem hlen {K : Nat} {s : State} (hp : PreR K s) :

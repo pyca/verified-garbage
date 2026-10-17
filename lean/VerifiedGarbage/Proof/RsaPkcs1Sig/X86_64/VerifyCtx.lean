@@ -58,7 +58,7 @@ def verContract : Contract isa where
       (stackArg s 1).toNat + (stackArg s 2).toNat ≤ 2 ^ 64 ∧
       (stackArg s 3).toNat + (stackArg s 4).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rsi).toNat ∧ 1 ≤ (s.gpr .rcx).toNat ∧ (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat ∧
-      Spec.Rsa.scratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
   post s s' :=
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPkcs1Sig.verifyId (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) ((s.gpr .r8).setWidth 32).toNat

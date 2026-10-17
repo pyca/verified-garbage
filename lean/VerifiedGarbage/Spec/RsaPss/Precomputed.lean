@@ -39,7 +39,7 @@ def verifyPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
   (verifyPrecomputedSig H).contract A
     (pre := fun _n nLen _e eLen _digest _sig sigLen _saltLen _anySaltLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        sigLen.toNat = nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        sigLen.toNat = nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun n nLen e eLen digest sig _sigLen saltLen anySaltLen _scratch _scratchLen pre preLen m _m'
         r =>
