@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Hmac.Scratch
 public import VerifiedGarbage.Proof.Hmac.PPC64LE.Finalize
 public import VerifiedGarbage.Proof.Hmac.PPC64LE.Init
+public import VerifiedGarbage.Proof.Hmac.PPC64LE.InitLong
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
+public import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Spec.Hmac.Generic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -186,5 +189,82 @@ theorem finalize : Verified PPC64LE.target
     (stack := 96) (bytes := 864) finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Hmac.finalizePost_local _ _ Proof.Hmac.sha256_local (by decide)) finFrame_sat
+
+/-! ## `init` for a key longer than a block
+
+`initLong` is verified against `initLongSha256PPC64LE`, which is the contract
+with its working space passed in `scratch` (`longScratchContract`), for a key
+longer than a block (`longPre`); in a frame of its own that it zeroes before
+returning, it is `longContract`, with the stack of `init` in its frame. -/
+
+/-- A key longer than a block. -/
+def longPre (pb : Nat) : Curry ((Spec.Hmac.initSig Spec.Hmac.sha256I.S).words pb) (Mem → Prop) :=
+  fun _inner _outer _key keyLen _ => 64 < keyLen.toNat
+
+theorem longPre_local (pb : Nat) : ∀ vs m₁ m₂,
+    vs.length = ((Spec.Hmac.initSig Spec.Hmac.sha256I.S).words pb).length →
+    (∀ b ∈ Sig.bufs (Spec.Hmac.initSig Spec.Hmac.sha256I.S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((Spec.Hmac.initSig Spec.Hmac.sha256I.S).words pb) (longPre pb) vs m₁ →
+      Curry.apply ((Spec.Hmac.initSig Spec.Hmac.sha256I.S).words pb) (longPre pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
+
+/-- `initLong`'s contract, with its working space passed in `scratch` (41
+doublewords). -/
+def longScratchContract : Contract PPC64LE.isa :=
+  (Spec.Hmac.initScratchSig Spec.Hmac.sha256I.S 41).contract PPC64LE.abi
+    (pre := fun inner outer key keyLen _scratch => longPre PPC64LE.abi.ptrBits inner outer key keyLen)
+    (post := fun inner outer key keyLen _scratch =>
+      Spec.Hmac.initPost Spec.Hmac.sha256I.S PPC64LE.abi.ptrBits inner outer key keyLen)
+    (writeArgs := true) (stack := 96)
+
+theorem long_implies : Proof.Hmac.initLongSha256PPC64LE.Implies longScratchContract := by
+  sig_implies [longScratchContract, longPre, Spec.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, Proof.Hmac.initLongSha256PPC64LE,
+    PPC64LE.abi, PPC64LE.argRegs]
+    [Proof.Hmac.PPC64LE.InitLong.sat] using Proof.Hmac.PPC64LE.InitLong.sat
+
+theorem longScratch : Verified PPC64LE.target Impl.Hmac.PPC64LE.initLong longScratchContract :=
+  Proof.Hmac.PPC64LE.InitLong.initLong_verified.of_implies long_implies
+
+/-- `initLong` in a frame of its own: a key longer than a block, with the
+stack of `init` in its frame. -/
+def longContract : Contract PPC64LE.isa :=
+  (Spec.Hmac.initSig Spec.Hmac.sha256I.S).contract PPC64LE.abi (pre := longPre PPC64LE.abi.ptrBits)
+    (post := Spec.Hmac.initPost Spec.Hmac.sha256I.S PPC64LE.abi.ptrBits) (writeArgs := true)
+    (stack := 96 + Impl.Hmac.PPC64LE.longFrame)
+
+/-- A state satisfying `longContract`'s precondition (a 100-byte key). -/
+def longFrameSat : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 100
+    | _ => 0
+  lr := 0
+  sp := 0x10000
+  mem _ := 0
+  rd := [⟨0x3000, 100⟩]
+  wr := [⟨0x1000, 96⟩, ⟨0x2000, 96⟩]
+
+theorem longFrame_sat : ∃ s, longContract.pre s := by
+  implies_sat [longContract, longPre, Impl.Hmac.PPC64LE.longFrame, Spec.Hmac.initSig, Spec.Hmac.initPost,
+      Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, PPC64LE.abi, PPC64LE.argRegs]
+    [longFrameSat] using longFrameSat
+
+/-- `initLong` in a frame of its own, which it zeroes before returning. -/
+theorem long : Verified PPC64LE.target
+    (Impl.StackScratch.PPC64LE.withStackScratchWiped Impl.Hmac.PPC64LE.longFrame .r7
+      Impl.Hmac.PPC64LE.longWords Impl.Hmac.PPC64LE.initLong) longContract :=
+  PPC64LE.Verified.stackScratchWiped (sig := Spec.Hmac.initSig Spec.Hmac.sha256I.S) (nm := "scratch")
+    (e := .u64) (n := 41) (pre := longPre PPC64LE.abi.ptrBits)
+    (post := Spec.Hmac.initPost Spec.Hmac.sha256I.S PPC64LE.abi.ptrBits) (wa := true) (stack := 96)
+    (bytes := Impl.Hmac.PPC64LE.longFrame) (words := Impl.Hmac.PPC64LE.longWords)
+    longScratch (by decide) (by decide) (by decide) (longPre_local _) (Proof.Hmac.initPost_local _ _)
+    (Proof.Hmac.initPostOut_local _ _ Proof.Hmac.sha256_local (by decide)) longFrame_sat
 
 end VG.Proof.Hmac.PPC64LE.Shared

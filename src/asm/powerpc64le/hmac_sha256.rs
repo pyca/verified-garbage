@@ -2,145 +2,264 @@
 //! Verified `hmac_sha256` functions for `powerpc64le`.
 #![allow(dead_code)]
 
-/// Starts an HMAC-SHA-256 computation with a key of at most 64 bytes: makes the SHA-256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha256_finalize`.
+/// Starts an HMAC-SHA-256 computation with a key of any length: makes the SHA-256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-256 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha256_finalize`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
 /// * `outer` must be valid for reads and writes of 96 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be at most 64.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 912 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "stdu %r1, -864(%r1)",
-        "addi %r7, %r1, 32",
-        "mflr %r0",
-        "stdu %r1, -48(%r1)",
-        "std %r0, 32(%r1)",
-        "std %r26, 112(%r7)",
-        "std %r27, 120(%r7)",
-        "std %r28, 128(%r7)",
-        "std %r29, 136(%r7)",
-        "std %r30, 144(%r7)",
-        "std %r31, 152(%r7)",
-        "addi %r26, %r3, 0",
-        "addi %r27, %r7, 0",
-        "addi %r28, %r4, 0",
-        "addi %r29, %r5, 0",
-        "addi %r30, %r6, 0",
-        "lis %r8, 27145",
-        "ori %r8, %r8, 58983",
-        "stw %r8, 0(%r26)",
-        "lis %r8, -17561",
-        "ori %r8, %r8, 44677",
-        "stw %r8, 4(%r26)",
-        "lis %r8, 15470",
-        "ori %r8, %r8, 62322",
-        "stw %r8, 8(%r26)",
-        "lis %r8, -23217",
-        "ori %r8, %r8, 62778",
-        "stw %r8, 12(%r26)",
-        "lis %r8, 20750",
-        "ori %r8, %r8, 21119",
-        "stw %r8, 16(%r26)",
-        "lis %r8, -25851",
-        "ori %r8, %r8, 26764",
-        "stw %r8, 20(%r26)",
-        "lis %r8, 8067",
-        "ori %r8, %r8, 55723",
-        "stw %r8, 24(%r26)",
-        "lis %r8, 23520",
-        "ori %r8, %r8, 52505",
-        "stw %r8, 28(%r26)",
-        "lis %r8, 27145",
-        "ori %r8, %r8, 58983",
-        "stw %r8, 0(%r28)",
-        "lis %r8, -17561",
-        "ori %r8, %r8, 44677",
-        "stw %r8, 4(%r28)",
-        "lis %r8, 15470",
-        "ori %r8, %r8, 62322",
-        "stw %r8, 8(%r28)",
-        "lis %r8, -23217",
-        "ori %r8, %r8, 62778",
-        "stw %r8, 12(%r28)",
-        "lis %r8, 20750",
-        "ori %r8, %r8, 21119",
-        "stw %r8, 16(%r28)",
-        "lis %r8, -25851",
-        "ori %r8, %r8, 26764",
-        "stw %r8, 20(%r28)",
-        "lis %r8, 8067",
-        "ori %r8, %r8, 55723",
-        "stw %r8, 24(%r28)",
-        "lis %r8, 23520",
-        "ori %r8, %r8, 52505",
-        "stw %r8, 28(%r28)",
-        "li %r12, 54",
-        "li %r0, 92",
-        "li %r31, 0",
-        "cmpldi %cr0, %r30, 0",
-        "beq %cr0, 20f",
-        "22:",
-        "lbz %r8, 0(%r29)",
-        "xor %r9, %r8, %r12",
-        "add %r11, %r26, %r31",
-        "stb %r9, 32(%r11)",
-        "xor %r9, %r8, %r0",
-        "add %r11, %r28, %r31",
-        "stb %r9, 32(%r11)",
-        "addi %r29, %r29, 1",
-        "addi %r31, %r31, 1",
-        "addi %r30, %r30, -1",
-        "cmpldi %cr0, %r30, 0",
-        "bne %cr0, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "li %r10, 64",
-        "subf %r10, %r31, %r10",
-        "cmpldi %cr0, %r10, 0",
-        "beq %cr0, 23f",
-        "25:",
-        "add %r11, %r26, %r31",
-        "stb %r12, 32(%r11)",
-        "add %r11, %r28, %r31",
-        "stb %r0, 32(%r11)",
-        "addi %r31, %r31, 1",
-        "addi %r10, %r10, -1",
-        "cmpldi %cr0, %r10, 0",
-        "bne %cr0, 25b",
-        "b 24f",
-        "23:",
-        "24:",
-        "addi %r4, %r26, 32",
-        "addi %r3, %r26, 0",
-        "li %r5, 1",
-        "addi %r6, %r27, 0",
-        "bl {vg_sha256_compress}",
-        "addi %r26, %r28, 0",
-        "addi %r4, %r26, 32",
-        "addi %r3, %r26, 0",
-        "li %r5, 1",
-        "addi %r6, %r27, 0",
-        "bl {vg_sha256_compress}",
-        "ld %r26, 112(%r27)",
-        "ld %r28, 128(%r27)",
-        "ld %r29, 136(%r27)",
-        "ld %r30, 144(%r27)",
-        "ld %r31, 152(%r27)",
-        "ld %r27, 120(%r27)",
-        "ld %r0, 32(%r1)",
-        "addi %r1, %r1, 48",
-        "mtlr %r0",
-        "addi %r1, %r1, 864",
-        "blr",
+        r"rldicl %r12, %r6, 57, 7
+li %r11, 127
+and %r11, %r6, %r11
+addi %r11, %r11, 63
+rldicl %r11, %r11, 57, 7
+add %r12, %r12, %r11
+cmpldi %cr0, %r12, 0
+bne %cr0, 20f
+stdu %r1, -864(%r1)
+addi %r7, %r1, 32
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r26, 112(%r7)
+std %r27, 120(%r7)
+std %r28, 128(%r7)
+std %r29, 136(%r7)
+std %r30, 144(%r7)
+std %r31, 152(%r7)
+addi %r26, %r3, 0
+addi %r27, %r7, 0
+addi %r28, %r4, 0
+addi %r29, %r5, 0
+addi %r30, %r6, 0
+lis %r8, 27145
+ori %r8, %r8, 58983
+stw %r8, 0(%r26)
+lis %r8, -17561
+ori %r8, %r8, 44677
+stw %r8, 4(%r26)
+lis %r8, 15470
+ori %r8, %r8, 62322
+stw %r8, 8(%r26)
+lis %r8, -23217
+ori %r8, %r8, 62778
+stw %r8, 12(%r26)
+lis %r8, 20750
+ori %r8, %r8, 21119
+stw %r8, 16(%r26)
+lis %r8, -25851
+ori %r8, %r8, 26764
+stw %r8, 20(%r26)
+lis %r8, 8067
+ori %r8, %r8, 55723
+stw %r8, 24(%r26)
+lis %r8, 23520
+ori %r8, %r8, 52505
+stw %r8, 28(%r26)
+lis %r8, 27145
+ori %r8, %r8, 58983
+stw %r8, 0(%r28)
+lis %r8, -17561
+ori %r8, %r8, 44677
+stw %r8, 4(%r28)
+lis %r8, 15470
+ori %r8, %r8, 62322
+stw %r8, 8(%r28)
+lis %r8, -23217
+ori %r8, %r8, 62778
+stw %r8, 12(%r28)
+lis %r8, 20750
+ori %r8, %r8, 21119
+stw %r8, 16(%r28)
+lis %r8, -25851
+ori %r8, %r8, 26764
+stw %r8, 20(%r28)
+lis %r8, 8067
+ori %r8, %r8, 55723
+stw %r8, 24(%r28)
+lis %r8, 23520
+ori %r8, %r8, 52505
+stw %r8, 28(%r28)
+li %r12, 54
+li %r0, 92
+li %r31, 0
+cmpldi %cr0, %r30, 0
+beq %cr0, 22f
+24:
+lbz %r8, 0(%r29)
+xor %r9, %r8, %r12
+add %r11, %r26, %r31
+stb %r9, 32(%r11)
+xor %r9, %r8, %r0
+add %r11, %r28, %r31
+stb %r9, 32(%r11)
+addi %r29, %r29, 1
+addi %r31, %r31, 1
+addi %r30, %r30, -1
+cmpldi %cr0, %r30, 0
+bne %cr0, 24b
+b 23f
+22:
+23:
+li %r10, 64
+subf %r10, %r31, %r10
+cmpldi %cr0, %r10, 0
+beq %cr0, 25f
+27:
+add %r11, %r26, %r31
+stb %r12, 32(%r11)
+add %r11, %r28, %r31
+stb %r0, 32(%r11)
+addi %r31, %r31, 1
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
+bne %cr0, 27b
+b 26f
+25:
+26:
+addi %r4, %r26, 32
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha256_compress}
+addi %r26, %r28, 0
+addi %r4, %r26, 32
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha256_compress}
+ld %r26, 112(%r27)
+ld %r28, 128(%r27)
+ld %r29, 136(%r27)
+ld %r30, 144(%r27)
+ld %r31, 152(%r27)
+ld %r27, 120(%r27)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+addi %r1, %r1, 864
+21:
+blr
+20:
+stdu %r1, -816(%r1)
+addi %r7, %r1, 32
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r20, 288(%r7)
+std %r21, 296(%r7)
+std %r22, 304(%r7)
+std %r23, 312(%r7)
+std %r24, 320(%r7)
+addi %r21, %r7, 0
+addi %r22, %r3, 0
+addi %r23, %r4, 0
+addi %r24, %r6, 0
+addi %r20, %r7, 160
+lis %r8, 27145
+ori %r8, %r8, 58983
+stw %r8, 0(%r20)
+lis %r8, -17561
+ori %r8, %r8, 44677
+stw %r8, 4(%r20)
+lis %r8, 15470
+ori %r8, %r8, 62322
+stw %r8, 8(%r20)
+lis %r8, -23217
+ori %r8, %r8, 62778
+stw %r8, 12(%r20)
+lis %r8, 20750
+ori %r8, %r8, 21119
+stw %r8, 16(%r20)
+lis %r8, -25851
+ori %r8, %r8, 26764
+stw %r8, 20(%r20)
+lis %r8, 8067
+ori %r8, %r8, 55723
+stw %r8, 24(%r20)
+lis %r8, 23520
+ori %r8, %r8, 52505
+stw %r8, 28(%r20)
+addi %r3, %r20, 0
+li %r4, 0
+addi %r7, %r21, 0
+bl {vg_sha256_update_scratch}
+addi %r3, %r20, 0
+addi %r4, %r24, 0
+addi %r5, %r21, 256
+addi %r6, %r21, 0
+bl {vg_sha256_finalize_scratch}
+addi %r3, %r22, 0
+addi %r4, %r23, 0
+addi %r5, %r21, 256
+li %r6, 32
+addi %r7, %r21, 0
+bl {vg_hmac_sha256_init_scratch}
+ld %r20, 288(%r21)
+ld %r22, 304(%r21)
+ld %r23, 312(%r21)
+ld %r24, 320(%r21)
+ld %r21, 296(%r21)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+addi %r12, %r1, 32
+li %r11, 0
+std %r11, 0(%r12)
+std %r11, 8(%r12)
+std %r11, 16(%r12)
+std %r11, 24(%r12)
+std %r11, 32(%r12)
+std %r11, 40(%r12)
+std %r11, 48(%r12)
+std %r11, 56(%r12)
+std %r11, 64(%r12)
+std %r11, 72(%r12)
+std %r11, 80(%r12)
+std %r11, 88(%r12)
+std %r11, 96(%r12)
+std %r11, 104(%r12)
+std %r11, 112(%r12)
+std %r11, 120(%r12)
+std %r11, 128(%r12)
+std %r11, 136(%r12)
+std %r11, 144(%r12)
+std %r11, 152(%r12)
+std %r11, 160(%r12)
+std %r11, 168(%r12)
+std %r11, 176(%r12)
+std %r11, 184(%r12)
+std %r11, 192(%r12)
+std %r11, 200(%r12)
+std %r11, 208(%r12)
+std %r11, 216(%r12)
+std %r11, 224(%r12)
+std %r11, 232(%r12)
+std %r11, 240(%r12)
+std %r11, 248(%r12)
+std %r11, 256(%r12)
+std %r11, 264(%r12)
+std %r11, 272(%r12)
+std %r11, 280(%r12)
+std %r11, 288(%r12)
+std %r11, 296(%r12)
+std %r11, 304(%r12)
+std %r11, 312(%r12)
+std %r11, 320(%r12)
+addi %r1, %r1, 816
+b 21b",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
     )
 }
 
@@ -159,74 +278,74 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "stdu %r1, -864(%r1)",
-        "addi %r7, %r1, 32",
-        "mflr %r0",
-        "stdu %r1, -48(%r1)",
-        "std %r0, 32(%r1)",
-        "std %r23, 240(%r7)",
-        "std %r24, 160(%r7)",
-        "std %r25, 168(%r7)",
-        "addi %r23, %r6, 0",
-        "addi %r24, %r3, 0",
-        "addi %r25, %r7, 0",
-        "lwz %r8, 0(%r4)",
-        "stw %r8, 208(%r7)",
-        "lwz %r8, 4(%r4)",
-        "stw %r8, 212(%r7)",
-        "lwz %r8, 8(%r4)",
-        "stw %r8, 216(%r7)",
-        "lwz %r8, 12(%r4)",
-        "stw %r8, 220(%r7)",
-        "lwz %r8, 16(%r4)",
-        "stw %r8, 224(%r7)",
-        "lwz %r8, 20(%r4)",
-        "stw %r8, 228(%r7)",
-        "lwz %r8, 24(%r4)",
-        "stw %r8, 232(%r7)",
-        "lwz %r8, 28(%r4)",
-        "stw %r8, 236(%r7)",
-        "addi %r4, %r5, 0",
-        "addi %r5, %r7, 176",
-        "addi %r6, %r7, 0",
-        "bl {vg_sha256_finalize_scratch}",
-        "lwz %r8, 208(%r25)",
-        "stw %r8, 0(%r24)",
-        "lwz %r8, 212(%r25)",
-        "stw %r8, 4(%r24)",
-        "lwz %r8, 216(%r25)",
-        "stw %r8, 8(%r24)",
-        "lwz %r8, 220(%r25)",
-        "stw %r8, 12(%r24)",
-        "lwz %r8, 224(%r25)",
-        "stw %r8, 16(%r24)",
-        "lwz %r8, 228(%r25)",
-        "stw %r8, 20(%r24)",
-        "lwz %r8, 232(%r25)",
-        "stw %r8, 24(%r24)",
-        "lwz %r8, 236(%r25)",
-        "stw %r8, 28(%r24)",
-        "ld %r8, 176(%r25)",
-        "std %r8, 32(%r24)",
-        "ld %r8, 184(%r25)",
-        "std %r8, 40(%r24)",
-        "ld %r8, 192(%r25)",
-        "std %r8, 48(%r24)",
-        "ld %r8, 200(%r25)",
-        "std %r8, 56(%r24)",
-        "addi %r3, %r24, 0",
-        "li %r4, 96",
-        "addi %r5, %r23, 0",
-        "addi %r6, %r25, 0",
-        "bl {vg_sha256_finalize_scratch}",
-        "ld %r23, 240(%r25)",
-        "ld %r24, 160(%r25)",
-        "ld %r25, 168(%r25)",
-        "ld %r0, 32(%r1)",
-        "addi %r1, %r1, 48",
-        "mtlr %r0",
-        "addi %r1, %r1, 864",
-        "blr",
+        r"stdu %r1, -864(%r1)
+addi %r7, %r1, 32
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r23, 240(%r7)
+std %r24, 160(%r7)
+std %r25, 168(%r7)
+addi %r23, %r6, 0
+addi %r24, %r3, 0
+addi %r25, %r7, 0
+lwz %r8, 0(%r4)
+stw %r8, 208(%r7)
+lwz %r8, 4(%r4)
+stw %r8, 212(%r7)
+lwz %r8, 8(%r4)
+stw %r8, 216(%r7)
+lwz %r8, 12(%r4)
+stw %r8, 220(%r7)
+lwz %r8, 16(%r4)
+stw %r8, 224(%r7)
+lwz %r8, 20(%r4)
+stw %r8, 228(%r7)
+lwz %r8, 24(%r4)
+stw %r8, 232(%r7)
+lwz %r8, 28(%r4)
+stw %r8, 236(%r7)
+addi %r4, %r5, 0
+addi %r5, %r7, 176
+addi %r6, %r7, 0
+bl {vg_sha256_finalize_scratch}
+lwz %r8, 208(%r25)
+stw %r8, 0(%r24)
+lwz %r8, 212(%r25)
+stw %r8, 4(%r24)
+lwz %r8, 216(%r25)
+stw %r8, 8(%r24)
+lwz %r8, 220(%r25)
+stw %r8, 12(%r24)
+lwz %r8, 224(%r25)
+stw %r8, 16(%r24)
+lwz %r8, 228(%r25)
+stw %r8, 20(%r24)
+lwz %r8, 232(%r25)
+stw %r8, 24(%r24)
+lwz %r8, 236(%r25)
+stw %r8, 28(%r24)
+ld %r8, 176(%r25)
+std %r8, 32(%r24)
+ld %r8, 184(%r25)
+std %r8, 40(%r24)
+ld %r8, 192(%r25)
+std %r8, 48(%r24)
+ld %r8, 200(%r25)
+std %r8, 56(%r24)
+addi %r3, %r24, 0
+li %r4, 96
+addi %r5, %r23, 0
+addi %r6, %r25, 0
+bl {vg_sha256_finalize_scratch}
+ld %r23, 240(%r25)
+ld %r24, 160(%r25)
+ld %r25, 168(%r25)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+addi %r1, %r1, 864
+blr",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
     )
 }
@@ -248,126 +367,126 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], ou
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "mflr %r0",
-        "stdu %r1, -48(%r1)",
-        "std %r0, 32(%r1)",
-        "std %r26, 112(%r7)",
-        "std %r27, 120(%r7)",
-        "std %r28, 128(%r7)",
-        "std %r29, 136(%r7)",
-        "std %r30, 144(%r7)",
-        "std %r31, 152(%r7)",
-        "addi %r26, %r3, 0",
-        "addi %r27, %r7, 0",
-        "addi %r28, %r4, 0",
-        "addi %r29, %r5, 0",
-        "addi %r30, %r6, 0",
-        "lis %r8, 27145",
-        "ori %r8, %r8, 58983",
-        "stw %r8, 0(%r26)",
-        "lis %r8, -17561",
-        "ori %r8, %r8, 44677",
-        "stw %r8, 4(%r26)",
-        "lis %r8, 15470",
-        "ori %r8, %r8, 62322",
-        "stw %r8, 8(%r26)",
-        "lis %r8, -23217",
-        "ori %r8, %r8, 62778",
-        "stw %r8, 12(%r26)",
-        "lis %r8, 20750",
-        "ori %r8, %r8, 21119",
-        "stw %r8, 16(%r26)",
-        "lis %r8, -25851",
-        "ori %r8, %r8, 26764",
-        "stw %r8, 20(%r26)",
-        "lis %r8, 8067",
-        "ori %r8, %r8, 55723",
-        "stw %r8, 24(%r26)",
-        "lis %r8, 23520",
-        "ori %r8, %r8, 52505",
-        "stw %r8, 28(%r26)",
-        "lis %r8, 27145",
-        "ori %r8, %r8, 58983",
-        "stw %r8, 0(%r28)",
-        "lis %r8, -17561",
-        "ori %r8, %r8, 44677",
-        "stw %r8, 4(%r28)",
-        "lis %r8, 15470",
-        "ori %r8, %r8, 62322",
-        "stw %r8, 8(%r28)",
-        "lis %r8, -23217",
-        "ori %r8, %r8, 62778",
-        "stw %r8, 12(%r28)",
-        "lis %r8, 20750",
-        "ori %r8, %r8, 21119",
-        "stw %r8, 16(%r28)",
-        "lis %r8, -25851",
-        "ori %r8, %r8, 26764",
-        "stw %r8, 20(%r28)",
-        "lis %r8, 8067",
-        "ori %r8, %r8, 55723",
-        "stw %r8, 24(%r28)",
-        "lis %r8, 23520",
-        "ori %r8, %r8, 52505",
-        "stw %r8, 28(%r28)",
-        "li %r12, 54",
-        "li %r0, 92",
-        "li %r31, 0",
-        "cmpldi %cr0, %r30, 0",
-        "beq %cr0, 20f",
-        "22:",
-        "lbz %r8, 0(%r29)",
-        "xor %r9, %r8, %r12",
-        "add %r11, %r26, %r31",
-        "stb %r9, 32(%r11)",
-        "xor %r9, %r8, %r0",
-        "add %r11, %r28, %r31",
-        "stb %r9, 32(%r11)",
-        "addi %r29, %r29, 1",
-        "addi %r31, %r31, 1",
-        "addi %r30, %r30, -1",
-        "cmpldi %cr0, %r30, 0",
-        "bne %cr0, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "li %r10, 64",
-        "subf %r10, %r31, %r10",
-        "cmpldi %cr0, %r10, 0",
-        "beq %cr0, 23f",
-        "25:",
-        "add %r11, %r26, %r31",
-        "stb %r12, 32(%r11)",
-        "add %r11, %r28, %r31",
-        "stb %r0, 32(%r11)",
-        "addi %r31, %r31, 1",
-        "addi %r10, %r10, -1",
-        "cmpldi %cr0, %r10, 0",
-        "bne %cr0, 25b",
-        "b 24f",
-        "23:",
-        "24:",
-        "addi %r4, %r26, 32",
-        "addi %r3, %r26, 0",
-        "li %r5, 1",
-        "addi %r6, %r27, 0",
-        "bl {vg_sha256_compress}",
-        "addi %r26, %r28, 0",
-        "addi %r4, %r26, 32",
-        "addi %r3, %r26, 0",
-        "li %r5, 1",
-        "addi %r6, %r27, 0",
-        "bl {vg_sha256_compress}",
-        "ld %r26, 112(%r27)",
-        "ld %r28, 128(%r27)",
-        "ld %r29, 136(%r27)",
-        "ld %r30, 144(%r27)",
-        "ld %r31, 152(%r27)",
-        "ld %r27, 120(%r27)",
-        "ld %r0, 32(%r1)",
-        "addi %r1, %r1, 48",
-        "mtlr %r0",
-        "blr",
+        r"mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r26, 112(%r7)
+std %r27, 120(%r7)
+std %r28, 128(%r7)
+std %r29, 136(%r7)
+std %r30, 144(%r7)
+std %r31, 152(%r7)
+addi %r26, %r3, 0
+addi %r27, %r7, 0
+addi %r28, %r4, 0
+addi %r29, %r5, 0
+addi %r30, %r6, 0
+lis %r8, 27145
+ori %r8, %r8, 58983
+stw %r8, 0(%r26)
+lis %r8, -17561
+ori %r8, %r8, 44677
+stw %r8, 4(%r26)
+lis %r8, 15470
+ori %r8, %r8, 62322
+stw %r8, 8(%r26)
+lis %r8, -23217
+ori %r8, %r8, 62778
+stw %r8, 12(%r26)
+lis %r8, 20750
+ori %r8, %r8, 21119
+stw %r8, 16(%r26)
+lis %r8, -25851
+ori %r8, %r8, 26764
+stw %r8, 20(%r26)
+lis %r8, 8067
+ori %r8, %r8, 55723
+stw %r8, 24(%r26)
+lis %r8, 23520
+ori %r8, %r8, 52505
+stw %r8, 28(%r26)
+lis %r8, 27145
+ori %r8, %r8, 58983
+stw %r8, 0(%r28)
+lis %r8, -17561
+ori %r8, %r8, 44677
+stw %r8, 4(%r28)
+lis %r8, 15470
+ori %r8, %r8, 62322
+stw %r8, 8(%r28)
+lis %r8, -23217
+ori %r8, %r8, 62778
+stw %r8, 12(%r28)
+lis %r8, 20750
+ori %r8, %r8, 21119
+stw %r8, 16(%r28)
+lis %r8, -25851
+ori %r8, %r8, 26764
+stw %r8, 20(%r28)
+lis %r8, 8067
+ori %r8, %r8, 55723
+stw %r8, 24(%r28)
+lis %r8, 23520
+ori %r8, %r8, 52505
+stw %r8, 28(%r28)
+li %r12, 54
+li %r0, 92
+li %r31, 0
+cmpldi %cr0, %r30, 0
+beq %cr0, 20f
+22:
+lbz %r8, 0(%r29)
+xor %r9, %r8, %r12
+add %r11, %r26, %r31
+stb %r9, 32(%r11)
+xor %r9, %r8, %r0
+add %r11, %r28, %r31
+stb %r9, 32(%r11)
+addi %r29, %r29, 1
+addi %r31, %r31, 1
+addi %r30, %r30, -1
+cmpldi %cr0, %r30, 0
+bne %cr0, 22b
+b 21f
+20:
+21:
+li %r10, 64
+subf %r10, %r31, %r10
+cmpldi %cr0, %r10, 0
+beq %cr0, 23f
+25:
+add %r11, %r26, %r31
+stb %r12, 32(%r11)
+add %r11, %r28, %r31
+stb %r0, 32(%r11)
+addi %r31, %r31, 1
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
+bne %cr0, 25b
+b 24f
+23:
+24:
+addi %r4, %r26, 32
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha256_compress}
+addi %r26, %r28, 0
+addi %r4, %r26, 32
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha256_compress}
+ld %r26, 112(%r27)
+ld %r28, 128(%r27)
+ld %r29, 136(%r27)
+ld %r30, 144(%r27)
+ld %r31, 152(%r27)
+ld %r27, 120(%r27)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+blr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
 }
@@ -389,71 +508,71 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96]
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "mflr %r0",
-        "stdu %r1, -48(%r1)",
-        "std %r0, 32(%r1)",
-        "std %r23, 240(%r7)",
-        "std %r24, 160(%r7)",
-        "std %r25, 168(%r7)",
-        "addi %r23, %r6, 0",
-        "addi %r24, %r3, 0",
-        "addi %r25, %r7, 0",
-        "lwz %r8, 0(%r4)",
-        "stw %r8, 208(%r7)",
-        "lwz %r8, 4(%r4)",
-        "stw %r8, 212(%r7)",
-        "lwz %r8, 8(%r4)",
-        "stw %r8, 216(%r7)",
-        "lwz %r8, 12(%r4)",
-        "stw %r8, 220(%r7)",
-        "lwz %r8, 16(%r4)",
-        "stw %r8, 224(%r7)",
-        "lwz %r8, 20(%r4)",
-        "stw %r8, 228(%r7)",
-        "lwz %r8, 24(%r4)",
-        "stw %r8, 232(%r7)",
-        "lwz %r8, 28(%r4)",
-        "stw %r8, 236(%r7)",
-        "addi %r4, %r5, 0",
-        "addi %r5, %r7, 176",
-        "addi %r6, %r7, 0",
-        "bl {vg_sha256_finalize_scratch}",
-        "lwz %r8, 208(%r25)",
-        "stw %r8, 0(%r24)",
-        "lwz %r8, 212(%r25)",
-        "stw %r8, 4(%r24)",
-        "lwz %r8, 216(%r25)",
-        "stw %r8, 8(%r24)",
-        "lwz %r8, 220(%r25)",
-        "stw %r8, 12(%r24)",
-        "lwz %r8, 224(%r25)",
-        "stw %r8, 16(%r24)",
-        "lwz %r8, 228(%r25)",
-        "stw %r8, 20(%r24)",
-        "lwz %r8, 232(%r25)",
-        "stw %r8, 24(%r24)",
-        "lwz %r8, 236(%r25)",
-        "stw %r8, 28(%r24)",
-        "ld %r8, 176(%r25)",
-        "std %r8, 32(%r24)",
-        "ld %r8, 184(%r25)",
-        "std %r8, 40(%r24)",
-        "ld %r8, 192(%r25)",
-        "std %r8, 48(%r24)",
-        "ld %r8, 200(%r25)",
-        "std %r8, 56(%r24)",
-        "addi %r3, %r24, 0",
-        "li %r4, 96",
-        "addi %r5, %r23, 0",
-        "addi %r6, %r25, 0",
-        "bl {vg_sha256_finalize_scratch}",
-        "ld %r23, 240(%r25)",
-        "ld %r24, 160(%r25)",
-        "ld %r25, 168(%r25)",
-        "ld %r0, 32(%r1)",
-        "addi %r1, %r1, 48",
-        "mtlr %r0",
-        "blr",
+        r"mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r23, 240(%r7)
+std %r24, 160(%r7)
+std %r25, 168(%r7)
+addi %r23, %r6, 0
+addi %r24, %r3, 0
+addi %r25, %r7, 0
+lwz %r8, 0(%r4)
+stw %r8, 208(%r7)
+lwz %r8, 4(%r4)
+stw %r8, 212(%r7)
+lwz %r8, 8(%r4)
+stw %r8, 216(%r7)
+lwz %r8, 12(%r4)
+stw %r8, 220(%r7)
+lwz %r8, 16(%r4)
+stw %r8, 224(%r7)
+lwz %r8, 20(%r4)
+stw %r8, 228(%r7)
+lwz %r8, 24(%r4)
+stw %r8, 232(%r7)
+lwz %r8, 28(%r4)
+stw %r8, 236(%r7)
+addi %r4, %r5, 0
+addi %r5, %r7, 176
+addi %r6, %r7, 0
+bl {vg_sha256_finalize_scratch}
+lwz %r8, 208(%r25)
+stw %r8, 0(%r24)
+lwz %r8, 212(%r25)
+stw %r8, 4(%r24)
+lwz %r8, 216(%r25)
+stw %r8, 8(%r24)
+lwz %r8, 220(%r25)
+stw %r8, 12(%r24)
+lwz %r8, 224(%r25)
+stw %r8, 16(%r24)
+lwz %r8, 228(%r25)
+stw %r8, 20(%r24)
+lwz %r8, 232(%r25)
+stw %r8, 24(%r24)
+lwz %r8, 236(%r25)
+stw %r8, 28(%r24)
+ld %r8, 176(%r25)
+std %r8, 32(%r24)
+ld %r8, 184(%r25)
+std %r8, 40(%r24)
+ld %r8, 192(%r25)
+std %r8, 48(%r24)
+ld %r8, 200(%r25)
+std %r8, 56(%r24)
+addi %r3, %r24, 0
+li %r4, 96
+addi %r5, %r23, 0
+addi %r6, %r25, 0
+bl {vg_sha256_finalize_scratch}
+ld %r23, 240(%r25)
+ld %r24, 160(%r25)
+ld %r25, 168(%r25)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+blr",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
     )
 }
