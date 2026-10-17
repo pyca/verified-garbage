@@ -5,8 +5,9 @@
 //! length supplied at import, or the public sampling bound for generated keys.
 //! All domain arithmetic and secret exponentiation run in verified code.
 //! Private-key generation samples and validates the scalar in verified code.
-//! Rust obtains random bytes, retries rejected attempts and packs inputs and
-//! results. On x86-64, parameter generation runs entirely in verified code,
+//! On x86-64 the verified code also retries rejected attempts and asks for
+//! the random bytes they need; on AArch64 Rust still retries them. Rust
+//! obtains random bytes and packs inputs and results. On x86-64, parameter generation runs entirely in verified code,
 //! including its attempt limit and entropy requests; Rust allocates and
 //! fills the random tape it asks for. On AArch64, Rust still runs the search
 //! with the shared verified Miller–Rabin round, preparing its workspace and
@@ -130,9 +131,38 @@ impl Parameters {
         self.generate_with(getrandom::fill)
     }
 
+    /// Verified code runs the whole search: it draws and checks each scalar
+    /// and its public value, retries up to 128 times for an in-range scalar
+    /// and up to 128 times for a public value that is not degenerate, and
+    /// asks for the random bytes each attempt needs.
+    #[cfg(target_arch = "x86_64")]
+    fn generate_with<E>(
+        &self,
+        fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    ) -> Result<PrivateKey, Error> {
+        let len = self.p.len();
+        let exponent_len = self.q.as_ref().map_or(len, Vec::len);
+        let mut x = alloc::vec![0; len];
+        let mut y = alloc::vec![0; len];
+        let mut state = self.domain.key_state();
+        let result = generation::serve(state[3] as usize, fill, |tape| {
+            self.domain.key_search(&mut state, tape, &mut x, &mut y)
+        });
+        zeroize(&mut state);
+        result.map(|()| PrivateKey {
+            public: PublicKey {
+                params: self.clone(),
+                y: canonical(&y).to_vec(),
+            },
+            x,
+            exponent_len,
+        })
+    }
+
     /// Verified code draws and checks the scalar and its public value.
     /// Retry up to 128 times for an in-range scalar and up to 128 times
     /// for a public value that is not degenerate.
+    #[cfg(target_arch = "aarch64")]
     fn generate_with<E>(
         &self,
         mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
@@ -344,6 +374,50 @@ mod tests {
             .unwrap();
         assert_eq!(attempts, 2);
         assert_eq!(key.private_component()[63], 3);
+    }
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn key_search_consumes_rejected_attempts() {
+        let params = composite_domain();
+        let domain = &params.domain;
+        // Scalars 0 (out of range), 4 (degenerate: g^4 = 1) and 3, one
+        // attempt of 64 bytes each, in one tape.
+        let mut tape = vec![0; 3 * 64];
+        tape[63] = 0;
+        tape[127] = 4;
+        tape[191] = 3;
+        let (mut x, mut y) = (vec![0xa5; 64], vec![0x5a; 64]);
+        let mut state = domain.key_state();
+        assert_eq!(&state[..4], &[128, 128, 64, 64]);
+        assert_eq!(
+            domain.key_search(&mut state, &tape, &mut x, &mut y),
+            (1, 192, 0)
+        );
+        assert_eq!(&state[..4], &[0, 0, 64, 0]);
+        assert_eq!(x, tape[128..]);
+        assert_eq!(y[15], 1);
+        // A tape that ends inside the second attempt: the first is
+        // consumed, and the controller asks for one attempt's bytes again,
+        // with the scalar budget one smaller.
+        let mut state = domain.key_state();
+        let (status, used, request) = domain.key_search(&mut state, &tape[..100], &mut x, &mut y);
+        assert_eq!((status, used, request), (0, 64, 64));
+        assert_eq!(&state[..4], &[128, 127, 64, 64]);
+        assert!(x.iter().chain(&y).all(|&b| b == 0));
+        // A degenerate value resets the scalar budget.
+        let (status, used, _) = domain.key_search(&mut state, &tape[64..128], &mut x, &mut y);
+        assert_eq!((status, used), (0, 64));
+        assert_eq!(&state[..2], &[127, 128]);
+        // Out-of-range scalars until the scalar budget runs out.
+        let mut state = domain.key_state();
+        state[1] = 2;
+        let zeros = vec![0; 3 * 64];
+        assert_eq!(
+            domain.key_search(&mut state, &zeros, &mut x, &mut y),
+            (3, 128, 0)
+        );
+        assert_eq!(&state[..4], &[0, 0, 64, 0]);
+        assert!(x.iter().chain(&y).all(|&b| b == 0));
     }
     #[test]
     fn generated_attempt_masks_failed_outputs() {

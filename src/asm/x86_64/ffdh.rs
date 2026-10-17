@@ -82,6 +82,46 @@ ret
     )
 }
 
+/// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_key_generation_init(state: *mut [u64; 16], p_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"cmp rsi, 64
+jb 20f
+cmp rsi, 1025
+jae 22f
+mov eax, 128
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rax
+mov QWORD PTR [rdi+16], rsi
+mov QWORD PTR [rdi+24], rsi
+mov eax, 1
+jmp 23f
+22:
+mov eax, 0
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rax
+mov QWORD PTR [rdi+16], rax
+mov QWORD PTR [rdi+24], rax
+23:
+jmp 21f
+20:
+mov eax, 0
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rax
+mov QWORD PTR [rdi+16], rax
+mov QWORD PTR [rdi+24], rax
+21:
+ret
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_ffdh_check_public_adx` requires (`Artifact.features`).
 pub(crate) const VG_FFDH_CHECK_PUBLIC_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
@@ -59032,6 +59072,238 @@ ret
     )
 }
 
+/// The CPU features `vg_ffdh_generate_key_search_adx` requires (`Artifact.features`).
+pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with the same backend, in a 40-byte frame. Timing depends on the domain, the controller's public words and the attempts' statuses.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_search_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+56]
+mov QWORD PTR [rax+32], r12
+mov r12, rax
+mov QWORD PTR [r12+40], rdi
+mov QWORD PTR [r12+48], rdx
+mov QWORD PTR [r12+120], r8
+mov QWORD PTR [r12+56], r9
+mov r10, QWORD PTR [rsp+8]
+mov r11, QWORD PTR [rsp+24]
+mov rax, QWORD PTR [rsp+32]
+mov rcx, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+48]
+mov QWORD PTR [r12+64], r10
+mov QWORD PTR [r12+72], r11
+mov QWORD PTR [r12+80], rax
+mov QWORD PTR [r12+96], rcx
+mov QWORD PTR [r12+104], rsi
+mov eax, 0
+mov QWORD PTR [r12+88], rax
+20:
+mov rax, QWORD PTR [r12]
+test rax, rax
+je 21f
+mov rax, QWORD PTR [r12+8]
+test rax, rax
+je 23f
+mov rax, QWORD PTR [r12+80]
+cmp rax, QWORD PTR [r12+16]
+jb 25f
+lea rsp, [rsp-40]
+mov rdi, QWORD PTR [r12+40]
+mov rsi, QWORD PTR [r12+16]
+mov rdx, QWORD PTR [r12+48]
+mov rcx, QWORD PTR [r12+16]
+mov r8, QWORD PTR [r12+56]
+mov r9, QWORD PTR [r12+64]
+mov rax, QWORD PTR [r12+72]
+mov r10, QWORD PTR [r12+96]
+mov r11, QWORD PTR [r12+104]
+mov QWORD PTR [rsp], rsi
+mov QWORD PTR [rsp+16], rsi
+mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+24], r10
+mov QWORD PTR [rsp+32], r11
+call {vg_ffdh_generate_key_adx}
+lea rsp, [rsp+40]
+mov eax, eax
+mov rcx, QWORD PTR [r12+16]
+mov rdx, QWORD PTR [r12+72]
+mov rsi, QWORD PTR [r12+80]
+mov r8, QWORD PTR [r12+88]
+add rdx, rcx
+sub rsi, rcx
+add r8, rcx
+mov QWORD PTR [r12+72], rdx
+mov QWORD PTR [r12+80], rsi
+mov QWORD PTR [r12+88], r8
+cmp rax, 1
+je 27f
+cmp rax, 2
+je 29f
+cmp rax, 3
+je 211f
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 3
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+213:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 213b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+214:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 214b
+jmp 212f
+211:
+mov rax, QWORD PTR [r12]
+sub rax, 1
+mov QWORD PTR [r12], rax
+mov eax, 128
+mov QWORD PTR [r12+8], rax
+mov eax, 4
+mov QWORD PTR [r12+112], rax
+212:
+jmp 210f
+29:
+mov rax, QWORD PTR [r12+8]
+sub rax, 1
+mov QWORD PTR [r12+8], rax
+mov eax, 4
+mov QWORD PTR [r12+112], rax
+210:
+jmp 28f
+27:
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 1
+mov QWORD PTR [r12+112], rax
+28:
+jmp 26f
+25:
+mov rax, QWORD PTR [r12+16]
+mov QWORD PTR [r12+24], rax
+mov eax, 0
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+215:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 215b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+216:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 216b
+26:
+jmp 24f
+23:
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 3
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+217:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 217b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+218:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 218b
+24:
+jmp 22f
+21:
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 3
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+219:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 219b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+220:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 220b
+22:
+mov rax, QWORD PTR [r12+112]
+cmp rax, 4
+je 20b
+mov rdx, QWORD PTR [r12+120]
+mov rcx, QWORD PTR [r12+88]
+mov rax, QWORD PTR [r12+112]
+mov r12, QWORD PTR [r12+32]
+mov QWORD PTR [rdx], rcx
+ret
+.p2align 6",
+        vg_ffdh_generate_key_adx = sym super::ffdh::vg_ffdh_generate_key_adx,
+    )
+}
+
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
@@ -81134,5 +81406,233 @@ mov QWORD PTR [rdx], rcx
 ret
 .p2align 6",
         vg_miller_rabin_round = sym super::miller_rabin::vg_miller_rabin_round,
+    )
+}
+
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with the same backend, in a 40-byte frame. Timing depends on the domain, the controller's public words and the attempts' statuses.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+56]
+mov QWORD PTR [rax+32], r12
+mov r12, rax
+mov QWORD PTR [r12+40], rdi
+mov QWORD PTR [r12+48], rdx
+mov QWORD PTR [r12+120], r8
+mov QWORD PTR [r12+56], r9
+mov r10, QWORD PTR [rsp+8]
+mov r11, QWORD PTR [rsp+24]
+mov rax, QWORD PTR [rsp+32]
+mov rcx, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+48]
+mov QWORD PTR [r12+64], r10
+mov QWORD PTR [r12+72], r11
+mov QWORD PTR [r12+80], rax
+mov QWORD PTR [r12+96], rcx
+mov QWORD PTR [r12+104], rsi
+mov eax, 0
+mov QWORD PTR [r12+88], rax
+20:
+mov rax, QWORD PTR [r12]
+test rax, rax
+je 21f
+mov rax, QWORD PTR [r12+8]
+test rax, rax
+je 23f
+mov rax, QWORD PTR [r12+80]
+cmp rax, QWORD PTR [r12+16]
+jb 25f
+lea rsp, [rsp-40]
+mov rdi, QWORD PTR [r12+40]
+mov rsi, QWORD PTR [r12+16]
+mov rdx, QWORD PTR [r12+48]
+mov rcx, QWORD PTR [r12+16]
+mov r8, QWORD PTR [r12+56]
+mov r9, QWORD PTR [r12+64]
+mov rax, QWORD PTR [r12+72]
+mov r10, QWORD PTR [r12+96]
+mov r11, QWORD PTR [r12+104]
+mov QWORD PTR [rsp], rsi
+mov QWORD PTR [rsp+16], rsi
+mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+24], r10
+mov QWORD PTR [rsp+32], r11
+call {vg_ffdh_generate_key}
+lea rsp, [rsp+40]
+mov eax, eax
+mov rcx, QWORD PTR [r12+16]
+mov rdx, QWORD PTR [r12+72]
+mov rsi, QWORD PTR [r12+80]
+mov r8, QWORD PTR [r12+88]
+add rdx, rcx
+sub rsi, rcx
+add r8, rcx
+mov QWORD PTR [r12+72], rdx
+mov QWORD PTR [r12+80], rsi
+mov QWORD PTR [r12+88], r8
+cmp rax, 1
+je 27f
+cmp rax, 2
+je 29f
+cmp rax, 3
+je 211f
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 3
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+213:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 213b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+214:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 214b
+jmp 212f
+211:
+mov rax, QWORD PTR [r12]
+sub rax, 1
+mov QWORD PTR [r12], rax
+mov eax, 128
+mov QWORD PTR [r12+8], rax
+mov eax, 4
+mov QWORD PTR [r12+112], rax
+212:
+jmp 210f
+29:
+mov rax, QWORD PTR [r12+8]
+sub rax, 1
+mov QWORD PTR [r12+8], rax
+mov eax, 4
+mov QWORD PTR [r12+112], rax
+210:
+jmp 28f
+27:
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 1
+mov QWORD PTR [r12+112], rax
+28:
+jmp 26f
+25:
+mov rax, QWORD PTR [r12+16]
+mov QWORD PTR [r12+24], rax
+mov eax, 0
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+215:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 215b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+216:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 216b
+26:
+jmp 24f
+23:
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 3
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+217:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 217b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+218:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 218b
+24:
+jmp 22f
+21:
+mov eax, 0
+mov QWORD PTR [r12], rax
+mov QWORD PTR [r12+8], rax
+mov QWORD PTR [r12+24], rax
+mov eax, 3
+mov QWORD PTR [r12+112], rax
+mov rdi, r12
+mov rsi, QWORD PTR [rdi+40]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+219:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 219b
+mov rsi, QWORD PTR [rdi+48]
+mov rcx, QWORD PTR [rdi+16]
+mov eax, 0
+220:
+mov BYTE PTR [rsi], al
+add rsi, 1
+sub rcx, 1
+jne 220b
+22:
+mov rax, QWORD PTR [r12+112]
+cmp rax, 4
+je 20b
+mov rdx, QWORD PTR [r12+120]
+mov rcx, QWORD PTR [r12+88]
+mov rax, QWORD PTR [r12+112]
+mov r12, QWORD PTR [r12+32]
+mov QWORD PTR [rdx], rcx
+ret
+.p2align 6",
+        vg_ffdh_generate_key = sym super::ffdh::vg_ffdh_generate_key,
     )
 }

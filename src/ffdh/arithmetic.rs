@@ -3,7 +3,8 @@
 use crate::arch::ffdh::{
     VG_FFDH_CHECK_DOMAIN_ADX_FEATURES, VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
     VG_FFDH_CHECK_PUBLIC_ADX_FEATURES, VG_FFDH_EXCHANGE_ADX_FEATURES,
-    VG_FFDH_GENERATE_KEY_ADX_FEATURES, VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
+    VG_FFDH_GENERATE_KEY_ADX_FEATURES, VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES,
+    VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
 };
 use crate::cpu::Features;
 use alloc::{vec, vec::Vec};
@@ -53,7 +54,7 @@ pub(super) enum Backend {
 }
 impl Backend {
     /// The implementation of the FFDH operations (`vg_ffdh_*`, in
-    /// `Domain` and parameter generation) a CPU with the features `_f`
+    /// `Domain`, key generation and parameter generation) a CPU with the features `_f`
     /// can run.
     pub(super) fn ffdh(_f: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
@@ -66,6 +67,7 @@ impl Backend {
                     VG_FFDH_GENERATE_KEY_ADX_FEATURES,
                     VG_FFDH_EXCHANGE_ADX_FEATURES,
                     VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
+                    VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES,
                 ])
             },
         ) {

@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
@@ -81,6 +82,17 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     code := Proof.Ffdh.X86_64.Generation.searchCode v
     verified := Proof.Ffdh.X86_64.Generation.search_verified v
     spSafe := Proof.Ffdh.X86_64.Generation.searchCode_sp v
+    features := v.features },
+  Spec.Ffdh.keySearchApi.artifact X86_64.target {
+    suffix := v.suffix
+    stack := 56
+    notes := ["The whole key search runs in verified code: both rejection budgets, the \
+        octets each attempt consumes, and the next entropy request. Each attempt calls \
+        `vg_ffdh_generate_key` with the same backend, in a 40-byte frame. Timing depends \
+        on the domain, the controller's public words and the attempts' statuses."]
+    code := Proof.Ffdh.X86_64.KeyGeneration.keyCode v
+    verified := Proof.Ffdh.X86_64.KeyGeneration.key_verified v
+    spSafe := Proof.Ffdh.X86_64.KeyGeneration.keyCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh
