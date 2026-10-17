@@ -19,7 +19,7 @@ import VerifiedGarbage.Spec.EcKey.Generic
 # Deterministic ECDSA over brainpoolP256r1 on x86-64, with the hash function as an argument
 
 brainpoolP256r1 as the proof's curve, with a tier `T` of hash functions (`any`); the contract
-`Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst.signAnyContract` for 544 bytes of stack, which a state permits (`sat`): `vg_ecdsa_brainpoolp256r1_rfc6979_sign` is
+`Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst.signAnyContract` for 552 bytes of stack, which a state permits (`sat`): `vg_ecdsa_brainpoolp256r1_rfc6979_sign` is
 verified (`sign_verified`).
 -/
 

@@ -53,10 +53,10 @@ theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitV
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   omega
 
-/-- The 24 bytes below the frame, which the calls use. -/
-theorem below24 (B : Addr) : below (B + BitVec.ofNat 64 24) 24 = ⟨B, 24⟩ := by
-  show (⟨B + BitVec.ofNat 64 24 - BitVec.ofNat 64 24, 24⟩ : Region) = _
-  rw [BitVec.add_sub_cancel]
+/-- The 32 bytes below the frame, which the calls use. -/
+theorem below32 {dn : Nat} (L : Lay dn) : below (L.B + BitVec.ofNat 64 24) 32 = L.CALLS := by
+  show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 32, 32⟩ : Region) = _
+  rw [L.shift, show L.A + BitVec.ofNat 64 (8 + 24) - BitVec.ofNat 64 32 = L.A from BitVec.add_sub_cancel _ _]
 
 /-- Callee-saved registers, through writes of others. -/
 macro "cs_tac" : tactic => `(tactic| plain_simp_names (
@@ -94,13 +94,13 @@ theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
   rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt h]
 
-/-- The stack below `rsp` a call nested `n / 8 - 1` deep uses, within the 24 bytes below the frame. -/
+/-- The stack below `rsp` a call uses, within the 32 bytes below the frame. -/
 theorem Ctx.below_sub {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} {u : State} (hc : Ctx L g m₀ u) {n : Nat}
-    (hn : n ≤ 24) : Region.Sub (below (u.gpr .rsp) n) ⟨L.B, 24⟩ := by
-  rw [hc.rsp, ← below24]; exact VG.X86_64.below_sub hn (by omega)
+    (hn : n ≤ 32) : Region.Sub (below (u.gpr .rsp) n) L.CALLS := by
+  rw [hc.rsp, ← below32]; exact VG.X86_64.below_sub hn (by omega)
 
 theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
-    Region.Disjoint ⟨L.B, 24⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
+    Region.Disjoint L.CALLS ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
 
 /-- Code that writes no callee-saved register keeps them (`hc` is checked

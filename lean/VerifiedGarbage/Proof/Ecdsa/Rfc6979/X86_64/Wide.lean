@@ -58,7 +58,7 @@ theorem conv_ok (hL : L.Ok) (hW : P.R.wide = true) {t : State} (hc : Ctx L g m�
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (24 + o)) P.Q) >>> s) := by
   obtain ⟨hw9, hQ66⟩ := P.sizesW hW
   have he := L.he
-  have hnb := hL.nb
+  have hnb := hL.nbB
   refine WP.of_syms ?_
   rw [Cfg.conv, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (fr_ok hL hc (d := .rsi) (by decide) (o := o) (by omega_arith)) fun u₁ h₁ => ?_

@@ -64,6 +64,12 @@ def cfgRT (R : RfcCurve) (T : Tier) (tries : Nat) : Cfg where
   tries := tries
   coreN := R.coreN
   coreC := R.coreC
+  initN := Spec.Hmac.Any.initApi.name ++ T.suffix
+  initC := Impl.Hmac.Any.X86_64.init (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf T))
+  updN := Spec.Hmac.Any.updateApi.name ++ T.suffix
+  updC := Impl.Hmac.Any.X86_64.update (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf T))
+  finN := Spec.Hmac.Any.finalizeApi.name ++ T.suffix
+  finC := Impl.Hmac.Any.X86_64.finalize (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf T))
 
 theorem cfgOf_eq (P : RfcHash) : cfgOf P = cfgRT P.R P.T P.I0.tries := rfl
 
@@ -90,8 +96,8 @@ def hashAt (k : Nat) (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) : RfcHash where
 /-- The code. -/
 abbrev code : Prog isa := (cfgRT A.R A.T A.I0.tries).sign
 
-/-- The contract, for the comb's tables and 544 bytes of stack. -/
-abbrev contract : Contract isa := A.I0.signAnyContract (X86_64.abi.withConsts A.R.E.combConsts) 544
+/-- The contract, for the comb's tables and 552 bytes of stack. -/
+abbrev contract : Contract isa := A.I0.signAnyContract (X86_64.abi.withConsts A.R.E.combConsts) 552
 
 end RfcAny
 
@@ -149,8 +155,9 @@ theorem cases_all {T : Tier} {α : Type} {g : α → Prog isa} {f : Impl.Pbkdf2.
 /-- What a property of instructions must hold of in the functions called and
 the blocks that depend on the curve. -/
 structure InstrsOk (R : RfcCurve) (T : Tier) (p : Instr → Bool) : Prop where
-  hash : ∀ k v, k ∈ Spec.Ecdsa.Rfc6979.hashIds → T.hashes[k]? = some v →
-    v.H.hmacInit.allInstrs p = true ∧ v.H.updC.allInstrs p = true ∧ v.H.hmacFin.allInstrs p = true
+  hmac : (Impl.Hmac.Any.X86_64.init (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf T))).allInstrs p = true ∧
+    (Impl.Hmac.Any.X86_64.update (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf T))).allInstrs p = true ∧
+    (Impl.Hmac.Any.X86_64.finalize (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf T))).allInstrs p = true
   core : R.coreC.allInstrs p = true
   curve : CurveInstrs (cfgC R.E R.wide R.sh) p
 
@@ -192,15 +199,9 @@ theorem dims_mem' {T : Tier} {k : Nat} {v : MdHash} (hv : T.hashes[k]? = some v)
 theorem sign_allInstrs (R : RfcCurve) (T : Tier) (tries : Nat) {p : Instr → Bool} (hI : InstrsOk R T p)
     (hG : GenOk p) : (cfgRT R T tries).sign.allInstrs p = true := by
   have hcv := hI.curve
-  have callH : ∀ (f : Impl.Pbkdf2.Md.X86_64.Hash → String × Prog isa),
-      (∀ k v, k ∈ Spec.Ecdsa.Rfc6979.hashIds → T.hashes[k]? = some v → (f v.H).2.allInstrs p = true) →
-      ((cfgRT R T tries).callH f).allInstrs p = true := fun f h =>
-    Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : String × Prog isa => Code.call x.1 x.2) h)
   have hmac : ∀ dataA e dst, (Code.block (Cfg.hmacArgs₂ dataA e) : Prog isa).allInstrs p = true →
       ((cfgRT R T tries).hmac dataA e dst).allInstrs p = true := fun _ e dst h₂ =>
-    ai_seq hG.a₁ (ai_seq (callH _ fun k v hk hv => (hI.hash k v hk hv).1) (ai_seq h₂
-      (ai_seq (callH _ fun k v hk hv => (hI.hash k v hk hv).2.1) (ai_seq (hG.a₃ e dst)
-        (callH _ fun k v hk hv => (hI.hash k v hk hv).2.2)))))
+    ai_seq hG.a₁ (ai_seq hI.hmac.1 (ai_seq h₂ (ai_seq hI.hmac.2.1 (ai_seq (hG.a₃ e dst) hI.hmac.2.2))))
   have hmacV : (cfgRT R T tries).hmacV.allInstrs p = true := hmac _ 0 fV (hG.a₂V 0)
   have rekeyF : ∀ b, (Cfg.msg R.E.C.len b true).all p = true →
       ((cfgRT R T tries).rekeyFull b).allInstrs p = true := fun b h =>
@@ -279,15 +280,20 @@ theorem genSp : GenOk fun i => !isa.writesSp i where
 /-- No instruction loads MXCSR. -/
 theorem sign_mx (A : RfcAny) : A.code.allInstrs (fun i => !loadsMxcsr i) = true :=
   sign_allInstrs A.R A.T A.I0.tries
-    ⟨fun _ v _ _ => ⟨core_hmacInit v.K.cMx v.K.iMx v.C.hinitMx, core_updC v.K.cMx v.C.updMx,
-      core_hmacFin v.K.cMx v.C.hfinMx⟩, A.R.coreMx, A.R.blks.mx⟩ genMx
+    ⟨⟨Proof.Hmac.Any.X86_64.init_mx (vs := Proof.Hmac.Any.X86_64.vsOf A.T),
+      Proof.Hmac.Any.X86_64.upd_mx (vs := Proof.Hmac.Any.X86_64.vsOf A.T),
+      Proof.Hmac.Any.X86_64.fin_mx (vs := Proof.Hmac.Any.X86_64.vsOf A.T)⟩, A.R.coreMx, A.R.blks.mx⟩ genMx
+
+/-- No instruction of code none of whose instructions clobbers `rsp` writes it. -/
+theorem ai_of_nosp {c : Prog isa} (h : NoSp c) : c.allInstrs (fun i => !isa.writesSp i) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true]
+  exact fun i hi => noSp_of_ns i (by rw [h i hi]; rfl)
 
 /-- No instruction writes `rsp` but the frame's push and pop. -/
 theorem sign_spSafe (A : RfcAny) : A.code.all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (sign_allInstrs A.R A.T A.I0.tries
-    ⟨fun _ v _ _ => ⟨core_hmacInit v.K.cSp v.K.iSp v.C.hinitSp,
-      allInstrs_imp noSp_of_ns (core_updC v.K.cNs v.C.updNs), core_hmacFin v.K.cSp v.C.hfinSp⟩,
-      A.R.coreSp, A.R.blks.sp⟩ genSp)
+    ⟨⟨ai_of_nosp (Proof.Hmac.Any.X86_64.init_ns A.T), ai_of_nosp (Proof.Hmac.Any.X86_64.upd_ns A.T),
+      ai_of_nosp (Proof.Hmac.Any.X86_64.fin_ns A.T)⟩, A.R.coreSp, A.R.blks.sp⟩ genSp)
 
 /-! ## The contract, for each hash function -/
 
@@ -317,7 +323,7 @@ variable (A : RfcAny)
 
 /-- The contract for the hash function `k`. -/
 abbrev K (k : Nat) (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) : Contract isa :=
-  rfcX86_64 A.R.E.combConsts (A.hashAt k hk).I k 544
+  rfcX86_64 A.R.E.combConsts (A.hashAt k hk).I k 552
 
 theorem code_eq (k : Nat) (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) : A.code = (cfgOf (A.hashAt k hk)).sign := rfl
 
@@ -506,10 +512,10 @@ def SatSep (Q : Nat) : Prop :=
     Region.sep ⟨0x3000, 32⟩ ⟨0x8000, 8192⟩ = true ∧ Region.sep ⟨0x20000, 8⟩ ⟨0x1000, 2 * Q⟩ = true ∧
     Region.sep ⟨0x20000, 8⟩ ⟨0x2000, Q⟩ = true ∧ Region.sep ⟨0x20000, 8⟩ ⟨0x3000, 32⟩ = true ∧
     Region.sep ⟨0x20000, 8⟩ ⟨0x8000, 8192⟩ = true ∧
-    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x1000, 2 * Q⟩ = true ∧
-    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x2000, Q⟩ = true ∧
-    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x3000, 32⟩ = true ∧
-    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x8000, 8192⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 552, 552⟩ ⟨0x1000, 2 * Q⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 552, 552⟩ ⟨0x2000, Q⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 552, 552⟩ ⟨0x3000, 32⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 552, 552⟩ ⟨0x8000, 8192⟩ = true ∧
     0x1000 + 2 * Q ≤ 2 ^ 64 ∧ 0x2000 + Q ≤ 2 ^ 64
 
 instance (Q : Nat) : Decidable (SatSep Q) := by unfold SatSep; infer_instance
@@ -520,14 +526,14 @@ tables `Tr` (if any) at `0x100000`. -/
 theorem sat_of (hcs : TblShape A.R.E.combConsts) {m : Mem} {Tr : List Region}
     (hTr : Tr = Abi.constRegions (fun _ => 0x100000) A.R.E.combConsts) (hsep : SatSep A.I0.ecdsa.curve.len)
     (htb : TblsOk A.R.E.combConsts (satState A.I0.ecdsa.curve.len 32 3 m Tr)
-      [⟨0x1000, 2 * A.I0.ecdsa.curve.len⟩, ⟨0x8000, 8192⟩, ⟨0x20000, 8⟩, ⟨0x20000 - BitVec.ofNat 64 544, 544⟩]) :
+      [⟨0x1000, 2 * A.I0.ecdsa.curve.len⟩, ⟨0x8000, 8192⟩, ⟨0x20000, 8⟩, ⟨0x20000 - BitVec.ofNat 64 552, 552⟩]) :
     ∃ s, A.contract.pre s := by
   have h3 : 3 ∈ Spec.Ecdsa.Rfc6979.hashIds := by decide
   refine ⟨_, A.any_pre_of hcs h3 (s := satState A.I0.ecdsa.curve.len 32 3 m Tr) (by rw [A.d3]; rfl) ?_⟩
   obtain ⟨s₁, s₂, s₃, s₄, s₅, s₆, s₇, s₈, s₉, s₁₀, s₁₁, s₁₂, s₁₃, b₁, b₂⟩ := hsep
   dsimp only [RfcAny.K, rfcX86_64]
   rw [A.d3 h3]
-  exact ⟨rfl, show 544 ≤ (0x20000 : BitVec 64).toNat by decide, by rw [hTr]; rfl, rfl, Region.disjoint_of_sep s₁, Region.disjoint_of_sep s₂,
+  exact ⟨rfl, show 552 ≤ (0x20000 : BitVec 64).toNat by decide, by rw [hTr]; rfl, rfl, Region.disjoint_of_sep s₁, Region.disjoint_of_sep s₂,
     Region.disjoint_of_sep s₃, Region.disjoint_of_sep s₄, Region.disjoint_of_sep s₅, Region.disjoint_of_sep s₆,
     Region.disjoint_of_sep s₇, Region.disjoint_of_sep s₈, Region.disjoint_of_sep s₉, Region.disjoint_of_sep s₁₀,
     Region.disjoint_of_sep s₁₁, Region.disjoint_of_sep s₁₂, Region.disjoint_of_sep s₁₃, b₁, b₂,
@@ -550,9 +556,9 @@ end RfcAny
 `core`; `wide` if they are longer than every hash function's output, of
 `nb` bits. -/
 def anyNotes (q : Nat) (core : String) (wide : Bool := false) (nb : Nat := 8 * q) : String :=
-  "Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, \
-  each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, \
-  working space and messages. " ++
+  "Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with \
+  `hash` (a public argument), which call the functions of the hash function it names, using the start of \
+  `scratch` for HMAC's states, working space and messages. " ++
   (if wide then "Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), \
     and each candidate `k`, the leftmost " ++ toString nb ++ " bits of successive `V`s, and the digest for the \
     signature are shifted into " ++ toString q ++ " bytes with word loads, shifts and stores. "

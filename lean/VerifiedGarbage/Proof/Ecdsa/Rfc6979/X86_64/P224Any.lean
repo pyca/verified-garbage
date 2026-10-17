@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.P224.Comb7
 # Deterministic ECDSA over P-224 on x86-64, with the hash function as an argument
 
 P-224 as the proof's curve, with a tier `T` of hash functions (`any`); the contract
-`Spec.Ecdsa.Rfc6979.P224Sha224.inst.signAnyContract` for 544 bytes of stack and the
+`Spec.Ecdsa.Rfc6979.P224Sha224.inst.signAnyContract` for 552 bytes of stack and the
 comb's table, which a state permits (`sat`): `vg_ecdsa_p224_rfc6979_sign` is
 verified (`sign_verified`).
 -/

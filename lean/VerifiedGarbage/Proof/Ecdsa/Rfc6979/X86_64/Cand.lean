@@ -39,7 +39,7 @@ abbrev RfcHash.nb (P : RfcHash) : Nat := Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.H.D
 /-- What a candidate changes: `scratch`, the stack below the frame, `K`, `V`
 and the offset, and the candidate. -/
 abbrev CW {dn : Nat} (L : Lay dn) : List Region :=
-  [L.SCR, ⟨L.B, 160⟩, ⟨L.B + BitVec.ofNat 64 384, 136⟩]
+  [L.SCR, ⟨L.A, 168⟩, ⟨L.B + BitVec.ofNat 64 384, 136⟩]
 
 /-! ## The number of `V`s -/
 
@@ -223,7 +223,7 @@ theorem kvw_cw : ∀ r ∈ KVW L, ∃ r' ∈ CW L, Region.Sub r r' := fun r hr =
   simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, by simp, sub_refl _⟩
-  · exact ⟨⟨L.B, 160⟩, by simp, Region.sub_prefix (by omega)⟩
+  · exact ⟨⟨L.A, 168⟩, by simp, Region.sub_prefix (by omega)⟩
 
 /-- One `V` more. -/
 theorem candStep_ok (hL : L.Ok) (hq : HashLay P L) {t₀ t : State} (hc : Ctx L g m₀ t) {K V : List Byte} {i : Nat}
@@ -240,7 +240,7 @@ theorem candStep_ok (hL : L.Ok) (hq : HashLay P L) {t₀ t : State} (hc : Ctx L 
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hL.stk_SCR (by have := L.he; omega)
-      · exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+      · exact L.disjA (by omega) (by omega)) (by decide)
   refine WP.seq (WP.mono (ld_ok hL hc₁ (d := .rdx) (by decide) (o := fOff) (by decide)) fun u₂ h₂ => ?_)
   have hdx₂ : u₂.gpr .rdx = BitVec.ofNat 64 (i * P.H.D) := h₂.val.trans hoff₁
   rw [← h₂.mem] at hoff₁
@@ -250,7 +250,7 @@ theorem candStep_ok (hL : L.Ok) (hq : HashLay P L) {t₀ t : State} (hc : Ctx L 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, by simp, Offset.sub (e := 384) (k := 136) _ (by omega) (by omega)⟩
-    · exact ⟨⟨L.B, 160⟩, by simp, Offset.sub_base _ (by omega)⟩
+    · exact ⟨⟨L.A, 168⟩, by simp, L.subA (by omega)⟩
   · rw [show kOf P L u₃.mem = kOf P L u₁.mem by
       rw [← h₂.mem]; exact bytesAt_frame hf₃ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -279,7 +279,7 @@ theorem candStep_ok (hL : L.Ok) (hq : HashLay P L) {t₀ t : State} (hc : Ctx L 
         simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact hL.stk_SCR (by have := L.he; omega)
-        · exact Offset.disjoint_base _ (by omega) (by omega)) (by omega)
+        · exact L.disjA (by omega) (by omega)) (by omega)
     rw [hT]
     refine congrArg (_ ++ ·) ?_
     rw [bytesAt_take _ _ (k := 64) hD, hb₃, ← bytesAt_take _ _ hD, h₂.mem]
@@ -298,7 +298,7 @@ theorem candStepOff_ok (hL : L.Ok) (hq : HashLay P L) {t : State} (hc : Ctx L g 
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hL.stk_SCR (by have := L.he; omega)
-      · exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+      · exact L.disjA (by omega) (by omega)) (by decide)
   refine WP.seq (WP.mono (ld_ok hL hc₁ (d := .rdx) (by decide) (o := fOff) (by decide)) fun u₂ h₂ => ?_)
   have hdx₂ : u₂.gpr .rdx = BitVec.ofNat 64 off := h₂.val.trans hoff₁
   rw [← h₂.mem] at hoff₁
@@ -357,7 +357,7 @@ theorem cand_ok (hL : L.Ok) (hq : HashLay P L) {t : State} (hc : Ctx L g m₀ t)
     simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums)
   have hf₁' : Frame (CW L) t.mem u₁.mem := hf₁.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨L.B, 160⟩, by simp, Offset.sub_base _ (by omega)⟩
+    exact ⟨⟨L.A, 168⟩, by simp, L.subA (by omega)⟩
   rw [← hk₁, ← hv₁] at hlen ⊢
   cases hw : P.R.wide
   · have hsh0 : P.R.sh = 0 := by rw [hsh, hw]; rfl

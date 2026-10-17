@@ -10,21 +10,22 @@ public import VerifiedGarbage.Impl.Dispatch.X86_64
 `sign (out = rdi, d = rsi, digest = rdx, digest_len = rcx, scratch = r8,
 hash = r9) -> eax`, for a curve of `Q`-byte scalars in `w` words and the
 Merkle–Damgård hash functions `hs` (each with its number, `HashId.hmac`):
-RFC 6979 §3.2, with HMAC computed by calling the HMAC `init`, streaming
-`update` and HMAC `finalize` of the hash function that `hash` names, and each
+RFC 6979 §3.2, with HMAC computed by calling `vg_hmac_init_scratch`,
+`vg_hash_update_scratch` and `vg_hmac_finalize_scratch` of a tier of hash
+functions, which call those of the hash function that `hash` names, and each
 candidate tried by calling `core`, the signature with a given `k`
 (`vg_ecdsa_<curve>_sign`), which reads `Q` bytes of its digest and of `k`,
 and takes its digest's leftmost `qlen` bits (`bits2int`, a right shift by
 `sh = 8 Q - qlen` bits). `digest_len` is the hash function's output length
 `D` (a precondition), which the code takes from `hash` instead.
 
-The hash function is public. Each call of one of its functions is a dispatch
-on `hash` (`Dispatch.X86_64.chain`), each case a direct call; its output
-length `D` and block size `B` are chosen once, by a dispatch before the
-frame is pushed, and kept in the frame, from which every length that depends
-on them is computed. The only other code that depends on the hash function
-is the digest's conversion (`prepCase`), whose copies depend on `D`, which
-is a dispatch of its own.
+The hash function is public. Each call of one of HMAC's functions passes
+`hash` (`r9`) to the tier's, which chooses the hash function's; its output
+length `D` and block size `B` are chosen once, by a dispatch on `hash`
+(`Dispatch.X86_64.chain`) before the frame is pushed, and kept in the frame,
+from which every length that depends on them is computed. The only other code
+that depends on the hash function is the digest's conversion (`prepCase`),
+whose copies depend on `D`, which is a dispatch of its own.
 
 * `h = bits2octets(digest)` (RFC 6979 §2.3.4): with `X` the digest's `Q`
   leftmost bytes, or the digest after `Q - D` zero bytes if it is shorter,
@@ -48,12 +49,13 @@ Everything runs in one stack frame of 65 words, pushed from `rax` (`hash`),
 of which the first `D` are used), the candidate's offset, the number of
 candidates left, then `scratch`, `digest`, `d` and `out`, `core`'s digest
 (`Y`, 72 bytes), `h` (72), the candidate (`C`, 136), and `B`, `D` and
-`hash`. The calls use only `scratch`, which `core` overwrites entirely, and
-the 24 bytes below the frame; `K`, `V`, `h`, `Y` and the candidate are
-cleared before the frame is popped. In `scratch`: HMAC's inner and outer
-streaming states (256 bytes each), the working space of HMAC's and the hash
-function's functions (2048 bytes), the message of steps d, f and h.3, and the
-words of a shift (if `wide`).
+`hash`. The calls use only `scratch`, which `core` overwrites entirely, the
+32 bytes below the frame, and, for HMAC's `finalize`, the 64 bytes at `K`'s
+or `V`'s place; `K`, `V`, `h`, `Y` and the candidate are cleared before the
+frame is popped. In `scratch`: HMAC's inner and outer streaming states (256
+bytes each), the working space of HMAC's and the hash function's functions
+(2048 bytes), the message of steps d, f and h.3, and the words of a shift (if
+`wide`).
 
 1. `h` and `core`'s digest, as above.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
@@ -134,6 +136,14 @@ structure Cfg where
   /-- The signature with a given `k`, and its name. -/
   coreN : String
   coreC : Prog isa
+  /-- `vg_hmac_init_scratch`, `vg_hash_update_scratch` and
+  `vg_hmac_finalize_scratch` of the tier, and their names. -/
+  initN : String
+  initC : Prog isa
+  updN : String
+  updC : Prog isa
+  finN : String
+  finC : Prog isa
 
 namespace Cfg
 
@@ -142,9 +152,8 @@ variable (c : Cfg)
 /-- `rax ← hash`, for a dispatch. -/
 def selLd : List Instr := [.mov .rax (.mem (stk fSel))]
 
-/-- The call of the function `f` gives of the hash function `hash` names. -/
-def callH (f : Hash → String × Prog isa) : Prog isa :=
-  Dispatch.X86_64.chain (c.hs.map fun p => (p.1, .call (f p.2).1 (f p.2).2))
+/-- `r9 ← hash`, the argument of HMAC's functions. -/
+def selArg : List Instr := [.mov .r9 (.mem (stk fSel))]
 
 /-- `d ← [rsp + o] + a`: an address in `scratch`. -/
 def scr (d : Reg) (a : Nat) : List Instr :=
@@ -158,7 +167,7 @@ def fr (d : Reg) (o : Nat) : List Instr :=
 the working space; and `hash`. -/
 def hmacArgs₁ : List Instr :=
   scr .rdi sInner ++ scr .rsi sOuter ++ fr .rdx fK ++ ([.mov .rcx (.mem (stk fHL))] : List Instr) ++
-    scr .r8 sWork ++ selLd
+    scr .r8 sWork ++ selArg
 
 /-- The arguments of the streaming `update`: the inner state, the `B` bytes
 it holds, the data (at the address `dataA` sets `rdx` to) of `D + e` bytes,
@@ -166,7 +175,7 @@ the working space; and `hash`. -/
 def hmacArgs₂ (dataA : List Instr) (e : Nat) : List Instr :=
   scr .rdi sInner ++ ([.mov .rsi (.mem (stk fBS))] : List Instr) ++ dataA ++
     ([.mov .rcx (.mem (stk fHL)), .alu .add .rcx (.imm (BitVec.ofNat 32 e))] : List Instr) ++
-    scr .r8 sWork ++ selLd
+    scr .r8 sWork ++ selArg
 
 /-- The arguments of HMAC's `finalize`: the states, the `B + D + e` bytes
 the inner one holds, the MAC's place in the frame, the working space; and
@@ -174,18 +183,18 @@ the inner one holds, the MAC's place in the frame, the working space; and
 def hmacArgs₃ (e dst : Nat) : List Instr :=
   scr .rdi sInner ++ scr .rsi sOuter ++
     ([.mov .rdx (.mem (stk fBS)), .alu .add .rdx (.mem (stk fHL)), .alu .add .rdx (.imm (BitVec.ofNat 32 e))] :
-      List Instr) ++ fr .rcx dst ++ scr .r8 sWork ++ selLd
+      List Instr) ++ fr .rcx dst ++ scr .r8 sWork ++ selArg
 
 /-- `HMAC_K(data)` into the frame at `dst`, for `D + e` bytes of `data` at
 the address `dataA` sets `rdx` to: HMAC's `init` with the key `K`, `update`
-on the inner state, and `finalize`, each of the hash function `hash` names. -/
+on the inner state, and `finalize`, of the hash function `hash` names. -/
 def hmac (dataA : List Instr) (e dst : Nat) : Prog isa :=
   .seq (.block hmacArgs₁)
-  (.seq (c.callH fun H => (H.hmacInitN, H.hmacInit))
+  (.seq (.call c.initN c.initC)
   (.seq (.block (hmacArgs₂ dataA e))
-  (.seq (c.callH fun H => (H.updN, H.updC))
+  (.seq (.call c.updN c.updC)
   (.seq (.block (hmacArgs₃ e dst))
-    (c.callH fun H => (H.hmacFinN, H.hmacFin))))))
+    (.call c.finN c.finC)))))
 
 /-- `V = HMAC_K(V)`. -/
 def hmacV : Prog isa := c.hmac (fr .rdx fV) 0 fV

@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.P384.Comb7
 
 P-384 as the proof's curve, with a tier `T` of hash functions and its multiplication
 with BMI2 and ADX (`adx`) or without (`any`); the contract
-`Spec.Ecdsa.Rfc6979.P384Sha384.inst.signAnyContract` for 544 bytes of stack and the
+`Spec.Ecdsa.Rfc6979.P384Sha384.inst.signAnyContract` for 552 bytes of stack and the
 comb's table, which a state permits (`sat`): `vg_ecdsa_p384_rfc6979_sign` is
 verified (`sign_verified`).
 -/
@@ -78,7 +78,7 @@ theorem sign_verified (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (T : Tier) :
     Verified X86_64.target (any adx hL hT hI T).code
-      (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signAnyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 544) := by
+      (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signAnyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 552) := by
   cases adx <;> exact (any _ hL hT hI T).verified (shape _ hL hT hI T) (sat _ hL hT hI T)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.P384Any

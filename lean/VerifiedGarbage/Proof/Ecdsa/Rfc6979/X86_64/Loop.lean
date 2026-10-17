@@ -105,13 +105,13 @@ theorem kvw_cnt (hL : L.Ok) : ∀ r ∈ KVW L, Region.Disjoint ⟨L.B + BitVec.o
   simp only [KVW, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact hL.stk_SCR (by nums)
-  · exact Offset.disjoint_base _ (by nums) (by nums)
+  · exact L.disjA (by nums) (by nums)
 
 theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 200, 8⟩ r := by
   simp only [CW, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact hL.stk_SCR (by nums)
-  · exact Offset.disjoint_base _ (by nums) (by nums)
+  · exact L.disjA (by nums) (by nums)
   · exact Offset.disjoint _ (by nums) (by nums) (by nums)
 
 /-- What `core` changes: `out`, `scratch` and the return addresses of it and its calls. -/
@@ -128,7 +128,7 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 2
 
 /-- The regions the loop writes, which are apart from `core`'s digest. -/
 def DgApart {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
-  r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 152⟩ ∨ r = ⟨L.B, 160⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 8⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 200, 8⟩ ∨
+  r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.A, 160⟩ ∨ r = ⟨L.A, 168⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 8⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 200, 8⟩ ∨
     r = ⟨L.B + BitVec.ofNat 64 384, 136⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 8, 16⟩
 
 theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) :
@@ -139,8 +139,8 @@ theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) :
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact hL.stk_SCR (by omega)
   · exact hL.stk_OUT (by omega)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact L.disjA (by omega) (by omega)
+  · exact L.disjA (by omega) (by omega)
   · exact Offset.disjoint _ (by omega) (by omega) (by omega)
   · exact Offset.disjoint _ (by omega) (by omega) (by omega)
   · exact Offset.disjoint _ (by omega) (by omega) (by omega)

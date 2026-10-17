@@ -17,15 +17,16 @@ public import VerifiedGarbage.Proof.Framework.Registration
 # Deterministic ECDSA (RFC 6979) over brainpoolP256r1 on x86-64, with the hash function as an argument
 
 A generic file of two interfaces (see `TCB/Emit.lean`):
-`vg_ecdsa_brainpoolp256r1_rfc6979_sign`, calling HMAC's `init` and `finalize` and the
-streaming `update` of the hash function its argument `hash` names, each of
-the tier's implementation (`Variants/MdHashTier/X86_64/`), and
+`vg_ecdsa_brainpoolp256r1_rfc6979_sign`, calling the tier's
+`vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch`
+(`Variants/MdHashTier/X86_64/`), which call the functions of the hash function
+its argument `hash` names, and
 `vg_ecdsa_brainpoolp256r1_sign`, is emitted for every tier, named by `Emit.qualifiedName`
 (the tier's suffix, tagged `hash`), and needs the tier's CPU features. It is
 generic over brainpoolP256r1's group law and inversions too, the variant
 `Variants/BrainpoolP256r1/X86_64/Law.lean`.
 
-The stack is 544 bytes: a 520-byte frame, and the 24 bytes below it that the
+The stack is 552 bytes: a 520-byte frame, and the 32 bytes below it that the
 calls use.
 -/
 
@@ -42,7 +43,7 @@ def artifacts (t : Proof.Pbkdf2.Md.X86_64.Tier) (h : Proof.Weierstrass.X86_64.Ha
     suffix := Emit.qualifiedName "" [("hash", t.suffix)]
     notes := [anyNotes 32 (Spec.Ecdsa.BrainpoolP256r1.signApi.name)]
     code := (any h.law h.inv t).code
-    stack := 544
+    stack := 552
     verified := sign_verified h.law h.inv t
     spSafe := sign_spSafe (any h.law h.inv t)
     features := t.features }]

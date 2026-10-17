@@ -134,12 +134,10 @@ theorem two_dispatch {f : Impl.Pbkdf2.Md.X86_64.Hash → Prog isa} {Φ : Lay P.I
     rw [case_eq P f hc] at e₁ e₂
     exact h _ _ _ _ _ _ ⟨e, hL, hq, hx, c₁.flags hL r₁, c₂.flags hL r₂, hΦ _ _ _ _ f₁ r₁, hΦ _ _ _ _ f₂ r₂⟩ e₁ e₂
 
-/-- The call of a function of the hash function, by a dispatch. -/
-theorem two_callH {f : Impl.Pbkdf2.Md.X86_64.Hash → String × Prog isa} {Φ : Lay P.I.hashLen → Mem → State → Prop}
-    {Q : State → State → Prop} (hax : ∀ L m₀ t, Φ L m₀ t → t.gpr .rax = BitVec.ofNat 64 P.k) (hΦ : NoFlags Φ)
-    (h : RelCT isa (Two P Φ) (.call (f P.H).1 (f P.H).2) Q) :
-    RelCT isa (Two P Φ) ((cfgOf P).callH f) Q :=
-  two_dispatch (f := fun H => .call (f H).1 (f H).2) hax hΦ h
+/-- A relation shown for each pair it relates. -/
+theorem relCT_pt {c : Prog isa} {Φ : State → State → Prop} {Q : State → State → Prop}
+    (h : ∀ a b, Φ a b → RelCT isa (fun x y => x = a ∧ y = b) c Q) : RelCT isa Φ c Q :=
+  fun s₁ s₂ _ _ _ _ hp e₁ e₂ => h s₁ s₂ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
 
 /-! ## The calls of HMAC's functions -/
 
@@ -147,25 +145,20 @@ theorem two_callH {f : Impl.Pbkdf2.Md.X86_64.Hash → String × Prog isa} {Φ : 
 def IA (P : RfcHash) (L : Lay P.I.hashLen) (_ : Mem) (u : State) : Prop :=
   u.gpr .rdi = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .rsi = L.scr + BitVec.ofNat 64 256 ∧
     u.gpr .rdx = L.B + BitVec.ofNat 64 24 ∧ u.gpr .rcx = BitVec.ofNat 64 P.H.D ∧
-    u.gpr .r8 = L.scr + BitVec.ofNat 64 512 ∧ u.gpr .rax = BitVec.ofNat 64 P.k
+    u.gpr .r8 = L.scr + BitVec.ofNat 64 512 ∧ u.gpr .r9 = BitVec.ofNat 64 P.k
 
 /-- The arguments of the streaming `update`, for the data at `da L` of `len`
 bytes, and `hash`. -/
 def UA (P : RfcHash) (da : Lay P.I.hashLen → Addr) (len : Nat) (L : Lay P.I.hashLen) (_ : Mem) (u : State) : Prop :=
   u.gpr .rdi = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .rsi = BitVec.ofNat 64 P.H.P.B ∧ u.gpr .rdx = da L ∧
-    u.gpr .rcx = BitVec.ofNat 64 len ∧ u.gpr .r8 = L.scr + BitVec.ofNat 64 512 ∧ u.gpr .rax = BitVec.ofNat 64 P.k
+    u.gpr .rcx = BitVec.ofNat 64 len ∧ u.gpr .r8 = L.scr + BitVec.ofNat 64 512 ∧ u.gpr .r9 = BitVec.ofNat 64 P.k
 
 /-- The arguments of HMAC's `finalize`, for `len` bytes of data and the MAC
 to `dst`, and `hash`. -/
 def FA (P : RfcHash) (len dst : Nat) (L : Lay P.I.hashLen) (_ : Mem) (u : State) : Prop :=
   u.gpr .rdi = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .rsi = L.scr + BitVec.ofNat 64 256 ∧
     u.gpr .rdx = BitVec.ofNat 64 (P.H.P.B + len) ∧ u.gpr .rcx = L.B + BitVec.ofNat 64 (24 + dst) ∧
-    u.gpr .r8 = L.scr + BitVec.ofNat 64 512 ∧ u.gpr .rax = BitVec.ofNat 64 P.k
-
-theorem ia_nf : NoFlags (IA P) := fun _ _ _ _ h hf => by simp only [IA, hf.gpr]; exact h
-theorem ua_nf {da : Lay P.I.hashLen → Addr} {len : Nat} : NoFlags (UA P da len) := fun _ _ _ _ h hf => by
-  simp only [UA, hf.gpr]; exact h
-theorem fa_nf {len dst : Nat} : NoFlags (FA P len dst) := fun _ _ _ _ h hf => by simp only [FA, hf.gpr]; exact h
+    u.gpr .r8 = L.scr + BitVec.ofNat 64 512 ∧ u.gpr .r9 = BitVec.ofNat 64 P.k
 
 theorem ce_rsp_two {dn : Nat} {L : Lay dn} {t₁ t₂ : State} {g₁ g₂ : Reg → BitVec 64} {m₁ m₂ : Mem}
     (c₁ : Ctx L g₁ m₁ t₁) (c₂ : Ctx L g₂ m₂ t₂) (rd₁ wr₁ rd₂ wr₂ : List Region) :
@@ -177,45 +170,32 @@ theorem ce_two {t₁ t₂ : State} {r : Reg} (hr : r ≠ .rsp) {x : BitVec 64} (
     (t₁.callEntry.withRegions rd₁ wr₁).gpr r = (t₂.callEntry.withRegions rd₂ wr₂).gpr r := by
   rw [ce_gpr _ _ _ hr, ce_gpr _ _ _ hr, h₁, h₂]
 
-theorem hinit_ct : RelCT isa (Two P (IA P)) (.call P.H.hmacInitN P.H.hmacInit) fun _ _ => True :=
-  RelCT.callEx P.hI.1 P.hI.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
-    obtain ⟨d₁, s₁, x₁, k₁, r₁, -⟩ := a₁
-    obtain ⟨d₂, s₂, x₂, k₂, r₂, -⟩ := a₂
-    have A₁ := initA (P := P) hL c₁ d₁ s₁ x₁ k₁ r₁
-    have A₂ := initA (P := P) hL c₂ d₂ s₂ x₂ k₂ r₂
-    exact ⟨_, _, _, _, Pbkdf2.Md.X86_64.Pbk.InitArgs.pre P.ok A₁, Pbkdf2.Md.X86_64.Pbk.InitArgs.pre P.ok A₂,
-      ⟨ce_two (by decide) d₁ d₂ _ _ _ _, ce_two (by decide) s₁ s₂ _ _ _ _, ce_two (by decide) x₁ x₂ _ _ _ _,
-        ce_two (by decide) k₁ k₂ _ _ _ _, ce_two (by decide) r₁ r₂ _ _ _ _, ce_rsp_two c₁ c₂ _ _ _ _⟩,
-      Pbkdf2.Md.X86_64.Pbk.covers_app A₁.cr A₁.cw, A₁.cw, Pbkdf2.Md.X86_64.Pbk.covers_app A₂.cr A₂.cw, A₂.cw,
-      rsp_two c₁ c₂⟩
+theorem hinit_ct : RelCT isa (Two P (IA P)) (.call (cfgOf P).initN (cfgOf P).initC) fun _ _ => True :=
+  relCT_pt fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ =>
+    Proof.Hmac.Any.X86_64.init_rel P.T fun _ _ ⟨ha, hb⟩ => by
+      subst ha hb
+      obtain ⟨d₁, s₁, x₁, k₁, r₁, n₁⟩ := a₁
+      obtain ⟨d₂, s₂, x₂, k₂, r₂, n₂⟩ := a₂
+      exact ⟨initA hL c₁ d₁ s₁ x₁ k₁ r₁ n₁, initA hL c₂ d₂ s₂ x₂ k₂ r₂ n₂, rsp_two c₁ c₂⟩
 
 theorem hupd_ct {da : Lay P.I.hashLen → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) len)
     (hlen : len ≤ 256) :
-    RelCT isa (Two P (UA P da len)) (.call P.H.updN P.H.updC) fun _ _ => True :=
-  RelCT.callEx P.ok.stream.upd.1 P.ok.stream.upd.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
-    obtain ⟨d₁, s₁, x₁, k₁, r₁, -⟩ := a₁
-    obtain ⟨d₂, s₂, x₂, k₂, r₂, -⟩ := a₂
-    have A₁ := updA (P := P) hL c₁ (hd L hL) hlen d₁ x₁ k₁ r₁
-    have A₂ := updA (P := P) hL c₂ (hd L hL) hlen d₂ x₂ k₂ r₂
-    exact ⟨_, _, _, _, Pbkdf2.Md.X86_64.Calls.UpdArgs.pre P.ok.stream A₁,
-      Pbkdf2.Md.X86_64.Calls.UpdArgs.pre P.ok.stream A₂,
-      ⟨ce_two (by decide) d₁ d₂ _ _ _ _, ce_two (by decide) s₁ s₂ _ _ _ _, ce_two (by decide) x₁ x₂ _ _ _ _,
-        ce_two (by decide) k₁ k₂ _ _ _ _, ce_two (by decide) r₁ r₂ _ _ _ _, ce_rsp_two c₁ c₂ _ _ _ _⟩,
-      Pbkdf2.Md.X86_64.Calls.UpdArgs.covers P.ok.stream A₁, A₁.cw,
-      Pbkdf2.Md.X86_64.Calls.UpdArgs.covers P.ok.stream A₂, A₂.cw, rsp_two c₁ c₂⟩
+    RelCT isa (Two P (UA P da len)) (.call (cfgOf P).updN (cfgOf P).updC) fun _ _ => True :=
+  relCT_pt fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ =>
+    Proof.Hmac.Any.X86_64.upd_rel P.T fun _ _ ⟨ha, hb⟩ => by
+      subst ha hb
+      obtain ⟨d₁, s₁, x₁, k₁, r₁, n₁⟩ := a₁
+      obtain ⟨d₂, s₂, x₂, k₂, r₂, n₂⟩ := a₂
+      exact ⟨updA hL c₁ (hd L hL) d₁ s₁ x₁ k₁ hlen r₁ n₁, updA hL c₂ (hd L hL) d₂ s₂ x₂ k₂ hlen r₂ n₂, rsp_two c₁ c₂⟩
 
-theorem hfin_ct {len dst : Nat} (hdst : dst + P.H.D ≤ 168) :
-    RelCT isa (Two P (FA P len dst)) (.call P.H.hmacFinN P.H.hmacFin) fun _ _ => True :=
-  RelCT.callEx P.hF.1 P.hF.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
-    obtain ⟨d₁, s₁, x₁, k₁, r₁, -⟩ := a₁
-    obtain ⟨d₂, s₂, x₂, k₂, r₂, -⟩ := a₂
-    have A₁ := finA (P := P) hL c₁ hdst d₁ s₁ x₁ k₁ r₁
-    have A₂ := finA (P := P) hL c₂ hdst d₂ s₂ x₂ k₂ r₂
-    exact ⟨_, _, _, _, Pbkdf2.Md.X86_64.Pbk.FinArgs.pre P.ok A₁, Pbkdf2.Md.X86_64.Pbk.FinArgs.pre P.ok A₂,
-      ⟨ce_two (by decide) d₁ d₂ _ _ _ _, ce_two (by decide) s₁ s₂ _ _ _ _, ce_two (by decide) x₁ x₂ _ _ _ _,
-        ce_two (by decide) k₁ k₂ _ _ _ _, ce_two (by decide) r₁ r₂ _ _ _ _, ce_rsp_two c₁ c₂ _ _ _ _⟩,
-      Pbkdf2.Md.X86_64.Pbk.covers_app A₁.cr A₁.cw, A₁.cw, Pbkdf2.Md.X86_64.Pbk.covers_app A₂.cr A₂.cw, A₂.cw,
-      rsp_two c₁ c₂⟩
+theorem hfin_ct {len dst : Nat} (hdst : dst + 64 ≤ 128) :
+    RelCT isa (Two P (FA P len dst)) (.call (cfgOf P).finN (cfgOf P).finC) fun _ _ => True :=
+  relCT_pt fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ =>
+    Proof.Hmac.Any.X86_64.fin_rel P.T fun _ _ ⟨ha, hb⟩ => by
+      subst ha hb
+      obtain ⟨d₁, s₁, x₁, k₁, r₁, n₁⟩ := a₁
+      obtain ⟨d₂, s₂, x₂, k₂, r₂, n₂⟩ := a₂
+      exact ⟨finA hL c₁ hdst d₁ s₁ x₁ k₁ r₁ n₁, finA hL c₂ hdst d₂ s₂ x₂ k₂ r₂ n₂, rsp_two c₁ c₂⟩
 
 /-! ## The calls keep `Ctx` -/
 
@@ -225,47 +205,34 @@ theorem scr_sub {dn : Nat} {L : Lay dn} {r : Region} (h : Region.Sub r ⟨L.scr,
   .inr (.inl (h.trans (Region.sub_prefix (by omega))))
 
 theorem initCall_ctx (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : IA P L m₀ u) :
-    WP isa ((cfgOf P).callH fun H => (H.hmacInitN, H.hmacInit)) u fun u' => Ctx L g m₀ u' ∧ True := by
-  obtain ⟨d, s, x, k, r, hax⟩ := ha
-  refine callH_ok P hax fun w hf => ?_
-  have hcw := hc.flags hL hf
-  refine WP.of_syms (Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId
-    (initA hL hcw ((hf.gpr _).trans d) ((hf.gpr _).trans s) ((hf.gpr _).trans x) ((hf.gpr _).trans k)
-      ((hf.gpr _).trans r))
-    fun u' hrd hwr hcs hf' _ _ hsy => ⟨hcw.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf'
-      (safe_call hcw (fun r hr => scr_sub ?_) (Nat.le_refl _)) hsy, trivial⟩)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> exact scr_work (by nums)
+    WP isa (.call (cfgOf P).initN (cfgOf P).initC) u fun u' => Ctx L g m₀ u' ∧ True := by
+  obtain ⟨d, s, x, k, r, n⟩ := ha
+  exact WP.of_syms (Proof.Hmac.Any.X86_64.init_call P.T (initA hL hc d s x k r n)
+    fun u' hrd hwr hcs hf _ hsy => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
+      (safe_call hc (fun r hr => scr_sub (hbufs_scr r hr)) (Nat.le_refl _)) hsy, trivial⟩)
 
 theorem updCall_ctx {da : Lay P.I.hashLen → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) len)
     (hlen : len ≤ 256) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : UA P da len L m₀ u) :
-    WP isa ((cfgOf P).callH fun H => (H.updN, H.updC)) u fun u' => Ctx L g m₀ u' ∧ True := by
-  obtain ⟨d, _, x, k, r, hax⟩ := ha
-  refine callH_ok P hax fun w hf => ?_
-  have hcw := hc.flags hL hf
-  refine WP.of_syms (Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream
-    (updA hL hcw (hd L hL) hlen ((hf.gpr _).trans d) ((hf.gpr _).trans x) ((hf.gpr _).trans k) ((hf.gpr _).trans r))
-    (by omega) fun u' af _ hsy => ⟨hcw.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr)
-      af.frame (safe_call hcw (fun r hr => scr_sub ?_) (by omega)) hsy, trivial⟩)
+    WP isa (.call (cfgOf P).updN (cfgOf P).updC) u fun u' => Ctx L g m₀ u' ∧ True := by
+  obtain ⟨d, s, x, k, r, n⟩ := ha
+  refine WP.of_syms (Proof.Hmac.Any.X86_64.upd_call P.T (updA hL hc (hd L hL) d s x k hlen r n)
+    fun u' hrd hwr hcs hf _ hsy => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
+      (safe_call hc (fun r hr => scr_sub ?_) (by omega)) hsy, trivial⟩)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact scr_work (by nums)
+  rcases hr with rfl | rfl <;> exact scr_work (by omega)
 
-theorem finCall_ctx {len dst : Nat} (hdst : dst + P.H.D ≤ 168) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u)
+theorem finCall_ctx {len dst : Nat} (hdst : dst + 64 ≤ 128) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u)
     (ha : FA P len dst L m₀ u) :
-    WP isa ((cfgOf P).callH fun H => (H.hmacFinN, H.hmacFin)) u fun u' => Ctx L g m₀ u' ∧ True := by
-  obtain ⟨d, s, x, k, r, hax⟩ := ha
-  refine callH_ok P hax fun w hf => ?_
-  have hcw := hc.flags hL hf
-  refine WP.of_syms (Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd
-    (finA hL hcw hdst ((hf.gpr _).trans d) ((hf.gpr _).trans s) ((hf.gpr _).trans x) ((hf.gpr _).trans k)
-      ((hf.gpr _).trans r))
-    fun u' hrd hwr hcs hf' _ hsy => ⟨hcw.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf'
-      (safe_call hcw (fun r hr => ?_) (Nat.le_refl _)) hsy, trivial⟩)
+    WP isa (.call (cfgOf P).finN (cfgOf P).finC) u fun u' => Ctx L g m₀ u' ∧ True := by
+  obtain ⟨d, s, x, k, r, n⟩ := ha
+  refine WP.of_syms (Proof.Hmac.Any.X86_64.fin_call P.T (finA hL hc hdst d s x k r n)
+    fun u' hrd hwr hcs hf _ hsy => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
+      (safe_call hc (fun r hr => ?_) (Nat.le_refl _)) hsy, trivial⟩)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact scr_sub (scr_work (by nums))
-  · exact safe_low L (by nums)
-  · exact scr_sub (scr_work (by nums))
+  · exact scr_sub (scr_work (by omega))
+  · exact safe_low L (by omega)
+  · exact scr_sub (scr_work (by omega))
 
 /-! ## One HMAC -/
 
@@ -287,20 +254,20 @@ theorem hmac_ct {dataA : List Instr} {da : Lay P.I.hashLen → Addr} {e dst : Na
     {Φ : Lay P.I.hashLen → Mem → State → Prop}
     (hdA : ∀ (L : Lay P.I.hashLen) g m₀ u, L.Ok → Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx (da L)))
     (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) (P.H.D + e)) (hlen : P.H.D + e ≤ 256)
-    (hdst : dst + P.H.D ≤ 168) (t₂ : TaintOk [.rsp] (Cfg.hmacArgs₂ dataA e)) :
+    (hdst : dst + 64 ≤ 128) (t₂ : TaintOk [.rsp] (Cfg.hmacArgs₂ dataA e)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac dataA e dst) fun _ _ => True := by
   refine (two_wp (Ψ := IA P) (two_blk [.rsp] rspOnly args₁_blk) fun L _ _ _ hL hk hc _ =>
     WP.mono (initArgs_ok hL hk.2.1 hc) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq ?_
-  refine (two_wp (Ψ := fun _ _ _ => True) (two_callH (fun _ _ _ h => h.2.2.2.2.2) ia_nf hinit_ct)
+  refine (two_wp (Ψ := fun _ _ _ => True) hinit_ct
     fun _ _ _ _ hL _ hc ha => initCall_ctx hL hc ha).seq ?_
   refine (two_wp (Ψ := UA P da (P.H.D + e)) (two_blk [.rsp] rspOnly t₂) fun L g m₀ _ hL hk hc _ =>
     WP.mono (updArgs_ok hL hk.2.1 hc (fun u hu => hdA L g m₀ u hL hu) (e := e) (by omega))
       fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq ?_
-  refine (two_wp (Ψ := fun _ _ _ => True) (two_callH (fun _ _ _ h => h.2.2.2.2.2) ua_nf (hupd_ct hd hlen))
+  refine (two_wp (Ψ := fun _ _ _ => True) (hupd_ct hd hlen)
     fun _ _ _ _ hL _ hc ha => updCall_ctx hd hlen hL hc ha).seq ?_
   exact (two_wp (Ψ := FA P (P.H.D + e) dst) (two_blk [.rsp] rspOnly (args₃_blk e dst)) fun _ _ _ _ hL hk hc _ =>
     WP.mono (finArgs_ok hL hk.2.1 hc (e := e) (dst := dst) (by omega) (by omega)) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq
-    (two_callH (fun _ _ _ h => h.2.2.2.2.2) fa_nf (hfin_ct hdst))
+    (hfin_ct hdst)
 
 /-- `V = HMAC_K(V)`. -/
 theorem hmacV_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} : RelCT isa (Two P Φ) (cfgOf P).hmacV fun _ _ => True :=
@@ -361,7 +328,7 @@ theorem hmacV_off (hL : L.Ok) (hq : HashLay P L) {t : State} (hc : Ctx L g m₀ 
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hL.stk_SCR (by have := L.he; omega)
-    · exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)⟩
+    · exact L.disjA (by omega) (by omega)) (by decide)⟩
 
 /-- `n` `V`s before the candidate is complete: the offset after `nb - n`. -/
 def LoopAt (P : RfcHash) (n : Nat) {dn : Nat} (L : Lay dn) (_ : Mem) (t : State) : Prop :=
@@ -622,8 +589,8 @@ theorem body_ct :
 
 /-- Two calls' states whose public data agree. -/
 abbrev Calls (P : RfcHash) (s₁ s₂ : State) : Prop :=
-  (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s₁ ∧ (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s₂ ∧
-    (rfcX86_64 P.R.E.combConsts P.I P.k 544).pub s₁ s₂
+  (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s₁ ∧ (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s₂ ∧
+    (rfcX86_64 P.R.E.combConsts P.I P.k 552).pub s₁ s₂
 
 /-- A block that addresses no memory: its taint check from no public register. -/
 theorem noMem_ct {is : List Instr} {R : State → State → Prop} (h : TaintOk [] is) :
@@ -660,8 +627,8 @@ theorem entered_ct : RelCT isa (Calls P) (.seq (.block Cfg.entry)
     cases he
     exact noMem_ct (sizes_blk _ _)
 
-theorem sign_ct : ConstantTime isa (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre
-    (rfcX86_64 P.R.E.combConsts P.I P.k 544).pub (cfgOf P).sign := by
+theorem sign_ct : ConstantTime isa (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre
+    (rfcX86_64 P.R.E.combConsts P.I P.k 552).pub (cfgOf P).sign := by
   refine VG.RelCT.constantTime (Q := fun _ _ => True) ?_
   rw [Cfg.sign]
   refine RelCT.assoc ((RelCT.wpDep entered_ct fun s₁ s₂ h => ⟨entered_ok h.1, entered_ok h.2.1⟩).seq ?_)

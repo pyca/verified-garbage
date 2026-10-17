@@ -230,7 +230,7 @@ theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' 
   simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hL.stk_SCR (by nums)
-  · exact Offset.disjoint_base _ (by omega) (by nums)
+  · exact L.disjA (by omega) (by nums)
 
 /-- After `h` and `core`'s digest: `V = 0x01…` and `K = 0x00…` (step c). -/
 theorem stageB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hp : Prepped P L m₀ u) :
@@ -389,7 +389,7 @@ def EntryBlk (k : Nat) (s s₁ : State) : Prop :=
   s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem ∧ s₁.syms = s.syms ∧ s₁.gpr .rax = BitVec.ofNat 64 k ∧
     s₁.gpr .rcx = s.gpr .r8 ∧ ∀ r, r ≠ .rax → r ≠ .rcx → s₁.gpr r = s.gpr r
 
-theorem entryBlk_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s) :
+theorem entryBlk_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s) :
     WP isa (.block Cfg.entry) s (EntryBlk P.k s) := by
   have hr9 : s.gpr .r9 = BitVec.ofNat 64 P.k := h.1
   apply WP.of_runBlock
@@ -401,7 +401,7 @@ theorem entryBlk_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pr
 
 /-- `scratch` in `rcx`, and the hash function's number, output length and
 block size in `rax`, `r10` and `r11` (by a dispatch on `hash`). -/
-theorem entered_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s) :
+theorem entered_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s) :
     WP isa (.seq (.block Cfg.entry)
       (Impl.Dispatch.X86_64.chain ((cfgOf P).hs.map fun p => (p.1, .block (Cfg.sizes p.2.D p.2.P.B)))))
       s (Entered s P.k P.H.D P.H.P.B) := by
@@ -429,7 +429,7 @@ theorem entered_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre
     by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), RegUpd.gpr_setReg_self], RegUpd.gpr_setReg_self _ _ _⟩
 
 /-- The entry and the dispatch on `hash`, then `c`. -/
-theorem entry_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s) {c : Prog isa}
+theorem entry_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s) {c : Prog isa}
     {Q : State → Prop} (hk : ∀ s', Entered s P.k P.H.D P.H.P.B s' → WP isa c s' Q) :
     WP isa (.seq (.block Cfg.entry)
       (.seq (Impl.Dispatch.X86_64.chain ((cfgOf P).hs.map fun p => (p.1, .block (Cfg.sizes p.2.D p.2.P.B)))) c))
@@ -439,9 +439,9 @@ theorem entry_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s
 /-- `vg_ecdsa_<curve>_rfc6979_sign` with `P`'s hash function meets
 `rfcX86_64 P.I P.k` and keeps the callee-saved registers and its return
 address. -/
-theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s) :
+theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s) :
     WP isa (cfgOf P).sign s fun s' =>
-      gprPreserved s s' ∧ (rfcX86_64 P.R.E.combConsts P.I P.k 544).post s s' := by
+      gprPreserved s s' ∧ (rfcX86_64 P.R.E.combConsts P.I P.k 552).post s s' := by
   have hL := lay_ok (I := P.I) P.k P.H.D P.H.P.B h
   rw [Cfg.sign]
   refine entry_ok h fun s' he => ?_
@@ -466,8 +466,8 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 544).pre s)
         rcases hr with rfl | rfl | rfl
         · exact hL.ro
         · exact hL.rc
-        · exact Offset.disjoint_base (d := 240 + 8 * 38) (n := 8) (k := 240 + 8 * 38) _ (by omega_using [])
-            (by omega_using [])
+        · exact (lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts s).disjA
+            (d := 240 + 8 * 38) (n := 8) (k := 248 + 8 * 38) (by omega_using []) (by omega_using [])
   · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts s).d
         (lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts s).dg).1 with
       | some rs => _ | none => _

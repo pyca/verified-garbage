@@ -127,7 +127,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     rcases hr with rfl | rfl | rfl
     · exact tO
     · exact tS
-    · exact tK.sub_right (Offset.sub_base _ (by omega_using []))
+    · exact tK.sub_right (L.sub_stk (by have := L.he; omega_using [this]))
   simp only [coreK, TblsOk, coreRd, coreWr, eD, eO, ce_gpr _ _ _ (by decide : Reg.rdi ≠ .rsp),
     ce_gpr _ _ _ (by decide : Reg.rsi ≠ .rsp), ce_gpr _ _ _ (by decide : Reg.rdx ≠ .rsp),
     ce_gpr _ _ _ (by decide : Reg.rcx ≠ .rsp), ce_gpr _ _ _ (by decide : Reg.r8 ≠ .rsp), hdi, hsi, hdx, hcx, h8,
@@ -157,7 +157,7 @@ theorem core_clear (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ 
   · rw [← hq]; exact (hL.stk_d (by omega_using [])).symm
   · exact (coreArg_ok (P := P) hL (.inl rfl)).2.2.2.sub_right hs
   · exact (coreArg_ok (P := P) hL (.inr rfl)).2.2.2.sub_right hs
-  · exact (hL.tbl r hr).2.2.2.sub_right (Offset.sub_base _ (by omega_using []))
+  · exact (hL.tbl r hr).2.2.2.sub_right (L.sub_stk (by have := L.he; omega_using [this]))
   · rw [show (⟨L.out, 2 * P.Q⟩ : Region) = L.OUT by simp only [Lay.OUT, hq]]; exact (hL.stk_OUT (by omega_using [])).symm
   · exact (hL.stk_SCR (by omega_using [])).symm
 

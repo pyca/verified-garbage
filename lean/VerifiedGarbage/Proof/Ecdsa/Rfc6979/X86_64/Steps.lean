@@ -39,23 +39,23 @@ theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.H.D 
   omega
 
 /-- What the steps change: `scratch`, the stack below the frame, `K` and `V`. -/
-abbrev KVW {dn : Nat} (L : Lay dn) : List Region := [L.SCR, ⟨L.B, 152⟩]
+abbrev KVW {dn : Nat} (L : Lay dn) : List Region := [L.SCR, ⟨L.A, 160⟩]
 
-theorem kvw_of {rs : List Region} (h : ∀ r ∈ rs, Region.Sub r L.SCR ∨ Region.Sub r ⟨L.B, 152⟩) :
+theorem kvw_of {rs : List Region} (h : ∀ r ∈ rs, Region.Sub r L.SCR ∨ Region.Sub r ⟨L.A, 160⟩) :
     ∀ r ∈ rs, ∃ r' ∈ KVW L, Region.Sub r r' := fun r hr => by
   rcases h r hr with h | h
   · exact ⟨_, by simp, h⟩
-  · exact ⟨⟨L.B, 152⟩, by simp, h⟩
+  · exact ⟨⟨L.A, 160⟩, by simp, h⟩
 
-theorem done_kvw {dst : Nat} (h : dst + P.H.D ≤ 128) :
-    ∀ r ∈ [(⟨L.scr, 2560⟩ : Region), ⟨L.B, 24⟩, ⟨L.B + BitVec.ofNat 64 (24 + dst), P.H.D⟩],
+theorem done_kvw {dst : Nat} (h : dst + 64 ≤ 128) :
+    ∀ r ∈ [(⟨L.scr, 2560⟩ : Region), L.CALLS, ⟨L.B + BitVec.ofNat 64 (24 + dst), 64⟩],
       ∃ r' ∈ KVW L, Region.Sub r r' :=
   kvw_of fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl (Region.sub_prefix (by omega))
     · exact .inr (Region.sub_prefix (by omega))
-    · exact .inr (Offset.sub_base _ (by omega))
+    · exact .inr (by rw [L.shift]; exact Offset.sub_base _ (by omega))
 
 /-- `V = HMAC_K(V)`. -/
 theorem hmacV_ok (hL : L.Ok) (hq : HashLay P L) {t : State} (hc : Ctx L g m₀ t) :
@@ -68,7 +68,7 @@ theorem hmacV_ok (hL : L.Ok) (hq : HashLay P L) {t : State} (hc : Ctx L g m₀ t
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact hL.stk_scr0 (by nums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by nums)
+      · exact (calls_fr (by omega) (by nums)).symm
       · exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums), h.mac⟩
 
 /-- `K = HMAC_K(m)`, for the message `m` of `D + e` bytes at `scratch + 2560`. -/
@@ -85,7 +85,7 @@ theorem hmacK_ok (hL : L.Ok) (hq : HashLay P L) {t : State} (hc : Ctx L g m₀ t
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact hL.stk_scr0 (by nums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by nums)
+      · exact (calls_fr (by omega) (by nums)).symm
       · exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums), h.mac⟩
 
 /-- What the steps need of the layout: the scalars' length, and the frame's

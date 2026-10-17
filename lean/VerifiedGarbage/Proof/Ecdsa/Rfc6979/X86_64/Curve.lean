@@ -87,6 +87,12 @@ def cfgC (E : Impl.Ecdsa.X86_64.Cfg) (wide : Bool := false) (sh : Nat := 0) : Im
   tries := 8
   coreN := ""
   coreC := .block []
+  initN := ""
+  initC := .block []
+  updN := ""
+  updC := .block []
+  finN := ""
+  finC := .block []
 
 /-- The taint check of a block whose addresses depend only on `rs`. -/
 abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=

@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Tier
 public import VerifiedGarbage.Proof.Framework.X86_64.Dispatch
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.AnyHash
+public import VerifiedGarbage.Proof.Hmac.Any.X86_64.Calls
 
 /-!
 # Deterministic ECDSA on x86-64: the hash function
@@ -246,6 +247,32 @@ def cfgOf (P : RfcHash) : Cfg where
   tries := P.I0.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
+  initN := Spec.Hmac.Any.initApi.name ++ P.T.suffix
+  initC := Impl.Hmac.Any.X86_64.init (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf P.T))
+  updN := Spec.Hmac.Any.updateApi.name ++ P.T.suffix
+  updC := Impl.Hmac.Any.X86_64.update (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf P.T))
+  finN := Spec.Hmac.Any.finalizeApi.name ++ P.T.suffix
+  finC := Impl.Hmac.Any.X86_64.finalize (Proof.Hmac.Any.X86_64.hsOf (Proof.Hmac.Any.X86_64.vsOf P.T))
+
+namespace RfcHash
+
+variable (P : RfcHash)
+
+/-- The hash function is among those of the tier HMAC's functions dispatch among. -/
+theorem mem_vs : (P.k, P.v) ∈ Proof.Hmac.Any.X86_64.vsOf P.T := by
+  unfold Proof.Hmac.Any.X86_64.vsOf
+  exact List.mem_filterMap.mpr ⟨P.k, P.hk, by rw [Tier.get, P.hv]; rfl⟩
+
+/-- The instance of HMAC's shared contracts for the hash function's number: `v`'s. -/
+theorem inst_eq : Spec.Hmac.Any.inst P.k = some P.v.I :=
+  (Proof.Hmac.Any.X86_64.good P.T).inst _ _ P.mem_vs
+
+theorem hsel : P.k ∈ Spec.Hmac.Any.hashIds := P.hk
+
+/-- The instance's streaming states are the hash function's. -/
+theorem iS : P.v.I.S = P.ok.SH := P.v.hSH.symm
+
+end RfcHash
 
 /-- The cases of a dispatch of `cfgOf P` on the hash function. -/
 theorem keys_cases (P : RfcHash) {α : Type} (f : Impl.Pbkdf2.Md.X86_64.Hash → α) :
