@@ -72,6 +72,44 @@ theorem keys_hsOf (T : Tier) : (hsOf T).map Prod.fst = Spec.Ecdsa.Rfc6979.hashId
   simp only [Spec.Ecdsa.Rfc6979.hashIds, List.filterMap_cons, List.getElem?_cons_succ,
     List.getElem?_cons_zero, Option.map_some, List.filterMap_nil, List.map_cons, List.map_nil]
 
+theorem hashIds_lt {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) : k < 8 := by
+  simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+
+/-- The hash function `k` of a tier is `HashId.mgf1 k`'s, as RSA's padding
+takes it, and `HashId.hmac k`'s, as HMAC does. -/
+theorem tier_mgf_eq {T : Tier} {k : Nat} {v : MdHash} (hv : T.hashes[k]? = some v) (hk : k < 8) :
+    some v.mgf.G = Spec.HashId.mgf1 k := by
+  have h := congrArg (·[k]?) T.mgf_ok
+  simp only [List.getElem?_map, hv, Option.map_some] at h
+  rw [List.getElem?_range hk, Option.map_some] at h
+  exact Option.some.inj h
+
+theorem tier_hmac_eq {T : Tier} {k : Nat} {v : MdHash} (hv : T.hashes[k]? = some v) (hk : k < 8) :
+    some v.ok.SH.H = Spec.HashId.hmac k := by
+  have h := congrArg (·[k]?) T.hmac_ok
+  simp only [List.getElem?_map, hv, Option.map_some] at h
+  rw [List.getElem?_range hk, Option.map_some] at h
+  rw [show v.ok.SH = v.I.S from v.hSH]
+  exact Option.some.inj h
+
+/-- The output and block sizes of the hash function `k` of a tier: SHA-1's,
+SHA-224's, SHA-256's, SHA-384's, SHA-512's, SHA-512/224's or SHA-512/256's. -/
+theorem tier_dims {T : Tier} {k : Nat} {v : MdHash} (hv : T.hashes[k]? = some v)
+    (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) :
+    (v.H.D = 20 ∧ v.H.P.B = 64) ∨ (v.H.D = 28 ∧ v.H.P.B = 64) ∨ (v.H.D = 32 ∧ v.H.P.B = 64) ∨
+      (v.H.D = 48 ∧ v.H.P.B = 128) ∨ (v.H.D = 64 ∧ v.H.P.B = 128) ∨ (v.H.D = 28 ∧ v.H.P.B = 128) ∨
+      (v.H.D = 32 ∧ v.H.P.B = 128) := by
+  have hm := tier_mgf_eq hv (hashIds_lt hk)
+  have hh := tier_hmac_eq hv (hashIds_lt hk)
+  have hD : v.H.D = v.mgf.G.len := v.mgf.len.symm
+  have hB : v.H.P.B = v.ok.SH.H.blockSize := v.ok.hB.symm
+  generalize v.mgf.G = G at hm hD
+  generalize v.ok.SH.H = F at hh hB
+  simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [Spec.HashId.mgf1, Spec.HashId.hmac, Spec.Mgf1.hashes, List.getElem?_cons_succ,
+      List.getElem?_cons_zero, Option.some.injEq] at hm hh <;> subst hm hh <;> rw [hD, hB] <;> decide
+
 /-- A curve and the hash function `k` of a tier, for RFC 6979 on x86-64. -/
 structure RfcHash where
   /-- The curve. -/
@@ -122,40 +160,15 @@ abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.ok.SH.H K text
 
 /-- The hash function is `HashId.mgf1 k`'s, as RSA's padding takes it, and
 `HashId.hmac k`'s, as HMAC does. -/
-theorem mgf_eq : some P.v.mgf.G = Spec.HashId.mgf1 P.k := by
-  have h := congrArg (·[P.k]?) P.T.mgf_ok
-  simp only [List.getElem?_map, P.hv, Option.map_some] at h
-  have hk : P.k < 8 := by have := P.hk; simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons,
-    List.not_mem_nil, or_false] at this; omega
-  rw [List.getElem?_range hk, Option.map_some] at h
-  exact Option.some.inj h
+theorem mgf_eq : some P.v.mgf.G = Spec.HashId.mgf1 P.k := tier_mgf_eq P.hv (hashIds_lt P.hk)
 
-theorem hmac_eq : some P.ok.SH.H = Spec.HashId.hmac P.k := by
-  have h := congrArg (·[P.k]?) P.T.hmac_ok
-  simp only [List.getElem?_map, P.hv, Option.map_some] at h
-  have hk : P.k < 8 := by have := P.hk; simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons,
-    List.not_mem_nil, or_false] at this; omega
-  rw [List.getElem?_range hk, Option.map_some] at h
-  rw [show P.ok.SH = P.v.I.S from P.v.hSH]
-  exact Option.some.inj h
+theorem hmac_eq : some P.ok.SH.H = Spec.HashId.hmac P.k := tier_hmac_eq P.hv (hashIds_lt P.hk)
 
 /-- The output and block sizes: SHA-1's, SHA-224's, SHA-256's, SHA-384's,
 SHA-512's, SHA-512/224's or SHA-512/256's. -/
 theorem dims : (P.H.D = 20 ∧ P.H.P.B = 64) ∨ (P.H.D = 28 ∧ P.H.P.B = 64) ∨ (P.H.D = 32 ∧ P.H.P.B = 64) ∨
     (P.H.D = 48 ∧ P.H.P.B = 128) ∨ (P.H.D = 64 ∧ P.H.P.B = 128) ∨ (P.H.D = 28 ∧ P.H.P.B = 128) ∨
-    (P.H.D = 32 ∧ P.H.P.B = 128) := by
-  have hm := P.mgf_eq
-  have hh := P.hmac_eq
-  have hD : P.H.D = P.v.mgf.G.len := P.v.mgf.len.symm
-  have hB : P.H.P.B = P.ok.SH.H.blockSize := P.ok.hB.symm
-  have hk := P.hk
-  generalize P.v.mgf.G = G at hm hD
-  generalize P.ok.SH.H = F at hh hB
-  generalize P.k = k at hk hm hh
-  simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Spec.HashId.mgf1, Spec.HashId.hmac, Spec.Mgf1.hashes, List.getElem?_cons_succ,
-      List.getElem?_cons_zero, Option.some.injEq] at hm hh <;> subst hm hh <;> rw [hD, hB] <;> decide
+    (P.H.D = 32 ∧ P.H.P.B = 128) := tier_dims P.hv P.hk
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.H.S ≤ 256 ∧ P.H.P.N + P.H.P.B ≤ 256 ∧ 8 * P.H.W ≤ 2048 ∧ P.ok.stream.Wb ≤ 2048 ∧
