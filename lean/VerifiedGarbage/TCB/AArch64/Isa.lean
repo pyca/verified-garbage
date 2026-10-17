@@ -134,7 +134,14 @@ Modelling choices:
   timing Arm specifies to be independent of their data when PSTATE.DIT is 1
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
-  PSTATE.DIT"). As above, the code does not set PSTATE.DIT.
+  PSTATE.DIT"). CMHI, CMHS, ADDV and UADDLV are in the list of
+  data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
+  Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
+  ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
+  lanes: ADDV, SADDLV, SMAXV, SMINV, UADDLV, UMAXV, and UMINV.", and their
+  descriptions in the A64 ISA XML 2026-09 say "This instruction is a
+  data-independent-time instruction as described in About PSTATE.DIT". As
+  above, the code does not set PSTATE.DIT.
 -/
 
 @[expose] public section
@@ -268,7 +275,8 @@ inductive VOp
   | insE (a : VArr) (d : VReg) (i : Nat) (n : VReg) (j : Nat)
   /-- `cmeq vd.<a>, vn.<a>, vm.<a>` (CMEQ (register)) -/
   | cmeq (a : VArr) (d n m : VReg)
-  /-- `cmhi`/`cmhs vd.<a>, vn.<a>, vm.<a>` (CMHI (register), CMHS (register)) -/
+  /-- `cmhi`/`cmhs vd.<a>, vn.<a>, vm.<a>` (CMHI (register), CMHS (register), DDI 0487
+  C7.2.34, C7.2.35) -/
   | cmp (op : VCmpOp) (a : VArr) (d n m : VReg)
   /-- `bsl`/`bit`/`bif vd.16b, vn.16b, vm.16b` -/
   | bsel (op : VSelOp) (d n m : VReg)
@@ -786,22 +794,21 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   dst_index, esize] = element`;
 * "CMEQ (register)": `test_passed = (element1 == element2); Elem[result,
   e, esize] = if test_passed then Ones(esize) else Zeros(esize)`;
-* "CMHI (register)", "CMHS (register)": `element1 = Int(Elem[operand1, e,
-  esize], unsigned); element2 = Int(Elem[operand2, e, esize], unsigned);
-  test_passed = if cmp_eq then element1 >= element2 else element1 >
-  element2`, with `operand1 = V[n]`, `operand2 = V[m]`, and `Elem[result, e,
-  esize]` as for CMEQ;
+* "CMHI (register)" (DDI 0487 M.b C7.2.34) and "CMHS (register)" (C7.2.35),
+  as in the A64 ISA XML 2026-09: `element1 = UInt(operand1[e*:esize]);
+  element2 = UInt(operand2[e*:esize]); result[e*:esize] = if element1 >
+  element2 then Ones{esize} else Zeros{esize}` (`>=` for CMHS), with
+  `operand1 = V{}(n)`, `operand2 = V{}(m)`, `V{datasize}(d) = result`;
 * "BSL", "BIT", "BIF": `VSelOp.eval`;
 * "AND", "ORR", "EOR", "BIC" (`operand1 AND NOT(operand2)`), "ORN"
   (`operand1 OR NOT(operand2)`) and "NOT" (vector, `.16b`);
 * "ADD (vector)", "SUB (vector)": lane-wise, modulo `2 ^ esize`;
-* "ADDV": `sum = Int(Elem[operand, 0, esize], unsigned); for e = 1 to
-  elements-1: sum = sum + Int(Elem[operand, e, esize], unsigned); V[d, esize]
-  = sum<esize-1:0>`; "UADDLV": the same sum, then `V[d, 2*esize] =
-  sum<2*esize-1:0>` (the sum of at most 16 lanes always fits). Each writes a
-  scalar register, so the other bits of `V[d]` are zero (`V[n, width] = value`
-  sets `_Z[n] = ZeroExtend(value, MAX_VL)`). Their 128-bit forms are `.16b`,
-  `.8h` and `.4s` (`size = '11'` is reserved), so `.2d` faults;
+* "ADDV" (C7.2.6): `V{esize}(d) = IntReduce{esize, datasize}(ReduceOp_ADD,
+  operand)`, the sum of the lanes modulo `2 ^ esize` (`IntReduce` adds the
+  halves recursively, in `bits(esize)`); "UADDLV" (C7.2.408): `sum = UInt` of
+  each lane, added as integers, then `V{2*esize}(d) = sum[2*esize-1:0]`. Each
+  writes a scalar register, so the other bits of `V[d]` are zero (`V[n, width]
+  = value` zero-extends). `size == '11'` is `Decode_UNDEF`, so `.2d` faults;
 * the shifts (`VShiftOp.eval`), the permutations (`VPermOp.eval`) and the
   reversals (`VRevOp.eval`);
 * "EXT": `concat = operand2:operand1; result = concat<position+127:position>`
