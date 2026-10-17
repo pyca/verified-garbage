@@ -187,4 +187,51 @@ def powersP : List Instr :=
 
 def ghashP : Prog isa := ghashWith prologueP powersP
 
+/-! ## With the powers in their own buffer
+
+`vg_ghash_with_powers_aes` and `vg_ghash_store_powers_aes`, whose sixth
+argument `pw` (`x5`) is a 128-byte buffer of the powers
+(`Spec.Gcm.Powers8Repr`): `H'²ʲ⁺²` at `pw + 32 j`, `H'²ʲ⁺¹` 16 bytes after,
+each as `tReg` holds it. Both have all eight powers in their registers before
+the loops, whatever the number of blocks: `vg_ghash_with_powers_aes` loads
+them, and `vg_ghash_store_powers_aes` computes them, as `vg_ghash_aes` does,
+and stores them after its epilogue. -/
+
+/-- GHASH from the prologue `pro`, which sets up `H'` to `H'⁸`, then `fin`
+after the epilogue. -/
+def ghashAll (pro fin : List Instr) : Prog isa :=
+  .seq (.block pro)
+    (.seq (.ite (.zero .x .x5)
+        (.ite (.zero .x .x3) (.block []) (.loop (.block (body 1)) (.nonzero .x .x3)))
+        (.seq (.loop (.block (body 8)) (.nonzero .x .x5)) tail))
+      (.block (epilogue ++ fin)))
+
+/-- Where `H'ᵏ` is, from `pw`. -/
+def pwOff (k : Nat) : Nat := if k % 2 = 0 then 16 * k - 32 else 16 * k
+
+/-- `H'ᵏ` loaded from `pw` (`x5`), and with its halves swapped. -/
+def loadPw (k : Nat) : List Instr :=
+  [.ldrq (tReg k) .x5 (pwOff k), .vop (.ext (sReg k) (tReg k) (tReg k) 8)]
+
+/-- `H'` to `H'⁸` loaded, the reduction constant, and `Y`. -/
+def prologueW : List Instr :=
+  loadPw 1 ++ loadPw 2 ++ loadPw 3 ++ loadPw 4 ++ loadPw 5 ++ loadPw 6 ++ loadPw 7 ++ loadPw 8 ++
+    ([.movz .x .x5 0xc200 3, .vop (.dup .d2 C .x5)] : List Instr) ++ loadRev Y .x1 0 ++
+    ([.lsr .x .x5 .x3 3] : List Instr)
+
+def ghashW : Prog isa := ghashAll prologueW []
+
+/-- `pw` kept in `x8`, then `vg_ghash_aes`'s prologue and powers. -/
+def prologueS : List Instr := ([.addImm .x .x8 .x5 0] : List Instr) ++ prologue ++ powers
+
+/-- `H'ᵏ` stored to `pw` (`x8`). -/
+def storePw (k : Nat) : List Instr := [.strq (tReg k) .x8 (pwOff k)]
+
+/-- `H'` to `H'⁸` stored. -/
+def storesS : List Instr :=
+  storePw 1 ++ storePw 2 ++ storePw 3 ++ storePw 4 ++ storePw 5 ++ storePw 6 ++ storePw 7 ++
+    storePw 8
+
+def ghashS : Prog isa := ghashAll prologueS storesS
+
 end VG.Impl.Gcm.AArch64.Pmull
