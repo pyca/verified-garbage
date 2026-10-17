@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Impl.Dsa.Arm.Entry
+meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -165,9 +168,25 @@ theorem reduceHead_relCT (input : Pointer) (count : Core.Count) :
       (erased_relCT (c₀ := .block (Core.countEnd (.field .p))) (VG.Taint.hintOf taint T0
         (.block (Core.countEnd (.field .p)))) rfl (wsT_noBase _ _) rfl))
 
+theorem doubles_eraseOff (n : Nat) : ∀ k, Code.eraseOff (doubles n k) = Code.eraseOff (doubles 1 k)
+  | 0 => rfl
+  | k + 1 => by simp only [doubles, eraseOff_seq, addD_eraseOff, doubles_eraseOff n k]
+
+theorem streamHead_eraseOff (k : Nat) :
+    Code.eraseOff (@Code.block Instr Cond (([.ldrb .r4 .r11 0] : List Instr) ++ ptr .r10 k ++
+        ([.str .r4 .r10 0] : List Instr))) =
+      Code.eraseOff (@Code.block Instr Cond (([.ldrb .r4 .r11 0] : List Instr) ++ ptr .r10 0 ++
+        ([.str .r4 .r10 0] : List Instr))) := rfl
+
+theorem streamStep_eraseOff (n : Nat) : Code.eraseOff (streamStep n) = Code.eraseOff (streamStep 1) := by
+  simp only [streamStep, reduceStep, eraseOff_seq, addD_eraseOff, doubles_eraseOff n 8, streamHead_eraseOff]
+
+theorem reduceStream_eraseOff (n : Nat) : Code.eraseOff (reduceStream n) = Code.eraseOff (reduceStream 1) := by
+  simp only [reduceStream, eraseOff_seq, eraseOff_ite, eraseOff_loop, zeros_eraseOff, streamStep_eraseOff n]
+
 theorem reduceStream_relCT (n : Nat) :
     RelCT isa (VG.Arm.Taint.Agree (wsT true true)) (reduceStream n) (VG.Arm.Taint.Agree (wsT true true)) :=
-  erased_relCT (c₀ := reduceStream 1) (VG.Taint.hintOf taint (wsT true true) (reduceStream 1)) rfl (wsT_noBase _ _) rfl
+  erased_relCT _ (reduceStream_eraseOff n) (wsT_noBase _ _) (by taint_decide)
 
 theorem storeComponent_relCT (len input : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T1) (storeComponent len input) (VG.Arm.Taint.Agree T0) :=
