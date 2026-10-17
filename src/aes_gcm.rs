@@ -741,8 +741,9 @@ struct Powers {
     /// The key context with the powers: written only by the call that
     /// moved `state` to `WRITING`, before `state` is `READY`; read only
     /// after `state` is `READY` (with acquire ordering), and never written
-    /// again while it is shared.
-    ctx: UnsafeCell<[u64; 48]>,
+    /// again while it is shared. Uninitialized until then, so that a key
+    /// that never computes the powers neither clears nor wipes it.
+    ctx: UnsafeCell<MaybeUninit<[u64; 48]>>,
 }
 
 /// `Powers::state`: no powers yet.
@@ -772,8 +773,21 @@ impl Powers {
             fns: backend.prepared(),
             calls: AtomicU32::new(0),
             state: AtomicU8::new(EMPTY),
-            ctx: UnsafeCell::new([0; 48]),
+            ctx: UnsafeCell::new(MaybeUninit::uninit()),
         }
+    }
+
+    /// The published key context.
+    ///
+    /// # Safety
+    ///
+    /// `state` must have been loaded as `READY` with acquire ordering (or
+    /// stored as `READY` by this thread), so that `ctx` is initialized
+    /// (`vg_aes_gcm_derive_prepared8` writes all 384 bytes) and its writes
+    /// are ordered before this read.
+    unsafe fn published(&self) -> &[u64; 48] {
+        // SAFETY: the caller's.
+        unsafe { (*self.ctx.get()).assume_init_ref() }
     }
 
     /// As on x86-64, with the key context `key` of `vg_aes_gcm_init`
@@ -785,7 +799,7 @@ impl Powers {
             // SAFETY: `ctx` is published (see `ctx`): the acquire load of
             // `READY` orders this read after its writes, and nothing writes
             // it again while `self` is shared.
-            return Some((unsafe { &*self.ctx.get() }, fns));
+            return Some((unsafe { self.published() }, fns));
         }
         let calls = self.calls.load(Ordering::Relaxed);
         if calls < POWERS_AFTER - 1 {
@@ -818,10 +832,10 @@ impl Powers {
         // of 384. They do not overlap each other or anything on the stack,
         // or wrap around. The CPU has the features of `init`
         // (`Backend::prepared`).
-        unsafe { init(key, self.ctx.get()) };
+        unsafe { init(key, self.ctx.get().cast::<[u64; 48]>()) };
         self.state.store(READY, Ordering::Release);
-        // SAFETY: as in `get`, after the release store.
-        Some((unsafe { &*self.ctx.get() }, fns))
+        // SAFETY: this thread stored `READY` after writing all of `ctx`.
+        Some((unsafe { self.published() }, fns))
     }
 
     /// Whether messages shorter than `POWERS_MIN_LEN` sealed take the
@@ -850,9 +864,9 @@ impl Clone for Powers {
             state: AtomicU8::new(if ready { READY } else { EMPTY }),
             // SAFETY: as in `get`, when `ready`.
             ctx: UnsafeCell::new(if ready {
-                unsafe { *self.ctx.get() }
+                MaybeUninit::new(unsafe { *self.published() })
             } else {
-                [0; 48]
+                MaybeUninit::uninit()
             }),
         }
     }
@@ -860,10 +874,15 @@ impl Clone for Powers {
 
 #[cfg(target_arch = "aarch64")]
 impl Drop for Powers {
-    /// Wipes the key context: its copy of `vg_aes_gcm_init`'s, and the
-    /// powers.
+    /// Wipes the key context, if it was written: its copy of
+    /// `vg_aes_gcm_init`'s, and the powers. (`state` is `EMPTY` or
+    /// `READY` here: the call that moves it to `WRITING` stores `READY`
+    /// before it returns, and `self` is no longer shared.)
     fn drop(&mut self) {
-        zeroize(self.ctx.get_mut());
+        if *self.state.get_mut() == READY {
+            // SAFETY: `READY`, so `derive` initialized all of `ctx`.
+            zeroize(unsafe { self.ctx.get_mut().assume_init_mut() });
+        }
     }
 }
 
