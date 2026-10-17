@@ -87,12 +87,16 @@ theorem num_of_zero {m : Mem} {B : BitVec 32} {w j : Nat}
   have := val32_zero_part h (a := 0) (c := w) (by omega)
   simpa using this
 
-theorem divN_ok {s0 s : State} (h : StA s0 s) :
-    WP isa (.seq (seqs divN) VG.Impl.Rsa.Arm.Div.code) s (StC s0) := by
+/-- The geometry of the division of `n` by `p`. -/
+abbrev gN (s0 : State) : VG.Proof.Rsa.Arm.Div.Geometry := divGeom (cvB s0) (cvZ s0) (cvW s0) aDQ aDR aDD aDT
+
+/-- `divN`, then the division, which starts from its context. -/
+theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
+    WP isa (seqs divN) s fun u => VG.Proof.Rsa.Arm.Div.Context (gN s0) u ∧
+      WP isa VG.Impl.Rsa.Arm.Div.code u (StC s0) := by
   have pre := h.base.pre
   have hw := h.ws
   have fit := fun j (hj : j < nArr) => hw.fit64 (j := j) hj
-  rw [WP.seq_iff]
   unfold divN
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok hw (o := aDD) (a := aP) (by decide) (by decide) (by decide) (by decide))
@@ -114,6 +118,8 @@ theorem divN_ok {s0 s : State} (h : StA s0 s) :
   have top3 : w32 t3.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0 := by
     rw [k3.word (by omega) (by simp) (by decide) fDD, k2.word (by omega) (by simp) (by decide) fDD, top1,
       top_of_full (h.zeros aDD (by decide))]
+  refine ⟨divGeom_ctx h3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) d3, ?_⟩
   refine WP.mono (div_ok h3 (q := aDQ) (r := aDR) (d := aDD) (t := aDT) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) d3 top3)
     fun t ⟨k, r, v⟩ => ?_
@@ -155,5 +161,9 @@ theorem divN_ok {s0 s : State} (h : StA s0 s) :
     rw [tr j (by simp only [aDD]; omega) (by simp only [aDQ]; omega) (by simp only [aDR]; omega)
       (by simp only [aDT]; omega) (by simp only [nArr]; omega)]
     exact h.zeros j (by simp only [zeroArrs, List.mem_cons, List.not_mem_nil, or_false]; omega)
+
+theorem divN_ok {s0 s : State} (h : StA s0 s) :
+    WP isa (.seq (seqs divN) VG.Impl.Rsa.Arm.Div.code) s (StC s0) :=
+  WP.seq_iff.mpr (WP.mono (divN_pre_ok h) fun _ h => h.2)
 
 end VG.Proof.Rsa.Arm.CrtValues

@@ -66,10 +66,19 @@ structure StG (s0 : State) (X₁ X₂ : Nat) (s : State) : Prop where
       (cvM s0 : Int) ∣ (num s.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - V ∧
       num s.mem (cvB s0) (cvW s0) 3 < cvM s0)
 
-theorem divQ_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
-    WP isa (.seq divQ VG.Impl.Rsa.Arm.Div.code) s (StG s0 X₁ X₂) := by
+/-- The geometries of the divisions of `d`. -/
+abbrev gP (s0 : State) : VG.Proof.Rsa.Arm.Div.Geometry := divGeom (cvB s0) (cvZ s0) (cvW s0) aDQ aDR2 aDD aDT
+abbrev gQ (s0 : State) : VG.Proof.Rsa.Arm.Div.Geometry := divGeom (cvB s0) (cvZ s0) (cvW s0) aDQ aDR3 aDD aDT
+
+theorem StD.ctx {s0 s : State} {X₁ X₂ : Nat} (h : StD s0 X₁ X₂ s) : VG.Proof.Rsa.Arm.Div.Context (gP s0) s :=
+  divGeom_ctx h.ws (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) h.hdr
+
+/-- `divQ`, then the division, which starts from its context. -/
+theorem divQ_pre_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
+    WP isa divQ s fun u => VG.Proof.Rsa.Arm.Div.Context (gQ s0) u ∧
+      WP isa VG.Impl.Rsa.Arm.Div.code u (StG s0 X₁ X₂) := by
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
-  rw [WP.seq_iff]
   unfold divQ
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil ctx]
   refine ctx_ok h.base fun t1 b1 h1 r1 m1 => WP.block_nil ?_
@@ -94,6 +103,8 @@ theorem divQ_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
   have top5 : w32 t5.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0 := by
     rw [k5.word (by omega) (by simp) (by decide) fDD, top4, top3, k2.word (by omega) (by decide) (by simp) fDD, m1,
       h.ddTop]
+  refine ⟨divGeom_ctx h5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) d5, ?_⟩
   refine WP.mono (divR_ok b5 h5 (.inr rfl) d5 top5) fun t ⟨bt, k, v⟩ => ?_
   obtain ⟨V, mV, iV⟩ := h.mask
   have tr : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR3, aDT] →
@@ -110,5 +121,9 @@ theorem divQ_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
     rw [v (by rw [dd5]; exact pos), dq5, dd5]
   · rw [k.slot (by decide) (by simp), K5.slot (by decide) (by decide), m1, mV]
   · rw [tr _ (by decide) (by decide)]; exact iV
+
+theorem divQ_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
+    WP isa (.seq divQ VG.Impl.Rsa.Arm.Div.code) s (StG s0 X₁ X₂) :=
+  WP.seq_iff.mpr (WP.mono (divQ_pre_ok h) fun _ h => h.2)
 
 end VG.Proof.Rsa.Arm.CrtValues

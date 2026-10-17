@@ -26,7 +26,7 @@ def saveL : List (Reg × Nat) :=
    (.r0, 56), (.r2, 60)]
 
 theorem entry_eq : entry = .ldrSp .r12 (4 * 10) :: (saveL.map (fun p => Instr.str p.1 .r12 p.2) ++
-    ([.mov .r8 (.reg .r12), .mov .r3 (.reg .r2)] ++ (.ldrSp .r4 (4 * 2) :: .ldrSp .r6 (4 * 3) :: modulusCheck))) := rfl
+    (([.mov .r8 (.reg .r12), .mov .r3 (.reg .r2)] : List Instr) ++ (.ldrSp .r4 (4 * 2) :: .ldrSp .r6 (4 * 3) :: modulusCheck))) := rfl
 
 theorem saveL_mem {i : Nat} (hi : i < 11) : (savedReg i, 20 + 4 * i) ∈ saveL := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10)

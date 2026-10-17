@@ -49,15 +49,16 @@ theorem ite_mask (c : Bool) {α : Type} (a b : α) : (if (if c then 1 else 0 : N
 /-- The glue: the working space, and `dp` and `dq` from the header. -/
 def glue : List Instr := ctx ++ [.ldr .r10 .r8 sDp, .ldr .r12 .r8 sDq]
 
-theorem finish_ok {s0 s : State} {X₁ X₂ : Nat} (h : StG s0 X₁ X₂ s) :
-    WP isa (.seq (.block glue) stores) s fun t => ∃ V,
+theorem glue_ok {s0 s : State} {X₁ X₂ : Nat} (h : StG s0 X₁ X₂ s) :
+    WP isa (.block glue) s fun u => Base s0 u ∧ Ws u (cvB s0) (cvZ s0) (cvW s0) nArr ∧
+    u.gpr .r10 = s0.gpr .r0 ∧ u.gpr .r12 = s0.gpr .r2 ∧
+    WP isa stores u fun t => ∃ V,
       (1 < cvM s0 → V = Nat.gcd (cvQ s0) (cvM s0) ∧
         (cvM s0 : Int) ∣ (num s.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - V ∧ num s.mem (cvB s0) (cvW s0) 3 < cvM s0) ∧
       Outs s0 t (maskOf (cvP s0) (cvQ s0) X₁ X₂ V) (num s.mem (cvB s0) (cvW s0) aDR2)
         (num s.mem (cvB s0) (cvW s0) aDR3) (num s.mem (cvB s0) (cvW s0) 3) := by
   have pre := h.base.pre
   obtain ⟨V, mV, iV⟩ := h.mask
-  rw [WP.seq_iff]
   unfold glue
   refine ctx_ok h.base fun t1 b1 h1 r1 m1 => ?_
   refine wp_ldrSlot h1 (d := sDp) (by decide) fun t2 u2 => ?_
@@ -70,6 +71,7 @@ theorem finish_ok {s0 s : State} {X₁ X₂ : Nat} (h : StG s0 X₁ X₂ s) :
   have p12 : t3.gpr .r12 = s0.gpr .r2 := by
     rw [u3.gpr, u2.mem, m1]
     exact BitVec.eq_of_toNat_eq (h.base.saved 10 (by decide))
+  refine ⟨b3, h3, p10, p12, ?_⟩
   have d3 := b3.done
   have w16 := pre.w16
   have kb := pre.kb
@@ -140,5 +142,13 @@ theorem finish_ok {s0 s : State} {X₁ X₂ : Nat} (h : StG s0 X₁ X₂ s) :
   · simp only [outQi]
     rw [u12.mem, o11, u10.mem, u9.mem, mb8, ms, ite_mask, num_frame pre f8 pre.dqS (by decide), u7.mem, u6.mem,
       num_frame pre f5 pre.dpS (by decide), u4.mem, n3 _ (by decide)]
+
+theorem finish_ok {s0 s : State} {X₁ X₂ : Nat} (h : StG s0 X₁ X₂ s) :
+    WP isa (.seq (.block glue) stores) s fun t => ∃ V,
+      (1 < cvM s0 → V = Nat.gcd (cvQ s0) (cvM s0) ∧
+        (cvM s0 : Int) ∣ (num s.mem (cvB s0) (cvW s0) 3 : Int) * cvQ s0 - V ∧ num s.mem (cvB s0) (cvW s0) 3 < cvM s0) ∧
+      Outs s0 t (maskOf (cvP s0) (cvQ s0) X₁ X₂ V) (num s.mem (cvB s0) (cvW s0) aDR2)
+        (num s.mem (cvB s0) (cvW s0) aDR3) (num s.mem (cvB s0) (cvW s0) 3) :=
+  WP.seq_iff.mpr (WP.mono (glue_ok h) fun _ h => h.2.2.2.2)
 
 end VG.Proof.Rsa.Arm.CrtValues
