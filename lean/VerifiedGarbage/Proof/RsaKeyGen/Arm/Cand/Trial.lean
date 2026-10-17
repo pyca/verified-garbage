@@ -29,9 +29,9 @@ theorem tr_succ (n c : Nat) : tr (n + 1) c = (tr n c || decide (c % tabEntry n =
 
 theorem trialStep_eq : trialStep =
     .seq (.block [.ldr .r10 .r12 0, .dp .add .r12 .r12 (.imm 4)])
-      (.seq (.block ([.mov .r3 (.shifted .r10 .lsl 16), .mov .r3 (.shifted .r3 .lsr 16)] ++ entryS))
+      (.seq (.block (([.mov .r3 (.shifted .r10 .lsl 16), .mov .r3 (.shifted .r3 .lsr 16)] : List Instr) ++ entryS))
         (.seq (.loop (.block trialWord) .ne) (.seq (.block trialFlag)
-          (.seq (.block ([.mov .r3 (.shifted .r10 .lsr 16)] ++ entryS))
+          (.seq (.block (([.mov .r3 (.shifted .r10 .lsr 16)] : List Instr) ++ entryS))
             (.seq (.loop (.block trialWord) .ne) (.seq (.block trialFlag) (.block [.subs .lr .lr (.imm 1)]))))))) :=
   rfl
 

@@ -25,8 +25,8 @@ open VG.Proof.Rsa (b2n)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem wsLen_eq : wsLen = ([(Reg.r0, 0), (Reg.r1, aoSl), (Reg.r2, foL)].map fun p => Instr.ldrSp p.1 p.2) ++
-    [.mov .r2 (.shifted .r2 .lsr 3), .mov .r3 (.imm 21), .mul .r2 .r2 .r3, .dp .add .r2 .r2 (.imm 30),
-      .dp .sub .r1 .r1 (.reg .r2)] := rfl
+    ([.mov .r2 (.shifted .r2 .lsr 3), .mov .r3 (.imm 21), .mul .r2 .r2 .r3, .dp .add .r2 .r2 (.imm 30),
+      .dp .sub .r1 .r1 (.reg .r2)] : List Instr) := rfl
 
 /-- Before the round: Montgomery multiplication's array 5 is `b σ` in Montgomery form. -/
 abbrev SR (P : CP) (E : State → Prop) (A : State → Nat → Nat) (L : List Nat) (V : State → Nat → Nat)

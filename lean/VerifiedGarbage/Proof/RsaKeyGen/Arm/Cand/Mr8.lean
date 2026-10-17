@@ -49,7 +49,7 @@ abbrev SI (P : CP) (E : State → Prop) (k : Nat) (σ s : State) : Prop :=
   St P E (AB2 P) LB2 (VI P k) LSI σ s ∧ MS P σ s
 
 theorem avFlag_eq : avFlag = ([(Reg.r1, aoRl)].map fun p => Instr.ldrSp p.1 p.2) ++
-    ([.ldr .r2 .r8 sUsed, .dp .sub .r1 .r1 (.reg .r2)] ++
+    (([.ldr .r2 .r8 sUsed, .dp .sub .r1 .r1 (.reg .r2)] : List Instr) ++
       (([(Reg.r2, foL)].map fun p => Instr.ldrSp p.1 p.2) ++ carryTail)) := rfl
 
 theorem mrS_fst (c L : Nat) (r : Spec.RsaKeyGen.Rand) : ∀ k, (mrS c L r k).1 = k + 1

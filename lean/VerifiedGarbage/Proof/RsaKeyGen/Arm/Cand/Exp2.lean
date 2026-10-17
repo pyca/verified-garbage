@@ -27,11 +27,11 @@ variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat
   {LS : List Nat}
 
 /-- `sBit := 1 − sBit` and `sTc +=` it. -/
-theorem St.pnotAdd (cert : Cert (.block (notS sBit sBit ++ [.ldr .r2 .r8 sTc, .dp .add .r2 .r2 (.reg .r1),
-      .str .r2 .r8 sTc])))
+theorem St.pnotAdd (cert : Cert (.block (notS sBit sBit ++ ([.ldr .r2 .r8 sTc, .dp .add .r2 .r2 (.reg .r1),
+      .str .r2 .r8 sTc] : List Instr))))
     (hb : sBit ∈ LS) (ht : sTc ∈ LS) (bit : ∀ σ, E σ → V σ sBit ≤ 1) (lt : ∀ σ, E σ → V σ sTc + 1 < 2 ^ 32) :
-    VP (St P E A L V LS) (.block (notS sBit sBit ++ [.ldr .r2 .r8 sTc, .dp .add .r2 .r2 (.reg .r1),
-      .str .r2 .r8 sTc]))
+    VP (St P E A L V LS) (.block (notS sBit sBit ++ ([.ldr .r2 .r8 sTc, .dp .add .r2 .r2 (.reg .r1),
+      .str .r2 .r8 sTc] : List Instr)))
       (St P E A L (fun σ => upd (upd (V σ) sBit (1 - V σ sBit)) sTc (V σ sTc + (1 - V σ sBit)))
         (sTc :: sBit :: LS)) :=
   VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by

@@ -32,7 +32,7 @@ abbrev RF (P : CP) (E : State → Prop) (st : State → Nat) (out : State → Li
   E σ ∧ Bk P σ s ∧ (s.gpr .r0).toNat = st σ ∧ Spec.Rsa.bytesAt s.mem (State.addr P.oP) P.L = out σ ∧
     Spec.Rsa.wordsAt s.mem (State.addr P.uP) 1 = [BitVec.ofNat 64 (used σ)]
 
-theorem finish_eq (r : Nat) : finish r = [.ldrSp .r2 foUsed] ++ finTail r := rfl
+theorem finish_eq (r : Nat) : finish r = ([.ldrSp .r2 foUsed] : List Instr) ++ finTail r := rfl
 
 section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}

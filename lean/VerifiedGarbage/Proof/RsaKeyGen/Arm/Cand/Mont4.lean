@@ -40,7 +40,7 @@ abbrev SC (P : CP) (E : State → Prop) (σ s : State) : Prop :=
 section
 variable {P : CP}
 
-theorem montSet_eq : montSet = (ptr .r0 mBase ++ [.dp .sub .r0 .r0 (.imm 256)]) ++
+theorem montSet_eq : montSet = (ptr .r0 mBase ++ ([.dp .sub .r0 .r0 (.imm 256)] : List Instr)) ++
     (.addSp .r12 0 :: [.str .r0 .r12 0, .ldrSp .r7 foL, .mov .r7 (.shifted .r7 .lsr 3), .mov .r3 (.imm 0)]) := rfl
 
 theorem In.rW0_rS {σ : State} (pre : In P σ) : P.rS.Disjoint P.rW0 :=

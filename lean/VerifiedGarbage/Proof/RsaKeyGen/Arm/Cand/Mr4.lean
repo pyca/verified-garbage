@@ -111,7 +111,7 @@ theorem St.porTwoM {j : Nat} (cert : Cert (.block (orTwo j))) (hj : j ∈ L) (hM
 /-- `St.phiOp`, keeping `MS`. -/
 theorem St.phiOpM {j c : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32 → BitVec 32} {g : State → Nat}
     (cert : Cert (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
-      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ [.str .r1 .r0 0]))))
+      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ ([.str .r1 .r0 0] : List Instr)))))
     (hj : j ∈ L) (hM : MOk j) (hc : encodable (BitVec.ofNat 32 c) = true)
     (hi : ∀ σ, E σ → In P σ → P.W * 4 = 4 * i P + c ∧ i P < P.W)
     (hops : ∀ u : State, ∀ R : State → Prop, (∀ u', Upd u u' .r1 (f (u.gpr .r1)) → R u') →
@@ -120,7 +120,7 @@ theorem St.phiOpM {j c : Nat} {i : CP → Nat} {ops : List Instr} {f : BitVec 32
         2 ^ (32 * i P) * (f (BitVec.ofNat 32 (A σ j / 2 ^ (32 * i P) % 2 ^ 32))).toNat +
         2 ^ (32 * (i P + 1)) * (A σ j / 2 ^ (32 * (i P + 1))) = g σ) :
     VP (fun σ s => St P E A L V LS σ s ∧ MS P σ s) (.block (ptr .r0 j ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
-      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ [.str .r1 .r0 0])))
+      .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 c)) :: .ldr .r1 .r0 0 :: (ops ++ ([.str .r1 .r0 0] : List Instr))))
       (fun σ s => St P E (fun σ => upd (A σ) j (g σ)) (j :: L) V LS σ s ∧ MS P σ s) :=
   VP.kv cert (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, m⟩ => by
     have hj' := h.live_lt j hj
@@ -142,15 +142,15 @@ theorem St.pselM {o a b sl : Nat} (cert : Cert (sel o a b sl)) (ho : o < nArr) (
         ⟨⟨e, h.write1 k ho (by simp) r.sp r.rd r.wr ?_ (by simp), ht⟩, m.of_k1 h hM k r.sp r.rd r.wr⟩
     rw [v, hs, h.arrs a ha, h.arrs b hb]
 
-theorem witnessFix_eq : witnessFix = ltS sA aX aTwo ++ (ltS sBb aX aCm1 ++ [.block (andNotS sU sA sBb),
+theorem witnessFix_eq : witnessFix = ltS sA aX aTwo ++ (ltS sBb aX aCm1 ++ ([.block (andNotS sU sA sBb),
     copy aXf aX, .block (orTwo aXf ++ (ptr .r0 aXf ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
       .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 12)) :: .ldr .r1 .r0 0 ::
-      ([.mov .r1 (.shifted .r1 .lsl 1), .mov .r1 (.shifted .r1 .lsr 1)] ++ [.str .r1 .r0 0]))),
-    sel aH1 aXf aX sU]) := rfl
+      (([.mov .r1 (.shifted .r1 .lsl 1), .mov .r1 (.shifted .r1 .lsr 1)] : List Instr) ++ ([.str .r1 .r0 0] : List Instr)))),
+    sel aH1 aXf aX sU] : List (Prog isa))) := rfl
 
 theorem clrTopBit_eq : clrTopBit aXf = ptr .r0 aXf ++ .dp .add .r0 .r0 (.shifted .r9 .lsl 2) ::
       .dp .sub .r0 .r0 (.imm (BitVec.ofNat 32 12)) :: .ldr .r1 .r0 0 ::
-      ([.mov .r1 (.shifted .r1 .lsl 1), .mov .r1 (.shifted .r1 .lsr 1)] ++ [.str .r1 .r0 0]) := rfl
+      (([.mov .r1 (.shifted .r1 .lsl 1), .mov .r1 (.shifted .r1 .lsr 1)] : List Instr) ++ ([.str .r1 .r0 0] : List Instr)) := rfl
 
 /-- The witness into `[aH1]`, and whether it was uniform into `sU`. -/
 theorem witnessFix_vp {k : Nat} :

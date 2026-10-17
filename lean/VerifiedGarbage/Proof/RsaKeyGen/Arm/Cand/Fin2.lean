@@ -42,7 +42,7 @@ theorem usedFinish_vp {r : Nat} {O : State → List Byte}
     (cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r2]) (.block (finTail r)) hc).isSome = true)
     (henc : encodable (BitVec.ofNat 32 r) = true) (hr : r < 2 ^ 32) (hU : sUsed ∈ LS) :
     VP (fun σ s => St P E A L V LS σ s ∧ Spec.Rsa.bytesAt s.mem (State.addr P.oP) P.L = O σ)
-      (.block ([.ldr .r3 .r8 sUsed] ++ finish r)) (RF P E (fun _ => r) O (fun σ => V σ sUsed)) := by
+      (.block (([.ldr .r3 .r8 sUsed] : List Instr) ++ finish r)) (RF P E (fun _ => r) O (fun σ => V σ sUsed)) := by
   refine VP.block_append (VP.kv ldrUsed_taint (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, o⟩ =>
     h.ldr hw hU (by decide) fun t _ _ u => WP.block_nil ⟨⟨e, h.bk.of_upd u, by rw [u.mem]; exact o⟩, u.gpr, ?_⟩)
     (finish_vp cert henc hr)
