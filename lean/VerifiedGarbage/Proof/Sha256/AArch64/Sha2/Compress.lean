@@ -109,18 +109,26 @@ theorem kTable_quad : ∀ n < 16, kTable.getD (16 * n / 8 + 1) 0 ++ kTable.getD 
 
 theorem kTable_length : kTable.length = 32 := by simp [kTable]
 
-/-- Loading group `n`, in the first block, from the table at `x4`. -/
-theorem kbuild_ok (n : Nat) (hn : n < 16) (s : State) (hx4 : s.gpr .x4 = s.syms kName) :
-    WP isa (.block (kbuild n)) s fun s' =>
-      s'.v (kreg n) = kQuad n ∧ (∀ r, r ≠ kreg n → s'.v r = s.v r) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hc : s.gpr .x4 = s.syms kName ∧ 16 * n % 16 = 0 ∧ 16 * n < 65536 ∧ 16 * n / 8 + 2 ≤ kTable.length :=
+/-- Loading group `j` from the table at `x4`. -/
+theorem exec_kld {j : Nat} (hj : j < 16) {s : State} (hx4 : s.gpr .x4 = s.syms kName) :
+    exec (kld j) s = some (s.setV (kreg j) (kQuad j)) := by
+  have hc : s.gpr .x4 = s.syms kName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧ 16 * j / 8 + 2 ≤ kTable.length :=
     ⟨hx4, by omega, by omega, by rw [kTable_length]; omega⟩
-  have e : exec (.ldrqTbl (kreg n) .x4 (16 * n) kName kTable) s =
-      some (s.setV (kreg n) (kQuad n)) := by
-    simp only [exec, ite_eq_left_of_eq_true _ _ (eq_true hc), kTable_quad n hn]
-  refine WP.block_cons_iff.mpr ⟨_, e, WP.block_nil (M := isa) ⟨RegUpd.v_setV_self _ _ _,
-    fun r hr => RegUpd.v_setV_of_ne _ _ hr, rfl, rfl, rfl, rfl⟩⟩
+  simp only [kld, exec, ite_eq_left_of_eq_true _ _ (eq_true hc), kTable_quad j hj]
+
+/-- Loading group `n + 2`, if any, in group `n` of the first block. -/
+theorem kbuild_ok (n : Nat) (s : State) (hx4 : s.gpr .x4 = s.syms kName) :
+    WP isa (.block (kbuild n)) s fun s' =>
+      (n + 2 < 16 → s'.v (kreg (n + 2)) = kQuad (n + 2)) ∧
+      (∀ r, (n + 2 < 16 → r ≠ kreg (n + 2)) → s'.v r = s.v r) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  by_cases h : n + 2 < 16
+  · simp only [kbuild, h, ite_true]
+    exact WP.block_cons_iff.mpr ⟨_, exec_kld h hx4, WP.block_nil (M := isa)
+      ⟨fun _ => RegUpd.v_setV_self _ _ _, fun r hr => RegUpd.v_setV_of_ne _ _ (hr trivial),
+        rfl, rfl, rfl, rfl⟩⟩
+  · simp only [kbuild, h, ite_false]
+    exact WP.block_nil (M := isa) ⟨fun h' => h'.elim, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 theorem rounds4_ok (n : Nat) (s : State) (v : HashValue) (q : BitVec 128)
     (h0 : s.v .v0 = abcd v) (h1 : s.v .v1 = efgh v) (hq : s.v (msg n) = q)
@@ -204,7 +212,7 @@ structure RInv (c : Bool) (H : HashValue) (M : Block) (sB : State) (n : Nat) (s 
   v0 : s.v .v0 = abcd (Spec.Sha256.rounds H M (4 * n))
   v1 : s.v .v1 = efgh (Spec.Sha256.rounds H M (4 * n))
   msgs : ∀ k < n, n ≤ k + 4 → s.v (msg k) = quad M k
-  k : ∀ j < 16, (c = false ∨ j < n) → s.v (kreg j) = kQuad j
+  k : ∀ j < 16, (c = false ∨ j < n + 2) → s.v (kreg j) = kQuad j
   gpr : ∀ r, r ≠ .x4 → s.gpr r = sB.gpr r
   mem : s.mem = sB.mem
   tbl : c = true → s.gpr .x4 = s.syms kName
@@ -271,10 +279,19 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
         fun j hj _ => hk rfl j hj, fun _ _ => rfl, rfl, fun h => absurd h (by decide), rfl, rfl⟩
     | true =>
       simp only [rounds, ite_true]
-      refine WP.block_cons_iff.mpr ⟨_, exec_adrSym, WP.block_nil (M := isa) ⟨h1, h2,
-        fun _ h => absurd h (by omega),
-        fun _ _ h => h.elim (fun h => absurd h (by decide)) (fun h => absurd h (by omega)),
-        fun r h4 => RegUpd.gpr_write_of_ne _ _ _ h4, rfl, fun _ => RegUpd.gpr_write_self _ _ _ _, rfl, rfl⟩⟩
+      have hx : (sB.write .x .x4 (sB.syms kName)).gpr .x4 = (sB.write .x .x4 (sB.syms kName)).syms kName :=
+        RegUpd.gpr_write_self _ _ _ _
+      have hx' : ((sB.write .x .x4 (sB.syms kName)).setV (kreg 0) (kQuad 0)).gpr .x4 =
+          ((sB.write .x .x4 (sB.syms kName)).setV (kreg 0) (kQuad 0)).syms kName := hx
+      refine WP.block_cons_iff.mpr ⟨_, exec_adrSym, WP.block_cons_iff.mpr ⟨_, exec_kld (by decide) hx,
+        WP.block_cons_iff.mpr ⟨_, exec_kld (by decide) hx', WP.block_nil (M := isa) ⟨?_, ?_,
+        fun _ h => absurd h (by omega), fun j _ h => ?_,
+        fun r h4 => RegUpd.gpr_write_of_ne _ _ _ h4, rfl, fun _ => hx, rfl, rfl⟩⟩⟩⟩
+      · rw [RegUpd.v_setV_of_ne _ _ (by decide), RegUpd.v_setV_of_ne _ _ (by decide)]; exact h1
+      · rw [RegUpd.v_setV_of_ne _ _ (by decide), RegUpd.v_setV_of_ne _ _ (by decide)]; exact h2
+      · rcases h.resolve_left (by decide) |> (fun h => (by omega : j = 0 ∨ j = 1)) with rfl | rfl
+        · rw [RegUpd.v_setV_of_ne _ _ (by decide), RegUpd.v_setV_self]
+        · rw [RegUpd.v_setV_self]
   | succ n ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
     rw [group, WP.block_append_iff]
@@ -299,27 +316,35 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
     refine AArch64.WP.mono_syms hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ hy₁ => ?_
     rw [WP.block_append_iff]
     have hn16 : n < 16 := by omega
-    -- The constants: loaded by the first block from the table, kept by the others.
+    -- The constants: those of group `n + 2` loaded by the first block from the table.
     have hmid : WP isa (.block (if c then kbuild n else [])) s₁ fun s₁' =>
-        s₁'.v (kreg n) = kQuad n ∧ (∀ r, r ≠ kreg n → s₁'.v r = s₁.v r) ∧
+        (∀ j < 16, (c = false ∨ j < n + 3) → s₁'.v (kreg j) = kQuad j) ∧
+        (∀ r, (∀ j < 16, r ≠ kreg j) → s₁'.v r = s₁.v r) ∧
         s₁'.gpr = s₁.gpr ∧ s₁'.mem = s₁.mem ∧ s₁'.rd = s₁.rd ∧ s₁'.wr = s₁.wr := by
+      have hk₀ : ∀ j < 16, (c = false ∨ j < n + 2) → s₁.v (kreg j) = kQuad j := fun j hj hcj => by
+        rw [hx₁ _ (Ne.symm (msg_kreg n hj))]; exact hs.k j hj hcj
       cases c with
       | true =>
         simp only [ite_true]
-        exact kbuild_ok n hn16 s₁ (by rw [hg₁, hy₁]; exact hs.tbl rfl)
+        refine (kbuild_ok n s₁ (by rw [hg₁, hy₁]; exact hs.tbl rfl)).mono
+          fun s' ⟨e, hv, hg, hm, hrd, hwr⟩ => ⟨fun j hj hcj => ?_, fun r hr => hv r fun h => hr _ h,
+            hg, hm, hrd, hwr⟩
+        by_cases hjn : j = n + 2
+        · subst hjn; exact e hj
+        · rw [hv _ fun _ h => hjn (kreg_inj j hj (n + 2) (by omega) h)]
+          exact hk₀ j hj (.inr (by rcases hcj with h | h <;> [cases h; omega]))
       | false =>
-        refine WP.block_nil (M := isa) ⟨?_, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-        rw [hx₁ _ (Ne.symm (msg_kreg n hn16))]
-        exact hs.k n hn16 (.inl rfl)
-    refine AArch64.WP.mono_syms hmid fun s₁' ⟨hk₁, hx₁', hg₁', hm₁', hrd₁', hwr₁'⟩ hy₁' => ?_
+        exact WP.block_nil (M := isa) ⟨fun j hj _ => hk₀ j hj (.inl rfl), fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+    refine AArch64.WP.mono_syms hmid fun s₁' ⟨hk₁', hx₁', hg₁', hm₁', hrd₁', hwr₁'⟩ hy₁' => ?_
+    have hk₁ : s₁'.v (kreg n) = kQuad n := hk₁' n hn16 (by cases c <;> simp)
     have o1 := msg_other n .v0 (by simp)
     have o2 := msg_other n .v1 (by simp)
     have kn := kreg_ne n hn16
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at kn
     refine AArch64.WP.mono_syms (rounds4_step H M n s₁'
-      (by rw [hx₁' _ (Ne.symm kn.1), hx₁ _ (Ne.symm o1)]; exact hs.v0)
-      (by rw [hx₁' _ (Ne.symm kn.2.1), hx₁ _ (Ne.symm o2)]; exact hs.v1)
-      (by rw [hx₁' _ (msg_kreg n hn16)]; exact hq) hk₁)
+      (by rw [hx₁' _ fun j hj => Ne.symm (kreg_ne j hj _ (by simp)), hx₁ _ (Ne.symm o1)]; exact hs.v0)
+      (by rw [hx₁' _ fun j hj => Ne.symm (kreg_ne j hj _ (by simp)), hx₁ _ (Ne.symm o2)]; exact hs.v1)
+      (by rw [hx₁' _ fun j hj => msg_kreg n hj]; exact hq) hk₁)
       fun s₂ ⟨e1, e2, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ hy₂ => ?_
     refine ⟨e1, e2, fun k hk hk' => ?_, fun j hj hcj => ?_, fun r h4 => ?_,
       by rw [hm₂, hm₁', hm₁, hs.mem],
@@ -329,7 +354,7 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
       have n1 := msg_other k .v0 (by simp)
       have n2 := msg_other k .v1 (by simp)
       have n11 := msg_other k .v3 (by simp)
-      rw [hx₂ _ n1 n2 n0 n11, hx₁' _ (msg_kreg k hn16)]
+      rw [hx₂ _ n1 n2 n0 n11, hx₁' _ fun j hj => msg_kreg k hj]
       by_cases hkn : k = n
       · subst hkn; exact hq
       · rw [hx₁ _ (msg_ne n k (by omega) (by omega))]
@@ -337,10 +362,7 @@ theorem rounds_ok (c : Bool) (H : HashValue) (M : Block) (bp : Addr) (sB : State
     · have kj := kreg_ne j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at kj
       rw [hx₂ _ kj.1 kj.2.1 kj.2.2.1 kj.2.2.2.1]
-      by_cases hjn : j = n
-      · subst hjn; exact hk₁
-      · rw [hx₁' _ (fun h => hjn (kreg_inj j hj n hn16 h)), hx₁ _ (Ne.symm (msg_kreg n hj))]
-        exact hs.k j hj (hcj.imp_right fun h => by omega)
+      exact hk₁' j hj (hcj.imp_right fun h => by omega)
     · rw [hg₂, hg₁', hg₁, hs.gpr r h4]
 
 theorem read_abcd (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 0) 16 = abcd (stateAt m p) := by
@@ -472,7 +494,7 @@ theorem block_ok (c : Bool) {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat} (hi
   · have kj := kreg_ne j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at kj
     rw [hv₃ _ kj.1 kj.2.1 kj.2.2.1 kj.2.2.2.1]
-    exact hR.k j hj (.inr hj)
+    exact hR.k j hj (.inr (by omega))
 
 theorem eval_x2 {s₀ : State} {i : Nat} {s : State} (h : s.gpr .x2 = BitVec.ofNat 64 (nb s₀ - i))
     (hn : nb s₀ < 2 ^ 64) :

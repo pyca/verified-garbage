@@ -15,9 +15,9 @@ original state is reloaded from `state` (stored after every block) into `v2`
 and `v3`.
 
 The sixteen round-constant vectors are loaded into `v16`–`v31` by the first
-block, each just before its group of rounds; later blocks only read them.
+block, each two groups ahead of its rounds; later blocks only read them.
 The first block puts the address of the table of constants `VG_SHA256_K`
-(`adrSym`) in `x4`, and each group loads its four constants from it with one
+(`adrSym`) in `x4`, and loads each group's four constants from it with one
 `ldr q` (`ldrqTbl`, which carries the table: the emitter writes it as a
 `static`, and no contract mentions it). Building them in general registers
 (`movz`/`movk`) instead took eight instructions and two stores a group, and
@@ -54,9 +54,13 @@ def kName : String := "VG_SHA256_K"
 `kWord k 1`, at bytes `16 k` to `16 k + 15`. -/
 def kTable : List (BitVec 64) := (List.range 32).map fun j => kWord (j / 2) (j % 2)
 
-/-- In the first block, before group `i`: load group `i`'s constants from the
-table, whose address is in `x4`. -/
-def kbuild (i : Nat) : List Instr := [.ldrqTbl (kreg i) .x4 (16 * i) kName kTable]
+/-- Load group `i`'s constants from the table, whose address is in `x4`. -/
+def kld (i : Nat) : Instr := .ldrqTbl (kreg i) .x4 (16 * i) kName kTable
+
+/-- In the first block, in group `i`: load the constants of group `i + 2`, if
+any, two groups ahead of their rounds, so that the load is not on the chain of
+SHA256H and SHA256H2 that it feeds. -/
+def kbuild (i : Nat) : List Instr := if i + 2 < 16 then [kld (i + 2)] else []
 
 /-- Load the first sixteen words, then expand the schedule in registers. -/
 def schedule (i : Nat) : List Instr :=
@@ -78,7 +82,7 @@ def group (c : Bool) (n : Nat) : List Instr :=
   schedule n ++ ((if c then kbuild n else []) ++ rounds4 n)
 
 def rounds (c : Bool) : Nat → Prog isa
-  | 0 => .block (if c then [.adrSym .x4 kName] else [])
+  | 0 => .block (if c then [.adrSym .x4 kName, kld 0, kld 1] else [])
   | n + 1 => .seq (rounds c n) (.block (group c n))
 
 def load : List Instr := [.ldrq .v0 .x0 0, .ldrq .v1 .x0 16]
