@@ -126,7 +126,7 @@ TARGET = pathlib.Path("bench-target").resolve()
 FRESH_COPIES = re.compile(
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
     r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$"
-    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$|mlkem(?:768|1024)_)")
+    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$|hmacprobe$|mlkem(?:768|1024)_)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
 # whose benchmarks hold those groups. The binary sets up every selected
