@@ -558,6 +558,24 @@ theorem openRunWith_postX (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Add
       simp only [hc, decide_false, Bool.false_eq_true, ite_false] at x0₄ d₄
       exact ⟨by rw [x0₄]; rfl, d₄⟩
 
+/-- `openRunWith_postX` without an invariant. -/
+theorem openRunWith_postE (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat}
+    {s₀ t : State} {ex : List Region} (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ t)
+    (h12 : nl = 12)
+    (h4 : t.gpr .x4 = A) (h5 : t.gpr .x5 = BitVec.ofNat 64 al) (h6 : t.gpr .x6 = D)
+    (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) (hT₃ : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
+    (hok : Spec.Gcm.tagLenOk tl = true)
+    (hexW : ∀ r ∈ ex, (workR W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)
+    (hexC : ∀ r ∈ ex, (⟨Ctx, 256⟩ : Region).Disjoint r)
+    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
+      Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
+      s'.rd = s₀.rd → s'.wr = s₀.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] s₀.mem s'.mem →
+      WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex) :
+    WP isa (Impl.AesGcm.AArch64.Fast.openRunWithP v.callees cl) t (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀) :=
+  WP.mono (openRunWith_postX cl v hMK (I := fun _ => True) o h12 h4 h5 h6 h7 hal hT₃ hok hexW hexD hexC
+    (fun _ _ => trivial) fun s' _ _ _ _ hc sY sS hr hw hsp hf =>
+      WP.mono (hgh s' hc sY sS hr hw hsp hf) fun _ g => ⟨g, trivial⟩) fun _ q => q.1
+
 /-- `openWithE_wp` for a TLS record with an allowed tag length, whose call
 may also write `ex` and establish `I` (`openRunWith_postX`). -/
 theorem openWithEX_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region}
