@@ -25,16 +25,17 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
-    // Measurement only: the parts of deriving the prepared context.
+    // Measurement only: the parts of deriving the prepared context (1: derive
+    // into a buffer, 2: a 384-byte Box allocated, cleared, wiped and freed).
     #[cfg(target_arch = "aarch64")]
     {
         let k = verified_garbage::aes_gcm::AesGcm::new(&[0x42; 16]).unwrap();
         let mut out = [0u64; 48];
         let mut g = c.benchmark_group("aes-128-gcm-derive-cost");
-        g.bench_function(criterion::BenchmarkId::new(crate::VG, "derive"), |b| {
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, 1), |b| {
             b.iter(|| verified_garbage::aes_gcm::bench_derive(std::hint::black_box(&k), &mut out))
         });
-        g.bench_function(criterion::BenchmarkId::new(crate::VG, "box"), |b| {
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, 2), |b| {
             b.iter(verified_garbage::aes_gcm::bench_box)
         });
         g.finish();
