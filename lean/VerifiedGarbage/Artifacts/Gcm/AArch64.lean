@@ -31,14 +31,6 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.AArch64.Pmull.ghash
     verified := Proof.Gcm.AArch64.Pmull.ghash_verified
     features := ["aes"] },
-  Spec.Gcm.ghashPrepared8Api.artifact AArch64.target {
-    suffix := "_aes"
-    notes := ["Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight \
-        blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) \
-        instead of computing them."]
-    code := Impl.Gcm.AArch64.Pmull.ghashP
-    verified := Proof.Gcm.AArch64.Pmull.ghashP_verified
-    features := ["aes"] },
   Spec.Gcm.ghashWithPowersApi.artifact AArch64.target {
     suffix := "_aes"
     notes := ["Uses PMULL as `vg_ghash_aes` does, loading `H'` to `H'⁸` (`H'ᵏ = Hᵏ · x⁻¹`) from `pw` \
