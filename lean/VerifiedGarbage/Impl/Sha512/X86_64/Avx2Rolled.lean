@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
+public import VerifiedGarbage.Impl.Weave
 
 /-!
 # SHA-512 compression function: x86-64 implementation with AVX2 and BMI, rolled
@@ -82,8 +83,11 @@ def scheduleR (i : Nat) : List Instr :=
   (schedule i).dropLast ++ [.vmovdquStore .l256 (sSlot i) (msg i)]
 
 /-- Group `i'` (`< 8`) of an iteration of the first block: words `2i'+16`
-and `2i'+17` of the iteration's schedule, and rounds `2i'` and `2i'+1`. -/
-def groupR (i' : Nat) : List Instr := scheduleR (i' + 8) ++ roundR 0 (2 * i') ++ roundR 0 (2 * i' + 1)
+and `2i'+17` of the iteration's schedule, woven into rounds `2i'` and
+`2i'+1` (`Impl.Weave.weave`, as OpenSSL spreads its schedule across its
+rounds), so that the vector and integer units both have work throughout. -/
+def groupR (i' : Nat) : List Instr :=
+  VG.Impl.Weave.weave (scheduleR (i' + 8)) (roundR 0 (2 * i') ++ roundR 0 (2 * i' + 1))
 
 /-- Groups `0 … n-1` of an iteration. -/
 def groupsR : Nat → Prog isa
