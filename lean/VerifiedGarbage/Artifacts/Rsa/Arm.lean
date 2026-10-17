@@ -41,9 +41,12 @@ def artifacts : List Artifact := [
   Spec.Rsa.privateCrtApi.artifact Arm.target {
     notes := ["Baseline ARMv7: the checks of the input and the key give a mask; rejected primes \
         are replaced, so that the arithmetic is the same whatever the key, and a rejected result \
-        is cleared under the mask. Each exponentiation follows a fixed schedule over 32-bit limbs, \
-        both primes at the width of `n`; `qInv` is reduced as a signed coefficient and the result \
-        recombined in a double-width product."]
+        is cleared under the mask. Each prime's working space at the width of `n` reduces the \
+        input modulo the prime by two Montgomery products; a narrow working space then takes the \
+        prime, its own Montgomery constants and the reduced input at the prime's width \
+        (`max(2, ⌈len/8⌉)` limbs of 64 bits for its public length), where the exponentiation \
+        follows a fixed schedule over 32-bit limbs. `qInv` is reduced as a signed coefficient \
+        and the result recombined in a double-width product, at the width of `n`."]
     code := Impl.Bignum.Arm.CrtFn.code
     stack := 56
     verified := Proof.Bignum.Arm.crt_verified }]

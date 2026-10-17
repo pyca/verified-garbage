@@ -16,14 +16,14 @@ import all Init.Data.Vector.Basic
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crt_computeStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (count : 128 * g.words < 2 ^ 32) :
+theorem crt_computeStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
       CrtFn.compute (fun _ _ => True) := by
   have coefficient : RelCT isa (fun s t => CrtPoweredPair g bs1 s ∧ CrtPoweredPair g bs2 t ∧ s.sp = t.sp)
       CrtFn.coefficientPhase (fun _ _ => True) :=
     crt_coefficientStage_ct.mono (fun _ _ h => ⟨h.1.coefficientSelection, h.2.1.coefficientSelection, h.2.2⟩)
       (fun _ _ _ => trivial)
-  exact (crt_seq_ct (crt_bothPowers_ct count) (fun s h => crt_bothPowers_ready s h) (fun s h => crt_bothPowers_ready s h)
+  exact (crt_seq_ct crt_bothPowers_ct (fun s h => crt_bothPowers_ready s h) (fun s h => crt_bothPowers_ready s h)
     (crt_seq_ct coefficient (fun s h => crt_coefficientFinish_ready s h) (fun s h => crt_coefficientFinish_ready s h)
       crt_finishStage_ct)).assoc
 

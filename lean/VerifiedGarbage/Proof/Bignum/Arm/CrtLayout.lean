@@ -24,16 +24,21 @@ theorem crt_buffer_sizes (w : Nat) :
     productWords w = 2 * w + 2 * w + 2 ∧
     productOffset w + productBytes w = compareOffset w ∧
     compareOffset w + productBytes w = modulusOffset w ∧
-    modulusOffset w + productBytes w = totalBytes w := by
+    modulusOffset w + productBytes w = narrowOffset w := by
   refine ⟨?_, rfl, rfl, rfl⟩
   simp only [productWords]
+  omega
+
+/-- The zero-extended modulus buffer ends before the narrow workspace. -/
+theorem crt_modulus_end_le (w : Nat) : modulusOffset w + 4 * (4 * w + 2) ≤ totalBytes w := by
+  simp only [totalBytes, narrowOffset, productBytes, productWords]
   omega
 
 theorem crt_layout_fits {k : Nat} (hk : Spec.Rsa.lenValid k) :
     totalBytes (Spec.Rsa.modulusWords k) ≤ 8 * Spec.Rsa.scratchWords k := by
   simp only [Spec.Rsa.lenValid] at hk
-  simp only [totalBytes, modulusOffset, compareOffset, productOffset, productBytes, productWords,
-    stride, workspaceWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords]
+  simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset, productBytes,
+    productWords, stride, workspaceWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords]
   omega
 
 theorem crt_width_valid {k : Nat} (hk : Spec.Rsa.lenValid k) :

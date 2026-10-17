@@ -33,7 +33,7 @@ theorem CrtShared.product_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
   have strideEq : 8 * workspaceWords w = stride w := rfl
   rw [strideEq] at endA endB
   have linear : 3 * stride w + 3 * (16 * w + 8) ≤ g.size := by
-    change 3 * stride w + 4 * (4 * w + 2) + 4 * (4 * w + 2) + 4 * (4 * w + 2) ≤ g.size at size
+    have size0 : 3 * stride w + 4 * (4 * w + 2) + 4 * (4 * w + 2) + 4 * (4 * w + 2) + stride w ≤ g.size := size
     omega
   have stridePos : 384 ≤ stride w := by simp only [VG.Impl.Bignum.Arm.Crt.stride, workspaceWords]; omega
   have aHeader : 256 ≤ arrAt w j := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega

@@ -42,7 +42,7 @@ theorem CrtShared.validation_child_eq {s t : State} {g : CrtGeometry} {bs : Fin 
   have nowrap := h.buffers.workspace.nowrap
   have small := h.main.toCrtLayoutState.size
   have bounds : 3 * stride g.words ≤ g.size := by
-    simp only [totalBytes, modulusOffset, compareOffset, productOffset] at size
+    simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset] at size
     omega
   constructor
   · apply WorkspaceEq.of_outs_offset paddr (by change stride g.words + stride g.words < _; omega) _ outside

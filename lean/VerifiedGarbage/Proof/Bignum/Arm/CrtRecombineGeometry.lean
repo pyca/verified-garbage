@@ -35,7 +35,7 @@ theorem CrtShared.recombine_input {s : State} {g : CrtGeometry} {bs : Fin 7 → 
     CrtRecombineInput g.base g.size (workspaceWords g.words) g.words (productOffset g.words)
       (crtProductA g.words true) (crtProductB g.words) (pOffset g.words) (qOffset g.words) (modulusOffset g.words) s := by
   have size := h.buffers.storageFits
-  have fits : modulusOffset g.words + 4 * (4 * g.words + 2) ≤ g.size := size
+  have fits : modulusOffset g.words + 4 * (4 * g.words + 2) ≤ g.size := Nat.le_trans (crt_modulus_end_le _) size
   have sep : productOffset g.words + 4 * (4 * g.words + 2) ≤ modulusOffset g.words := by
     simp only [modulusOffset, compareOffset, productBytes, productWords]; omega
   refine ⟨h.product_input ready true, h.pad_input ready,

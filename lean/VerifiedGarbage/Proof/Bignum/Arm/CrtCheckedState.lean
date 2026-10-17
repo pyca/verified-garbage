@@ -22,9 +22,8 @@ structure CrtCheckedState (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : Stat
   flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)
 
 theorem CrtCheckedState.pSelection {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtCheckedState g bs s) : CrtPowerSelection g bs (crtP g.base g.words) 224 s := by
-  refine ⟨h.selected, h.selected.1.buffers.context.p, h.selected.1.p, by simp [crtRegions],
-    by have := h.selected.1.buffers.context.size; omega, by decide, h.selected.1.main.p, ?_, ?_⟩
+    (h : CrtCheckedState g bs s) : CrtPowerSelection g bs (crtP g.base g.words) 224 1 s := by
+  refine ⟨h.selected, Or.inl ⟨rfl, rfl⟩, ?_, ?_, h.p⟩
   · rw [h.flag]; split <;> decide
   · rw [h.flag, h.p]
     by_cases accepted : crtAccepted bs
@@ -32,16 +31,16 @@ theorem CrtCheckedState.pSelection {s : State} {g : CrtGeometry} {bs : Fin 7 →
     · simp [accepted]
 
 theorem crt_firstPower_qInput (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtCheckedState g bs s) : WP isa (CrtFn.power 224 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228) := by
+    (h : CrtCheckedState g bs s) :
+    WP isa (CrtFn.power 224 64 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228 2) := by
   have input := h.pSelection
-  refine WP.mono (crt_powerStage_ok s h.selected.1 h.selected.2 (Or.inl rfl) input.workspace input.layout
-    input.slotFit input.slotSmall input.link 3 (Or.inl rfl) input.bit input.valid) ?_
+  refine WP.mono (crt_powerStage_ok s h.selected.1 h.selected.2 input.kind 1 3 (Or.inl ⟨rfl, rfl⟩)
+    input.bit input.valid input.prime) ?_
   rintro t ⟨sharedT, readyT, _, flag, frame, _⟩
   have eq := h.selected.1.workspace_eq_after_power h.selected.1.buffers.context.q (by simp [crtRegions])
-    h.selected.1.buffers.context.sepPQ.symm frame
+    h.selected.1.buffers.context.sepPQ.symm h.selected.1.buffers.context.sepQN frame
   have qValue := (eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)).trans h.q
-  refine ⟨⟨sharedT, readyT⟩, sharedT.buffers.context.q, sharedT.q, by simp [crtRegions],
-    by have := sharedT.buffers.context.size; omega, by decide, sharedT.main.q, ?_, ?_⟩
+  refine ⟨⟨sharedT, readyT⟩, Or.inr ⟨rfl, rfl⟩, ?_, ?_, qValue⟩
   · rw [flag]; exact input.bit
   · rw [flag, h.flag, qValue]
     by_cases accepted : crtAccepted bs
