@@ -44,49 +44,49 @@ def satState (D : Nat) : State where
 theorem verify_sat_md5 : ∃ s, (spec Spec.Mgf1.md5).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 16
 
 theorem verify_sat_sha1 : ∃ s, (spec Spec.Mgf1.sha1).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 20
 
 theorem verify_sat_sha224 : ∃ s, (spec Spec.Mgf1.sha224).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 28
 
 theorem verify_sat_sha256 : ∃ s, (spec Spec.Mgf1.sha256).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 32
 
 theorem verify_sat_sha384 : ∃ s, (spec Spec.Mgf1.sha384).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 48
 
 theorem verify_sat_sha512 : ∃ s, (spec Spec.Mgf1.sha512).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 64
 
 theorem verify_sat_sha512_224 : ∃ s, (spec Spec.Mgf1.sha512_224).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 28
 
 theorem verify_sat_sha512_256 : ∃ s, (spec Spec.Mgf1.sha512_256).pre s := by
   sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
-    Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
+    Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]
     using satState 32
 
 end VG.Proof.RsaPss.Arm.Vf

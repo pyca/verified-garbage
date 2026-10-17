@@ -86,7 +86,7 @@ structure In (D : Nat) (P : EP) (σ : State) : Prop where
   el1 : 1 ≤ P.el
   elK : P.el ≤ P.K
   glK : P.gl = P.K
-  scrK : Spec.RsaPss.scratchWords P.K ≤ P.scl
+  scrK : Spec.RsaPss.publicScratchWords P.K ≤ P.scl
   rlK : P.rl = Spec.Rsa.precomputedWords P.K
   slt32 : P.slt < 2 ^ 32
   scl32 : P.scl < 2 ^ 32
@@ -104,10 +104,10 @@ theorem k1024 : P.K ≤ 1024 := h.kv.2
 
 /-- The working space: ours, and the public operation's after it. This is
 the one place the contract's bound on `scratch_len` is used. -/
-theorem pubScr : Spec.Rsa.scratchWords P.K ≤ P.scl - 1024 ∧ 1025 ≤ P.scl := by
+theorem pubScr : Spec.Rsa.publicScratchWords P.K ≤ P.scl - 1024 ∧ 1025 ≤ P.scl := by
   have := h.scrK
-  unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this
-  unfold Spec.Rsa.scratchWords
+  unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords at this
+  unfold Spec.Rsa.publicScratchWords
   omega
 
 /-- Our part of `scratch`. -/
