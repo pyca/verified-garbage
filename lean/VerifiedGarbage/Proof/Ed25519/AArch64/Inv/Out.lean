@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Row
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -23,11 +24,6 @@ open VG.Proof.X25519.AArch64 (exec_lsr exec_lsl exec_sub_x exec_add_x exec_and_x
 open VG.Proof.X25519.AArch64.Alt (exec_mul_x exec_umulh_x exec_adds_x exec_adcs_x exec_adc_x)
 
 variable {large : Bool}
-
-theorem extr_toNat (n m : Word) (lsb : Nat) :
-    ((n ++ m).extractLsb' lsb 64).toNat = (n.toNat * 2 ^ 64 + m.toNat) / 2 ^ lsb % 2 ^ 64 := by
-  rw [BitVec.extractLsb'_toNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt m.isLt,
-    Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
 
 theorem exec_extr_x (s : State) (d n m : Reg) {lsb : Nat} (h : lsb < 64) :
     exec (.extr .x d n m lsb) s = some (s.write .x d ((s.gpr n ++ s.gpr m).extractLsb' lsb 64)) := by
@@ -123,17 +119,6 @@ theorem shift_ok {s : State} {base : Addr} (hs : Scr s base large) {o t : Nat}
       ka.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2])]
 
 /-! ## The reduction -/
-
-/-- `q = ⌊W / 2²⁵⁵⌋ - [W < 0]` (a word), for five words `W` (`w4` the top). -/
-def redQ (w3 w4 : Word) : Word := (w4 ++ w3).extractLsb' 63 64 - (w4 >>> 63)
-
-/-- What `reduce` leaves: `W - 2²⁵⁵ q + 19 q` modulo `2²⁵⁶`, by the words the code computes:
-the low four words with `q` added at bit 255, plus `19 q` as four words (its
-high word signed, and the mask of its sign above). -/
-def redV (w0 w1 w2 w3 w4 : Word) : Nat :=
-  let q := redQ w3 w4
-  let sg := (0 : Word) - (q >>> 63)
-  (val4 w0 w1 w2 (w3 + (q <<< 63)) + val4 (q * 19) (mulHi q 19 - (sg &&& 19)) sg sg) % 2 ^ 256
 
 theorem add4_mod (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     val4 (addCarry a0 b0 false) (addCarry a1 b1 (carryOut a0 b0 false))
