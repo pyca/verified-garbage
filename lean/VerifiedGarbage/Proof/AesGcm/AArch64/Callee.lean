@@ -163,13 +163,14 @@ structure GhCall (s : State) (H Y D S : Addr) (n : Nat) : Prop where
   reads : Covers ([⟨H, 16⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨Y, 16⟩, ⟨S, 256⟩] s.wr
 
-/-- What a call of `vg_ghash` leaves. -/
-structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) : Prop where
+/-- What a call of `vg_ghash` leaves, and of a GHASH that also writes the
+regions `ex` (`vg_ghash_store_powers`). -/
+structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) (ex : List Region := []) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨Y, 16⟩, ⟨S, 256⟩] s.mem s'.mem
+  frame : Frame (⟨Y, 16⟩ :: ⟨S, 256⟩ :: ex) s.mem s'.mem
   out : blockAt s'.mem Y = ghashFrom (blockAt s.mem H) (blockAt s.mem Y) (blocksAt s.mem D n)
 
 theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
