@@ -411,8 +411,8 @@ theorem oc_in {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
 
 theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
-    (mo : MidO fr Ctx W SP D Np A R nl al n tl s s₇) (hfr : ∀ r ∈ fr, Region.Sub r (workR W)) :
+    (mo : MidO fr Ctx W SP D Np A R nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
     WP isa (.ite (.zero .x .x27) (.block []) (oneCrypt v.callees)) s₇ fun s₈ =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
       Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s₈.mem ∧
@@ -421,8 +421,6 @@ theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
           (bytesAt s.mem D n)).take tl = bytesAt s.mem W tl) then
         gctr (ciphOf s.mem Ctx R) (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
           (bytesAt s.mem Np nl))) (bytesAt s.mem D n) else bytesAt s.mem D n := by
-  have dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r := keep_of_sub hfr ddW
-  have dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r := keep_of_sub hfr dcW
   have hnlt := mo.data.ok.lt
   have F₇ := mo.frame
   have hD₇ : bytesAt s₇.mem D n = bytesAt s.mem D n := bytesAt_frame F₇ dD (by omega)
@@ -450,6 +448,31 @@ theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     · rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, hD₈, Proof.Gcm.gctr_eq]
       rfl
 
+/-- `omB`, with what it writes from the branch on: `omB_ok`, for a frame
+`fr` apart from the text and the key context. -/
+theorem omBX_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (mo : MidO fr Ctx W SP D Np A R nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
+    WP isa (omB v.callees) s₇ fun s' =>
+      let ciph := ciphOf s.mem Ctx R
+      let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
+      let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)
+      let b := decide (T.take tl = bytesAt s.mem W tl)
+      (Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ Frame (⟨D, n⟩ :: fr ++ crFrame (W + BitVec.ofNat 64 16) W D n) s.mem s'.mem ∧
+      s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
+      bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
+        else bytesAt s.mem D n) ∧ Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s'.mem := by
+  unfold omB
+  refine WP.seq (WP.mono (omIte_ok v L hR mo dD dC) fun s₈ ⟨he₈, x27₈, f₈, d₈⟩ => ?_)
+  refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
+  subst hs'
+  refine ⟨⟨he₈.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl, ?_, by simp [gpr_write, x27₈, mo.x27], d₈⟩, f₈⟩
+  exact (mo.frame.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_left _ hr), fun _ h => h⟩).trans
+    (f₈.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_right _ hr), fun _ h => h⟩)
+
 theorem omB_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
@@ -462,16 +485,8 @@ theorem omB_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ Frame (⟨D, n⟩ :: fr ++ crFrame (W + BitVec.ofNat 64 16) W D n) s.mem s'.mem ∧
       s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
       bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
-        else bytesAt s.mem D n := by
-  unfold omB
-  refine WP.seq (WP.mono (omIte_ok v L hR ddW dcW mo hfr) fun s₈ ⟨he₈, x27₈, f₈, d₈⟩ => ?_)
-  refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
-  subst hs'
-  refine ⟨he₈.keep (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl, ?_, by simp [gpr_write, x27₈, mo.x27], d₈⟩
-  exact (mo.frame.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_left _ hr), fun _ h => h⟩).trans
-    (f₈.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_right _ hr), fun _ h => h⟩)
+        else bytesAt s.mem D n :=
+  WP.mono (omBX_ok v L hR mo (keep_of_sub hfr ddW) (keep_of_sub hfr dcW)) fun _ q => q.1
 
 theorem openMain_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {s : State}
