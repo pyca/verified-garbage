@@ -803,6 +803,26 @@ fn tls_connection_rows(c: &mut Criterion) {
         let mut ossl_out = [0u8; 256 + 16];
         let mut t = [0u8; 16];
         let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-connection"));
+        // Measurement only: shorter connections too.
+        for records in 1..=8usize {
+            g.throughput(Throughput::Bytes((records * 256) as u64));
+            g.bench_function(BenchmarkId::new(VG, records), |b| {
+                b.iter(|| {
+                    let k = AesGcm::new(black_box(key)).unwrap();
+                    for _ in 0..records {
+                        black_box(
+                            k.encrypt(
+                                black_box(&nonce),
+                                black_box(&aad),
+                                &[black_box(&data[..]), black_box(&ty[..])],
+                                black_box(&mut out),
+                            )
+                            .unwrap(),
+                        );
+                    }
+                })
+            });
+        }
         g.throughput(Throughput::Bytes((CONNECTION_RECORDS * 256) as u64));
         g.bench_function(BenchmarkId::new(VG, CONNECTION_RECORDS), |b| {
             b.iter(|| {
