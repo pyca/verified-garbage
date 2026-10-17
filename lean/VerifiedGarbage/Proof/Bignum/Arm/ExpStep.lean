@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 public import VerifiedGarbage.Proof.Bignum.FoldedPublic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -18,11 +19,10 @@ open VG.Proof.X25519.Arm (Rest)
 
 theorem exp_square_ok (s : State) {base : BitVec 32} {len w M x E : Nat}
     (h : ExpState base len w M x E s) :
-    WP isa (montOp 6 6 6) s fun t => ExpState base len w M x (2 * E) t ∧
+    WP isa (squareOp 6 6) s fun t => ExpState base len w M x (2 * E) t ∧
       Keeps (State.addr base) len w 6 s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  refine WP.mono (montOp_ok s h.ready
-    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
+  refine WP.mono (squareOp_ok s h.ready
     (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
     (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
     (by rw [h.modulus]; exact h.powerBound)) ?_

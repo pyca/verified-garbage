@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # RSA exponentiation in Montgomery form -/
@@ -20,7 +21,7 @@ def expBitTest : List Instr :=
 
 /-- Process the current public exponent bit. -/
 def expBit : Prog isa :=
-  .seq (montOp 6 6 6) (.seq (.block expBitTest) (.ite .ne (montOp 6 6 5) (.block [])))
+  .seq (squareOp 6 6) (.seq (.block expBitTest) (.ite .ne (montOp 6 6 5) (.block [])))
 
 /-- Advance the byte and its remaining bit count. -/
 def expShift : List Instr := [.ldr .r1 .r0 200, .dp .add .r1 .r1 (.reg .r1), .str .r1 .r0 200]

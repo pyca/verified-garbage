@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
 
 /-!
 # A prepared Miller–Rabin round on ARMv7
@@ -93,6 +94,11 @@ def copyClr (o a : Nat) : List (Prog isa) := [copy o a, .block (Rsa.Arm.Recover.
 def mulY (b : Nat) : List (Prog isa) :=
   [.block [.ldrSp .r0 0], montOp aY aY b, .block (ctx ++ Rsa.Arm.Recover.clrTop aY)]
 
+/-- `[aY] := [aY]² R⁻¹ mod c` by the dedicated square, then the context and `[aY]`'s top
+words cleared. -/
+def sqY : List (Prog isa) :=
+  [.block [.ldrSp .r0 0], squareOp aY aY, .block (ctx ++ Rsa.Arm.Recover.clrTop aY)]
+
 /-- The count decremented: Z when it reaches 0. -/
 def cntNext : List Instr := [.ldr .r1 .r8 sK, .subs .r1 .r1 (.imm 1), .str .r1 .r8 sK]
 
@@ -128,7 +134,7 @@ def sqFlag : List Instr :=
     .str .r4 .r8 sF, .subs .r1 .r1 (.imm 1), .str .r1 .r8 sQ]
 
 /-- A squaring. -/
-def sqStep : Prog isa := seqs [seqs (mulY aY), eqS sE2 aY aM1 aX, .block sqFlag]
+def sqStep : Prog isa := seqs [seqs sqY, eqS sE2 aY aM1 aX, .block sqFlag]
 
 /-- `sQ` squarings. -/
 def sqLoop : Prog isa := .loop sqStep .ne
