@@ -197,6 +197,17 @@ theorem Keep.num {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
   · have := arr_disj (w := w) (hj k hk); dsimp only; omega
   · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
 
+/-- All the words of an array outside the frame. -/
+theorem Keep.full {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
+    (h : Keep B w js ds m m') {j : Nat} (hj : ∀ k ∈ js, k ≠ j) (hd : ∀ d ∈ ds, d + 4 ≤ hdr)
+    (fit : arr w j + S w ≤ 2 ^ 64) :
+    val32 m' (State.addr B) (arr w j) (w + 2) = val32 m (State.addr B) (arr w j) (w + 2) := by
+  refine Outs.val32 h (fun r hr => ?_) (by simp only [S] at fit; omega)
+  simp only [ranges, List.mem_append, List.mem_map] at hr
+  rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
+  · have := arr_disj (w := w) (hj k hk); dsimp only; simp only [S] at *; omega
+  · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
+
 /-- A word of an array outside the frame. -/
 theorem Keep.word {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') {j i : Nat} (hi : 4 * i + 4 ≤ S w) (hj : ∀ k ∈ js, k ≠ j)
