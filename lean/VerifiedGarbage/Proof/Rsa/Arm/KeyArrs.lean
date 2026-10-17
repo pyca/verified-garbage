@@ -99,4 +99,12 @@ theorem upd_ne (A : Nat → Nat) {i j : Nat} (v : Nat) (h : i ≠ j) : upd A j v
 
 theorem upd_self (A : Nat → Nat) (j v : Nat) : upd A j v j = v := by simp only [upd, ↓reduceIte]
 
+/-- `upd` to the value already there. -/
+theorem upd_noop {A : Nat → Nat} {j v : Nat} (h : A j = v) : upd A j v = A :=
+  funext fun i => by
+    simp only [upd]
+    split
+    · subst i; exact h.symm
+    · rfl
+
 end VG.Proof.Rsa.Arm.Keys

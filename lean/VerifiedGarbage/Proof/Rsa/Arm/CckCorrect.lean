@@ -49,14 +49,14 @@ theorem cck_pre (s : State) (h : (Spec.Rsa.checkCrtKeyContract abi 0).pre s) : F
 /-- The numbers. -/
 abbrev vC (σ : State) : Vals := ⟨nV σ, eV σ, inV σ 0, inV σ 2, inV σ 4, inV σ 6, inV σ 8, 0⟩
 
-theorem cck_hv (σ : State) : (List.range nArr).map (aEnt insC σ) = (List.range nArr).map (vals (vC σ)) := rfl
+theorem cck_hv (σ : State) : aEnt insC σ = vals (vC σ) := by
+  unfold vals
+  rw [upd_noop (A := upd (fun _ => 0) aE (vC σ).e) (j := aD) (v := (vC σ).d) rfl]
+  rfl
 
 theorem cck_hA {σ : State} (pre : FnPre 12 10 insC σ) : ∀ j < nArr, aEnt insC σ j < 2 ^ (32 * (geo 10 σ).w) := by
   have kb := pre.kb
   have hw : fK σ ≤ 4 * (geo 10 σ).w := by simp only [Geo.w]; omega
-  have hvj : ∀ j < nArr, aEnt insC σ j = vals (vC σ) j := fun j hj => by
-    have := congrArg (fun l => l[j]?) (cck_hv σ)
-    simpa [hj] using this
   have ins := fun p (hp : p ∈ insC) => (pre.ins1 p hp).2
   have i0 : (stackArg σ 1).toNat ≤ fK σ := ins (0, aP) (by simp)
   have i2 : (stackArg σ 3).toNat ≤ fK σ := ins (2, aQ) (by simp)
@@ -64,7 +64,7 @@ theorem cck_hA {σ : State} (pre : FnPre 12 10 insC σ) : ∀ j < nArr, aEnt ins
   have i6 : (stackArg σ 7).toNat ≤ fK σ := ins (6, aDQ) (by simp)
   have i8 : (stackArg σ 9).toNat ≤ fK σ := ins (8, aQI) (by simp)
   intro j hj
-  rw [hvj j hj]
+  rw [cck_hv σ]
   exact vals_lt (Nat.two_pow_pos _) (bytesV_lt (by omega)) (bytesV_lt (by have := pre.e2; omega))
     (bytesV_lt (k := (stackArg σ 1).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 3).toNat) (by omega))
     (bytesV_lt (k := (stackArg σ 5).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 7).toNat) (by omega))
