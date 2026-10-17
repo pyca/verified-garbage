@@ -205,7 +205,7 @@ impl<P, T> TestFile<P, T> {
     /// group (e.g. its key, made once for all its tests), as [`par_each`]
     /// does.
     #[cfg(all(
-        any(target_arch = "x86_64", target_arch = "aarch64"),
+        any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
         feature = "alloc"
     ))]
     pub fn par_tests_with<S: Sync>(
