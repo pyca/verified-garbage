@@ -12,10 +12,6 @@
 use super::{Error, Secp256k1, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_secp256k1::vg_ec_secp256k1_public_key;
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_verify;
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_secp256k1_rfc6979::{
-    vg_ecdsa_secp256k1_rfc6979_sign, vg_ecdsa_secp256k1_rfc6979_sign_hash_shani,
-};
 #[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign;
 #[cfg(target_arch = "x86_64")]
@@ -58,8 +54,7 @@ impl sealed::Functions<Secp256k1> for Sha256 {
     #[cfg(target_arch = "x86")]
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         super::rfc6979::sign::<Sha256, 32, 64>(
-            vg_ecdsa_secp256k1_rfc6979_sign,
-            vg_ecdsa_secp256k1_rfc6979_sign_hash_shani,
+            super::rfc6979_x86::secp256k1(crate::cpu::detected()),
             d,
             digest,
         )

@@ -12,10 +12,6 @@
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_brainpoolp512r1_rfc6979::{
-    vg_ecdsa_brainpoolp512r1_rfc6979_sign, vg_ecdsa_brainpoolp512r1_rfc6979_sign_hash_shani,
-};
 #[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign;
 #[cfg(target_arch = "aarch64")]
@@ -58,8 +54,7 @@ impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     #[cfg(target_arch = "x86")]
     fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
         super::rfc6979::sign::<Sha512, 64, 128>(
-            vg_ecdsa_brainpoolp512r1_rfc6979_sign,
-            vg_ecdsa_brainpoolp512r1_rfc6979_sign_hash_shani,
+            super::rfc6979_x86::brainpoolp512r1(crate::cpu::detected()),
             d,
             digest,
         )

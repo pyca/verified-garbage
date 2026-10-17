@@ -12,10 +12,6 @@
 use super::{BrainpoolP384r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp384r1::vg_ec_brainpoolp384r1_public_key;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_brainpoolp384r1_rfc6979::{
-    vg_ecdsa_brainpoolp384r1_rfc6979_sign, vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani,
-};
 #[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign;
 #[cfg(target_arch = "aarch64")]
@@ -58,8 +54,7 @@ impl sealed::Functions<BrainpoolP384r1> for Sha384 {
     #[cfg(target_arch = "x86")]
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         super::rfc6979::sign::<Sha384, 48, 96>(
-            vg_ecdsa_brainpoolp384r1_rfc6979_sign,
-            vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani,
+            super::rfc6979_x86::brainpoolp384r1(crate::cpu::detected()),
             d,
             digest,
         )

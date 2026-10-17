@@ -14,10 +14,6 @@ use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_p384_rfc6979::{
-    vg_ecdsa_p384_rfc6979_sign, vg_ecdsa_p384_rfc6979_sign_hash_shani,
-};
 #[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
 #[cfg(target_arch = "aarch64")]
@@ -52,8 +48,7 @@ impl sealed::Functions<P384> for Sha384 {
     #[cfg(target_arch = "x86")]
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         super::rfc6979::sign::<Sha384, 48, 96>(
-            vg_ecdsa_p384_rfc6979_sign,
-            vg_ecdsa_p384_rfc6979_sign_hash_shani,
+            super::rfc6979_x86::p384(crate::cpu::detected()),
             d,
             digest,
         )

@@ -15,10 +15,6 @@ use super::{Error, P521, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify_adx;
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_p521_rfc6979::{
-    vg_ecdsa_p521_rfc6979_sign, vg_ecdsa_p521_rfc6979_sign_hash_shani,
-};
 #[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign;
 #[cfg(target_arch = "aarch64")]
@@ -65,8 +61,7 @@ impl sealed::Functions<P521> for Sha512 {
     #[cfg(target_arch = "x86")]
     fn sign(d: &[u8; 66], digest: &[u8; 64]) -> Result<[u8; 132], Error> {
         super::rfc6979::sign::<Sha512, 66, 132>(
-            vg_ecdsa_p521_rfc6979_sign,
-            vg_ecdsa_p521_rfc6979_sign_hash_shani,
+            super::rfc6979_x86::p521(crate::cpu::detected()),
             d,
             digest,
         )

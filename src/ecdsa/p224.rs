@@ -12,10 +12,6 @@
 use super::{Error, P224, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p224::vg_ec_p224_public_key;
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify;
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_p224_rfc6979::{
-    vg_ecdsa_p224_rfc6979_sign, vg_ecdsa_p224_rfc6979_sign_hash_shani,
-};
 #[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign;
 #[cfg(target_arch = "x86_64")]
@@ -58,8 +54,7 @@ impl sealed::Functions<P224> for Sha224 {
     #[cfg(target_arch = "x86")]
     fn sign(d: &[u8; 28], digest: &[u8; 28]) -> Result<[u8; 56], Error> {
         super::rfc6979::sign::<Sha224, 28, 56>(
-            vg_ecdsa_p224_rfc6979_sign,
-            vg_ecdsa_p224_rfc6979_sign_hash_shani,
+            super::rfc6979_x86::p224(crate::cpu::detected()),
             d,
             digest,
         )

@@ -1,19 +1,23 @@
-//! Deterministic signatures on x86 with the hash function as an argument:
-//! one verified function per curve and [`Tier`] of the hash functions
-//! (`vg_ecdsa_<curve>_rfc6979_sign`, `…_hash_shani`, contract
-//! `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`), which takes the hash
-//! function by its number (`VG.Spec.HashId`).
+//! Deterministic signatures with the hash function as an argument: one
+//! verified function per curve (`vg_ecdsa_<curve>_rfc6979_sign`, contract
+//! `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`), for each tier of
+//! implementations of the hash functions ([`Tier`](crate::hashes::tier::Tier)),
+//! which takes the hash function by its number (`VG.Spec.HashId`).
+//!
+//! What is the same on every architecture is here: the hash functions'
+//! numbers ([`HashId`]), the functions' type ([`SignFn`]) and the call
+//! ([`sign`]). Each architecture names its functions for each tier in a
+//! file of its own, `rfc6979_<arch>.rs`, whose `<curve>(f)` gives the
+//! function a CPU with the features `f` runs best.
 
 #![cfg(target_arch = "x86")]
 
 use super::Error;
-use crate::cpu::detected;
 use crate::hashes::HashFunction;
 use crate::hashes::sha224::Sha224;
 use crate::hashes::sha256::Sha256;
 use crate::hashes::sha384::Sha384;
 use crate::hashes::sha512::Sha512;
-use crate::hashes::tier::Tier;
 use crate::zeroize::zeroize;
 
 /// A hash function, by the number the verified functions take
@@ -39,7 +43,7 @@ impl HashId for Sha512 {
 }
 
 /// A verified `vg_ecdsa_<curve>_rfc6979_sign`, for scalars of `Q` bytes and
-/// signatures of `S`.
+/// signatures of `S`: `(out, d, digest, digest_len, scratch, hash)`.
 pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
     *mut [u8; S],
     *const [u8; Q],
@@ -50,28 +54,24 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
 ) -> u32;
 
 /// The signature `r ‖ s` of `digest`, the hash with `H`, with the key `d`,
-/// by the curve's function of this CPU's tier: `base` or `shani`.
+/// by `sign`, which the architecture's `<curve>` chose for the features
+/// this CPU has.
 pub(super) fn sign<H: HashId, const Q: usize, const S: usize>(
-    base: SignFn<Q, S>,
-    shani: SignFn<Q, S>,
+    sign: SignFn<Q, S>,
     d: &[u8; Q],
     digest: &H::Output,
 ) -> Result<[u8; S], Error> {
-    let sign = match Tier::select(detected()) {
-        Tier::Base => base,
-        Tier::ShaNi => shani,
-    };
     let digest = digest.as_ref();
     let mut out = [0; S];
     let mut scratch = [0u64; 1024];
     // SAFETY: `out` is valid for reads and writes of `S` bytes, `d` for
     // reads of `Q`, `digest` of `digest.len()` (`H::OUTPUT_SIZE`, the
-    // length of the values of the hash function `H::ID` names, 1 to 5) and
-    // `scratch` for reads and writes of 8192; `out` and `scratch` are
-    // distinct objects from each other and the others, so none overlaps
+    // length of the values of the hash function `H::ID` names, one of 1 to
+    // 7) and `scratch` for reads and writes of 8192; `out` and `scratch`
+    // are distinct objects from each other and the others, so none overlaps
     // another or the call's stack frame, and, as Rust objects, none wraps
-    // around the address space. `sign` needs no CPU feature that the tier
-    // selected for this CPU does not.
+    // around the address space. `sign` needs no CPU feature that this CPU
+    // lacks (it was chosen for the features detected).
     let ok = unsafe {
         sign(
             &mut out,
