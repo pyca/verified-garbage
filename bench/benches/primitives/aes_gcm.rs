@@ -25,6 +25,16 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
+    // Measurement only: the buffer-offset sweep.
+    if std::env::var_os("VG_NO_SWEEP").is_none() {
+        for o in [0, 1, 5, 8, 13, 16, 32, 48, 4032] {
+            let same = Offsets { input: o, output: o, aad: o };
+            tls_record_rows(c, &[1024, 10000, 16384], same, &format!("-same{o}"));
+            let split = Offsets { input: o, output: o + 2048, aad: o };
+            tls_record_rows(c, &[1024, 10000, 16384], split, &format!("-split{o}"));
+        }
+        return;
+    }
     use std::hint::black_box;
 
     use aws_lc_rs::aead::{AES_128_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
