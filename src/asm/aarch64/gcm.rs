@@ -1008,6 +1008,812 @@ ret
     )
 }
 
+/// The CPU features `vg_ghash_with_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_GHASH_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// `vg_ghash` with the 8 prepared powers of the hash subkey `H` at `h` at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
+///
+/// Contract: `VG.Spec.Gcm.ghashWithPowersContract`. Constant time: only the pointers and `n` may affect timing.
+///
+/// Uses PMULL as `vg_ghash_aes` does, loading `H'` to `H'⁸` (`H'ᵏ = Hᵏ · x⁻¹`) from `pw` instead of computing them.
+///
+/// # Safety
+///
+/// * `h` must be valid for reads of 16 bytes.
+/// * `y` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `*pw` must be what a `*_store_powers` function wrote for the hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and that subkey).
+/// * `y` and `scratch` must not overlap each other, `h`, `data` or `pw` (distinct Rust objects never do).
+/// * None of `h`, `y`, `data`, `scratch` and `pw` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ghash_with_powers_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *const [u64; 16]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+ldr q16, [x5, #16]
+ext v24.16b, v16.16b, v16.16b, #8
+ldr q17, [x5, #0]
+ext v25.16b, v17.16b, v17.16b, #8
+ldr q18, [x5, #48]
+ext v26.16b, v18.16b, v18.16b, #8
+ldr q19, [x5, #32]
+ext v27.16b, v19.16b, v19.16b, #8
+ldr q20, [x5, #80]
+ext v28.16b, v20.16b, v20.16b, #8
+ldr q21, [x5, #64]
+ext v29.16b, v21.16b, v21.16b, #8
+ldr q22, [x5, #112]
+ext v30.16b, v22.16b, v22.16b, #8
+ldr q23, [x5, #96]
+ext v31.16b, v23.16b, v23.16b, #8
+movz x5, #49664, lsl #48
+dup v1.2d, x5
+ldr q0, [x1, #0]
+rev64 v0.16b, v0.16b
+lsr x5, x3, #3
+cbz x5, 20f
+22:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v30.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v30.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v22.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v22.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v29.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v29.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v21.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v21.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v28.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v28.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v20.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v20.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #64]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #80]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #96]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #112]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v31.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v31.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v23.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v23.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #128
+sub x3, x3, #8
+lsr x5, x3, #3
+cbnz x5, 22b
+lsr x6, x3, #2
+cbz x6, 23f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #64
+sub x3, x3, #4
+lsr x5, x3, #3
+b 24f
+23:
+24:
+lsr x6, x3, #1
+cbz x6, 25f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #32
+sub x3, x3, #2
+lsr x5, x3, #3
+b 26f
+25:
+26:
+cbz x3, 27f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+b 28f
+27:
+28:
+b 21f
+20:
+cbz x3, 29f
+211:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+cbnz x3, 211b
+b 210f
+29:
+210:
+21:
+rev64 v0.16b, v0.16b
+str q0, [x1, #0]
+ret
+.arch_extension noaes
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_ghash_store_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_GHASH_STORE_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// `vg_ghash`, which also writes to `*pw` the 8 prepared powers of its hash subkey `H`: at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`). Its other results are those of `vg_ghash`. The powers are secret, as the hash subkey is: they may not affect timing. Contract: `VG.Spec.Gcm.ghashStorePowersContract`. Only the pointers and `n` may affect timing.
+///
+/// Uses PMULL as `vg_ghash_aes` does, computing `H'` to `H'⁸` on every call and storing them to `pw` after the hash.
+///
+/// # Safety
+///
+/// * `h` must be valid for reads of 16 bytes.
+/// * `y` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `pw` must be valid for reads and writes of 128 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `y`, `scratch` and `pw` must not overlap each other, `h` or `data` (distinct Rust objects never do).
+/// * None of `h`, `y`, `data`, `scratch` and `pw` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ghash_store_powers_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *mut [u64; 16]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+add x8, x5, #0
+ldr q6, [x0, #0]
+rev64 v6.16b, v6.16b
+movz x5, #49664, lsl #48
+dup v1.2d, x5
+movz x6, #3, lsl #0
+movz x7, #17920, lsl #48
+mov v17.d[0], x6
+mov v17.d[1], x7
+mov v25.d[0], x7
+mov v25.d[1], x6
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v24.16b, v5.16b, v7.16b
+ext v16.16b, v24.16b, v24.16b, #8
+ldr q0, [x1, #0]
+rev64 v0.16b, v0.16b
+lsr x5, x3, #3
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v24.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v24.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v24.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v24.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v25.16b, v5.16b, v7.16b
+ext v17.16b, v25.16b, v25.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v25.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v25.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v25.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v25.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v26.16b, v5.16b, v7.16b
+ext v18.16b, v26.16b, v26.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v25.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v25.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v25.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v25.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v27.16b, v5.16b, v7.16b
+ext v19.16b, v27.16b, v27.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v28.16b, v5.16b, v7.16b
+ext v20.16b, v28.16b, v28.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v29.16b, v5.16b, v7.16b
+ext v21.16b, v29.16b, v29.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v30.16b, v5.16b, v7.16b
+ext v22.16b, v30.16b, v30.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v31.16b, v5.16b, v7.16b
+ext v23.16b, v31.16b, v31.16b, #8
+cbz x5, 20f
+22:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v30.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v30.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v22.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v22.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v29.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v29.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v21.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v21.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v28.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v28.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v20.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v20.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #64]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #80]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #96]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #112]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v31.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v31.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v23.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v23.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #128
+sub x3, x3, #8
+lsr x5, x3, #3
+cbnz x5, 22b
+lsr x6, x3, #2
+cbz x6, 23f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #64
+sub x3, x3, #4
+lsr x5, x3, #3
+b 24f
+23:
+24:
+lsr x6, x3, #1
+cbz x6, 25f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #32
+sub x3, x3, #2
+lsr x5, x3, #3
+b 26f
+25:
+26:
+cbz x3, 27f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+b 28f
+27:
+28:
+b 21f
+20:
+cbz x3, 29f
+211:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+cbnz x3, 211b
+b 210f
+29:
+210:
+21:
+rev64 v0.16b, v0.16b
+str q0, [x1, #0]
+str q16, [x8, #16]
+str q17, [x8, #0]
+str q18, [x8, #48]
+str q19, [x8, #32]
+str q20, [x8, #80]
+str q21, [x8, #64]
+str q22, [x8, #112]
+str q23, [x8, #96]
+ret
+.arch_extension noaes
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_aes_gcm_init_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
