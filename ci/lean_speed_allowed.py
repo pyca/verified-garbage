@@ -181,7 +181,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Sha256/X86_64/Compress.lean": 1,
     "VerifiedGarbage/Proof/Sha256/X86_64/ShaNi/Compress.lean": 3,
     "VerifiedGarbage/Proof/Sha512/AArch64/Compress.lean": 6,
-    "VerifiedGarbage/Proof/Sha512/AArch64/Sha3/Compress.lean": 3,
+    "VerifiedGarbage/Proof/Sha512/AArch64/Sha3/Compress.lean": 2,
     "VerifiedGarbage/Proof/Sha512/X86_64/Avx2/Compress.lean": 8,
     "VerifiedGarbage/Proof/Sha512/X86_64/Avx2Rolled/Compress.lean": 2,
     "VerifiedGarbage/Proof/Sha512/X86_64/Compress.lean": 4,
