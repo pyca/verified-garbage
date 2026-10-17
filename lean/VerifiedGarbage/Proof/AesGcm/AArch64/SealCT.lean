@@ -118,8 +118,8 @@ abbrev SealEntered (w : Nat) (σ σ₀ τ : State) : Prop :=
     Frame [entryR (stackArg σ₀ w)] σ.mem τ.mem ∧ SavedAt τ.mem (stackArg σ₀ w) σ ∧ τ.rd = σ.rd ∧ τ.wr = σ.wr
 
 /-- `seal` after its entry, in two runs. -/
-theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
-    (h₁ : sealPreXW w extra₁ σ₁) (h₂ : sealPreXW w extra₂ σ₂)
+theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
+    (h₁ : sealPreXW w extra₁ σ₁ extraW₁) (h₂ : sealPreXW w extra₂ σ₂ extraW₂)
     (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered w σ₁ σ₁ τ₁) (a₂ : SealEntered w σ₂ σ₁ τ₂) :
     RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
   unfold sealRest

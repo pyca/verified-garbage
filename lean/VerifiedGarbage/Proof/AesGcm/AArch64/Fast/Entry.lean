@@ -57,8 +57,8 @@ theorem entry_keeps {s : State} {k j : Nat} {W : Addr} (hk : k % 8 = 0 ∧ k < 3
     rw [og₃ _ (by decide), g₂ _ (by decide), g₁, g₀ _ (by decide)]
 
 /-- The entry of `seal`, with `x4`–`x7` kept. -/
-theorem fastEntry_ok {w : Nat} (hw : w = 1 ∨ w = 2) {extra : List Region} {s : State}
-    (hs : sealPreXW w extra s) :
+theorem fastEntry_ok {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State}
+    (hs : sealPreXW w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 0)) s fun s₁ =>
       SealEntry w s s₁ ∧ ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs

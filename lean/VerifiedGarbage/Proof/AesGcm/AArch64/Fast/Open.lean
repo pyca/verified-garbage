@@ -578,8 +578,8 @@ theorem openRunWith_postE (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Add
 
 /-- `openWithE_wp` for a TLS record with an allowed tag length, whose call
 may also write `ex` and establish `I` (`openRunWith_postX`). -/
-theorem openWithEX_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region}
-    {s : State} {ex : List Region} {I : Mem → Prop} (hs : openPreXW w extra s)
+theorem openWithEX_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
+    {s : State} {ex : List Region} {I : Mem → Prop} (hs : openPreXW w extra s extraW)
     (hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12) (htl : Spec.Gcm.tagLenOk (stackArg s 1).toNat = true)
     (hexW : ∀ r ∈ ex, (workR (stackArg s w)).Disjoint r)
     (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
@@ -614,8 +614,8 @@ theorem openWithEX_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w =
 argument `w`, and its whole blocks hashed by `cl`, which hashes as a call of
 `vg_ghash` when run with memory changed since the entry only in the working
 space and the text. -/
-theorem openWithE_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region}
-    {s : State} (hs : openPreXW w extra s)
+theorem openWithE_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
+    {s : State} (hs : openPreXW w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →

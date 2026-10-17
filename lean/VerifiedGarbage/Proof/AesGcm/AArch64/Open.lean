@@ -600,7 +600,7 @@ theorem OpenIn.tagIn {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s s'
     o.sv.frame f (saved_tag16 L), o.sp₀, rd.trans o.rd₀, wr.trans o.wr₀⟩
 
 /-- `openPre`'s common arguments. -/
-theorem openCore {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w extra s) :
+theorem openCore {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW w extra s extraW) :
     oneCore (w + 1) w s := by
   simp only [openPreXW] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, -, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
@@ -608,7 +608,7 @@ theorem openCore {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w e
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `openPre` gives. -/
-theorem openLay {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w extra s) :
+theorem openLay {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW w extra s extraW) :
     OneLay s (w + 1) w ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR (stackArg s w)) := by
   have hs' := hs
@@ -617,8 +617,8 @@ theorem openLay {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w ex
   exact ⟨oneLay (openCore hs), covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- `open`'s first block: the entry, the tag length and the tag. -/
-theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region} {s : State}
-    (hs : openPreXW w extra s) :
+theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region} {s : State}
+    (hs : openPreXW w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧

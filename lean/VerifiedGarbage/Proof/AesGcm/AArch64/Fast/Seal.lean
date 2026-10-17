@@ -98,7 +98,7 @@ argument `w`, and its whole blocks hashed by `cl`, which hashes as a call of
 `vg_ghash` when run with memory changed since the entry only in the working
 space and the text. -/
 theorem sealWithE_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {w : Nat}
-    (hw : w = 1 ∨ w = 2) {extra : List Region} {s : State} (hs : sealPreXW w extra s)
+    (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State} (hs : sealPreXW w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
@@ -123,8 +123,8 @@ theorem sealWithE_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmul
 additional data), whose call may also write `ex` and establish `I`
 (`runWithPX_ok`). -/
 theorem sealWithEX_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {w : Nat}
-    (hw : w = 1 ∨ w = 2) {extra : List Region} {s : State} {ex : List Region} {I : Mem → Prop}
-    (hs : sealPreXW w extra s) (hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12)
+    (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State} {ex : List Region} {I : Mem → Prop}
+    (hs : sealPreXW w extra s extraW) (hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12)
     (hexW : ∀ r ∈ ex, (workR (stackArg s w)).Disjoint r)
     (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)
