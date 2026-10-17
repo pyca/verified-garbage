@@ -55,7 +55,7 @@ use core::fmt;
 use crate::cpu::detected;
 use crate::rsa::{PrivateKey, PublicKey};
 pub use crate::rsa_pkcs1_sig::Hash;
-use crate::rsa_pss::scratch_words;
+use crate::rsa_pss::{public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
 
 /// Why an encryption or a decryption was refused.
@@ -239,14 +239,14 @@ fn encrypt_with<const L: usize>(
     let mut seed = [0u8; L];
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
-    let mut scratch = key.verify_scratch.take(scratch_words(k), true);
+    let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
     let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
     // overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1056`; `pre` holds the verified
+    // `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
     // CPU has the features of `f`, which `functions` chose for the features
     // detected (its `backend_features` test checks that they need no others).

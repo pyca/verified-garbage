@@ -59,7 +59,7 @@ use crate::arch::rsa_pkcs1_enc::{
 };
 use crate::cpu::detected;
 use crate::hashes::sha256::Sha256Backend;
-use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words, trim};
+use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words, trim};
 use crate::zeroize::zeroize;
 
 /// Why an encryption or a decryption was refused. An invalid padding is
@@ -143,7 +143,7 @@ pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
 fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
     let k = key.modulus_len();
     let mut out = vec![0u8; k];
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = vec![0u64; public_scratch_words(k)];
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_encrypt_precomputed,
@@ -156,7 +156,7 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
     // distinct Rust allocations; `PublicKey::new` and `encrypt` give
     // `64 ≤ n_len ≤ 1024`, `out_len = n_len`, `1 ≤ e_len ≤ 5 ≤ n_len`,
     // `msg_len + 11 ≤ n_len`, `ps_len = n_len - msg_len - 3` and
-    // `scratch_len = 16 n_len + 32`; `pre` holds the verified
+    // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `pre` holds the verified
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
     // CPU supports the selected function's features.
     let r = unsafe {

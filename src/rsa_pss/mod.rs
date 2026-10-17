@@ -262,6 +262,12 @@ pub(crate) fn scratch_words(n_len: usize) -> usize {
     crate::rsa::scratch_words(n_len) + 1024
 }
 
+/// The words of working space verification needs for an `n_len`-byte
+/// modulus (`VG.Spec.RsaPss.publicScratchWords`).
+pub(crate) fn public_scratch_words(n_len: usize) -> usize {
+    crate::rsa::public_scratch_words(n_len) + 1024
+}
+
 /// RSASSA-PSS-SIGN (RFC 8017 §8.1.1) of the hash value `digest` of the hash
 /// function `hash`, with MGF1 over `mgf1_hash` (which must be `hash`) and a
 /// salt of `salt_len` random bytes: the signature, as long as the modulus.
@@ -330,7 +336,7 @@ pub fn verify(
         SaltLength::Len(l) => (l, 0),
         SaltLength::Any => (0, 1),
     };
-    let mut scratch = key.verify_scratch.take(scratch_words(k), false);
+    let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
     let r = with_functions!(hash, |fns| call_verify(
         fns.1,
         key,
@@ -406,13 +412,13 @@ fn call_verify<const N: usize>(
     scratch: &mut [u64],
 ) -> u32 {
     let digest: &[u8; N] = digest.try_into().unwrap();
-    assert!(signature.len() == key.n.len() && scratch.len() == scratch_words(key.n.len()));
+    assert!(signature.len() == key.n.len() && scratch.len() == public_scratch_words(key.n.len()));
     let pre = key.pre(scratch);
     // SAFETY: each pointer is valid for its length (`scratch` for writes,
     // `digest` for the hash function's values), and none overlaps another or
     // wraps around, as they are distinct Rust allocations; `PublicKey::new`
     // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
-    // and `scratch_len = 16 n_len + 1056`; and the CPU has the features of
+    // and `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; and the CPU has the features of
     // the function `functions` chose. `pre` holds the verified precomputed
     // values for `key.n`, with their required length.
     unsafe {

@@ -45,7 +45,7 @@ use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_verify_precomputed_adx,
 };
 use crate::cpu::detected;
-use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words};
+use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
 
 /// The hash function of a hash value (`VG.Spec.RsaPkcs1Sig.Hash`), each with
 /// the number the verified functions take (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
@@ -187,7 +187,7 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
 /// values and is not wiped.
 pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
     let k = key.n.len();
-    let mut scratch = key.verify_scratch.take(scratch_words(k), false);
+    let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
@@ -197,7 +197,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len + 32`; and `pre`
+    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; and `pre`
     // holds the verified precomputation for `key.n`, with `2 * ceil(n_len / 8)`
     // words. The CPU supports the selected function's features.
     let r = unsafe {
@@ -226,7 +226,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
 pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>, Error> {
     let k = key.n.len();
     let mut out = vec![0; hash.digest_len()];
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = vec![0u64; public_scratch_words(k)];
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_recover_precomputed,
@@ -238,7 +238,7 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`
     // and `1 ≤ e_len ≤ 5 ≤ n_len`; `hash` is in `0..=11` and `out_len` is the
-    // length of its values; `scratch_len = 16 n_len + 32`; `pre` holds the
+    // length of its values; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `pre` holds the
     // verified precomputation for `key.n`, with `2 * ceil(n_len / 8)` words;
     // and the CPU supports the selected function's features.
     let r = unsafe {
