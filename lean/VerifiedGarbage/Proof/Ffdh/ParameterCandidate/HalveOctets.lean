@@ -6,7 +6,6 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Ring
 
 /-! # FFDH parameter candidates: halving a big-endian encoding -/
 
@@ -51,11 +50,15 @@ theorem halfOctets_value (bs : List Byte) {carry : Nat} (hc : carry ≤ 1) :
           2 * ((b.toNat / 2 + 128 * carry) * 256 ^ bs.length) := by
       rw [Nat.pow_succ]
       calc
-        _ = (carry * 256 + b.toNat) * 256 ^ bs.length + Spec.Rsa.os2ip bs := by ring
+        _ = (carry * 256 + b.toNat) * 256 ^ bs.length + Spec.Rsa.os2ip bs := by
+          simp only [Nat.add_mul, Nat.mul_assoc, Nat.mul_comm,
+            Nat.add_assoc, Nat.add_left_comm, Nat.add_comm]
         _ = (2 * (b.toNat / 2 + 128 * carry) + b.toNat % 2) * 256 ^ bs.length + Spec.Rsa.os2ip bs := by
           congr 2
           omega
-        _ = _ := by ring
+        _ = _ := by
+          simp only [Nat.add_mul, Nat.mul_add, Nat.mul_assoc, Nat.mul_left_comm, Nat.mul_comm,
+            Nat.add_assoc, Nat.add_left_comm, Nat.add_comm]
     rw [he, Nat.add_mul_div_left _ _ (by decide)]
     exact Nat.add_comm _ _
 

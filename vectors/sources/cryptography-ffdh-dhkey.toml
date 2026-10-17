@@ -1,0 +1,5 @@
+name = "pyca/cryptography FFDH key components (dhkey.txt)"
+directories = ["cryptography-ffdh/dhkey"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/874145c30c2143546ce30c38eccd88f3bae3425c/vectors/cryptography_vectors/asymmetric/DH/dhkey.txt"
+sha256 = "7b2061999d11bb24052804ea97f06c67112673d7238f2856849d051e3cc065e8"
+retrieved = 2026-10-15
