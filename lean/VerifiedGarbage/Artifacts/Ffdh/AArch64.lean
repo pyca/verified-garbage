@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Verified
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -67,6 +69,18 @@ def artifacts : List Artifact := [
         masked by y's validity, zeros for 3, without a branch."]
     code := Impl.Ffdh.AArch64.Domain.GenerateKey.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.GenerateKey.gk_verified _ _ _ }]
+    verified := Proof.Ffdh.AArch64.GenerateKey.gk_verified _ _ _ },
+  Spec.Ffdh.keyInitApi.artifact target {
+    code := Impl.Ffdh.AArch64.KeyGeneration.init
+    verified := Proof.Ffdh.AArch64.KeyGeneration.init_verified },
+  Spec.Ffdh.keySearchApi.artifact target {
+    stack := 48
+    notes := ["The whole key search runs in verified code: both rejection budgets, the \
+        octets each attempt consumes, and the next entropy request. Each attempt calls \
+        `vg_ffdh_generate_key`, in a frame of 32 bytes holding its stack arguments, within \
+        a frame saving `x30`. Timing depends on the domain, the controller's public words and \
+        the attempts' statuses."]
+    code := Proof.Ffdh.AArch64.KeyGeneration.keyCode
+    verified := Proof.Ffdh.AArch64.KeyGeneration.key_verified_base }]
 
 end VG.Artifacts.Ffdh.AArch64
