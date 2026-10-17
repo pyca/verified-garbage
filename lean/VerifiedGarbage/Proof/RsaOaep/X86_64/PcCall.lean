@@ -127,7 +127,7 @@ theorem call_pre {s t : State} (hp : PPre H s) (hsp : t.gpr .rsp = fb s)
     by rw [← hsi']; exact hp.wO, hp.preWrap, hp.wE,
     by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm; omega,
     by rw [r1, r2]; unfold oRsa; omega,
-    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by rw [r1]; unfold Spec.Rsa.scratchWords; omega⟩
+    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by rw [r1]; unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega⟩
 
 theorem call_covers {s t : State} (hp : PPre H s) (hrd : t.rd = s.rd) (hwr : t.wr = [frR s, outR s, scrR s]) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by

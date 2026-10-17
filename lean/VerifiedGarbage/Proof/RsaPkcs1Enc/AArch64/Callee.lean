@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Rsa.Scratch
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the public-key operation, as a callee
@@ -88,6 +89,7 @@ theorem pub_pre {S : Nat} {s : State} (h : (pubK S).pre s) :
   all_goals first
     | with_reducible assumption
     | with_reducible exact Region.Disjoint.symm ‹_›
+    | exact VG.Proof.Rsa.publicScratch_le ‹_› ‹_›
 
 theorem pub_post {S : Nat} {s s' : State}
     (h : (Spec.Rsa.publicCheckedContract AArch64.abi (S + 1)).post s s') : (pubK S).post s s' := by
