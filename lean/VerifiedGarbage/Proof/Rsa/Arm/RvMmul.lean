@@ -98,13 +98,8 @@ theorem montOp_after {P : RP} {σ s : State} {o a b T : Nat} {A : Nat → Nat} {
     refine ⟨P.rS, List.mem_singleton_self _, ?_⟩
     rw [show State.addr P.M0 = State.addr P.B + BitVec.ofNat 64 P.oM from M0_addr sz hf]
     exact Offset.sub_base _ (by rw [sz.endM]; exact Nat.le_trans (arr_mono (by decide)) sz.fits)
-  have ho4 : o ≠ 4 := by have := hi.1; omega
-  refine ⟨h.bs.of_frame fS rest.sp rest.rd rest.wr, ⟨ArithmeticReady.mr ar, m0.trans hm.n0, ?_⟩, ?_, ?_, ?_, ?_, h.live_lt,
+  refine ⟨h.bs.of_frame fS rest.sp rest.rd rest.wr, ⟨ArithmeticReady.mr ar, m0.trans hm.n0⟩, ?_, ?_, ?_, ?_, h.live_lt,
     h.liveW_lt, h.ls_ok, ?_⟩
-  · rw [numAt_keep sz hf k (i := 4) (by decide) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro j (rfl | rfl | rfl) <;> simp [mBase] <;> omega)
-      (by simp)]
-    exact hm.r2
   · refine (BitVec.eq_of_toNat_eq ?_).trans h.cnt
     exact k.slot (e := 16) (by decide) (by simp)
   · intro j hj hjo

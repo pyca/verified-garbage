@@ -245,10 +245,11 @@ def clrTop (j : Nat) : List Instr :=
 then the context and `[o]`'s top words cleared. -/
 def mmul (o a b : Nat) : List (Prog isa) := [.block mont0, montOp o a b, .block (ctx ++ clrTop (mBase + o))]
 
-/-- The working space, `n` and `R² mod n`; `R mod n` (from `1 · R²`) and
-`n - R mod n`. -/
-def mont : Prog isa := seqs ([.block (ctxw ++ montSet), setup, .block [.ldrSp .r4 aoN, .ldrSp .r6 aoK], precompute,
-  .block ctx, copy mXm aOne] ++ mmul iXm iXm iR2 ++ [copy aO mXm, sub3 aNg aN aO])
+/-- The numbers 0 (`n - n`) and 1, the working space, `n` and `R² mod n`
+(with its top words cleared); `R mod n` (from `1 · R²`) and `n - R mod n`. -/
+def mont : Prog isa := seqs ([.block ctxw, sub3 aZ aN aN, copy aOne aZ, .block (setOne aOne ++ montSet), setup,
+  .block [.ldrSp .r4 aoN, .ldrSp .r6 aoK], precompute, .block (ctx ++ clrTop mR2), copy mXm aOne,
+  seqs (mmul iXm iXm iR2), copy aO mXm, sub3 aNg aN aO])
 
 /-! ## A candidate -/
 
@@ -261,7 +262,7 @@ def candSet : Prog isa := seqs [copy mG aZ,
 /-- A bit of `r`: the multiplicand `g^(2^i)` or 1, by the bit of `r`'s copy
 shifted out; `y` times it, and `g^(2^i)` squared. -/
 def expBody : Prog isa := seqs ([.block (ctxW ++ bitOf sBit wRc ++ [.mov .r11 (.imm 0)]), half wRc,
-  .block ctxw, sel mXm aO mG sBit] ++ mmul iY iY iXm ++ mmul iG iG iG ++ [.block cntNext])
+  .block ctxw, sel mXm aO mG sBit, seqs (mmul iY iY iXm), seqs (mmul iG iG iG), .block cntNext])
 
 /-- `y` to the power `r`. -/
 def expLoop : Prog isa := .loop expBody .ne
@@ -292,7 +293,7 @@ def sqMasks : List Instr :=
 def sqNext : List Instr := [.ldr .r1 .r8 sK, .dp .add .r1 .r1 (.imm 1), .str .r1 .r8 sK] ++ cntNext
 
 /-- A squaring under the masks. -/
-def sqBody : Prog isa := seqs (mmul iX iY iY ++ [eqAt sE1 mX aO, eqAt sE2 mX aNg, .block sqMasks,
+def sqBody : Prog isa := seqs ([seqs (mmul iX iY iY), eqAt sE1 mX aO, eqAt sE2 mX aNg, .block sqMasks,
   copy aU mY, sel mY aU mX sLive, .block sqNext])
 
 def sqLoop : Prog isa := .loop sqBody .ne
@@ -305,7 +306,7 @@ def candNext : List Instr :=
     .dp .and .r1 .r1 (.reg .r2), .subs .r1 .r1 (.imm 0)]
 
 /-- A candidate. -/
-def candBody : Prog isa := seqs ([candSet] ++ mmul iG iG iR2 ++ [expLoop, eqAt sE1 mY aO, eqAt sE2 mY aNg,
+def candBody : Prog isa := seqs ([candSet, seqs (mmul iG iG iR2), expLoop, eqAt sE1 mY aO, eqAt sE2 mY aNg,
   .block sqInit, sqLoop, .block candNext])
 
 /-- The candidates, from `sCand = 0`. -/
@@ -315,8 +316,8 @@ def candLoop : Prog isa :=
 /-! ## The factors -/
 
 /-- `ok` into the mask, and `y` out of Montgomery form. -/
-def finY : Prog isa := seqs ([.block [.ldr .r1 .r8 sOk, .str .r1 .r8 sMask], copy mXm aOne] ++
-  mmul iY iY iXm)
+def finY : Prog isa := seqs [.block [.ldr .r1 .r8 sOk, .str .r1 .r8 sMask], copy mXm aOne,
+  seqs (mmul iY iY iXm)]
 
 /-- `inverse`'s start: `(u, v, x₁, x₂) = (y - 1, n, 1, 0)`, its modulus `n`,
 the negated modulus and zero. -/
