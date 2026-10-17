@@ -33,8 +33,8 @@ abbrev accL (V : Nat → Byte) (D j : Nat) : BitVec 64 := accG (V oEm) (fun i =>
 
 theorem accHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {D : Nat} (hl : W 4 = BitVec.ofNat 64 D) (ws : List Region) :
-    WP isa (.block (scr .x11 oLh ++ scr .x13 oEm ++ ([.ldrb .x14 .x13 0, .ldrSp .x13 sHl] : List Instr) ++
-      scr .x12 (oEm + 1) ++ ([.add .x .x12 .x12 .x13] : List Instr))) u fun u' =>
+    WP isa (.block (scr .x11 oLh ++ ([.ldrSp .x13 sHl] : List Instr) ++ scr .x12 (oEm + 1) ++
+      ([.add .x .x12 .x12 .x13] : List Instr) ++ scr .x10 oEm ++ ([.ldrb .x14 .x10 0] : List Instr))) u fun u' =>
       Step F S ws u u' ∧ u'.mem = u.mem ∧ u'.gpr .x11 = off S oLh ∧ u'.gpr .x12 = off S (1 + D) ∧
       u'.gpr .x13 = BitVec.ofNat 64 D ∧ u'.gpr .x14 = accL V D 0 := by
   have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)

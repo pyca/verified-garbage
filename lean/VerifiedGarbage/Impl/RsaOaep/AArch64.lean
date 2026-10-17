@@ -299,8 +299,8 @@ def decFail : Prog isa :=
 
 /-- `acc := EM[0] ∨ ⋁ (lHash'[i] ⊕ lHash[i])`, to its slot. -/
 def accLh : Prog isa :=
-  .seq (.block (scr .x11 oLh ++ scr .x13 oEm ++ [.ldrb .x14 .x13 0, .ldrSp .x13 sHl] ++ scr .x12 (oEm + 1) ++
-      [.add .x .x12 .x12 .x13]))
+  .seq (.block (scr .x11 oLh ++ [.ldrSp .x13 sHl] ++ scr .x12 (oEm + 1) ++ [.add .x .x12 .x12 .x13] ++
+      scr .x10 oEm ++ [.ldrb .x14 .x10 0]))
     (.seq (.loop (.block [.ldrb .x10 .x11 0, .ldrb .x15 .x12 0, .logic .eor .x .x10 .x10 .x15,
         .logic .orr .x .x14 .x14 .x10, .addImm .x .x11 .x11 1, .addImm .x .x12 .x12 1, .subImm .x .x13 .x13 1])
         (.nonzero .x .x13))

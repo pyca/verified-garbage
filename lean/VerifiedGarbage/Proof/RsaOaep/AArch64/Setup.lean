@@ -68,7 +68,24 @@ theorem mgf_valid {H : Hash} {hH : Proof.Pbkdf2.Md.AArch64.HashOK H} (lk : Proof
   have := hH.sizes.DN
   omega
 
+/-- The `hLen` of the `k`th hash function of `hs` (0 if there is none). -/
+def lenAt (hs : List Hash) (k : Nat) : Nat := (hs[k]?.map (·.D)).getD 0
+
+theorem Num.lenAt {hs : List Hash} {k : Nat} {G : Hash} (h : Num hs k G) : lenAt hs k = G.D := by
+  rw [AArch64.lenAt, h.get]; rfl
+
 /-! ## The number and its length to their slots -/
+
+/-- The number to its slot, and in `x16`. -/
+theorem selHead_ok {u : State} {F S : Addr} (L : Lay u F S) {j sel k : Nat}
+    (hj : arg j % 8 = 0 ∧ arg j < 32768) (hsel : sel % 8 = 0 ∧ sel + 8 ≤ frameBytes)
+    (hld : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 (arg j)) 8)
+    (hv : u.mem.read (F + BitVec.ofNat 64 (arg j)) 8 = BitVec.ofNat 64 k) :
+    WP isa (.block [.ldrSp .x16 (arg j), .addSp .x9 0, .str .x .x16 .x9 sel]) u fun u' =>
+      u'.sp = u.sp ∧ u'.gpr .x16 = BitVec.ofNat 64 k := by
+  have ws : InRegions u.wr (F + BitVec.ofNat 64 sel) 8 := L.st hsel.2
+  have hs8 : sel < 32768 := by unfold frameBytes at hsel; omega
+  oaep_run [L.sp, hld, hv, hj.1, hj.2, hsel.1, hs8, ws, BitVec.add_zero]
 
 theorem selArg_ok {hs : List Hash} {k : Nat} {G : Hash} (hn : Num hs k G) (hD : G.D < 65536)
     {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W)
