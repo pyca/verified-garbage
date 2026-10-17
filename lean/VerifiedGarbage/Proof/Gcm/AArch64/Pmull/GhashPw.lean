@@ -136,17 +136,24 @@ theorem read_pwOff {s₀ : State} (h : Proof.Gcm.ghashWithAArch64.pre s₀) {k :
   have hr := h.2.2.2.2.2.2.2.2.2
   rcases Nat.even_or_odd' k with ⟨j, rfl | rfl⟩
   · obtain ⟨hv, -⟩ := hr (j - 1) (by omega)
-    rw [show 32 * (j - 1) = pwOff (2 * j) by
-      simp only [pwOff, Nat.mul_mod_right, ↓reduceIte]; omega] at hv
+    have h1 : pwOff (2 * j) = 32 * (j - 1) := by
+      simp only [pwOff, Nat.mul_mod_right, ↓reduceIte]; omega
+    have h2 : 2 * j = 2 * (j - 1) + 2 := by omega
     have hv' : s₀.mem.read (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff (2 * j))) 16 =
-        Spec.Gcm.preparedPower (Spec.Gcm.hpow (H₀ s₀) (2 * j)) := by
-      rw [show 2 * j = 2 * (j - 1) + 2 by omega]; exact hv
+        Spec.Gcm.preparedPower (Spec.Gcm.hpow (H₀ s₀) (2 * j)) :=
+      calc _ = s₀.mem.readW (s₀.gpr .x5 + BitVec.ofNat 64 (32 * (j - 1))) 128 := by
+              rw [h1, Mem.readW]; rfl
+        _ = _ := hv
+        _ = _ := by rw [← h2]
     rw [hv', x_φ_preparedPower_hpow]
   · obtain ⟨-, hv⟩ := hr j (by omega)
-    rw [show 16 + 32 * j = pwOff (2 * j + 1) by
-      simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega, Nat.one_ne_zero, ↓reduceIte]; omega] at hv
+    have h1 : pwOff (2 * j + 1) = 16 + 32 * j := by
+      simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega, Nat.one_ne_zero, ↓reduceIte]; omega
     have hv' : s₀.mem.read (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff (2 * j + 1))) 16 =
-        Spec.Gcm.preparedPower (Spec.Gcm.hpow (H₀ s₀) (2 * j + 1)) := hv
+        Spec.Gcm.preparedPower (Spec.Gcm.hpow (H₀ s₀) (2 * j + 1)) :=
+      calc _ = s₀.mem.readW (s₀.gpr .x5 + BitVec.ofNat 64 (16 + 32 * j)) 128 := by
+              rw [h1, Mem.readW]; rfl
+        _ = _ := hv
     rw [hv', x_φ_preparedPower_hpow]
 
 theorem loadPw_ok (k : Nat) (s : State) (hin : InRegions (s.rd ++ s.wr)
