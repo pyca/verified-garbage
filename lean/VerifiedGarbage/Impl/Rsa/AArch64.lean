@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64
+public import VerifiedGarbage.Impl.Bignum.AArch64.R2Div
 
 /-!
 # The RSA public-key operations on AArch64
@@ -60,7 +61,7 @@ def sqs (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 /-- `R² mod m` into array `aR2`: `2^(b - 1)` for the bit length `b` of `m`,
 doubled `64 - (b - 1) mod 64 + w` times (`2^w R mod m`), then squared six
 times (`sqs`). -/
-def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
+def r2StepsOld (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block [ldh .x12 sW, ldh .x8 (sArr aN), .subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x8 .x4,
     ld .x3 .x4],
   topBit,
@@ -69,6 +70,11 @@ def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block [ldh .x13 sCnt, ldh .x12 sW, .add .x .x13 .x13 .x12],
   doubles aN aAcc aTmp aR2 sCnt,
   sqs mul]
+
+/-- `R² mod m` into array `aR2`: by `w` word steps of long division
+(`R2Div.fast`) when the top bit of `m` is set, as for RSA moduli of a whole
+number of words, and by `r2StepsOld` otherwise. -/
+def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [R2Div.choice (seqs (r2StepsOld mul))]
 
 /-! ## `vg_rsa_public_precompute`
 
