@@ -825,6 +825,32 @@ ldr x22, [x23, #712]
 ldr x24, [x23, #720]
 ldr x30, [x23, #728]
 ldr x23, [x23, #736]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
 add sp, sp, #1872
 ret
 .p2align 6",
@@ -1967,6 +1993,16 @@ ldr x22, [x23, #712]
 ldr x24, [x23, #720]
 ldr x30, [x23, #728]
 ldr x23, [x23, #736]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
 add sp, sp, #1872
 ret
 .arch_extension nosha3

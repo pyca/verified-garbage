@@ -428,6 +428,10 @@ ldr x22, [x23, #136]
 ldr x24, [x23, #144]
 ldr x30, [x23, #152]
 ldr x23, [x23, #160]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #168]
+str x17, [x16, #176]
 add sp, sp, #384
 ret
 .p2align 6",

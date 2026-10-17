@@ -18,7 +18,8 @@ suffix.
 functions may use for a frame saving `x30`. `init_scratch` and
 `finalize_scratch`, with their working space as an argument, are what
 PBKDF2's code calls; `finalize` keeps its working space in a frame of its own,
-above those. `init` takes a key of any length
+above those, zeroing where the compression function leaves the schedule of
+the outer block and the inner digest (`finCode`). `init` takes a key of any length
 (`Impl/Pbkdf2/Md/AnyKey/AArch64.lean`): it runs `init_scratch` in a frame of
 its own for a key of at most a block, zeroing the part of it where the
 compression function leaves the schedule of the padded keys (`MdHash.wipe`,
@@ -42,7 +43,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     features := v.features },
   v.I.finalizeApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
+    code := Proof.Pbkdf2.Md.AArch64.finCode v.H v.I v.wipe
     stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
     verified := v.hmacFinF
     features := v.features },

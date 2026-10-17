@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Hmac.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe2
+public import VerifiedGarbage.Proof.Hmac.AnyKey
+public import VerifiedGarbage.Impl.Pbkdf2.Md.Arm
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -61,6 +64,34 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     rfl rfl rfl hb
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.finalizePost_local I.S _ hR hS) hsat
+
+/-- The words of `finalize`'s working space that hold the inner digest,
+which the streaming `finalize` writes (`F` bytes) at the start of the outer
+block (`blkO`). -/
+def digestWords (H : Impl.Pbkdf2.Md.Arm.Hash) : Nat := (H.st.F + 3) / 4
+
+/-- HMAC's `finalize` for `H`: its `_scratch` form in a frame of `bytes`
+bytes holding its working space, whose first `w` words, where the
+compression function leaves the schedule of the outer block and its working
+variables, and inner digest it zeroes. -/
+def finCode (bytes w : Nat) (H : Impl.Pbkdf2.Md.Arm.Hash) : Prog isa :=
+  Impl.StackScratch.Arm.withStackScratchWiped2 bytes 1 w H.blkO (digestWords H) H.hmacFin
+
+theorem finFramedW {I : Spec.Hmac.Instance} {H : Impl.Pbkdf2.Md.Arm.Hash} {bytes w : Nat}
+    (h : Verified Arm.target H.hmacFin (I.finalizeScratchContract Arm.abi 16))
+    (hR : Hmac.ReprLocal I.S)
+    (hsat : ∃ s, (I.finalizeContract Arm.abi (16 + bytes)).pre s)
+    (hb : Fits 1 bytes .u64 I.scratch := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide)
+    (hD : I.S.digestBytes < 2 ^ 64 := by decide) (hw : 4 * w ≤ 8 * I.scratch := by decide)
+    (hw' : H.blkO + 4 * digestWords H ≤ 8 * I.scratch := by decide)
+    (hdb : H.blkO + 4 * digestWords H ≤ 4096 := by decide) :
+    Verified Arm.target (finCode bytes w H) (I.finalizeContract Arm.abi (16 + bytes)) :=
+  Arm.Verified.stackScratchWiped2 (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    (n := I.scratch) (post := Spec.Hmac.finalizePost I.S Arm.abi.ptrBits) (wa := true)
+    (stack := 16) (m := 1) (a := w) (d := H.blkO) (b := digestWords H) h
+    rfl rfl rfl hb (by simp only [Elem.size]; omega) (by simp only [Elem.size]; omega) hdb
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Hmac.finalizePost_local I.S _ hR hS) (Hmac.finalizePostOut_local I.S _ hD) hsat rfl
 
 /-- A state satisfying `init`'s precondition without the working space, with
 states of `S` bytes (and a one-byte key). -/

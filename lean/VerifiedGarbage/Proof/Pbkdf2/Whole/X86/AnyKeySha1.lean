@@ -87,4 +87,23 @@ theorem sha1_initF (v : Backend) :
 theorem sha1_initSp (v : Backend) : (initCode Spec.Hmac.sha1I v.wipe v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=
   initCode_spSafe v.initSp (wipe_all_spSafe _ _) (by decide +kernel) (sha1_anySp v)
 
+/-! ## `finalize`, its schedule and the inner digest wiped -/
+
+/-- `vg_hmac_sha1_finalize` with the backend `v`, its frame's schedule of
+the outer block (`v.wipe`) and inner digest zeroed. -/
+theorem sha1_finF (v : Backend) :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha1I v.wipe v.M.st v.M.hmacFin)
+      (Spec.Hmac.sha1I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha1I)) :=
+  Md.X86.finFramedW v.hmacFin Proof.Hmac.sha1_local Md.X86.sha1_finFrameSat
+    (Nat.le_trans v.wipe_le (by decide))
+    (by
+      simp only [Proof.Sha1.X86.Variants.mdHash, Proof.Sha1.X86.Variants.hmacHash, Md.X86.digestWords,
+        Impl.Pbkdf2.Stream.X86.Hash.buf]
+      decide)
+    (Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
+
+theorem sha1_finSp (v : Backend) :
+    (Md.X86.finCode Spec.Hmac.sha1I v.wipe v.M.st v.M.hmacFin).all (fun i => !isa.writesSp i) = true :=
+  Md.X86.finCode_spSafe v.finSp
+
 end VG.Proof.Pbkdf2.Whole.X86.Any

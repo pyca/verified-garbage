@@ -316,4 +316,35 @@ theorem sha512_256_initF :
 theorem sha512_256_initSp : (initCode Spec.Hmac.sha512_256I sha512Wipe Md.X86.sha512_256M.hmacInit sha512_256F).all (fun i => !isa.writesSp i) = true :=
   initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (wipe_all_spSafe _ _) (by decide +kernel) sha512_256_anySp
 
+/-! ## `finalize`, its schedule and the inner digest wiped
+
+`vg_hmac_<hash>_finalize`, whose frame's schedule of the outer block (the
+sizes of `init`'s wipe, `md5Wipe` and `sha512Wipe`: the same compression
+function) and inner digest it zeroes. -/
+
+theorem md5_finF :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.md5I md5Wipe Md.X86.md5M.st Md.X86.md5M.hmacFin)
+      (Spec.Hmac.md5I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.md5I)) :=
+  Md.X86.finFramedW Md.X86.Instances.md5_finalize Proof.Hmac.md5_local Md.X86.md5_finFrameSat (by decide) (by decide)
+
+theorem sha384_finF :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha384I sha512Wipe Md.X86.sha384M.st Md.X86.sha384M.hmacFin)
+      (Spec.Hmac.sha384I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha384I)) :=
+  Md.X86.finFramedW Md.X86.Instances.sha384_finalize Proof.Hmac.sha384_local Md.X86.sha384_finFrameSat (by decide) (by decide)
+
+theorem sha512_finF :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha512I sha512Wipe Md.X86.sha512M'.st Md.X86.sha512M'.hmacFin)
+      (Spec.Hmac.sha512I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha512I)) :=
+  Md.X86.finFramedW Md.X86.Instances.sha512_finalize Proof.Hmac.sha512_local Md.X86.sha512_finFrameSat (by decide) (by decide)
+
+theorem sha512_224_finF :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha512_224I sha512Wipe Md.X86.sha512_224M.st Md.X86.sha512_224M.hmacFin)
+      (Spec.Hmac.sha512_224I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha512_224I)) :=
+  Md.X86.finFramedW Md.X86.Instances.sha512_224_finalize Proof.Hmac.sha512_224_local Md.X86.sha512_224_finFrameSat (by decide) (by decide)
+
+theorem sha512_256_finF :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha512_256I sha512Wipe Md.X86.sha512_256M.st Md.X86.sha512_256M.hmacFin)
+      (Spec.Hmac.sha512_256I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha512_256I)) :=
+  Md.X86.finFramedW Md.X86.Instances.sha512_256_finalize Proof.Hmac.sha512_256_local Md.X86.sha512_256_finFrameSat (by decide) (by decide)
+
 end VG.Proof.Pbkdf2.Whole.X86.Any

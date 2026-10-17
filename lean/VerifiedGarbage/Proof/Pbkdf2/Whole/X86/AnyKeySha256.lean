@@ -146,4 +146,40 @@ theorem sha224_initF (v : Backend) :
 theorem sha224_initSp (v : Backend) : (initCode Spec.Hmac.sha224I v.wipe v.M224.hmacInit v.F224).all (fun i => !isa.writesSp i) = true :=
   initCode_spSafe v.init224Sp (wipe_all_spSafe _ _) (by decide +kernel) (sha224_anySp v)
 
+/-! ## `finalize`, its schedule and the inner digest wiped -/
+
+/-- `vg_hmac_sha256_finalize` with the backend `v`, its frame's schedule of
+the outer block (`v.wipe`) and inner digest zeroed. -/
+theorem sha256_finF (v : Backend) :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha256I v.wipe v.M.st v.M.hmacFin)
+      (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha256I)) :=
+  Md.X86.finFramedW v.hmacFin Proof.Hmac.sha256_local Md.X86.sha256_finFrameSat
+    (Nat.le_trans v.wipe_le (by decide))
+    (by
+      simp only [Proof.Sha256.X86.Variants.mdHash, Proof.Sha256.X86.Variants.hmacHash, Md.X86.digestWords,
+        Impl.Pbkdf2.Stream.X86.Hash.buf]
+      decide)
+    (Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
+
+theorem sha256_finSp (v : Backend) :
+    (Md.X86.finCode Spec.Hmac.sha256I v.wipe v.M.st v.M.hmacFin).all (fun i => !isa.writesSp i) = true :=
+  Md.X86.finCode_spSafe v.finSp
+
+/-- `vg_hmac_sha224_finalize` with the backend `v`, its frame's schedule of
+the outer block (`v.wipe`) and inner digest zeroed. -/
+theorem sha224_finF (v : Backend) :
+    Verified X86.target (Md.X86.finCode Spec.Hmac.sha224I v.wipe v.M224.st v.M224.hmacFin)
+      (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + Md.X86.finFrame Spec.Hmac.sha224I)) :=
+  Md.X86.finFramedW v.hmacFin224 Proof.Hmac.sha224_local Md.X86.sha224_finFrameSat
+    (Nat.le_trans v.wipe_le (by decide))
+    (by
+      simp only [Proof.Sha256.X86.Variants.mdHash224, Proof.Sha256.X86.Variants.hmacHash224,
+        Md.X86.digestWords, Impl.Pbkdf2.Stream.X86.Hash.buf]
+      decide)
+    (Md.X86.noEsp_of v.finalize224NoSp) v.finalize224Stack
+
+theorem sha224_finSp (v : Backend) :
+    (Md.X86.finCode Spec.Hmac.sha224I v.wipe v.M224.st v.M224.hmacFin).all (fun i => !isa.writesSp i) = true :=
+  Md.X86.finCode_spSafe v.fin224Sp
+
 end VG.Proof.Pbkdf2.Whole.X86.Any

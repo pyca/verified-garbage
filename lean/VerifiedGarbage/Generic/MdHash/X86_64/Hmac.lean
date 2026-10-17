@@ -17,7 +17,8 @@ emitted once for each variant (`Variants/MdHash/X86_64/`), named with its
 suffix (e.g. `vg_hmac_sha256_init_shani`). `init_scratch` and
 `finalize_scratch`, with their working space as an argument, are what
 PBKDF2's and ECDSA's code calls; `finalize` keeps its working space in a frame
-of its own. `init` takes a key of any length (`Impl/Pbkdf2/Md/AnyKey/X86_64.lean`):
+of its own, zeroing where the compression function leaves the schedule of
+the outer block and the inner digest (`finCode`). `init` takes a key of any length (`Impl/Pbkdf2/Md/AnyKey/X86_64.lean`):
 it runs `init_scratch` in a frame of its own for a key of at most a block,
 zeroing the part of it where the compression function leaves the schedule of
 the padded keys (`MdHash.wipe`, `Compress.wipe`: none for SHA-NI and MD5), and for a longer key hashes it with the streaming functions, as `pbkdf2`
@@ -40,10 +41,10 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
     features := v.features },
   v.I.finalizeApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame v.I) .r8 v.H.hmacFin
+    code := Proof.Pbkdf2.Md.X86_64.finCode v.H v.I v.wipe
     stack := 16 + Proof.Pbkdf2.Md.X86_64.hmacFrame v.I
     verified := v.hmacFinF
-    spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp
+    spSafe := X86_64.withStackScratchWipedX2_spSafe_of v.hmacFinSp
     features := v.features },
   v.I.initScratchApi.artifact X86_64.target {
     suffix := v.suffix

@@ -11,7 +11,9 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64.WipedX
 scratch buffer passed in a register and any wipe (`Wiper`) of the start of
 the buffer, at `rsp + 8`; and `Verified.stackScratchWipedX`, for
 `withStackScratchWipedX`, which zeroes the first `n` 16-byte words of the
-buffer (`Wiper.x`). The wipe stores only into the buffer, within the frame,
+buffer (`Wiper.x`), and `Verified.stackScratchWipedX2`, for
+`withStackScratchWipedX2`, which zeroes the first `a` and the `b` at byte `d`
+(`Wiper.x2`). The wipe stores only into the buffer, within the frame,
 and writes no callee-saved register, `rax` or MXCSR, so the run of the code
 followed by the wipe keeps what the calling convention requires and the
 return value, and its trace depends only on the stack pointer.
@@ -22,6 +24,28 @@ return value, and its trace depends only on the stack pointer.
 namespace VG.X86_64
 
 open VG.Impl.StackScratch.X86_64
+
+/-- `wipeAtX2`, zeroing the first `a` 16-byte words and the `b` at byte
+`d`. -/
+def Wiper.x2 (a d b : Nat) : Wiper where
+  code off := wipeAtX2 off a d b
+  len := max (16 * a) (d + 16 * b)
+  trace sp off := wipeAtXTrace sp off a ++ wipeAtXTrace sp (off + d) b
+  run R u off hR hc := by
+    obtain ⟨m₁, he₁, hf₁⟩ := wipeAtX_run R u off a hR fun k hk =>
+      hc (16 * k) 16 (by omega_using [hk])
+    obtain ⟨m₂, he₂, hf₂⟩ := wipeStoresAtX_run R { u.setXmm .xmm0 0 with mem := m₁ } (off + d)
+      (by simpa [State.setXmm] using hR) b fun k hk => by
+        have h := hc (d + 16 * k) 16 (by omega_using [hk])
+        simpa [State.setXmm, Nat.add_assoc] using h
+    refine ⟨{ u.setXmm .xmm0 0 with mem := m₂ }, ?_, hf₁.trans hf₂, fun r _ => rfl, rfl, rfl, rfl⟩
+    rw [wipeAtX2, execBlock_append, he₁]
+    simp only [Option.bind_some]
+    rw [he₂]
+    rfl
+  spSafe off := by
+    simp only [wipeAtX2, List.all_append, wipeAtX_spSafe, Bool.true_and]
+    simp [wipeStoresAtX, Instr.dst]
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
@@ -158,6 +182,37 @@ theorem Verified.stackScratchWipedX {c : Prog isa} {k : Nat}
       (withStackScratchWipedX bytes (argRegs.getD (sig.words abi.ptrBits).length .rax) k c)
       (sig.contract abi pre post wa (stack + bytes)) :=
   Verified.stackScratchWipedBy (.x k) h hk hb hst hsp hd hw hpost hsat hl
+
+/-- `Verified.stackScratchWipedBy`, for `withStackScratchWipedX2`, which
+zeroes the first `a` 16-byte words of the buffer and the `b` at its byte
+`d`. -/
+theorem Verified.stackScratchWipedX2 {c : Prog isa} {a d b : Nat}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (hk : (sig.words abi.ptrBits).length < 6)
+    (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0 ∧ 8 + n * e.size ≤ bytes)
+    (hst : stack + bytes + 8 ≤ 2 ^ 64)
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack)
+    (hw : 16 * a ≤ n * e.size) (hw' : d + 16 * b ≤ n * e.size)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
+    (hl : Sig.noLists sig.params = true := by decide) :
+    Verified target
+      (withStackScratchWipedX2 bytes (argRegs.getD (sig.words abi.ptrBits).length .rax) a d b c)
+      (sig.contract abi pre post wa (stack + bytes)) :=
+  Verified.stackScratchWipedBy (.x2 a d b) h hk hb hst hsp hd (by simp only [Wiper.x2]; omega) hpost hsat hl
+
+/-- `withStackScratchWipedX2` writes `rsp` only in its frame if its code
+does. -/
+theorem withStackScratchWipedX2_spSafe_of {bytes : Nat} {r : Reg} {a d b : Nat} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true) (hr : r ≠ .rsp := by decide) :
+    (withStackScratchWipedX2 bytes r a d b c).all (fun i => !isa.writesSp i) = true :=
+  withStackScratch_spSafe hr (by
+    have := (Wiper.x2 a d b).spSafe 8
+    simp only [Wiper.x2] at this
+    simp only [Code.all, h, this, Bool.and_self])
 
 /-- `withStackScratchWipedX` writes `rsp` only in its frame if its code does. -/
 theorem withStackScratchWipedX_spSafe_of {bytes : Nat} {r : Reg} {k : Nat} {c : Prog isa}

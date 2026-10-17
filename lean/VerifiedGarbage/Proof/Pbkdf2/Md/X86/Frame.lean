@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Hmac.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe2
+public import VerifiedGarbage.Proof.Hmac.AnyKey
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -19,7 +22,10 @@ that allocates the working space and copies the arguments passed on the
 stack (`Verified.stackScratch`): `initFramed` and `finFramed`, for any
 instance, from the locality of HMAC's pre- and postconditions
 (`Proof/Hmac/Scratch.lean`). `initFrameSat` and `finFrameSat` satisfy the
-preconditions of the contracts without the working space.
+preconditions of the contracts without the working space. `finFramedW` is
+`finFramed` for `finCode`, which also zeroes the start of the working space,
+where the compression function leaves the schedule of the outer block, and
+the inner digest, which the streaming `finalize` writes at `buf`.
 -/
 
 @[expose] public section
@@ -73,6 +79,37 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.finalizePost_local I.S _ hR hS) hsat
 
+/-- The doublewords of `finalize`'s working space that hold the inner digest,
+which the streaming `finalize` writes (`F` bytes) at `buf`. -/
+def digestWords (st : Impl.Pbkdf2.Stream.X86.Hash) : Nat := (st.F + 3) / 4
+
+/-- HMAC's `finalize`: `c`, its `_scratch` form for the streaming functions
+`st`, in a frame holding its working space, whose first `w` doublewords and
+inner digest it zeroes. -/
+def finCode (I : Spec.Hmac.Instance) (w : Nat) (st : Impl.Pbkdf2.Stream.X86.Hash) (c : Prog isa) : Prog isa :=
+  Impl.StackScratch.X86.withStackScratchWiped2 (finFrame I) 5 w st.buf (digestWords st) c
+
+theorem finFramedW {I : Spec.Hmac.Instance} {c : Prog isa} {w : Nat} {st : Impl.Pbkdf2.Stream.X86.Hash}
+    (h : Verified X86.target c (I.finalizeScratchContract X86.abi 48))
+    (hR : Hmac.ReprLocal I.S)
+    (hsat : ∃ s, (I.finalizeContract X86.abi (48 + finFrame I)).pre s)
+    (hw : 4 * w ≤ 8 * I.scratch) (hw' : st.buf + 4 * digestWords st ≤ 8 * I.scratch)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 48 := by lit_decide)
+    (hs : 8 * I.scratch < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide)
+    (hD : I.S.digestBytes < 2 ^ 64 := by decide) :
+    Verified X86.target (finCode I w st c) (I.finalizeContract X86.abi (48 + finFrame I)) :=
+  X86.Verified.stackScratchWiped2 (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    (n := I.scratch) (post := Spec.Hmac.finalizePost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
+    (bytes := finFrame I) (a := w) (d := st.buf) (b := digestWords st) h
+    (by
+      refine ⟨?_, by simp only [finFrame]; omega, by simp only [finFrame]; omega⟩
+      change 8 + 4 * 5 + I.scratch * 8 ≤ finFrame I
+      simp only [finFrame]; omega)
+    hsp hd (by simp only [Elem.size]; omega) (by simp only [Elem.size]; omega)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Hmac.finalizePost_local I.S _ hR hS) (Hmac.finalizePostOut_local I.S _ hD) hsat rfl
+
 /-- Memory holding the arguments `0x1000, 0x1400, 0x1800, 0` of `init` at
 `0x6004`. -/
 def initFrameMem : Mem := fun a =>
@@ -120,6 +157,18 @@ theorem withStackScratch_spSafe {bytes n : Nat} {c : Prog isa}
   simp only [Impl.StackScratch.X86.withStackScratch, Code.all, List.all_nil, Bool.and_true,
     Bool.and_eq_true] at hf ⊢
   simp_all
+
+/-- `finCode` keeps the stack pointer if its code does. -/
+theorem finCode_spSafe {I : Spec.Hmac.Instance} {w : Nat} {st : Impl.Pbkdf2.Stream.X86.Hash} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true)
+    (hf : (Impl.StackScratch.X86.withStackScratch (finFrame I) 5 (.block [])).all
+      (fun i => !isa.writesSp i) = true := by decide) :
+    (finCode I w st c).all (fun i => !isa.writesSp i) = true := by
+  refine withStackScratch_spSafe ?_ hf
+  simp only [Code.all, h, Bool.true_and, Impl.StackScratch.X86.wipe2, Impl.StackScratch.X86.wipe,
+    Impl.StackScratch.X86.wipeStores, List.cons_append, List.all_cons, List.all_append, List.all_map]
+  exact Bool.and_eq_true_iff.mpr ⟨rfl, Bool.and_eq_true_iff.mpr
+    ⟨List.all_eq_true.mpr fun _ _ => rfl, List.all_eq_true.mpr fun _ _ => rfl⟩⟩
 
 /-- `c` writes `esp` only through its frames' pushes and pops: as `NoSp`. -/
 theorem noEsp_of {c : Prog isa} (h : NoSp c) : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by

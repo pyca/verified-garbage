@@ -191,6 +191,6 @@ def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes]
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    0 (by decide) "" []
+    0 (by decide) (by decide) "" []
 
 end VG.Proof.Pbkdf2.Md.AArch64.Md5

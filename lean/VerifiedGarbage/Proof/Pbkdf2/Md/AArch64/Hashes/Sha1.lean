@@ -233,6 +233,8 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.wipe (Nat.le_trans v.wipe_le (by decide)) v.suffix v.features (stream v)
+    v.wipe (Nat.le_trans v.wipe_le (by decide)) (by
+      simp only [hash, digestWords, Impl.Pbkdf2.Md.AArch64.Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf]
+      decide) v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha1

@@ -30,8 +30,9 @@ space, as PBKDF2's `pbkdf2` hashes a long password
 its working space as an argument, is called with its digest, in a larger
 frame of its own, which it wipes before returning
 (`Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); `stack` is that of the larger.
-`finalize` keeps its working space in a frame of its own too
-(`Proof/Pbkdf2/Md/X86/Frame.lean`). `init_scratch` and
+`finalize` keeps its working space in a frame of its own too, zeroing where
+the compression function leaves the schedule of the outer block and the
+inner digest (`finCode`, `Proof/Pbkdf2/Md/X86/Frame.lean`). `init_scratch` and
 `finalize_scratch` are what PBKDF2's code calls.
 -/
 
@@ -46,11 +47,10 @@ def artifacts : List Artifact := [
     verified := Proof.Pbkdf2.Whole.X86.Any.sha512_initF
     spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_initSp },
   Spec.Hmac.sha512I.finalizeApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha512I) 5
+    code := Proof.Pbkdf2.Md.X86.finCode Spec.Hmac.sha512I Proof.Pbkdf2.Whole.X86.Any.sha512Wipe Proof.Pbkdf2.Md.X86.sha512M'.st
       Proof.Pbkdf2.Md.X86.sha512M'.hmacFin
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha512I
-    verified := Proof.Pbkdf2.Md.X86.finFramed Proof.Pbkdf2.Md.X86.Instances.sha512_finalize Proof.Hmac.sha512_local
-      Proof.Pbkdf2.Md.X86.sha512_finFrameSat },
+    verified := Proof.Pbkdf2.Whole.X86.Any.sha512_finF },
   Spec.Hmac.sha512I.initScratchApi.artifact X86.target {
     code := Proof.Pbkdf2.Md.X86.sha512M'.hmacInit
     stack := 48

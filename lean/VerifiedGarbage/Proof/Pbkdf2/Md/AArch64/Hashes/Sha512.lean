@@ -327,7 +327,9 @@ def sha384 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha384_satPF
-    v.wipe (Nat.le_trans v.wipe_le (by decide)) v.suffix v.features (stream384 v) with
+    v.wipe (Nat.le_trans v.wipe_le (by decide)) (by
+      simp only [hash, digestWords, Impl.Pbkdf2.Md.AArch64.Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf]
+      decide) v.suffix v.features (stream384 v) with
     sha384 := some v }
 
 /-! ## SHA-512 -/
@@ -386,7 +388,9 @@ def sha512 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_satPF
-    v.wipe (Nat.le_trans v.wipe_le (by decide)) v.suffix v.features (stream v) with
+    v.wipe (Nat.le_trans v.wipe_le (by decide)) (by
+      simp only [hash, digestWords, Impl.Pbkdf2.Md.AArch64.Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf]
+      decide) v.suffix v.features (stream v) with
     sha512 := some v }
 
 /-! ## SHA-512/224 -/
@@ -445,7 +449,9 @@ def sha512_224 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_224_satPF
-    v.wipe (Nat.le_trans v.wipe_le (by decide)) v.suffix v.features (stream512_224 v)
+    v.wipe (Nat.le_trans v.wipe_le (by decide)) (by
+      simp only [hash, digestWords, Impl.Pbkdf2.Md.AArch64.Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf]
+      decide) v.suffix v.features (stream512_224 v)
 
 /-! ## SHA-512/256 -/
 
@@ -503,6 +509,8 @@ def sha512_256 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_256_satPF
-    v.wipe (Nat.le_trans v.wipe_le (by decide)) v.suffix v.features (stream512_256 v)
+    v.wipe (Nat.le_trans v.wipe_le (by decide)) (by
+      simp only [hash, digestWords, Impl.Pbkdf2.Md.AArch64.Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf]
+      decide) v.suffix v.features (stream512_256 v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha512

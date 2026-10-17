@@ -585,6 +585,12 @@ ldr r9, [r11, #132]
 ldr r10, [r11, #136]
 ldr lr, [r11, #140]
 ldr r11, [r11, #144]
+add r12, sp, #12
+mov r2, #0
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
 add sp, sp, #416
 bx lr",
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,

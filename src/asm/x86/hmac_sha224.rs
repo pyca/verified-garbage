@@ -843,6 +843,39 @@ mov ebx, DWORD PTR [eax+160]
 mov esi, DWORD PTR [eax+164]
 mov edi, DWORD PTR [eax+168]
 mov ebp, DWORD PTR [eax+172]
+mov ecx, 0
+mov DWORD PTR [esp+28], ecx
+mov DWORD PTR [esp+32], ecx
+mov DWORD PTR [esp+36], ecx
+mov DWORD PTR [esp+40], ecx
+mov DWORD PTR [esp+44], ecx
+mov DWORD PTR [esp+48], ecx
+mov DWORD PTR [esp+52], ecx
+mov DWORD PTR [esp+56], ecx
+mov DWORD PTR [esp+60], ecx
+mov DWORD PTR [esp+64], ecx
+mov DWORD PTR [esp+68], ecx
+mov DWORD PTR [esp+72], ecx
+mov DWORD PTR [esp+76], ecx
+mov DWORD PTR [esp+80], ecx
+mov DWORD PTR [esp+84], ecx
+mov DWORD PTR [esp+88], ecx
+mov DWORD PTR [esp+92], ecx
+mov DWORD PTR [esp+96], ecx
+mov DWORD PTR [esp+100], ecx
+mov DWORD PTR [esp+104], ecx
+mov DWORD PTR [esp+108], ecx
+mov DWORD PTR [esp+112], ecx
+mov DWORD PTR [esp+116], ecx
+mov DWORD PTR [esp+120], ecx
+mov DWORD PTR [esp+204], ecx
+mov DWORD PTR [esp+208], ecx
+mov DWORD PTR [esp+212], ecx
+mov DWORD PTR [esp+216], ecx
+mov DWORD PTR [esp+220], ecx
+mov DWORD PTR [esp+224], ecx
+mov DWORD PTR [esp+228], ecx
+mov DWORD PTR [esp+232], ecx
 lea esp, [esp+860]
 ret
 .p2align 6",
@@ -1999,6 +2032,31 @@ mov ebx, DWORD PTR [eax+160]
 mov esi, DWORD PTR [eax+164]
 mov edi, DWORD PTR [eax+168]
 mov ebp, DWORD PTR [eax+172]
+mov ecx, 0
+mov DWORD PTR [esp+28], ecx
+mov DWORD PTR [esp+32], ecx
+mov DWORD PTR [esp+36], ecx
+mov DWORD PTR [esp+40], ecx
+mov DWORD PTR [esp+44], ecx
+mov DWORD PTR [esp+48], ecx
+mov DWORD PTR [esp+52], ecx
+mov DWORD PTR [esp+56], ecx
+mov DWORD PTR [esp+60], ecx
+mov DWORD PTR [esp+64], ecx
+mov DWORD PTR [esp+68], ecx
+mov DWORD PTR [esp+72], ecx
+mov DWORD PTR [esp+76], ecx
+mov DWORD PTR [esp+80], ecx
+mov DWORD PTR [esp+84], ecx
+mov DWORD PTR [esp+88], ecx
+mov DWORD PTR [esp+204], ecx
+mov DWORD PTR [esp+208], ecx
+mov DWORD PTR [esp+212], ecx
+mov DWORD PTR [esp+216], ecx
+mov DWORD PTR [esp+220], ecx
+mov DWORD PTR [esp+224], ecx
+mov DWORD PTR [esp+228], ecx
+mov DWORD PTR [esp+232], ecx
 lea esp, [esp+860]
 ret
 .p2align 6",

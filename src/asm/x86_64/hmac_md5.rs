@@ -423,6 +423,8 @@ mov r12, QWORD PTR [r15+128]
 mov r13, QWORD PTR [r15+136]
 mov r14, QWORD PTR [r15+144]
 mov r15, QWORD PTR [r15+152]
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+168], xmm0
 lea rsp, [rsp+392]
 ret
 .p2align 6",

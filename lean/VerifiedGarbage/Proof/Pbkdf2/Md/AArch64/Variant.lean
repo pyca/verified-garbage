@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe2
 public import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
@@ -94,6 +95,18 @@ def initCode (H : Hash) (I : Spec.Hmac.Instance) (w : Nat) : Prog isa :=
   Impl.Pbkdf2.Md.AArch64.initEntry I.S.H.blockSize (shortCode H I w)
     (Impl.StackScratch.AArch64.withStackScratchWiped (anyFrame I) .x4 I.initAnyKeyScratch H.hmacInitAny)
 
+/-- The doublewords of HMAC's `finalize`'s working space that hold the inner
+digest, which the streaming `finalize` writes (`F` bytes) at `Stream.buf`. -/
+def digestWords (H : Hash) : Nat := (H.stream.F + 7) / 8
+
+/-- HMAC's `finalize`, `vg_hmac_<hash>_finalize`: `finalize_scratch`
+(`Hash.hmacFin`) in a frame holding its working space, whose first `w`
+doublewords, where the compression function leaves the schedule of the
+outer block (the inner digest and its padding), and the inner digest, at
+`Stream.buf`, it zeroes. -/
+def finCode (H : Hash) (I : Spec.Hmac.Instance) (w : Nat) : Prog isa :=
+  Impl.StackScratch.AArch64.withStackScratchWiped2 (hmacFrame I) .x4 w H.stream.buf (digestWords H) H.hmacFin
+
 /-- The bytes of the frame in which PBKDF2's `pbkdf2` (of instance `I`) keeps
 its working space, for its `_scratch` form. -/
 def pbkdf2Frame (I : Spec.Hmac.Instance) : Nat := 8 * I.pbkdf2Scratch
@@ -129,11 +142,10 @@ structure MdHash where
   its first `wipe` doublewords zeroed;
   for a longer key, `hmacInitAny` with its working space in a frame of its
   own, wiped before returning; and `finalize` with its working space in a
-  frame of its own (`hmacFin` is its `_scratch` form). -/
+  frame of its own, whose first `wipe` doublewords and inner digest it
+  zeroes (`hmacFin` is its `_scratch` form). -/
   hmacInitF : Verified AArch64.target (initCode H I wipe) (I.initAnyKeyContract AArch64.abi (16 + anyFrame I))
-  hmacFinF : Verified AArch64.target
-    (Impl.StackScratch.AArch64.withStackScratch (hmacFrame I) .x4 H.hmacFin)
-    (I.finalizeContract AArch64.abi (16 + hmacFrame I))
+  hmacFinF : Verified AArch64.target (finCode H I wipe) (I.finalizeContract AArch64.abi (16 + hmacFrame I))
   /-- PBKDF2's `pbkdf2` with its working space in a frame of its own
   (`pbkdf2` is its `_scratch` form). -/
   pbkdf2F : Verified AArch64.target
@@ -254,15 +266,22 @@ theorem hmacInitF_of {w : Nat} (hw : 8 * w ≤ 8 * I.scratch) (A : Any.AnyOK (co
   initEntry_verified (hmacShortF_of hH C hSH hW hw hsI hs hR hsIF) (hmacInitAnyF_of hH C hSH hW A hsI hsA ha hR hsat)
     (by omega) (by simp only [hmacFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega) hB hsat
 
-theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
+theorem hmacFinF_of {w : Nat} (hw : 8 * w ≤ 8 * I.scratch)
+    (hd : H.stream.buf + 8 * digestWords H ≤ 8 * I.scratch)
+    (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
     (hsat : ∃ s, (I.finalizeContract AArch64.abi (16 + hmacFrame I)).pre s) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (hmacFrame I) .x4 H.hmacFin)
-      (I.finalizeContract AArch64.abi (16 + hmacFrame I)) :=
-  AArch64.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    Verified AArch64.target (finCode H I w) (I.finalizeContract AArch64.abi (16 + hmacFrame I)) :=
+  AArch64.Verified.stackScratchWiped2 (a := w) (d := H.stream.buf) (b := digestWords H)
+    (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := hmacFrame I) (hmacFin_of hH C hSH hW hsF) (by exact (by decide : 4 < 8))
-    (by simp only [hmacFrame, Elem.size]; omega) hsat
+    (by simp only [hmacFrame, Elem.size]; omega) (by simp only [Elem.size]; omega)
+    (by simp only [Elem.size]; omega)
+    (by simp only [Impl.Pbkdf2.Md.AArch64.Stream.buf]; omega)
+    (Proof.Hmac.finalizePostOut_local I.S _ (by
+      rw [← hSH, hH.hD]; have h1 := hH.stream.hDF; have := hH.N_le
+      simp only [Impl.Pbkdf2.Md.AArch64.Hash.stream] at h1; omega)) hsat
 
 theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
@@ -299,6 +318,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hp : 0 < I.pbkdf2Scratch ∧ I.pbkdf2Scratch < 512 ∧ I.pbkdf2Scratch % 2 = 0)
     (hsPF : ∃ s, (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)).pre s)
     (wipe : Nat) (hwipe : 8 * wipe ≤ 8 * I.scratch)
+    (hdig : H.stream.buf + 8 * digestWords H ≤ 8 * I.scratch)
     (suffix : String) (features : List String) (stream : List StreamFn := []) : MdHash where
   H := H
   I := I
@@ -312,7 +332,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   wipe := wipe
   wipe_le := hwipe
   hmacInitF := MdHash.hmacInitF_of hH C hSH hW hwipe A hsI hs hsIF hsA ha hR hB hsAF
-  hmacFinF := MdHash.hmacFinF_of hH C hSH hW hsF hs hsFF
+  hmacFinF := MdHash.hmacFinF_of hH C hSH hW hwipe hdig hsF hs hsFF
   pbkdf2F := MdHash.pbkdf2F_of hH C hSH hW hsI hsF hsT hsP hp hsPF
   suffix := suffix
   features := features

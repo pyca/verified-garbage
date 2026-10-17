@@ -539,6 +539,20 @@ ldr x22, [x23, #184]
 ldr x24, [x23, #192]
 ldr x30, [x23, #200]
 ldr x23, [x23, #208]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
 add sp, sp, #832
 ret
 .p2align 6",
@@ -1351,6 +1365,12 @@ ldr x22, [x23, #184]
 ldr x24, [x23, #192]
 ldr x30, [x23, #200]
 ldr x23, [x23, #208]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
 add sp, sp, #832
 ret
 .arch_extension nosha2

@@ -103,4 +103,20 @@ theorem sha256_initF :
     Md.Arm.sha256_initFrameSat) sha256_anyFramed
     (by decide) (by decide) (by decide) sha256_anyFrameSat
 
+/-! ## `finalize`, its schedule and the inner digest wiped -/
+
+/-- `vg_hmac_sha224_finalize`, its frame's schedule of the outer block and
+working variables (`sha256Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha224_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha224I) sha256Wipe Md.Arm.sha224Md)
+      (Spec.Hmac.sha224I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha224I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha224_finalize Proof.Hmac.sha224_local Md.Arm.sha224_finFrameSat
+
+/-- `vg_hmac_sha256_finalize`, its frame's schedule of the outer block and
+working variables (`sha256Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha256_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha256I) sha256Wipe Md.Arm.sha256Md)
+      (Spec.Hmac.sha256I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha256I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha256_finalize Proof.Hmac.sha256_local Md.Arm.sha256_finFrameSat
+
 end VG.Proof.Pbkdf2.Whole.Arm.Any

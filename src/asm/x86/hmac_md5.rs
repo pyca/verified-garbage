@@ -635,6 +635,11 @@ mov ebx, DWORD PTR [eax+112]
 mov esi, DWORD PTR [eax+116]
 mov edi, DWORD PTR [eax+120]
 mov ebp, DWORD PTR [eax+124]
+mov ecx, 0
+mov DWORD PTR [esp+156], ecx
+mov DWORD PTR [esp+160], ecx
+mov DWORD PTR [esp+164], ecx
+mov DWORD PTR [esp+168], ecx
 lea esp, [esp+412]
 ret
 .p2align 6",

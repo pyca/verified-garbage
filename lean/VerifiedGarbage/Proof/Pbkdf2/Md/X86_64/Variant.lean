@@ -106,6 +106,19 @@ def initCode (H : Hash) (I : Spec.Hmac.Instance) (w : Nat) : Prog isa :=
   Impl.Pbkdf2.Md.X86_64.initEntry I.S.H.blockSize (shortCode H I w)
     (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny)
 
+/-- The 16-byte words of HMAC's `finalize`'s working space that hold the
+inner digest, which the streaming `finalize` writes (`F` bytes) at
+`Stream.buf`. -/
+def digestWords (H : Hash) : Nat := (H.stream.F + 15) / 16
+
+/-- HMAC's `finalize`, `vg_hmac_<hash>_finalize`: `finalize_scratch`
+(`Hash.hmacFin`) in a frame holding its working space, whose first `w`
+16-byte words, where the compression function leaves the schedule of the
+outer block (the inner digest and its padding), and the inner digest, at
+`Stream.buf`, it zeroes. -/
+def finCode (H : Hash) (I : Spec.Hmac.Instance) (w : Nat) : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratchWipedX2 (hmacFrame I) .r8 w H.stream.buf (digestWords H) H.hmacFin
+
 /-- The bytes of the frame in which PBKDF2's `pbkdf2` (of instance `I`) keeps
 its working space, for its `_scratch` form: a quadword standing for the
 return address, a copy of `out_len` and the buffer's address (its stack
@@ -148,12 +161,11 @@ structure MdHash where
   its first `wipe` 16-byte words zeroed;
   for a longer key, `hmacInitAny` with its working space in a frame of its
   own, wiped before returning; and `finalize` with its working space in a
-  frame of its own (`hmacFin` is its `_scratch` form). -/
+  frame of its own, whose first `wipe` 16-byte words and inner digest it
+  zeroes (`hmacFin` is its `_scratch` form). -/
   hmacInitF : Verified X86_64.target (initCode H I wipe) (I.initAnyKeyContract X86_64.abi (24 + anyFrame I))
   hmacInitFSp : (initCode H I wipe).all (fun i => !isa.writesSp i) = true
-  hmacFinF : Verified X86_64.target
-    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)
-    (I.finalizeContract X86_64.abi (16 + hmacFrame I))
+  hmacFinF : Verified X86_64.target (finCode H I wipe) (I.finalizeContract X86_64.abi (16 + hmacFrame I))
   /-- PBKDF2's `pbkdf2` with its working space in a frame of its own
   (`pbkdf2` is its `_scratch` form). -/
   pbkdf2F : Verified X86_64.target
@@ -297,15 +309,20 @@ theorem hmacInitFSp_of (A : Any.AnyOK (core H)) (w : Nat) :
     Bool.and_true]
   rfl
 
-theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s) (hs : I.scratch < 511)
+theorem hmacFinF_of {w : Nat} (hw : 16 * w ≤ 8 * I.scratch)
+    (hd : H.stream.buf + 16 * digestWords H ≤ 8 * I.scratch)
+    (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s) (hs : I.scratch < 511)
     (hsat : ∃ s, (I.finalizeContract X86_64.abi (16 + hmacFrame I)).pre s) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)
-      (I.finalizeContract X86_64.abi (16 + hmacFrame I)) :=
-  X86_64.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    Verified X86_64.target (finCode H I w) (I.finalizeContract X86_64.abi (16 + hmacFrame I)) :=
+  X86_64.Verified.stackScratchWipedX2 (a := w) (d := H.stream.buf) (b := digestWords H)
+    (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := hmacFrame I) (hmacFin_of hH C K hSH hW hsF) (by exact (by decide : 4 < 6))
     (by simp only [hmacFrame, Elem.size]; omega) (by simp only [hmacFrame]; omega) (hmacFin_sp C K)
-    (Callees.hmacFinXD K C) hsat rfl
+    (Callees.hmacFinXD K C) (by simp only [Elem.size]; omega) (by simp only [Elem.size]; omega)
+    (Proof.Hmac.finalizePostOut_local I.S _ (by
+      rw [← hSH, hH.hD]; have := hH.hDN; have := hH.N_le
+      show H.D < 2 ^ 64; omega)) hsat rfl
 
 theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract X86_64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s)
@@ -343,6 +360,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hp : I.pbkdf2Scratch < 509)
     (hsPF : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I)).pre s)
     (wipe : Nat) (hwipe : 16 * wipe ≤ 8 * I.scratch)
+    (hdig : H.stream.buf + 16 * digestWords H ≤ 8 * I.scratch)
     (suffix : String) (features : List String) (stream : List StreamFn) : MdHash where
   H := H
   I := I
@@ -362,7 +380,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   wipe_le := hwipe
   hmacInitF := MdHash.hmacInitF_of hH C K hSH hW hwipe A hsI hs hsIF hsA ha hR hB hsAF
   hmacInitFSp := MdHash.hmacInitFSp_of C K A wipe
-  hmacFinF := MdHash.hmacFinF_of hH C K hSH hW hsF hs hsFF
+  hmacFinF := MdHash.hmacFinF_of hH C K hSH hW hwipe hdig hsF hs hsFF
   pbkdf2F := MdHash.pbkdf2F_of hH C K hSH hW hsI hsF hsT hsP hp hsPF
   suffix := suffix
   features := features

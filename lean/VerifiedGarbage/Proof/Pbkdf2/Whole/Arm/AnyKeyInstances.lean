@@ -245,4 +245,48 @@ theorem sha512_256_initF :
     Md.Arm.sha512_256_initFrameSat) sha512_256_anyFramed
     (by decide) (by decide) (by decide) sha512_256_anyFrameSat
 
+/-! ## `finalize`, its schedule and the inner digest wiped -/
+
+/-- `vg_hmac_md5_finalize`, its frame's schedule of the outer block and
+working variables (`md5Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem md5_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.md5I) md5Wipe Md.Arm.md5Md)
+      (Spec.Hmac.md5I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.md5I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.md5_finalize Proof.Hmac.md5_local Md.Arm.md5_finFrameSat
+
+/-- `vg_hmac_sha1_finalize`, its frame's schedule of the outer block and
+working variables (`sha1Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha1_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha1I) sha1Wipe Md.Arm.sha1Md)
+      (Spec.Hmac.sha1I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha1I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha1_finalize Proof.Hmac.sha1_local Md.Arm.sha1_finFrameSat
+
+/-- `vg_hmac_sha384_finalize`, its frame's schedule of the outer block and
+working variables (`sha512Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha384_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha384I) sha512Wipe Md.Arm.sha384Md)
+      (Spec.Hmac.sha384I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha384I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha384_finalize Proof.Hmac.sha384_local Md.Arm.sha384_finFrameSat
+
+/-- `vg_hmac_sha512_finalize`, its frame's schedule of the outer block and
+working variables (`sha512Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha512_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha512I) sha512Wipe Md.Arm.sha512Md')
+      (Spec.Hmac.sha512I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha512I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha512_finalize Proof.Hmac.sha512_local Md.Arm.sha512_finFrameSat
+
+/-- `vg_hmac_sha512_224_finalize`, its frame's schedule of the outer block and
+working variables (`sha512Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha512_224_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha512_224I) sha512Wipe Md.Arm.sha512_224Md)
+      (Spec.Hmac.sha512_224I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha512_224I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha512_224_finalize Proof.Hmac.sha512_224_local Md.Arm.sha512_224_finFrameSat
+
+/-- `vg_hmac_sha512_256_finalize`, its frame's schedule of the outer block and
+working variables (`sha512Wipe`, as `init`'s) and inner digest zeroed. -/
+theorem sha512_256_finF :
+    Verified Arm.target (Md.Arm.finCode (Md.Arm.frame Spec.Hmac.sha512_256I) sha512Wipe Md.Arm.sha512_256Md)
+      (Spec.Hmac.sha512_256I.finalizeContract Arm.abi (16 + Md.Arm.frame Spec.Hmac.sha512_256I)) :=
+  Md.Arm.finFramedW Md.Arm.Instances.sha512_256_finalize Proof.Hmac.sha512_256_local Md.Arm.sha512_256_finFrameSat
+
 end VG.Proof.Pbkdf2.Whole.Arm.Any
