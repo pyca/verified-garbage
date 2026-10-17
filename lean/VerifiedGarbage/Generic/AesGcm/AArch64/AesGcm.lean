@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPrepared
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -140,67 +138,6 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV)
     features := v.features }]
 
-/-- How `vg_aes_gcm_derive_prepared8` computes the powers. -/
-def preparedNote : String :=
-  "This implementation copies the key context, then computes `H' = H · x⁻¹` as `vg_ghash_aes` does, then \
-    each even power `H'²ᵏ` by squaring `H'ᵏ`, read back from the context, and each odd power by one \
-    multiplication by `H'`; `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed."
-
-/-- How `vg_aes_gcm_seal_prepared8` uses the prepared context. -/
-def sealPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
-  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash \
-    subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the \
-    lengths block into the hash with PMULL in registers, calling `" ++ gp.fn.name ++ "` once, on the whole \
-    blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the \
-    context's first 256 bytes, as `" ++ Spec.Gcm.sealApi.name ++ v.suffix ++ "` does."
-
-/-- How `vg_aes_gcm_open_prepared8` uses the prepared context. -/
-def openPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
-  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as \
-    `" ++ Spec.Gcm.sealPrepared8Api.name ++ v.suffix ++ "` does, calling `" ++ gp.fn.name ++ "` once, on the \
-    whole blocks of the ciphertext, and decrypts only if it matches. Otherwise it reads only the context's \
-    first 256 bytes, as `" ++ Spec.Gcm.openApi.name ++ v.suffix ++ "` does."
-
-/-- `vg_aes_gcm_seal_prepared8` and `vg_aes_gcm_open_prepared8`, calling `gp`
-on the path for TLS records, and `vg_aes_gcm_seal_gather_prepared8`, calling
-the former. -/
-def sealPreparedArtifacts (v : GcmImpl) (gp : GhashPreparedImpl) : List Artifact :=
-  let F := Proof.AesGcm.AArch64.sealPreparedFn v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
-  [Spec.Gcm.sealPrepared8Api.artifact AArch64.target {
-    suffix := v.suffix
-    notes := [note v, sealPreparedNote v gp]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
-      (Impl.AesGcm.AArch64.Fast.sealWith v.callees gp.fn)
-    stack := 2576
-    verified := Fast.sealPrepared_framed v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features },
-  Spec.Gcm.sealGatherPrepared8Api.artifact AArch64.target {
-    suffix := v.suffix
-    notes := [gatherNote F.fn.name]
-    code := Impl.AesGcm.AArch64.SealGather.sealGather F.fn
-    stack := 2592
-    verified := Proof.AesGcm.AArch64.Gather.sealGatherPrepared_verified F
-    features := v.features },
-  Spec.Gcm.openPrepared8Api.artifact AArch64.target {
-    suffix := v.suffix
-    notes := [note v, openPreparedNote v gp]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
-      (Impl.AesGcm.AArch64.Fast.openWith v.callees gp.fn)
-    stack := 2592
-    verified := Fast.openPrepared_framed v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features }]
-
-/-- The functions with a prepared key context, for the implementations with PMULL. -/
-def artifactsPrepared (v : GcmImpl) : List Artifact :=
-  if v.gh.pmull then [
-    Spec.Gcm.derivePrepared8Api.artifact AArch64.target {
-      suffix := v.suffix
-      notes := [preparedNote]
-      code := Impl.AesGcm.AArch64.Prepared.derive
-      verified := derive_verified Proof.Gcm.AArch64.Pmull.prepPow
-      features := ["aes"] }] ++ ((v.gh.prepared.map (sealPreparedArtifacts v)).getD [])
-  else []
-
 /-- How the `*_with_powers` functions use the powers. -/
 def withPowersNote (v : GcmImpl) (g : GhashWithImpl) (name : String) : String :=
   "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `" ++
@@ -229,7 +166,7 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsPrepared v.impl ++
+  artifactsOf v.impl ++ artifactsGather v.impl ++
     (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm
