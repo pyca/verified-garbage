@@ -431,11 +431,11 @@ def clrTopBit (j : Nat) : List Instr :=
   ptr .r0 j ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2), .dp .sub .r0 .r0 (.imm 12), .ldr .r1 .r0 0,
     .mov .r1 (.shifted .r1 .lsl 1), .mov .r1 (.shifted .r1 .lsr 1), .str .r1 .r0 0]
 
-/-- The slot `sU` := `2 ≤ x < c − 1`; if it is clear, bit 1 of `x` set and its
-top bit cleared. -/
+/-- The slot `sU` := `2 ≤ x < c − 1`; the witness into `aH1`: `x` if it is
+set, else `x` with bit 1 set and its top bit cleared. -/
 def witnessFix : List (Prog isa) :=
   ltS sA aX aTwo ++ ltS sBb aX aCm1 ++ [.block (Key.andNotS sU sA sBb), copy aXf aX,
-    .block (orTwo aXf ++ clrTopBit aXf), sel aX aXf aX sU]
+    .block (orTwo aXf ++ clrTopBit aXf), sel aH1 aXf aX sU]
 
 /-- `r1 := ws_len − (21 w + 30)`, the 64-bit words of the round's working space. -/
 def wsLen : List Instr :=
@@ -445,7 +445,7 @@ def wsLen : List Instr :=
 /-- The witness in Montgomery form (array 5), the round, and its result
 into `sF`. -/
 def mrCall (name : String) (round : Prog isa) : List (Prog isa) :=
-  [copy (mBase + 1) aX, .block mont0, montOp 5 1 4, .block wsLen, .call name round,
+  [copy (mBase + 1) aH1, .block mont0, montOp 5 1 4, .block wsLen, .call name round,
     .block (ctx ++ [.str .r0 .r8 sF])]
 
 /-- `r1 := 1` if more witnesses are needed: `i ≤ 16` or `uniform < checks`. -/
