@@ -26,18 +26,18 @@ namespace VG.Proof.Mont.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Mont VG.Proof.Mont
 
 /-- `[r + d]`, with `r` at `4i` bytes into the working space. -/
-theorem Scr.ea_reg {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {i d : Nat}
+theorem Scr.ea_regAt {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {i d : Nat}
     (hp : s.gpr r = s.gpr .edi + BitVec.ofNat 32 (4 * i)) (hd : 4 * i + d < size) :
     s.ea (at_ r d) = off base (4 * i + d) := by
   change ((s.gpr r + BitVec.ofNat 32 d).setWidth 64) = _
   rw [hp, Offset.add_add]
   exact hs.ea hd
 
-theorem readSrc_reg {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {i d : Nat}
+theorem readSrc_regAt {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {i d : Nat}
     (hp : s.gpr r = s.gpr .edi + BitVec.ofNat 32 (4 * i)) (hd : 4 * i + d + 4 ≤ size) :
     readSrc s (.mem (at_ r d)) = some (s.mem.readW (off base (4 * i + d)) 32) := by
   show s.load32 (s.ea (at_ r d)) = _
-  rw [hs.ea_reg hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
+  rw [hs.ea_regAt hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
 
 /-- One step of the row's loop. -/
 theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size) {acc b i j N w mult : Nat}
@@ -62,7 +62,7 @@ theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size
   have hs₀ := hs.of_keeps u₀.keeps (by decide)
   have hecx₀ : s₀.gpr .ecx = s₀.gpr .edi + BitVec.ofNat 32 (4 * j) := by
     rw [u₀.other _ (by decide), u₀.other _ (by decide)]; exact hecx
-  refine wp_movS (readSrc_reg hs₀ hecx₀ (d := b) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_regAt hs₀ hecx₀ (d := b) (by omega)) fun s₁ u₁ _ => ?_
   refine wp_mul fun s₂ m₂ => ?_
   refine wp_addS rfl fun s₃ u₃ c₃ => ?_
   refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
@@ -71,13 +71,13 @@ theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size
   have hs₄ := hs.of_keeps K₄ (by decide)
   have hp₄ : s₄.gpr .ebp = s₄.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
     rw [K₄.1 _ (by decide), K₄.1 _ (by decide)]; exact hp
-  refine wp_addS (readSrc_reg hs₄ hp₄ (d := acc) (by omega)) fun s₅ u₅ c₅ => ?_
+  refine wp_addS (readSrc_regAt hs₄ hp₄ (d := acc) (by omega)) fun s₅ u₅ c₅ => ?_
   refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
   have K₆ : Keeps [.eax, .edx] t s₆ := (K₄.widen u₅.keeps).widen u₆.keeps
   have hs₆ := hs.of_keeps K₆ (by decide)
   have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
     rw [K₆.1 _ (by decide), K₆.1 _ (by decide)]; exact hp
-  refine wp_storeS (hs₆.ea_reg hp₆ (d := acc) (by omega)) (hs₆.write (d := 4 * (i + j) + acc) (n := 4) (by omega))
+  refine wp_storeS (hs₆.ea_regAt hp₆ (d := acc) (by omega)) (hs₆.write (d := 4 * (i + j) + acc) (n := 4) (by omega))
     fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => ?_
   refine wp_addS rfl fun s₉ u₉ _ => ?_
