@@ -585,45 +585,48 @@ theorem OpenIn.tagIn {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s s'
     o.sv.frame f (saved_tag16 L), o.sp₀, rd.trans o.rd₀, wr.trans o.wr₀⟩
 
 /-- `openPre`'s common arguments. -/
-theorem openCore {extra : List Region} {s : State} (hs : openPreX extra s) : oneCore 3 2 s := by
-  simp only [openPreX] at hs
+theorem openCore {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w extra s) :
+    oneCore (w + 1) w s := by
+  simp only [openPreXW] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, -, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
   exact ⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hwr]; simp,
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `openPre` gives. -/
-theorem openLay {extra : List Region} {s : State} (hs : openPreX extra s) :
-    OneLay s 3 2 ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
-      (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR (stackArg s 2)) := by
+theorem openLay {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w extra s) :
+    OneLay s (w + 1) w ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
+      (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR (stackArg s w)) := by
   have hs' := hs
-  simp only [openPreX] at hs'
+  simp only [openPreXW] at hs'
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, dtw, -⟩ := hs'
   exact ⟨oneLay (openCore hs), covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- `open`'s first block: the entry, the tag length and the tag. -/
-theorem openEntry_ok {extra : List Region} {s : State} (hs : openPreX extra s) :
-    WP isa (.block (oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
-      OpenIn (s.gpr .x0) (stackArg s 2) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region} {s : State}
+    (hs : openPreXW w extra s) :
+    WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
+      OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
       s'.gpr .x12 = stackArg s 0 := by
   obtain ⟨ol, tR, dtW⟩ := openLay hs
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
-  have hW16 : s.mem.readW (s.sp + BitVec.ofNat 64 16) 64 = stackArg s 2 := rfl
+  have hW16 : s.mem.readW (s.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg s w := rfl
   have hT8 : s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (stackArg s 1).toNat := by
     rw [ofNat_toNat']; rfl
   have hT0 : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := rfl
-  have hsp16 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 16) 8 := hsp 2 (by decide)
-  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := hsp 1 (by decide)
-  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by decide)
-  have darg (j : Nat) (hj : j + 8 ≤ 24) : (⟨s.sp + BitVec.ofNat 64 j, 8⟩ : Region).Disjoint (workR (stackArg s 2)) := by
+  have hsp16 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * w)) 8 := hsp w (by omega)
+  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := hsp 1 (by omega)
+  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by omega)
+  have darg (j : Nat) (hj : j + 8 ≤ 8 * (w + 1)) :
+      (⟨s.sp + BitVec.ofNat 64 j, 8⟩ : Region).Disjoint (workR (stackArg s w)) := by
     refine daA.sub_left ?_
-    show Region.Sub ⟨s.sp + BitVec.ofNat 64 j, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * 3⟩
+    show Region.Sub ⟨s.sp + BitVec.ofNat 64 j, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * (w + 1)⟩
     rw [show s.sp + BitVec.ofNat 64 (8 * 0) = s.sp by rw [Nat.mul_zero, BitVec.add_zero]]
     exact Offset.sub_base _ (by omega)
   have h3 := ofNat_toNat' (s.gpr .x3)
   have h5 := ofNat_toNat' (s.gpr .x5)
   have h7 := ofNat_toNat' (s.gpr .x7)
-  generalize hW : stackArg s 2 = W at *
+  generalize hW : stackArg s w = W at *
   generalize hTg : stackArg s 0 = Tg at *
   generalize hCtx : s.gpr .x0 = Ctx at *
   generalize hRR : (s.gpr .x1).toNat = R at *
@@ -636,12 +639,12 @@ theorem openEntry_ok {extra : List Region} {s : State} (hs : openPreX extra s) :
   generalize htlv : (stackArg s 1).toNat = tl at *
   have hnlt : n < 2 ^ 64 := hn ▸ (s.gpr .x7).isLt
   have htlt : tl < 2 ^ 64 := htlv ▸ (stackArg s 1).isLt
-  refine WP.block_append (WP.mono (entryStash_ok (k := 16) (j := 8) (by decide) (by decide) hW16 hsp16 hsp8 hT8
-      (darg 8 (by decide)) hCtx perm)
+  refine WP.block_append (WP.mono (entryStash_ok (k := 8 * w) (j := 8) (by omega) (by decide) hW16 hsp16 hsp8 hT8
+      (darg 8 (by omega)) hCtx perm)
     fun s₂ ⟨he₂, x22₂, x23₂, x24₂, x26₂, x27₂, x28₂, sl₁, sl₂, sl₃, sl₄, sl₅, f₂, sv₂, rd₂, wr₂⟩ => ?_)
   obtain ⟨s₃, run₃, x12₃, g₃, sp₃, m₃, rd₃, wr₃⟩ := ldrSp_ok (t := .x12) (s := s₂) (k := 0) (by decide)
     (by rw [he₂.sp, f₂.readW (r := ⟨s.sp + BitVec.ofNat 64 0, 8⟩) (Region.contains_self _ _)
-      (keep_of_sub (entryR_work W) (darg 0 (by decide))) (by decide), hT0])
+      (keep_of_sub (entryR_work W) (darg 0 (by omega))) (by decide), hT0])
     (by rw [rd₂, wr₂, he₂.sp]; exact hsp0)
   refine WP.of_runBlock ⟨s₃, run₃, ?_, x12₃⟩
   rw [hA] at sl₁
@@ -764,16 +767,16 @@ theorem oite_ok (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {
 
 /-- `open` after its entry, with `m` once the received tag is at `W`, from
 the registers `x4` to `x7` of the entry. -/
-theorem openRestWith_wp {m : Prog isa} {s s₂ : State}
-    (o₂ : OpenIn (s.gpr .x0) (stackArg s 2) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+theorem openRestWith_wp {m : Prog isa} {w : Nat} {s s₂ : State}
+    (o₂ : OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
       (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s₂)
     (x12₂ : s₂.gpr .x12 = stackArg s 0)
-    (hm : ∀ {t : State}, OpenIn (s.gpr .x0) (stackArg s 2) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+    (hm : ∀ {t : State}, OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s t →
-      bytesAt t.mem (stackArg s 2) (stackArg s 1).toNat = bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat →
+      bytesAt t.mem (stackArg s w) (stackArg s 1).toNat = bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat →
       Spec.Gcm.tagLenOk (stackArg s 1).toNat = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
-      WP isa m t (OpenPost (s.gpr .x0) (stackArg s 2) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+      WP isa m t (OpenPost (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s)) :
     WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
       fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
@@ -791,7 +794,7 @@ theorem openRestWith_wp {m : Prog isa} {s s₂ : State}
 
 theorem open_wp (v : GcmImpl) {s : State} (hs : openAArch64.pre s) :
     WP isa («open» v.callees) s fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
-  refine WP.seq (WP.mono (openEntry_ok hs) fun s₂ ⟨o₂, x12₂⟩ => ?_)
+  refine WP.seq (WP.mono (openEntry_ok (.inl rfl) (openPreX_W hs)) fun s₂ ⟨o₂, x12₂⟩ => ?_)
   exact openRestWith_wp o₂ x12₂ fun o' hT hok _ => openMain_post v o' hT hok
 
 end VG.Proof.AesGcm.AArch64
