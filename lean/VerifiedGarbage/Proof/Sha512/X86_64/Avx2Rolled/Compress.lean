@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Rounds
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Weave
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
@@ -286,9 +287,7 @@ theorem groupsR_ok (H : HashValue) (M₀ M₁ : Block) (scr kb : Addr) (sB : Sta
   | zero => exact WP.block_nil h₀
   | succ n ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s ⟨hv, hs, hI⟩ => ?_)
-    have e : groupR n = scheduleR (n + 8) ++ (roundR 0 (2 * n) ++ roundR 0 (2 * n + 1)) := by
-      simp only [groupR, List.append_assoc]
-    rw [e, WP.block_append_iff]
+    refine VG.Interleave.WP.weave (group_indeps (by omega)) trivial ?_
     refine WP.mono (schedR_step hrcx hR (by omega) (by omega) hI hs) fun s₁ ⟨hs₁, hg₁⟩ => ?_
     have hv₁ : Vars (2 * n) s₁ (Spec.Sha512.rounds H M₀ (16 * j + 2 * n)) := by
       simp only [Vars, hg₁]; exact hv
