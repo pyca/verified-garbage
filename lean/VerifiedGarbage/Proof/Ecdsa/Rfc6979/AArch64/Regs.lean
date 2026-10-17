@@ -103,7 +103,7 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {a : Nat}
     (ha : a < 4096) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h200 := hc.inFr (d := 200) (by omega) (by omega)
+  have h200 := hc.inFr (d := 232) (by omega) (by omega)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
     Size.bits, BitVec.setWidth_eq, hc.sp, Offset.add_add, Nat.reduceAdd, Nat.reduceMod, Nat.reduceLT, and_self,
@@ -113,6 +113,54 @@ theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d �
     fun r hr => ?_⟩
   · rw [RegUpd.gpr_write_of_ne _ _ _ hr, RegUpd.gpr_write_of_ne _ _ _ hr]
   · rw [RegUpd.gpr_write_of_ne _ _ _ hr, RegUpd.gpr_write_of_ne _ _ _ hr]
+
+/-- `d ← [sp + o]`: a word of the frame, `v`. -/
+theorem ldSlot_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {o : Nat}
+    (ho : o % 8 = 0 ∧ o + 8 ≤ 480) {v : BitVec 64} (hv : u.mem.readW (L.B + BitVec.ofNat 64 (16 + o)) 64 = v) :
+    WP isa (.block [.ldrSp d o]) u (Upd L g m₀ u d v) := by
+  have hr := hc.inFr (d := 16 + o) (by omega) (by omega)
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load,
+    BitVec.setWidth_eq, hc.sp, Offset.add_add, ho.1, show o < 32768 by omega, and_self,
+    hr, ite_true, Option.map_some, read8, hv, Option.some.injEq, exists_eq_left']
+  refine ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => ?_) rfl, rfl, by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
+    fun r hr => ?_⟩
+  · rw [RegUpd.gpr_write_of_ne _ _ _ hr]
+  · rw [RegUpd.gpr_write_of_ne _ _ _ hr]
+
+/-- `d ← D`, the hash function's output length. -/
+theorem ldDl_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) :
+    WP isa (.block [.ldrSp d fDl]) u (Upd L g m₀ u d (BitVec.ofNat 64 dn)) :=
+  ldSlot_ok hL hc hd (by decide) hc.pDl
+
+/-- `d ← B`, its block size. -/
+theorem ldBl_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) :
+    WP isa (.block [.ldrSp d fBl]) u (Upd L g m₀ u d (BitVec.ofNat 64 L.bl)) :=
+  ldSlot_ok hL hc hd (by decide) hc.pBl
+
+/-- `d ← hash`, its number. -/
+theorem ldSel_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) :
+    WP isa (.block [.ldrSp d fSel]) u (Upd L g m₀ u d (BitVec.ofNat 64 L.sel)) :=
+  ldSlot_ok hL hc hd (by decide) hc.pSel
+
+/-- `d ← n + imm`. -/
+theorem addI_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d n : Reg} (hd : d ∉ preserved) {imm : Nat}
+    (himm : imm < 4096) :
+    WP isa (.block [.addImm .x d n imm]) u (Upd L g m₀ u d (u.gpr n + BitVec.ofNat 64 imm)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, himm, ite_true, State.read, Size.bits,
+    BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
+    by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
+
+/-- `d ← n + m`. -/
+theorem addR_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d n m : Reg} (hd : d ∉ preserved) :
+    WP isa (.block [.add .x d n m]) u (Upd L g m₀ u d (u.gpr n + u.gpr m)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
+    BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
+    by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
 
 /-- `d ← sp + o`, an address in the frame. -/
 theorem fr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {o : Nat}

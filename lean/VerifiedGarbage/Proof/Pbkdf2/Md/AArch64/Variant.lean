@@ -108,6 +108,14 @@ structure MdHash where
   /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
   hash function, once for each hash function. -/
   pss : Proof.RsaPss.AArch64.PssChecks H.P H.D
+  /-- The instance's streaming hash is the code's (for the callers that
+  chain HMAC's `init`, the streaming `update` and HMAC's `finalize`:
+  deterministic ECDSA's). -/
+  hSH : ok.SH = I.S
+  /-- HMAC's `init` and `finalize`, against the contracts the proofs of their
+  callers use (`Calls.initG`, `Calls.finG`). -/
+  hmacInitG : Verified AArch64.target H.hmacInit (Calls.initG ok.SH H.W)
+  hmacFinG : Verified AArch64.target H.hmacFin (Calls.finG ok.SH H.W)
   hmacInit : Verified AArch64.target H.hmacInit (I.initScratchContract AArch64.abi 16)
   hmacFin : Verified AArch64.target H.hmacFin (I.finalizeScratchContract AArch64.abi 16)
   iterate : Verified AArch64.target H.iterate (I.iterateContract AArch64.abi)
@@ -280,6 +288,10 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   ok := hH
   mgf := lk
   pss := pss
+  hSH := hSH
+  hmacInitG := hmacInit_ok hH C (by simp only [Spec.Hmac.Instance.initScratchContract, ← hSH, ← hW] at hsI; exact hsI)
+  hmacFinG := hmacFin_ok hH C (by
+    simp only [Spec.Hmac.Instance.finalizeScratchContract, ← hSH, ← hW] at hsF; exact hsF)
   hmacInit := MdHash.hmacInit_of hH C hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C hSH hW hsF
   iterate := MdHash.iterate_of hH C hSH hW hsT

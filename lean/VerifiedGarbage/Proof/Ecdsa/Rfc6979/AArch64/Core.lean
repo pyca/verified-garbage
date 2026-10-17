@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Start
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -10,9 +10,8 @@ import all Init.Data.Vector.Basic
 /-!
 # Deterministic ECDSA on AArch64: signing with a candidate
 
-The call of `vg_ecdsa_<curve>_sign` with `k = V` from the frame, or, if two
-`V`s make a candidate, the digest and `k` from the frame's top bytes
-(`core_ok`): it returns 1 and writes the signature, or returns 0 and writes
+The call of `vg_ecdsa_<curve>_sign` with the digest `G` and `k` (at `T`)
+from the frame's top bytes (`core_ok`): it returns 1 and writes the signature, or returns 0 and writes
 zeros, as `Spec.Ecdsa.signWith` gives for `d` and `Q` bytes of the digest
 and of `k`, and changes only `out` and `scratch` (it pushes no frame: its
 return address is in `x30`).
@@ -26,12 +25,9 @@ open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn P.R.E} {g : Reg → BitVec 64} {m₀ : Mem}
 
-/-- The digest and `k` `core` is passed: the digest and `V`, or, if two
-`V`s make a candidate, the frame's top bytes. -/
-abbrev dgAddr {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr :=
-  if L.wide then L.B + BitVec.ofNat 64 240 else L.dg
-abbrev kAddr {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr :=
-  L.B + BitVec.ofNat 64 (if L.wide then 312 else 80)
+/-- The digest and `k` `core` is passed: `G` and `T`, in the frame's top bytes. -/
+abbrev dgAddr {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr := gA L
+abbrev kAddr {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr := L.B + BitVec.ofNat 64 360
 
 /-- The signature `core` computes, or none. -/
 abbrev coreSig (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) (m : Mem) : Option (Nat × Nat) :=
@@ -43,37 +39,15 @@ abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : List Region :=
   [⟨L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩] ++ L.tables
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : List Region := [⟨L.out, 2 * P.Q⟩, L.SCR]
 
-/-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
-candidate, the digest has `Q` bytes; if they do, the frame has its top
-bytes; and `h` is where the code keeps it. -/
-def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : Prop :=
-  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ L.hHigh = P.R.hHigh) ∧ L.wide = P.R.wide
-
-/-- The bytes at the frame's top are the code's. -/
-theorem CoreOk.e_eq {L : Lay dn P.R.E} (hk : CoreOk P L) : L.e = P.e := by
-  rw [L.ew, hk.2.2, hk.2.1.2]
-
-/-- `core`'s digest and `k`: in the digest or the frame, apart from `out`
-and `scratch`. -/
-theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgAddr L ∨ x = kAddr L) :
+/-- `core`'s digest and `k`: in the frame, apart from `out` and `scratch`. -/
+theorem coreArg_ok (hL : L.Ok) {x : Addr} (hx : x = dgAddr L ∨ x = kAddr L) :
     (∃ R ∈ [L.D, L.DG, L.FR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨x, P.Q⟩ L.SCR := by
   have nB := hL.nB
-  cases hw : L.wide
-  · obtain ⟨-, h6, -⟩ := P.sizesA (hk.2.2.symm.trans hw)
-    have hn := hk.2.1.1 hw
-    have hQ := P.wsizes
-    simp only [dgAddr, kAddr, hw, Bool.false_eq_true, ite_false] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨⟨L.DG, by simp, within_base _ hn⟩, hL.og.symm.sub_left (Region.sub_prefix hn),
-        hL.gc.sub_left (Region.sub_prefix hn)⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, hL.stk_OUT (by omega), hL.stk_SCR (by omega)⟩
-  · obtain ⟨-, hQ66, -, -⟩ := P.sizesW (hk.2.2.symm.trans hw)
-    have he : L.e = 144 := by rw [L.ew, hw]; rfl
-    simp only [dgAddr, kAddr, hw, ite_true] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, hL.stk_OUT (by omega), hL.stk_SCR (by omega)⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, hL.stk_OUT (by omega), hL.stk_SCR (by omega)⟩
+  have hQ := P.wsizes
+  rcases hx with rfl | rfl
+  · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, hL.stk_OUT (by omega), hL.stk_SCR (by omega)⟩
+  · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, hL.stk_OUT (by omega), hL.stk_SCR (by omega)⟩
 
 theorem ce_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
@@ -99,8 +73,8 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   have eD : (⟨L.d, P.R.E.C.len⟩ : Region) = L.D := by rw [Lay.D, hq']
   have eO : (⟨L.out, 2 * P.R.E.C.len⟩ : Region) = L.OUT := by rw [Lay.OUT, hq']
   have no : L.out.toNat + 2 * P.R.E.C.len ≤ 2 ^ 64 := by have := hL.no; rw [hq'] at this; omega
-  obtain ⟨-, gO, gS⟩ := coreArg_ok hL hk (.inl rfl)
-  obtain ⟨-, kO, kS⟩ := coreArg_ok hL hk (.inr rfl)
+  obtain ⟨-, gO, gS⟩ := coreArg_ok (P := P) hL (.inl rfl)
+  obtain ⟨-, kO, kS⟩ := coreArg_ok (P := P) hL (.inr rfl)
   have sy : ∀ rd wr, tableAddr P.R.E (t.callEntry.withRegions rd wr).syms = L.T := fun _ _ => hc.sy
   simp only [coreK, TblOk, coreRd, coreWr, eD, eO, ce_gpr _ _ _ (by decide : Reg.x0 ∉ linkRegs),
     ce_gpr _ _ _ (by decide : Reg.x1 ∉ linkRegs), ce_gpr _ _ _ (by decide : Reg.x2 ∉ linkRegs),
@@ -129,8 +103,8 @@ theorem core_covers (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨L.D, by simp, within_base _ (by omega)⟩
-      · exact hw (coreArg_ok hL hk (.inl rfl)).1
-      · exact hw (coreArg_ok hL hk (.inr rfl)).1
+      · exact hw (coreArg_ok (P := P) hL (.inl rfl)).1
+      · exact hw (coreArg_ok (P := P) hL (.inr rfl)).1
     · exact ⟨r, by simp [hr], within_base _ (Nat.le_refl _)⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
