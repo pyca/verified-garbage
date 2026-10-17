@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Rsa.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -69,7 +70,7 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     h.valid.stackWorkspace.sub_left tempStack, (h.valid.stackWorkspace.sub_left argStack).symm,
     ?_, ?_, ?_, ?_, ?_, ?_, h.valid.outputFit, h.valid.precomputationFit, h.valid.sourceFits 1,
     h.valid.temporaryFit, h.valid.workspaceFit, ⟨h.valid.minLength, h.valid.maxLength⟩, rfl,
-    trivial, h.valid.exponentPositive, h.valid.exponentFits, h.valid.space⟩
+    trivial, h.valid.exponentPositive, h.valid.exponentFits, publicScratch_le ⟨h.valid.minLength, h.valid.maxLength⟩ h.valid.space⟩
   · rw [callee]; exact h.valid.stackOutput.sub_left h.valid.calleeSub
   · rw [callee]; exact h.valid.calleeInner.sub_right preSub
   · rw [callee]; exact (h.valid.stackSources 1).sub_left h.valid.calleeSub

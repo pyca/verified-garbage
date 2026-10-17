@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Rsa.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -55,7 +56,7 @@ theorem pcCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega, rfl, rfl,
     (h.valid.stackSources 0).sub_left preStack, h.valid.stackWorkspace.sub_left preStack, ?_,
     h.valid.sourcesWorkspace 0, ?_, ?_, ?_, ?_, ?_, h.valid.precomputationFit,
-    h.valid.sourceFits 0, h.valid.workspaceFit, ⟨h.valid.minLength, h.valid.maxLength⟩, rfl, h.valid.space⟩
+    h.valid.sourceFits 0, h.valid.workspaceFit, ⟨h.valid.minLength, h.valid.maxLength⟩, rfl, publicScratch_le ⟨h.valid.minLength, h.valid.maxLength⟩ h.valid.space⟩
   · change (⟨State.addr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Disjoint _
     rw [PrivGeometry.precomputation, h.valid.offsetAddr (by decide)]
     exact Offset.disjoint_base _ (by decide : 8 ≤ oPre)
