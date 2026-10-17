@@ -52,7 +52,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       joint Jacobian accumulator with width-7 and width-5 sparse signed digits, respectively. \
       Generator digits reuse the odd multiples in the first row of `VG_P256_COMB`. The eight \
       odd multiples of `Q` cache their Jacobian `Z²` and `Z³` values. The joint loop doubles \
-      its accumulator in place, specializes arithmetic to the sparse P-256 prime, and keeps \
+      its accumulator in place with five squares and three products, each linear combination \
+      (`12a − 9b`, `4a − b`, `3a − 8b`) reduced once (ECDH's doubling), specializes arithmetic to the sparse P-256 prime, and keeps \
       field values in scalar registers across operations with checked scheduling and allocation, \
       then converts once to homogeneous coordinates. Verification compares the projective \
       x-coordinate with `r` and, when in range, `r + n`, without a field inversion. Table \

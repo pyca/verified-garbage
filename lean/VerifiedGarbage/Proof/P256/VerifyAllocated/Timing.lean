@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
-meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 meta import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
@@ -29,10 +27,6 @@ meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 namespace VG.Proof.P256.VerifyAllocated
 open VG VG.AArch64 VG.Proof.Weierstrass.AArch64
-
-theorem Double_ct : FieldCT (VG.Impl.P256.VerifyAllocated.program .doubleRR) := by
-  exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0])
-    (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem MixedHead_ct : FieldCT (VG.Impl.P256.VerifyAllocated.program .mixedHead) := by
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0])

@@ -107,11 +107,9 @@ theorem allocatedOps_timing (raw : RawCorrect) {base T : Addr} {P Q : Point C} {
   double := by
     intro A j E
     dsimp only [P256Allocated.ops]
-    have h := field_relCT raw Proof.P256.VerifyAllocated.Double.caseProof
-      (base:=base) (V:=jointLive cfg) (Out:=jointLive cfg) (E:=E)
-      (by decide +kernel) (by decide +kernel)
-      (fun _ hx => (mem_validAfter _ _).mpr (Or.inl hx))
-      (by decide +kernel) Proof.P256.VerifyAllocated.Double_ct
+    have h := fieldWP_relCT (base:=base) (V:=jointLive cfg) (V':=jointLive cfg) (E:=E)
+      Proof.P256.EcdhDouble.Certificate.ct fun _ hi =>
+        WP.mono (double_field_ok hi) fun _ ⟨hk,it⟩ => ⟨it,hk.regs.sp⟩
     exact h.mono (fun _ _ h => h.1) (fun _ _ h => ⟨_,h⟩)
   peer := by
     intro A j hj E

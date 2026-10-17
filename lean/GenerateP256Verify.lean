@@ -15,7 +15,7 @@ private def render (code : List Instr) : String := Id.run do
   return "aarch64_instrs% " ++ s
 
 def main : IO Unit := do
-  let cases := [("doubleRR",VerifyArithmetic.Kind.doubleRR),("mixedHead",.mixedHead),
+  let cases := [("mixedHead",VerifyArithmetic.Kind.mixedHead),
     ("mixedTail",.mixedTail),("jacTail",.jacTail),("cachedHead",.cachedHead)]
   let mut text := "module\n\npublic import VerifiedGarbage.TCB.AArch64.Isa\npublic import VerifiedGarbage.Impl.AArch64Instrs\n\n/-! Lean-generated output of VerifyRegisters.optimize. These literal instruction\nblocks are untrusted input to the checked arithmetic certificates. -/\n\n@[expose] public section\n\nnamespace VG.Impl.P256.VerifyAllocatedCode\nopen VG VG.AArch64\n\n"
   for (name,k) in cases do

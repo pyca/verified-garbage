@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.Booth
 namespace VG.Proof.P256.EcdhDouble
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open EcdhJac (C K M Sl layout aligned)
+open EcdhJac (C K M)
 
 section
 variable {m : Nat} [NeZero m] {R : Nat}
@@ -48,7 +48,8 @@ theorem linearKeep {base : Addr} {o : Nat} {s t : State}
     (hk : KeepRegs (clob 4) s t) (ho : Outside base o 32 s.mem t.mem) : OpKeep M base o s t :=
   ⟨hk.gpr,hk.rd,hk.wr,hk.sp,fun x hx _ => ho x hx⟩
 
-theorem inv_keep_unused {base : Addr} {o : Nat} {s t : State} {V : List Nat} {E : Nat→Fin C.p}
+theorem inv_keep_unused {Sl : Nat → Prop} (layout : Lay M 8192 Sl)
+    {base : Addr} {o : Nat} {s t : State} {V : List Nat} {E : Nat→Fin C.p}
     (hi : Inv M base 8192 C.p Sl V E s) (ho : Sl o) (hv : o∉V) (hk : OpKeep M base o s t) :
     Inv M base 8192 C.p Sl V E t := by
   have hg : ProgKeep M base [o] s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp,fun x hx ht => hk.mem x (hx o (by simp)) ht⟩

@@ -20,7 +20,6 @@ def keep (k : Kind) (off : Nat) : Bool :=
   if k == .doubleRR then VerifyDouble.R.x ≤ off && off < VerifyDouble.R.z+32 else true
 
 def code : Kind → List Instr
-  | .doubleRR => VerifyAllocatedCode.doubleRR
   | .mixedHead => VerifyAllocatedCode.mixedHead
   | .mixedTail => VerifyAllocatedCode.mixedTail
   | .jacTail => VerifyAllocatedCode.jacTail
