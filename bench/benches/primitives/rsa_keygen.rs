@@ -5,7 +5,7 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["rsa_keygen", "miller_rabin"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -201,7 +201,7 @@ pub fn bench(c: &mut Criterion) {
 
 /// The shortest stream of octets from a splitmix64 generator seeded with
 /// `seed`, grown by doubling from `seed / 4` octets, that is `enough`.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
     let start = seed / 4;
     let mut seed = seed as u64;
@@ -220,5 +220,5 @@ fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
     rand
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
 pub fn bench(_: &mut Criterion) {}
