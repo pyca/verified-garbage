@@ -96,21 +96,15 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
           q * m) ∧
       val32 u.mem base (acc + 4 * (i + 1)) (2 * N + 1 - (i + 1)) < 2 * m ∧
       Keeps clobW s u := by
-  have hN : 0 < N := by omega
+  have hN : 0 < N := by omega_using [hi]
   have hn := hs.nowrap
   have := hL.acc_le
   have := hL.a_le
   have := hL.b_le
   have := hL.mo_le
-  have := hL.sa
-  have := hL.sb
-  have := hL.smo
   have := hX.le
-  have := hX.sacc
-  have := hX.sa
-  have := hX.sb
-  have := hX.smo
-  have := hX.sinv
+  -- The layout's disjunctions stay in `hL` and `hX`: each side condition
+  -- adds the ones it needs, as `omega` case-splits on every disjunction.
   have hmP : m < 2 ^ (32 * N) := hm ▸ val32_lt _ _ _ _
   have hP : 0 < 2 ^ (32 * N) := Nat.two_pow_pos _
   have hpow : 2 ^ (32 * (N + 2)) = 2 ^ (32 * N) * 2 ^ 64 := by rw [pow32_add]
@@ -148,8 +142,9 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
   have mult₁ : w32 s₁.mem base mult = w32 s.mem base (a + 4 * i) := by
     rw [m₁.mem, w32_write_self, u₀.gpr, Nat.add_comm a]
   have win₁ : val32 s₁.mem base w (N + 2) = val32 s.mem base w (N + 2) :=
-    O₁.val32 (by omega_arith) (by omega_arith)
-  have b₁ : val32 s₁.mem base b N = val32 s.mem base b N := O₁.val32 (by omega_arith) (by omega_arith)
+    O₁.val32 (by have := hX.sacc; omega_arith) (by omega_arith)
+  have b₁ : val32 s₁.mem base b N = val32 s.mem base b N :=
+    O₁.val32 (by have := hX.sb; omega_arith) (by omega_arith)
   -- The window `+= a_i B`.
   have hlt₁ : val32 s₁.mem base w (N + 2) + w32 s₁.mem base mult * val32 s₁.mem base b N <
       2 ^ (32 * (N + 2)) := by
@@ -160,8 +155,8 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
     omega_arith
-  refine WP.seq (WP.mono (mulRowW_ok hs₁ hN hp₁ hw hL.b_le (by omega_arith) (by omega_arith) hX.le
-    (by omega_arith) hlt₁) fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
+  refine WP.seq (WP.mono (mulRowW_ok hs₁ hN hp₁ hw hL.b_le (by omega_arith) (by have := hL.sb; omega_arith) hX.le
+    (by have := hX.sacc; omega_arith) hlt₁) fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
   have k₂ : Keeps clobW s s₂ := k₁.trans (K₂.mono (by decide))
   have hs₂ := hs.of_keeps k₂ (by decide)
   have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
@@ -179,16 +174,17 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
     simp only [w32]
     omega_using []
   have inv₂ : w32 s₂.mem base inv = w32 s.mem base inv := by
-    rw [O₂.w32 (by omega_arith) (by omega_arith), O₁.w32 (by omega_arith) (by omega_arith)]
+    rw [O₂.w32 (by omega_arith) (by omega_arith), O₁.w32 (by have := hX.sinv; omega_arith) (by omega_arith)]
   rw [inv₂] at q₆
   have q₆' : w32 s₆.mem base mult = val32 s₂.mem base w (N + 2) % 2 ^ 32 * w32 s.mem base inv % 2 ^ 32 := by
     rw [q₆, show w32 s₂.mem base (4 * i + acc) = _ from t0]
   -- The window `+= q m`.
   have win₆ : val32 s₆.mem base w (N + 2) = val32 s₂.mem base w (N + 2) :=
-    O₆.val32 (by omega_arith) (by omega_arith)
+    O₆.val32 (by have := hX.sacc; omega_arith) (by omega_arith)
   have hmo₆ : val32 s₆.mem base mo N = m := by
-    rw [O₆.val32 (by omega_arith) (by omega_arith), O₂.val32 (by omega_arith) (by omega_arith),
-      O₁.val32 (by omega_arith) (by omega_arith), hm]
+    rw [O₆.val32 (by have := hX.smo; omega_arith) (by omega_arith),
+      O₂.val32 (by have := hL.smo; omega_arith) (by omega_arith),
+      O₁.val32 (by have := hX.smo; omega_arith) (by omega_arith), hm]
   have hq : w32 s₆.mem base mult < 2 ^ 32 := (s₆.mem.readW (off base mult) 32).isLt
   have hlt₆ : val32 s₆.mem base w (N + 2) + w32 s₆.mem base mult * val32 s₆.mem base mo N <
       2 ^ (32 * (N + 2)) := by
@@ -199,8 +195,8 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
     omega_arith
-  refine WP.seq (WP.mono (mulRowW_ok hs₆ hN hp₆ hw hL.mo_le (by omega_arith) (by omega_arith) hX.le
-    (by omega_arith) hlt₆) fun s₇ ⟨O₇, V₇, K₇⟩ => ?_)
+  refine WP.seq (WP.mono (mulRowW_ok hs₆ hN hp₆ hw hL.mo_le (by omega_arith) (by have := hL.smo; omega_arith) hX.le
+    (by have := hX.sacc; omega_arith) hlt₆) fun s₇ ⟨O₇, V₇, K₇⟩ => ?_)
   have k₇ : Keeps clobW s s₇ := k₆.trans (K₇.mono (by decide))
   have hp₇ : s₇.gpr .ebp = s₇.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [K₇.1 _ (by decide), K₇.1 _ (by decide)]; exact hp₆
@@ -237,8 +233,9 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
         omega_arith)
     exact ((e₁.trans e₂).trans e₆).trans e₇
   have habove' : val32 s₁₁.mem base (w + 4 * (N + 2)) (N - 1 - i) = 0 := by
-    rw [mem₁₁, O₇.val32 (by omega_arith) (by omega_arith), O₆.val32 (by omega_arith) (by omega_arith),
-      O₂.val32 (by omega_arith) (by omega_arith), O₁.val32 (by omega_arith) (by omega_arith), habove]
+    rw [mem₁₁, O₇.val32 (by omega_arith) (by omega_arith),
+      O₆.val32 (by have := hX.sacc; omega_arith) (by omega_arith), O₂.val32 (by omega_arith) (by omega_arith),
+      O₁.val32 (by have := hX.sacc; omega_arith) (by omega_arith), habove]
   have hW2 : val32 s₁₁.mem base w (N + 2) = val32 s.mem base w (2 * N + 1 - i) +
       w32 s.mem base (a + 4 * i) * val32 s.mem base b N + w32 s₆.mem base mult * m := by
     rw [mem₁₁, V₇]
@@ -275,27 +272,20 @@ theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N
   have := hL.a_le
   have := hL.b_le
   have := hL.mo_le
-  have := hL.sa
-  have := hL.sb
-  have := hL.smo
   have := hX.le
-  have := hX.sa
-  have := hX.sb
-  have := hX.smo
-  have := hX.sinv
   have hn := hs.nowrap
   refine WP.loop (M := isa)
     (fun n t' => ∃ i, n = N - i ∧ i < N ∧ LoopInvW base N acc a b m mult i s t') ?_ N t ⟨0, rfl, hN, h0⟩
   rintro n t' ⟨i, rfl, hi, I⟩
   have ht := hs.of_keeps I.keeps (by decide)
   have hm' : val32 t'.mem base mo N = m := by
-    rw [outs2_val32 I.out (by omega_arith) (by omega_arith) (by omega_arith), hm]
+    rw [outs2_val32 I.out (by have := hL.smo; omega_arith) (by have := hX.smo; omega_arith) (by omega_arith), hm]
   have hb' : val32 t'.mem base b N = val32 s.mem base b N :=
-    outs2_val32 I.out (by omega_arith) (by omega_arith) (by omega_arith)
+    outs2_val32 I.out (by have := hL.sb; omega_arith) (by have := hX.sb; omega_arith) (by omega_arith)
   have ha' : w32 t'.mem base (a + 4 * i) = w32 s.mem base (a + 4 * i) :=
-    outs2_w32 I.out (by omega_arith) (by omega_arith) (by omega_arith)
+    outs2_w32 I.out (by have := hL.sa; omega_arith) (by have := hX.sa; omega_arith) (by omega_arith)
   have hinv' : (m * w32 t'.mem base inv + 1) % 2 ^ 32 = 0 := by
-    rw [outs2_w32 I.out hsepInv (by omega_arith) (by omega_arith)]; exact hinv
+    rw [outs2_w32 I.out hsepInv (by have := hX.sinv; omega_arith) (by omega_arith)]; exact hinv
   refine WP.mono (row_ok ht hL hX hv hsepInv hi I.ebp hm' hinv' (hb' ▸ hB) I.lt)
     fun u ⟨hp, hz, O, ⟨q, hq⟩, hT, K⟩ => ?_
   rw [hb', ha'] at hq

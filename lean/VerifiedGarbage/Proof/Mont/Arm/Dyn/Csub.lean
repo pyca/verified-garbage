@@ -268,6 +268,15 @@ theorem SelInv.fupd {s : State} {base : Addr} {size src tmp o : Nat} {b : Bool} 
   ⟨h.ws.of_fupd f, h.rest.trans (f.rest _), by rw [f.gpr]; exact h.r3, by rw [f.gpr]; exact h.r10,
     by rw [f.gpr]; exact h.r1, by rw [f.mem]; exact h.words, by rw [f.mem]; exact h.out⟩
 
+/-- The separations of `csubD`'s slots, out of `omega`'s sight: it
+case-splits on every disjunction (and conjunction) among the hypotheses, so
+each side condition adds the ones it needs. -/
+structure CsubSep (W src o tmp mo : Nat) : Prop where
+  ts : tmp + 4 * W ≤ src ∨ src + 4 * (2 * W + 1) ≤ tmp
+  tm : tmp + 4 * W ≤ mo ∨ mo + 4 * W ≤ tmp
+  os : o + 4 * W ≤ src ∨ src + 4 * (2 * W + 1) ≤ o
+  ot : o + 4 * W ≤ tmp ∨ tmp + 4 * W ≤ o
+
 /-- `[o] = [src] mod m` for the number `[src] < 2m` (`D` digits and a top digit),
 through `[M.tmp]`. -/
 theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {src o m : Nat}
@@ -290,6 +299,8 @@ theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M
   rw [hD] at hsrc h16 hts hos hd hV ⊢
   rw [hW] at ho htmp hmo h16t h16m hts htm hos hot hm ⊢
   have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega
+  have hsep : CsubSep W src o M.tmp M.mo := ⟨hts, htm, hos, hot⟩
+  clear hts htm hos hot
   unfold csubD
   rw [hW]
   refine WP.seq (wp_movw fun s₁ u₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ =>
@@ -320,9 +331,12 @@ theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M
   · -- The difference.
     intro j hj u I pu p9u
     have e12 : u.gpr .r12 = s.gpr .r12 := I.rest.gpr _ (by decide)
-    have x0 : w32 u.mem base (src + 8 * j) = w32 s.mem base (src + 8 * j) := I.out.w32 (by omega) (by omega)
-    have x1 : w32 u.mem base (src + 8 * j + 4) = w32 s.mem base (src + 8 * j + 4) := I.out.w32 (by omega) (by omega)
-    have xm : w32 u.mem base (M.mo + 4 * j) = w32 s.mem base (M.mo + 4 * j) := I.out.w32 (by omega) (by omega)
+    have x0 : w32 u.mem base (src + 8 * j) = w32 s.mem base (src + 8 * j) :=
+      I.out.w32 (by have := hsep.ts; omega) (by omega)
+    have x1 : w32 u.mem base (src + 8 * j + 4) = w32 s.mem base (src + 8 * j + 4) :=
+      I.out.w32 (by have := hsep.ts; omega) (by omega)
+    have xm : w32 u.mem base (M.mo + 4 * j) = w32 s.mem base (M.mo + 4 * j) :=
+      I.out.w32 (by have := hsep.tm; omega) (by omega)
     have d0 : w32 s.mem base (src + 8 * j) < 2 ^ 16 := by
       have := hd (2 * j) (by omega); rwa [show src + 4 * (2 * j) = src + 8 * j by omega] at this
     have d1 : w32 s.mem base (src + 8 * j + 4) < 2 ^ 16 := by
@@ -343,7 +357,8 @@ theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M
       exact (I.out.mono (by omega) (by omega)).trans ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
   -- The mask, then the selection.
   have e12 : u.gpr .r12 = s.gpr .r12 := I.rest.gpr _ (by decide)
-  have xt : w32 u.mem base (src + 8 * W) = w32 s.mem base (src + 8 * W) := I.out.w32 (by omega) (by omega)
+  have xt : w32 u.mem base (src + 8 * W) = w32 s.mem base (src + 8 * W) :=
+    I.out.w32 (by have := hsep.ts; omega) (by omega)
   have hX : dval s.mem base src (2 * W) < 2 ^ (32 * W) := by
     rw [show 32 * W = 16 * (2 * W) by omega]; exact dval_lt (hd.mono (by omega))
   have hsplit : dval s.mem base src (2 * W + 1) = dval s.mem base src (2 * W) +
@@ -411,10 +426,11 @@ theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M
   · intro j hj v J pv p9v
     have e12 : v.gpr .r12 = s.gpr .r12 := J.rest.gpr _ (by decide)
     have y0 : w32 v.mem base (src + 8 * j) = w32 s.mem base (src + 8 * j) := by
-      rw [J.out.w32 (by omega) (by omega), I.out.w32 (by omega) (by omega)]
+      rw [J.out.w32 (by have := hsep.os; omega) (by omega), I.out.w32 (by have := hsep.ts; omega) (by omega)]
     have y1 : w32 v.mem base (src + 8 * j + 4) = w32 s.mem base (src + 8 * j + 4) := by
-      rw [J.out.w32 (by omega) (by omega), I.out.w32 (by omega) (by omega)]
-    have yt : w32 v.mem base (M.tmp + 4 * j) = w32 u.mem base (M.tmp + 4 * j) := J.out.w32 (by omega) (by omega)
+      rw [J.out.w32 (by have := hsep.os; omega) (by omega), I.out.w32 (by have := hsep.ts; omega) (by omega)]
+    have yt : w32 v.mem base (M.tmp + 4 * j) = w32 u.mem base (M.tmp + 4 * j) :=
+      J.out.w32 (by have := hsep.ot; omega) (by omega)
     have d0 : w32 s.mem base (src + 8 * j) < 2 ^ 16 := by
       have := hd (2 * j) (by omega); rwa [show src + 4 * (2 * j) = src + 8 * j by omega] at this
     have d1 : w32 s.mem base (src + 8 * j + 4) < 2 ^ 16 := by
