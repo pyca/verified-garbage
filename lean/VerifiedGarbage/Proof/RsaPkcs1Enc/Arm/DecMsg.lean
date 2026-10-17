@@ -152,4 +152,37 @@ theorem clLen_wp {σ s t : State} {lab : List Byte} {i : Nat} (hl : lab.length =
     h1.putByte hr0 (by decide) (v := 0) (by decide) e9 (is := []) fun t2 h2 => WP.block_nil (k t2 h2)
   simpa [clLen, putByte] using this
 
+theorem shl3 (K : Nat) : BitVec.ofNat 32 K <<< 3 = BitVec.ofNat 32 (8 * K) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega
+
+theorem shr8 {K : Nat} (hK : K ≤ 1024) : BitVec.ofNat 32 (8 * K) >>> 8 = BitVec.ofNat 32 (8 * K / 256) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega
+
+/-- The bit length `8 k` (`amLen`), after a label of 7 bytes, from `k` in `r3`. -/
+theorem amLen_wp {σ s t : State} {lab : List Byte} {i K : Nat} (hl : lab.length = 7) (hK : K ≤ 1024)
+    (hr0 : s.gpr .r0 = P.scr + BitVec.ofNat 32 sMsg) (hr3 : s.gpr .r3 = BitVec.ofNat 32 K)
+    (h : MW P σ s (msgV i lab K) 9 t) {Q : State → Prop}
+    (k : ∀ t', MW P σ s (msgV i lab K) 11 t' → Q t') : WP isa (.block amLen) t Q := by
+  have r3 : t.gpr .r3 = BitVec.ofNat 32 K := by rw [h.regs _ (by decide), hr3]
+  have e9 : (msgV i lab K).getD 9 0 = BitVec.ofNat 8 (8 * K / 256) := by
+    simp only [msgV]
+    rw [getD_append_right _ _ _ (by simp [VG.Proof.RsaPkcs1Enc.i2osp_length, hl])]
+    simp [hl, VG.Proof.RsaPkcs1Enc.i2osp_two]
+  have e10 : (msgV i lab K).getD 10 0 = BitVec.ofNat 8 (8 * K) := by
+    simp only [msgV]
+    rw [getD_append_right _ _ _ (by simp [VG.Proof.RsaPkcs1Enc.i2osp_length, hl])]
+    simp [hl, VG.Proof.RsaPkcs1Enc.i2osp_two]
+  refine wp_mov (op2_lsl (by decide)) fun t1 u1 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun t2 u2 => ?_
+  refine ((h.upd u1).upd u2).strb hr0 (by decide) (rt := .r2)
+    (by rw [u2.gpr, u1.gpr, r3, shl3, shr8 hK, setWidth_ofNat8, e9]) fun t3 h3 g3 => ?_
+  have r3' : t3.gpr .r3 = BitVec.ofNat 32 K := by rw [g3, u2.other _ (by decide), u1.other _ (by decide), r3]
+  refine wp_mov (op2_lsl (by decide)) fun t4 u4 => ?_
+  refine (h3.upd u4).strb hr0 (by decide) (rt := .r2)
+    (by rw [u4.gpr, r3', shl3, setWidth_ofNat8, e10]) fun t5 h5 _ => WP.block_nil (k t5 h5)
+
 end VG.Proof.RsaPkcs1Enc.Arm.Dec
