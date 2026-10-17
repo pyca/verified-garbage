@@ -91,13 +91,14 @@ def prepareContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Cont
 def cryptSig : Sig where
   params := [("ws", .slice true .u64 "ws_len")]
 
-/-- For a working space of at least `L.size` bytes: wherever its table
-encodes the round keys `k` in the order of the direction `d`, the
-`L.blocks` blocks at `L.buf` are replaced by their ECB in direction `d`
-under `k`. Only the bytes of `L.cryptScratch` change. -/
+/-- For a working space of at least `L.size` bytes whose table encodes some
+round keys in the order of some direction (as `vg_sm4_prepare_keys` leaves
+it): wherever the table encodes the round keys `k` in the order of the
+direction `d`, the `L.blocks` blocks at `L.buf` are replaced by their ECB in
+direction `d` under `k`. Only the bytes of `L.cryptScratch` change. -/
 def cryptContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
   cryptSig.contract A
-    (pre := fun _ws wsLen _ => L.size ≤ 8 * wsLen.toNat)
+    (pre := fun ws wsLen m => L.size ≤ 8 * wsLen.toNat ∧ ∃ k d, Holds L m ws k d)
     (post := fun ws wsLen m m' _ =>
       (∀ k d, Holds L m ws k d →
         blocksAt m' (ws + BitVec.ofNat 64 L.buf) L.blocks = ecb k d (blocksAt m (ws + BitVec.ofNat 64 L.buf) L.blocks)) ∧
@@ -139,6 +140,7 @@ def cryptApi (L : Layout) : Api where
     Contract: `VG.Spec.Sm4.Prepared.cryptContract`. Constant time: only pointers and `ws_len` \
     may affect timing, not the round keys or the blocks."
   safety := [s!"`ws_len` must be at least {(L.size + 7) / 8}.",
+    "`ws` must hold the round keys as `vg_sm4_prepare_keys` wrote them.",
     s!"The bytes {rangesDoc L.cryptScratch} of `ws` are unspecified on return but for the \
       blocks, and hold secrets, which the caller must destroy."]
 
