@@ -18,20 +18,17 @@ of q, on which `mask` branches, is public.
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Impl.Dsa.X86
 
-/-- The registers `rs` hold `p`'s values. -/
-def PublicRegs (rs : List Reg) (p : Reg → BitVec 32) (s : State) : Prop :=
-  ∀ r ∈ rs, s.gpr r = p r
+theorem copyLoop_ct {α : Type} {Φ : α → State → Prop} (h : Pins Φ [.esi, .edx, .ecx]) :
+    RelCT isa (Two Φ) (.loop (.block Random.copyByte) .ne) (fun _ _ => True) :=
+  two_taint [.esi, .edx, .ecx] h (by taint_decide)
 
-theorem copyLoop_ct :
-    RelCT isa (Two (PublicRegs [.esi, .edx, .ecx])) (.loop (.block Random.copyByte) .ne) (fun _ _ => True) :=
-  two_taint [.esi, .edx, .ecx] (pins_of (fun p r => p r) (fun _ _ h => h)) (by taint_decide)
+theorem rangeBody_ct {α : Type} {Φ : α → State → Prop} (h : Pins Φ [.esi, .edx, .ecx]) :
+    RelCT isa (Two Φ) (.seq (.loop (.block Random.rangeByte) .ne) (.block Random.rangeFinish))
+      (fun _ _ => True) :=
+  two_taint [.esi, .edx, .ecx] h (by taint_decide)
 
-theorem rangeBody_ct :
-    RelCT isa (Two (PublicRegs [.esi, .edx, .ecx]))
-      (.seq (.loop (.block Random.rangeByte) .ne) (.block Random.rangeFinish)) (fun _ _ => True) :=
-  two_taint [.esi, .edx, .ecx] (pins_of (fun p r => p r) (fun _ _ h => h)) (by taint_decide)
-
-theorem mask_ct : RelCT isa (Two (PublicRegs [.edx])) Random.mask (fun _ _ => True) :=
-  two_taint [.edx] (pins_of (fun p r => p r) (fun _ _ h => h)) (by taint_decide)
+theorem mask_ct {α : Type} {Φ : α → State → Prop} (h : Pins Φ [.edx]) :
+    RelCT isa (Two Φ) Random.mask (fun _ _ => True) :=
+  two_taint [.edx] h (by taint_decide)
 
 end VG.Proof.Dsa.X86

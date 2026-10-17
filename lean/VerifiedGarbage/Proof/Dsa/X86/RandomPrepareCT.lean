@@ -194,7 +194,6 @@ def Scanned (s₀ t : State) : Prop :=
     t.gpr .edx = (scanAfter (rQBytes s₀) (rQBytes s₀).length).2.setWidth 32
 
 theorem prepare_ct : RelCT isa (Two (At Ready)) Random.prepare fun _ _ => True := by
-  have hR : ∀ (a : Pub) s₀ t, Ready s₀ t → Ready s₀ t := fun _ _ _ h => h
   unfold Random.prepare
   refine RelCT.seq (two_piece (Ψ := At ScanPre) [.esp] (pins_esp id (fun _ _ h => h) (fun _ _ _ h => h))
     (by taint_decide) fun a t ⟨s₀, A, e, h⟩ => WP.mono (prepHead_ok A h) fun u hu => ⟨s₀, A, e, hu⟩) ?_

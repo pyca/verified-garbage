@@ -139,28 +139,18 @@ theorem Ready.draw {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) 
 abbrev drawPlace (s₀ : State) : Nat := oNonce + ((rQBytes s₀).length - rWidth s₀)
 abbrev drawBytes (s₀ : State) (used : Nat) : List Byte := ((rInput s₀).rand.drop used).take (rWidth s₀)
 
-theorem copy_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {used : Nat}
+/-- The draw's source, count and place. -/
+theorem copyHeader_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {used : Nat}
     (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
-    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
-    (hm : slot t.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat)
-    (hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length) (hw1 : 1 ≤ rWidth s₀) :
-    WP isa copy t fun u => Ready s₀ u ∧
-      (∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
-        copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
-      Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧
-      Keeps [.eax, .ecx, .edx, .esi] t u := by
-  have hF : Random.frameBytes = 120 := rfl
+    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)) :
+    WP isa (.block copyHeader) t fun u => Ready s₀ u ∧ u.mem = t.mem ∧ Keeps [.eax, .ecx, .edx, .esi] t u ∧
+      u.gpr .esi = X86.arg s₀ 9 + BitVec.ofNat 32 used ∧ u.gpr .ecx = BitVec.ofNat 32 (rWidth s₀) ∧
+      u.gpr .edx = u.gpr .esp + BitVec.ofNat 32 (drawPlace s₀) := by
   have hql := rQBytes_le A
   have hqn := rQBytes_length A
   have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
-  have hlen : (drawBytes s₀ used).length = rWidth s₀ := by
-    simp only [drawBytes, List.length_take, List.length_drop]; omega
-  have hin := fun u (hr : Ready s₀ u) => hr.draw A (show used ≤ _ by omega) (rWidth s₀)
-  have hd : drawPlace s₀ + (drawBytes s₀ used).length ≤ Random.frameBytes := by
-    rw [hlen]; unfold drawPlace oNonce; omega
-  unfold copy copyInit copyHeader copyFirst
-  simp only [List.cons_append, List.nil_append]
-  refine WP.seq (wp_movS (h.argSrc A (j := 9) (by decide)) fun t₁ u₁ _ => ?_)
+  unfold copyHeader
+  refine wp_movS (h.argSrc A (j := 9) (by decide)) fun t₁ u₁ _ => ?_
   have h₁ := h.upd u₁ (by decide)
   refine wp_addS (v := BitVec.ofNat 32 used) (by rw [h₁.rf.readSlot (by decide), u₁.mem]; exact congrArg some hu) fun t₂ u₂ _ => ?_
   have h₂ := h₁.upd u₂ (by decide)
@@ -172,7 +162,7 @@ theorem copy_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {us
   have h₅ := h₄.upd u₅ (by decide)
   refine wp_addS (h₅.argSrc A (j := 6) (by decide)) fun t₆ u₆ _ => ?_
   have h₆ := h₅.upd u₆ (by decide)
-  refine wp_sub fun t₇ u₇ _ => ?_
+  refine wp_sub fun t₇ u₇ _ => WP.block_nil ?_
   have h₇ := h₆.upd u₇ (by decide)
   have k₇ : Keeps [.eax, .ecx, .edx, .esi] t t₇ :=
     ((((((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))).trans
@@ -193,6 +183,28 @@ theorem copy_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {us
       show X86.arg s₀ 6 = BitVec.ofNat 32 (rQBytes s₀).length by rw [hqn, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       Offset.add_add, add_ofNat_sub32 _ (by omega) (by unfold oNonce; omega)]
     unfold drawPlace; congr 2; omega
+  exact ⟨h₇, m₇, k₇, esi₇, ecx₇, edx₇⟩
+
+/-- The draw's header and its first byte. -/
+theorem copyInit_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {used : Nat}
+    (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
+    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
+    (hm : slot t.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat)
+    (hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length) (hw1 : 1 ≤ rWidth s₀) :
+    WP isa (.block copyInit) t fun u => CopyInv s₀ t (X86.arg s₀ 9 + BitVec.ofNat 32 used) (drawPlace s₀)
+      (drawBytes s₀ used) (maskValue (rLead s₀).toNat) 1 u ∧ u.zf = some (decide (rWidth s₀ - 1 = 0)) := by
+  have hF : Random.frameBytes = 120 := rfl
+  have hql := rQBytes_le A
+  have hqn := rQBytes_length A
+  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  have hlen : (drawBytes s₀ used).length = rWidth s₀ := by
+    simp only [drawBytes, List.length_take, List.length_drop]; omega
+  have hin := fun u (hr : Ready s₀ u) => hr.draw A (show used ≤ _ by omega) (rWidth s₀)
+  have hd : drawPlace s₀ + (drawBytes s₀ used).length ≤ Random.frameBytes := by
+    rw [hlen]; unfold drawPlace oNonce; omega
+  unfold copyInit
+  refine WP.block_append (WP.mono (copyHeader_ok A h hu hw) fun t₇ ⟨h₇, m₇, k₇, esi₇, ecx₇, edx₇⟩ => ?_)
+  unfold copyFirst
   -- The first byte.
   have hb₀ := (hin t₇ h₇).rd 0 (by rw [hlen]; omega)
   rw [BitVec.add_zero] at hb₀
@@ -244,12 +256,35 @@ theorem copy_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {us
       u₈.other _ (by decide), ecx₇, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
       sub_beq (by omega) (by decide)]
     exact congrArg some (decide_eq_decide.mpr (by omega))
+  exact ⟨I₁, z₁⟩
+
+theorem copy_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {used : Nat}
+    (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
+    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
+    (hm : slot t.mem (rBase s₀) oMask = maskValue (rLead s₀).toNat)
+    (hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length) (hw1 : 1 ≤ rWidth s₀) :
+    WP isa copy t fun u => Ready s₀ u ∧
+      (∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
+        copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
+      Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧
+      Keeps [.eax, .ecx, .edx, .esi] t u := by
+  have hF : Random.frameBytes = 120 := rfl
+  have hql := rQBytes_le A
+  have hqn := rQBytes_length A
+  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  have hlen : (drawBytes s₀ used).length = rWidth s₀ := by
+    simp only [drawBytes, List.length_take, List.length_drop]; omega
+  have hin := fun u (hr : Ready s₀ u) => hr.draw A (show used ≤ _ by omega) (rWidth s₀)
+  have hd : drawPlace s₀ + (drawBytes s₀ used).length ≤ Random.frameBytes := by
+    rw [hlen]; unfold drawPlace oNonce; omega
   have fin : ∀ u, CopyInv s₀ t (X86.arg s₀ 9 + BitVec.ofNat 32 used) (drawPlace s₀) (drawBytes s₀ used)
       (maskValue (rLead s₀).toNat) (rWidth s₀) u →
       Ready s₀ u ∧ (∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
         copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
       Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧ Keeps [.eax, .ecx, .edx, .esi] t u :=
     fun u J => ⟨J.ready, J.bytes, hlen ▸ J.out, J.keeps⟩
+  unfold copy
+  refine WP.seq (WP.mono (copyInit_ok A h hu hw hm hfull hw1) fun t₁₃ ⟨I₁, z₁⟩ => ?_)
   unfold copyRest
   by_cases h1 : rWidth s₀ = 1
   · refine WP.ite false (by simp only [eval, z₁, h1, Nat.sub_self, decide_true, Option.map_some,

@@ -195,19 +195,16 @@ theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length =
   rw [z₅, ebx₄, BitVec.and_self]
   cases accepts s₀ cs <;> rfl
 
-theorem inRange_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {cs : List Byte}
+/-- The comparison's pointers and count. -/
+theorem rangeInit_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {cs : List Byte}
     (hq : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
-    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
-    (hcs : cs.length = rWidth s₀) (hw1 : 1 ≤ rWidth s₀)
-    (hnonce : ∀ i < rWidth s₀, t.mem (off (rBase s₀) (drawPlace s₀ + i)) = cs.getD i 0) :
-    WP isa inRange t fun u => u.gpr .ebx = (if accepts s₀ cs then 1 else 0) ∧
-      u.zf = some (!accepts s₀ cs) ∧ u.mem = t.mem ∧ Ready s₀ u ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t u := by
+    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)) (hcs : cs.length = rWidth s₀) :
+    WP isa (.block rangeInit) t fun u => RangeInv s₀ t cs (rWidth s₀) u ∧ u.mem = t.mem := by
   have hql := rQBytes_le A
   have hqn := rQBytes_length A
   have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
-  unfold inRange rangeInit
-  refine WP.seq (wp_movS rfl fun t₁ u₁ _ => wp_addi fun t₂ u₂ => ?_)
+  unfold rangeInit
+  refine wp_movS rfl fun t₁ u₁ _ => wp_addi fun t₂ u₂ => ?_
   have h₂ := (h.upd u₁ (by decide)).upd u₂ (by decide)
   refine wp_addS (h₂.argSrc A (j := 6) (by decide)) fun t₃ u₃ _ => ?_
   have h₃ := h₂.upd u₃ (by decide)
@@ -239,6 +236,21 @@ theorem inRange_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) 
     · rw [u₈.other _ (by decide), u₇.gpr, hcsd, hqd]; rfl
     · rw [u₈.gpr]; decide
     · rw [u₈.gpr, hcsd]; simp
+  exact ⟨I₀, m₈⟩
+
+theorem inRange_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {cs : List Byte}
+    (hq : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
+    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀))
+    (hcs : cs.length = rWidth s₀) (hw1 : 1 ≤ rWidth s₀)
+    (hnonce : ∀ i < rWidth s₀, t.mem (off (rBase s₀) (drawPlace s₀ + i)) = cs.getD i 0) :
+    WP isa inRange t fun u => u.gpr .ebx = (if accepts s₀ cs then 1 else 0) ∧
+      u.zf = some (!accepts s₀ cs) ∧ u.mem = t.mem ∧ Ready s₀ u ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] t u := by
+  have hql := rQBytes_le A
+  have hqn := rQBytes_length A
+  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  unfold inRange
+  refine WP.seq (WP.mono (rangeInit_ok A h hq hw hcs) fun t₈ ⟨I₀, _⟩ => ?_)
   -- The loop.
   refine WP.seq (WP.loop (M := isa) (fun (n : Nat) (u : State) => ∃ k, n = k ∧ 1 ≤ k ∧ k ≤ rWidth s₀ ∧
       RangeInv s₀ t cs k u) (fun n u hu => ?_) (rWidth s₀) t₈ ⟨_, rfl, hw1, Nat.le_refl _, I₀⟩)

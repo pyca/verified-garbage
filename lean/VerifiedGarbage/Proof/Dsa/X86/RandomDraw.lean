@@ -89,6 +89,33 @@ theorem store_outs (B : Addr) (m : Mem) {d : Nat} (v : BitVec 32) {rs : List (Na
     (hd : (d, 4) ∈ rs) (hb : d + 4 ≤ 2 ^ 64 := by decide) : Outs B rs m (m.writeW (off B d) v) :=
   Outs.of_outside (writeW32_outside m B v hb) hd
 
+/-- Spend a draw of the budget. -/
+theorem drawDec_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
+    (hd : 1 ≤ draws) (hdb : draws ≤ 128) :
+    WP isa (.block [.mov .eax (.mem (sp oDraws)), .alu .sub .eax (.imm 1), .store (sp oDraws) .eax]) t fun u =>
+      Keeps [.eax] t u ∧ u.gpr .eax = BitVec.ofNat 32 (draws - 1) ∧
+      u.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) ∧ Ready s₀ u ∧
+      u.zf = some (decide (draws - 1 = 0)) ∧ Smp s₀ used (draws - 1) u := by
+  have h := S.ready
+  refine (wp_movS (v := BitVec.ofNat 32 draws) (by rw [h.rf.readSlot (by decide)]; exact congrArg some S.drawsW)
+    fun t₁ u₁ _ => wp_subi fun t₂ u₂ _ z₂ => ?_)
+  have v₂ : t₂.gpr .eax = BitVec.ofNat 32 (draws - 1) := by
+    rw [u₂.gpr, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat hd]
+  have f₂ := h.rf.of_keeps ((u₁.keeps.mono (by decide)).trans u₂.keeps)
+  refine wp_slot f₂ (by decide) v₂ fun t₃ f₃ m₃ g₃ r₃ w₃ zf₃ _ => WP.block_nil ?_
+  have k₃ : Keeps [.eax] t t₃ := ((u₁.keeps.mono (by decide)).trans u₂.keeps).trans ⟨fun r _ => by rw [g₃], r₃, w₃⟩
+  have hm₃ : t₃.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) := by
+    rw [m₃, u₂.mem, u₁.mem]
+  have h₃ : Ready s₀ t₃ := h.congr k₃ (by rw [hm₃]; exact frame_store s₀ _ (by decide) _)
+  have z₃ : t₃.zf = some (decide (draws - 1 = 0)) := by
+    rw [zf₃, z₂, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
+    exact congrArg some (decide_eq_decide.mpr (by omega))
+  have S₃ : Smp s₀ used (draws - 1) t₃ :=
+    S.of A h₃ (by rw [hm₃]; exact store_outs _ _ _ (by simp only [drawRanges, List.mem_cons, true_or, or_true]))
+      (by rw [hm₃, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.usedW)
+      (by rw [hm₃, slot_write_self]) S.usedBound
+  exact ⟨k₃, by rw [g₃, v₂], hm₃, h₃, z₃, S₃⟩
+
 /-- Accept, or spend a draw. -/
 theorem drawFinish_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
     (hd : 1 ≤ draws) (hdb : draws ≤ 128) {acc : Bool} (hz : t.zf = some (!acc)) :
@@ -117,26 +144,11 @@ theorem drawFinish_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Na
   | false =>
     refine WP.ite false (by simp only [eval, hz, Bool.not_false, Option.map_some, Bool.not_true])
       (fun e => Bool.noConfusion e) (fun _ => ?_)
-    refine WP.seq (wp_movS (v := BitVec.ofNat 32 draws) (by rw [h.rf.readSlot (by decide)]; exact congrArg some S.drawsW)
-      fun t₁ u₁ _ => wp_subi fun t₂ u₂ _ z₂ => ?_)
-    have v₂ : t₂.gpr .eax = BitVec.ofNat 32 (draws - 1) := by
-      rw [u₂.gpr, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat hd]
-    have f₂ := h.rf.of_keeps ((u₁.keeps.mono (by decide)).trans u₂.keeps)
-    refine wp_slot f₂ (by decide) v₂ fun t₃ f₃ m₃ g₃ r₃ w₃ zf₃ _ => WP.block_nil ?_
-    have k₃ : Keeps [.eax] t t₃ := ((u₁.keeps.mono (by decide)).trans u₂.keeps).trans ⟨fun r _ => by rw [g₃], r₃, w₃⟩
-    have hm₃ : t₃.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) := by
-      rw [m₃, u₂.mem, u₁.mem]
-    have h₃ : Ready s₀ t₃ := h.congr k₃ (by rw [hm₃]; exact frame_store s₀ _ (by decide) _)
-    have z₃ : t₃.zf = some (decide (draws - 1 = 0)) := by
-      rw [zf₃, z₂, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
-      exact congrArg some (decide_eq_decide.mpr (by omega))
-    have S₃ : Smp s₀ used (draws - 1) t₃ :=
-      S.of A h₃ (by rw [hm₃]; exact store_outs _ _ _ (by simp only [drawRanges, List.mem_cons, true_or, or_true]))
-        (by rw [hm₃, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.usedW)
-        (by rw [hm₃, slot_write_self]) S.usedBound
+    refine WP.seq (WP.mono (drawDec_ok A S hd hdb) fun t₃ ⟨k₃, v₃, hm₃, h₃, z₃, S₃⟩ => ?_)
+    have f₃ := h₃.rf
     by_cases h0 : draws - 1 = 0
     · refine WP.ite true (by simp only [eval, z₃, h0, decide_true]) (fun _ => ?_) (fun e => Bool.noConfusion e)
-      refine wp_slot f₃ (by decide) (by rw [g₃, v₂, h0]) fun t₄ f₄ m₄ g₄ r₄ w₄ _ _ => WP.block_nil ?_
+      refine wp_slot f₃ (by decide) (by rw [v₃, h0]) fun t₄ f₄ m₄ g₄ r₄ w₄ _ _ => WP.block_nil ?_
       have hm₄ : t₄.mem = t₃.mem.writeW (off (rBase s₀) oStatus) (0 : BitVec 32) := m₄
       have k₄ : Keeps [.eax] t t₄ := k₃.trans ⟨fun r _ => by rw [g₄], r₄, w₄⟩
       have h₄ : Ready s₀ t₄ := h.congr k₄ (by
@@ -191,6 +203,91 @@ theorem sampleStatus_le (S : Spec.Dsa.Random.Sample) : VG.Proof.Dsa.Random.sampl
 
 abbrev sampleRegs : List Reg := [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp]
 
+/-- The tape's remaining bytes against the width. -/
+theorem drawHead_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t) :
+    WP isa (.block [.mov .eax (.mem (arg aRandLen)), .alu .sub .eax (.mem (sp oUsed)),
+      .alu .cmp .eax (.mem (sp oWidth))]) t fun u => Smp s₀ used draws u ∧ u.mem = t.mem ∧
+      Keeps sampleRegs t u ∧ u.cf = some (decide ((rInput s₀).rand.length - used < rWidth s₀)) := by
+  have h := S.ready
+  have hub := S.usedBound
+  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  have hql := rQBytes_le A
+  have hrl : (rInput s₀).rand.length = (X86.arg s₀ 10).toNat := by simp only [rInput, rBytes_length]
+  refine wp_movS (h.argSrc A (j := 10) (by decide)) fun t₁ u₁ _ => ?_
+  have h₁ := h.upd u₁ (by decide)
+  refine wp_subS (v := BitVec.ofNat 32 used)
+    (by rw [h₁.rf.readSlot (by decide), u₁.mem]; exact congrArg some S.usedW) fun t₂ u₂ _ => ?_
+  have h₂ := h₁.upd u₂ (by decide)
+  refine wp_cmpSc (v := BitVec.ofNat 32 (rWidth s₀))
+    (by rw [h₂.rf.readSlot (by decide), u₂.mem, u₁.mem]; exact congrArg some S.width) fun t₃ f₃ c₃ => WP.block_nil ?_
+  have h₃ := h₂.fupd f₃
+  have k₃ : Keeps sampleRegs t t₃ := ((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (f₃.keeps _)
+  have m₃ : t₃.mem = t.mem := by rw [f₃.mem, u₂.mem, u₁.mem]
+  have e10 : X86.arg s₀ 10 = BitVec.ofNat 32 (rInput s₀).rand.length := by
+    rw [hrl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  rw [u₂.gpr, u₁.gpr, e10, sub_ofNat hub, toNat_ofNat_lt (by have := (X86.arg s₀ 10).isLt; omega),
+    toNat_ofNat_lt (by omega)] at c₃
+  exact ⟨S.congr A h₃ (by rw [m₃]; exact Outs.refl _ _ _) (by rw [m₃]) (by rw [m₃]), m₃, k₃, c₃⟩
+
+/-- Consume a complete draw. -/
+theorem drawUsed_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
+    (hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length) :
+    WP isa (.block [.mov .eax (.mem (sp oUsed)), .alu .add .eax (.mem (sp oWidth)), .store (sp oUsed) .eax]) t
+      fun u => Smp s₀ (used + rWidth s₀) draws u ∧
+        u.mem = t.mem.writeW (off (rBase s₀) oUsed) (BitVec.ofNat 32 (used + rWidth s₀)) ∧
+        Keeps sampleRegs t u := by
+  have h₄ := S.ready
+  refine wp_movS (v := BitVec.ofNat 32 used)
+    (by rw [h₄.rf.readSlot (by decide)]; exact congrArg some S.usedW) fun t₅ u₅ _ => ?_
+  have h₅ := h₄.upd u₅ (by decide)
+  refine wp_addS (v := BitVec.ofNat 32 (rWidth s₀))
+    (by rw [h₅.rf.readSlot (by decide), u₅.mem]; exact congrArg some S.width) fun t₆ u₆ _ => ?_
+  have h₆ := h₅.upd u₆ (by decide)
+  refine wp_slot h₆.rf (by decide) (v := BitVec.ofNat 32 (used + rWidth s₀))
+    (by rw [u₆.gpr, u₅.gpr, BitVec.ofNat_add]) fun t₇ f₇ m₇ g₇ r₇ w₇ _ _ => WP.block_nil ?_
+  have hm₇ : t₇.mem = t.mem.writeW (off (rBase s₀) oUsed) (BitVec.ofNat 32 (used + rWidth s₀)) := by
+    rw [m₇, u₆.mem, u₅.mem]
+  have k₇ : Keeps sampleRegs t t₇ :=
+    ((u₅.keeps.mono (by decide)).trans (u₆.keeps.mono (by decide))).trans ⟨fun r _ => by rw [g₇], r₇, w₇⟩
+  have h₇ : Ready s₀ t₇ := h₄.congr k₇ (by rw [hm₇]; exact frame_store s₀ _ (by decide) _)
+  have o₇ : Outs (rBase s₀) [(oUsed, 4)] t.mem t₇.mem := by rw [hm₇]; exact store_outs _ _ _ (by decide)
+  exact ⟨S.of A h₇ (o₇.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [drawRanges])
+    (by rw [hm₇, slot_write_self]) (by rw [hm₇, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.drawsW)
+    hfull, hm₇, k₇⟩
+
+/-- The copy, apart from the rest of the sampler's state. -/
+theorem drawCopy_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
+    (hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length) (hw1 : 1 ≤ rWidth s₀) :
+    WP isa copy t fun u => Smp s₀ used draws u ∧
+      (∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
+        copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
+      Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧
+      Keeps [.eax, .ecx, .edx, .esi] t u := by
+  have hql := rQBytes_le A
+  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  refine WP.mono (copy_ok A S.ready S.usedW S.width S.mask hfull hw1) fun t₄ ⟨h₄, hc₄, ho₄, k₄⟩ => ?_
+  have o₄ : Outs (rBase s₀) (drawRanges s₀) t.mem t₄.mem :=
+    Outs.of_outside ho₄ (by simp only [drawRanges, List.mem_cons, true_or, or_true])
+  have sl₄ : ∀ d, d + 4 ≤ oNonce → slot t₄.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd' =>
+    slot_outs (Outs.of_outside ho₄ (List.mem_singleton_self _)) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace; omega) (by unfold oNonce at hd'; omega)
+  exact ⟨S.congr A h₄ o₄ (sl₄ _ (by decide)) (sl₄ _ (by decide)), hc₄, ho₄, k₄⟩
+
+/-- The nonce's bytes survive the store of `used`. -/
+theorem drawUsed_bytes {s₀ : State} (A : RandomSignABI s₀) {t u : State} {used v : Nat}
+    (hm : u.mem = t.mem.writeW (off (rBase s₀) oUsed) (BitVec.ofNat 32 v))
+    (hc : ∀ i < rWidth s₀, t.mem (off (rBase s₀) (drawPlace s₀ + i)) =
+      copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) :
+    ∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
+      copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i := fun i hi => by
+  have hql := rQBytes_le A
+  have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  have o₇ : Outs (rBase s₀) [(oUsed, 4)] t.mem u.mem := by rw [hm]; exact store_outs _ _ _ (by decide)
+  rw [o₇ _ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [ofs_off0 _ (by unfold drawPlace oNonce; omega)]; right; unfold drawPlace oNonce oUsed; omega]
+  exact hc i hi
+
 theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
     (hd : 1 ≤ draws) (hdb : draws ≤ 128) (hq : 1 < rq s₀)
     (hst : slot t.mem (rBase s₀) oStatus = 4) :
@@ -211,21 +308,8 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
   have hdw : Spec.Dsa.Random.drawBytes (rq s₀) = rWidth s₀ := rWidth_eq s₀
   have hrlen : ((rInput s₀).rand.drop used).length = (rInput s₀).rand.length - used := List.length_drop
   unfold draw
-  refine WP.seq (wp_movS (h.argSrc A (j := 10) (by decide)) fun t₁ u₁ _ => ?_)
-  have h₁ := h.upd u₁ (by decide)
-  refine wp_subS (v := BitVec.ofNat 32 used)
-    (by rw [h₁.rf.readSlot (by decide), u₁.mem]; exact congrArg some S.usedW) fun t₂ u₂ _ => ?_
-  have h₂ := h₁.upd u₂ (by decide)
-  refine wp_cmpSc (v := BitVec.ofNat 32 (rWidth s₀))
-    (by rw [h₂.rf.readSlot (by decide), u₂.mem, u₁.mem]; exact congrArg some S.width) fun t₃ f₃ c₃ => WP.block_nil ?_
-  have h₃ := h₂.fupd f₃
-  have k₃ : Keeps sampleRegs t t₃ := ((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (f₃.keeps _)
-  have m₃ : t₃.mem = t.mem := by rw [f₃.mem, u₂.mem, u₁.mem]
-  have e10 : X86.arg s₀ 10 = BitVec.ofNat 32 (rInput s₀).rand.length := by
-    rw [hrl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  rw [u₂.gpr, u₁.gpr, e10, sub_ofNat hub, toNat_ofNat_lt (by have := (X86.arg s₀ 10).isLt; omega),
-    toNat_ofNat_lt (by omega)] at c₃
-  have S₃ : Smp s₀ used (d' + 1) t₃ := S.congr A h₃ (by rw [m₃]; exact Outs.refl _ _ _) (by rw [m₃]) (by rw [m₃])
+  refine WP.seq (WP.mono (drawHead_ok A S) fun t₃ ⟨S₃, m₃, k₃, c₃⟩ => ?_)
+  have h₃ := S₃.ready
   by_cases hshort : (rInput s₀).rand.length - used < rWidth s₀
   · -- The tape is short.
     refine WP.ite true (by simp only [eval, c₃, hshort, decide_true]) (fun _ => ?_) (fun e => Bool.noConfusion e)
@@ -253,39 +337,12 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
     have hnp : ∀ i, i < rWidth s₀ → oNonce ≤ drawPlace s₀ + i ∧ drawPlace s₀ + i < oNonce + 32 := by
       intro i hi; unfold drawPlace; omega
     -- The copy.
-    refine WP.seq (WP.mono (copy_ok A h₃ S₃.usedW S₃.width S₃.mask hfull hw1)
-      fun t₄ ⟨h₄, hc₄, ho₄, k₄⟩ => ?_)
-    have o₄ : Outs (rBase s₀) (drawRanges s₀) t₃.mem t₄.mem :=
-      Outs.of_outside ho₄ (by simp only [drawRanges, List.mem_cons, true_or, or_true])
-    have sl₄ : ∀ d, d + 4 ≤ oNonce → slot t₄.mem (rBase s₀) d = slot t₃.mem (rBase s₀) d := fun d hd' =>
-      slot_outs (Outs.of_outside ho₄ (List.mem_singleton_self _)) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace; omega) (by unfold oNonce at hd'; omega)
-    have S₄ : Smp s₀ used (d' + 1) t₄ := S₃.congr A h₄ o₄ (sl₄ _ (by decide)) (sl₄ _ (by decide))
+    refine WP.seq (WP.mono (drawCopy_ok A S₃ hfull hw1) fun t₄ ⟨S₄, hc₄, ho₄, k₄⟩ => ?_)
     -- The consumption.
-    refine WP.seq (wp_movS (v := BitVec.ofNat 32 used)
-      (by rw [h₄.rf.readSlot (by decide)]; exact congrArg some S₄.usedW) fun t₅ u₅ _ => ?_)
-    have h₅ := h₄.upd u₅ (by decide)
-    refine wp_addS (v := BitVec.ofNat 32 (rWidth s₀))
-      (by rw [h₅.rf.readSlot (by decide), u₅.mem]; exact congrArg some S₄.width) fun t₆ u₆ _ => ?_
-    have h₆ := h₅.upd u₆ (by decide)
-    refine wp_slot h₆.rf (by decide) (v := BitVec.ofNat 32 (used + rWidth s₀))
-      (by rw [u₆.gpr, u₅.gpr, BitVec.ofNat_add]) fun t₇ f₇ m₇ g₇ r₇ w₇ _ _ => WP.block_nil ?_
-    have hm₇ : t₇.mem = t₄.mem.writeW (off (rBase s₀) oUsed) (BitVec.ofNat 32 (used + rWidth s₀)) := by
-      rw [m₇, u₆.mem, u₅.mem]
-    have k₇ : Keeps sampleRegs t₄ t₇ :=
-      ((u₅.keeps.mono (by decide)).trans (u₆.keeps.mono (by decide))).trans ⟨fun r _ => by rw [g₇], r₇, w₇⟩
-    have h₇ : Ready s₀ t₇ := h₄.congr k₇ (by rw [hm₇]; exact frame_store s₀ _ (by decide) _)
+    refine WP.seq (WP.mono (drawUsed_ok A S₄ hfull) fun t₇ ⟨S₇, hm₇, k₇⟩ => ?_)
+    have h₇ := S₇.ready
     have o₇ : Outs (rBase s₀) [(oUsed, 4)] t₄.mem t₇.mem := by rw [hm₇]; exact store_outs _ _ _ (by decide)
-    have S₇ : Smp s₀ (used + rWidth s₀) (d' + 1) t₇ :=
-      S₄.of A h₇ (o₇.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [drawRanges])
-        (by rw [hm₇, slot_write_self]) (by rw [hm₇, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S₄.drawsW)
-        hfull
-    have hc₇ : ∀ i < rWidth s₀, t₇.mem (off (rBase s₀) (drawPlace s₀ + i)) =
-        copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i := fun i hi => by
-      rw [o₇ _ fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        rw [ofs_off0 _ (by unfold drawPlace oNonce; omega)]; right; unfold drawPlace oNonce oUsed; omega]
-      exact hc₄ i hi
+    have hc₇ := drawUsed_bytes A hm₇ hc₄
     -- The comparison.
     let cs := copiedList (drawBytes s₀ used) (maskValue (rLead s₀).toNat) (rWidth s₀)
     refine WP.seq (WP.mono (inRange_ok A h₇ (cs := cs) S₇.q S₇.width (copiedList_length _ _ _) hw1
