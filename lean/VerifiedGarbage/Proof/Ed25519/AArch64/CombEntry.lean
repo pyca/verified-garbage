@@ -36,7 +36,7 @@ theorem combDigitS_ok {s : State} {base : Addr} (hs : Scr s base) {S i : Nat} (h
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
     WP isa (.block combDigitS) s fun t =>
       t.gpr .x2 = BitVec.ofNat 64 (mag (nib S i)) ∧ t.gpr .x1 = mask (decide (nib S i < 8)) ∧
-      Keeps (clob ++ [.x1]) s t := by
+      Keeps (clob ++ ([.x1] : List Reg)) s t := by
   have hn : nib S i < 16 := nib_lt _ _
   simp only [combDigitS, List.append_assoc]
   rw [WP.block_append_iff]
@@ -383,9 +383,10 @@ theorem scanNeg_ok (s : State) {v : Nat}
 /-- The prefix of `scanSign`: the choices under the sign's mask. -/
 def signSel : List Instr := scanSign.take 13
 
-theorem scanSign_eq : scanSign = signSel ++ ([.stp .x20 .x21 .x0 (offset 4), .stp .x22 .x23 .x0 (offset 4 + 16)] ++
-    ([.stp .x16 .x17 .x0 (offset 5), .stp .x24 .x2 .x0 (offset 5 + 16)] ++
-    [.stp .x12 .x13 .x0 (offset 6), .stp .x14 .x15 .x0 (offset 6 + 16)])) := rfl
+theorem scanSign_eq : scanSign = signSel ++
+    (([.stp .x20 .x21 .x0 (offset 4), .stp .x22 .x23 .x0 (offset 4 + 16)] : List Instr) ++
+    (([.stp .x16 .x17 .x0 (offset 5), .stp .x24 .x2 .x0 (offset 5 + 16)] : List Instr) ++
+    ([.stp .x12 .x13 .x0 (offset 6), .stp .x14 .x15 .x0 (offset 6 + 16)] : List Instr))) := rfl
 
 /-- What `signSel` changes. -/
 def signRegs : List Reg := [.x12, .x13, .x14, .x15, .x20, .x21, .x22, .x23, .x16, .x17, .x24, .x2]
