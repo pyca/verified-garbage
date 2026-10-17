@@ -165,19 +165,25 @@ def kdkMac : Prog isa :=
 /-- Byte `d` of the block's message (at `r0`): the immediate `v`. -/
 def putByte (d v : Nat) : List Instr := [movI .r2 v, .strb .r2 .r0 d]
 
+/-- The bytes `vs` from byte `d` of the message on. -/
+def putLabel : List Nat → Nat → List Instr
+  | [], _ => []
+  | v :: vs, d => putByte d v ++ putLabel vs (d + 1)
+
 /-- The message `I2OSP(i, 2) ‖ label ‖ bitLength` at `scratch + sMsg` (in
 `r0`), with `i < 256` in `r1`: the label's bytes, and the code `len`
-writing the bit length's two bytes after them. -/
+writing the bit length's two bytes after them, all in order. -/
 def msgBytes (label : List Nat) (len : List Instr) : List Instr :=
-  putByte 0 0 ++ [.strb .r1 .r0 1] ++ (label.zipIdx.flatMap fun (v, j) => putByte (2 + j) v) ++ len
+  putByte 0 0 ++ .strb .r1 .r0 1 :: (putLabel label 2 ++ len)
 
 /-- The bit length 2048 of `CL`, after the 6 bytes of "length". -/
 def clLen : List Instr := putByte 8 0x08 ++ putByte 9 0x00
 
 /-- The bit length `8 k` of `AM`, after the 7 bytes of "message", from `k`
-in `r3`. -/
+in `r3`: its high byte, then its low byte. -/
 def amLen : List Instr :=
-  [.mov .r2 (.shifted .r3 .lsl 3), .strb .r2 .r0 10, .mov .r2 (.shifted .r2 .lsr 8), .strb .r2 .r0 9]
+  [.mov .r2 (.shifted .r3 .lsl 3), .mov .r2 (.shifted .r2 .lsr 8), .strb .r2 .r0 9, .mov .r2 (.shifted .r3 .lsl 3),
+    .strb .r2 .r0 10]
 
 /-- The message's place in `r0`, the counter `i` in `r1` and `k` in `r3`. -/
 def msgPtr : List Instr := [.addSp .r12 0, .ldrSp .r0 (arg 21), addI .r0 .r0 sMsg, .ldrSp .r1 oI, .ldrSp .r3 (arg 4)]
