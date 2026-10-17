@@ -541,7 +541,7 @@ theorem diagonal8_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
       Keep [.rdx,.r11,.r12,.rsi,.rbx,.rax,.rcx,.r15,.rbp,.r14] s t := by
   have hdiv : 8*(w/8) = w := by omega_arith
   unfold AdxSquareGrouped.diagonal8
-  have init : WP isa (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)]) s fun t =>
+  have init : WP isa (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0), .align 6]) s fun t =>
       t.gpr .r15 = 0 ∧ t.gpr .rbp = 0 ∧ t.gpr .r14 = 0 ∧ t.mem = s.mem ∧
       Keep [.r15,.rbp,.r14] s t := by
     refine WP.mono (WP.keep [.r15,.rbp,.r14] (Q := fun t =>

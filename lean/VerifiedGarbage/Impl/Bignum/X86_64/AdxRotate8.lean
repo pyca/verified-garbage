@@ -128,7 +128,7 @@ def tile : Prog isa :=
 def setupBases : List Instr :=
   [.mov .rcx (.mem (hdr (sArr Public.aAcc))), .alu .add .rcx (.imm 16)]
 
-def setup : List Instr := setupBases ++ ([.mov32 .rax (.imm 0), .store tileCarry .rax] : List Instr)
+def setup : List Instr := setupBases ++ ([.mov32 .rax (.imm 0), .store tileCarry .rax, .align 6] : List Instr)
 
 def finishSetup : List Instr :=
   [.mov .r8 (.reg .rcx), .mov .rbp (.mem (hdr sW)), .mov .r10 (.mem tileCarry)]
