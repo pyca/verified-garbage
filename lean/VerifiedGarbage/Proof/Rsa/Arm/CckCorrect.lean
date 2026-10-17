@@ -49,6 +49,27 @@ theorem cck_pre (s : State) (h : (Spec.Rsa.checkCrtKeyContract abi 0).pre s) : F
 /-- The numbers. -/
 abbrev vC (σ : State) : Vals := ⟨nV σ, eV σ, inV σ 0, inV σ 2, inV σ 4, inV σ 6, inV σ 8, 0⟩
 
+theorem cck_hv (σ : State) : (List.range nArr).map (aEnt insC σ) = (List.range nArr).map (vals (vC σ)) := rfl
+
+theorem cck_hA {σ : State} (pre : FnPre 12 10 insC σ) : ∀ j < nArr, aEnt insC σ j < 2 ^ (32 * (geo 10 σ).w) := by
+  have kb := pre.kb
+  have hw : fK σ ≤ 4 * (geo 10 σ).w := by simp only [Geo.w]; omega
+  have hvj : ∀ j < nArr, aEnt insC σ j = vals (vC σ) j := fun j hj => by
+    have := congrArg (fun l => l[j]?) (cck_hv σ)
+    simpa [hj] using this
+  have ins := fun p (hp : p ∈ insC) => (pre.ins1 p hp).2
+  have i0 : (stackArg σ 1).toNat ≤ fK σ := ins (0, aP) (by simp)
+  have i2 : (stackArg σ 3).toNat ≤ fK σ := ins (2, aQ) (by simp)
+  have i4 : (stackArg σ 5).toNat ≤ fK σ := ins (4, aDP) (by simp)
+  have i6 : (stackArg σ 7).toNat ≤ fK σ := ins (6, aDQ) (by simp)
+  have i8 : (stackArg σ 9).toNat ≤ fK σ := ins (8, aQI) (by simp)
+  intro j hj
+  rw [hvj j hj]
+  exact vals_lt (Nat.two_pow_pos _) (bytesV_lt (by omega)) (bytesV_lt (by have := pre.e2; omega))
+    (bytesV_lt (k := (stackArg σ 1).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 3).toNat) (by omega))
+    (bytesV_lt (k := (stackArg σ 5).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 7).toNat) (by omega))
+    (bytesV_lt (k := (stackArg σ 9).toNat) (by omega)) (Nat.two_pow_pos _) j
+
 theorem cck_ok {σ : State} (pre : FnPre 12 10 insC σ) (l1 : (stackArg σ 5).toNat = (stackArg σ 1).toNat)
     (l2 : (stackArg σ 9).toNat = (stackArg σ 1).toNat) (l3 : (stackArg σ 7).toNat = (stackArg σ 3).toNat)
     (hp : (stackArg σ 1).toNat < fK σ) (hq : (stackArg σ 3).toNat < fK σ) :
@@ -62,28 +83,11 @@ theorem cck_ok {σ : State} (pre : FnPre 12 10 insC σ) (l1 : (stackArg σ 5).to
           (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 6)) (stackArg σ 3).toNat)
           (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 8)) (stackArg σ 1).toNat) then 1 else 0 := by
   have kb := pre.kb
-  have hw : fK σ ≤ 4 * (geo 10 σ).w := by simp only [Geo.w]; omega
-  have hv : (List.range nArr).map (aEnt insC σ) = (List.range nArr).map (vals (vC σ)) := rfl
-  have hvj : ∀ j < nArr, aEnt insC σ j = vals (vC σ) j := fun j hj => by
-    have := congrArg (fun l => l[j]?) hv
-    simpa [hj] using this
-  have ins := fun p (hp : p ∈ insC) => (pre.ins1 p hp).2
-  have i0 : (stackArg σ 1).toNat ≤ fK σ := ins (0, aP) (by simp)
-  have i2 : (stackArg σ 3).toNat ≤ fK σ := ins (2, aQ) (by simp)
-  have i4 : (stackArg σ 5).toNat ≤ fK σ := ins (4, aDP) (by simp)
-  have i6 : (stackArg σ 7).toNat ≤ fK σ := ins (6, aDQ) (by simp)
-  have i8 : (stackArg σ 9).toNat ≤ fK σ := ins (8, aQI) (by simp)
-  have hA : ∀ j < nArr, aEnt insC σ j < 2 ^ (32 * (geo 10 σ).w) := fun j hj => by
-    rw [hvj j hj]
-    exact vals_lt (Nat.two_pow_pos _) (bytesV_lt (by omega)) (bytesV_lt (by have := pre.e2; omega))
-      (bytesV_lt (k := (stackArg σ 1).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 3).toNat) (by omega))
-      (bytesV_lt (k := (stackArg σ 5).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 7).toNat) (by omega))
-      (bytesV_lt (k := (stackArg σ 9).toNat) (by omega)) (Nat.two_pow_pos _) j
   rw [code_eq]
-  refine WP.mono (fn_ok pre (by decide) hv hA fun s hs => crtBody_post hs) fun u ⟨pres, c, hc, hr⟩ =>
-    ⟨pres, ?_⟩
-  rw [hr, crt_result (g := geo 10 σ) (VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _) (by show 0 < fK σ; omega)
-    (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)
+  refine WP.mono (fn_ok pre (by decide) (cck_hv σ) (cck_hA pre) fun s hs => crtBody_post hs)
+    fun u ⟨pres, c, hc, hr⟩ => ⟨pres, ?_⟩
+  rw [hr, crt_result (g := geo 10 σ) (VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _)
+    (by show 0 < fK σ; omega) (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)
     (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hq) hc]
   rw [show (2 + 1 : Nat) = 3 from rfl, show (4 + 1 : Nat) = 5 from rfl, show (6 + 1 : Nat) = 7 from rfl,
     show (8 + 1 : Nat) = 9 from rfl, l1, l2, l3, show (geo 10 σ).K = (σ.gpr .r1).toNat from rfl]

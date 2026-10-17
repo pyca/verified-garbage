@@ -45,3 +45,21 @@ theorem dChecks3_taint :
   ⟨_, by taint_decide⟩
 
 end VG.Proof.Rsa.Arm.KeyCheck
+
+namespace VG.Proof.Rsa.Arm.KeyCheck
+open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
+
+theorem eLoad_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8]) (.block [.ldr .r1 .r8 sE, .ldr .lr .r8 sEl]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem eCmp_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) (.block [.cmp .r7 (.imm 1)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem ret_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8]) (.block ret) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem ret0_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) (.block ret0) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+end VG.Proof.Rsa.Arm.KeyCheck
