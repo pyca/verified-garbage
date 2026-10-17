@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.GhashPw
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
 /-!
-# AES-GCM on AArch64: `vg_ghash_aes` and `vg_ghash_prepared8_aes`
+# AES-GCM on AArch64: `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
 
 Untrusted: everything here is checked by Lean. The `GhashImpl` of
 `vg_ghash_aes` and the `GhashPreparedImpl` of `vg_ghash_prepared8_aes`, from
@@ -31,6 +32,14 @@ def GhashPreparedImpl.aes : GhashPreparedImpl where
   ct := Proof.Gcm.AArch64.Pmull.ghashP_ct
   keepsV := by decide +kernel
 
+/-- `vg_ghash_with_powers_aes`, with PMULL. -/
+def GhashWithImpl.aes : GhashWithImpl where
+  fn := ⟨"vg_ghash_with_powers_aes", Impl.Gcm.AArch64.Pmull.ghashW⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.Pmull.ghashW_correct
+  ct := Proof.Gcm.AArch64.Pmull.ghashW_ct
+  keepsV := by decide +kernel
+
 namespace GhashImpl
 
 /-- `vg_ghash_aes`, with PMULL (which Rust's `aes` feature stands for, with
@@ -45,6 +54,7 @@ def aes : GhashImpl where
   features := ["aes"]
   pmull := true
   prepared := some .aes
+  withPowers := some .aes
 
 end GhashImpl
 

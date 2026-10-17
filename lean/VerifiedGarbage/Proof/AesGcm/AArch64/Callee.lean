@@ -44,6 +44,15 @@ structure GhashPreparedImpl where
   ct : ConstantTime isa Proof.Gcm.ghashPreparedAArch64.pre Proof.Gcm.ghashPreparedAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
 
+/-- An implementation of `vg_ghash_with_powers` on AArch64. -/
+structure GhashWithImpl where
+  fn : Fn
+  noFrames : fn.code.noFrames = true
+  ok : ∀ s, Proof.Gcm.ghashWithAArch64.pre s →
+    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashWithAArch64.post s s'
+  ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.ghashWithAArch64.pub fn.code
+  keepsV : fn.code.allInstrs keepsV = true
+
 /-- An implementation of `vg_ghash` on AArch64. -/
 structure GhashImpl where
   fn : Fn
@@ -60,6 +69,9 @@ structure GhashImpl where
   /-- Its `vg_ghash_prepared`, if it has one, which `vg_aes_gcm_seal_prepared`
   calls on the path for TLS records. -/
   prepared : Option GhashPreparedImpl := none
+  /-- Its `vg_ghash_with_powers`, if it has one, which the `*_with_powers`
+  functions call on the path for TLS records. -/
+  withPowers : Option GhashWithImpl := none
 
 /-- An implementation of `vg_aes_expand_key_scratch` on AArch64. -/
 structure KeyImpl where

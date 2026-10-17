@@ -29,15 +29,6 @@ namespace VG.Proof.AesGcm.AArch64
 
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 
-/-- An implementation of `vg_ghash_with_powers` on AArch64. -/
-structure GhashWithImpl where
-  fn : Fn
-  noFrames : fn.code.noFrames = true
-  ok : ∀ s, Proof.Gcm.ghashWithAArch64.pre s →
-    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashWithAArch64.post s s'
-  ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.ghashWithAArch64.pub fn.code
-  keepsV : fn.code.allInstrs keepsV = true
-
 /-- What a call of `vg_ghash_with_powers` needs besides `GhCall`: the powers
 of the hash subkey at `Ctx + 240`, readable at `P`, apart from the
 accumulator and the working space. -/
