@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM `open`'s path for TLS records: after the entry

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # FFDH key-generation status and generator powers -/
 

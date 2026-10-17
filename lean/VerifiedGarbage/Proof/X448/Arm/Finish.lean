@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.X448.Arm.Restore
 public import VerifiedGarbage.Proof.X448.Arm.Setup
 import VerifiedGarbage.Proof.X448.Arm.Output
 import VerifiedGarbage.Proof.X448.Arm.Freeze
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.X448.Arm.Call
 

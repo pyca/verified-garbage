@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Invalid RSA moduli return zero and clear every precomputation word -/
 

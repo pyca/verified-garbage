@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Import q while preserving p and the accumulated secret acceptance bit -/
 

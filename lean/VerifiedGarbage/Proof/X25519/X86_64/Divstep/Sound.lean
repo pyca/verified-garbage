@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Divstep.Iter
 public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Divstep.Packed
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the theory

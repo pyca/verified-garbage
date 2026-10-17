@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Scratch space for retained error polynomials
 

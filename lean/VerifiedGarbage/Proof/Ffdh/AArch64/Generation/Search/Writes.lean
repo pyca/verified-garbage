@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Live
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The parameter search's writes of its own words, and zeros at `out` (AArch64)

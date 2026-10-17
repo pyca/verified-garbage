@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 

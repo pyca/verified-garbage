@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Impl.MlKem.Arm.Sample
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: calling the SHA-3 sponge

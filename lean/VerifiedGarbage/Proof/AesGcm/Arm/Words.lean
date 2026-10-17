@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Cmac.Dbl32
 public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.TCB.Arm.Isa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!

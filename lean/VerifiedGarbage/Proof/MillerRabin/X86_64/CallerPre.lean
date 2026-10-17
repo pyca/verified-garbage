@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerEntry
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The caller provides the shared round's workspace and stack -/
 

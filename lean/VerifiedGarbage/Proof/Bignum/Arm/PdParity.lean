@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ReadPrefix
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckMath
 public import VerifiedGarbage.Spec.Rsa.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The first packed byte determines a precomputed modulus's parity -/
 

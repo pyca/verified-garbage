@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec

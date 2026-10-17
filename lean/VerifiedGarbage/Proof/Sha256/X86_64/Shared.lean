@@ -20,10 +20,6 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha256.Digest
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Sha256.Digest

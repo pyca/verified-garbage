@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 public import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
 public import VerifiedGarbage.Proof.Modes.X86.Modes

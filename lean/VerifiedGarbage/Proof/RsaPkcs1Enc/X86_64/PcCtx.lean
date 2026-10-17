@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Precomputed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

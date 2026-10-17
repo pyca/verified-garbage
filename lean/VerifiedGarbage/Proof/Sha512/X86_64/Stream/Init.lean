@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
 import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 import VerifiedGarbage.Proof.Sha512.X86_64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on x86-64: `init`

@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Verify FFDH private-key validation for every Montgomery backend -/
 

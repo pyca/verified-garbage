@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The masked public-operation result is exactly the shared checked-RSA postcondition -/
 

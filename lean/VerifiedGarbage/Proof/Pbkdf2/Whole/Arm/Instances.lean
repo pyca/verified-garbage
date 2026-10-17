@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the instances

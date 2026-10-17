@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJBuild
 public import VerifiedGarbage.Proof.Weierstrass.WindowJA
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!

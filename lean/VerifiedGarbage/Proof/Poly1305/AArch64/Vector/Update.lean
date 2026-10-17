@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64: `update`, with AdvSIMD

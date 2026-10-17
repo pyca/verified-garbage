@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec

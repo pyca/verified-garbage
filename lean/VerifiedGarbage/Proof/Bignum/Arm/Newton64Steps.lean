@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.Newton64
 public import VerifiedGarbage.Proof.Bignum.Arm.Mul64
 public import VerifiedGarbage.Proof.Bignum.Arm.Sub64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Loading, subtracting, and retaining one Newton iterate -/
 

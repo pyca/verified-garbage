@@ -14,10 +14,6 @@ public import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on AArch64: verified against the shared contract

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
 

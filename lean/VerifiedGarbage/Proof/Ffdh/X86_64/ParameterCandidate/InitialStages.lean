@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # FFDH parameter generation on x86-64: retain the initial candidate through trial checks -/
 

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Windows in Jacobian coordinates on AArch64: an iteration

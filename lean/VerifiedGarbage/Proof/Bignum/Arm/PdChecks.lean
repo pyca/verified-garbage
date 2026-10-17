@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckFirst
 public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete public validation of the arithmetic preconditions for packed RSA keys -/
 

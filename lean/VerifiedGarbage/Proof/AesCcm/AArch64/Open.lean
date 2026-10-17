@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Seal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCcm.AArch64.Cmp
 
 /-!

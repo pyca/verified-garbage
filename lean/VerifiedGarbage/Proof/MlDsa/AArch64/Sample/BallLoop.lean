@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

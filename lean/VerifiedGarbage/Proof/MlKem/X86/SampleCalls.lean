@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.MlKem.KPke

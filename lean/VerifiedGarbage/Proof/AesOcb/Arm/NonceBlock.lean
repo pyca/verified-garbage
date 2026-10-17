@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.LNtz
 public import VerifiedGarbage.Proof.Ocb.Nonce
 import VerifiedGarbage.Proof.Ocb.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the block `Nonce` (`nonceBlock`)

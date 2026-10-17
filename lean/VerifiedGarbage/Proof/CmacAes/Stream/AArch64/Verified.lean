@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbCorrect
 meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbCorrect
 public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

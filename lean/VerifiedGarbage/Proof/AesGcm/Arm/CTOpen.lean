@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn

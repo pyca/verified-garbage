@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.CandidatePre
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Proof.Bignum.Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete parameter-search controller: layout and observable result -/
 

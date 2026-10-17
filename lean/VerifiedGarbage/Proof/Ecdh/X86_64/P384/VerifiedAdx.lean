@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

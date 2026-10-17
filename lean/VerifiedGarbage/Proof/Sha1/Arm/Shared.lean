@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
 import VerifiedGarbage.Proof.Sha1.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!

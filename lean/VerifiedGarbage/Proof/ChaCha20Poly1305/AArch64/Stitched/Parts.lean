@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-224 and PBKDF2-HMAC-SHA-224 over the compression function on x86 (32-bit), for every backend

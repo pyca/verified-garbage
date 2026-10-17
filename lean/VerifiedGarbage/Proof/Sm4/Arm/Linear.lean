@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 public import VerifiedGarbage.Proof.Sm4.Arm.LinG
 public import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesXts.Alpha
 import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 public import VerifiedGarbage.Impl.AesXts.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on AArch64: multiplication by `α`

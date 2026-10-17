@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Checked literals for the comb variant (its doublings' calls inlined, as its constant-time proof
 reads it) and the registered code. -/

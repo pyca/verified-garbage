@@ -9,10 +9,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 
 /-!

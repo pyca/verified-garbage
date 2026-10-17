@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
 
 /-!

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.Rounds
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sm4.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SM4's cipher for the modes, on any target

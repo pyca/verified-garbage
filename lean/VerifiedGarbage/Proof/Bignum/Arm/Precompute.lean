@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA precomputation from modulus bytes, entirely in proved ARMv7 code -/
 

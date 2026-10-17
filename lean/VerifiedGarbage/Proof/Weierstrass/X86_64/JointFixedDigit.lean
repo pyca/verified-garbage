@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.BrainpoolP512r1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # brainpoolP512r1's base point is on the curve

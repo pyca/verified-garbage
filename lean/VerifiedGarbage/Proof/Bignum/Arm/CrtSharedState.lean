@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Shared state retained across private CRT validation and arithmetic -/
 

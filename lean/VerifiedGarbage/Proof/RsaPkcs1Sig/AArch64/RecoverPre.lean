@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 

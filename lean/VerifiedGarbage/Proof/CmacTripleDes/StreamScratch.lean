@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC with its working space as an argument

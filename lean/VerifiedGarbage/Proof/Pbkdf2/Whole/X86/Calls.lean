@@ -4,10 +4,6 @@ import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.OmegaLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.Lit

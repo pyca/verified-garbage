@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT8
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: verified against the shared contract

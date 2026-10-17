@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4

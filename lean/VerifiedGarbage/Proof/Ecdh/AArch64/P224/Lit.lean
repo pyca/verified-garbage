@@ -6,10 +6,6 @@ import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-224 on AArch64: the code as a literal

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Branchless workspace selection also permits replacing the modulus -/
 

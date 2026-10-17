@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
 public import VerifiedGarbage.Proof.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.RandomSignResult
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

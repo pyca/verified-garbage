@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Aes.Arm.Bitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced S-box on ARMv7

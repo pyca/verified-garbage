@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Proof.Weierstrass.Window
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core

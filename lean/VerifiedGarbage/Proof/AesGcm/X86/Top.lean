@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86.Contract
 import VerifiedGarbage.Proof.Gcm.Compose
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: from the contracts to the pieces

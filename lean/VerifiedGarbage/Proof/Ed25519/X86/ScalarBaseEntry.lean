@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 public import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Impl.Mont.Mod

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPss.CtPad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 /-!

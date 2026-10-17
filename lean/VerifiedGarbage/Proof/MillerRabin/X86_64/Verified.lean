@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Correct
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.RoundCT
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Verified shared round with a generic inlined Montgomery backend -/
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared8
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open_prepared`

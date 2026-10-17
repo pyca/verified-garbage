@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ExportBufferMasked
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Wide-result serialization keeps both the result and acceptance secret -/
 

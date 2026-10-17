@@ -18,10 +18,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Spec.Ed25519.CachedSign
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.MdStream.Spec

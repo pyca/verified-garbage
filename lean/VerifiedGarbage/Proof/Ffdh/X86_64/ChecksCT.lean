@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ws

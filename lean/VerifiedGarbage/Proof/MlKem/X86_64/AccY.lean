@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 import VerifiedGarbage.Proof.Framework.Range
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: sums of products in words, with AVX2

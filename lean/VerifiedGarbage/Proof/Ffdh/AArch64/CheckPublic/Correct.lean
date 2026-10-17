@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Scan
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit

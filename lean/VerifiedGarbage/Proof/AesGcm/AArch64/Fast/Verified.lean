@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.CT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 import VerifiedGarbage.Spec.Gcm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_seal`, with the path for TLS records where PMULL is there

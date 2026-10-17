@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
 import VerifiedGarbage.Proof.Dsa.Joint
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 

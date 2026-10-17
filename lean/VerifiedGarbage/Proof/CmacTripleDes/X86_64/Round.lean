@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.CmacTripleDes.Rows
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
 public import VerifiedGarbage.Proof.Framework.Bitslice.Rows
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 

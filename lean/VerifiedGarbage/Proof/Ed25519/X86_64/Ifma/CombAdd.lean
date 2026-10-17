@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombStage
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's comb with AVX512_IFMA: an addition in the lanes

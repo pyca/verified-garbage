@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.Sm3.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Sm3.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SM3 with its working space as an argument

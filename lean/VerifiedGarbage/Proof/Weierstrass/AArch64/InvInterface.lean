@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! Curves using a public early-exit inverse also supply its Montgomery-form

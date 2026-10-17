@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Safety
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Implies
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The verified key search, for every arithmetic backend -/
 

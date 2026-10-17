@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

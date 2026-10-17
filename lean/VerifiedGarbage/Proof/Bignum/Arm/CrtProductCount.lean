@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Two native words represent each shared 64-bit RSA limb -/
 

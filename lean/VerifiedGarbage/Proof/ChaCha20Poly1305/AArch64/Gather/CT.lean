@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Fn
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.LoopCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: constant time

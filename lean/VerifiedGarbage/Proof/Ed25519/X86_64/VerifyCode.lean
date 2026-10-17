@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Facts about the code of each registered verification

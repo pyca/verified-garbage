@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Byte-level correctness of 128-bit XOR stores used by the SSE2 loops. -/
 

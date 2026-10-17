@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The initial paired matrix parse observes only the public seed -/
 @[expose] public section

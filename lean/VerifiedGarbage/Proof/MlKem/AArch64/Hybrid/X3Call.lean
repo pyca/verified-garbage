@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Calls of `vg_keccak_f1600_x3_sha3` from ML-KEM's matrix

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotFive
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMiddle
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 

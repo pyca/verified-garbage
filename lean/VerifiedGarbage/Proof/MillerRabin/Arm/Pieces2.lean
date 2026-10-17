@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The Miller–Rabin round on ARMv7: the blocks on the header words as pieces
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.CTCrypt
 meta import VerifiedGarbage.Proof.AesCcm.Arm.CTCrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 

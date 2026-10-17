@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes

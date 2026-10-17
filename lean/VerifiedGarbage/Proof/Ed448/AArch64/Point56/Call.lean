@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Body
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.Covers
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: calls of the functions

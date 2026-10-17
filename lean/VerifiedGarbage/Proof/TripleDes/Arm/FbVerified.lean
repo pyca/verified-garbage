@@ -16,10 +16,6 @@ public import VerifiedGarbage.Spec.TripleDes.Cfb
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
 public import VerifiedGarbage.Spec.TripleDes.Cfb8
 meta import VerifiedGarbage.Spec.TripleDes.Cfb8
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
 public import VerifiedGarbage.Proof.Sm4.CtrCipher
 public import VerifiedGarbage.Spec.Sm4.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SM4's core for the modes on x86-64

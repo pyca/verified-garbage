@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupWsCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupWsCT
 public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 import VerifiedGarbage.Proof.Framework.Semantics
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: initialize an odd modulus in constant time -/

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X448.Field
 public import VerifiedGarbage.Proof.X448.Invert
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # X448: the ladder one iteration at a time

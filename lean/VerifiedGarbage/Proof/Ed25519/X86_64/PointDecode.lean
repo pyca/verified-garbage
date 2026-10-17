@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.Decode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.X25519.X86_64.Setup
 

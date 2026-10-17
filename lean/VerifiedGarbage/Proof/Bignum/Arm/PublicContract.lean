@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Checked public RSA satisfies its shared contract under AAPCS -/
 

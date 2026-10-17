@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesOfb.Arm.Body
 meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
 public import VerifiedGarbage.Impl.AesCfb.Arm
 meta import VerifiedGarbage.Impl.AesCfb.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB128 on ARMv7: one block, and constant time

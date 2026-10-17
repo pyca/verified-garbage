@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions: facts about the specification

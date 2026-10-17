@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC-SHA-1 on x86 (32-bit), the whole derivation, for every backend

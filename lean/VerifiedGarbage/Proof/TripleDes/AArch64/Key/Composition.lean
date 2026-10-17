@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Copy
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Load
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset

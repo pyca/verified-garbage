@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 

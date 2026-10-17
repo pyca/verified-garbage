@@ -6,10 +6,6 @@ import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.X86_64
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Shared literals for code used by signing, verification, public-key
 derivation and ECDH over brainpoolP512r1 on x86-64. Each generator is checked once here;

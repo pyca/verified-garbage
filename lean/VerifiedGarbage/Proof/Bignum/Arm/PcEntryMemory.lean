@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The entry point changes only its two dedicated stack slots -/
 

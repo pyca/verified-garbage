@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Invalid public RSA moduli produce failure and an all-zero output -/
 

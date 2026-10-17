@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont3
 public import VerifiedGarbage.Proof.Bignum.Arm.Setup
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: Montgomery multiplication's base and header
 

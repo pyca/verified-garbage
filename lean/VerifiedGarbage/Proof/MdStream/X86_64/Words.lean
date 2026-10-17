@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: length fields and digests

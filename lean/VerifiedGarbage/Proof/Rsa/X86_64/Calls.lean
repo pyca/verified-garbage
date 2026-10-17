@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs

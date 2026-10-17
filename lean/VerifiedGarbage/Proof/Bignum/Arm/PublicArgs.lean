@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
 public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Restore each public RSA phase's arguments from the outer frame -/
 

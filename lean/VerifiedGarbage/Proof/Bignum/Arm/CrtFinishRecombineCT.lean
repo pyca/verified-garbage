@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishRecombine
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Final CRT reconstruction hides the product and residue -/
 

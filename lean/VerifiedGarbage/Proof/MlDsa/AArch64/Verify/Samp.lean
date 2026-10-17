@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Z
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Z
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
 import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample

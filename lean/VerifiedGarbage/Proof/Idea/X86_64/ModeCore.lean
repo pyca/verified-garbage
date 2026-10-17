@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.Idea.X86_64.Modes
 public import VerifiedGarbage.Spec.Idea.Cbc
 public import VerifiedGarbage.Proof.Idea.ModeBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

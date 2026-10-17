@@ -7,10 +7,6 @@ public import VerifiedGarbage.Spec.Rsa.Mont
 meta import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Verified ARMv7 Montgomery multiplication against the shared RSA contract -/
 

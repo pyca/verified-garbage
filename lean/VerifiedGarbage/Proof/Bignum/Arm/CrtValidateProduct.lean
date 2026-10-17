@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValidationState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exact full product validation against the original RSA modulus -/
 

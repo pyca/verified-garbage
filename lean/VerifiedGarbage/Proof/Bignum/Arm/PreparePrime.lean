@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.PreparePrime
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Invalid secret factors still enter well-defined Montgomery arithmetic -/
 

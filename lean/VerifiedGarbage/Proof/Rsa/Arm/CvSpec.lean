@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Rsa.KeyParts
 public import VerifiedGarbage.Proof.Rsa.Arm.CvChecksB
 public import VerifiedGarbage.Spec.Rsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_crt_values` on ARMv7: the checks are `crtKey`
 

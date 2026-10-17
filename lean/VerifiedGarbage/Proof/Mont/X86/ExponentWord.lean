@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Exponent
 public import VerifiedGarbage.Proof.Mont.X86.Instr
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Vector.Basic
 
 /-! # Shifting a secret exponent word without branches on its value -/
 

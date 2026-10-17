@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha1.X86.ShaNi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 with the SHA extensions on x86: the 80 rounds of a block

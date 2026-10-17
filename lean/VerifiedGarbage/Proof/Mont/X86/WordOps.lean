@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.WordLoop
 public import VerifiedGarbage.Proof.Mont.X86.Ops
 import VerifiedGarbage.Proof.Mont.X86.Csub
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

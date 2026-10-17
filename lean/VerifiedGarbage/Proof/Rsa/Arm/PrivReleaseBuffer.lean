@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivRelease
 public import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Private-result release writes masked output and erases its temporary buffer -/
 

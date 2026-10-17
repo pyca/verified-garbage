@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Fixed-array operand imports do not expose operand bytes -/
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv

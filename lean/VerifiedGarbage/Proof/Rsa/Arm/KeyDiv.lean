@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
 public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The division of `Impl/Rsa/Arm/Div.lean` on arrays of the key working space
 

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.XorPad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the rest of the data and the tag (`rest`, `tag`)

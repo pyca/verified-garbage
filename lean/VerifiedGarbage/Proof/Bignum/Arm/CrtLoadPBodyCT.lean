@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayoutCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Secret CRT factor and coefficient loading is constant-time -/
 

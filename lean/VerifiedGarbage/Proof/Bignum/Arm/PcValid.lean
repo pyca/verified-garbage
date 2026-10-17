@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOut
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Successful public RSA precomputation, from bytes to the output buffer -/
 

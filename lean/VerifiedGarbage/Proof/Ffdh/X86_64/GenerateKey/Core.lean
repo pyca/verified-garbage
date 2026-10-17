@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Tail
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Reject
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ResultMath
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: scalar rejection and generated public values -/

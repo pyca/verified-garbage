@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 

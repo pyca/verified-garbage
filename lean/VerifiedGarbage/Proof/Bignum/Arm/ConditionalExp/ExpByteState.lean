@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByte
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public buffer invariants for the exponent-byte timing proof -/
 

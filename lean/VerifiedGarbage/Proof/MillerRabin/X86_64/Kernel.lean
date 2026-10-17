@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerResult
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A callable prepared round for generic RSA and FFDH policies -/
 

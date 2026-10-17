@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMaskVector
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal

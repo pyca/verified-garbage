@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Dsa.Layout

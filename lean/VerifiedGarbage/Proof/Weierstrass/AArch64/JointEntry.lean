@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot

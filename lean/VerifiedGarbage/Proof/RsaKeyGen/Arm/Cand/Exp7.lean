@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp6
 public import VerifiedGarbage.Spec.MillerRabin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the round's exponent (`expSetup_vp`)
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Powers
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Spec.Gcm.Prepared8
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_derive_prepared8`

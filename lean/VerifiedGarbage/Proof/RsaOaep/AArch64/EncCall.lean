@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

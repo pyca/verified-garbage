@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Scrypt.Spec
 public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 

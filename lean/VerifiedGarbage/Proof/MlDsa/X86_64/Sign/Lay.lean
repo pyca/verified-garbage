@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the buffers of the function

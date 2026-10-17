@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery products as functions on AArch64: rounds from registers

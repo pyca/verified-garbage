@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp1
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the halvings (`halving_vp`)
 

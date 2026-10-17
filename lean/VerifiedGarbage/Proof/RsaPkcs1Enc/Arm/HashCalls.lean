@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Spec.Hmac.Generic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: their callees SHA-256 and HMAC-SHA-256

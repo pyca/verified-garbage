@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

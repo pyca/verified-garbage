@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesXts.AArch64.CT
 meta import VerifiedGarbage.Proof.AesXts.AArch64.CT
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES of data units on AArch64: constant time

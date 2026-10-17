@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 import Mathlib.Data.List.Induction

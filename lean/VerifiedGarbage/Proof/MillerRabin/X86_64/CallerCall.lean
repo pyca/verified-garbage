@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRound
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRestore
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerKept
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The actual x86-64 shared call preserves its RSA caller -/
 

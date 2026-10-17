@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 

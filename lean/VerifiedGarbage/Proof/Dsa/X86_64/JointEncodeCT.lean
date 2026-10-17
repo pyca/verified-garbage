@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain

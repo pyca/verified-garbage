@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Ed25519.Window
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Framework.X86_64.Spill

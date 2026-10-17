@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A constant in the working space, by a zeroing loop and its nonzero words (x86, 32-bit) -/

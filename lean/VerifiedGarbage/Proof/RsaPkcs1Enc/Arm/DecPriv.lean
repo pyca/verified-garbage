@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecMem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the private-key operation

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with PMULL: the values

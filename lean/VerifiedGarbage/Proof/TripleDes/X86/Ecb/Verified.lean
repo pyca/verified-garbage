@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Rc2.X86.Save
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Rc2.Select

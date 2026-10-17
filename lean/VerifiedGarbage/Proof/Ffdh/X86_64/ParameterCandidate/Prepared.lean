@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Constants
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Rsa.Ranges
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates on x86-64: a prepared shared Miller–Rabin modulus -/

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Proof.X448.BaseTable
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The table and scalar arithmetic of the four-column, 456-bit fixed-base comb. -/
 

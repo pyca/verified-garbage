@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.Key
 public import VerifiedGarbage.Proof.Idea.Inverse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # IDEA decryption subkeys on AArch64

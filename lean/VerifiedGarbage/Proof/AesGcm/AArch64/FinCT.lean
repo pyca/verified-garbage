@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 

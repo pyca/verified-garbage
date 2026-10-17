@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.Blake2.X86_64.Stream
 meta import VerifiedGarbage.Impl.Blake2.X86_64.Stream
 public import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Spec.Blake2.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b on x86-64 with AVX2: the code as literals

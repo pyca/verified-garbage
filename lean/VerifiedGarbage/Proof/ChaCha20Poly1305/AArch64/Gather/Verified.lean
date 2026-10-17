@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!

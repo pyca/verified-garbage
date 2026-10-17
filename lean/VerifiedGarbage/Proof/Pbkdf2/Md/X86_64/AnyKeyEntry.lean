@@ -6,10 +6,6 @@ public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` for a key of any length on x86-64, choosing on entry

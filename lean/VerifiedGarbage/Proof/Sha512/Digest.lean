@@ -6,10 +6,6 @@ public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MdStream.Prefix
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory

@@ -13,10 +13,6 @@ meta import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on x86-64

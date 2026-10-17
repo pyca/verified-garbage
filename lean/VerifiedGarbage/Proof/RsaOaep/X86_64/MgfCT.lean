@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Sse

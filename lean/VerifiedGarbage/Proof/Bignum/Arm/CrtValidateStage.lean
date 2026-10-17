@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadQStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStage
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exact acceptance and imported factors for the private RSA computation -/
 

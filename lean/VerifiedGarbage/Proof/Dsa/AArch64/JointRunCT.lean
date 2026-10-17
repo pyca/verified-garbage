@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepareCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepareCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant time of the joint exponentiation loop and decoding -/
 

@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.MdStream.X86.Words
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
 public import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Sha512.Word64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `finalize`

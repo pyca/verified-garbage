@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.InputCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptance
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Save the exact secret range-check result while preserving every public argument -/
 

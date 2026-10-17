@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseBuffer
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseArgs
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Fault status, branchless release, and temporary erasure as one verified stage -/
 

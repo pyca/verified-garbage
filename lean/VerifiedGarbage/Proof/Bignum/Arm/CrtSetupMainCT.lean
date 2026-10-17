@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public geometry determines the main CRT initialization trace -/
 

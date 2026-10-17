@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
 import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Finish

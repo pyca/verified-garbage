@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpByteState
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpByteCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The private exponent loop reveals only public buffer dimensions -/
 

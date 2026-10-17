@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Dsa.Arm.Entry
 meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # DSA on 32-bit ARM: the parts whose traces a taint analysis checks

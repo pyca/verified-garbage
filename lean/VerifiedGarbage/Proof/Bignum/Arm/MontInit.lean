@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.InitMetaMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 public import VerifiedGarbage.Proof.Bignum.Arm.Zero
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCoreCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Initialize the complete Montgomery core without changing its operands -/
 

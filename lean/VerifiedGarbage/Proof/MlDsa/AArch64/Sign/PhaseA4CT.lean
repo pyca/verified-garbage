@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
@@ -20,6 +16,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import all Init.Data.Nat.Bitwise.Basic
 
 /-! Four-way matrix expansion leaks only the public matrix seed. The batch return is public before signing branches on it. -/
 

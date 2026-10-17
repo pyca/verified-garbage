@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecD
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 

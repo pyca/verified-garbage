@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Header
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the associated data (`aadHead y`, `aad y`)

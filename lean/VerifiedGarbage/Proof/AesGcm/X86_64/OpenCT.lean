@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase

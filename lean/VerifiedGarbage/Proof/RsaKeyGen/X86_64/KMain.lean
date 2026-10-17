@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Close
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

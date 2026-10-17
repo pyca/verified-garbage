@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombine
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The extended product buffers contain every possible CRT reconstruction -/
 

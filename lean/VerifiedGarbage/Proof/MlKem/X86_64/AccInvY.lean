@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvTop
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAccA
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` of the AVX2 accumulator

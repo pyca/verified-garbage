@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Poly1305.Horner
 public import VerifiedGarbage.Proof.Poly1305.Limbs64

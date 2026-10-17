@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainTile
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The single-carry diagonal pass retains the existing full-width postcondition. -/

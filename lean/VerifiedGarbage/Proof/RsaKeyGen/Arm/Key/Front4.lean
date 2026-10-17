@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front3
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Div
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: `L = lcm(p − 1, q − 1)` (`lcm_vp`) -/
 

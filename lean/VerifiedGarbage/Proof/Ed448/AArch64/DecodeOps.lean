@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
 public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!

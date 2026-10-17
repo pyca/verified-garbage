@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold

@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last bytes of `seal`

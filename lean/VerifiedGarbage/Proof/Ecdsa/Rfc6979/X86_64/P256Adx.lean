@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA

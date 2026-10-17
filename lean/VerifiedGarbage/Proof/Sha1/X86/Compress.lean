@@ -26,10 +26,6 @@ public import VerifiedGarbage.Proof.Sha1.X86.Contract
 meta import VerifiedGarbage.Proof.Sha1.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 compression function on x86 (32-bit): the message schedule and the rounds

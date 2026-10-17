@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

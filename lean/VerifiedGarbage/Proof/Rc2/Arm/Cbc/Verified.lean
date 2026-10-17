@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Rc2.Arm.KeyIO
 meta import VerifiedGarbage.Proof.Rc2.Arm.KeyIO
 import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
 meta import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs

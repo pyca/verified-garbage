@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with VPCLMULQDQ: what the instruction groups compute, as bits

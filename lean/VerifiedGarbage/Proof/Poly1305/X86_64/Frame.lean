@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Poly1305 on x86-64, with its working space on the stack

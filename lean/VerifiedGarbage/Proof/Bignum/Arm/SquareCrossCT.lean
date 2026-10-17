@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.Square
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The square's setup and rows of cross products leak only the width -/
 

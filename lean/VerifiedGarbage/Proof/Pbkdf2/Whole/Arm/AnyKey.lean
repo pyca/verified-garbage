@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Setup
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPrefix
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The four register arguments of the public re-exponentiation call -/
 

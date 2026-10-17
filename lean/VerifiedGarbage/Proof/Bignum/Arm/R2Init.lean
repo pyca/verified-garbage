@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
 public import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Initialize every loop invariant for RSA R-squared precomputation -/
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Spec.Rsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The checked RSA private-key operation: the check's logic, on every target

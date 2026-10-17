@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.TopSeq2
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Impl.MlKem.X86.Kem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Bswap

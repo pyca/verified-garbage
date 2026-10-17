@@ -22,10 +22,6 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit

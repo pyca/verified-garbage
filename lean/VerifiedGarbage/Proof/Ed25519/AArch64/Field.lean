@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 public import VerifiedGarbage.Spec.Ed25519
 public import Mathlib.Logic.Function.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.AArch64.Sqr`. -/

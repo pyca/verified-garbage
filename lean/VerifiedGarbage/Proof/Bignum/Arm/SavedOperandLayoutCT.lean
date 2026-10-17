@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandLayoutCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Saved private operand imports reveal no source bytes -/
 

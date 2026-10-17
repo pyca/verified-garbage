@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86.Pack
 import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Proof.MlKem.Compress1024
 public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.CmacTripleDes.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # DES's key schedule, bit by bit

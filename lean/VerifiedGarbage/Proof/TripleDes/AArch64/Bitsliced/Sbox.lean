@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 import Mathlib.Tactic.SplitIfs
 

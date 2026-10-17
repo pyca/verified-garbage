@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
 import VerifiedGarbage.Proof.MlKem.Arm.Sample
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: SHAKE256 through the sponge functions

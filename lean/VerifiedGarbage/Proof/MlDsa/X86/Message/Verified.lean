@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run

@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import Mathlib.Tactic.SplitIfs

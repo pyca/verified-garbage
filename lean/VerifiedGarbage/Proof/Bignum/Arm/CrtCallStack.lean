@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Immutable AAPCS arguments across private RSA workspace switches
 

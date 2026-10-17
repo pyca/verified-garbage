@@ -16,10 +16,6 @@ public import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv

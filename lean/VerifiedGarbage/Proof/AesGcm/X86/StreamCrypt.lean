@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.TextAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.X86.TextAbsorb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the entry of `stream_encrypt` and `stream_decrypt`

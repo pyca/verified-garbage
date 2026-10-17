@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 public import VerifiedGarbage.Proof.MlKem.Encode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!

@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Absorb
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.Arith

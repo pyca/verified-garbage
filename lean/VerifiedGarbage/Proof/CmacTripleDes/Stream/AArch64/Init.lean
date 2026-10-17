@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC on AArch64: `vg_cmac_triple_des_stream_init`

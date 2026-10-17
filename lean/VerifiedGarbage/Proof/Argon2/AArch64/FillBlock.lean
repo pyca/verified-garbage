@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FillBlock
 import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
 import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
 public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Argon2.AArch64.HPrime

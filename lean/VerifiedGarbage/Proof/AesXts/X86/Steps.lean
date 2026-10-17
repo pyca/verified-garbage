@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Proof.AesCbc.X86.Body
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.AesXts.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86: multiplication by `α`

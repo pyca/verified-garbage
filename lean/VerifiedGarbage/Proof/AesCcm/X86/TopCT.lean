@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.AesCcm.X86.MacCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.MacCT
 public import VerifiedGarbage.Proof.AesCcm.X86.CryptCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.CryptCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 

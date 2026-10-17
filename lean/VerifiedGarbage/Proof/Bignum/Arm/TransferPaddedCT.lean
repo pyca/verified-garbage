@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.TransferPadded
 public import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Moving a residue from a narrower workspace reveals only the public addresses and widths -/
 

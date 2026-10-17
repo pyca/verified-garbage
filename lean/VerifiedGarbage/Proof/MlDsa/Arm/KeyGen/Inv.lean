@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 

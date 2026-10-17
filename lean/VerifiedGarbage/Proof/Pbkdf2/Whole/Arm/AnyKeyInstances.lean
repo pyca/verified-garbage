@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` for a key of any length on 32-bit ARM: the instances

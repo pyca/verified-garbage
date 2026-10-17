@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 import VerifiedGarbage.Proof.Weierstrass.WindowJ
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the slots

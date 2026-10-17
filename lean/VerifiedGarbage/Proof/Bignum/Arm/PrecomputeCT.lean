@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.InitInverseCT
 public import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 meta import VerifiedGarbage.Impl.Bignum.Arm.Precompute
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Modulus precomputation reveals no modulus-dependent execution trace -/
 

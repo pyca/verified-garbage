@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
 meta import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_check_crt_key` on ARMv7: the pieces that read the stack arguments
 

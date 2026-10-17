@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Montgomery setup and RSA's shared Miller–Rabin witness loop -/
 

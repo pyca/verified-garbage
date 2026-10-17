@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA's prepared witness and a generic shared round -/
 

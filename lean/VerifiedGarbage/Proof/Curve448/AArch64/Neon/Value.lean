@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.X448.Field
 public import VerifiedGarbage.Proof.X448.Limbs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The value and bounds of `mul2`'s results

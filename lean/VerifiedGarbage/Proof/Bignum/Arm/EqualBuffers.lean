@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.EqualReverse
 public import VerifiedGarbage.Proof.Bignum.Arm.SubCompareRow
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.Round
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Both unsigned comparisons yield exact equality without secret-dependent branches -/
 

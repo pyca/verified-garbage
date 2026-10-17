@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.PdImport
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public buffers and packed precomputation for the callable RSA body -/
 

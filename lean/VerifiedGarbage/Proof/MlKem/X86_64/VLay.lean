@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.Framework.AddrArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MlKem.Mem

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Chunk
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV's interleaved loop: a batch of eight blocks

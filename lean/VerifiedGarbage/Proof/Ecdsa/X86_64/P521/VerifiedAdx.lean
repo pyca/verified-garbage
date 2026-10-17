@@ -7,10 +7,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Call

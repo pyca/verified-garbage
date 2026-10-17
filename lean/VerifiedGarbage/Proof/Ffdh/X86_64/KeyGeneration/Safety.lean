@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Contract
 public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The key search's instructions and the stack it uses -/
 

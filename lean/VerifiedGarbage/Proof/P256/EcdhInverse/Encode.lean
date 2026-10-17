@@ -2,10 +2,6 @@ module
 
 public import Mathlib.Tactic.NormNum
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Rounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.AArch64.Row

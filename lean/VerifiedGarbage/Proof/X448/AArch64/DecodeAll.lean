@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Omega
 

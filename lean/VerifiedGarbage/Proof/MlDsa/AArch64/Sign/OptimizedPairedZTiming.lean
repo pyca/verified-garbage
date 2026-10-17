@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared

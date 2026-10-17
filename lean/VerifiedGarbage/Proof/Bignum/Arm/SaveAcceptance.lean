@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.SaveAcceptance
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Saving acceptance leaves the RSA workspace and saved base unchanged -/
 

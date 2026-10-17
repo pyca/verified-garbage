@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT6
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT6
 import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Bignum.CrtFrame

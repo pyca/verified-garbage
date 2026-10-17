@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 public import VerifiedGarbage.Spec.Gcm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.TripleDes
 
 /-!

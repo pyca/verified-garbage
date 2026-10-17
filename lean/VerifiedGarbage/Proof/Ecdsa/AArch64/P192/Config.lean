@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.P192.Point
 import VerifiedGarbage.Proof.P192.OrderPrime
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # p192 parameters for the AArch64 arithmetic -/

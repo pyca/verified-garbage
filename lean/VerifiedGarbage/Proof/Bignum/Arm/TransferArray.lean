@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exact transfer of a secret residue between disjoint RSA workspaces -/
 

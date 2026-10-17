@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStageCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Both private powers have identical traces for independent secret keys -/
 

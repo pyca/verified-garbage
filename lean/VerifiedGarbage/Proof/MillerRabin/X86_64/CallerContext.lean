@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerSave
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Prepared
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Saving the workspace preserves its mathematical preparation -/
 

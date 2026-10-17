@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Select a factor, compute its private power, and restore the main workspace -/
 

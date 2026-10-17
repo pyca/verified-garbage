@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Seed.X86_64.KeyRounds
 import VerifiedGarbage.Proof.Seed.X86_64.Copy
 import VerifiedGarbage.Proof.Seed.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Loading the key on x86-64

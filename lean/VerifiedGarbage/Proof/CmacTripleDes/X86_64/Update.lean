@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
 public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.Cmac.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 

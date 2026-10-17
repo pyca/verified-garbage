@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
 public import VerifiedGarbage.Proof.Ed25519.Arm.Power
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! Affine conversion using the verified inversion chain. -/

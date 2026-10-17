@@ -9,10 +9,6 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.TripleDes
 
 /-!

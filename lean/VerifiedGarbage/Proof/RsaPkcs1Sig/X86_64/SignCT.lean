@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import Mathlib.Data.Int.ModEq

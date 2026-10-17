@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.Omega

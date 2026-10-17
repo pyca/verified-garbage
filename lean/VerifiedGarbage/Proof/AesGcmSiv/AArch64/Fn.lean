@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
 public import VerifiedGarbage.Proof.Cmac.Dbl32
 public import VerifiedGarbage.Proof.Cmac.Stream

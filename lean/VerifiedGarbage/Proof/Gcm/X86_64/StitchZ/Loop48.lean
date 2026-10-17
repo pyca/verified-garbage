@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: 48 blocks at a time

@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 import VerifiedGarbage.Impl.AesCbc.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on x86-64: the contracts, and a call of a block function

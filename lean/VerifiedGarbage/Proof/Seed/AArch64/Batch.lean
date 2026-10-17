@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Copy
 import VerifiedGarbage.Proof.Seed.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # A batch on AArch64

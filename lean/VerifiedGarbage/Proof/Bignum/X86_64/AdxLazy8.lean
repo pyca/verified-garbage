@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
 public import VerifiedGarbage.Proof.Bignum.LazyMath
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

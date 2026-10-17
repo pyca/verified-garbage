@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Entering the narrow workspace depends only on public lengths and addresses -/
 

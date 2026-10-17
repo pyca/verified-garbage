@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsB
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.X86_64.Contracts

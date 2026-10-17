@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Classify
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Total correctness of the parameter search's loop (AArch64) -/

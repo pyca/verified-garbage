@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 

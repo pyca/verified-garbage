@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullStart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Reject the first three paired SHAKE128 blocks -/
 

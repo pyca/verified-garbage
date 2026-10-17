@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The interleaved loops on 256-bit registers, as literals
 

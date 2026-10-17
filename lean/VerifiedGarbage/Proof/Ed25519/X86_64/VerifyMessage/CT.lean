@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep

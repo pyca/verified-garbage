@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxLazy8
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The reduction of a raw product `X < R²` and the lazy final subtraction. -/
 

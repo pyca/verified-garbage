@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Begin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The initial three-block singleton sample -/
 @[expose] public section

@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

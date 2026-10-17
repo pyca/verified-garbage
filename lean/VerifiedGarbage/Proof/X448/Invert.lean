@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # X448: the inversion `z^(p-2)` as an addition chain

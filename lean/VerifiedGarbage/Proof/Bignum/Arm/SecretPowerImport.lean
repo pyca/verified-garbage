@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretPowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Ciphertext import establishes all secret-exponentiation preconditions -/
 

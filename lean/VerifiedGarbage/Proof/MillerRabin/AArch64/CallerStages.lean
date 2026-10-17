@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerKept
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Contexts at the three boundaries of a shared-round call -/
 

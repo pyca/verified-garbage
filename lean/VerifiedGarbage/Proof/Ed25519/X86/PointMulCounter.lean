@@ -5,10 +5,6 @@ import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 

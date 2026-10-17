@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesOfb.AArch64.Body
 meta import VerifiedGarbage.Proof.AesOfb.AArch64.Body
 public import VerifiedGarbage.Impl.AesCfb.AArch64
 meta import VerifiedGarbage.Impl.AesCfb.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB128 on AArch64: one block, and constant time

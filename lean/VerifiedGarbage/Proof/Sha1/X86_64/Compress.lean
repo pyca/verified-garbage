@@ -28,10 +28,6 @@ import VerifiedGarbage.Spec.Sha1
 meta import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 compression function on x86-64: the message schedule and the rounds

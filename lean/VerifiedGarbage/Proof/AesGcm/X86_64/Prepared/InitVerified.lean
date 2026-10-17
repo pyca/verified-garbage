@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitCT
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 
 /-! # Prepared key setup satisfies the shared contract -/

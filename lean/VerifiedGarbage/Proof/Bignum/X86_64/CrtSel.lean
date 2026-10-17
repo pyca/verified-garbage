@@ -10,10 +10,6 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Proof.Bignum.CrtExp
 
 -- Reduce vector updates before comparing unchanged fields of whole states.
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
 

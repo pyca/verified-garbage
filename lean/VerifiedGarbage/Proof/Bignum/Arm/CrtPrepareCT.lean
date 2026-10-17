@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.PcFn
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # CRT workspace preparation reveals only public geometry -/
 

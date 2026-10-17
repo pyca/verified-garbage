@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportFinalResidue
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineGeometry
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Reconstruct the integer result from the coefficient and q residue -/
 

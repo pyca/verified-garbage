@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.BitWrite
 public import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Range
 

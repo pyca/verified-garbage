@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
 import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH in AVX: the GHASH work

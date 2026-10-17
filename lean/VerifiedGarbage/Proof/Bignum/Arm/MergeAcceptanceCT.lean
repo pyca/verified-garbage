@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Merging validation bits reveals only the public stack address -/
 

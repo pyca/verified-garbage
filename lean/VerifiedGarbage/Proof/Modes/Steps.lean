@@ -5,10 +5,6 @@ public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Cfb8
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The modes, one step at a time, for any target

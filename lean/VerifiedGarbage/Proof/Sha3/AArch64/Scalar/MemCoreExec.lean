@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.MemLower
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 public import VerifiedGarbage.Proof.Framework.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.Offset

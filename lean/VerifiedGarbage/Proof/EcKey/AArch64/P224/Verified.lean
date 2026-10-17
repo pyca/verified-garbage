@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.P224.Lit
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P224.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi

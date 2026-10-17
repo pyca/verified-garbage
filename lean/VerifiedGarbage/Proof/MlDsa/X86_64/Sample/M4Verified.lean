@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv

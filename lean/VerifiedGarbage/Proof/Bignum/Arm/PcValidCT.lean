@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepareCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PcComputed
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Successful public precomputation has no secret-dependent trace -/
 

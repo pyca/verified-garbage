@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptance
 public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
 public import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The saved validation bit establishes the sanitized-factor precondition -/
 

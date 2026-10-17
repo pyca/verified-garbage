@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Clearing an extended operand buffer reveals only its public pointer and width -/
 

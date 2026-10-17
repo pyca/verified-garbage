@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowProduct
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCallTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified

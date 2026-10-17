@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Mul
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: the entry

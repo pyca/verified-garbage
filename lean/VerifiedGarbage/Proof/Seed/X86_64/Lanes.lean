@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
 public import VerifiedGarbage.Proof.Seed.X86_64.G16
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The arrays of 32-bit words in the scratch buffer

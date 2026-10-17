@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic

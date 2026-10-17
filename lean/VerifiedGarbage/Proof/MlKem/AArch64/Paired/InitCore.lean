@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Zero
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exact instruction proof of paired noise state initialization -/
 

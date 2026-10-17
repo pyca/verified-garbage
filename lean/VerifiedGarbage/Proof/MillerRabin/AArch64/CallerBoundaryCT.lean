@@ -8,10 +8,6 @@ meta import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The caller's save and restore addresses are fixed by its workspace -/
 

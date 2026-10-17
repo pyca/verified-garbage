@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Square
 public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareMath
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # What holds throughout an ARMv7 Montgomery square
 

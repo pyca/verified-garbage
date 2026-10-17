@@ -9,10 +9,6 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField

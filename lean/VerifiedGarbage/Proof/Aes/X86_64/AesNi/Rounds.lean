@@ -7,10 +7,6 @@ import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

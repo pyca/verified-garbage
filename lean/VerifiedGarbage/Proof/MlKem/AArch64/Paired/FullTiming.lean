@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullReject
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Singleton fallback timing depends only on the shared matrix seed -/
 @[expose] public section

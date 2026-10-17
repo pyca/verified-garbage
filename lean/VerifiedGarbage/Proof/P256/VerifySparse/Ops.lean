@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.P256.VerifySparse.Correct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! The existing Montgomery setup/round and addition-chain proofs are reused here.

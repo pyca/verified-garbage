@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the MAC is constant time

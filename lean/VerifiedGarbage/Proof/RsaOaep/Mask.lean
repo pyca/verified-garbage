@@ -4,10 +4,6 @@ public import Batteries.Tactic.Init
 public import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Spec.RsaOaep
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP: masking and unmasking `EM`, whatever the target

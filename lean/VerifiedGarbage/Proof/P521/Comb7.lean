@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.P521.Point
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Impl.P521.CombTable7
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-521: the 7-bit fixed-base comb's tables are right

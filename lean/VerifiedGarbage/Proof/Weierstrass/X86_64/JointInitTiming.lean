@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay

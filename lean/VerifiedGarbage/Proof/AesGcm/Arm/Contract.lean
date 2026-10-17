@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 public import VerifiedGarbage.Spec.Gcm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the contracts the proofs are written against

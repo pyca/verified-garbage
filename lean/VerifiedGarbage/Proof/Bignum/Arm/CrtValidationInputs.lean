@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Recover validation inputs from the selected workspace -/
 

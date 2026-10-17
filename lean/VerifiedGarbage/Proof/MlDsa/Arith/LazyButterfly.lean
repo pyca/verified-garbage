@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Lazy
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Range and congruence of a lazy butterfly. The twiddle is reduced, but
 its input coefficient may occupy any unsigned doubleword. -/

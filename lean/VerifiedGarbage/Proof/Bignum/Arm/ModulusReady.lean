@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
 public import VerifiedGarbage.Proof.Bignum.Arm.InverseReady
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Integer import preserves the RSA layout and the modulus parity -/
 

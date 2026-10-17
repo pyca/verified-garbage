@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: the preconditions and the layouts

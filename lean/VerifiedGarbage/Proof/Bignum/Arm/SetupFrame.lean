@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.Setup
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Workspace setup changes only bytes within the caller's scratch buffer -/
 

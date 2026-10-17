@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseBits
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
 import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
 import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.X448.X86.Iter

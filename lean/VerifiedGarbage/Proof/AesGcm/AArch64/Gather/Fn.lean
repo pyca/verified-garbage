@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesGcm.CtxFrame
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function

@@ -22,10 +22,6 @@ public import VerifiedGarbage.Proof.Scrypt.X86.SalsaRounds
 meta import VerifiedGarbage.Proof.Scrypt.X86.SalsaRounds
 public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
 meta import VerifiedGarbage.Impl.Scrypt.X86.Salsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

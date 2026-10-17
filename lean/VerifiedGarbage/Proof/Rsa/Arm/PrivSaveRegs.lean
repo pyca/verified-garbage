@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Save the register-passed output, modulus, and length before preparing calls -/
 

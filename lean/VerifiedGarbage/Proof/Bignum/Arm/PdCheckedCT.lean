@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdChecksCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PdApplyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Packed-key checks branch only on public values -/
 

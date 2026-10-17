@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB with its working space as an argument

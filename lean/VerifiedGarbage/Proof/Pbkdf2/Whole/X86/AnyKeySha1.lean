@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-1's `init` for a key of any length on x86 (32-bit), for every backend

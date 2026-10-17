@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.InverseArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusReady
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Establish arithmetic readiness from an imported odd RSA modulus -/
 

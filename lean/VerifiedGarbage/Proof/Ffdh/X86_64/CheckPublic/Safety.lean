@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 public import VerifiedGarbage.Proof.Bignum.X86_64.Template
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Instruction safety of the x86-64 FFDH public-key validator -/
 

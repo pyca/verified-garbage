@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sha512.Md
 import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!

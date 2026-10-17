@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.WindowJ
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Signed windows in Jacobian coordinates with an affine table, on any target

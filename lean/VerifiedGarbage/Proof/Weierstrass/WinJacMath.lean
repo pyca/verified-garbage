@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Windows of 5 bits in Jacobian coordinates: why no addition is exceptional

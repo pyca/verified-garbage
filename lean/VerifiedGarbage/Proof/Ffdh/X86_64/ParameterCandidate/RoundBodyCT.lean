@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoopCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRunCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBody
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: timing of a complete policy iteration -/

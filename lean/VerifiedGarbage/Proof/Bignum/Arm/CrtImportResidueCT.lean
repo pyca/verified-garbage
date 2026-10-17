@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtQSourceCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Copying the q residue has a trace independent of both secret residues -/
 

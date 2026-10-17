@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
 meta import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
 meta import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 

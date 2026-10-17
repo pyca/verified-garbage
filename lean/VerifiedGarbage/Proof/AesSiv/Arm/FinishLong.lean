@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Arm.FinishShort
 public import VerifiedGarbage.Proof.AesSiv.Long
 import VerifiedGarbage.Proof.AesCcm.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Omega
 

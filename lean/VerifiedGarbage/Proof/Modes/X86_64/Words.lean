@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Proof.Modes.Words
 import VerifiedGarbage.Proof.Framework.Range
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.AesCbc.Spec

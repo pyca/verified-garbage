@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: a word of an array set
 

@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

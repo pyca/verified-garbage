@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.KeyExp

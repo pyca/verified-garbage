@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Spec.MlKem.Poly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: Compress and Decompress without division, for every target

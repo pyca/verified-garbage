@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.AesCbc.Arm.Verified
 public import VerifiedGarbage.Proof.AesCfb8.Arm.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on ARMv7: `Verified`

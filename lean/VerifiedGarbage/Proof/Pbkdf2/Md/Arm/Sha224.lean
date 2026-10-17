@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-224 and PBKDF2-HMAC-SHA-224 over the compression function on ARMv7

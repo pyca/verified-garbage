@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Hash
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base

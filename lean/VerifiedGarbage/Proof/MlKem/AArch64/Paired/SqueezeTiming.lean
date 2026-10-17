@@ -10,10 +10,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleStep
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public-address timing for paired and singleton SHAKE128 generation -/
 @[expose] public section

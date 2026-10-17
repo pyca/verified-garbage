@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find

@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 import VerifiedGarbage.Proof.BrainpoolP256r1.Prime
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # brainpoolP256r1 parameters for the AArch64 arithmetic -/

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.Sha512.Arm.Word64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Range
 
 /-!

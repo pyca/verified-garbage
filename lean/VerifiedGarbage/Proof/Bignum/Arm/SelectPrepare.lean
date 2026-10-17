@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Csub
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Rewind the two sources and restore the selection loop's public count -/
 

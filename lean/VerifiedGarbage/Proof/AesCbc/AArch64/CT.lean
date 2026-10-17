@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on AArch64: constant time

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Seed.Arm.G8
 public import VerifiedGarbage.Proof.Seed.G8
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import VerifiedGarbage.Proof.Aes.Arm.Sbox
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # `g8` on ARMv7

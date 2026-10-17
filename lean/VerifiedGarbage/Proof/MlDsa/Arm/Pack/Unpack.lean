@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Arm.Add

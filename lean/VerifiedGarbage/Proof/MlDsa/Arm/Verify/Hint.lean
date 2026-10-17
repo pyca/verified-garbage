@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Spec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint

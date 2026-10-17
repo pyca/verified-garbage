@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Arm.Env
 public import VerifiedGarbage.Proof.AesSiv.Key
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: `vg_aes_siv_init`

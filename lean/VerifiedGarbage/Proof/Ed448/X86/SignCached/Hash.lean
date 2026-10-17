@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 public import VerifiedGarbage.Impl.Ed448.X86.SignCached
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Proof.Framework.Bswap

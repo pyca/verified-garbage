@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
 import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 
 /-! Merged from `Proof.Ed25519.Arm.BatchFrame`. -/

@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
 public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega

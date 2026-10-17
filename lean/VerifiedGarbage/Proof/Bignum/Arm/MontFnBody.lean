@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 public import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The native Montgomery body meets the existing RSA arithmetic postcondition -/
 

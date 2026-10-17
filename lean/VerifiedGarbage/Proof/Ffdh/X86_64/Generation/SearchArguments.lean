@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Frame
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Restore the candidate ABI in a private outgoing frame -/

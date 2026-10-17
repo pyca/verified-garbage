@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `cryptS`

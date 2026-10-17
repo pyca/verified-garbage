@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: relating two runs

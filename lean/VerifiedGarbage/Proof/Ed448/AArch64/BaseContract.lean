@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on AArch64: the contract its callers use

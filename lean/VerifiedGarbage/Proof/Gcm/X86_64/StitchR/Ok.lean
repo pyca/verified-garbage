@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The 256-bit interleaved loops with prepared powers meet their contracts

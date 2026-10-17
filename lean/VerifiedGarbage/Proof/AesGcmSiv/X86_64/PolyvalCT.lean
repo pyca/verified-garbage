@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the keys and POLYVAL are constant time

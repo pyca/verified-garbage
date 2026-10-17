@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.CT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the whole function

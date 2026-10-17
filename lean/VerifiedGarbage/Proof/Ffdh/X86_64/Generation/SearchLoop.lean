@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSemantics
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Total correctness of the complete native parameter-search loop -/

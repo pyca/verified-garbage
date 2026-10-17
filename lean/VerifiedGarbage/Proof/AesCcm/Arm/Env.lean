@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesCcm.Arm.Contract
 import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 import VerifiedGarbage.Impl.AesCcm.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: where everything is

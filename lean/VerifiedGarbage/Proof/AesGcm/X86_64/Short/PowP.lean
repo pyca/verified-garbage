@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
 meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the table of powers from a prepared context

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.EcKey.Arm.Finish
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.PublicKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Elliptic curve public keys on 32-bit ARM: the whole function

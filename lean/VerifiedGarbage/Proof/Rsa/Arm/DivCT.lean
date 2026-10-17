@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
 public import VerifiedGarbage.Proof.Rsa.Arm.DivStepCT
 public import VerifiedGarbage.Proof.Rsa.Arm.DivInitCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Fixed-iteration division is constant-time for all secret array contents -/
 

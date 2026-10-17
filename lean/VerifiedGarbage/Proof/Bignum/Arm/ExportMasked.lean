@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.ExportMasked
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The serialized result and return status implement secret input acceptance -/
 

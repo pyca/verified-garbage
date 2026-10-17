@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the function called

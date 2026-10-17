@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 public import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
 public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The Miller–Rabin round on ARMv7: the key view's context, and Montgomery products
 

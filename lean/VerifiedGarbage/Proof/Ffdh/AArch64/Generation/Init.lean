@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base

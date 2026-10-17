@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryFinalField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 

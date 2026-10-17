@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 
 /-! Reset the pending digit and bit count while preserving arithmetic arrays. -/

@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Seed.FbScratch
 public import VerifiedGarbage.Proof.Seed.X86.FbLit
 meta import VerifiedGarbage.Proof.Seed.X86.FbLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Seed.X86.ModeCore
 meta import VerifiedGarbage.Proof.Seed.X86.ModeCore
 public import VerifiedGarbage.Proof.Modes.X86.Modes

@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! ## `JointLayout` -/

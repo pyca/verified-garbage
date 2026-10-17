@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The first multiply-add of a Montgomery round -/
 

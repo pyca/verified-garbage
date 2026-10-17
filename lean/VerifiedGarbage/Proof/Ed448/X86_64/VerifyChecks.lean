@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
 public import VerifiedGarbage.Proof.X448.X86_64.Main
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.Ed448.Wnaf
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Framework.Range

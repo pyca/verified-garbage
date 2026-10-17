@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCall
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Saved-register initialization and the first three matrix blocks -/
 @[expose] public section

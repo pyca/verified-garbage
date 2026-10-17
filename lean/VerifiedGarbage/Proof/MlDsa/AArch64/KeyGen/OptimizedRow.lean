@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs

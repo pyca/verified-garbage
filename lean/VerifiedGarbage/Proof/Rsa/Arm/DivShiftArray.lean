@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Shifting either division register while preserving the public layout -/
 

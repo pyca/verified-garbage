@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.HeaderControl
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Decrement a fixed-offset public loop counter -/
 

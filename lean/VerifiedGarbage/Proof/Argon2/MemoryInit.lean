@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Argon2.Contract
 import VerifiedGarbage.Proof.Blake2.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The RFC initialization blocks as byte strings in memory -/
 

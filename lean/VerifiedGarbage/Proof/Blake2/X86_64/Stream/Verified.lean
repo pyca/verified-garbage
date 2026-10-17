@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86-64: `Verified`

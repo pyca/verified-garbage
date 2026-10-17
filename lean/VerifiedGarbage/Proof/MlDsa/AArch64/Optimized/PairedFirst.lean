@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt

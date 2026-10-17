@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! ## `NafChoose` -/

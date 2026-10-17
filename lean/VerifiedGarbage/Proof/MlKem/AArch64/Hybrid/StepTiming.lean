@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The main squeezes of a hashing pair leak only public pointers

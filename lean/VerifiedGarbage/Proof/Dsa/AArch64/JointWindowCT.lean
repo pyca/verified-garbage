@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Dsa.Joint
 meta import VerifiedGarbage.Proof.Dsa.Joint
 import VerifiedGarbage.Proof.Framework.AArch64.Call

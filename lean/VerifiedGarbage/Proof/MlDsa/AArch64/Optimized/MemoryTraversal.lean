@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! ## From `MemoryInner.lean` -/

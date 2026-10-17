@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 public import VerifiedGarbage.Spec.Gcm.Prepared
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Prepared GHASH contexts: preservation under disjoint writes

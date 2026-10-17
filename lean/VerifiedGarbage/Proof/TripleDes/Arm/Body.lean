@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 public import VerifiedGarbage.Proof.TripleDes.Core
 public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Word
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! ## `RoundBody` -/

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchContract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A private outgoing-argument frame for the native candidate operation -/

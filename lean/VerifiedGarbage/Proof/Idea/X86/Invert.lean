@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Idea.Inverse
 meta import VerifiedGarbage.Proof.Idea.Inverse
 public import VerifiedGarbage.Proof.Idea.Scratch32
 meta import VerifiedGarbage.Proof.Idea.Scratch32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Idea.Memory32
 meta import VerifiedGarbage.Proof.Idea.Memory32
 

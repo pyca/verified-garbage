@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 public import VerifiedGarbage.Proof.Bignum.Arm.ReverseEncoding
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Zero-extended RSA integer import, including partial native words -/
 

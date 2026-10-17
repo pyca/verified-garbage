@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 public import VerifiedGarbage.Proof.Mont.X86.Ops
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Spec.Rc2

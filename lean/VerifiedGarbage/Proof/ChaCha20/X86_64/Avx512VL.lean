@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, short data in `ymm` registers: verified

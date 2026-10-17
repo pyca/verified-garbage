@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
 public import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: `−c⁻¹` and `R² mod c`
 

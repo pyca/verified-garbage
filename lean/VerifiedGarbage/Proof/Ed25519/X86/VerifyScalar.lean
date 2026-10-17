@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
 public import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Scalar
 
 @[expose] public section

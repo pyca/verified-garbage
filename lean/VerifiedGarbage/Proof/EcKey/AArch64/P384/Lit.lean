@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.EcKey.P384.AArch64
 meta import VerifiedGarbage.Impl.EcKey.P384.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-384 public keys on AArch64: the code as a literal

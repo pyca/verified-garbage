@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesOcb.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: where everything is

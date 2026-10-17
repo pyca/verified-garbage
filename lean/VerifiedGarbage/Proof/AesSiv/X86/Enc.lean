@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.AesSiv.X86.Entry
 public import VerifiedGarbage.Proof.AesSiv.X86.FinishCT
 public import VerifiedGarbage.Proof.AesSiv.X86.CtrCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: S2V of the associated data, and `vg_aes_siv_encrypt`

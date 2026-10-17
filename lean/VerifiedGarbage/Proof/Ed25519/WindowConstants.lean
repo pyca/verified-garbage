@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.Group.Decode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The small multiples of the base point represent `[i + 1]B`

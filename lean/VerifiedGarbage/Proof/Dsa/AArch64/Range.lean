@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.CheckCall
 import VerifiedGarbage.Proof.Dsa.AArch64.LoadRange
 import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
 import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Spec.Dsa.SignVerify
 

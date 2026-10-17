@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Steps
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.Rc2
 
 /-!

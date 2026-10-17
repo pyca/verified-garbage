@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.HashChunk
 import VerifiedGarbage.Proof.AesOcb.X86.PadTo
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ocb.State
 
 /-!

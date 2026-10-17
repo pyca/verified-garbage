@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks

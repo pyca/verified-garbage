@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.Entry
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.Restore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Callable Montgomery multiplication preserves the ARM procedure-call ABI -/
 

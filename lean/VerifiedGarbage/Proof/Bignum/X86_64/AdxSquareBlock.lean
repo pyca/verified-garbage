@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The register-resident scalar multiply-add used by the square. -/

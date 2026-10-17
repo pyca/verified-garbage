@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 public import VerifiedGarbage.Impl.Aes.X86_64.Vaes
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # VAES: encrypting the lanes of the block registers

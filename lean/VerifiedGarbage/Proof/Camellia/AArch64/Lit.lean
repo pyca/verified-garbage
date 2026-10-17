@@ -10,10 +10,6 @@ import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 meta import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 public import VerifiedGarbage.Impl.Camellia.AArch64.Cbc
 meta import VerifiedGarbage.Impl.Camellia.AArch64.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Camellia on AArch64: the code as literals

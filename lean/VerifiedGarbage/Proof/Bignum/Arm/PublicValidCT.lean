@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepareCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicApplyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Modulus precomputation and the public RSA arithmetic path share a public trace -/
 

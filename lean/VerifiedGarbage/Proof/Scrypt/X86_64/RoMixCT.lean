@@ -24,10 +24,6 @@ import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory

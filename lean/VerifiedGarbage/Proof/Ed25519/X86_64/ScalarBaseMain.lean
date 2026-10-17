@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBaseMemory`. -/
 

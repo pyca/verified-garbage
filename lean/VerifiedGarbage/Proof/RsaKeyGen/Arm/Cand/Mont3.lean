@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint6
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: tools for Montgomery multiplication's stages
 

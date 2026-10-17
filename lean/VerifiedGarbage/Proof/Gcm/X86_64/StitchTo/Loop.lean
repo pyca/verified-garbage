@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place VAES loop: the loop of one group, and the stores

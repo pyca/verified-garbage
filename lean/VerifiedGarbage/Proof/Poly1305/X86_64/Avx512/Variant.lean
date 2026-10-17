@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 
 /-!

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
 public import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

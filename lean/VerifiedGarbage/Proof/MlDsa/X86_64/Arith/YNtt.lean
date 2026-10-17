@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 

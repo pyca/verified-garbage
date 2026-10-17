@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
 public import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Proof.AesSiv.Words
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: the regions of `encrypt` and `decrypt`

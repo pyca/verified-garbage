@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
 meta import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint

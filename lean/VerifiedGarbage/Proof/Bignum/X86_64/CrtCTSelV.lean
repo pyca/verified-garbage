@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the selection with AVX2 is constant time

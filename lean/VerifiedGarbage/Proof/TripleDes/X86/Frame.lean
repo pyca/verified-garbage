@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES key expansion and ECB on x86, with their working space on the stack

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Canonical reduction and storage of CBD2 lanes -/
 

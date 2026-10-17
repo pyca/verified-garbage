@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCorrect
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCT
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Shared round implementations for generic RSA and FFDH callers -/
 

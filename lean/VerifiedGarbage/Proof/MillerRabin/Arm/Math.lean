@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Bignum.Math
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The Miller–Rabin round on ARMv7: the arithmetic

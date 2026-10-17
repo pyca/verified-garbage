@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
 public import VerifiedGarbage.TCB.X86_64.Avx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

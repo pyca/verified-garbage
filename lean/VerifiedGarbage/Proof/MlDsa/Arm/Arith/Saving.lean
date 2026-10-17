@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Packed twelve-bit candidate decoding for ML-KEM's vector sampler -/
 

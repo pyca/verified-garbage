@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Sha3.AArch64.Callee

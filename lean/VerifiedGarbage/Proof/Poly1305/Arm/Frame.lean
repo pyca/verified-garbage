@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Poly1305.Arm.Update
 public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 public import VerifiedGarbage.Proof.Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

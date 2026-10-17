@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: the challenge, the equation, and the body

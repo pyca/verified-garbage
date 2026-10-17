@@ -36,11 +36,8 @@ public import Mathlib.Tactic.LinearCombination
 meta import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring.RingNF
 meta import Mathlib.Tactic.Ring.RingNF
-
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+
 
 @[expose] public section
 

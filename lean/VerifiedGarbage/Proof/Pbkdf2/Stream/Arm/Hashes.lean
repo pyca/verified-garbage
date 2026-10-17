@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Sha1.Arm.Shared
 public import VerifiedGarbage.Proof.Md5.Arm.Shared
 public import VerifiedGarbage.Proof.Sha512.Arm.Shared
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Init
 
 /-!

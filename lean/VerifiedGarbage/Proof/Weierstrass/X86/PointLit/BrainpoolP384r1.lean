@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.Point
 meta import VerifiedGarbage.Impl.Weierstrass.X86.Point
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Literals of brainpoolP384r1's x86 point addition and doubling

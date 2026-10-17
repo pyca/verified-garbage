@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTail
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on ARMv7: the body

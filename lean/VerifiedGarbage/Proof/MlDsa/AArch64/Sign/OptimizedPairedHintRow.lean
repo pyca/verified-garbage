@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared

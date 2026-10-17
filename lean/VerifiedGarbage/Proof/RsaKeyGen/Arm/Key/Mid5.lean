@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid2
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid3
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid4
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Result
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: `d` by `e`'s case (`dPart_vp`), and whether it is too small (`small_vp`) -/
 

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Into and out of the bitsliced state, for 64 blocks

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 public import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.Framework.Range
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

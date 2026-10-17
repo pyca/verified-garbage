@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Rsa.Scratch
 

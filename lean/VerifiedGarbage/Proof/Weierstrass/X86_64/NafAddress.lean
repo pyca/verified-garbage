@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-! Bounds and addresses of the eight public odd-multiple table entries. -/

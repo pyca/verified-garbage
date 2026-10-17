@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.X25519.X86.Fn
 meta import VerifiedGarbage.Impl.X25519.X86.Fn
 public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

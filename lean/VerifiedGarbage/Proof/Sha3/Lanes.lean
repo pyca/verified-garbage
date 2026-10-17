@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sha3.Spec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600]: states in memory, for every target

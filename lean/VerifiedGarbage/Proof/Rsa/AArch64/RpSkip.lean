@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!

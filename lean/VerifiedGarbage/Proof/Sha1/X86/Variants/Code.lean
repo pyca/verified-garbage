@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
 public import VerifiedGarbage.Impl.Sha1.X86.Stream
 public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 backends on x86: the code built on them

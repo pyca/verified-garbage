@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpBytesCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpPhase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete private RSA exponentiation hides the exponent, input, and modulus values -/
 

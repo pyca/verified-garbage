@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.EcKey.X86.CombMain
 meta import VerifiedGarbage.Proof.EcKey.X86.CombMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find

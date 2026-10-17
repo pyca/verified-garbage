@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.P521.X86_64.JointPartsLitAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.JointPartsLitAdx
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-521 on x86-64 with BMI2 and ADX: the code as a literal

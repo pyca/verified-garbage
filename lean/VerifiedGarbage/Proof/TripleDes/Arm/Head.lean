@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Body
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.TripleDes.Bytes
 

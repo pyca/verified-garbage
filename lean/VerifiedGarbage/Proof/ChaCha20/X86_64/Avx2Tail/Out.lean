@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Sym
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 

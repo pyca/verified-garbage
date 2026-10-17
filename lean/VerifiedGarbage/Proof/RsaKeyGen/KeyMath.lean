@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes: the arithmetic

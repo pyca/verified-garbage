@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Initial
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Initialize and parse the first three paired matrix blocks -/
 @[expose] public section

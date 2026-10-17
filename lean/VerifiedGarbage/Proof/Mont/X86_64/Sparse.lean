@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the reduction for P-384's `p`

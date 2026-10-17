@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.X3Call
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # One main squeeze of a hashing pair

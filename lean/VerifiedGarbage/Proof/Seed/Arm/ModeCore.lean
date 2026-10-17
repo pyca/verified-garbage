@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Seed.Arm.Modes
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Spec.Seed.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!

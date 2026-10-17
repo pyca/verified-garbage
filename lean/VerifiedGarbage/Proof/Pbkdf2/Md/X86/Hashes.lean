@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 public import VerifiedGarbage.Proof.Sha512.Md
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Md5.X86.Compress
 
 /-!

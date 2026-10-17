@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on AArch64, with its working space on the stack

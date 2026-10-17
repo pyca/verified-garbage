@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Modes.X86.Modes
 public import VerifiedGarbage.Proof.Modes.StepsChained
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CBC that updates the chaining value on x86 (32-bit), for any core

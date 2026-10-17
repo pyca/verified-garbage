@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Ed448.Formulas
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Inline

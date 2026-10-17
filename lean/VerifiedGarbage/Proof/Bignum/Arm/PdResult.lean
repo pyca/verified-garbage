@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdControls
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Precomputed exponentiation is safe unconditionally and computes RSA for valid R² -/
 

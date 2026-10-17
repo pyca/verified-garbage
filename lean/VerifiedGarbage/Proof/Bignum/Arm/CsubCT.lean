@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Csub
 meta import VerifiedGarbage.Impl.Bignum.Arm.Csub
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Final modular reduction has no secret-dependent branches or addresses -/
 

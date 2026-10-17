@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 /-! ## From `PairedRawNorm.lean` -/

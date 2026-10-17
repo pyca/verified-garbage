@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: `vg_cmac_triple_des_stream_init`

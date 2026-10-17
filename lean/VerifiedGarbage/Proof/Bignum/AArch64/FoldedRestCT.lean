@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
 import VerifiedGarbage.Proof.Bignum.AArch64.FoldedMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 

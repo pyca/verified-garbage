@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Invalid public keys produce an all-zero output and failure status -/
 

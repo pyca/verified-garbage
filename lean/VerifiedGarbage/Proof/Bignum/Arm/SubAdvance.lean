@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
 public import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public pointer and counter updates of a subtraction row -/
 

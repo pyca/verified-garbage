@@ -16,10 +16,6 @@ import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha1.X86_64.Stream
 meta import VerifiedGarbage.Impl.Sha1.X86_64.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-1 on x86-64: `update` and `finalize`

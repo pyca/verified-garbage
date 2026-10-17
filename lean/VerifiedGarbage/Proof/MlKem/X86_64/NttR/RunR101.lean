@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR100
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR100
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, the second half of pass B to `r10`

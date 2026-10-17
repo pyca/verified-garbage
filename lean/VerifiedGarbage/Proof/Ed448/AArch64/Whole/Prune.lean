@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Ed448.Prune
 public import VerifiedGarbage.Proof.Ed448.ScalarWords
 import VerifiedGarbage.Spec.Sha3
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!

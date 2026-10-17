@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 public import VerifiedGarbage.Proof.Bignum.FoldedPublic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Proved squaring, multiplication, and conversion out of Montgomery form -/
 

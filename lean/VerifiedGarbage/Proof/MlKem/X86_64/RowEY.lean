@@ -5,10 +5,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.RowY
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 meta import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

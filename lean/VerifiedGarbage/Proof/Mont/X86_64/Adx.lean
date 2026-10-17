@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: a round with BMI2 and ADX

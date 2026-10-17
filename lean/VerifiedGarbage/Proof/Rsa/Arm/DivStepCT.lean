@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.DivShift
 public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
 public import VerifiedGarbage.Proof.Rsa.Arm.DivReduceCT
 public import VerifiedGarbage.Proof.Rsa.Arm.DivBitCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One division iteration is independent of the secret numerator and divisor -/
 

@@ -26,10 +26,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRowStep
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRowStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv

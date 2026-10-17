@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.References
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Proof.Argon2.FillPositions
 public import VerifiedGarbage.Proof.Argon2.SegmentIndices

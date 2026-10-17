@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombLay
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb from tables in memory: where it keeps its numbers

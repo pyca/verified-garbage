@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes: `keyFromPrimes` as `vg_rsa_keygen_key` computes it

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareR2CT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareConstantsCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # FFDH parameter generation on x86-64: timing of complete modulus preparation -/
 

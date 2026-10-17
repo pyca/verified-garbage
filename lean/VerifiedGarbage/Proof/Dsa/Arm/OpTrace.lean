@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Env
 public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

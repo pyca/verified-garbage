@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteSave
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Read a byte and establish the complete exponent-bit-loop invariant -/
 

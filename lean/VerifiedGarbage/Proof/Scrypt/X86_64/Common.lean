@@ -7,10 +7,6 @@ public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
 
 /-!

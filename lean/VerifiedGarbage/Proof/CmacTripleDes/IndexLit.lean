@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.CmacTripleDes.Index
 meta import VerifiedGarbage.Impl.CmacTripleDes.Index
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule's bit maps as tables, for the kernel

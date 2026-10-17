@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: the outputs written under the mask (`stores_vp`) -/
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 meta import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The checks of an RSA key on ARMv7: the pieces the taint analysis checks
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Callee
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 
 /-!

@@ -13,10 +13,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.X86.Lit

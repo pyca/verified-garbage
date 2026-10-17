@@ -10,10 +10,6 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.Spec.TripleDes
 

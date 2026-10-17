@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesXts.Arm.Steps
 meta import VerifiedGarbage.Proof.AesXts.Arm.Steps
 public import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesXts.Spec
 meta import VerifiedGarbage.Proof.AesXts.Spec
 

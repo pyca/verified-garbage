@@ -3,10 +3,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Transport
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.PadState
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Squeeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedule
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

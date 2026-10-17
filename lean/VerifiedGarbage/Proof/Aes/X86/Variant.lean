@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Aes.X86.Callee
 public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Contracts and execution properties that every x86 AES variant supplies to callers. -/
 

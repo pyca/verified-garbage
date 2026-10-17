@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A wide-product row hides its scalar and multiplicand values -/
 

@@ -11,10 +11,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 meta import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashCallers
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The checks of the hashing key generation, for any permutation

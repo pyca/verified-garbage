@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SetBases
 meta import VerifiedGarbage.Impl.Bignum.Arm.SetBases
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Header initialization reveals only the destination and fixed count -/
 

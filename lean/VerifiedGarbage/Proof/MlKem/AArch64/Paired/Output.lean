@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Squeeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SeedSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Memory bytes of the initial paired matrix streams -/
 @[expose] public section

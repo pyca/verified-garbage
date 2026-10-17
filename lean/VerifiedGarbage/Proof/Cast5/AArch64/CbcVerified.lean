@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC on AArch64 meets its contracts

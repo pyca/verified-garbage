@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SecretPower
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpPhaseCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Ciphertext import and secret modular exponentiation have public-only traces -/
 

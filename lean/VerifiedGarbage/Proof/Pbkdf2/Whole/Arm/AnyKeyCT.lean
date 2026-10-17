@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 public import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` for a key of any length on 32-bit ARM: constant time, and in a frame of its own

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import VerifiedGarbage.Proof.Rc2.Expansion
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 

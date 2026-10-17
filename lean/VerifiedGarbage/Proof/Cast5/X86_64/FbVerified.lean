@@ -18,10 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 

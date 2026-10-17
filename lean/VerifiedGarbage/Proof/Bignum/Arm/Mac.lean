@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Mac
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The exact multiply-accumulate value and its carry, on ARMv7 -/
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFunction
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts

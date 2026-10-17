@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.Argon2.X86.HPrime
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Word64
 

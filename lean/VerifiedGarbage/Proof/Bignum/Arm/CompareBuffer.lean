@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Byte-exact equality for two readable buffers without input-dependent branches -/
 

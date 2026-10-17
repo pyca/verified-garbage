@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 

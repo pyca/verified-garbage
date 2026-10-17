@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch

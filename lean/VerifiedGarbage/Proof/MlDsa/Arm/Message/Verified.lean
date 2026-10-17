@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 
 /-!

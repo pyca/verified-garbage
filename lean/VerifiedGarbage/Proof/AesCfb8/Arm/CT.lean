@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesCfb8.Arm.Body
 meta import VerifiedGarbage.Proof.AesCfb8.Arm.Body
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on ARMv7: constant time

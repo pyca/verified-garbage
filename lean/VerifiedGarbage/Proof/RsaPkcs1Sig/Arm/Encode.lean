@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
 public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.Covers
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on ARMv7: correctness

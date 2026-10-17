@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundsCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: timing of the complete modulus policy -/

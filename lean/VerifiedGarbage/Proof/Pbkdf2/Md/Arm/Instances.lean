@@ -26,10 +26,6 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Shared
 meta import VerifiedGarbage.Proof.Sha512.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over Merkle–Damgård hash functions on ARMv7: the instances

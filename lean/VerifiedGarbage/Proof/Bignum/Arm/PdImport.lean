@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Import both public precomputation arrays in the shared 64-bit word format -/
 

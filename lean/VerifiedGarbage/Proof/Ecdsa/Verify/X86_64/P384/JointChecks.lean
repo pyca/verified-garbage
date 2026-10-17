@@ -22,10 +22,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesSiv.Arm.Call
 import VerifiedGarbage.Proof.AesCcm.Arm.Callee
 import VerifiedGarbage.Proof.AesSiv.Ctr32
 public import VerifiedGarbage.Proof.Siv.Spec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesCcm.Arm.Env
 
 /-!

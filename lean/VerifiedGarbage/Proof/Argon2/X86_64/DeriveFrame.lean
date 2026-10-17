@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Derive
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Compose the nested saved-register frames and the 272-byte local allocation. -/
 

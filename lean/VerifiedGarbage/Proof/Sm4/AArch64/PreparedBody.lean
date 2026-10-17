@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
 public import VerifiedGarbage.Proof.Sm4.AArch64.Keys
 public import VerifiedGarbage.Impl.Sm4.AArch64.Prepared
 public import VerifiedGarbage.Proof.Sm4.Planes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

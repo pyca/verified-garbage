@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 import Mathlib.Tactic.SplitIfs

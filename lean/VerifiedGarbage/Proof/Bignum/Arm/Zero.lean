@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.CallLay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A runtime-length zeroing of a packed-word accumulator -/
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Body
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Save
 public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
 public import VerifiedGarbage.Spec.TripleDes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.TCB.Arm.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Linear

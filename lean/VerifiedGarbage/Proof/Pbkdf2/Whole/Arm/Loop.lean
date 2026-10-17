@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Block
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the rest of a block, the loop, and `pbkdf2`

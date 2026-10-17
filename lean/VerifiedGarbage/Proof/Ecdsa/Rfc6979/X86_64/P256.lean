@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointSelect
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.PointAccumulate`. -/
 

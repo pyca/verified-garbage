@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
 public import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The parameter search's public data, loop states and buffers (AArch64)

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
 import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Cmac.Dbl32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the pre-counter block (`j0`)

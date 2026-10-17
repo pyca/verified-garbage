@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-! # RSA Montgomery setup, shared Miller–Rabin loop, and result -/

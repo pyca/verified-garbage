@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Arm.Lay
 
 /-!

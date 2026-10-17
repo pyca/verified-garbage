@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

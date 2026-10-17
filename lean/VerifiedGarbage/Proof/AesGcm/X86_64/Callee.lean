@@ -11,10 +11,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Spec.TripleDes
 

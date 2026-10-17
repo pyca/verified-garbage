@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksZVector
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints

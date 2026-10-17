@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
 public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Small-integer initialization through the shared RSA array layout -/
 

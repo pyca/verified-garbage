@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `addMod` on ARMv7: `[o] = ([a] + [b]) mod [m]` -/
 

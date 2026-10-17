@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # General complete addition for secp256k1 verification -/

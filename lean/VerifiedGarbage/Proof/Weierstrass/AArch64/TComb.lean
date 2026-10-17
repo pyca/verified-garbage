@@ -5,10 +5,6 @@ public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
 public import VerifiedGarbage.Proof.Weierstrass.CombW
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Proof.Weierstrass.TCombLay
 import Mathlib.Tactic.SplitIfs

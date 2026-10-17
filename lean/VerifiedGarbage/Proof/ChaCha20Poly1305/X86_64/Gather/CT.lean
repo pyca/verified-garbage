@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 

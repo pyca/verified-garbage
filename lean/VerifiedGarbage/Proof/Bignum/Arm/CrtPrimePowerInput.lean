@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSources
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretPowerInput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A validated factor becomes an arithmetic workspace while retaining its sources -/
 

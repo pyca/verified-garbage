@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyChildPointer
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyHeaderPointer
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductCount
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Prepare the verified full-width factor multiplication -/
 

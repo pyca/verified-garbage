@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked

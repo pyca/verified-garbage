@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Carries
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Prep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Range
 
 /-!

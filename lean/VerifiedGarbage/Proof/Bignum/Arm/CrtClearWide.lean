@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.Zero
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Zero a complete factor-product buffer while preserving all other bytes -/
 

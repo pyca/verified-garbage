@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningShapeCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
 import VerifiedGarbage.Proof.Framework.AArch64.Call

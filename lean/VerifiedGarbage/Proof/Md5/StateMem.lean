@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Md5
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # MD5: the hash value in memory

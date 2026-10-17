@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Implementations of the shared Miller–Rabin round on ARMv7, for generic callers
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # DSA on 32-bit ARM: the contracts the proofs are written against

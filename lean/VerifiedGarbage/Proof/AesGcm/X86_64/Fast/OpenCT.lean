@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid

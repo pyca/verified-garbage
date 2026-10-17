@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PcValidCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PcFailCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public modulus validation selects two proved timing-safe branches -/
 

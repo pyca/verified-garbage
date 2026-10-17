@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CTCode
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Implies
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The verified parameter search (AArch64)
 

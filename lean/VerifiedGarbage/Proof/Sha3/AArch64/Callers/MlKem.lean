@@ -14,10 +14,6 @@ import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Constant time of ML-KEM's calls of the sponge, for any Keccak backend

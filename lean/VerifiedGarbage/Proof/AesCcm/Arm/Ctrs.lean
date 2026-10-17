@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Compare
 import VerifiedGarbage.Proof.AesCcm.Arm.Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.AesCcm.Arm
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 

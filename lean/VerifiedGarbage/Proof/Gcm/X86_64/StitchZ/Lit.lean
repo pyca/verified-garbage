@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The interleaved loops on 512-bit registers, as literals
 

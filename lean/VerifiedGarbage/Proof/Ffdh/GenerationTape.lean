@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 public import VerifiedGarbage.Spec.Ffdh.Generation
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Complete generation consumes prefixes, including every rejected witness -/

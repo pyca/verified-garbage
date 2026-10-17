@@ -4,10 +4,6 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Bignum.Words
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Carry conservation for a doubled word stream and a two-word addend. -/

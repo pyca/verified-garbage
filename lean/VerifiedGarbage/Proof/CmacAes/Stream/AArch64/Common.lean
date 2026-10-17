@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
 import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.CmacAes.AArch64.Finalize
 
 @[expose] public section

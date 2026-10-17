@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail

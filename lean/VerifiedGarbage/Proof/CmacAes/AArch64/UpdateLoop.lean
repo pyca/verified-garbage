@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.CmacAes.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

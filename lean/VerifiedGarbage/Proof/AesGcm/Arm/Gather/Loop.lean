@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Copy
 public import VerifiedGarbage.Proof.Gcm.SealGather
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: gathering the slices

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowersCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStageCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete private computation has a secret-independent trace -/
 

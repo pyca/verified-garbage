@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrS
 import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's squaring

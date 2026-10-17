@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
 meta import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public-exponent validation has no dependency on any secret memory -/
 

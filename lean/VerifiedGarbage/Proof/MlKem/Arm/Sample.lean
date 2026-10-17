@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Word64
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Range
 

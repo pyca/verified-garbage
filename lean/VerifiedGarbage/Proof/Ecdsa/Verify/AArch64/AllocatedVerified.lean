@@ -18,10 +18,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

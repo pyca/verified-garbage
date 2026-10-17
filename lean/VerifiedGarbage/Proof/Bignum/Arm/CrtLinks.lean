@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinkStep
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStrides
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # All CRT buffer links come from public lengths and addresses -/
 

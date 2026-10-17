@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!

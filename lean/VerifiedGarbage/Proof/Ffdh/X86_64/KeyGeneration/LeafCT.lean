@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CTData
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
 meta import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key search's exits and rejections use only public addresses -/

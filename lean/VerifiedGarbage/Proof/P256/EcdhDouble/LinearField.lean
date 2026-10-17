@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.P256.EcdhJac.State
 public import VerifiedGarbage.Proof.P256.Linear.WeakAdd
 import VerifiedGarbage.Proof.P256.Linear.Linear41
 import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.Booth
 
 @[expose] public section

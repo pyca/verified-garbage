@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-OFB and -CFB64 on AArch64 meet their contracts

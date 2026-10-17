@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: loops four blocks at a time

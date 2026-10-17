@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Open
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: constant time, the combinators

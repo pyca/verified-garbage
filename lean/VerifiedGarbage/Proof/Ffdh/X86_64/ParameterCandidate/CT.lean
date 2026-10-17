@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.BodyCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # FFDH parameter generation on x86-64: constant time under the public tape contract -/
 

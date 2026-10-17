@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.MontMixedProduct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The secret CRT inverse is read from the original private-key bytes -/
 

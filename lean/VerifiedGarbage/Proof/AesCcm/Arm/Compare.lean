@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Env
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: checking a received tag (`recv`, `cmp o`)

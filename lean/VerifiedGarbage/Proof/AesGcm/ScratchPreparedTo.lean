@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.AesGcm.ScratchTo
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-! # Prepared-context out-of-place scratch contracts -/

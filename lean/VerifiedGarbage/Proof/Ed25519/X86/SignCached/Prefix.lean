@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.Signing
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.Derive
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialArgs
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Normalize u32 stack arguments without assuming anything about their upper bits. -/

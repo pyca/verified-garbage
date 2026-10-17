@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
 import VerifiedGarbage.Proof.Ed25519.WindowNibble
 import VerifiedGarbage.Proof.Ed25519.AArch64.Nibbles
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 

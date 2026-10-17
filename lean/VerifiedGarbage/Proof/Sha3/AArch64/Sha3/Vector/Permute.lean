@@ -12,10 +12,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv

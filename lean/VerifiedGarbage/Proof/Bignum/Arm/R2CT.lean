@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.R2
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA R-squared precomputation leaks only public workspace dimensions -/
 

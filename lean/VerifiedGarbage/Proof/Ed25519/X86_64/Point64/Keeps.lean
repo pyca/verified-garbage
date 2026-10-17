@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The point functions keep `rbp` and `r12`–`r15`

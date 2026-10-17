@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Idea.Arm.Ecb
 public import VerifiedGarbage.Proof.Idea.Arm.Invert
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 import VerifiedGarbage.Impl.StackScratch.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Verified IDEA on ARMv7, with its saved registers on the stack

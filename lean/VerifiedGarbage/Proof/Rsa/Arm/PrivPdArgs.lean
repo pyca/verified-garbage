@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPrefixMemory
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdSuffix
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # All arguments and the saved precomputation status before re-exponentiation -/
 

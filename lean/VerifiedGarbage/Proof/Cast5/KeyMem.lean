@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Cast5.KeyLines
 import VerifiedGarbage.Proof.Cast5.Memory
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Cast5.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion: the working space and the subkeys

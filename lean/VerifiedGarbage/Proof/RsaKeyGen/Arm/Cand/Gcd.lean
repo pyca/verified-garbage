@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Close
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint3
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: `gcd(c − 1, e)` (`gcdCheck_vp`)
 

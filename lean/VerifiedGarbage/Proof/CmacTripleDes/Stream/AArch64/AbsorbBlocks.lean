@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC on AArch64: `vg_cmac_triple_des_absorb`'s straight-line code

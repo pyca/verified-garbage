@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AVX-512 VAES counter mode: the counter blocks and the data

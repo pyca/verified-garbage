@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: pass 2

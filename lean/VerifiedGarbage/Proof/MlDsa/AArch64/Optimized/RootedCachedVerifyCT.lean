@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel

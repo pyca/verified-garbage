@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.R2CT
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.R2CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH domain validation on x86-64: public reduction workspace -/

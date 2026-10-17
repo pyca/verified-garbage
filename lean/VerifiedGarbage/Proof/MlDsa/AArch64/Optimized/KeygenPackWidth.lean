@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackBody
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl

@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit

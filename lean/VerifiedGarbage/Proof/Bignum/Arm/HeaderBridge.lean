@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.Bases
 public import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Rsa.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The existing 64-bit RSA workspace as native ARMv7 words -/
 

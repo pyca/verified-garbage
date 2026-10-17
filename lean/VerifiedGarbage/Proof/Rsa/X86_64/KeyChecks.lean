@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes

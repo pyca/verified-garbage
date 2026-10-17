@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` for a key of any length: its postcondition reads the states alone

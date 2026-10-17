@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackMain
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackMain
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint

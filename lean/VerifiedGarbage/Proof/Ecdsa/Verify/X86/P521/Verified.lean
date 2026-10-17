@@ -16,10 +16,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.X25519.X86.Column
 

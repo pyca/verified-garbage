@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Idea.X86_64.Lit
 meta import VerifiedGarbage.Proof.Idea.X86_64.Lit
 public import VerifiedGarbage.Impl.Idea.X86_64.Modes
 meta import VerifiedGarbage.Impl.Idea.X86_64.Modes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 

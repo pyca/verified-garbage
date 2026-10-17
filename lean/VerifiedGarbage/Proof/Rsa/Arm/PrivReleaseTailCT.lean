@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 meta import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Private release and fault status have no secret-dependent leakage -/
 

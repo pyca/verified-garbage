@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.Framework.X86_64.Call

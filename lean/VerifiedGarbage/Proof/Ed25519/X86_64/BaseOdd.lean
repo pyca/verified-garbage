@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 public import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.Recode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The static odd multiples of `-B`

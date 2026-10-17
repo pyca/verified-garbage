@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.Ccm
 meta import VerifiedGarbage.Spec.Ccm
 

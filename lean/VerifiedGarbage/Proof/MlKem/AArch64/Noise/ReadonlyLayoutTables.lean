@@ -1,10 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutAll
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
