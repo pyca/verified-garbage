@@ -37,6 +37,11 @@ theorem fits : Spill.Fits (saved ++ regSlots) := by decide
 /-- A number, as the prologue zero-extends it from 32 bits. -/
 abbrev zx (v : BitVec 64) : BitVec 64 := (v.setWidth 32).setWidth 64
 
+theorem zx_eq {v : BitVec 64} (h : v.toNat < 2 ^ 32) : zx v = BitVec.ofNat 64 v.toNat := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
 /-- The frame's slots that the code reads: the saved registers, the
 arguments. -/
 structure Fr (s : State) (m : Mem) : Prop where

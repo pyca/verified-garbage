@@ -88,15 +88,17 @@ theorem st_slot {t : State} {F : Addr} {d : Nat} (hsp : t.sp = F) (hd : d % 8 = 
   refine wp_strx hd (by rw [e₁]) (by rw [o₁.wr]; exact hw) fun u₂ m₂ => k u₂ (o₁.keep.trans m₂.keep).mono
     (by rw [m₂.mem, o₁.mem, o₁.get r (by simpa using hr)]) (by rw [m₂.gpr, e₁])
 
-theorem emLen_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {F : Addr} (hsp : u.sp = F) {x : Nat} (hx : x < 256)
+theorem emLen_ok {D : Nat} (hD : D + 2 < 4096) {u : State} {F : Addr} (hsp : u.sp = F) {x : Nat} (hx : x < 256)
     (h0 : x ≠ 0)
     (hwC : InRegions u.wr (F + BitVec.ofNat 64 sC) 8) (hwL : InRegions u.wr (F + BitVec.ofNat 64 sLo) 8)
+    (hrH : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 sHLen) 8)
+    (hsD : u.mem.readW (F + BitVec.ofNat 64 sHLen) 64 = BitVec.ofNat 64 D)
     {k : Nat} (hk : u.gpr .x23 = BitVec.ofNat 64 k) (hk1 : 1 ≤ k) (hk2 : k < 2 ^ 32)
     (h11 : u.gpr .x11 = (if x = 1 then 0 else BitVec.ofNat 64 (2 ^ Nat.log2 x - 1))) :
-    WP isa (emLen H) u fun u' => Keep [.x11, .x12, .x16, .x9, .x10] u u' ∧
+    WP isa emLen u fun u' => Keep [.x11, .x12, .x16, .x9, .x10, .x13] u u' ∧
       u'.mem = (u.mem.writeW (F + BitVec.ofNat 64 sC) (maskV x)).writeW (F + BitVec.ofNat 64 sLo)
         (BitVec.ofNat 64 (loV x)) ∧
-      u'.gpr .x9 = BitVec.ofNat 64 (k - loV x) ∧ (u'.gpr .x10 != 0) = decide (k - loV x < H.D + 2) := by
+      u'.gpr .x9 = BitVec.ofNat 64 (k - loV x) ∧ (u'.gpr .x10 != 0) = decide (k - loV x < D + 2) := by
   have hl : loV x ≤ 1 := by unfold loV; split <;> omega
   have hl' : loV x ≤ k := by omega
   unfold emLen
@@ -110,17 +112,24 @@ theorem emLen_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {F : Addr} (hsp : 
     · have h1 : x ≠ 1 := fun h => by rw [h11, ite_eq_left h] at hb; exact absurd hb (by decide)
       exact wp_movz fun v₁ o₁ e₁ => wp_nil ⟨o₁.mono, by rw [o₁.get .x11, h11, maskV, ite_eq_right h1,
         ite_eq_right h1], by rw [e₁, loV, ite_eq_right h1]; rfl⟩
-  rw [List.append_assoc]
-  refine st_slot (by rw [O.sp, hsp]) (by decide) (by rw [O.wr]; exact hwC) (fun v₁ k₁ m₁ x₁ => ?_) (by decide)
-  refine st_slot (by rw [k₁.sp, O.sp, hsp]) (by decide) (by rw [k₁.wr, O.wr]; exact hwL) (fun v₂ k₂ m₂ x₂ => ?_)
+  unfold hLen2 ld
+  simp only [List.cons_append, List.nil_append, List.append_assoc]
+  refine wp_ldrSp (by decide) (by rw [O.sp, hsp, O.rd, O.wr]; exact hrH) fun v₀ o₀ e₀ =>
+    wp_addImm (by decide) fun v₀' o₀' e₀' => ?_
+  have x13 : v₀'.gpr .x13 = BitVec.ofNat 64 (D + 2) := by
+    rw [e₀', e₀, O.sp, hsp, O.mem, hsD, BitVec.ofNat_add_ofNat]
+  have O' : Only [.x11, .x12, .x13] u v₀' := (O.trans (o₀.trans o₀')).mono
+  refine st_slot (by rw [O'.sp, hsp]) (by decide) (by rw [O'.wr]; exact hwC) (fun v₁ k₁ m₁ x₁ => ?_) (by decide)
+  refine st_slot (by rw [k₁.sp, O'.sp, hsp]) (by decide) (by rw [k₁.wr, O'.wr]; exact hwL) (fun v₂ k₂ m₂ x₂ => ?_)
     (by decide)
-  refine wp_sub fun v₃ o₃ e₃ => wp_subImm (by omega) fun v₄ o₄ e₄ => wp_lsr (by decide) fun v₅ o₅ e₅ => wp_nil
-    ⟨(O.keep.trans (k₁.trans (k₂.trans (o₃.keep.trans (o₄.keep.trans o₅.keep))))).mono, ?_, ?_, ?_⟩
-  · rw [o₅.mem, o₄.mem, o₃.mem, m₂, m₁, O.mem, k₁.get .x12, h12', h11']
-  · rw [o₅.get .x9, o₄.get .x9, e₃, k₂.get .x23, k₁.get .x23, O.get .x23, hk, k₂.get .x12, k₁.get .x12, h12',
-      Offset.ofNat_sub_ofNat hl']
-  · rw [e₅, e₄, e₃, k₂.get .x23, k₁.get .x23, O.get .x23, hk, k₂.get .x12, k₁.get .x12, h12',
-      Offset.ofNat_sub_ofNat hl']
+  refine wp_sub fun v₃ o₃ e₃ => wp_sub fun v₄ o₄ e₄ => wp_lsr (by decide) fun v₅ o₅ e₅ => wp_nil
+    ⟨(O'.keep.trans (k₁.trans (k₂.trans (o₃.keep.trans (o₄.keep.trans o₅.keep))))).mono, ?_, ?_, ?_⟩
+  · rw [o₅.mem, o₄.mem, o₃.mem, m₂, m₁, O'.mem, k₁.get .x12, o₀'.get .x12, o₀.get .x12, h12',
+      o₀'.get .x11, o₀.get .x11, h11']
+  · rw [o₅.get .x9, o₄.get .x9, e₃, k₂.get .x23, k₁.get .x23, O'.get .x23, hk, k₂.get .x12, k₁.get .x12,
+      o₀'.get .x12, o₀.get .x12, h12', Offset.ofNat_sub_ofNat hl']
+  · rw [e₅, e₄, e₃, k₂.get .x23, k₁.get .x23, O'.get .x23, hk, k₂.get .x12, k₁.get .x12, o₀'.get .x12,
+      o₀.get .x12, h12', Offset.ofNat_sub_ofNat hl', o₃.get .x13, k₂.get .x13, k₁.get .x13, x13]
     exact borrow_ne (by omega) (by omega)
 
 theorem borrow_or {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 64) :
@@ -147,21 +156,32 @@ theorem borrow_or {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 64) :
     have := congrArg (fun y => y.getLsbD 0) h'
     simp at this
 
-theorem saltFits_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {F : Addr} (hsp : u.sp = F)
-    (hrS : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 sSaltLen) 8) {a sl : Nat}
-    (ha : H.D + 2 ≤ a) (ha' : a < 2 ^ 32) (h9 : u.gpr .x9 = BitVec.ofNat 64 a)
+theorem saltFits_ok {D : Nat} (hD : D + 2 < 4096) {u : State} {F : Addr} (hsp : u.sp = F)
+    (hrS : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 sSaltLen) 8)
+    (hrH : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 sHLen) 8)
+    (hsD : u.mem.readW (F + BitVec.ofNat 64 sHLen) 64 = BitVec.ofNat 64 D) {a sl : Nat}
+    (ha : D + 2 ≤ a) (ha' : a < 2 ^ 32) (h9 : u.gpr .x9 = BitVec.ofNat 64 a)
     (hsl : u.mem.readW (F + BitVec.ofNat 64 sSaltLen) 64 = BitVec.ofNat 64 sl) (hsl' : sl < 2 ^ 64) :
-    WP isa (.block ([ld .x12 sSaltLen] ++ saltFits H)) u fun u' => Only [.x12, .x9, .x10, .x13] u u' ∧
-      u'.gpr .x9 = BitVec.ofNat 64 (a - (H.D + 2)) ∧ (u'.gpr .x10 != 0) = decide (a - (H.D + 2) < sl) := by
-  unfold saltFits ld
+    WP isa (.block ([ld .x12 sSaltLen] ++ saltFits)) u fun u' => Only [.x12, .x9, .x10, .x13] u u' ∧
+      u'.gpr .x9 = BitVec.ofNat 64 (a - (D + 2)) ∧ (u'.gpr .x10 != 0) = decide (a - (D + 2) < sl) := by
+  unfold saltFits hLen2 ld
   simp only [List.cons_append, List.nil_append]
-  refine wp_ldrSp (by decide) (by rw [hsp]; exact hrS) fun u₁ o₁ e₁ => wp_subImm (by omega) fun u₂ o₂ e₂ =>
+  refine wp_ldrSp (by decide) (by rw [hsp]; exact hrS) fun u₁ o₁ e₁ => ?_
+  refine wp_ldrSp (by decide) (by rw [o₁.sp, o₁.rd, o₁.wr, hsp]; exact hrH) fun u₁' o₁' e₁' => ?_
+  refine wp_addImm (by decide) fun u₁'' o₁'' e₁'' => wp_sub fun u₂ o₂ e₂ =>
     wp_sub fun u₃ o₃ e₃ => wp_lsr (by decide) fun u₄ o₄ e₄ => wp_lsr (by decide) fun u₅ o₅ e₅ =>
-    wp_orr fun u₆ o₆ e₆ => wp_nil ⟨(o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono, ?_, ?_⟩
-  · rw [o₆.get .x9, o₅.get .x9, o₄.get .x9, o₃.get .x9, e₂, o₁.get .x9, h9, Offset.ofNat_sub_ofNat ha]
+    wp_orr fun u₆ o₆ e₆ => wp_nil ⟨(o₁.trans (o₁'.trans (o₁''.trans (o₂.trans (o₃.trans (o₄.trans
+      (o₅.trans o₆))))))).mono, ?_, ?_⟩
+  · have x13 : u₁''.gpr .x13 = BitVec.ofNat 64 (D + 2) := by
+      rw [e₁'', e₁', o₁.sp, o₁.mem, hsp, hsD, BitVec.ofNat_add_ofNat]
+    rw [o₆.get .x9, o₅.get .x9, o₄.get .x9, o₃.get .x9, e₂, o₁''.get .x9, o₁'.get .x9, o₁.get .x9, h9, x13,
+      Offset.ofNat_sub_ofNat ha]
   · have h12 : u₁.gpr .x12 = BitVec.ofNat 64 sl := by rw [e₁, hsp, hsl]
-    rw [e₆, o₅.get .x10, e₄, e₃, e₂, o₁.get .x9, h9, Offset.ofNat_sub_ofNat ha, o₂.get .x12, h12, e₅,
-      o₄.get .x12, o₃.get .x12, o₂.get .x12, h12]
+    have x13 : u₁''.gpr .x13 = BitVec.ofNat 64 (D + 2) := by
+      rw [e₁'', e₁', o₁.sp, o₁.mem, hsp, hsD, BitVec.ofNat_add_ofNat]
+    rw [e₆, o₅.get .x10, e₄, e₃, e₂, o₁''.get .x9, o₁'.get .x9, o₁.get .x9, h9, x13, Offset.ofNat_sub_ofNat ha,
+      o₂.get .x12, o₁''.get .x12, o₁'.get .x12, h12, e₅, o₄.get .x12, o₃.get .x12, o₂.get .x12, o₁''.get .x12,
+      o₁'.get .x12, h12]
     exact borrow_or (by omega) hsl'
 
 end VG.Proof.RsaPss.AArch64

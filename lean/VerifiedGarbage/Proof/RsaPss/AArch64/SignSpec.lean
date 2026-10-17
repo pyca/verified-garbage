@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignMain
-public import VerifiedGarbage.Proof.RsaPss.SignCases
+public import VerifiedGarbage.Proof.RsaPss.SignAny
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,7 +11,7 @@ import Mathlib.Tactic.SplitIfs
 /-!
 # RSASSA-PSS signing on AArch64: the outcome, by cases
 
-`signOut G s`: what the contract asks of a call from `s`. It is `invalid`
+`signOut H G s`: what the contract asks of a call from `s`. It is `invalid`
 if the modulus' first byte is zero (`signOut_zero`) or the salt does not fit
 (`signOut_long`), and otherwise the private operation on the encoding
 `signEnc` writes (`signOut_eq`).
@@ -25,15 +25,15 @@ open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Proof.RsaPss.AArch64 (loV maskV)
 
 /-- The outcome `signContract.post` asks for. -/
-def signOut (G : Spec.Mgf1.Hash) (s : State) : Spec.Rsa.Outcome :=
-  Spec.RsaPss.sign G G (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
+def signOut (H G : Spec.Mgf1.Hash) (s : State) : Spec.Rsa.Outcome :=
+  Spec.RsaPss.sign H G (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 2) (s.gpr .x7).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 6) (s.gpr .x7).toNat)
-    (digB G.len s) (saltB s)
+    (digB H.len s) (saltB s)
 
 theorem bytesAt_cons (m : Mem) (p : Addr) {k : Nat} (hk : 1 ≤ k) :
     Spec.Rsa.bytesAt m p k = m p :: Spec.Rsa.bytesAt m (p + 1) (k - 1) := by
@@ -44,13 +44,13 @@ theorem bytesAt_cons (m : Mem) (p : Addr) {k : Nat} (hk : 1 ≤ k) :
   rw [show (1 : Addr) + BitVec.ofNat 64 i = BitVec.ofNat 64 (i + 1) by
     rw [BitVec.add_comm, ← BitVec.ofNat_add_ofNat]; rfl]
 
-variable (G : Spec.Mgf1.Hash)
+variable (H G : Spec.Mgf1.Hash)
 
 theorem signOut_zero {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.gpr .x2) = 0) :
-    signOut G s = .invalid := by
+    signOut H G s = .invalid := by
   unfold signOut
   rw [bytesAt_cons _ _ hk, h0]
-  exact RsaPss.sign_zero G ..
+  exact RsaPss.sign_zero_any H G ..
 
 theorem emLen_eq {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.gpr .x2) ≠ 0) :
     Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
@@ -61,17 +61,17 @@ theorem emLen_eq {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.gpr .
   split <;> omega
 
 theorem signOut_long {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.gpr .x2) ≠ 0)
-    (h : (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat < G.len + (stackArg s 10).toNat + 2) :
-    signOut G s = .invalid := by
+    (h : (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat < H.len + (stackArg s 11).toNat + 2) :
+    signOut H G s = .invalid := by
   unfold signOut
-  refine RsaPss.sign_long G _ _ _ _ _ _ _ _ ?_
+  refine RsaPss.sign_long_any H G _ _ _ _ _ _ _ _ ?_
   rw [emLen_eq hk h0, VG.Proof.RsaPkcs1Sig.bytesAt_length]
   exact h
 
-theorem signOut_eq (hG : Proof.Mgf1.Valid G) {s : State} (hk : 1 ≤ (s.gpr .x3).toNat)
+theorem signOut_eq (hH : Proof.Mgf1.Valid H) (hG : Proof.Mgf1.Valid G) {s : State} (hk : 1 ≤ (s.gpr .x3).toNat)
     (h0 : s.mem (s.gpr .x2) ≠ 0)
-    (hfit : G.len + (stackArg s 10).toNat + 2 ≤ (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat) :
-    signOut G s = privOut s (encEm G G.len s (loV (s.mem (s.gpr .x2)).toNat)
+    (hfit : H.len + (stackArg s 11).toNat + 2 ≤ (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat) :
+    signOut H G s = privOut s (encEm H G H.len s (loV (s.mem (s.gpr .x2)).toNat)
       ((maskV (s.mem (s.gpr .x2)).toNat).setWidth 8)) := by
   have hel := emLen_eq hk h0
   have hc := RsaPss.mask_eq (Spec.Rsa.bytesAt s.mem (s.gpr .x2 + 1) ((s.gpr .x3).toNat - 1)) h0
@@ -79,8 +79,8 @@ theorem signOut_eq (hG : Proof.Mgf1.Valid G) {s : State} (hk : 1 ≤ (s.gpr .x3)
   generalize hnB : Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = nB at hel ⊢
   rw [bytesAt_cons _ _ hk] at hnB
   subst hnB
-  rw [RsaPss.sign_eq G hG h0 (lo := loV (s.mem (s.gpr .x2)).toNat)
-    (db := (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat - G.len - 1)
+  rw [RsaPss.sign_eq_any H G hH hG h0 (lo := loV (s.mem (s.gpr .x2)).toNat)
+    (db := (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat - H.len - 1)
     (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) rfl hel
     (by rw [List.length_cons, VG.Proof.RsaPkcs1Sig.bytesAt_length]; unfold loV; split <;> omega) rfl
     (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; exact hfit)]

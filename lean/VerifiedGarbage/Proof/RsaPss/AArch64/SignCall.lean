@@ -30,7 +30,7 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length bytes_apart)
 open VG.Proof.RsaPss.AArch64 (off)
 
 /-- The working space. -/
-abbrev scr (s : State) : Addr := stackArg s 11
+abbrev scr (s : State) : Addr := stackArg s 12
 
 /-- What the code writes before the call: the frame, the working space, and
 the stack below the frame the hash function's `init` uses. -/
@@ -48,7 +48,7 @@ theorem wrS_disj {K : Nat} {s : State} (hK : 16 ≤ K) {R : Region} (hk : (kR K 
 
 /-- A stack argument, in memory changed only where the code writes. -/
 theorem arg_frameW {D K : Nat} {s : State} (hp : PreS D K s) (hK : 16 ≤ K) {m : Mem} (h : Frame (wrS s) s.mem m)
-    {j : Nat} (hj : j < 13) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
+    {j : Nat} (hj : j < 16) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
   h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (wrS_disj hK hp.ka hp.sa.symm) (by decide)
 
@@ -67,7 +67,7 @@ structure Main (s : State) (em : List Byte) (t : State) : Prop where
 /-- The call's stack arguments. -/
 def argv (s : State) : List (BitVec 64) :=
   [s.gpr .x6, s.gpr .x7, stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5,
-    stackArg s 6, stackArg s 7, off (scr s) oRsa, stackArg s 12 - BitVec.ofNat 64 1024]
+    stackArg s 6, stackArg s 7, off (scr s) oRsa, stackArg s 13 - BitVec.ofNat 64 1024]
 
 /-- At the call. -/
 structure AtCall (s : State) (em : List Byte) (t : State) : Prop where
@@ -137,10 +137,12 @@ theorem copies_ok {D K : Nat} {s v₀ : State} (hp : PreS D K s) (hK : 16 ≤ K)
       · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [h]) (by omega_using [hn, h]) (by omega_using [hn])) (by decide), hv.args i h]
       · exact Mem.readW_writeW_self64 _ _ _
 
-theorem fr_args (s : State) : ∀ r ∈ [(⟨fb s, 96⟩ : Region)], (frA s).Disjoint r ∧ (frB s).Disjoint r := by
+theorem fr_args (s : State) : ∀ r ∈ [(⟨fb s, 96⟩ : Region)],
+    (frA s).Disjoint r ∧ (frB s).Disjoint r ∧ (frC s).Disjoint r := by
   intro r hr
   rw [List.mem_singleton.mp hr]
-  exact ⟨Offset.disjoint_base _ (by decide) (by decide), Offset.disjoint_base _ (by decide) (by decide)⟩
+  exact ⟨Offset.disjoint_base _ (by decide) (by decide), Offset.disjoint_base _ (by decide) (by decide),
+    Offset.disjoint_base _ (by decide) (by decide)⟩
 
 theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) {em : List Byte}
     (hm : Main s em t) : WP isa (.block privArgs) t (AtCall s em) := by
@@ -166,12 +168,14 @@ theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) 
     rw [m₃.mem, o₂.mem, o₁.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
   refine wp_ldrSp (by decide) (rsl sp₃ rd₃ wr₃ (by decide)) fun u₄ o₄ e₄ => ?_
-  rw [sp₃, (hm.fr.frame fA₃ (fun r hr => ((fr_args s) r hr).1) (fun r hr => ((fr_args s) r hr).2)).rs (.x7, sPl)
+  rw [sp₃, (hm.fr.frame fA₃ (fun r hr => ((fr_args s) r hr).1) (fun r hr => ((fr_args s) r hr).2.1)
+    (fun r hr => ((fr_args s) r hr).2.2)).rs (.x7, sPl)
     (by simp [regSlots])] at e₄
   refine wp_strx (a := fb s + BitVec.ofNat 64 8) (by decide) (by rw [o₄.get .x16, m₃.gpr, o₂.get .x16, e₁])
     (by rw [o₄.wr, wr₃]; exact in_frame _ _ (by decide)) fun u₅ m₅ => ?_
   have frX : ∀ {m : Mem}, Frame [(⟨fb s, 96⟩ : Region)] t.mem m → Fr s m := fun h =>
-    hm.fr.frame h (fun r hr => ((fr_args s) r hr).1) (fun r hr => ((fr_args s) r hr).2)
+    hm.fr.frame h (fun r hr => ((fr_args s) r hr).1) (fun r hr => ((fr_args s) r hr).2.1)
+      (fun r hr => ((fr_args s) r hr).2.2)
   have wX : ∀ {m : Mem}, Frame [(⟨fb s, 96⟩ : Region)] t.mem m → Frame (wrS s) s.mem m := fun h =>
     hm.mem.trans (h.sub fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -249,7 +253,7 @@ theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) 
     rw [m₁₂.gpr, o₁₁.get .x20, o₁₀.get .x20, m₉.gpr, o₈.get .x20, o₇.get .x20, g₆ .x20 (by decide) (by decide),
       hm.x20]
   have hm₁₂ : u₁₂.mem = (v.mem.writeW (fb s + BitVec.ofNat 64 80) (off (scr s) oRsa)).writeW
-      (fb s + BitVec.ofNat 64 88) (stackArg s 12 - BitVec.ofNat 64 1024) := by
+      (fb s + BitVec.ofNat 64 88) (stackArg s 13 - BitVec.ofNat 64 1024) := by
     rw [m₁₂.mem, o₁₁.mem, o₁₀.mem, m₉.mem, o₈.mem, o₇.mem, x9₈, e₁₁, e₁₀]
   have hm₅ : u₅.mem = (u₁.mem.writeW (fb s + BitVec.ofNat 64 0) (s.gpr .x6)).writeW (fb s + BitVec.ofNat 64 8)
       (s.gpr .x7) := by
@@ -302,13 +306,13 @@ theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) 
 
 /-- `EM`, and the call's working space. -/
 abbrev emR (s : State) : Region := ⟨off (scr s) oEm, (s.gpr .x3).toNat⟩
-abbrev scR (s : State) : Region := ⟨off (scr s) oRsa, (stackArg s 12 - BitVec.ofNat 64 1024).toNat * 8⟩
+abbrev scR (s : State) : Region := ⟨off (scr s) oRsa, (stackArg s 13 - BitVec.ofNat 64 1024).toNat * 8⟩
 
 theorem scr_toNat {D K : Nat} {s : State} (hp : PreS D K s) :
-    (stackArg s 12 - BitVec.ofNat 64 1024).toNat = (stackArg s 12).toNat - 1024 := by
+    (stackArg s 13 - BitVec.ofNat 64 1024).toNat = (stackArg s 13).toNat - 1024 := by
   have := hp.hs
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  have := (stackArg s 12).isLt
+  have := (stackArg s 13).isLt
   omega_arith
 
 theorem em_sub {D K : Nat} {s : State} (hp : PreS D K s) : Region.Sub (emR s) (sR s) :=
@@ -327,7 +331,7 @@ theorem privOk_of (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) 
   have hkb := kb_toNat hp
   have hcl := c.le
   have hpos := c.pos
-  have hws : (scr s).toNat + (stackArg s 12).toNat * 8 ≤ 2 ^ 64 := hp.ws
+  have hws : (scr s).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 := hp.ws
   have hsc := scr_toNat hp
   have hhs := hp.hs
   have hK : Region.Sub ⟨fb s - BitVec.ofNat 64 c.stack, c.stack⟩ (kR K s) := fun a h =>
@@ -347,7 +351,7 @@ theorem privOk_of (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) 
   have a8 : stackArg t 8 = stackArg s 6 := ha.args 8 (by decide)
   have a9 : stackArg t 9 = stackArg s 7 := ha.args 9 (by decide)
   have a10 : stackArg t 10 = off (scr s) oRsa := ha.args 10 (by decide)
-  have a11 : stackArg t 11 = stackArg s 12 - BitVec.ofNat 64 1024 := ha.args 11 (by decide)
+  have a11 : stackArg t 11 = stackArg s 13 - BitVec.ofNat 64 1024 := ha.args 11 (by decide)
   have ol : (s.gpr .x3).toNat = (s.gpr .x1).toNat := hp.ol.symm
   have hO : (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = oR s := by rw [ol]
   have s96 := a96_sub K s
@@ -355,7 +359,7 @@ theorem privOk_of (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) 
   have hSsc := sc_sub hp
   have hwem : (off (scr s) oEm).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 := by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm at *; omega_using [hws, hhs]
-  have hwsc : (off (scr s) oRsa).toNat + (stackArg s 12 - BitVec.ofNat 64 1024).toNat * 8 ≤ 2 ^ 64 := by
+  have hwsc : (off (scr s) oRsa).toNat + (stackArg s 13 - BitVec.ofNat 64 1024).toNat * 8 ≤ 2 ^ 64 := by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; rw [hsc]; unfold oRsa at *; omega_using [hws]
   refine ⟨?hl, ?hrd, ?hwr, ?hk, ?h1, ?h7, ?he1, ?he2, ?hp1, ?hp2, ?hq1, ?hq2, ?hdp, ?hqi, ?hdq, ?hs⟩
   case hl =>
@@ -470,7 +474,7 @@ theorem bytes_wrS {K : Nat} {s : State} (hK : 16 ≤ K) {m : Mem} (hf : Frame (w
 
 theorem Fr.below {s : State} {m m' : Mem} (h : Fr s m) {rs : List Region} {n : Nat} (hn : n ≤ 2 ^ 20)
     (hf : Frame (rs ++ [below (fb s) n]) m m') (hA : ∀ r ∈ rs, (frA s).Disjoint r)
-    (hB : ∀ r ∈ rs, (frB s).Disjoint r) : Fr s m' :=
+    (hB : ∀ r ∈ rs, (frB s).Disjoint r) (hC : ∀ r ∈ rs, (frC s).Disjoint r) : Fr s m' :=
   h.frame hf (fun r hr => by
       rcases List.mem_append.mp hr with h' | h'
       · exact hA r h'
@@ -478,6 +482,10 @@ theorem Fr.below {s : State} {m m' : Mem} (h : Fr s m) {rs : List Region} {n : N
     (fun r hr => by
       rcases List.mem_append.mp hr with h' | h'
       · exact hB r h'
+      · rw [List.mem_singleton.mp h']; exact Offset.disjoint_below _ (by omega_using [hn]))
+    (fun r hr => by
+      rcases List.mem_append.mp hr with h' | h'
+      · exact hC r h'
       · rw [List.mem_singleton.mp h']; exact Offset.disjoint_below _ (by omega_using [hn]))
 
 theorem call_ok (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K)
@@ -495,7 +503,7 @@ theorem call_ok (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (h
   have a6 : stackArg t 6 = stackArg s 4 := ha.args 6 (by decide)
   have a8 : stackArg t 8 = stackArg s 6 := ha.args 8 (by decide)
   have a10 : stackArg t 10 = off (scr s) oRsa := ha.args 10 (by decide)
-  have a11 : stackArg t 11 = stackArg s 12 - BitVec.ofNat 64 1024 := ha.args 11 (by decide)
+  have a11 : stackArg t 11 = stackArg s 13 - BitVec.ofNat 64 1024 := ha.args 11 (by decide)
   refine privCall c (privOk_of c hp hcK ha) fun s' hrd' hwr' hsp' hf hpres hvs hpost => ?_
   simp only [privWr] at hf
   rw [ha.x0, ha.x1, a10, a11, ha.sp] at hf
@@ -527,6 +535,11 @@ theorem call_ok (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (h
         rcases hr with rfl | rfl
         · rw [hO]; exact hp.ko.sub_left (frame_sub K s (d := 288) (n := 16) (by decide))
         · exact (hp.ks.sub_left (frame_sub K s (d := 288) (n := 16) (by decide))).sub_right (sc_sub hp))
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hO]; exact hp.ko.sub_left (frame_sub K s (d := 328) (n := 24) (by decide))
+        · exact (hp.ks.sub_left (frame_sub K s (d := 328) (n := 24) (by decide))).sub_right (sc_sub hp))
     res := hpost }
 
 end VG.Proof.RsaPss.AArch64.Sgn
