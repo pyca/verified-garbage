@@ -377,12 +377,24 @@ mov rdx, r15
 add rdx, 208
 mov rcx, r15
 call {vg_sha1_finalize_scratch}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
@@ -612,12 +624,24 @@ mov rdx, r15
 add rdx, 208
 mov rcx, r15
 call {vg_sha1_finalize_scratch}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
@@ -1057,12 +1081,24 @@ mov rdx, r15
 add rdx, 208
 mov rcx, r15
 call {vg_sha1_finalize_scratch_shani}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx
@@ -1300,12 +1336,24 @@ mov rdx, r15
 add rdx, 208
 mov rcx, r15
 call {vg_sha1_finalize_scratch_shani}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
 mov eax, DWORD PTR [r12+16]
 mov DWORD PTR [rbx+16], eax
-movdqu xmm0, XMMWORD PTR [r15+208]
-movdqu XMMWORD PTR [rbx+20], xmm0
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
 mov eax, DWORD PTR [r15+224]
 mov DWORD PTR [rbx+36], eax
 mov rbp, rbx

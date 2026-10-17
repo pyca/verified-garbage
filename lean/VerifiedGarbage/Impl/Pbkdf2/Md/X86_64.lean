@@ -283,7 +283,7 @@ def wideDigest : Bool := true
 buffer, then the padding after it (`padW`), and the block's address for
 the compression function. -/
 def finMid : List Instr :=
-  copyW wideState .r12 0 .rbx 0 H.P.N ++ copyW wideDigest .r15 H.stream.buf .rbx H.P.N H.D ++
+  copyW (H.P.B == 128) .r12 0 .rbx 0 H.P.N ++ copyW (H.P.B == 128) .r15 H.stream.buf .rbx H.P.N H.D ++
     ([.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] : List Instr) ++
     H.padW ++ ([.mov .rsi (.reg .rbp)] : List Instr)
 
@@ -291,7 +291,7 @@ def finMid : List Instr :=
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into
 the block and its first `D` bytes copied; and our caller's registers back. -/
 def finOut : List Instr :=
-  (if H.D < H.P.N then H.P.out ++ copyW true .rbp 0 .r13 0 H.D else .mov .rbp (.reg .r13) :: H.P.out) ++
+  (if H.D < H.P.N then H.P.out ++ copyW (H.P.B == 128) .rbp 0 .r13 0 H.D else .mov .rbp (.reg .r13) :: H.P.out) ++
     H.stream.restore
 
 def hmacFin : Prog isa :=
