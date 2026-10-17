@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Conn
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Out
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Step
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvPacked
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,10 +10,9 @@ import all Init.Data.Vector.Basic
 
 /-! # A batch of the inversion modulo `p` on AArch64
 
-A batch keeps the invariant (`batch_ok`): its divsteps are `dsM` (`pwords_ok`),
-its rows are the matrix's combinations (`row_ok`, `rowF_int`, `rowU_int`),
-shifted (`shift_ok`) or reduced (`reduce_ok`, `redV_cong`), so `step_inv`
-applies; and it counts down. It writes only bytes 192 to 487. -/
+What a batch's proof (`DivstepSound.batch_ok`) is built from: its rows are the
+matrix's combinations (`row_ok`, `rowF_rel`, `rowU_rel`), shifted and reduced
+(`outs_ok`: `shift_ok`, `reduce_ok`), and it counts down. -/
 
 @[expose] public section
 
@@ -201,7 +199,7 @@ abbrev red5 (m : Mem) (base : Addr) (t : Nat) : Nat :=
 /-- The rows shifted and reduced, and the counter one down. -/
 theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x12 = 0) {i : Nat}
     (hi : i < 10) (hc : s.gpr .x20 = BitVec.ofNat 64 (10 - i)) :
-    WP isa (.block (shift F TF ++ (shift G TG ++ ([.movz .x .x13 19 0] ++ (reduce U TU ++
+    WP isa (.block (shift F TF ++ (shift G TG ++ (([.movz .x .x13 19 0] : List Instr) ++ (reduce U TU ++
         (reduce V TV ++ ([.subImm .x .x20 .x20 1] : List Instr))))))) s
       fun t =>
         fe t.mem base F = val5 s.mem base TF / 2 ^ 59 % 2 ^ 256 ∧
@@ -262,130 +260,5 @@ theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   · exact ((((ka.mono (by decide)).trans (kb.mono (by decide))).trans
       (((Keeps.regs kc).mono (by decide)).trans (kd.mono (by decide)))).trans (ke.mono (by decide))).trans
       ((Keeps.regs kt).mono (by decide))
-
-/-- A batch: the invariant one batch on, and the counter one down. -/
-theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (hx : x < P)
-    (hi : i < 10)
-    (h : RInv x i (word s.mem base DSAVE) (fe s.mem base F) (fe s.mem base G) (fe s.mem base U)
-      (fe s.mem base V))
-    (hc : s.gpr .x20 = BitVec.ofNat 64 (10 - i)) :
-    WP isa (.block batch) s fun t =>
-      RInv x (i + 1) (word t.mem base DSAVE) (fe t.mem base F) (fe t.mem base G) (fe t.mem base U)
-        (fe t.mem base V) ∧
-      t.gpr .x20 = BitVec.ofNat 64 (10 - (i + 1)) ∧
-      Outside base 192 296 s.mem t.mem ∧ KeepRegs batchRegs s t := by
-  have _hmin := workSize_ge large
-  have _hcap := workSize_le large
-  obtain ⟨hD, hF, hG, hFl, hGl, hUl, hVl, _, _, _⟩ := id h
-  have hd30 : |(dsI x i).1| ≤ 2 ^ 30 := by
-    have := dsI_d x i
-    have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega : 59 * i ≤ 59 * 9)
-    linarith
-  obtain ⟨bu, bv, bq, br⟩ := dsM_bnd x i
-  simp only [batch, List.append_assoc]
-  -- the divsteps
-  rw [WP.block_append_iff]
-  refine WP.mono (lds3_ok hs) fun a ⟨a1, a2, a3, ka⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (VG.Proof.Weierstrass.AArch64.pwords_ok a (f := (dsI x i).2.1) (g := (dsI x i).2.2)
-    hd30 (dsI_odd x i).2 (a1.trans hD)
-    (by rw [a2]; exact low_rel hF) (by rw [a3]; exact low_rel hG))
-    fun b ⟨b1, b4, b5, b6, b7, kb⟩ => ?_
-  have hsb : Scr b base large := (hs.of_keeps ka (by decide)).of_keeps kb (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (st_ok hsb (d := DSAVE) (by decide) (by simp only [DSAVE]; omega) .x1)
-    fun c ⟨mc, kc⟩ => ?_
-  have hsc : Scr c base large := ⟨(kc.gpr _ (by decide)).trans hsb.x0, kc.wr ▸ hsb.wr, hs.nowrap⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (mat_ok c) fun d ⟨d12, d4, d14, d5, d15, d6, d16, d7, d17, d13, d19, kd⟩ => ?_
-  have hsd : Scr d base large := hsc.of_keeps kd (by decide)
-  have gc : ∀ r, c.gpr r = b.gpr r := fun r => kc.gpr r (by simp)
-  have md : MatRegs (dsM x i) d := ⟨d12, by rw [d4, gc, b4], by rw [d14, gc, b4], by rw [d5, gc, b5],
-    by rw [d15, gc, b5], by rw [d6, gc, b6], by rw [d16, gc, b6], by rw [d7, gc, b7],
-    by rw [d17, gc, b7], by rw [d13, gc, gc, b4, b5], by rw [d19, gc, gc, b6, b7]⟩
-  -- the memory the rows read
-  have mb : b.mem = s.mem := by rw [kb.mem, ka.mem]
-  have mdm : d.mem = s.mem.writeW (off base DSAVE) (BitVec.ofInt 64 (dsM x i).d) := by
-    rw [kd.mem, mc, mb, b1]
-  have od : Outside base 480 8 s.mem d.mem := by
-    rw [mdm]; exact writeW_outside _ _ _ (by decide)
-  have fd : ∀ o, o + 32 ≤ 480 → fe d.mem base o = fe s.mem base o := fun o ho =>
-    od.fe (Or.inl ho) (by omega)
-  -- the rows
-  rw [WP.block_append_iff]
-  refine WP.mono (row_ok hsd true (t := TF) (xo := F) (yo := G) (by decide) (by decide) md.z
-    (by rw [md.u]; exact absW_le bu) (by rw [md.v]; exact absW_le bv)
-    ⟨by decide, by simp only [TF]; omega⟩ ⟨by decide, by simp only [F]; omega⟩
-    ⟨by decide, by simp only [G]; omega⟩ (by decide) (by decide)) fun e1 ⟨r1, o1, k1⟩ => ?_
-  have hs1 : Scr e1 base large := ⟨(k1.gpr _ (by decide)).trans hsd.x0, k1.wr ▸ hsd.wr, hs.nowrap⟩
-  have m1 := md.keep k1
-  rw [md.u, md.su, md.v, md.sv', md.c0] at r1
-  have hWF := rowF_rel (m := d.mem) (m' := e1.mem) (base := base) (t := TF) (xo := F) (yo := G) bu bv r1
-  rw [WP.block_append_iff]
-  refine WP.mono (row_ok hs1 true (t := TG) (xo := F) (yo := G) (by decide) (by decide) m1.z
-    (by rw [m1.q]; exact absW_le bq) (by rw [m1.r]; exact absW_le br)
-    ⟨by decide, by simp only [TG]; omega⟩ ⟨by decide, by simp only [F]; omega⟩
-    ⟨by decide, by simp only [G]; omega⟩ (by decide) (by decide)) fun e2 ⟨r2, o2, k2⟩ => ?_
-  have hs2 : Scr e2 base large := ⟨(k2.gpr _ (by decide)).trans hs1.x0, k2.wr ▸ hs1.wr, hs.nowrap⟩
-  have m2 := m1.keep k2
-  rw [m1.q, m1.sq, m1.r, m1.sr, m1.c1] at r2
-  have hWG := rowF_rel (m := e1.mem) (m' := e2.mem) (base := base) (t := TG) (xo := F) (yo := G) bq br r2
-  rw [WP.block_append_iff]
-  refine WP.mono (row_ok hs2 false (t := TU) (xo := U) (yo := V) (by decide) (by decide) m2.z
-    (by rw [m2.u]; exact absW_le bu) (by rw [m2.v]; exact absW_le bv)
-    ⟨by decide, by simp only [TU]; omega⟩ ⟨by decide, by simp only [U]; omega⟩
-    ⟨by decide, by simp only [V]; omega⟩ (by decide) (by decide)) fun e3 ⟨r3, o3, k3⟩ => ?_
-  have hs3 : Scr e3 base large := ⟨(k3.gpr _ (by decide)).trans hs2.x0, k3.wr ▸ hs2.wr, hs.nowrap⟩
-  have m3 := m2.keep k3
-  rw [m2.u, m2.su, m2.v, m2.sv', m2.c0] at r3
-  have hWU := rowU_rel (m := e2.mem) (m' := e3.mem) (base := base) (t := TU) (xo := U) (yo := V) bu bv r3
-  rw [WP.block_append_iff]
-  refine WP.mono (row_ok hs3 false (t := TV) (xo := U) (yo := V) (by decide) (by decide) m3.z
-    (by rw [m3.q]; exact absW_le bq) (by rw [m3.r]; exact absW_le br)
-    ⟨by decide, by simp only [TV]; omega⟩ ⟨by decide, by simp only [U]; omega⟩
-    ⟨by decide, by simp only [V]; omega⟩ (by decide) (by decide)) fun e4 ⟨r4, o4, k4⟩ => ?_
-  have hs4 : Scr e4 base large := ⟨(k4.gpr _ (by decide)).trans hs3.x0, k4.wr ▸ hs3.wr, hs.nowrap⟩
-  have m4 := m3.keep k4
-  rw [m3.q, m3.sq, m3.r, m3.sr, m3.c1] at r4
-  have hWV := rowU_rel (m := e3.mem) (m' := e4.mem) (base := base) (t := TV) (xo := U) (yo := V) bq br r4
-  -- the shifts, the reductions and the counter
-  have cnt4 : e4.gpr .x20 = BitVec.ofNat 64 (10 - i) := by
-    rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide),
-      kd.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide), ka.gpr _ (by decide), hc]
-  refine WP.mono (outs_ok hs4 m4.z hi cnt4) fun t ⟨tF, tG, tU, tV, t20, tD, ot, kt⟩ => ?_
-  -- what the rows read, as it was in `s`
-  have f1 : ∀ o, o + 32 ≤ TF → fe e1.mem base o = fe s.mem base o := fun o ho => by
-    rw [o1.fe (Or.inl ho) (by simp only [TF] at ho; omega), fd o (by simp only [TF] at ho; omega)]
-  have f2 : ∀ o, o + 32 ≤ TF → fe e2.mem base o = fe s.mem base o := fun o ho => by
-    rw [o2.fe (Or.inl (by simp only [TF, TG] at ho ⊢; omega)) (by simp only [TF] at ho; omega), f1 o ho]
-  rw [f1 _ (by decide), f1 _ (by decide), hF, hG] at hWG
-  rw [fd _ (by decide), fd _ (by decide), hF, hG] at hWF
-  have f3 : ∀ o, o + 32 ≤ TF → fe e3.mem base o = fe s.mem base o := fun o ho => by
-    rw [o3.fe (Or.inl (by simp only [TF, TU] at ho ⊢; omega)) (by simp only [TF] at ho; omega), f2 o ho]
-  rw [f2 _ (by decide), f2 _ (by decide)] at hWU
-  rw [f3 _ (by decide), f3 _ (by decide)] at hWV
-  -- the rows where the shifts and reductions read them
-  have vF : val5 e4.mem base TF = val5 e1.mem base TF := by
-    rw [val5_out o4 (by decide) (by decide), val5_out o3 (by decide) (by decide),
-      val5_out o2 (by decide) (by decide)]
-  have vG : val5 e4.mem base TG = val5 e2.mem base TG := by
-    rw [val5_out o4 (by decide) (by decide), val5_out o3 (by decide) (by decide)]
-  have vU : red5 e4.mem base TU = red5 e3.mem base TU := redV_out o4 (by decide) (by decide)
-  have hU := redV_cong _ _ _ _ _ hWU (sum_bnd bu bv hUl hVl)
-  have hV := redV_cong _ _ _ _ _ hWV (sum_bnd bq br hUl hVl)
-  have hR := step_inv hx h hWF hWG hU (Nat.mod_lt _ (by decide)) hV (Nat.mod_lt _ (by decide))
-  have dD : word t.mem base DSAVE = BitVec.ofInt 64 (dsM x i).d := by
-    rw [tD, o4.word (by decide) (by decide), o3.word (by decide) (by decide),
-      o2.word (by decide) (by decide), o1.word (by decide) (by decide), mdm, word_writeW_self]
-  refine ⟨?_, t20, ?_, ?_⟩
-  · rw [dD, tF, tG, tU, tV, vF, vG, vU]
-    exact hR
-  · exact ((((od.mono (by decide) (by decide)).trans (o1.mono (by decide) (by decide))).trans
-      (o2.mono (by decide) (by decide))).trans ((o3.mono (by decide) (by decide)).trans
-      (o4.mono (by decide) (by decide)))).trans ot
-  · exact ((((Keeps.regs ka).mono (by decide)).trans ((Keeps.regs kb).mono (by decide))).trans
-      ((kc.mono (by decide)).trans ((Keeps.regs kd).mono (by decide)))).trans
-      ((((k1.mono (by decide)).trans (k2.mono (by decide))).trans
-        ((k3.mono (by decide)).trans (k4.mono (by decide)))).trans kt)
 
 end VG.Proof.Ed25519.AArch64.Inv

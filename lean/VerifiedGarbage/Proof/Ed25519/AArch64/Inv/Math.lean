@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.Ed25519.Word64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -139,54 +140,57 @@ theorem red_arith {w0 w1 w2 w3 w4 E n t w3' lo mh s19 hi sg : Nat} {R : Int}
   -- the five words as `a + 2²⁵⁵ T`
   obtain ⟨W, hWd⟩ : ∃ W, W = w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * w4 := ⟨_, rfl⟩
   rw [← hWd] at hc
-  have hWl : W < 2 ^ 320 := by omega
-  have hT : (w4 * 2 ^ 64 + w3) / 2 ^ 63 = W / 2 ^ 255 := by omega
-  have hn' : w4 / 2 ^ 63 = W / 2 ^ 319 := by omega
-  have hlow : w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * (w3 % 2 ^ 63) = W % 2 ^ 255 := by omega
-  have hb : w3 / 2 ^ 63 = W / 2 ^ 255 % 2 := by omega
-  have hp : lo + 2 ^ 64 * mh = t * 19 := by omega
+  have hWl : W < 2 ^ 320 := by omega_using [hWd, h0, h1, h2, h3, h4]
+  have hT : (w4 * 2 ^ 64 + w3) / 2 ^ 63 = W / 2 ^ 255 := by omega_using [hWd, h0, h1, h2, h3]
+  have hn' : w4 / 2 ^ 63 = W / 2 ^ 319 := by omega_using [hWd, h0, h1, h2, h3]
+  have hlow : w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * (w3 % 2 ^ 63) = W % 2 ^ 255 := by
+    omega_using [hWd, h0, h1, h2, h3]
+  have hb : w3 / 2 ^ 63 = W / 2 ^ 255 % 2 := by omega_using [hWd, h0, h1, h2, h3]
+  have hp : lo + 2 ^ 64 * mh = t * 19 := by omega_using [hlo, hmh]
   rw [hT] at hE
   rw [hn'] at hn
   clear hT hn' hlo
   obtain ⟨T, hTd⟩ : ∃ T, T = W / 2 ^ 255 := ⟨_, rfl⟩
   obtain ⟨a, had⟩ : ∃ a, a = W % 2 ^ 255 := ⟨_, rfl⟩
-  have hWa : W = a + 2 ^ 255 * T := by omega
+  have hWa : W = a + 2 ^ 255 * T := by omega_using [hTd, had]
   rw [← hTd] at hE hb
   rw [← had] at hlow
   by_cases hneg : R < 0
   · -- `W = R + 2³²⁰`
-    have hWR : (W : Int) = R + 2 ^ 320 := by omega
-    have hn1 : n = 1 := by omega
-    have hE1 : E = T - 2 ^ 64 := by omega
-    have ht1 : t = T - 2 ^ 64 - 1 := by omega
+    have hWR : (W : Int) = R + 2 ^ 320 := by omega_using [hc, hR, hWl, hneg]
+    have hn1 : n = 1 := by omega_using [hn, hWR, hR, hWl]
+    have hE1 : E = T - 2 ^ 64 := by omega_using [hE, hTd, hWR, hR, hWl]
+    have ht1 : t = T - 2 ^ 64 - 1 := by omega_using [ht, hn1, hE1, hTd, hWR, hR, hWl]
     obtain ⟨ht63, rfl, rfl⟩ : 2 ^ 63 ≤ t ∧ s19 = 19 ∧ sg = 2 ^ 64 - 1 := by
       rcases hs with h | h
       · exact h
-      · omega
-    have hw3' : w3' = w3 % 2 ^ 63 + 2 ^ 63 := by omega
-    have hhi' : hi = 2 ^ 64 + mh - 19 := by omega
+      · omega_using [h.1, ht1, hTd, hWR, hR, hWl]
+    have hw3' : w3' = w3 % 2 ^ 63 + 2 ^ 63 := by omega_using [hw3, ht1, hb, h3, hTd, hWR, hR, hWl]
+    have hhi' : hi = 2 ^ 64 + mh - 19 := by omega_using [hhi, hmh, ht]
     have hsum : w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3' +
         (lo + 2 ^ 64 * hi + 2 ^ 128 * (2 ^ 64 - 1) + 2 ^ 192 * (2 ^ 64 - 1)) =
         a + 2 ^ 255 + 19 * t - 19 * 2 ^ 64 + 2 ^ 256 := by
-      rw [hw3', hhi']; omega
-    rw [hsum, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+      rw [hw3', hhi']; omega_using [hlow, hp]
+    rw [hsum, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [had, ht])]
     have hX : ((a + 2 ^ 255 + 19 * t - 19 * 2 ^ 64 : Nat) : Int) =
-        R + (2 ^ 255 - 19) * ((2 ^ 65 + 1 : Int) - T) := by omega
+        R + (2 ^ 255 - 19) * ((2 ^ 65 + 1 : Int) - T) := by
+      omega_using [hWa, hWR, ht1, hTd, hWl, hR, hneg, had]
     rw [hX, Int.add_mul_emod_self_left]
-  · have hWR : (W : Int) = R := by omega
-    have hn0 : n = 0 := by omega
-    have ht0 : t = T := by omega
+  · have hWR : (W : Int) = R := by omega_using [hc, hR, hWl, hneg]
+    have hn0 : n = 0 := by omega_using [hn, hWR, hR]
+    have ht0 : t = T := by omega_using [ht, hn0, hE, hTd, hWR, hR]
     obtain ⟨ht63, rfl, rfl⟩ : t < 2 ^ 63 ∧ s19 = 0 ∧ sg = 0 := by
       rcases hs with h | h
-      · omega
+      · omega_using [h.1, ht0, hTd, hWR, hR]
       · exact h
-    have hw3' : w3' = w3 % 2 ^ 63 := by omega
-    have hhi' : hi = mh := by omega
+    have hw3' : w3' = w3 % 2 ^ 63 := by omega_using [hw3, ht0, hb, h3, hTd, hWR, hR]
+    have hhi' : hi = mh := by omega_using [hhi, hmh, ht0, hTd, hWR, hR]
     have hsum : w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3' +
         (lo + 2 ^ 64 * hi + 2 ^ 128 * 0 + 2 ^ 192 * 0) = a + 19 * t := by
-      rw [hw3', hhi']; omega
-    rw [hsum, Nat.mod_eq_of_lt (by omega)]
-    have hX : ((a + 19 * t : Nat) : Int) = R + (2 ^ 255 - 19) * (-(T : Int)) := by omega
+      rw [hw3', hhi']; omega_using [hlow, hp]
+    rw [hsum, Nat.mod_eq_of_lt (by omega_using [had, ht0, hTd, hWR, hR])]
+    have hX : ((a + 19 * t : Nat) : Int) = R + (2 ^ 255 - 19) * (-(T : Int)) := by
+      omega_using [hWa, hWR, ht0]
     rw [hX, Int.add_mul_emod_self_left]
 
 /-- The reduction is `W` modulo `p`, for `W ≡ R` (mod `2³²⁰`) with `|R| < 2³¹⁷`. -/
