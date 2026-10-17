@@ -27,7 +27,7 @@ abbrev tv (P : RP) (σ : State) : Nat := (hvs P σ P.c).2
 def Vc (P : RP) (σ : State) (j k : Nat) : Nat → Nat := upd (upd (upd (fun _ => 0) sTc (tv P σ)) sCand j) sCnt k
 
 /-- `g^e` in Montgomery form, `g = j + 2`. -/
-abbrev gR (P : RP) (j e : Nat) : Nat := (j + 2) ^ e * Rm P % P.n
+def gR (P : RP) (j e : Nat) : Nat := (j + 2) ^ e * Rm P % P.n
 
 /-- The arrays after `i` bits: `y = g^(r mod 2^i)` and `g^(2^i)`. -/
 def Ae (P : RP) (σ : State) (j i : Nat) : Nat → Nat :=
@@ -51,7 +51,7 @@ section
 variable {P : RP}
 
 theorem gR1_mont (j : Nat) : gR P j 1 * Rm P % P.n = (j + 2) * R2v P % P.n := by
-  rw [Nat.mod_mul_mod, Nat.mul_mod_mod, Nat.pow_one, Nat.mul_assoc, ← Nat.pow_add,
+  rw [gR, Nat.mod_mul_mod, Nat.mul_mod_mod, Nat.pow_one, Nat.mul_assoc, ← Nat.pow_add,
     show 64 * P.w6 + 64 * P.w6 = 128 * P.w6 by omega]
 
 theorem candSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (h101 : 101 < P.n) {E : State → Prop} {j : Nat} (hj : j < 100) :
