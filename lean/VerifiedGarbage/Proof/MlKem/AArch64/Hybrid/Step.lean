@@ -59,6 +59,9 @@ theorem tail_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
   · rw [h2.get .x20 (by decide), e1, hu.gpr .x20 (by decide) (by decide), ha]; rfl
   · rw [e2, h1.get .x21 (by decide), hu.gpr .x21 (by decide) (by decide), hb]; rfl
 
+/-- The registers a main squeeze may change. -/
+def stepRegs : List Reg := clobbered ++ [.x20, .x21]
+
 /-- The regions a main squeeze writes. -/
 def step3Writes (p a b st sp : Addr) : List Region :=
   [pairR p, rateR21 a, rateR21 b, callR (p + 1536), stR st, frame sp]
@@ -93,7 +96,7 @@ theorem step3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p a b e st : Addr}
     (hE : bytesAt s.mem e L.ekLen = E) (hst : stateAt s.mem st = hstate E blk)
     (pair : PairAt s.mem p A B) (hl : StepLay L p a b e st s) :
     WP isa (Impl.MlKem.AArch64.Hybrid.step3 L blk) s fun t =>
-      Keep (clobbered ++ [.x20, .x21]) s t ∧
+      Keep stepRegs s t ∧
       Frame (step3Writes p a b st s.sp) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
       Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
@@ -122,7 +125,7 @@ theorem step3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p a b e st : Addr}
   have svt : ∀ r ∈ [rateR21 a, rateR21 b], (stR st).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl; exact hl.dSA; exact hl.dSB
-  refine ⟨(kuv.trans kt).mono (by simp [clobbered]), ?_, ?_, at', bt, ?_, t20, t21⟩
+  refine ⟨(kuv.trans kt).mono (by simp [stepRegs, clobbered]), ?_, ?_, at', bt, ?_, t20, t21⟩
   · refine ((fu.mono (by simp [step3Writes])).trans (fv.mono (by simp [step3Writes]))).trans
       (ft.mono (by simp [step3Writes]))
   · exact VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pv ft fvt

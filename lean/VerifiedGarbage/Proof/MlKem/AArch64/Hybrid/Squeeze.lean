@@ -38,7 +38,7 @@ def startWrites (p st sp : Addr) : List Region := [⟨p, 2048⟩, stR st, frame 
 /-- After `k` of the three main squeezes. -/
 structure SInv3 (L : Impl.MlKem.AArch64.KemLay) (initial : State) (p e st : Addr) (E : List Byte)
     (A B : Spec.Sha3.State) (i k : Nat) (s : State) : Prop where
-  keep : Keep (clobbered ++ [.x20, .x21]) initial s
+  keep : Keep stepRegs initial s
   pair : PairAt s.mem p (iterF k A) (iterF k B)
   ptr : s.gpr .x19 = p
   pa : s.gpr .x20 = blockAt (p + 400) k
@@ -210,7 +210,7 @@ theorem squeeze3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p e st : Addr} 
   refine WP.seq (WP.mono (sstep_ok L (k := 1) (by decide) (by omega) h8 hlim hl h28 h25 ht) fun u hu => ?_)
   exact sstep_ok L (k := 2) (by decide) hb h8 hlim hl h28 h25 hu
 
-def startRegs3 : List Reg := Paired.initRegs ++ (clobbered ++ [.x20, .x21])
+def startRegs3 : List Reg := Paired.initRegs ++ stepRegs
 
 /-- **A hashing pair's initialization and main squeezes** (as `Paired.start_ok`). -/
 theorem start3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p seed e st : Addr} {E : List Byte}
