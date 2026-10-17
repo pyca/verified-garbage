@@ -110,18 +110,17 @@ theorem omA_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {
     ⟨_, by taint_decide⟩
 
 /-- The rest of `openMain`, in two runs that agree on the tag. -/
-theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+theorem omB_relD (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
     (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
-    (hfr : ∀ r ∈ fr, Region.Sub r (workR W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT := by
   unfold omB
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  refine rel_seq ?_ (omIte_ok v L hR mo₁ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW))
-    (omIte_ok v L hR mo₂ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW))
+  refine rel_seq ?_ (omIte_ok v L hR mo₁ dD dC) (omIte_ok v L hR mo₂ dD dC)
     fun a b ⟨ea, xa, _, _⟩ ⟨eb, xb, _, _⟩ =>
       rel_taint [.x27] (by rw [ea.sp, eb.sp]) (by agree_tac [xa, xb, hx]) tm
   have x27₁ := mo₁.x27
@@ -133,6 +132,15 @@ theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
       ⟨_, by taint_decide⟩) (ocLdr_ok mo₁.env mo₁.sD mo₁.sN) (ocLdr_ok mo₂.env mo₂.sD mo₂.sN)
       fun c₁ c₂ h₁ h₂ => ?_
     exact cryptAl_rel L v (oc_in hR mo₁ h₁) (oc_in hR mo₂ h₂) rfl
+
+theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
+    (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
+    (hfr : ∀ r ∈ fr, Region.Sub r (workR W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT :=
+  omB_relD v L hR mo₁ mo₂ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW) hx
 
 /-- `open` after its entry, in two runs from the same public arguments, with
 `m` once the received tag is at `W`: `m` in each run (`hm₁`, `hm₂`), and in
