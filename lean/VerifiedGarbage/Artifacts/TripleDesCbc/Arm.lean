@@ -10,15 +10,15 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.TripleDesCbc.Arm
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_triple_des_ecb_encrypt` on each block in a 56-byte working space on the stack, zeroed on return."]
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncrypt
+  Spec.TripleDes.cbcEncryptChainedApi.artifact Arm.target {
+    notes := ["Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_triple_des_ecb_encrypt` on each block in a 56-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained
     stack := 1088
-    verified := Proof.TripleDes.Arm.cbcEncrypt_framed },
-  Spec.TripleDes.cbcDecryptApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_triple_des_ecb_decrypt` on each block in place, with the chaining value in a 56-byte working space on the stack, zeroed on return."]
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcDecrypt
+    verified := Proof.TripleDes.Arm.cbcEncryptChained_framed },
+  Spec.TripleDes.cbcDecryptChainedApi.artifact Arm.target {
+    notes := ["Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_triple_des_ecb_decrypt` on each block in place, with the chaining value in a 56-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcDecryptChained
     stack := 1088
-    verified := Proof.TripleDes.Arm.cbcDecrypt_framed }]
+    verified := Proof.TripleDes.Arm.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.Arm

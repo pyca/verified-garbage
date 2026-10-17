@@ -2,21 +2,23 @@
 //! Verified `triple_des_cbc` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Triple DES-CBC encryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`. No padding is added.
+/// Triple DES-CBC encryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.TripleDes.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.TripleDes.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline AArch64: one block at a time, through the scalar block function (`vg_triple_des_encrypt_block` and `vg_triple_des_decrypt_block`'s code, inlined), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/AArch64/`.
+///
+/// The IV's address is kept in `x25`, which the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_triple_des_cbc_encrypt(schedule: *const [u8; 384], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_cbc_encrypt_chained(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1008
 add x4, sp, #0
@@ -31,6 +33,7 @@ str x25, [x5, #952]
 str x26, [x5, #960]
 str x27, [x5, #968]
 str x28, [x5, #976]
+add x25, x1, #0
 cbz x3, 20f
 ldr x6, [x2, #0]
 ldr x7, [x1, #0]
@@ -161,6 +164,8 @@ b 26f
 26:
 add x23, x23, #8
 cbnz x24, 24b
+ldr x6, [x5, #512]
+str x6, [x25, #0]
 b 23f
 22:
 23:
@@ -308,21 +313,23 @@ ret
     )
 }
 
-/// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
+/// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.TripleDes.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline AArch64: one block at a time, through the scalar block function (`vg_triple_des_encrypt_block` and `vg_triple_des_decrypt_block`'s code, inlined), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/AArch64/`.
+///
+/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_triple_des_cbc_decrypt(schedule: *const [u8; 384], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_cbc_decrypt_chained(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1008
 add x4, sp, #0
@@ -339,6 +346,15 @@ str x27, [x5, #968]
 str x28, [x5, #976]
 ldr x6, [x1, #0]
 str x6, [x5, #984]
+cbz x3, 20f
+sub x7, x3, #1
+lsl x7, x7, #3
+add x7, x7, x2
+ldr x6, [x7, #0]
+str x6, [x1, #0]
+b 21f
+20:
+21:
 add x23, x2, #0
 add x24, x3, #0
 ldr x6, [x0, #0]
@@ -437,26 +453,26 @@ ldr x6, [x0, #368]
 str x6, [x5, #888]
 ldr x6, [x0, #376]
 str x6, [x5, #896]
-cbz x24, 20f
-22:
-lsr x13, x24, #0
-cbnz x13, 23f
-add x16, x24, #0
-b 24f
-23:
-movz x16, #1, lsl #0
+cbz x24, 22f
 24:
+lsr x13, x24, #0
+cbnz x13, 25f
+add x16, x24, #0
+b 26f
+25:
+movz x16, #1, lsl #0
+26:
 add x14, x5, #0
 add x14, x14, #512
 add x15, x23, #0
 add x17, x16, #0
-25:
+27:
 ldr x8, [x15, #0]
 str x8, [x14, #0]
 add x14, x14, #8
 add x15, x15, #8
 sub x17, x17, #1
-cbnz x17, 25b
+cbnz x17, 27b
 add x0, x5, #520
 add x1, x5, #512
 add x2, x5, #0
@@ -465,17 +481,17 @@ bl {vg_triple_des_decrypt_block}
 add x5, x2, #0
 add x30, x26, #0
 lsr x13, x24, #0
-cbnz x13, 26f
+cbnz x13, 28f
 add x16, x24, #0
-b 27f
-26:
+b 29f
+28:
 movz x16, #1, lsl #0
-27:
+29:
 add x14, x5, #0
 add x14, x14, #512
 add x15, x23, #0
 add x17, x16, #0
-28:
+210:
 ldr x8, [x14, #0]
 ldr x9, [x5, #984]
 eor x8, x8, x9
@@ -487,13 +503,13 @@ str x8, [x15, #0]
 add x14, x14, #8
 add x15, x15, #8
 sub x17, x17, #1
-cbnz x17, 28b
+cbnz x17, 210b
 add x23, x15, #0
 sub x24, x24, x16
-cbnz x24, 22b
-b 21f
-20:
-21:
+cbnz x24, 24b
+b 23f
+22:
+23:
 ldr x19, [x5, #904]
 ldr x20, [x5, #912]
 ldr x21, [x5, #920]

@@ -1,19 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
-public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 
 /-!
 # Triple DES-CBC on x86-64
 
-`cbcEncrypt` and `cbcDecrypt` (schedule = rdi, iv = rsi, data = rdx,
-n = rcx, scratch = r8): the modes' generic CBC (`Impl/Modes/X86_64/Cbc.lean`,
-`CbcEnc.lean`) over calls of the scalar block function
+`cbcEncryptChained` and `cbcDecryptChained` (schedule = rdi, iv = rsi,
+data = rdx, n = rcx, scratch = r8): the modes' generic CBC that updates the
+chaining value (`Impl/Modes/X86_64/CbcChained.lean`) over calls of the scalar block function
 (`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), one 8-byte
 block at a time, with the working space in the scratch buffer, which the
 artifact allocates on the stack. `dirCore` is the core with the block
-function inlined, which the proofs verify (`cbcEncryptI`, …): the emitted
+function inlined, which the proofs verify (`cbcEncryptChainedI`, …): the emitted
 code (`callCore`) is the same with the call in its place.
 
 The core's slots: the block function's 64 (`rdx`), the buffer's one block,
@@ -72,16 +71,16 @@ def callCore (d : Direction) : Impl.Modes.X86_64.Core :=
       .alu .add .rsi (.imm (BitVec.ofNat 32 (8 * cbcBuf))), movR .rdx sb])
       (.seq (blockCall d) (.block [movR sb .rdx])) }
 
-/-- `vg_triple_des_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (callCore .encrypt).cbcEncrypt ⟨.rsi, .rdx, .rcx, .r8⟩
+/-- `vg_triple_des_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (callCore .encrypt).cbcEncryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
 
-/-- `cbcEncrypt` with the block function inlined. -/
-def cbcEncryptI : Prog isa := (dirCore .encrypt).cbcEncrypt ⟨.rsi, .rdx, .rcx, .r8⟩
+/-- `cbcEncryptChained` with the block function inlined. -/
+def cbcEncryptChainedI : Prog isa := (dirCore .encrypt).cbcEncryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
 
-/-- `vg_triple_des_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (callCore .decrypt).cbcDecrypt ⟨.rsi, .rdx, .rcx, .r8⟩
+/-- `vg_triple_des_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (callCore .decrypt).cbcDecryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
 
-/-- `cbcDecrypt` with the block function inlined. -/
-def cbcDecryptI : Prog isa := (dirCore .decrypt).cbcDecrypt ⟨.rsi, .rdx, .rcx, .r8⟩
+/-- `cbcDecryptChained` with the block function inlined. -/
+def cbcDecryptChainedI : Prog isa := (dirCore .decrypt).cbcDecryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
 
 end VG.Impl.TripleDes.X86_64
