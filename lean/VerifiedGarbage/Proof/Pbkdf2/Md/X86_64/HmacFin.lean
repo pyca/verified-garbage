@@ -172,7 +172,10 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   have G₄ : ∀ r, r ≠ .rax → r ≠ .rbp → s₄.gpr r = s₁.gpr r := fun r h1 h2 => by
     rw [u₄.other r h2, u₃.other r h2, g₂ r h1]
   have hB16 : H.P.B % 16 = 0 := by rcases hH.dims.B with h | h <;> omega_using [h]
-  refine padW_ok hH.shape (hH.lenOk _ (by omega_using [hB, hDL])) hD4 hB16 hH.dims.L hH.hPad hB (s := s₄) rbp₄
+  refine padSel_ok hH.shape (hH.lenOk _ (by omega_using [hB, hDL])) hD4 hB16 hH.dims.L hL4 hH.hPad
+    (by omega_using [hDL]) hB (s := s₄) rbp₄
+    (by rw [G₄ _ (by decide) (by decide), rbx, add_ofNat,
+      show H.P.N + (H.P.B - H.P.L) = H.P.N + H.P.B - H.P.L by omega_using [hDL]])
     (fun a n h' => by
       rw [u₄.wr, u₃.wr, wr₂, wr₁, hk.wr, add_ofNat]
       exact ⟨_, iR, Offset.contains_base _ (by omega_using [h', hS]) (by omega_using [h', hB, hNL])⟩) fun s₅ g₅ rd₅ wr₅ f₅ p₅ d₅ => ?_

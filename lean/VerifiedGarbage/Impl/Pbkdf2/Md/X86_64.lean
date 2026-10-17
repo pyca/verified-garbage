@@ -275,6 +275,9 @@ def padW : List Instr :=
     .mov32 .r12 (.imm (BitVec.ofNat 32 (H.P.B + H.D))) :: H.P.lenV ++
     ([.movdquStore (at_ .rbp (H.P.B - 16)) .xmm7] : List Instr)
 
+/-- EXPERIMENT: the outer block's padding, in 16-byte stores (`padW`) only for 128-byte blocks. -/
+def padSel : List Instr := if H.P.B == 128 then H.padW else Impl.Pbkdf2.X86_64.padLen H.P H.D
+
 /-- EXPERIMENT: which copies of `finMid` are 16 bytes at a time. -/
 def wideState : Bool := true
 def wideDigest : Bool := true
@@ -285,7 +288,7 @@ the compression function. -/
 def finMid : List Instr :=
   copyW (H.P.B == 128) .r12 0 .rbx 0 H.P.N ++ copyW (H.P.B == 128) .r15 H.stream.buf .rbx H.P.N H.D ++
     ([.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] : List Instr) ++
-    H.padW ++ ([.mov .rsi (.reg .rbp)] : List Instr)
+    H.padSel ++ ([.mov .rsi (.reg .rbp)] : List Instr)
 
 /-- The MAC to `out`: the digest of the hash value, written there directly,
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into

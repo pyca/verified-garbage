@@ -404,17 +404,19 @@ mov DWORD PTR [rbp+20], eax
 mov eax, 0
 mov DWORD PTR [rbp+24], eax
 mov DWORD PTR [rbp+28], eax
-pxor xmm0, xmm0
-movdqu XMMWORD PTR [rbp+32], xmm0
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
 mov r12d, 84
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-movq xmm7, rax
-pslldq xmm7, 8
-movdqu XMMWORD PTR [rbp+48], xmm7
+mov QWORD PTR [rbx+76], rax
 mov rsi, rbp
 mov rdi, rbx
 mov edx, 1
@@ -651,17 +653,19 @@ mov DWORD PTR [rbp+20], eax
 mov eax, 0
 mov DWORD PTR [rbp+24], eax
 mov DWORD PTR [rbp+28], eax
-pxor xmm0, xmm0
-movdqu XMMWORD PTR [rbp+32], xmm0
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
 mov r12d, 84
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-movq xmm7, rax
-pslldq xmm7, 8
-movdqu XMMWORD PTR [rbp+48], xmm7
+mov QWORD PTR [rbx+76], rax
 mov rsi, rbp
 mov rdi, rbx
 mov edx, 1
@@ -1108,17 +1112,19 @@ mov DWORD PTR [rbp+20], eax
 mov eax, 0
 mov DWORD PTR [rbp+24], eax
 mov DWORD PTR [rbp+28], eax
-pxor xmm0, xmm0
-movdqu XMMWORD PTR [rbp+32], xmm0
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
 mov r12d, 84
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-movq xmm7, rax
-pslldq xmm7, 8
-movdqu XMMWORD PTR [rbp+48], xmm7
+mov QWORD PTR [rbx+76], rax
 mov rsi, rbp
 mov rdi, rbx
 mov edx, 1
@@ -1363,17 +1369,19 @@ mov DWORD PTR [rbp+20], eax
 mov eax, 0
 mov DWORD PTR [rbp+24], eax
 mov DWORD PTR [rbp+28], eax
-pxor xmm0, xmm0
-movdqu XMMWORD PTR [rbp+32], xmm0
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
 mov r12d, 84
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-movq xmm7, rax
-pslldq xmm7, 8
-movdqu XMMWORD PTR [rbp+48], xmm7
+mov QWORD PTR [rbx+76], rax
 mov rsi, rbp
 mov rdi, rbx
 mov edx, 1

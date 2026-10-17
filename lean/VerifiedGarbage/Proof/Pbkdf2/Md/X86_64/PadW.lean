@@ -154,4 +154,21 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
     (by rw [hm, bytesAt_writeBytes_self' tlen (by omega), htl]; rfl)
     (by rw [hm, bytesAt_writeBytes_sep _ _ (by rw [tlen]; exact sep) (by omega)])
 
+/-- `padSel`: `padW` or `padLen`, which write the same. -/
+theorem padSel_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.lenOk (H.P.B + H.D))
+    (hD4 : H.D % 4 = 0) (hB16 : H.P.B % 16 = 0) (hL : 0 < H.P.L ∧ H.P.L ≤ 16) (hL4 : H.P.L % 4 = 0)
+    (hA : H.padA + 16 ≤ H.P.B) (hpad : H.D + 4 ≤ H.P.B - H.P.L)
+    (hB : H.P.B ≤ 128) {s : State} {p : Addr} (hbp : s.gpr .rbp = p)
+    (hbx : s.gpr .rbx + BitVec.ofNat 64 (H.P.N + H.P.B - H.P.L) = p + BitVec.ofNat 64 (H.P.B - H.P.L))
+    (hw : ∀ a n, a + n ≤ H.P.B → InRegions s.wr (p + BitVec.ofNat 64 a) n) {rest : List Instr}
+    {Q : State → Prop}
+    (k : ∀ s', (∀ r, r ≠ .rax → r ≠ .r12 → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
+      Frame [⟨p, H.P.B⟩] s.mem s'.mem → bytesAt s'.mem (p + BitVec.ofNat 64 H.D) (H.P.B - H.D) = M.tailPad H.D →
+      bytesAt s'.mem p H.D = bytesAt s.mem p H.D → WP isa (.block rest) s' Q) :
+    WP isa (.block (H.padSel ++ rest)) s Q := by
+  unfold Hash.padSel
+  split
+  · exact padW_ok hs hok hD4 hB16 hL hA hB hbp hw k
+  · exact Pbkdf2.X86_64.padLen_ok hs hok hD4 hL4 (by omega) hpad hB hbp hbx hw k
+
 end VG.Proof.Pbkdf2.Md.X86_64
