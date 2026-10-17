@@ -35,7 +35,7 @@ section
 variable {P : MP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
 
 theorem KS.fit (h : KS P σ A live V ls s) {j : Nat} (hj : j < nArr) : arr P.W j + S P.W ≤ 2 ^ 64 := by
-  have := arr_end (w := P.W) hj; have := h.pre.fitsK; have := h.pre.Z_le; omega
+  exact Nat.le_trans (arr_end hj) (Nat.le_trans h.pre.fitsK (Nat.le_trans h.pre.Z_le (by decide)))
 
 /-- The arrays a step does not write. -/
 theorem KS.arrs_keep {js ds : List Nat} (h : KS P σ A live V ls s) (k : Keep P.B P.W js ds s.mem t.mem)
@@ -171,22 +171,23 @@ theorem KS.sel_ok {o a b sl : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.
   refine ⟨h.write1 k ho (by simp) r.sp r.rd r.wr ?_ (by simp), ht, r⟩
   rw [e, hs, h.arrs a ha, h.arrs b hb]
 
-/-- `eqS d a b aT`: the header word `d := [a] = [b]`, through `aT` and `sT`. -/
-theorem KS.eqS_ok {d a b : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nArr)
-    (ha : a ∈ live) (hb : b ∈ live) (hd : d ∈ wDs) (hT : aT ∉ live) (hls : sT ∉ ls) (hdT : d ≠ sT) :
-    WP isa (eqS d a b aT) s fun t =>
-      KS P σ A live (upd V d (if A a = A b then 1 else 0)) (d :: ls) t ∧ Ws t P.B P.Z P.W nArr ∧
-        Rest opRegs s t := by
-  have hTa : aT ≠ a := fun e => hT (e ▸ ha)
-  have hTb : aT ≠ b := fun e => hT (e ▸ hb)
-  refine WP.mono (VG.Proof.Rsa.Arm.Keys.eqS_ok hw (t := aT) (by decide) (h.live_lt a ha) (h.live_lt b hb) (by decide)
-    hTa hTb (wDs_hdr d hd)) fun t ⟨ht, k, e, r⟩ => ⟨?_, ht, r⟩
+/-- `eqS d a b t`: the header word `d := [a] = [b]`, through `[t]` and `sT`. -/
+theorem KS.eqS_ok {d a b t : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nArr)
+    (ha : a ∈ live) (hb : b ∈ live) (hd : d ∈ wDs) (htw : t ∈ wJs) (hT : t ∉ live) (hls : sT ∉ ls)
+    (hdT : d ≠ sT) :
+    WP isa (eqS d a b t) s fun u =>
+      KS P σ A live (upd V d (if A a = A b then 1 else 0)) (d :: ls) u ∧ Ws u P.B P.Z P.W nArr ∧
+        Rest opRegs s u := by
+  have hTa : t ≠ a := fun e => hT (e ▸ ha)
+  have hTb : t ≠ b := fun e => hT (e ▸ hb)
+  refine WP.mono (VG.Proof.Rsa.Arm.Keys.eqS_ok hw (t := t) (wJs_lt t htw).2 (h.live_lt a ha) (h.live_lt b hb)
+    (by decide) hTa hTb (wDs_hdr d hd)) fun u ⟨hu, k, e, r⟩ => ⟨?_, hu, r⟩
   have hds : ∀ x ∈ [sT, d], x ∈ wDs := by
     intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
     · decide
     · rw [List.mem_singleton.mp hx]; exact hd
-  refine h.core k (by decide) hds r.sp r.rd r.wr
+  refine h.core k (by simpa using htw) hds r.sp r.rd r.wr
     (h.arrs_keep k (fun j hj e => by simp at e; exact hT (e ▸ hj)) hds) (fun x hx => ?_) (h.live_lt)
     (fun x hx => ?_)
   · by_cases e' : x = d

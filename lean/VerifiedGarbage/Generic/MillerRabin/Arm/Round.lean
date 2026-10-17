@@ -14,11 +14,12 @@ open VG.Arm
 def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
   (Spec.MillerRabin.roundApi Spec.MillerRabin.compact).artifact target {
     suffix := v.suffix
-    notes := ["ARMv7: binary exponentiation rather than windows of four bits, by `vg_rsa_public_checked`'s \
-        Montgomery multiplication on 32-bit limbs. The bits of `c − 1` are shifted out of a copy of \
-        `c` one at a time, from the top; each squares `y`, multiplies it by the witness or by 1, \
-        selected under the bit's mask, and updates the flag under masks. The shifted exponent and \
-        the table are not used. The round result is returned without branching on it."]
+    notes := ["ARMv7: fixed windows of four bits, by `vg_rsa_public_checked`'s Montgomery multiplication \
+        on 32-bit limbs. The table of the 16 powers is built once (14 products, the entries shifted \
+        down one a product); each window squares four times, or'ing the flag with `y = −1` under \
+        masks, selects its entry by a scan of all 16 under masks into array 5, multiplies, and sets \
+        the flag under the mask of a nonzero digit. Three last squarings use the threshold `4 − σ` \
+        from the word after the exponent. The round result is returned without branching on it."]
     code := v.code
     stack := 56
     verified := v.verifiedSpec

@@ -68,10 +68,10 @@ theorem in_x (h : roundPre s) : In (mkP s) (bodyIn s) := by
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   obtain ⟨lM, w4, w128, fits⟩ := lay'
   rw [hw] at w4 w128 fits
-  obtain ⟨c3, codd, inv, x5, one, m1⟩ := prep'
-  simp only [hw] at c3 codd inv x5 one m1
+  obtain ⟨c3, codd, inv, x5, one, m1, ex, lo⟩ := prep'
+  simp only [hw] at c3 codd inv x5 one m1 ex lo
   refine ⟨rfl, rfl, by simp only [mkP]; omega, by simp only [mkP]; rw [spN]; have := s.sp.isLt; omega, ?_,
-    w4, w128, fits, ?_, hw, inv, c3, codd, x5, one, m1, ?_⟩
+    w4, w128, fits, ?_, hw, inv, c3, codd, x5, one, m1, ex, lo, ?_⟩
   · show (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint _
     exact disj
   · simpa [mkP] using lM
@@ -105,9 +105,10 @@ theorem KS.keepsLite {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat} {V
       have h23 := hk 23 (by simp)
       have h26 := hk 26 (by simp)
       have h29 := hk 29 (by simp)
+      have h30 := hk 30 (by simp)
       dsimp only
       simp only [wDs, List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sE1, sE2, sT, sBit, sF, sK, kOff] at * <;> omega
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [sE1, sE2, sT, sV, sF, sK, sQ, sR, kOff] at * <;> omega
 
 end VG.Proof.MillerRabin.Arm

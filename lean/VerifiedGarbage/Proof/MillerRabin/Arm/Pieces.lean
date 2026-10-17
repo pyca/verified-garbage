@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Taint
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Math
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -87,12 +85,12 @@ theorem St.psel {o a b sl : Nat} (cert : Cert (sel o a b sl)) (ho : o ∈ wJs) (
   VP.kv cert (fun _ _ h => h.2.2) fun σ _ ⟨e, h, hw⟩ =>
     WP.mono (h.sel_ok hw ho ha hb hoa hob hsl (bit σ e)) fun _ ⟨ht, hwt, _⟩ => ⟨e, ht, hwt⟩
 
-theorem St.peqS {d a b : Nat} (cert : Cert (eqS d a b aT)) (ha : a ∈ L) (hb : b ∈ L) (hd : d ∈ wDs)
-    (hT : aT ∉ L) (hls : sT ∉ LS) (hdT : d ≠ sT) :
-    VP (St P E A L V LS) (eqS d a b aT)
+theorem St.peqS {d a b t : Nat} (cert : Cert (eqS d a b t)) (ha : a ∈ L) (hb : b ∈ L) (hd : d ∈ wDs)
+    (htw : t ∈ wJs) (hT : t ∉ L) (hls : sT ∉ LS) (hdT : d ≠ sT) :
+    VP (St P E A L V LS) (eqS d a b t)
       (St P E A L (fun σ => upd (V σ) d (if A σ a = A σ b then 1 else 0)) (d :: LS)) :=
   VP.kv cert (fun _ _ h => h.2.2) fun _ _ ⟨e, h, hw⟩ =>
-    WP.mono (h.eqS_ok hw ha hb hd hT hls hdT) fun _ ⟨ht, hwt, _⟩ => ⟨e, ht, hwt⟩
+    WP.mono (h.eqS_ok hw ha hb hd htw hT hls hdT) fun _ ⟨ht, hwt, _⟩ => ⟨e, ht, hwt⟩
 
 /-! ## Montgomery products -/
 

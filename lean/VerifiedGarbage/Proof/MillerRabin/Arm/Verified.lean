@@ -75,8 +75,7 @@ theorem round_implies : roundContract.Implies
     · have : arrAt (wOf s.mem (State.addr (s.gpr .r0))) nArr ≤ arrAt (wOf s.mem (State.addr (s.gpr .r0))) 28 := by
         simp only [arrAt, nArr]; exact Nat.add_le_add_left (Nat.mul_le_mul_right _ (by decide)) _
       exact Nat.le_trans this fits'
-    · obtain ⟨c3, codd, inv, x5, one, m1, _⟩ := prep
-      exact ⟨c3, codd, inv, x5, one, m1⟩
+    · exact prep
   post := by
     intro s t _ h
     sig_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs, reduceClassify, Loc.val,
@@ -87,17 +86,18 @@ theorem round_implies : roundContract.Implies
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk' ⊢
       simp only [Spec.MillerRabin.compact]
       omega
-    · simp only [wJs, List.mem_cons, List.not_mem_nil, or_false] at hj
-      have ht : i < arrAt (wOf s.mem (State.addr (s.gpr .r0))) 11 ∨
+    · have ht : i < arrAt (wOf s.mem (State.addr (s.gpr .r0))) 11 ∨
           arrAt (wOf s.mem (State.addr (s.gpr .r0))) 27 ≤ i := htab
-      rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact harr 2 (by simp)
-      · exact harr 3 (by simp)
-      · exact harr 5 (by simp)
-      · exact harr 6 (by simp)
-      · exact harr 8 (by simp [Spec.MillerRabin.compact])
-      all_goals
-        simp only [arrAt, Spec.Rsa.Mont.hdrBytes, aE, aOne, aM1, aT] at ht ⊢
+      by_cases hs : j ∈ [2, 3, 5, 6, 8]
+      · exact harr j (by simpa only [Spec.MillerRabin.compact] using hs)
+      · have hj' : 11 ≤ j ∧ j ≤ 26 := by
+          simp only [wJs, aX, aY, aM1, List.mem_cons, List.not_mem_nil, or_false] at hj hs; omega
+        generalize wOf s.mem (State.addr (s.gpr .r0)) = w at ht ⊢
+        have a := Nat.mul_le_mul_right (8 * (w + 2)) hj'.1
+        have b := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 27 by omega)
+        rw [Nat.add_mul, Nat.one_mul] at b
+        simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at ht ⊢
+        generalize 8 * (w + 2) = S at *
         omega
   pub := by
     rintro s t - - h
