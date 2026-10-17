@@ -42,6 +42,22 @@ theorem exp_step {g r i n R Y G X Y' G' : Nat} (hR : Nat.Coprime R n)
     rw [Nat.mod_eq_of_lt hG'] at this
     rw [this, ← Nat.two_mul, Nat.pow_succ, Nat.mul_comm (2 ^ i)]
 
+/-- A Montgomery product of two powers. -/
+theorem mont_prod_eq (x a b R n : Nat) :
+    x ^ (a + b) * R % n * R % n = (x ^ a * R % n) * (x ^ b * R % n) % n := by
+  rw [Nat.mod_mul_mod, ← Nat.mul_mod, Nat.pow_add, Nat.mul_mul_mul_comm, Nat.mul_assoc (x ^ a * x ^ b)]
+
+/-- The multiplicand of a bit: `x^0` or `x^(2^i)` in Montgomery form. -/
+theorem bit_mont (x r i R n : Nat) :
+    (if r / 2 ^ i % 2 = 0 then R % n else x ^ (2 ^ i) * R % n) = x ^ (r / 2 ^ i % 2 * 2 ^ i) * R % n := by
+  split
+  · rename_i h; rw [h, Nat.zero_mul, Nat.pow_zero, Nat.one_mul]
+  · rename_i h; rw [show r / 2 ^ i % 2 = 1 by omega, Nat.one_mul]
+
+/-- The bits of `r` up to `i + 1`. -/
+theorem mod_pow_succ' (r i : Nat) : r % 2 ^ (i + 1) = r % 2 ^ i + r / 2 ^ i % 2 * 2 ^ i := by
+  rw [Nat.mod_pow_succ, Nat.mul_comm]
+
 /-- The top bit of `a - b`: `a < b`, for `a, b < 2^31`. -/
 theorem lt_bit {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31) :
     ((BitVec.ofNat 32 a - BitVec.ofNat 32 b) >>> 31).toNat = if a < b then 1 else 0 := by
