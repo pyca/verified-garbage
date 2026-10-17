@@ -84,7 +84,7 @@ theorem sched_eq (pre : In P σ) (hL : P.L ≤ P.rl) :
     P.sch = if clv P σ then ⟨true, false, false, none⟩ else if compv P σ then ⟨false, true, false, none⟩
       else if !gv P σ then ⟨false, false, true, none⟩
       else ⟨false, false, false, (resP P σ).map fun x => (x.1, x.2.length)⟩ := by
-  rw [← pre.sch]
+  rw [← pre.sch hL]
   unfold VG.Proof.RsaKeyGen.schedOf
   rw [take_rB hL]
   rfl
