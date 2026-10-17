@@ -3370,14 +3370,15 @@ theorem cmpFold_ok {fold : Nat} (hf : fold + 1 < 2 ^ 31) {s₀ : State} {s : Sta
   refine ⟨trivial, trivial, trivial, trivial, ?_⟩
   rw [hr13, toNat_ofNat_lt (by lit_omega)]
 
-/-- `foldML`: `m`, the length up to `fold`, else from where the prologue
-stored it. -/
-theorem foldML_ok {fold pass : Nat} (hf : fold + 1 < 2 ^ 31) {s₀ s : State} (hr13 : s.gpr .r13 = s₀.gpr .r9)
-    (hr15 : s.gpr .r15 = cx s₀) (hw : InRegions s.wr (off (cx s₀) 48) 8)
-    (hm : fold < L s₀ → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))) :
-    WP isa (foldML fold) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 (mOf fold pass (L s₀)) ∧
+/-- The length `wipeL` leaves in `rdx`: the data's, up to `fold`, else `extra`. -/
+def wOf (fold extra len : Nat) : Nat := if len ≤ fold then len else extra
+
+/-- `wipeL`: the length up to `fold`, else `extra`. -/
+theorem wipeL_ok {fold extra : Nat} (hf : fold + 1 < 2 ^ 31) (he : extra < 2 ^ 31) {s₀ s : State}
+    (hr13 : s.gpr .r13 = s₀.gpr .r9) :
+    WP isa (wipeL fold extra) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 (wOf fold extra (L s₀)) ∧
       (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
-  unfold foldML
+  unfold wipeL
   refine WP.seq (WP.mono (cmpFold_ok hf hr13) fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
   refine WP.ite (decide (L s₀ < fold + 1)) (by simp [eval, c₁]) (fun h => ?_) (fun h => ?_)
   · simp only [decide_eq_true_eq] at h
@@ -3385,12 +3386,18 @@ theorem foldML_ok {fold pass : Nat} (hf : fold + 1 < 2 ^ 31) {s₀ s : State} (h
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg,
       RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
       exists_eq_left', ite_true]
-    refine ⟨by rw [g₁, hr13, hL s₀]; simp only [mOf, show L s₀ ≤ fold from by omega_using [h], ite_true],
+    refine ⟨by rw [g₁, hr13, hL s₀]; simp only [wOf, show L s₀ ≤ fold from by omega_using [h], ite_true],
       fun q hq => by simp [hq, g₁], rd₁, wr₁, m₁⟩
   · simp only [decide_eq_false_iff_not] at h
-    exact WP.mono (mLoad_ok (n := mOf fold pass (L s₀)) (by rw [g₁, hr15]) (by rw [wr₁]; exact hw)
-      (by rw [m₁]; exact hm (by omega_using [h]))) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ =>
-      ⟨d₂, fun q hq => by rw [g₂ q hq, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁]⟩
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, RegUpd.gpr_setReg,
+      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
+      exists_eq_left']
+    refine ⟨by
+        simp only [wOf, show ¬ L s₀ ≤ fold from by omega_using [h], ite_false]
+        exact BitVec.eq_of_toNat_eq (by
+          simp only [ite_true, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [he]),
+      fun q hq => by simp [hq, g₁], rd₁, wr₁, m₁⟩
 
 /-- After the data is encrypted (or decrypted), before the keystream is wiped. -/
 structure Crypted (s₀ s : State) (s' : State) : Prop where

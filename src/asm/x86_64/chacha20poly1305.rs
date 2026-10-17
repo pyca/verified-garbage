@@ -25727,7 +25727,7 @@ mov r15, rsi
 sub r15, 128
 cmp r13, 449
 jb 2129f
-mov rdx, QWORD PTR [r15+48]
+mov edx, 512
 jmp 2130f
 2129:
 mov rdx, r13
@@ -32840,9 +32840,9 @@ add rsi, 128
 211:
 mov r15, rsi
 sub r15, 128
-mov edx, 0
 cmp r13, 449
 jb 274f
+mov edx, 64
 jmp 275f
 274:
 mov rdx, r13
@@ -59251,7 +59251,7 @@ mov r15, rsi
 sub r15, 128
 cmp r13, 449
 jb 2186f
-mov rdx, QWORD PTR [r15+48]
+mov edx, 512
 jmp 2187f
 2186:
 mov rdx, r13
@@ -66782,9 +66782,9 @@ add rsi, 128
 268:
 mov r15, rsi
 sub r15, 128
-mov edx, 0
 cmp r13, 449
 jb 2131f
+mov edx, 64
 jmp 2132f
 2131:
 mov rdx, r13
@@ -93971,7 +93971,7 @@ mov r15, rsi
 sub r15, 128
 cmp r13, 449
 jb 2186f
-mov rdx, QWORD PTR [r15+48]
+mov edx, 512
 jmp 2187f
 2186:
 mov rdx, r13
@@ -100946,9 +100946,9 @@ add rsi, 128
 268:
 mov r15, rsi
 sub r15, 128
-mov edx, 0
 cmp r13, 449
 jb 2131f
+mov edx, 64
 jmp 2132f
 2131:
 mov rdx, r13

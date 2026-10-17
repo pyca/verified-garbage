@@ -465,7 +465,9 @@ def prologueX (x : ChaCha20.X86_64.Callee) : Prog isa :=
 /-- `crypt`, with `rbx`, `rbp` set to the ciphertext not yet absorbed: the
 whole chunks are encrypted and absorbed by `bigS` or `preS`, with the rest if
 at most 256 bytes, and any rest left encrypted by the implementation `x` of
-`vg_chacha20_xor`. `m` is the prologue's (`mLoad`, `foldML`). -/
+`vg_chacha20_xor`. `m` is the prologue's (`mLoad`). Then the keystream is
+wiped: past `fold` bytes all of `ctx[672, 1248)`, where `tailK` stores its
+own too (`wipeL`). -/
 def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
@@ -477,7 +479,7 @@ def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
         (.seq (.block [.alu .test .rdx (.reg .rdx)])
           (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code)))))))
   (.seq (.block (anchor .rsi 128))
-  (.seq (foldML x.fold)
+  (.seq (wipeL x.fold 512)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
 /-- `seal`, with Poly1305 inside the kernel for the whole chunks. -/
@@ -660,7 +662,9 @@ def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
 bytes, as `open` does; otherwise the whole chunks decrypted and absorbed by
-`bulkO`, then the rest absorbed and decrypted. -/
+`bulkO`, then the rest absorbed and decrypted. Then the keystream is wiped:
+past `fold` bytes `ctx[672, 800)`, where `twoKs` stores the block of the last
+bytes too (`wipeL`). -/
 def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
@@ -673,7 +677,7 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
       (.seq (macPadLengths b .rbx .rbp)
       (decRest x))))))
   (.seq (.block (anchor .rsi 128))
-  (.seq (foldM x.fold x.pass)
+  (.seq (wipeL x.fold 64)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
 /-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
