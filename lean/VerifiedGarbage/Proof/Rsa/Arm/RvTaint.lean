@@ -51,7 +51,7 @@ abbrev setupKTail : List Instr :=
   [.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)), .mov .lr (.imm (BitVec.ofNat 32 nArr)),
     .mul .lr .lr .r7, .mov .lr (.shifted .lr .lsr 2), .mov .r3 (.imm 0)]
 
-theorem setupK_eq : setupK = ctxB ++ ([.ldrSp .r9 aoK] ++ setupKTail) := rfl
+theorem setupK_eq : setupK = ctxB ++ (([.ldrSp .r9 aoK] : List Instr) ++ setupKTail) := rfl
 
 theorem setupKTail_taint :
     ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8, .r9]) (.block setupKTail) hc).isSome = true :=

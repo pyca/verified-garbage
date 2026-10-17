@@ -32,7 +32,7 @@ theorem sqInit_eq : sqInit = sqHead ++ cntBits := rfl
 /-- The first block of a bit of `r`, after the context. -/
 abbrev expTail : List Instr := bitOf sBit wRc ++ [.mov .r11 (.imm 0)]
 
-theorem expHead_eq : ctxW ++ bitOf sBit wRc ++ [.mov .r11 (.imm 0)] = ctxW ++ expTail := by
+theorem expHead_eq : ctxW ++ bitOf sBit wRc ++ ([.mov .r11 (.imm 0)] : List Instr) = ctxW ++ expTail := by
   simp only [List.append_assoc]
 
 /-- `ok` into the mask. -/

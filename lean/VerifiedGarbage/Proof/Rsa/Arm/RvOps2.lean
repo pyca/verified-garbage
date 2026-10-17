@@ -137,13 +137,13 @@ theorem KS.eqS_w {d a b : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P
     hWa hWb hd.1) fun t ⟨ht, k, e, r⟩ => ⟨?_, ht, r⟩
   have hT : SlotOk sT := by decide
   refine h.core k (by simpa using fitZ_w h.sizes (show aW < nArr by decide))
-    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro x (rfl | rfl) <;> assumption)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro x (rfl | rfl) <;> with_reducible assumption)
     (h.r8_of r) r.sp r.rd r.wr
     (h.arrs_w k (fun j hj i hi => by simp at hi; subst hi; exact fun e => hW (e ▸ hj))
-      (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro x (rfl | rfl) <;> assumption))
+      (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro x (rfl | rfl) <;> with_reducible assumption))
     h.live_lt
     (h.arrsW_w k (fun j hj i hi => by simp at hi; subst hi; exact hlW j hj)
-      (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro x (rfl | rfl) <;> assumption))
+      (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro x (rfl | rfl) <;> with_reducible assumption))
     h.liveW_lt (fun x hx => ?_) (fun x hx => ?_)
   · by_cases e' : x = d
     · subst e'; rw [upd_self, e, h.arrs a ha, h.arrs b hb]
