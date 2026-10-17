@@ -38,21 +38,12 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Rsa.Arm.Keys
 
 /-! ## The header
 
-Bytes 0–19 are the division's; 20–52 hold `r4`–`r11` and `lr`, 56–96 the
-arguments, 100–112 the slots of the shared routines and 116–132 the
-checks. -/
+Bytes 0–19 are the division's; 20–52 hold `r4`–`r11` and `lr`, 56 and 60
+`dp` and `dq` (the other arguments are read from the stack), 100–112 the
+slots of the shared routines and 116–132 the checks. -/
 
 def sDp : Nat := 56
 def sDq : Nat := 60
-def sQi : Nat := 64
-def sN : Nat := 68
-def sNl : Nat := 72
-def sP : Nat := 76
-def sPl : Nat := 80
-def sQ : Nat := 84
-def sQl : Nat := 88
-def sD : Nat := 92
-def sDl : Nat := 96
 def sPodd : Nat := 116
 def sE1 : Nat := 120
 def sE2 : Nat := 124
@@ -90,41 +81,34 @@ def entrySave : List Instr :=
    .str .r9 .r12 40, .str .r10 .r12 44, .str .r11 .r12 48, .str .lr .r12 52,
    .str .r0 .r12 sDp, .str .r2 .r12 sDq, .mov .r8 (.reg .r12), .mov .r3 (.reg .r2)]
 
-/-- The stack arguments into registers: `qinv` (`r10`), `p_len` (`r11`),
-`q_len` (`r12`), `n` (`r4`), `n_len` (`r6`), `p` (`r5`), `q` (`r7`), `d`
-(`r9`) and `d_len` (`r1`). -/
-def entryArgs : List Instr :=
-  [.ldrSp .r10 0, .ldrSp .r11 20, .ldrSp .r12 28, .ldrSp .r4 8, .ldrSp .r6 12, .ldrSp .r5 16,
-   .ldrSp .r7 24, .ldrSp .r9 32, .ldrSp .r1 36]
+/-- `n` checked: Z if it is valid. -/
+def entryCheck : List Instr := [.ldrSp .r4 8, .ldrSp .r6 12] ++ modulusCheck
 
-/-- The arguments saved, then `n` checked: Z if it is valid. -/
-def entryCheck : List Instr :=
-  [.str .r10 .r8 sQi, .str .r4 .r8 sN, .str .r6 .r8 sNl, .str .r5 .r8 sP, .str .r11 .r8 sPl,
-   .str .r7 .r8 sQ, .str .r12 .r8 sQl, .str .r9 .r8 sD, .str .r1 .r8 sDl] ++ modulusCheck
-
-def entry : List Instr := entryBase ++ entrySave ++ entryArgs ++ entryCheck
+def entry : List Instr := entryBase ++ entrySave ++ entryCheck
 
 /-! ## An invalid modulus -/
 
-/-- Zeros to `dp` (`r0`, `p_len` in `r11`), `dq` (`r3`, `q_len` in `r12`)
-and `qinv` (`r10`), and 0 returned. -/
+/-- Zeros to `dp` (`r0`), `dq` (`r3`) and `qinv`, and 0 returned. -/
 def fail : Prog isa := seqs [
-  .block [.mov .r2 (.imm 0), .mov .lr (.reg .r11)], maskBytes,
-  .block [.mov .r0 (.reg .r3), .mov .lr (.reg .r12)], maskBytes,
-  .block [.mov .r0 (.reg .r10), .mov .lr (.reg .r11)], maskBytes,
+  .block [.mov .r2 (.imm 0), .ldrSp .lr 20], maskBytes,
+  .block [.mov .r0 (.reg .r3), .mov .r2 (.imm 0), .ldrSp .lr 28], maskBytes,
+  .block [.ldrSp .r0 0, .mov .r2 (.imm 0), .ldrSp .lr 20], maskBytes,
   .block [.mov .r0 (.imm 0)]]
 
 /-! ## A valid modulus -/
 
-/-- `w = ⌈n_len / 4⌉` (`n_len` in `r6`) into `r9` and the header's
-division count, the stride, and every array zeroed. -/
+/-- The base into `r8`, `w = ⌈n_len / 4⌉` into `r9` and the stride into `r7`,
+all from the stack arguments. -/
+def ctx : List Instr :=
+  [.ldrSp .r8 40, .ldrSp .r9 12, .dp .add .r9 .r9 (.imm 3), .mov .r9 (.shifted .r9 .lsr 2)] ++ stride
+
+/-- `w` into the division's header, and every array zeroed. -/
 def setup : List Instr :=
-  [.dp .add .r9 .r6 (.imm 3), .mov .r9 (.shifted .r9 .lsr 2)] ++ stride ++
-  [.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)), .mov .lr (.imm (BitVec.ofNat 32 nArr)),
+  ctx ++ [.str .r9 .r8 16, .dp .add .r0 .r8 (.imm (BitVec.ofNat 32 hdr)), .mov .lr (.imm (BitVec.ofNat 32 nArr)),
    .mul .lr .lr .r7, .mov .lr (.shifted .lr .lsr 2), .mov .r3 (.imm 0)]
 
-/-- The pointer and length in the slots `sPtr` and `sLen` into `r4` and `r6`. -/
-def args (sPtr sLen : Nat) : List Instr := [.ldr .r4 .r8 sPtr, .ldr .r6 .r8 sLen]
+/-- The pointer and length at the stack offsets `oPtr` and `oLen` into `r4` and `r6`. -/
+def args (oPtr oLen : Nat) : List Instr := [.ldrSp .r4 oPtr, .ldrSp .r6 oLen]
 
 /-- `[j] :=` the bytes at `r4` (`r6` of them). -/
 def load (j : Nat) : Prog isa :=
@@ -135,15 +119,12 @@ def divHdr (q r d t : Nat) : List Instr :=
   ptr .r1 q ++ [.str .r1 .r8 0] ++ ptr .r1 r ++ [.str .r1 .r8 4] ++
   ptr .r1 d ++ [.str .r1 .r8 8] ++ ptr .r1 t ++ [.str .r1 .r8 12]
 
-/-- `w` back into `r9`, from the division's header. -/
-def reload : List Instr := [.ldr .r9 .r8 16]
-
 /-- `n`, `p`, `q` and `d` read, and `n` divided by `p`. -/
 def loads : Prog isa := seqs [
-  .block setup, zero, load aDQ,
-  .block (args sP sPl), load aP,
-  .block (args sQ sQl), load aQ,
-  .block (args sD sDl), load aD]
+  .block setup, zero, .block (args 8 12), load aDQ,
+  .block (args 16 20), load aP,
+  .block (args 24 28), load aQ,
+  .block (args 32 36), load aD]
 
 /-- `p` odd, and the division of `n` by `p` set up. -/
 def divN : List (Prog isa) := [
@@ -158,17 +139,14 @@ def invSetup : List (Prog isa) := [
 /-- The checks of `p q = n` and of the inverse, `qInv` computed, and the
 division of `d` by `p - 1` set up. -/
 def checks : Prog isa := seqs ([
-  .block stride, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup ++ [
+  .block ctx, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup ++ [
   inverse, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT)])
 
 /-- The division of `d` by `q - 1` set up. -/
 def divQ : Prog isa := seqs [
-  .block stride, copy aDQ aD, copy aDD aQ, .block (clrLow aDD ++ divHdr aDQ aDR3 aDD aDT)]
-
-/-- The pointer and length in the slots `sPtr` and `sLen` into `r10` and `r11`. -/
-def outArgs (sPtr sLen : Nat) : List Instr := [.ldr .r10 .r8 sPtr, .ldr .r11 .r8 sLen]
+  .block ctx, copy aDQ aD, copy aDD aQ, .block (clrLow aDD ++ divHdr aDQ aDR3 aDD aDT)]
 
 /-- `[j]`'s low `r11` bytes to `r10`, most significant first, masked by the
 slot `sMask`. -/
@@ -180,18 +158,21 @@ def store (j : Nat) : Prog isa := seqs [
     .dp .sub .r2 .r2 (.reg .r1)],
   maskBytes]
 
-def valid : Prog isa := seqs [
-  loads, seqs divN, Rsa.Arm.Div.code, .block reload, checks, Rsa.Arm.Div.code, .block reload,
-  divQ, Rsa.Arm.Div.code, .block reload, .block stride,
-  .block (outArgs sDp sPl), store aDR2,
-  .block (outArgs sDq sQl), store aDR3,
-  .block (outArgs sQi sPl), store 3,
+/-- The three results written out under the mask (`dp` in `r10`, `dq` in `r12`). -/
+def stores : Prog isa := seqs [
+  .block [.ldrSp .r11 20], store aDR2,
+  .block [.mov .r10 (.reg .r12), .ldrSp .r11 28], store aDR3,
+  .block [.ldrSp .r10 0, .ldrSp .r11 20], store 3,
   .block [.ldr .r0 .r8 sMask]]
 
-/-- `r4`–`r11` and `lr` restored, the base last. -/
+def valid : Prog isa := seqs [
+  loads, seqs divN, Rsa.Arm.Div.code, checks, Rsa.Arm.Div.code, divQ, Rsa.Arm.Div.code,
+  .block (ctx ++ [.ldr .r10 .r8 sDp, .ldr .r12 .r8 sDq]), stores]
+
+/-- `r4`–`r11` and `lr` restored. -/
 def restore : List Instr :=
-  [.ldr .r4 .r8 20, .ldr .r5 .r8 24, .ldr .r6 .r8 28, .ldr .r7 .r8 32, .ldr .r9 .r8 40,
-   .ldr .r10 .r8 44, .ldr .r11 .r8 48, .ldr .lr .r8 52, .ldr .r8 .r8 36]
+  [.ldrSp .r12 40, .ldr .r4 .r12 20, .ldr .r5 .r12 24, .ldr .r6 .r12 28, .ldr .r7 .r12 32, .ldr .r8 .r12 36,
+   .ldr .r9 .r12 40, .ldr .r10 .r12 44, .ldr .r11 .r12 48, .ldr .lr .r12 52]
 
 /-- `vg_rsa_crt_values`. -/
 def code : Prog isa := .seq (.block entry) (.seq (.ite .eq valid fail) (.block restore))
