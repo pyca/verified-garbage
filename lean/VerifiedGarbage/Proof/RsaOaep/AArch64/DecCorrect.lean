@@ -53,19 +53,6 @@ theorem resSlot_ok {u : State} {F S : Addr} (Ly : Lay u F S) {V : Nat → Byte} 
   rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), R.fr 12 (by decide)]
   rfl
 
-/-- The frame's words after the hash functions' slots are set: `W` but in
-words 2 to 5. -/
-def setW (W : Nat → BitVec 64) (kH DH kG DG : Nat) : Nat → BitVec 64 :=
-  upd (upd (upd (upd W 2 (BitVec.ofNat 64 kH)) 4 (BitVec.ofNat 64 DH)) 3 (BitVec.ofNat 64 kG)) 5
-    (BitVec.ofNat 64 DG)
-
-theorem setW_slots (W : Nat → BitVec 64) (kH DH kG DG : Nat) : HSlots (setW W kH DH kG DG) kH DH kG DG :=
-  ⟨by simp [setW, upd], by simp [setW, upd], by simp [setW, upd], by simp [setW, upd]⟩
-
-theorem setW_eq (W : Nat → BitVec 64) (kH DH kG DG : Nat) {j : Nat} (hj : j < 2 ∨ 5 < j) :
-    setW W kH DH kG DG j = W j := by
-  simp only [setW, upd]; rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
-
 /-- Our stack argument `j` (`hash` or `mgf1_hash`), from the frame's base. -/
 theorem Ctx.argAt {L : DLay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (hc : Ctx L g vv m₀ t) {j : Nat} (hj : j < 17) :

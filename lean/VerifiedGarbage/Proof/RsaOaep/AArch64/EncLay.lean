@@ -43,7 +43,13 @@ structure ELay where
   sd : Addr
   scr : Addr
   sl : BitVec 64
+  /-- `seed_len`, and the hash functions' numbers, `hash` and `mgf1_hash`. -/
+  sdl : BitVec 64
+  hh : BitVec 64
+  gh : BitVec 64
+  /-- The seed's length, and MGF1's `hLen`. -/
   D : Nat
+  DG : Nat
   Q : Addr
   P : Nat
   X : List Region
@@ -83,20 +89,25 @@ structure Ok : Prop where
   bO : L.out.toNat + L.k.toNat ≤ 2 ^ 64
   bS : L.scr.toNat + L.sl.toNat * 8 ≤ 2 ^ 64
   bR : ∀ R ∈ L.ro, R.base.toNat + R.len ≤ 2 ^ 64
-  nQ : L.Q.toNat + 328 ≤ 2 ^ 64
+  nQ : L.Q.toNat + 336 ≤ 2 ^ 64
   pQ : L.P ≤ L.Q.toNat
   kv : Spec.Rsa.lenValid L.k.toNat
   olk : L.ol.toNat = L.k.toNat
   el1 : 1 ≤ L.el.toNat
   elk : L.el.toNat ≤ L.k.toNat
   slk : Spec.RsaPss.publicScratchWords L.k.toNat ≤ L.sl.toNat
-  al40 : 40 ≤ L.al
-  al64 : L.al ≤ 64
+  al48 : 48 ≤ L.al
+  al80 : L.al ≤ 80
   nQa : L.Q.toNat + 288 + L.al ≤ 2 ^ 64
   xO : ∀ R ∈ L.X, R.Disjoint L.OUT
   xS : ∀ R ∈ L.X, R.Disjoint L.SCR
   xK : ∀ R ∈ L.X, L.STK.Disjoint R
   xw : ∀ R ∈ L.X, R.base.toNat + R.len ≤ 2 ^ 64
+  /-- The hash functions' numbers, and the seed's length, the label's hash
+  function's `hLen`. -/
+  hhk : L.hh.toNat ∈ Spec.RsaOaep.hashIds
+  ghk : L.gh.toNat ∈ Spec.RsaOaep.hashIds
+  hsd : ∀ H, Spec.HashId.mgf1 L.hh.toNat = some H → L.D = H.len
 
 end ELay
 
@@ -127,10 +138,10 @@ theorem sub_stk {d n : Nat} (hd : d + n ≤ 288) : Region.Sub ⟨L.Q + BitVec.of
 omit h in
 theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
 
-theorem fr_low {d n : Nat} (hd : d + n ≤ 328) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
+theorem fr_low {d n : Nat} (hd : d + n ≤ 336) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
   Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega)
 
-theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 328) (h₂ : d' + n' ≤ 328) :
+theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 336) (h₂ : d' + n' ≤ 336) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ ⟨L.Q + BitVec.ofNat 64 d', n'⟩ :=
   Offset.disjoint _ hs (by have := h.nQ; omega) (by have := h.nQ; omega)
 
@@ -141,10 +152,10 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 288) {R : Region} (hR : InW L R) :
   · exact (h.kO.sub_left hs).sub_right hR
   · exact (h.kS.sub_left hs).sub_right hR
 
-theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 328) {R : Region} (hR : InW L R) :
+theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 336) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
   have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS :=
-    Offset.sub _ h₁ (by have := h.al40; omega)
+    Offset.sub _ h₁ (by have := h.al48; omega)
   rcases hR with hR | hR
   · exact (h.oA.symm.sub_left hs).sub_right hR
   · exact (h.sA.symm.sub_left hs).sub_right hR
@@ -174,7 +185,7 @@ end ELay.Ok
 
 /-- Our stack argument `j`. -/
 def ourArg (L : ELay) : Nat → BitVec 64
-  | 0 => L.msg | 1 => L.ml | 2 => L.sd | 3 => L.scr | _ => L.sl
+  | 0 => L.msg | 1 => L.ml | 2 => L.sd | 3 => L.sdl | 4 => L.scr | _ => L.sl
 
 structure Ctx (L : ELay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
@@ -184,7 +195,7 @@ structure Ctx (L : ELay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m�
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
   vs : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (vv r).extractLsb' 0 64
   lr : t.mem.readW (L.Q + BitVec.ofNat 64 272) 64 = g .x30
-  args : ∀ j < 5, t.mem.readW (L.Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = ourArg L j
+  args : ∀ j < 6, t.mem.readW (L.Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = ourArg L j
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
 
 /-- The slots of our arguments, as the frame's words `W`. -/
@@ -201,15 +212,17 @@ structure Slots (L : ELay) (W : Nat → BitVec 64) : Prop where
   msg : W 27 = L.msg
   ml : W 28 = L.ml
   sd : W 29 = L.sd
+  hsl : HSlots W L.hh.toNat L.D L.gh.toNat L.DG
 
 theorem Slots.of {L : ELay} {W W' : Nat → BitVec 64} (h : Slots L W)
-    (hW : ∀ j, 12 ≤ j → j ≤ 29 → (j = 12 ∨ 19 ≤ j) → W' j = W j) : Slots L W' :=
+    (hW : ∀ j, 2 ≤ j → j ≤ 29 → (j ≤ 5 ∨ j = 12 ∨ 19 ≤ j) → W' j = W j) : Slots L W' :=
   ⟨(hW 12 (by decide) (by decide) (by decide)).trans h.scr, (hW 19 (by decide) (by decide) (by decide)).trans h.out,
     (hW 20 (by decide) (by decide) (by decide)).trans h.n, (hW 21 (by decide) (by decide) (by decide)).trans h.k,
     (hW 22 (by decide) (by decide) (by decide)).trans h.e, (hW 23 (by decide) (by decide) (by decide)).trans h.el,
     (hW 24 (by decide) (by decide) (by decide)).trans h.sl, (hW 25 (by decide) (by decide) (by decide)).trans h.lab,
     (hW 26 (by decide) (by decide) (by decide)).trans h.labl, (hW 27 (by decide) (by decide) (by decide)).trans h.msg,
-    (hW 28 (by decide) (by decide) (by decide)).trans h.ml, (hW 29 (by decide) (by decide) (by decide)).trans h.sd⟩
+    (hW 28 (by decide) (by decide) (by decide)).trans h.ml, (hW 29 (by decide) (by decide) (by decide)).trans h.sd,
+    h.hsl.of_eq fun j h1 h2 => hW j h1 (by omega) (by omega)⟩
 
 namespace Ctx
 
@@ -219,7 +232,7 @@ include hc hL
 
 omit hc in
 theorem kept_apart (hP : 16 ≤ L.P) {ws : List Region} (hws : ∀ r ∈ ws, Region.Sub r L.OUT) {d : Nat}
-    (hd : 272 ≤ d) (hd₂ : d + 8 ≤ 288 ∨ 288 ≤ d) (hd' : d + 8 ≤ 328) :
+    (hd : 272 ≤ d) (hd₂ : d + 8 ≤ 288 ∨ 288 ≤ d) (hd' : d + 8 ≤ 336) :
     ∀ r ∈ ⟨L.Q, frameBytes⟩ :: ⟨L.scr, oRsa⟩ :: retR L.Q :: ws, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ r := by
   have hb : ∀ R, InW L R → Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := fun R hR =>
     hd₂.elim (fun h₁ => hL.stk_buf h₁ hR) fun h₁ => hL.args_buf h₁ hd' hR
@@ -237,7 +250,7 @@ theorem kept_apart (hP : 16 ≤ L.P) {ws : List Region} (hws : ∀ r ∈ ws, Reg
 working space, keeps `Ctx`. -/
 theorem step (hP : 16 ≤ L.P) {ws : List Region} (hS : Step L.Q L.scr ws t t')
     (hws : ∀ r ∈ ws, Region.Sub r L.OUT) : Ctx L g vv m₀ t' := by
-  have hk : ∀ d, 272 ≤ d → (d + 8 ≤ 288 ∨ 288 ≤ d) → d + 8 ≤ 328 →
+  have hk : ∀ d, 272 ≤ d → (d + 8 ≤ 288 ∨ 288 ≤ d) → d + 8 ≤ 336 →
       t'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ h₃ => hS.frame.readW (Region.contains_self _ _) (kept_apart hL hP hws h₁ h₂ h₃) (by decide)
   refine ⟨hS.rd.trans hc.rd, hS.wr.trans hc.wr, hS.sp.trans hc.sp,

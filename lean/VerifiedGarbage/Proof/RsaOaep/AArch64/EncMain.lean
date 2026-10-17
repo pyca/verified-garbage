@@ -33,14 +33,15 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (Spec.Rsa.bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]
 
-variable {Hl : Hash} (hH : StreamOK Hl.stream)
+variable {hs : List Hash} {Hl : Hash} (hH : StreamOK Hl.stream)
 
 include hH in
 theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) {L : ELay} (hL : L.Ok)
+    (hnH : Num hs L.hh.toNat Hl)
     (hP : 16 ≤ L.P) (hD : L.D = Hl.D) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (hc : Ctx L g vv m₀ t) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem L.Q L.scr V W)
     (hS : Slots L W) (hk : 2 * Hl.D + 2 + L.ml.toNat ≤ L.k.toNat) :
-    WP isa (encEm Hl) t fun t' => Ctx L g vv m₀ t' ∧ ∃ V', Rep t'.mem L.Q L.scr V' W ∧
+    WP isa (encEm hs) t fun t' => Ctx L g vv m₀ t' ∧ ∃ V', Rep t'.mem L.Q L.scr V' W ∧
       EmAt V' L.k.toNat Hl.D (Spec.Rsa.bytesAt m₀ L.sd Hl.D)
         (Hs.hash (Spec.Rsa.bytesAt m₀ L.lab L.labl.toNat)) (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat) L.ml.toNat := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
@@ -50,6 +51,7 @@ theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
   have c0 : oEm = 0 := rfl
   have cR : oRsa = 8192 := rfl
   have hk3 : W 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hl : W 4 = BitVec.ofNat 64 Hl.D := hD ▸ hS.hsl.hlen
   have hm3 : W 28 = BitVec.ofNat 64 L.ml.toNat := by rw [hS.ml, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- The seed's and the message's bytes are apart from our working space.
   have hsdS : ∀ i < Hl.D, ∀ j < oRsa, off L.sd i ≠ off L.scr j := fun i hi j hj
@@ -70,20 +72,20 @@ theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
   refine WP.seq (WP.mono (clearEm_ok (hc.lay hL hP R hS.scr) R) fun t1 ⟨_, S1, R1⟩ => ?_)
   have hc1 := hc.step hL hP S1 nil_ws
   -- The seed.
-  refine WP.seq (WP.mono (copySeed_ok (hc1.lay hL hP R1 hS.scr) R1 (H := Hl) hS.sd hD0 hD64
+  refine WP.seq (WP.mono (copySeed_ok (hc1.lay hL hP R1 hS.scr) R1 hS.sd hl hD0 hD64
     (fun i hi => inRd hc1 (by simp) (Offset.contains_base L.sd (d := i) (n := 1) (k := L.D) (by omega)
       (by have := hL.bR _ (ro_SD L); simp only at this; omega)))
     (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega))) fun t2 ⟨_, S2, R2⟩ => ?_)
   have hc2 := hc1.step hL hP S2 nil_ws
   -- The label's hash.
-  refine WP.seq (WP.mono (hashLabel_ok hH (Hs := Hs) hHh (hc2.lay hL hP R2 hS.scr) R2 (hc2.labAt hL hP hS)
-    (o := oDig) (.inl rfl)) fun t3 ⟨_, S3, V3, R3, hV3, hV3'⟩ => ?_)
+  refine WP.seq (WP.mono (hashLabel_ok hnH hH (Hs := Hs) hHh (hc2.lay hL hP R2 hS.scr) R2 (hc2.labAt hL hP hS)
+    hS.hsl.hsel (o := oDig) (.inl rfl)) fun t3 ⟨_, S3, V3, R3, hV3, hV3'⟩ => ?_)
   have hc3 := hc2.step hL hP S3 nil_ws
   have hlab := hc2.bytes_ro hL (ro_LAB L)
   simp only at hlab
   rw [hlab] at hV3'
   -- `lHash` after the seed.
-  refine WP.seq (WP.mono (copyLh_ok (hc3.lay hL hP R3 hS.scr) R3 (H := Hl) hD0 hD64) fun t4 ⟨_, S4, R4⟩ => ?_)
+  refine WP.seq (WP.mono (copyLh_ok (hc3.lay hL hP R3 hS.scr) R3 hl hD0 hD64) fun t4 ⟨_, S4, R4⟩ => ?_)
   have hc4 := hc3.step hL hP S4 nil_ws
   -- `0x01` and the message.
   refine WP.mono (putMsg_ok (hc4.lay hL hP R4 hS.scr) R4 hk3 hm3 hS.msg (by omega) hk1024

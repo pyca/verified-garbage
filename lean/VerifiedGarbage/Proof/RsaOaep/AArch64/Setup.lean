@@ -165,6 +165,19 @@ theorem chkK_ok {u : State} {F S : Addr} (Ly : Lay u F S) {V : Nat → Byte} {W 
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
     Nat.mod_eq_of_lt (show 2 * D + 2 < 2 ^ 64 by omega)]
 
+/-- The frame's words after the hash functions' slots are set: `W` but in
+words 2 to 5. -/
+def setW (W : Nat → BitVec 64) (kH DH kG DG : Nat) : Nat → BitVec 64 :=
+  upd (upd (upd (upd W 2 (BitVec.ofNat 64 kH)) 4 (BitVec.ofNat 64 DH)) 3 (BitVec.ofNat 64 kG)) 5
+    (BitVec.ofNat 64 DG)
+
+theorem setW_slots (W : Nat → BitVec 64) (kH DH kG DG : Nat) : HSlots (setW W kH DH kG DG) kH DH kG DG :=
+  ⟨by simp [setW, upd], by simp [setW, upd], by simp [setW, upd], by simp [setW, upd]⟩
+
+theorem setW_eq (W : Nat → BitVec 64) (kH DH kG DG : Nat) {j : Nat} (hj : j < 2 ∨ 5 < j) :
+    setW W kH DH kG DG j = W j := by
+  simp only [setW, upd]; rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
+
 /-! ## In constant time -/
 
 /-- Code that keeps `sp`, constant time from states with the same `sp`. -/

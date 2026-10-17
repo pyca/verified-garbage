@@ -128,10 +128,10 @@ structure CallArgs (L : ELay) (W : Nat → BitVec 64) : Prop where
   s0 : W 0 = L.scr + BitVec.ofNat 64 8192
   s1 : W 1 = L.sl - BitVec.ofNat 64 1024
 
-/-- `pre` and `pre_len`, the words of the entry memory `m₀` at `Q + 328`
-and `Q + 336`. -/
-abbrev preW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 328) 64
-abbrev prlW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 336) 64
+/-- `pre` and `pre_len`, the words of the entry memory `m₀` at `Q + 336`
+and `Q + 344`. -/
+abbrev preW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 336) 64
+abbrev prlW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 344) 64
 
 /-- The region of `pre`. -/
 abbrev PRE (L : ELay) (m₀ : Mem) : Region := ⟨preW L m₀, (prlW L m₀).toNat * 8⟩
@@ -139,8 +139,11 @@ abbrev PRE (L : ELay) (m₀ : Mem) : Region := ⟨preW L m₀, (prlW L m₀).toN
 /-- `pre` in a layout from the entry memory `m₀`. -/
 structure PreOk (L : ELay) (m₀ : Mem) : Prop where
   hx : L.X = [PRE L m₀]
-  al : L.al = 56
+  al : L.al = 80
   pl : (prlW L m₀).toNat = Spec.Rsa.precomputedWords L.k.toNat
+  /-- The hash functions' numbers, at `Q + 352` and `Q + 360`. -/
+  hh : m₀.readW (L.Q + BitVec.ofNat 64 352) 64 = L.hh
+  gh : m₀.readW (L.Q + BitVec.ofNat 64 360) 64 = L.gh
 
 theorem pre_ok (hL : L.Ok) (hp : PreOk L m₀) :
     (PRE L m₀).Disjoint L.OUT ∧ (PRE L m₀).Disjoint L.SCR ∧ L.STK.Disjoint (PRE L m₀) ∧
@@ -187,18 +190,18 @@ structure PReadyP (L : ELay) (m₀ : Mem) (t : State) : Prop where
   x7 : t.gpr .x7 = L.k
 
 theorem loads_ok (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀) (hr : PReady L t) :
-    WP isa (.block ([.ldrSp .x2 (arg 5), .ldrSp .x3 (arg 6)] : List Instr)) t fun u =>
+    WP isa (.block ([.ldrSp .x2 (arg 6), .ldrSp .x3 (arg 7)] : List Instr)) t fun u =>
       Ctx L g vv m₀ u ∧ u.mem = t.mem ∧ PReadyP L m₀ u := by
   have hA := hp.al
   have := hL.nQa
-  have i0 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 328) 8 := by
+  have i0 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 336) 8 := by
     rw [hc.sp]; exact ⟨L.ARGS, by rw [hc.rd]; simp,
-      Offset.contains _ (by omega) (by omega) (by have := hL.al64; omega)⟩
-  have i1 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 336) 8 := by
+      Offset.contains _ (by omega) (by omega) (by have := hL.al80; omega)⟩
+  have i1 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 344) 8 := by
     rw [hc.sp]; exact ⟨L.ARGS, by rw [hc.rd]; simp,
-      Offset.contains _ (by omega) (by omega) (by have := hL.al64; omega)⟩
-  have k0 := arg_keep hL hc (d := 328) (by omega) (by omega)
-  have k1 := arg_keep hL hc (d := 336) (by omega) (by omega)
+      Offset.contains _ (by omega) (by omega) (by have := hL.al80; omega)⟩
+  have k0 := arg_keep hL hc (d := 336) (by omega) (by omega)
+  have k1 := arg_keep hL hc (d := 344) (by omega) (by omega)
   rw [← hc.sp] at k0 k1
   apply WP.of_runBlock
   simp only [arg, frameBytes, runBlock_cons, runStep_some, runBlock_nil, exec, State.load,
@@ -319,7 +322,7 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
     · exact .inl fun _ h => h
     · exact .inr (.inl (Offset.sub_base _ (by rw [hsl]; omega)))
     · exact .inr (.inr hlow)
-  have hfr : ∀ d, d + 8 ≤ 328 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  have hfr : ∀ d, d + 8 ≤ 336 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       ∀ X ∈ ([L.OUT, ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩] : List Region) ++
         [below t.sp (16 * c.code.aarch64Depth)], Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ X :=
     fun d h₁ h₂ X hX => by
@@ -331,7 +334,7 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
         · exact hL.stk_buf h₂ (.inr hs)
         · exact hL.args_buf h₂ h₁ (.inr hs)
       · exact (hL.fr_low h₁).sub_right hs
-  have hk' : ∀ d, d + 8 ≤ 328 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  have hk' : ∀ d, d + 8 ≤ 336 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       s'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (Region.contains_self _ _) (hfr d h₁ h₂) (by decide)
   refine ⟨⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
