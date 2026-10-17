@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
-public import VerifiedGarbage.Spec.Mgf1.Id
+public import VerifiedGarbage.Spec.HashId
 
 /-!
 # RSAES-OAEP with the hash functions as arguments: the contracts, on every target
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.Mgf1.Id
 `Spec/RsaOaep/Contract.lean` and `Spec/RsaOaep/Precomputed.lean`, but with
 the hash function `H` (the label's) and MGF1's hash function `G` passed as
 public `u32` arguments, `hash` and `mgf1_hash`, rather than fixed by the
-function's name: each is the number `Mgf1.ofId` gives the hash function, one
+function's name: each is the number `HashId.mgf1` gives the hash function, one
 of `hashIds` (SHA-1 and the SHA-2 functions), in the module `rsa_oaep`:
 
 * `vg_rsa_oaep_encrypt_precomputed`: `encryptPrecomputedContract H G`,
@@ -31,16 +31,14 @@ open Mgf1 (Hash)
 open Rsa (bytesAt lenValid written exponentDoc)
 open RsaPss (scratchWords scratchSafety publicScratchWords publicScratchSafety)
 
-/-- The numbers (`Mgf1.ofId`) of the hash functions these functions take,
+/-- The numbers (`HashId.mgf1`) of the hash functions these functions take,
 both as the label's and as MGF1's: SHA-1, SHA-224, SHA-256, SHA-384,
 SHA-512, SHA-512/224 and SHA-512/256. -/
 def hashIds : List Nat := [1, 2, 3, 4, 5, 6, 7]
 
 /-- The documentation's list of the hash functions' numbers. -/
 def hashIdsDoc : String :=
-  "`hash` names the label's hash function and `mgf1_hash` MGF1's: 1 SHA-1, 2 SHA-224, \
-    3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256 \
-    (`VG.Spec.Mgf1.ofId`, as `VG.Spec.RsaPkcs1Sig.Hash.ofId` numbers them)"
+  s!"`hash` names the label's hash function and `mgf1_hash` MGF1's: {HashId.sha12Doc}"
 
 /-! ## `vg_rsa_oaep_encrypt_precomputed` -/
 
@@ -66,13 +64,13 @@ def encryptAnyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed seedLen _scratch
         scratchLen _pre preLen hash mgf1Hash _ =>
       hash.toNat ∈ hashIds ∧ mgf1Hash.toNat ∈ hashIds ∧
-        (∀ H, Mgf1.ofId hash.toNat = some H → seedLen.toNat = H.len) ∧
+        (∀ H, HashId.mgf1 hash.toNat = some H → seedLen.toNat = H.len) ∧
         lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
         eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed seedLen _scratch
         _scratchLen pre preLen hash mgf1Hash m m' r =>
-      ∀ H G, Mgf1.ofId hash.toNat = some H → Mgf1.ofId mgf1Hash.toNat = some G →
+      ∀ H G, HashId.mgf1 hash.toNat = some H → HashId.mgf1 mgf1Hash.toNat = some G →
         Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
           written m' out nLen.toNat r
             (encrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
@@ -108,8 +106,7 @@ def encryptAnyApi : Api where
     timing may depend on the pointers, the lengths, `hash`, `mgf1_hash` and the contents of \
     `n`, `e` and `pre`, not on the message, the label or the seed."
   safety := ["`hash` and `mgf1_hash` must each be one of 1..=7.",
-    "`seed_len` must be the length of `hash`'s values: 20 for SHA-1, 28 for SHA-224 and \
-      SHA-512/224, 32 for SHA-256 and SHA-512/256, 48 for SHA-384, 64 for SHA-512.",
+    HashId.lenSafety "seed_len" "hash",
     "`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
     "`e_len` must be in 1..=`n_len`."] ++ publicScratchSafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
@@ -150,7 +147,7 @@ def decryptAnyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         scratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
         _qinvLen label labelLen ct _ctLen _scratch _scratchLen hash mgf1Hash m m' r =>
-      ∀ H G, Mgf1.ofId hash.toNat = some H → Mgf1.ofId mgf1Hash.toNat = some G →
+      ∀ H G, HashId.mgf1 hash.toNat = some H → HashId.mgf1 mgf1Hash.toNat = some G →
         writtenDecrypt m' out msgLen nLen.toNat r
           (decrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
