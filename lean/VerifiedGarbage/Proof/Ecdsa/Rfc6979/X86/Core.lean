@@ -95,9 +95,13 @@ abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨L.out, 
 
 /-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
 candidate, the digest has `Q` bytes; if they do, the frame has its top
-words. -/
+words; and `h` is where the code keeps it. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ (L.wide = false → P.Q ≤ dn) ∧ L.wide = P.R.wide ∧ L.cs = P.R.E.combConsts
+  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ L.hHigh = P.R.hHigh) ∧ L.wide = P.R.wide ∧ L.cs = P.R.E.combConsts
+
+/-- The words at the frame's top are the code's. -/
+theorem CoreOk.e_eq {L : Lay dn} (hk : CoreOk P L) : L.e = P.e := by
+  rw [L.ew, hk.2.2.1, hk.2.1.2]
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the stack below the frame, and not wrapping. -/
@@ -110,8 +114,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {v : BitVec 32} {x : Addr}
   have e272 := hL.e272
   cases hw : L.wide
   · obtain ⟨hQ8, h6, -⟩ := P.sizesA (hk.2.2.1 ▸ hw)
-    have hn := hk.2.1 hw
-    have he : L.e = 0 := by rw [L.ew, hw]; rfl
+    have hn := hk.2.1.1 hw
     simp only [dgArg, kArg, dgAddr, kAddr, hw, Bool.false_eq_true, ite_false] at hx
     rcases hx with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · exact ⟨⟨L.DG, by simp, within_base _ hn⟩, hL.og.symm.sub_left (Region.sub_prefix hn),
