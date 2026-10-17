@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
+public import VerifiedGarbage.Impl.Bignum.Arm.Store64
 
 /-!
 # A candidate for a prime of an RSA key on ARMv7
@@ -318,9 +319,9 @@ def montSet : List Instr :=
   ptr .r0 mBase ++ [.dp .sub .r0 .r0 (.imm 256), .addSp .r12 0, .str .r0 .r12 0, .ldrSp .r7 foL,
     .mov .r7 (.shifted .r7 .lsr 3), .mov .r3 (.imm 0)]
 
-/-- Its header word 28 := the stride `8 (w + 2)` (`r0` its base, `r7 = w`). -/
-def strideW : List Instr :=
-  [.mov .r1 (.shifted .r7 .lsl 3), .dp .add .r1 .r1 (.imm 16), .str .r1 .r0 224, .mov .r1 (.imm 0), .str .r1 .r0 228]
+/-- Its header word 28 := the stride `8 (w + 2)` (`r0` its base, `r7` the key
+working space's stride, `4 (W + 2) = 8 (w + 2)`). -/
+def strideW : List Instr := .mov .r1 (.imm 0) :: store64 .r7 .r1 .r0 224
 
 /-- The base of Montgomery multiplication's working space into `r0`. -/
 def mont0 : List Instr := [.ldrSp .r0 0]
@@ -328,10 +329,10 @@ def mont0 : List Instr := [.ldrSp .r0 0]
 /-- The words above the low `2 w` of `[j]` cleared. -/
 def clrTop (j : Nat) : List Instr := Rsa.Arm.Recover.clrTop j
 
-/-- The working space, `−c⁻¹`, `R² mod c` (array 4), and `c`'s top words cleared. -/
+/-- The working space, `−c⁻¹`, `R² mod c` (array 4), `c`'s top words cleared,
+and the stride. -/
 def montA : Prog isa :=
-  seqs [.block montSet, setup, .block strideW, precomputeInverse, r2,
-    .block (ctx ++ clrTop (mBase + 4) ++ clrTop mBase)]
+  seqs [.block montSet, setup, precomputeInverse, r2, .block (ctx ++ clrTop mBase), .block mont0, .block strideW]
 
 /-- `R mod c` (array 9, from `1 · R²`) and `c − R mod c` (array 10). -/
 def montB : Prog isa :=
