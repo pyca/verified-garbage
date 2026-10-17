@@ -311,27 +311,40 @@ def sqn (F : Field) (o a n : Nat) : Prog isa :=
 
 /-! ## The ladder -/
 
-/-- One iteration of the ladder, for the bit `t = rbx - 1`: `k_t` from
-`BITS`, `swap ^= k_t` into the mask `rcx = -swap`, the swaps, `swap = k_t`,
-and the formulas of RFC 7748 §5, ordered by their dependencies rather than
-as the RFC lists them: the four sums and differences, the four products of
-them, and so on, so that independent multiplications are next to each other
-and the processor overlaps them (the longest chain, to `z_3`, is three
-multiplications). The sums and differences fold once (`addCmov`, `subCmov`): `z_2`
-and `z_3` are products, at most `2p`, and so is an operand of each other sum
-and the subtrahend of each other difference (`BB`, `CB`). `AA + a24 E` is one
-multiply-add (`a24add`). `x_2 = AA · BB` comes before it, as soon as the
-products it needs are done, so that it overlaps the chain to `z_2`. -/
-def step (F : Field) : List Instr :=
+/-- `[o] = [y]` if ZF is set, else `[x]`: both into `r8–r11` and
+`r12–r15`, `cmove` word by word, and stored (s2n-bignum's `mux_4`, but for
+its registers); no flag changes. -/
+def mux (o x y : Nat) : List Instr :=
+  loads x .r8 .r9 .r10 .r11 ++ loads y .r12 .r13 .r14 .r15 ++
+  [.cmov .e .r8 (.reg .r12), .cmov .e .r9 (.reg .r13), .cmov .e .r10 (.reg .r14),
+    .cmov .e .r11 (.reg .r15)] ++ store4 o
+
+/-- The bit `t = rbx - 1` of the scalar for an iteration: `k_t` from `BITS`,
+compared with `swap` (ZF set if they are equal) and stored as the new `swap`. -/
+def bitCmp : List Instr :=
   [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
-    .mov .rdx (.mem (sc SWAP)), .alu .xor .rdx (.reg .rax), .store (sc SWAP) .rax,
-    .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx)] ++
-  cswap X2 X3 ++ cswap Z2 Z3 ++
-  addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ addCmov C X3 Z3 ++ subCmov D X3 Z3 ++
-  F.sqr AA A ++ F.sqr BB B ++ F.mul DA D A ++ F.mul CB C B ++
-  subCmov E AA BB ++ subCmov Z3 DA CB ++ addCmov X3 DA CB ++ F.mul X2 AA BB ++
-  F.a24add Z2 AA E ++ F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ F.mul Z3 X1 Z3 ++ F.mul Z2 E Z2 ++
-  [.alu .test .rbx (.reg .rbx)]
+    .alu .cmp .rax (.mem (sc SWAP)), .store (sc SWAP) .rax]
+
+/-- One iteration of the ladder, for the bit `t = rbx - 1`, as the
+iteration of s2n-bignum's `curve25519_x25519` (the order of its operations,
+and of their sharing of slots): no swap of the points, which keep RFC 7748
+§5's `(x_2, z_2)` and `(x_3, z_3)` in their slots, but `mux` choosing the
+point to double, `(x_3, z_3)` if `swap ≠ k_t`. The sums and differences of
+both points come first (`dm = x_3 - z_3` in `B`, `sn = x_2 + z_2` in `A`,
+`dn = x_2 - z_2` in `z_2`'s slot, `sm = x_3 + z_3` in `z_3`'s), then
+`dmsn = sn · dm` (in `C`), the bit, the differences `d` (in `D`) and sums
+`s` (in `x_2`'s slot) of the doubled point, and the rest of the addition
+(`dnsm = sm · dn`, then `(dmsn ± dnsm)²`) interleaved with the doubling's
+(`d²`, `s²`, `p = s² - d²`, `x_2 = s² d²` and `z_2 = p (s² + a24 p)`), so
+that independent multiplications are next to each other. The sums and
+differences fold once (`addCmov`, `subCmov`): `z_2`, `z_3` and the other
+subtrahends are products, at most `2p`. -/
+def step (F : Field) : List Instr :=
+  subCmov B X3 Z3 ++ addCmov A X2 Z2 ++ subCmov Z2 X2 Z2 ++ addCmov Z3 X3 Z3 ++
+  F.mul C A B ++ bitCmp ++ mux D B Z2 ++ mux X2 Z3 A ++
+  F.mul X3 Z3 Z2 ++ F.sqr D D ++ subCmov Z3 C X3 ++ F.sqr X2 X2 ++ addCmov X3 C X3 ++
+  F.sqr Z3 Z3 ++ subCmov C X2 D ++ F.sqr X3 X3 ++ F.a24add Z2 X2 C ++
+  F.mul X2 X2 D ++ F.mul Z3 Z3 X1 ++ F.mul Z2 C Z2 ++ [.alu .test .rbx (.reg .rbx)]
 
 /-- The 255 iterations, for `t` from 254 down to 0. -/
 def ladder (F : Field) : Prog isa :=
