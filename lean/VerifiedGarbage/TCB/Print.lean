@@ -18,6 +18,9 @@ conditional branches:
   `VG.Rust.files` writes in the syntax of the object format
 * `frame push body pop` ⟶  `push; body; pop`
 
+where `b<c> L` is the conditional branch to `L`, which on some targets is
+more than one instruction (e.g. a comparison, then the branch).
+
 Structured-control-flow labels are numeric local labels (`N:`, referenced
 as `Nf` forward or `Nb` backward), the only kind Rust allows in inline
 assembly (the `named_asm_labels` lint). Each has a distinct number, so each
@@ -87,8 +90,9 @@ inductive Line
 structure Printer (M : ISA) where
   /-- Assembly text for one instruction (may be several lines). -/
   instr : M.Instr → List String
-  /-- Conditional branch to a label, taken when the condition is true. -/
-  branch : M.Cond → String → String
+  /-- Conditional branch to a label, taken when the condition is true (one or
+  more lines, e.g. a comparison and a branch). -/
+  branch : M.Cond → String → List String
   /-- Unconditional branch to a label. -/
   jump : String → String
   /-- Return to the caller. -/
@@ -138,19 +142,19 @@ def Printer.lower : Code M.Instr M.Cond → Nat → List Line × List Line × Na
     let lBack := labelNum (n + 1)
     let (le, ke, n) := lower e (n + 2)
     let (lt, kt, n) := lower t n
-    ([.text (P.branch c (lCold ++ "f"))] ++ le ++ [.text (lBack ++ ":")],
+    ((P.branch c (lCold ++ "f")).map .text ++ le ++ [.text (lBack ++ ":")],
       ke ++ [.text (lCold ++ ":")] ++ lt ++ [.text (P.jump (lBack ++ "b"))] ++ kt, n)
   | .ite c t e, n =>
     let lThen := labelNum n
     let lEnd := labelNum (n + 1)
     let (le, ke, n) := lower e (n + 2)
     let (lt, kt, n) := lower t n
-    ([.text (P.branch c (lThen ++ "f"))] ++ le ++ [.text (P.jump (lEnd ++ "f")), .text (lThen ++ ":")] ++
+    ((P.branch c (lThen ++ "f")).map .text ++ le ++ [.text (P.jump (lEnd ++ "f")), .text (lThen ++ ":")] ++
       lt ++ [.text (lEnd ++ ":")], ke ++ kt, n)
   | .loop body c, n =>
     let lTop := labelNum n
     let (lb, kb, n) := lower body (n + 1)
-    ([.text (lTop ++ ":")] ++ lb ++ [.text (P.branch c (lTop ++ "b"))], kb, n)
+    ([.text (lTop ++ ":")] ++ lb ++ (P.branch c (lTop ++ "b")).map .text, kb, n)
   | .call name _, n => ([.call name], [], n)
   | .frame i body j, n =>
     let (lb, kb, n) := lower body n
