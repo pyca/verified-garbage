@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeySha1
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -18,9 +19,15 @@ hash, then computes the outer hash with one call of the backend's verified
 compression function, on a block it lays out word by word in `scratch`: the
 outer key's hash value, the inner digest, its padding and length.
 
-`init` and `finalize` keep their working space in a frame of their own
-(`Proof/Pbkdf2/Md/X86/Frame.lean`); `init_scratch` and `finalize_scratch`, the
-same code with it as an argument, are what PBKDF2's code calls.
+`init` takes a key of any length (`initAnyKeyApi`): a key longer than a block
+is first hashed with the backend's verified streaming functions into its
+working space, as PBKDF2's `pbkdf2` hashes a long password
+(`Impl/Pbkdf2/Md/AnyKey/X86.lean`), and `init_scratch`, the code above with
+its working space as an argument, is called with the key or its digest.
+`init` keeps its working space in a frame of its own, which it wipes before
+returning (`Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); `finalize` keeps its in a
+frame of its own too (`Proof/Pbkdf2/Md/X86/Frame.lean`). `init_scratch` and
+`finalize_scratch` are what PBKDF2's code calls.
 -/
 
 @[expose] public section
@@ -28,14 +35,13 @@ same code with it as an argument, are what PBKDF2's code calls.
 namespace VG.Generic.Sha1.X86.Hmac
 
 def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
-  Spec.Hmac.sha1I.initApi.artifact X86.target {
+  Spec.Hmac.sha1I.initAnyKeyApi.artifact X86.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha1I) 4
-      v.M.hmacInit
-    stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha1I
-    verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit Proof.Pbkdf2.Md.X86.sha1_initFrameSat
-      (Proof.Pbkdf2.Md.X86.noEsp_of v.initNoSp) v.initStack
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.initSp
+    code := Impl.StackScratch.X86.withStackScratchWiped (Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha1I) 4
+      (2 * Spec.Hmac.sha1I.initAnyKeyScratch) v.F.hmacInitAny
+    stack := 76 + Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha1I
+    verified := Proof.Pbkdf2.Whole.X86.Any.sha1_anyFramed v
+    spSafe := Proof.Pbkdf2.Whole.X86.Any.sha1_anySp v
     features := v.features },
   Spec.Hmac.sha1I.finalizeApi.artifact X86.target {
     suffix := v.suffix
