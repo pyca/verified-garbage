@@ -35,8 +35,9 @@ of it, so that its proof holds for every implementation: each is a variant
 of the interface `MlKemSample4` on x86-64 (`Variants/MlKemSample4/X86_64/`),
 and each caller (the top-level functions of ML-KEM-768 and ML-KEM-1024, in
 `Generic/MlKemSample4/X86_64/`) is emitted once for each of them (see
-`TCB/Emit.lean`). Both implementations use 24 bytes of stack below their
-return address (`vg_mlkem_sample_ntt`'s calls, three deep).
+`TCB/Emit.lean`). Each is proven with 24 bytes of stack below its return
+address: the baseline's calls of `vg_mlkem_sample_ntt`, three deep (the
+others call nothing).
 
 Each also comes with the computation of several outputs of `PRF₂` that its
 callers inline (`Callee4.prfs`): one at a time for the baseline, and four

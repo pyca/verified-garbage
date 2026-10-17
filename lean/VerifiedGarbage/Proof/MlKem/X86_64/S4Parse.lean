@@ -11,15 +11,13 @@ import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, sampling
+# ML-KEM on x86-64: `vg_mlkem_sample_ntt4`, sampling
 
-What holds before and during `parse k` (`PInv`, `LAt`), an iteration of
-`vg_mlkem_sample_ntt`'s loop on the XOF output of seed `k` (`lat_step`, as
-`SampleNtt.lean`'s), and, if the iterations sample fewer than 256
-coefficients, the call of `vg_mlkem_sample_ntt` on the seed (`fallback_ok`).
-Either way, polynomial `k` is then the seed's `SampleNTT`, if it succeeds, and
-`r14` records whether the first `k + 1` do. The loop of `parse k` is in
-`S4Loop.lean`.
+What holds during the loop of `vg_mlkem_sample_ntt4_avx2` on the buffer of
+seed `k` (`LAt`), and an iteration of `vg_mlkem_sample_ntt`'s loop on it
+(`lat_step`, as `SampleNtt.lean`'s); the rest of that loop is in
+`S4Loop.lean`. Then what holds between the calls of `vg_mlkem_sample_ntt`
+of the baseline implementation (`PC`), and the calls.
 -/
 
 @[expose] public section
@@ -35,22 +33,19 @@ open VG.Spec.Sha3 (bytesAt)
 def okN (σ : State) (K : Nat) : Nat :=
   if (List.range K).all fun k => (sampleNTT minIterations (B σ k)).isSome then 1 else 0
 
-/-- The output of the squeezes: the first 504 bytes of each seed's XOF output. -/
-abbrev BufOK (σ : State) (m : Mem) : Prop :=
-  ∀ k < 4, ∀ p < 504, m (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p
-
 /-- The table of the sampling and the constants of the vector code, from
-byte 0 of `scratch`. -/
-def TabOK (σ : State) (m : Mem) : Prop := ∀ i < 280, m.readW (at' σ (8 * i)) 64 = tabQ i
+byte `oTab` of `scratch`. -/
+def TabOK (σ : State) (m : Mem) : Prop := ∀ i < 280, m.readW (at' σ (oTab + 8 * i)) 64 = tabQ i
 
-/-- The output of the squeezes, and the table. -/
-abbrev BufT (σ : State) (m : Mem) : Prop := BufOK σ m ∧ TabOK σ m
+/-- Where the table is. -/
+abbrev tabR (σ : State) : Region := ⟨at' σ oTab, 2240⟩
 
 /-- The table is kept by writes elsewhere. -/
-theorem tab_frame {σ : State} {m m' : Mem} {rs : List Region} (hd : ∀ r ∈ rs, Region.Disjoint ⟨at' σ 0, 2240⟩ r)
+theorem tab_frame {σ : State} {m m' : Mem} {rs : List Region} (hd : ∀ r ∈ rs, Region.Disjoint (tabR σ) r)
     (hf : Frame rs m m') (h : TabOK σ m) : TabOK σ m' := fun i hi => by
   rw [← h i hi]
-  exact hf.readW (Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)
+  exact hf.readW (Offset.contains _ (by simp only [oTab]; omega) (by simp only [oTab]; omega)
+    (by simp only [oTab]; omega)) hd (by decide)
 
 /-- Before the `K`-th polynomial, with `X` of the memory. -/
 structure PC (X : Mem → Prop) (σ : State) (K : Nat) (s : State) : Prop where
@@ -59,19 +54,37 @@ structure PC (X : Mem → Prop) (σ : State) (K : Nat) (s : State) : Prop where
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ K)
   polys : ∀ k < K, ∀ f, sampleNTT minIterations (B σ k) = some f → PolyIs s.mem (poly4 (aP σ) k) f
 
-/-- Before `parse K`. -/
-abbrev PInv (σ : State) (K : Nat) (s : State) : Prop := PC (BufT σ) σ K s
-
 /-- The coefficients of seed `K` after `t` iterations. -/
 abbrev Lt (σ : State) (K t : Nat) : List Zq := sampleAfter [] (xofByte (B σ K)) t
 
-/-- At the start of iteration `t` of `parse K`. -/
-structure LAt (σ : State) (K t : Nat) (s : State) : Prop where
-  pinv : PInv σ K s
+/-- What the iterations of the loop on seed `K` keep, from `s₀`: its buffer
+holds bytes `3 b` on of its XOF output, and only polynomial `K` is written. -/
+structure LB (σ s₀ : State) (K b : Nat) (s : State) : Prop where
+  env : Env σ s
+  r14 : s.gpr .r14 = s₀.gpr .r14
+  tab : TabOK σ s.mem
+  out : ∀ p < 504, 3 * b + p < 840 → s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (3 * b + p)
+  fr : Frame [pR (poly4 (aP σ) K)] s₀.mem s.mem
+
+/-- At iteration `b + t` of the loop on seed `K`, at byte `3 t` of its buffer. -/
+structure LAt (σ s₀ : State) (K b t : Nat) (s : State) : Prop where
+  lb : LB σ s₀ K b s
   rsi : s.gpr .rsi = at' σ (oBuf + 504 * K) + BitVec.ofNat 64 (3 * t)
-  rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K t).length
+  rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K (b + t)).length
   rbp : s.gpr .rbp = poly4 (aP σ) K
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K t)
+  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K (b + t))
+
+/-- A byte apart from the regions of a frame. -/
+theorem byte_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region} (hd : ∀ r ∈ rs, R.Disjoint r)
+    {x : Addr} (hx : R.Contains x 1) : m' x = m x :=
+  hf x fun r hr hc => hd r hr x hx hc
+
+/-- Stored coefficients, apart from the regions of a frame. -/
+theorem stored_apart {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (pR p).Disjoint r) {L : List Zq} (hL : L.length ≤ 256) (h : Stored m p L) : Stored m' p L :=
+  fun k hk => by
+    rw [← h k hk]
+    exact hf.readW (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
 
 section
 variable {σ : State} (hp : Pre σ)
@@ -80,58 +93,94 @@ include hp
 omit hp in
 theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (pR (poly4 (aP σ) K)) (aR σ) := Offset.sub_base _ (by omega)
 
-/-- Writes to polynomial `K` keep `PInv` but for polynomial `K`, and the registers. -/
-theorem PInv.poly {K : Nat} (hK : K < 4) {s s' : State} (h : PInv σ K s)
+/-- Polynomial `K` is apart from the scratch space. -/
+theorem scr_poly {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ 8192) :
+    Region.Disjoint ⟨at' σ a, n⟩ (pR (poly4 (aP σ) K)) :=
+  (hp.a_scr.symm.sub_left (sub_scr h)).sub_right (sub_poly hK)
+
+/-- `Env` after writes to polynomial `K`. -/
+theorem Env.poly {K : Nat} (hK : K < 4) {s s' : State} (he : Env σ s)
     (hf : Frame [pR (poly4 (aP σ) K)] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r, r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14] → s'.gpr r = s.gpr r) : PInv σ K s' := by
-  have hsub := sub_poly (σ := σ) hK
-  refine ⟨⟨hrd.trans h.env.rd, hwr.trans h.env.wr, by rw [hg .rbx (by simp), h.env.rbx],
-      by rw [hg .r12 (by simp), h.env.r12], by rw [hg .r13 (by simp), h.env.r13], by rw [hg .rsp (by simp), h.env.rsp],
-      by rw [hg .r15 (by simp), h.env.r15], fun i hi => ?_, h.env.frame.trans (hf.sub fun r hr => ?_)⟩,
-    ⟨fun k hk p hp' => ?_, tab_frame (by
-      simpa using (hp.a_scr.symm.sub_left (sub_scr (a := 0) (n := 2240) (by omega))).sub_right hsub) hf h.buf.2⟩,
-    by rw [hg .r14 (by simp), h.r14], fun k hk f e => ?_⟩
+    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : Env σ s' := by
+  refine ⟨hrd.trans he.rd, hwr.trans he.wr, by rw [hg .rbx (by simp), he.rbx], by rw [hg .r12 (by simp), he.r12],
+    by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
+    fun i hi => ?_, he.frame.trans (hf.sub fun r hr => ?_)⟩
   · rw [hf.readW (Region.contains_self _ _) (by
-        simpa using (hp.a_scr.symm.sub_left (sub_scr (by simp only [oSave]; omega))).sub_right hsub) (by decide)]
-    exact h.env.saved i hi
-  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aR σ, by simp, hsub⟩
-  · rw [buf_frame (by simpa using (hp.a_scr.symm.sub_left (sub_scr (by simp only [oBuf]; omega))).sub_right hsub)
-      hf hk hp']
-    exact h.buf.1 k hk p hp'
-  · have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega) (by omega)
-      (by omega)
-    exact polyIs_frame hf (by simpa [poly4] using hd) (h.polys k hk f e)
+        simpa using scr_poly hp hK (a := oSave + 8 * i) (n := 8) (by simp only [oSave]; omega)) (by decide)]
+    exact he.saved i hi
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aR σ, by simp, sub_poly hK⟩
+
+/-- Writes to polynomial `K` keep `LB`. -/
+theorem LB.poly {s₀ : State} {K b : Nat} (hK : K < 4) {s s' : State} (h : LB σ s₀ K b s)
+    (hf : Frame [pR (poly4 (aP σ) K)] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : LB σ s₀ K b s' :=
+  ⟨Env.poly hp hK h.env hf hrd hwr fun r hr => hg r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),
+    by rw [hg .r14 (by simp), h.r14],
+    tab_frame (by simpa using scr_poly hp hK (a := oTab) (n := 2240) (by simp only [oTab]; omega)) hf h.tab,
+    fun p hp' hb => by
+      rw [byte_frame hf (R := ⟨at' σ (oBuf + 504 * K + p), 1⟩)
+        (by simpa using scr_poly hp hK (a := oBuf + 504 * K + p) (n := 1) (by simp only [oBuf]; omega))
+        (Region.contains_self _ _)]
+      exact h.out p hp' hb,
+    h.fr.trans hf⟩
 
 omit hp in
-theorem out_byte {K t : Nat} (hK : K < 4) {s : State} (h : LAt σ K t s) {j : Nat} (hj : 3 * t + j < 504) :
-    s.mem (s.gpr .rsi + BitVec.ofNat 64 j) = xofByte (B σ K) (3 * t + j) := by
-  have e := h.pinv.buf.1 K hK (3 * t + j) hj
-  rw [at'] at e
-  rw [h.rsi, at', Offset.add_add, Offset.add_add]
-  exact e
+/-- `LB` after code that writes no memory and keeps its registers. -/
+theorem LB.keep {s₀ : State} {K b : Nat} {s s' : State} (h : LB σ s₀ K b s) (hm : s'.mem = s.mem) {rs : List Reg}
+    (k : Keep rs s s') (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], r ∉ rs := by decide) :
+    LB σ s₀ K b s' :=
+  ⟨h.env.keep hm k fun r hr => hrs r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),
+    by rw [k.gpr (hrs .r14 (by simp)), h.r14], by rw [hm]; exact h.tab, by rw [hm]; exact h.out,
+    by rw [hm]; exact h.fr⟩
 
-theorem lat_regions {K t : Nat} (hK : K < 4) {s : State} (h : LAt σ K t s) {j : Nat} (hj : 3 * t + j < 504) :
-    InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 j) 1 := by
+omit hp in
+theorem LAt.same {s₀ : State} {K b t : Nat} {s s' : State} (h : LAt σ s₀ K b t s) (g : s'.gpr = s.gpr)
+    (m : s'.mem = s.mem) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) : LAt σ s₀ K b t s' :=
+  ⟨h.lb.keep m (rs := []) ⟨fun r _ => by rw [g], rd, wr⟩ (by simp), by rw [g]; exact h.rsi,
+    by rw [g]; exact h.rdi, by rw [g]; exact h.rbp, by rw [m]; exact h.stored⟩
+
+omit hp in
+theorem LAt.same' {s₀ : State} {K b t : Nat} {s s' : State} (h : LAt σ s₀ K b t s) (m : s'.mem = s.mem)
+    {rs : List Reg} (k : Keep rs s s') (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], r ∉ rs := by decide)
+    (hrs' : Reg.rsi ∉ rs ∧ Reg.rdi ∉ rs ∧ Reg.rbp ∉ rs := by decide) : LAt σ s₀ K b t s' :=
+  ⟨h.lb.keep m k hrs, by rw [k.gpr hrs'.1]; exact h.rsi, by rw [k.gpr hrs'.2.1]; exact h.rdi,
+    by rw [k.gpr hrs'.2.2]; exact h.rbp, by rw [m]; exact h.stored⟩
+
+omit hp in
+theorem out_byte {s₀ : State} {K b t : Nat} {s : State} (h : LAt σ s₀ K b t s) {j : Nat} (hj : 3 * t + j < 504)
+    (hj' : 3 * (b + t) + j < 840) :
+    s.mem (s.gpr .rsi + BitVec.ofNat 64 j) = xofByte (B σ K) (3 * (b + t) + j) := by
+  have e := h.lb.out (3 * t + j) hj (by omega)
+  rw [at'] at e
+  rw [h.rsi, at', Offset.add_add, Offset.add_add, e]
+  exact congrArg _ (by omega)
+
+theorem lat_regions {s₀ : State} {K b t : Nat} (hK : K < 4) {s : State} (h : LAt σ s₀ K b t s) {j : Nat}
+    (hj : 3 * t + j < 504) : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 j) 1 := by
   rw [h.rsi, at', Offset.add_add, Offset.add_add]
-  exact in_scr' hp h.pinv.env.rd h.pinv.env.wr (by simp only [oBuf]; omega)
+  exact in_scr' hp h.lb.env.rd h.lb.env.wr (by simp only [oBuf]; omega)
 
 /-- An iteration. -/
-theorem lat_step {K t : Nat} (hK : K < 4) (ht : t < 168) {s : State} (h : LAt σ K t s) :
-    WP isa snBody s fun s' => LAt σ K (t + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
+theorem lat_step {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t < 168) (hbt : b + t < 280) {s : State}
+    (h : LAt σ s₀ K b t s) :
+    WP isa snBody s fun s' => LAt σ s₀ K b (t + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have hL : (Lt σ K t).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ t
+  have hL : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
   have hw : WrA s.wr (poly4 (aP σ) K) := fun j hj => by
-    rw [h.pinv.env.wr, hp.wr]
+    rw [h.lb.env.wr, hp.wr]
     refine ⟨aR σ, by simp, ?_⟩
     rw [coeffAddr, poly4, Offset.add_add]
     exact Offset.contains_base _ (by omega) (by omega)
   refine WP.mono (snBody_ok s (aP := poly4 (aP σ) K) h.rbp h.rdi hL hw h.stored
     (by simpa using lat_regions hp hK h (j := 0) (by omega)) (lat_regions hp hK h (by omega))
     (lat_regions hp hK h (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
-  have e0 := out_byte hK h (j := 0) (by omega)
+  have e0 := out_byte h (j := 0) (by omega) (by omega)
   rw [add_ofNat_zero, Nat.add_zero] at e0
-  rw [e0, out_byte hK h (j := 1) (by omega), out_byte hK h (j := 2) (by omega), ← sampleAfter_succ] at hdi hst
-  refine ⟨⟨h.pinv.poly hp hK hf hk.2.1 hk.2.2 fun r hr => hk.gpr (by
+  rw [e0, out_byte h (j := 1) (by omega) (by omega), out_byte h (j := 2) (by omega) (by omega),
+    ← sampleAfter_succ] at hdi hst
+  refine ⟨⟨h.lb.poly hp hK hf hk.2.1 hk.2.2 fun r hr => hk.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
     by rw [hsi, h.rsi, show (3 : BitVec 64) = BitVec.ofNat 64 3 from rfl, Offset.add_add, Nat.mul_succ], hdi,
     by rw [hk.gpr (by decide), h.rbp], hst⟩, hcx, hz⟩
@@ -145,7 +194,7 @@ theorem PC.keep {X : Mem → Prop} {K : Nat} {s s' : State} (h : PC X σ K s) (h
     by rw [hm]; exact h.buf, by rw [hk.gpr (hrs .r14 (by simp)), h.r14],
     by rw [hm]; exact h.polys⟩
 
-/-! ## The fallback -/
+/-! ## The calls of `vg_mlkem_sample_ntt` -/
 
 omit hp in
 theorem okN_succ (K : Nat) : BitVec.setWidth 64 ((BitVec.ofNat 64 (okN σ K)).setWidth 32 &&&
@@ -212,11 +261,6 @@ theorem PC.call {X : Mem → Prop} {K : Nat} (hK : K < 4) {s s' : State} (h : PC
       simpa [poly4] using hd
     · exact (hp.a_scr.sub_left (sub_poly (by omega))).sub_right (sub_scr (by simp only [oScalar]; omega))
     · exact (hp.stk_a.sub_right (sub_poly (by omega))).symm
-
-theorem bufOK_call {K : Nat} (hK : K < 4) : ∀ m m', Frame (cWr σ K ++ [stkR σ]) m m' → BufT σ m → BufT σ m' :=
-  fun _ _ hf h => ⟨fun k hk p hp' => by
-    rw [buf_frame (c_disj hp hK (by simp only [oBuf, oScalar]; omega)) hf hk hp']
-    exact h.1 k hk p hp', tab_frame (c_disj hp hK (a := 0) (n := 2240) (by simp only [oScalar]; omega)) hf h.2⟩
 
 omit hp in
 theorem sx6144 : BitVec.signExtend 64 (BitVec.ofNat 32 oScalar) = BitVec.ofNat 64 6144 := by decide
@@ -330,56 +374,6 @@ theorem andK_ok {X : Mem → Prop} {K : Nat} {s : State} (h : CallI X σ K s) :
   by_cases ek : k = K
   · subst ek; exact h.poly f e
   · exact h₃.polys k (by omega) f e
-
-/-- The call of `vg_mlkem_sample_ntt` on seed `K`. -/
-theorem call_ok {K : Nat} (hK : K < 4) {s : State} (h : PInv σ K s) :
-    WP isa (.seq (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * K))),
-          .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * K))), .mov .rdx (.reg .rbx),
-          .alu .add .rdx (.imm (BitVec.ofNat 32 oScalar))])
-        (.seq (.call "vg_mlkem_sample_ntt" sampleNTT) (.block [.alu32 .and .r14 (.reg .rax)]))) s
-      (PInv σ (K + 1)) :=
-  WP.seq (WP.mono (argsK_ok hK h) fun _ h₂ => WP.seq (WP.mono (callK_ok hp hK (bufOK_call hp hK) h₂)
-    fun _ h₃ => andK_ok h₃))
-
-/-- After the check of `j`. -/
-structure MI (σ : State) (K : Nat) (s : State) : Prop where
-  pinv : PInv σ K s
-  stored : Stored s.mem (poly4 (aP σ) K) (Lt σ K 168)
-  cf : s.cf = some (decide ((Lt σ K 168).length < 256))
-
-omit hp in
-theorem cmpK_ok {K : Nat} {s : State} (h : LAt σ K 168 s) : WP isa (.block [.alu .cmp .rdi (.imm 256)]) s (MI σ K) := by
-  refine WP.mono (cmpRdi_ok s) fun s₁ ⟨hc, hm, hg, hrd, hwr⟩ => ?_
-  have hL : (Lt σ K 168).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ 168
-  rw [h.rdi, ofNat64_toNat (by omega)] at hc
-  exact ⟨h.pinv.keep hm (rs := []) ⟨fun r _ => by rw [hg], hrd, hwr⟩ (by simp), by rw [hm]; exact h.stored, hc⟩
-
-omit hp in
-/-- Without the call, if `j = 256`. -/
-theorem skipK_ok {K : Nat} (hK : K < 4) {s : State} (h : MI σ K s) (hb : s.cf = some false) : PInv σ (K + 1) s := by
-  have hL : (Lt σ K 168).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ 168
-  have hfull : (Lt σ K 168).length = 256 := by
-    rw [h.cf, Option.some.injEq, decide_eq_false_iff_not] at hb; omega
-  have hs : sampleNTT minIterations (B σ K) = some (toPoly (Lt σ K 168)) :=
-    sampleNTT_of_full (by decide) (by rw [n_eq]; exact hfull)
-  refine ⟨h.pinv.env, h.pinv.buf, ?_, fun k hk f e => ?_⟩
-  · have e : okN σ (K + 1) = okN σ K := by
-      simp only [okN, List.range_succ, List.all_append, List.all_cons, List.all_nil, Bool.and_true, hs,
-        Option.isSome_some]
-    rw [h.pinv.r14, e]
-  · by_cases ek : k = K
-    · subst ek
-      rw [hs] at e
-      rw [← Option.some.inj e]
-      exact SampleNtt.stored_polyAt h.stored hfull
-    · exact h.pinv.polys k (by omega) f e
-
-/-- The check of `j`, and the call if it is less than 256. -/
-theorem fallback_ok {K : Nat} (hK : K < 4) {s : State} (h : LAt σ K 168 s) :
-    WP isa (fallback K) s (PInv σ (K + 1)) := by
-  unfold fallback
-  exact WP.seq (WP.mono (cmpK_ok h) fun s₁ h₁ => WP.ite _ h₁.cf (fun _ => call_ok hp hK h₁.pinv)
-    fun hb => WP.block_nil (skipK_ok hK h₁ (by rw [h₁.cf, hb])))
 
 end
 
