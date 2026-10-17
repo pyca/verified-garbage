@@ -20,8 +20,8 @@ reaches the end in `r9`. A number of `n` 64-bit words is `W = 2n` 32-bit
 words, `D = 4n` digits; an array of digits holds one a word.
 
 * `zeros k o`, `setConst k o x`: `k` words.
-* `addD M acc o a b`, `subD M acc o a b`: `[o] = [a] ± [b] mod m`, through the
-  digits of `[a] + [b]` (or `[a] + m - [b]`) at `[acc]` and `csubD`.
+* `addD M acc o a b`: `[o] = [a] + [b] mod m`, through the digits of
+  `[a] + [b]` at `[acc]` and `csubD`.
 * `csubD M src o`: the `D` digits and top digit at `[src]`, a number below
   `2m`, reduced modulo `m` into `[o]` (through `[M.tmp]`): its difference
   with `m`, packed, if that did not borrow, else itself.
@@ -85,22 +85,6 @@ def addDigits (M : Mod) (acc a b : Nat) : Prog isa :=
       [bump .r10 4, bump .r0 4, bump .r8 8]))
     (.block [.str .r3 .r8 0]))
 
-/-- Digit `h` of `[a] + m - [b]` (words of `[a]`, `[b]` in `r7`, `r2`, of `m`
-at `[r1]`), from the carry `r3`, to `[r8 + 4h]`, its carry to `r3`. -/
-def subDigitD (h : Nat) : List Instr :=
-  [half .r4 .r7 h, .ldr .r5 .r1 0, half .r5 .r5 h, .dp .add .r4 .r4 (.reg .r5), .dp .add .r4 .r4 (.reg .r6),
-    half .r5 .r2 h, .dp .sub .r4 .r4 (.reg .r5), .dp .add .r4 .r4 (.reg .r3),
-    .dp .and .r5 .r4 (.reg .r6), .str .r5 .r8 (4 * h), .mov .r3 (.shifted .r4 .lsr 16)]
-
-/-- The digits of `[a] + m - [b]` at `[acc]` (a carry of 1 adds `2^(16 D)`,
-which the top digit takes off). -/
-def subDigits (M : Mod) (acc a b : Nat) : Prog isa :=
-  .seq (.block ([mask16, .mov .r3 (.imm 1)] ++ ptr .r10 a ++ ptr .r0 b ++ ptr .r1 M.mo ++ ptr .r8 acc ++
-      ptr .r9 (a + 4 * words M)))
-  (.seq (ptrLoop .r10 ([.ldr .r7 .r10 0, .ldr .r2 .r0 0] ++ subDigitD 0 ++ subDigitD 1 ++
-      [bump .r10 4, bump .r0 4, bump .r1 4, bump .r8 8]))
-    (.block [.dp .sub .r3 .r3 (.imm 1), .str .r3 .r8 0]))
-
 /-- Digit `h` of `[src] - m` (the digit at `[r10 + 4h]`, `m`'s word in
 `r7`), from the carry `r3`, into `r5`, its carry to `r3`. -/
 def diffDigitD (h : Nat) : List Instr :=
@@ -123,9 +107,6 @@ def csubD (M : Mod) (src o : Nat) : Prog isa :=
 
 /-- `[o] = [a] + [b] mod m`. -/
 def addD (M : Mod) (acc o a b : Nat) : Prog isa := .seq (addDigits M acc a b) (csubD M acc o)
-
-/-- `[o] = [a] - [b] mod m`, as `[a] + m - [b]` reduced. -/
-def subD (M : Mod) (acc o a b : Nat) : Prog isa := .seq (subDigits M acc a b) (csubD M acc o)
 
 /-! ## The multiplication -/
 

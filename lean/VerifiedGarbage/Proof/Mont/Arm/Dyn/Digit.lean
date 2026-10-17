@@ -9,10 +9,9 @@ public import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
-# Runtime-modulus Montgomery arithmetic on 32-bit ARM: digits of sums
+# Runtime-modulus Montgomery arithmetic on 32-bit ARM: digits of a sum
 
-A digit of `[a] + [b]` (`addDigitD_ok`) or of `[a] + m - [b]`
-(`subDigitD_ok`) from the words in `r7` and `r2` (and `m`'s at `[r1]`) and
+A digit of `[a] + [b]` (`addDigitD_ok`) from the words in `r7` and `r2` and
 the carry `r3`, stored at `[r8 + 4h]`, its carry to `r3`.
 -/
 
@@ -74,54 +73,5 @@ theorem addDigitD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
   · rw [u₇.gpr, toNat_shr, m₆.gpr, u₅.other .r4 (by decide), v4]
   · exact ((((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))).trans
       (u₅.rest (by simp))).trans ((m₆.rest _).trans (u₇.rest (by simp)))
-
-/-- Digit `h` of `[a] + m - [b]`: `x + m + (2¹⁶ - 1) - y + c` to `[r8 + 4h]` and its carry. -/
-theorem subDigitD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {P Pm h : Nat} (hh : h < 2)
-    (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (h8 : s.gpr .r8 = s.gpr .r12 + BitVec.ofNat 32 P)
-    (h1 : s.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 Pm)
-    (hP : P + 4 * h + 4 ≤ size) (hPm : Pm + 4 ≤ size) (hc : (s.gpr .r3).toNat ≤ 2) :
-    WP isa (.block (subDigitD h)) s fun u =>
-      u.mem = s.mem.writeW (off base (P + 4 * h)) (BitVec.ofNat 32
-        ((hdig (s.gpr .r7).toNat h + hdig (w32 s.mem base Pm) h + (2 ^ 16 - 1) - hdig (s.gpr .r2).toNat h +
-          (s.gpr .r3).toNat) % 2 ^ 16)) ∧
-      (u.gpr .r3).toNat = (hdig (s.gpr .r7).toNat h + hdig (w32 s.mem base Pm) h + (2 ^ 16 - 1) -
-          hdig (s.gpr .r2).toNat h + (s.gpr .r3).toNat) / 2 ^ 16 ∧
-      Rest [.r3, .r4, .r5] s u := by
-  have hx := hdig_lt (s.gpr .r7).toNat h
-  have hy := hdig_lt (s.gpr .r2).toNat h
-  have hm := hdig_lt (w32 s.mem base Pm) h
-  simp only [subDigitD]
-  refine wp_half hh h6 fun s₁ u₁ => ?_
-  have w₁ := hs.of_upd u₁ (by decide)
-  refine wp_ldr (by decide) (w₁.ea (K := Pm) (d := 0) (by rw [u₁.other .r1 (by decide), u₁.other .r12 (by decide)]; exact h1)
-    (by omega)) (w₁.read (d := Pm + 0) (n := 4) (by omega)) fun s₂ u₂ => ?_
-  refine wp_half hh (by rw [u₂.other _ (by decide), u₁.other _ (by decide)]; exact h6) fun s₃ u₃ => ?_
-  refine wp_dp (op2_reg _ _) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => wp_half hh
-    (by simp only [u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h6) fun s₆ u₆ => ?_
-  refine wp_dp (op2_reg _ _) fun s₇ u₇ => wp_dp (op2_reg _ _) fun s₈ u₈ => wp_dp (op2_reg _ _) fun s₉ u₉ => ?_
-  have w₉ : Ws s₉ base size := (((((((w₁.of_upd u₂ (by decide)).of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅
-    (by decide)).of_upd u₆ (by decide)).of_upd u₇ (by decide)).of_upd u₈ (by decide)).of_upd u₉ (by decide)
-  have e8 : s₉.gpr .r8 = s₉.gpr .r12 + BitVec.ofNat 32 P := by
-    simp only [u₉.get, u₈.get, u₇.get, u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
-    exact h8
-  refine wp_str (by omega) (w₉.ea e8 (by omega)) (w₉.write (by omega)) fun s₁₀ m₁₀ =>
-    wp_mov (op2_lsr (by decide)) fun s₁₁ u₁₁ => WP.block_nil ?_
-  have v8 : (s₈.gpr .r4).toNat = hdig (s.gpr .r7).toNat h + hdig (w32 s.mem base Pm) h + (2 ^ 16 - 1) -
-      hdig (s.gpr .r2).toNat h + (s.gpr .r3).toNat := by
-    have r6 : (VG.Proof.X25519.Arm.mask16).toNat = 2 ^ 16 - 1 := rfl
-    simp only [u₈.get, u₇.get, u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal, h6, u₁.mem, Nat.add_zero]
-    refine toNat_add_eq (toNat_sub_eq (toNat_add_eq (toNat_add_eq (toNat_ofNat_dig _ _) (toNat_ofNat_dig _ _) ?_) r6 ?_)
-      (toNat_ofNat_dig _ _) ?_) rfl ?_ <;> omega
-  refine ⟨?_, ?_, ?_⟩
-  · rw [u₁₁.mem, m₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-    congr 1
-    simp only [u₉.get, ↓reduceIte, dpVal]
-    rw [show s₈.gpr .r6 = VG.Proof.X25519.Arm.mask16 by
-      simp only [u₈.get, u₇.get, u₆.get, u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h6]
-    exact and_mask_ofNat v8
-  · rw [u₁₁.gpr, toNat_shr, m₁₀.gpr, u₉.other .r4 (by decide), v8]
-  · exact (((((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))).trans
-      ((u₅.rest (by simp)).trans (u₆.rest (by simp)))).trans ((u₇.rest (by simp)).trans ((u₈.rest (by simp)).trans
-      (u₉.rest (by simp))))).trans ((m₁₀.rest _).trans (u₁₁.rest (by simp)))
 
 end VG.Proof.Mont.Arm.Dyn

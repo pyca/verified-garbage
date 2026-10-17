@@ -96,7 +96,7 @@ def checkMul (n modulus a b : Nat) : Except String Unit := do
     throw s!"Montgomery mismatch: n={n}, modulus={modulus}, a={a}, b={b}"
   checkPreserved m₀.state r.state
 
-def checkAddSub (n modulus a b : Nat) : Except String Unit := do
+def checkAdd (n modulus a b : Nat) : Except String Unit := do
   let base := 0x10000
   let size := 8000
   let tmp := 64 + 8 * n + 8
@@ -109,10 +109,6 @@ def checkAddSub (n modulus a b : Nat) : Except String Unit := do
   let r ← evaluate fuel (addD M acc out ao bo) m₀
   unless get r.words (base + out) (2 * n) == (a + b) % modulus do
     throw s!"addition mismatch: n={n}, modulus={modulus}, a={a}, b={b}"
-  checkPreserved m₀.state r.state
-  let r ← evaluate fuel (subD M acc out ao bo) m₀
-  unless get r.words (base + out) (2 * n) == (a + modulus - b) % modulus do
-    throw s!"subtraction mismatch: n={n}, modulus={modulus}, a={a}, b={b}"
   checkPreserved m₀.state r.state
 
 def powMod (a e m : Nat) : Nat := Id.run do
@@ -146,13 +142,13 @@ def checks : Except String Nat := do
     for modulus in [3, 2 ^ (64 * n - 1) + 1, 2 ^ (64 * n) - 1] do
       for (a, b) in [(0, 0), (modulus - 1, modulus - 1), (modulus - 1, 1), (1, modulus - 1)] do
         checkMul n modulus a b
-        checkAddSub n modulus a b
+        checkAdd n modulus a b
         count := count + 1
       checkMul n modulus (2 ^ (64 * n) - 1) 1
   for n in [16, 48] do
     let modulus := 2 ^ (64 * n) - 2 ^ 77 - 1
     checkMul n modulus (modulus - 1) (modulus - 2)
-    checkAddSub n modulus (modulus - 1) (modulus - 2)
+    checkAdd n modulus (modulus - 1) (modulus - 2)
     count := count + 1
   for n in [1, 3] do
     for modulus in [3, 2 ^ (64 * n - 1) + 1, 2 ^ (64 * n) - 1] do

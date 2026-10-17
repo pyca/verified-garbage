@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.AddSub
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Select
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
