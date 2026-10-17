@@ -75,7 +75,12 @@ on an EPYC 9V74 spread by up to 9% (`pbkdf2-hmac-sha512-256`, 23.33–25.49 µs
 at 64 bytes; `pbkdf2-hmac-sha384` 6.9%, `sha512` at 64 bytes 11%), and one
 run of each side of unchanged PBKDF2 code reported it 5% slower on an EPYC
 7763, three times out of three, where the fastest copies of the two sides
-were within 0.1%.
+were within 0.1%. So do ML-KEM's: eight copies of one binary spread by
+up to 9.4% on an EPYC 9V74 and 4.6% on an EPYC 7763 for
+`mlkem1024_keygen` (17.18–18.81 µs), and up to 14% for `mlkem768_decaps`,
+and one run of each side of a change that left `keygen_mul` byte for byte
+the same reported ML-KEM-1024's key generation 4–5% slower or faster,
+where the fastest copies of the two sides were within 0.3%.
 
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
@@ -108,18 +113,18 @@ TARGET = pathlib.Path("bench-target").resolve()
 
 # The benchmark groups (`<primitive>`s) whose time depends on the physical
 # pages that hold the binary (see the module docstring): those that read a
-# comb's table of hundreds of kilobytes, ChaCha20-Poly1305's, AES-GCM's, and
-# the SHA-512 family's digests and PBKDF2's.
+# comb's table of hundreds of kilobytes, ChaCha20-Poly1305's, AES-GCM's,
+# the SHA-512 family's digests and PBKDF2's, and ML-KEM's.
 # They run from `--copies` copies of each binary.
 FRESH_COPIES = re.compile(
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
-    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$)")
+    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
 # whose benchmarks hold those groups. The binary sets up every selected
 # benchmark before criterion's filter applies (RSA keys of up to 4096 bits
 # among them), which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512"
+FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
