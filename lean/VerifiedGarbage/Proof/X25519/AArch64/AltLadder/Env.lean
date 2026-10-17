@@ -125,6 +125,21 @@ theorem cmaddE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) 
   rw [← toFe_mul (a := 121666) (b := fe s.mem base (offset a)) rfl]
   exact toFe_add (mod_of_add_mul (q := q) (by simp only [P]; exact e))
 
+theorem cmadd4E {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+    (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0) (h1 : (s.gpr .x1).toNat = 4) :
+    WP isa (.block (Impl.X25519.AArch64.Alt.cmadd4 (offset o) (offset a) (offset b))) s fun t =>
+      AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
+      env t.mem base = Function.update (env s.mem base) o
+        (toFe 4 * env s.mem base a + env s.mem base b) := by
+  have la := fe_lt s.mem base (offset a)
+  have lb := fe_lt s.mem base (offset b)
+  refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega))
+    fun t ⟨h, hl, q, e⟩ => ⟨h, hl, (env_upd h).trans (congrArg _ ?_)⟩
+  rw [h1] at e
+  simp only [env, F]
+  rw [← toFe_mul (a := 4) (b := fe s.mem base (offset a)) rfl]
+  exact toFe_add (mod_of_add_mul (q := q) (by simp only [P]; exact e))
+
 theorem muxE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) :
     WP isa (.block (Impl.X25519.AArch64.Alt.mux4 (offset o) (offset a) (offset b))) s fun t =>

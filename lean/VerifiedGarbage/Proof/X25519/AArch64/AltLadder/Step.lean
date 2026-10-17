@@ -98,17 +98,17 @@ theorem AltOp.w768 {base : Addr} {o : VG.Impl.Ed25519.AArch64.Slot} {s t : State
 
 theorem S14_cases : ∀ i : VG.Impl.Ed25519.AArch64.Slot, S14 i = true → i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by decide
 
-theorem step_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i : Nat}
+theorem body_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i : Nat}
     (hs : Scratch s base) (hi : i < 255) (hg : Good (env s.mem base) x1 st)
     (hsw : st.swap ≤ 1) (hcnt : s.gpr .x19 = BitVec.ofNat 64 (i+1))
     (hw : word s.mem base 768 = BitVec.ofNat 64 st.swap)
     (hb : s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (bit k i))
     (hB : Bel s.mem base S14) :
-    WP isa (.block VG.Impl.X25519.AArch64.AltLadder.step) s fun t =>
+    WP isa (.block VG.Impl.X25519.AArch64.AltLadder.body) s fun t =>
       LoopKeep base s t ∧ Good (env t.mem base) x1 (ladderStep k x1 st i) ∧
       t.gpr .x19 = BitVec.ofNat 64 i ∧ word t.mem base 768 = BitVec.ofNat 64 (bit k i) ∧
       Bel t.mem base S14 := by
-  simp only [VG.Impl.X25519.AArch64.AltLadder.step, List.append_assoc]
+  simp only [VG.Impl.X25519.AArch64.AltLadder.body, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (x17_ok s) fun a ⟨za, ka⟩ => ?_
   have lka : LoopKeep base s a := LoopKeep.of_keeps ka (by decide)
@@ -273,5 +273,34 @@ theorem step_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i :
     · rw [fr h19 3 (by decide), fr h18 3 (by decide), fr h17 3 (by decide), o16fe 3 (by decide)]
       exact l15
     · rw [fr h19 4 (by decide)]; exact l18
+
+/-- `x16 = x19 - 3`. -/
+theorem cnt_ok (s : State) :
+    WP isa (.block [.subImm .x .x16 .x19 3]) s fun t =>
+      t.gpr .x16 = s.gpr .x19 - 3 ∧ Keeps [.x16] s t := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_subImm_x (d := .x16) (n := .x19) (imm := 3) (by decide), WP.block_nil ?_⟩
+  refine ⟨?_, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr), rfl, rfl, rfl, rfl⟩⟩
+  rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
+  simp only [State.read, BitVec.setWidth_eq]
+  rfl
+
+theorem step_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i : Nat}
+    (hs : Scratch s base) (hi : i < 255) (hi3 : 3 ≤ i) (hg : Good (env s.mem base) x1 st)
+    (hsw : st.swap ≤ 1) (hcnt : s.gpr .x19 = BitVec.ofNat 64 (i+1))
+    (hw : word s.mem base 768 = BitVec.ofNat 64 st.swap)
+    (hb : s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (bit k i))
+    (hB : Bel s.mem base S14) :
+    WP isa (.block VG.Impl.X25519.AArch64.AltLadder.step) s fun t =>
+      LoopKeep base s t ∧ Good (env t.mem base) x1 (ladderStep k x1 st i) ∧
+      t.gpr .x19 = BitVec.ofNat 64 i ∧ t.gpr .x16 = BitVec.ofNat 64 (i - 3) ∧
+      word t.mem base 768 = BitVec.ofNat 64 (bit k i) ∧ Bel t.mem base S14 := by
+  rw [VG.Impl.X25519.AArch64.AltLadder.step, WP.block_append_iff]
+  refine WP.mono (body_ok hs hi hg hsw hcnt hw hb hB) fun u ⟨ku, gu, cu, wu, bu⟩ => ?_
+  refine WP.mono (cnt_ok u) fun t ⟨t16, kt⟩ => ?_
+  refine ⟨ku.trans (LoopKeep.of_keeps kt (by decide)), by rw [kt.mem]; exact gu,
+    by rw [kt.gpr _ (by decide)]; exact cu, ?_, by rw [kt.mem]; exact wu,
+    fun j hj => by rw [kt.mem]; exact bu j hj⟩
+  rw [t16, cu]
+  exact VG.Offset.ofNat_sub_ofNat hi3
 
 end VG.Proof.X25519.AArch64.AltLadder
