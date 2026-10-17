@@ -176,4 +176,19 @@ theorem block_relCT_T0 (is : List Instr) (h : (taint.checkBlock T0 is).map (tain
     RelCT isa (VG.Arm.Taint.Agree T0) (.block is) (VG.Arm.Taint.Agree T0) :=
   relCT_of_check (h := .block []) h
 
+theorem outBlock_relCT (qLen : Nat) (second : Bool) :
+    RelCT isa (VG.Arm.Taint.Agree T0)
+      (.block (SignVerify.outputPointer qLen second ++ [.ldr .r3 .r12 (Layout.field .mask)]))
+      (VG.Arm.Taint.Agree T0) := by
+  cases second
+  · exact erased_relCT (c₀ := .block (SignVerify.outputPointer 0 false ++ [.ldr .r3 .r12 0]))
+      (VG.Taint.hintOf taint T0 (.block (SignVerify.outputPointer 0 false ++ [.ldr .r3 .r12 0]))) rfl
+      (wsT_noBase _ _) rfl
+  · exact erased_relCT (c₀ := .block (SignVerify.outputPointer 0 true ++ [.ldr .r3 .r12 0]))
+      (VG.Taint.hintOf taint T0 (.block (SignVerify.outputPointer 0 true ++ [.ldr .r3 .r12 0]))) rfl
+      (wsT_noBase _ _) rfl
+
+theorem result_relCT : RelCT isa (VG.Arm.Taint.Agree T0) (.block SignVerify.result) (VG.Arm.Taint.Agree T0) :=
+  relCT_of_check (h := .block []) rfl
+
 end VG.Proof.Dsa.Arm
