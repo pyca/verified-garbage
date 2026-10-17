@@ -2866,6 +2866,7 @@ str q1, [x0, #16]
 add x1, x1, #64
 sub x2, x2, #1
 cbz x2, 22f
+.p2align 6
 24:
 ldr q4, [x1, #0]
 rev32 v4.16b, v4.16b
