@@ -1,25 +1,38 @@
 #!/usr/bin/env python3
-"""The architectures whose Rust tests a pull request runs (see ci.yml).
+"""The Rust jobs a CI run starts: the entries of ci/rust_matrix.toml's
+matrices for the architectures it tests (see `rust-arches` in ci.yml).
 
 The verified functions of each architecture are its own generated files,
 `src/asm/<target>/`, which only that architecture compiles, and the Lean
 proofs reach the Rust code only through them (CI checks that they are what
-the emitter writes). So a pull request runs the Rust tests of an
+the emitter writes). So a pull request runs the Rust jobs of an
 architecture only when it changes that architecture's files or anything else
 that can change what the tests do (the shared Rust code, the tests, their
-vectors, Cargo's files, the Rust jobs' workflow and scripts): every path
-but those of one architecture and those in `NOT_RUST`.
+vectors, Cargo's files, the Rust jobs' workflow, matrices and scripts):
+every path but those of one architecture and those in `NOT_RUST`. The merge
+queue runs every job, and a push to main runs every job without its tests
+(for main's caches).
 
-  rust_arches.py < PATHS
-      reads the changed paths, one per line, and prints
-      `arches=<JSON list>` for $GITHUB_OUTPUT, and `all=true` or
-      `all=false`
-  rust_arches.py --all
-      the same for every architecture
+  rust_arches.py pull_request < PATHS
+      the jobs of the architectures the changed paths (one per line) reach
+  rust_arches.py merge_group
+      every job
+  rust_arches.py push
+      every job, with `tests` false
+
+It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
+`all=true` or `all=false` (whether that is every architecture), and each
+job's matrix (`rust=`, `thumb=`, `cpu=`): the JSON list of its entries,
+each with `tests`, and each CPU with shards as one entry per shard.
 """
 
 import json
+from pathlib import Path
 import sys
+import tomllib
+
+MATRIX = Path(__file__).resolve().parent / "rust_matrix.toml"
+JOBS = ("rust", "thumb", "cpu")
 
 # `src/asm/<target>/`'s target, and the architecture (`target_arch`) it is
 # compiled for.
@@ -66,6 +79,7 @@ RUST_CI = {
     "ci/requirements-coverage.txt",
     "ci/runner.Dockerfile",
     "ci/rust_arches.py",
+    "ci/rust_matrix.toml",
 }
 
 
@@ -90,18 +104,50 @@ def arches(paths):
     return sorted(out)
 
 
-def output(selected):
-    return f"arches={json.dumps(selected)}\nall={str(len(selected) == len(set(ARCHES.values()))).lower()}\n"
+def entries(matrix, job):
+    """The matrix's entries of `job`, a CPU with shards once per shard."""
+    out = []
+    for entry in matrix[job]:
+        entry = dict(entry)
+        n = entry.pop("shards", None)
+        if n is None:
+            out.append(entry)
+        else:
+            out += [dict(entry, shard=f"{i}/{n}") for i in range(1, n + 1)]
+    return out
+
+
+def arch_of(entry):
+    return entry.get("arch", "x86_64")  # the SDE chips'
+
+
+def output(matrix, selected, tests=True):
+    """The outputs of a run testing the architectures `selected` (or, without
+    `tests`, building every job)."""
+    everything = sorted(set(ARCHES.values()))
+    lines = [
+        f"arches={json.dumps(selected if tests else [])}",
+        f"all={str(tests and selected == everything).lower()}",
+    ]
+    for job in JOBS:
+        keep = [dict(e, tests=tests) for e in entries(matrix, job)
+                if not tests or arch_of(e) in selected]
+        lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
+    return "".join(line + "\n" for line in lines)
 
 
 def main(argv):
-    if argv == ["--all"]:
-        selected = sorted(set(ARCHES.values()))
-    elif not argv:
-        selected = arches(line.strip() for line in sys.stdin if line.strip())
+    matrix = tomllib.loads(MATRIX.read_text())
+    everything = sorted(set(ARCHES.values()))
+    if argv == ["pull_request"]:
+        out = output(matrix, arches(line.strip() for line in sys.stdin if line.strip()))
+    elif argv == ["merge_group"]:
+        out = output(matrix, everything)
+    elif argv == ["push"]:
+        out = output(matrix, everything, tests=False)
     else:
         sys.exit(__doc__)
-    sys.stdout.write(output(selected))
+    sys.stdout.write(out)
 
 
 if __name__ == "__main__":

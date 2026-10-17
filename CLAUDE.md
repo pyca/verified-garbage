@@ -44,10 +44,10 @@ Lake rebuilds your changes and anything not yet cached.
   (`src/` and `tests/`) from every platform and fails below 100%. Add tests
   or delete dead code; only exclude lines that genuinely cannot run, between
   `// NO-COVERAGE-START` and `// NO-COVERAGE-END`, with a comment saying why.
-  A pull request runs the Rust tests of only the architectures its changes
-  reach (`ci/rust_arches.py`: an architecture's `src/asm/<target>/`, or
-  shared code for all), and checks coverage only when that is all of them;
-  the merge queue always tests and checks every architecture.
+  A pull request starts the Rust jobs (`ci/rust_matrix.toml`) of only the
+  architectures its changes reach (`ci/rust_arches.py`: an architecture's
+  `src/asm/<target>/`, or shared code for all), and checks coverage only
+  when that is all of them; the merge queue always runs every job.
 * **Known-answer tests need clear provenance.** Never type test vectors into
   a test. Use Wycheproof (`tests/wycheproof/`), or vendor the published
   files byte for byte into a directory under `vectors/`, with a new
@@ -737,11 +737,12 @@ benchmarked) end to end in each configuration, never through a special API:
 the `cpu-features-env` Cargo feature lets `VG_CPU_FEATURES` restrict the
 features detected (see `src/cpu.rs`). CI tests each configuration that
 chooses differently on a CPU that has those features: the runner's, or one
-Intel SDE presents (`rust-cpu-features` in `ci.yml`; SDE runs the SHA
+Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
+`cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
 `VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
-to test is a line of a CPU's `runs` in `rust-cpu-features`
+to test is a line of a CPU's `runs` in `ci/rust_matrix.toml`
 (`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
 a run never repeats another: add groups to a CPU's line for those features.
@@ -751,8 +752,8 @@ and in `tests/main.rs`; a line runs exactly those tests, so a new test of a
 primitive that varies by CPU feature goes into its group (or a new group),
 never into a line by matching part of its name. CI fails a path that
 selects no test on any CPU, and a group that selects none on a line's CPU.
-A CPU whose lines take long runs as shards (matrix entries with a `shard`
-of `i/n` and the first entry's `runs` as a YAML alias), which deal out its
+A CPU whose lines take long runs as shards (its `shards = n`: n jobs, each
+with a `shard` of `i/n`), which deal out its
 lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
 one up, add a shard, never split its lines by hand.
 To test the baseline ISA's implementations:
