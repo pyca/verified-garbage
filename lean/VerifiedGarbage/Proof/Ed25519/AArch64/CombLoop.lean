@@ -105,35 +105,6 @@ theorem negSel_ok (s : State) {sg : Bool} (h1 : s.gpr .x1 = mask sg) :
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ↓reduceIte]
 
-/-- Slot `c` negated (`0 - [c]`, from slot 21) where the sign's mask in `x1` is set. -/
-theorem combNeg_ok {s : State} {base : Addr} (hs : Scr s base) (c : Slot) {sg : Bool}
-    (h1 : s.gpr .x1 = mask sg) :
-    WP isa (.block (combNeg c)) s fun t => Op base (offset c) s t ∧
-      F t.mem base (offset c) =
-        if sg then F s.mem base (offset 21) - F s.mem base (offset c) else F s.mem base (offset c) := by
-  rw [combNeg, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (subRegs_ok hs (slot_range 21) (slot_range c)) fun u ⟨eu, ku⟩ => ?_
-  have hsu := hs.of_keeps ku (by decide)
-  refine WP.mono (loads_ok hsu (slot_range c) (a := .x12) (b := .x13) (c := .x14) (d := .x15) (by decide))
-    fun v ⟨v12, v13, v14, v15, kv⟩ => ?_
-  have hsv := hsu.of_keeps kv (by decide)
-  refine WP.mono (negSel_ok v (sg := sg) (by rw [kv.gpr _ (by decide), ku.gpr _ (by decide), h1]))
-    fun w ⟨w4, w5, w6, w7, kw⟩ => ?_
-  refine WP.mono (store4_ok (hsv.of_keeps kw (by decide)) (slot_range c)) fun t ht => ?_
-  subst t
-  have kuw : Keeps clob s w := (ku.mono (by decide)).trans ((kv.mono (by decide)).trans (kw.mono (by decide)))
-  refine ⟨Op.of_store (slot_range c) kuw _ _ _ _, ?_⟩
-  simp only [F]
-  rw [fe_st4 _ _ (by simp only [offset]; omega), w4, w5, w6, w7]
-  cases sg
-  · simp only [Bool.false_eq_true, ↓reduceIte]
-    rw [v12, v13, v14, v15, ku.mem]
-  · simp only [↓reduceIte]
-    rw [kv.gpr _ (by decide), kv.gpr _ (by decide), kv.gpr _ (by decide), kv.gpr _ (by decide)]
-    exact eu
-
-/-! ## The loop over the digits -/
-
 /-- The loop's invariant, after `j` steps from `[v]B`. -/
 structure CombInv (s₀ : State) (base : Addr) (S : Nat) (v : ℤ) (j : Nat) (s : State) : Prop where
   bound : j ≤ 64
