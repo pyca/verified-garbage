@@ -16,20 +16,16 @@ holds `[k]([16^i]B)` for `k ≤ 8` (`combCached64`), affine; the 64 tables are
 the static `combSym` (`combWords`, 768 bytes a table, 48 KiB). The
 accumulator, in slots 0–3, starts at `[17 G]B` (`combStart`), and step `i`
 adds digit `i`'s entry of table `i`: 64 additions of affine cached points,
-each inline on the `_alt` field operations (`combAdd`, seven
+inline on s2n-bignum's `_alt` field operations (`combAdd`, seven
 multiplications), and no doublings.
 
-The digits are secret: their entries are selected in constant time. The
-masks of the eight magnitudes `k = 1 … 8` (all ones exactly for `|d|`) and
-the bit of `|d| = 0` stay in registers (`magRegs`, `x22`), and each mask is
-copied into both lanes of a vector register (`maskV`). Each candidate is
-loaded from the table 16 bytes at a time and inserted into `v2` where its
-mask is set (BIT), on the vector pipes, which the additions leave idle:
-every entry of the table is read, at addresses from the static's and the
-loop's counter. Each entry is negated, or not, with the mask of its digit's
-sign: its `Y - X` and `Y + X` are exchanged in the vector registers (BIT),
-and its `2dT` chosen against its negation by `csel`. The loops' counter `x19`, which is
-also the table index, is public.
+The digits are secret: their entries are selected in constant time, as
+s2n-bignum's `edwards25519_scalarmulbase_alt` selects (`combEntry`). Every
+candidate of the table is loaded, a pair of words at a time, at addresses from
+the static's and the loop's counter, and kept where the digit's magnitude is
+its index (`csel`), from the identity's; then `2dT` is negated and `Y - X`,
+`Y + X` exchanged under the sign's mask, in registers, and the entry stored
+once. The loops' counter `x19`, which is also the table index, is public.
 -/
 
 @[expose] public section
@@ -49,27 +45,6 @@ def combNibble (o : Nat) : List Instr :=
 def combSign : List Instr :=
   [.subImm .x .x3 .x2 8, .lsr .x .x1 .x3 63, .movz .w .x9 0 0, .sub .x .x1 .x9 .x1,
     .logic .eor .x .x2 .x3 .x1, .sub .x .x2 .x2 .x1]
-
-/-- The registers holding the masks of the digit's magnitudes `1 … 8`. -/
-def magRegs : List Reg := [.x12, .x13, .x14, .x15, .x16, .x17, .x20, .x21]
-
-/-- Mask `k` of the digit. -/
-def magReg (k : Nat) : Reg := magRegs.getD (k - 1) .x12
-
-/-- `x22` = `[|d| < 1]` and `rs[k - 1]` = `[|d| < k]` for `k = 1 … 8`, then
-`rs[k - 1]` = `[|d| < k] - [|d| < k + 1]`: all ones exactly if `|d| = k`, for `|d|` in `x2`. -/
-def combMasks : List Instr :=
-  [.subImm .x .x22 .x2 1, .lsr .x .x22 .x22 63] ++
-    (List.range 8).flatMap (fun k =>
-      [.subImm .x (magRegs.getD k .x1) .x2 (k + 1),
-        .lsr .x (magRegs.getD k .x1) (magRegs.getD k .x1) 63]) ++
-    (List.range 8).map fun k =>
-      if k < 7 then .sub .x (magRegs.getD k .x1) (magRegs.getD k .x1) (magRegs.getD (k + 1) .x1)
-      else .subImm .x (magRegs.getD k .x1) (magRegs.getD k .x1) 1
-
-/-- Digit `x19`, whose bits are at `x0 + 768 + 4 x19`: its masks to `magRegs` and `x22`. -/
-def combDigit : List Instr :=
-  [.lsl .x .x8 .x19 2, .add .x .x8 .x0 .x8] ++ combNibble 768 ++ combSign ++ combMasks
 
 /-- Word `w` of a field element. -/
 def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 64 := BitVec.ofNat 64 (v.val / 2 ^ (64 * w))
@@ -91,71 +66,68 @@ def combWords : List (BitVec 64) := (List.range (64 * 96)).map combWord
 /-- The static the comb reads. -/
 def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]
 
-/-- `x9` = the address of table `x19`: the static's, plus 768 bytes a table. -/
-def tblAddr : List Instr :=
-  [.adrSym .x9 combSym, .lsl .x .x2 .x19 8, .add .x .x9 .x9 .x2, .add .x .x9 .x9 .x2,
-    .add .x .x9 .x9 .x2]
-
-/-- The vector register holding, in both lanes, the mask of magnitude `k = 1 … 8`
-(`v16`–`v23`). -/
-def maskV (k : Nat) : VReg := [VReg.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23].getD (k - 1) .v16
-
-/-- The vector register candidate `m + 1`'s half is loaded into (`v24`–`v29`, `v0`, `v1`). -/
-def candV (m : Nat) : VReg := [VReg.v24, .v25, .v26, .v27, .v28, .v29, .v0, .v1].getD m .v24
-
-/-- The masks of the eight magnitudes, each in both lanes of `maskV k`. -/
-def selectMasks : List Instr :=
-  (List.range 8).map fun k => .vop (.dup .d2 (maskV (k + 1)) (magReg (k + 1)))
-
-/-- The start of half `h` of a coordinate's selection, in `acc`: words `2h` and `2h + 1` of the
-identity's `Y - X` and `Y + X` (if `one`; `1` and `0` for `|d| = 0`, from `x22`) or zero. -/
-def selectHalfStart (acc : VReg) (one : Bool) (h : Nat) : List Instr :=
-  [.vop (.movi0 acc)] ++ if one && h == 0 then [.vop (.ins .d2 acc 0 .x22)] else []
-
-/-- Candidate `m + 1`'s half `h` of coordinate `c` (at `x9 + 256 c + 32 m + 16 h`), inserted
-into `acc` where its mask is set (BIT). -/
-def selectHalfCand (acc : VReg) (c h m : Nat) : List Instr :=
-  [.ldrq (candV m) .x9 (256 * c + 32 * m + 16 * h), .vop (.bsel .bit acc (candV m) (maskV (m + 1)))]
-
-/-- Half `h` (words `2h`, `2h + 1`) of entry `|d|`'s coordinate `c`, into `acc`. -/
-def selectAcc (acc : VReg) (one : Bool) (c h : Nat) : List Instr :=
-  selectHalfStart acc one h ++ (List.range 8).flatMap (selectHalfCand acc c h)
-
-/-- Half `h` of entry `|d|`'s coordinate `c`, to byte `o + 16 h`. -/
-def selectHalf (one : Bool) (c o h : Nat) : List Instr :=
-  selectAcc .v2 one c h ++ [.strq .v2 .x0 (o + 16 * h)]
-
-/-- Coordinate `c` of entry `|d|`, to byte `o`. -/
-def selectField (one : Bool) (c o : Nat) : List Instr :=
-  (List.range 2).flatMap fun h => selectHalf one c o h
-
-/-- `v30` = the sign's mask (`x1`) in both lanes. -/
-def signV : List Instr := [.vop (.dup .d2 .v30 .x1)]
-
-/-- Half `h` of the entry's `Y - X` and `Y + X`, into `v2` and `v3`, exchanged where the sign's
-mask in `v30` is set (BIT, through `v4`), to slots 4 and 5. -/
-def selectPairHalf (h : Nat) : List Instr :=
-  selectAcc .v2 true 0 h ++ selectAcc .v3 true 1 h ++
-    [.vop (.mov .v4 .v2), .vop (.bsel .bit .v2 .v3 .v30), .vop (.bsel .bit .v3 .v4 .v30),
-      .strq .v2 .x0 (offset 4 + 16 * h), .strq .v3 .x0 (offset 5 + 16 * h)]
-
-/-- The digit's entry from table `x19`, to slots 4–6, its `Y - X` and `Y + X` exchanged for a
-negative digit (the sign's mask in `x1`): every candidate is loaded, 16 bytes at a time, and
-inserted where its digit's mask is set, so only the digit's survives. -/
-def combSelect : List Instr :=
-  tblAddr ++ selectMasks ++ signV ++ selectPairHalf 0 ++ selectPairHalf 1 ++
-    selectField false 2 (offset 6)
-
 /-- `x4`–`x7` where the sign's mask in `x1` is set, else `x12`–`x15`. -/
 def negSel : List Instr :=
   [.tst .x .x1 .x1, .cselc .x .x4 .x4 .x12 .ne, .cselc .x .x5 .x5 .x13 .ne, .cselc .x .x6 .x6 .x14 .ne,
     .cselc .x .x7 .x7 .x15 .ne]
 
-/-- Slot `c` negated where the sign's mask in `x1` is set: `0 - [c]` (slot 21 holds zero) into
-`x4`–`x7`, `[c]` into `x12`–`x15`, and the choice by `csel` stored back. -/
-def combNeg (c : Slot) : List Instr :=
-  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords (offset 21) (offset c) ++ borrow38 ++
-    [.sub .x .x4 .x4 .x8] ++ loads (offset c) .x12 .x13 .x14 .x15 ++ negSel ++ store4 (offset c)
+/-! ## The selection in registers
+
+As s2n-bignum's `edwards25519_scalarmulbase_alt` selects: every candidate's words are loaded in
+pairs (`ldp`) and kept where the digit's magnitude `|d|` (in `x2`) is the candidate's (`csel`),
+starting from the identity's; then `2dT` is negated, `Y - X` and `Y + X` exchanged, for a
+negative digit (the sign's mask in `x1`), and the entry stored to slots 4–6 once. -/
+
+/-- Digit `x19`, whose bits are at `x0 + 768 + 4 x19`: its sign's mask to `x1` and its magnitude
+to `x2`. -/
+def combDigitS : List Instr :=
+  [.lsl .x .x8 .x19 2, .add .x .x8 .x0 .x8] ++ combNibble 768 ++ combSign
+
+/-- `x9` = the address of table `x19`, through `x16`. -/
+def tblAddrS : List Instr :=
+  [.adrSym .x9 combSym, .lsl .x .x16 .x19 8, .add .x .x9 .x9 .x16, .add .x .x9 .x9 .x16,
+    .add .x .x9 .x9 .x16]
+
+/-- The accumulators of the selection, in pairs, and their pairs' offsets in a table: `Y - X`
+and `Y + X` (`scanAccs₁`, from `x9`), then `2dT` (`scanAccs₂`, from `x9 + 512`). -/
+def scanAccs₁ : List (Reg × Reg × Nat) := [(.x3, .x4, 0), (.x5, .x6, 16), (.x7, .x8, 256), (.x10, .x11, 272)]
+def scanAccs₂ : List (Reg × Reg × Nat) := [(.x12, .x13, 0), (.x14, .x15, 16)]
+
+/-- The identity's cached form `[1, 1, 0]` in the accumulators. -/
+def scanInit : List Instr :=
+  [.movz .x .x3 1 0, .movz .x .x4 0 0, .movz .x .x5 0 0, .movz .x .x6 0 0,
+    .movz .x .x7 1 0, .movz .x .x8 0 0, .movz .x .x10 0 0, .movz .x .x11 0 0,
+    .movz .x .x12 0 0, .movz .x .x13 0 0, .movz .x .x14 0 0, .movz .x .x15 0 0]
+
+/-- Candidate `m + 1`'s pairs at `x9 + o + 32 m`, kept in `accs` where `|d| = m + 1`. -/
+def scanCand (accs : List (Reg × Reg × Nat)) (m : Nat) : List Instr :=
+  [.movz .x .x16 (BitVec.ofNat 16 (m + 1)) 0, .subs .x .x16 .x2 .x16] ++
+    accs.flatMap fun a => [.ldp .x16 .x17 .x9 (a.2.2 + 32 * m), .cselc .x a.1 .x16 a.1 .eq,
+      .cselc .x a.2.1 .x17 a.2.1 .eq]
+
+/-- `p - [x12–x15]` into `x20`–`x23`, from the constants `2⁶⁴ - 19`, `2⁶⁴ - 1`, `2⁶³ - 1`. -/
+def scanNeg : List Instr :=
+  [.movz .x .x17 0 0, .subImm .x .x17 .x17 1, .lsr .x .x24 .x17 1, .subImm .x .x16 .x17 18,
+    .subs .x .x20 .x16 .x12, .sbcs .x .x21 .x17 .x13, .sbcs .x .x22 .x17 .x14, .sbc .x .x23 .x24 .x15]
+
+/-- Under the sign's mask (`x1`): `2dT` negated, and `Y - X`, `Y + X` exchanged, stored to slots
+4–6. -/
+def scanSign : List Instr :=
+  [.tst .x .x1 .x1,
+    .cselc .x .x12 .x20 .x12 .ne, .cselc .x .x13 .x21 .x13 .ne,
+    .cselc .x .x14 .x22 .x14 .ne, .cselc .x .x15 .x23 .x15 .ne,
+    .cselc .x .x20 .x7 .x3 .ne, .cselc .x .x21 .x8 .x4 .ne,
+    .cselc .x .x22 .x10 .x5 .ne, .cselc .x .x23 .x11 .x6 .ne,
+    .cselc .x .x16 .x3 .x7 .ne, .cselc .x .x17 .x4 .x8 .ne,
+    .cselc .x .x24 .x5 .x10 .ne, .cselc .x .x2 .x6 .x11 .ne,
+    .stp .x20 .x21 .x0 (offset 4), .stp .x22 .x23 .x0 (offset 4 + 16),
+    .stp .x16 .x17 .x0 (offset 5), .stp .x24 .x2 .x0 (offset 5 + 16),
+    .stp .x12 .x13 .x0 (offset 6), .stp .x14 .x15 .x0 (offset 6 + 16)]
+
+/-- The digit's entry from table `x19`, negated for a negative digit, to slots 4–6. -/
+def combEntry : List Instr :=
+  tblAddrS ++ scanInit ++ (List.range 8).flatMap (scanCand scanAccs₁) ++
+    [.addImm .x .x9 .x9 512] ++ (List.range 8).flatMap (scanCand scanAccs₂) ++ scanNeg ++ scanSign
 
 open VG.Impl.X25519.AArch64.Alt in
 /-- The entry in slots 4–6 (`[Y - X, Y + X, 2dT]` of an affine point) added to the accumulator
@@ -175,8 +147,8 @@ def combAdd : List Instr :=
 /-- Step `x19 = i`: digit `i`'s entry of table `i`, negated for a negative digit, added to the
 accumulator. `x8` is nonzero while another step follows. -/
 def combStep : Prog isa :=
-  .seq (.block combDigit) <|
-  .seq (.block (combSelect ++ combNeg 6)) <|
+  .seq (.block combDigitS) <|
+  .seq (.block combEntry) <|
   .seq (.block combAdd) (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64])
 
 /-- The steps from digit `j < 64` on. -/
