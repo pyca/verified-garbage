@@ -35,9 +35,9 @@ the first chunk, are absorbed. -/
 theorem tailKMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {st buf q : Addr} {s : State}
     (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = q)
     (hst : stR st ∈ s.wr) (hb : bufR buf ∈ s.wr) (hkr : kR buf ∈ s.wr)
-    (hin : ∀ off n, off + n ≤ 512 → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 off) n)
+    (hin : ∀ off n, off + n ≤ 16 * total pre → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 off) n)
     (hc : Consts s.mem buf) (dsb : (stR st).Disjoint (bufR buf)) (dsk : (stR st).Disjoint (kR buf))
-    (dbk : (bufR buf).Disjoint (kR buf)) (dqs : (dR5 q).Disjoint (slotsR buf))
+    (dbk : (bufR buf).Disjoint (kR buf)) (dqs : (⟨q, 16 * total pre⟩ : Region).Disjoint (slotsR buf))
     (hacc : Acc R0 R1 X s) :
     WP isa (tailKMain vl pre) s fun s' =>
         (∀ k < 512, s'.mem (kA buf + BitVec.ofNat 64 k) =
@@ -53,7 +53,7 @@ theorem tailKMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : N
   have F₁ : Frame [slotsR buf] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
   have q₁ : bytesAt s₁.mem q (16 * total pre) = bytesAt s.mem q (16 * total pre) := by
-    have := bytes_frame F₁ dqs (j := 0) (n := 16 * total pre) (by cases pre <;> decide)
+    have := bytes_frame F₁ dqs (by cases pre <;> decide) (j := 0) (n := 16 * total pre) (by omega)
     simpa using this
   have h0 : SR pre buf q R0 R1 X (fun j => ctr (stateAt s.mem st) j) s₁ 0 s₁ :=
     ⟨hh, h15, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, by
@@ -61,7 +61,7 @@ theorem tailKMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : N
         VG.Proof.Poly1305.absorbAll_nil]
       exact ⟨by rw [g₁]; exact hacc.r8, by rw [g₁]; exact hacc.r9, by rw [g₁]; exact hacc.r10,
         by rw [g₁]; exact hacc.h2, by simp only [hval, g₁]; exact hacc.val⟩⟩
-  refine WP.seq (WP.mono (sroundsFor_ok hk (by rw [g₁, hrsi]) (by rw [rd₁, wr₁]; exact hin) vl pre
+  refine WP.seq (WP.mono (sroundsFor_ok hk (by rw [g₁, hrsi]) (by rw [rd₁, wr₁]; exact hin) vl pre (Nat.le_refl _) (total_le pre)
     (by rw [g₁, hrcx]) (by rw [wr₁]; exact hb) c₁.m8 ⟨c₁.lo16, c₁.hi16⟩ dqs h0) fun s₂ h₂ => ?_)
   have F₂ : Frame [slotsR buf] s.mem s₂.mem := F₁.trans h₂.frame
   have hh₂ : Holds buf false (fun j => Nat.repeat innerBlock 10 (ctr (stateAt s.mem st) j)) s₂ := by
