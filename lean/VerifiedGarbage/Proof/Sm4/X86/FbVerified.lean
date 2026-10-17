@@ -2,8 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
-public import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
-meta import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
+public import VerifiedGarbage.Proof.Sm4.X86.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.X86.ModeCore
+public import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.FbScratch
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Proof.Sm4.X86.FbLit
@@ -31,6 +39,19 @@ their working space on the stack, zeroed on return.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Sm4.X86
+
+open VG VG.X86 VG.Impl.Sm4.X86
+
+theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r := fun _ h => by
+  simp only [Region.Contains] at h; omega
+
+theorem scr_eq (s : State) (d : Dir) :
+    Modes.X86.scrR s (dirCore d) = ⟨(arg s 4).setWidth 64, 8 * 181⟩ := by
+  simp [Modes.X86.scrR, dirCore, tableEnd_eq]
+
+end VG.Proof.Sm4.X86
 
 namespace VG.Proof.Sm4.X86.Fb
 
