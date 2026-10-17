@@ -127,23 +127,18 @@ def moves : List Instr :=
   [.mov .r15 (.reg .rax), .mov .r12 (.reg .r11), .mov .rbx (.reg .rdx), .mov .rbp (.reg .rcx),
     .mov .r14 (.reg .r8), .mov .r13 (.reg .r9)]
 
-/-- `rdx = len - lo` (`len` in `r13`) plus `2 ^ 64 - n`: `CF` set if `len` is
-not from `lo` to `lo + n - 1`. -/
-def lenOut (lo n : Nat) : List Instr :=
-  [.mov .rdx (.reg .r13), .alu .sub .rdx (.imm (BitVec.ofNat 32 lo)),
-    .alu .add .rdx (.imm (BitVec.ofInt 32 (-(n : Int))))]
-
 /-- `rdx = fold` if `CF` is set, else 0, without a branch. -/
 def mask (fold : Nat) : List Instr := [.alu .sbb .rdx (.reg .rdx), .alu .and .rdx (.imm (BitVec.ofNat 32 fold))]
 
 /-- For more than `fold` bytes of data (in `r13`), `rdx = m`: if `pass` is
 512 (the stitched AVX2 `seal`, `fold` 448, whose first chunk can absorb the
 `fold` bytes before it), `fold` if the bytes after them are whole chunks of
-512 and 1 to `512 - fold`, or, from 513 to 576 bytes and from 1025 to 1408,
-if no more than one chunk follows them and then 65 to 128 or 448 bytes: the
+512 and 1 to `512 - fold`, or for any length below 1409 bytes (after them
+up to 512 bytes and no chunk, or a chunk and up to 448 bytes): the
 prologue's pass computes their keystream with the one-time key's, which
-saves a chunk; else 0. Below 1409 bytes that is any length but 577 to 960
-(`lenOut 577 384`), one test as from 1409, each without a branch (`mask`). If `pass` is another number but 0,
+saves a pass (of the one-time key's block alone, or a chunk); else 0,
+without a branch (`mask`).
+If `pass` is another number but 0,
 the bytes past the last multiple of `pass` rounded up to a multiple of 64
 (`pass` a power of two), if that is at most `fold`; else (or if `pass` is 0,
 adding no code) `rdx` stays 0. -/
@@ -151,7 +146,7 @@ def splitM (fold pass : Nat) : Prog isa :=
   if pass = 0 then .block [] else
   if pass = 512 then
     .seq (.block [.alu .cmp .r13 (.imm 1409)])
-      (.ite .b (.block (lenOut 577 384 ++ mask fold))
+      (.ite .b (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))])
         (.block ([.mov .rdx (.reg .r13), .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 511),
           .alu .add .rdx (.imm (BitVec.ofInt 32 (-(fold : Int))))] ++ mask fold)))
   else
