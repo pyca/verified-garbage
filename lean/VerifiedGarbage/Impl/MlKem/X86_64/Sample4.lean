@@ -16,23 +16,22 @@ elements of `ymm` registers (`Impl/Sha3/X86_64/X4.lean`). It keeps
 results in `r14`, and saves their caller's values and `rbp`'s in
 `scratch[4384..4424)`. `scratch` holds, from byte 0, the four states
 (interleaved, 800 bytes), the second buffer of the permutation (800
-bytes), the table of the round constants (768 bytes), the first 504 bytes
-of the XOF output of each seed (from byte `2368 + 504 k`), and, from byte
-6144, the scratch space of `vg_mlkem_sample_ntt` (2048 bytes).
+bytes), the table of the round constants (768 bytes), a buffer of 504
+bytes of the XOF output of each seed (from byte `2368 + 504 k`), the
+number `j` of coefficients of each seed sampled so far (from byte
+`4424 + 8 k`), and, from byte 4480, a table for the sampling (`tabQ`,
+2048 bytes) and the constants of the vector code (`consts`, 192 bytes).
 
 Each seed is at most 34 bytes, so the padded message is one block: the
 code zeroes the states, writes the seed's bytes, SHAKE's suffix `0x1f` (at
 byte 34) and the last bit of the padding (`0x80`, at byte 167) into each,
 and permutes them. It then copies the first 168 bytes of each state to its
-output, and permutes them again, three times in all, in a loop (`squeezes`)
-whose output pointer is `rbp` and whose count is `r10`.
+buffer, and permutes them again, three times in all, in a loop (`squeezes`)
+whose output pointer is `rbp` and whose count is `r10`. It then writes the
+table and the constants, which it loads into `ymm8` to `ymm13`.
 
-The states are then no longer needed, and the code writes over them a
-table for the sampling (`tabQ`, 2048 bytes from byte 0 of `scratch`) and
-the constants of the vector code (`consts`, 192 bytes from byte 2048),
-which it loads into `ymm8` to `ymm13`. For each seed it runs 168
-iterations of `SampleNTT`'s loop on its 504 bytes, which samples 256
-coefficients but for about one seed in 120, four at a time (`vgrp`): while
+For each seed it runs 168 iterations of `SampleNTT`'s loop on its 504 bytes
+(`run1`), which samples 256 coefficients but for about one seed in 120, four at a time (`vgrp`): while
 fewer than 249 coefficients are sampled (`j ≤ 248`), with AVX2 code, which
 computes the eight candidates `d₁`, `d₂` of the 12 bytes in the
 doublewords of `ymm0` and the mask `m` of those less than `q` in `eax`
@@ -43,14 +42,21 @@ of candidates less than `q`, the entry's high doubleword (`vput`);
 otherwise (`j ≥ 249`), with four iterations of the loop of
 `vg_mlkem_sample_ntt` (`snBody`), which stops at 256. A value stored but
 not counted lies past the coefficients sampled, and is overwritten by the
-next. Only if a seed does not reach 256 coefficients does the code call
-`vg_mlkem_sample_ntt` for that seed, which samples it from the start. It
-returns 1 if every seed has 256 coefficients, and 0 otherwise.
+next. It keeps each seed's `j`.
+
+Only if a seed has fewer than 256 coefficients (`tail4`), the states are
+still there: the code squeezes two more blocks of each seed to its buffer
+(bytes 504 to 839 of its output), and runs 112 more iterations of the loop
+on them for each seed, from its `j` (`run2`; for a seed that has 256, they
+store nothing). That is `SampleNTT`'s loop bounded by `minIterations` = 280
+iterations, so a seed that still has fewer than 256 coefficients fails the
+specification's bound too. It returns 1 if every seed has 256 coefficients
+(the AND of `j >> 8`), and 0 otherwise.
 
 The loops' branches, the addresses of their loads from the table and of
-their stores, and whether the function calls `vg_mlkem_sample_ntt`,
-depend on the XOF output, a function of the seeds, and on nothing else;
-every other address and branch depends only on the pointers.
+their stores, and whether the function squeezes the two more blocks, depend
+on the XOF output, a function of the seeds, and on nothing else; every other
+address and branch depends only on the pointers.
 -/
 
 @[expose] public section
@@ -67,6 +73,10 @@ def oRc : Nat := 1600
 def oBuf : Nat := 2368
 def oSave : Nat := 4384
 def oScalar : Nat := 6144
+/-- Where `j` of seed `k` is kept, at `scratch + oCnt + 8 k`. -/
+def oCnt : Nat := 4424
+/-- The table and the constants of the vector code. -/
+def oTab : Nat := 4480
 
 /-- The registers saved, at `scratch + oSave + 8 k`. -/
 def saved : List Reg := [.rbx, .rbp, .r12, .r13, .r14]
@@ -122,17 +132,6 @@ def squeeze (fast : Bool := false) : Prog isa :=
 /-- Squeeze blocks `b` to `b + n - 1`. -/
 def squeezes (b n : Nat) (fast : Bool := false) : Prog isa := blocks (oBuf + 168 * b) 168 n (squeeze fast)
 
-/-- If seed `k` has fewer than 256 coefficients: `vg_mlkem_sample_ntt` on
-it, and `r14 ← r14 ∧ result`. -/
-def fallback (k : Nat) : Prog isa :=
-  .seq (.block [.alu .cmp .rdi (.imm 256)])
-    (.ite .b
-      (.seq (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * k))),
-          .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * k))), .mov .rdx (.reg .rbx),
-          .alu .add .rdx (.imm (BitVec.ofNat 32 oScalar))])
-        (.seq (.call "vg_mlkem_sample_ntt" sampleNTT) (.block [.alu32 .and .r14 (.reg .rax)])))
-      (.block []))
-
 /-! ## The vector sampling -/
 
 /-- The positions of the set bits of the byte `m`, in order. -/
@@ -144,7 +143,7 @@ doubleword. -/
 def tabEntry (m : Nat) : Nat := (setBits m).foldr (fun p acc => p + 16 * acc) 0 + 2 ^ 32 * (setBits m).length
 
 /-- The constants of the vector code, four quadwords each, from byte
-`oCst` of `scratch` (in `ymm8` to `ymm13`): the `vpshufb` mask that puts
+`oTab + oCst` of `scratch` (in `ymm8` to `ymm13`): the `vpshufb` mask that puts
 bytes `3i, 3i+1` and `3i+1, 3i+2` of the 12 in the low half of doublewords
 `2i` and `2i+1` (bytes 0 to 5 in the low lane, 6 to 11 in the high one);
 the shifts of the doublewords (`0, 4, …`); `0xfff`; `q`; the `vpshufb`
@@ -159,24 +158,24 @@ def consts : List (BitVec 64) :=
     0x8080808080808080, 0x0f0b070380808080, 0x808080800f0b0703, 0x8080808080808080,
     0x0000000400000000, 0x0000000c00000008, 0x0000001400000010, 0x0000001c00000018]
 
-/-- The offset of the constants in `scratch`. -/
+/-- The offset of the constants in the table. -/
 def oCst : Nat := 2048
 
-/-- Quadword `i` of the table and the constants, from byte 0 of `scratch`. -/
+/-- Quadword `i` of the table and the constants, from byte `oTab` of `scratch`. -/
 def tabQ (i : Nat) : BitVec 64 := if i < 256 then BitVec.ofNat 64 (tabEntry i) else consts.getD (i - 256) 0
 
 /-- The table and the constants, through `rax`. -/
 def tabBuild : List Instr :=
-  (List.range 280).flatMap fun i => [.movImm64 .rax (tabQ i), .store (at_ .rbx (8 * i)) .rax]
+  (List.range 280).flatMap fun i => [.movImm64 .rax (tabQ i), .store (at_ .rbx (oTab + 8 * i)) .rax]
 
 /-- The constants into `ymm8` to `ymm13`. -/
 def cstLoad : List Instr :=
-  [.vmovdquLoad .l256 .xmm8 (at_ .rbx oCst), .vmovdquLoad .l256 .xmm9 (at_ .rbx (oCst + 32)),
-    .vmovdquLoad .l256 .xmm10 (at_ .rbx (oCst + 64)), .vmovdquLoad .l256 .xmm11 (at_ .rbx (oCst + 96)),
-    .vmovdquLoad .l256 .xmm12 (at_ .rbx (oCst + 128)), .vmovdquLoad .l256 .xmm13 (at_ .rbx (oCst + 160))]
+  [.vmovdquLoad .l256 .xmm8 (at_ .rbx (oTab + oCst)), .vmovdquLoad .l256 .xmm9 (at_ .rbx (oTab + oCst + 32)),
+    .vmovdquLoad .l256 .xmm10 (at_ .rbx (oTab + oCst + 64)), .vmovdquLoad .l256 .xmm11 (at_ .rbx (oTab + oCst + 96)),
+    .vmovdquLoad .l256 .xmm12 (at_ .rbx (oTab + oCst + 128)), .vmovdquLoad .l256 .xmm13 (at_ .rbx (oTab + oCst + 160))]
 
-/-- `[rbx + 8 rax]`: entry `rax` of the table. -/
-def tabE : MemOp := { base := .rbx, index := some .rax, scale := 8 }
+/-- `[rbx + 8 rax + oTab]`: entry `rax` of the table. -/
+def tabE : MemOp := { base := .rbx, index := some .rax, scale := 8, disp := oTab }
 
 /-- `[rbp + 4 rdi]`: `a[j]`. -/
 def aV : MemOp := { base := .rbp, index := some .rdi, scale := 4 }
@@ -192,7 +191,7 @@ def vcand : List Instr :=
 def vput : List Instr :=
   [.vmovdquLoad .l128 .xmm1 tabE, .vop (.vpbroadcastd .l256 .xmm1 .xmm1),
     .vop (.vvar .vpsrlvd .l256 .xmm1 .xmm1 .xmm13), .vop (.vpermd .xmm0 .xmm1 .xmm0), .vmovdquStore .l256 aV .xmm0,
-    .alu32 .add .rdi (.mem { tabE with disp := 4 }), .alu .add .rsi (.imm 12)]
+    .alu32 .add .rdi (.mem { tabE with disp := oTab + 4 }), .alu .add .rsi (.imm 12)]
 
 /-- Four iterations of the loop: with AVX2 if `j < 249`, and otherwise with
 `snBody`. -/
@@ -209,24 +208,50 @@ def setup (k : Nat) : List Instr :=
     .mov32 .rdi (.imm 0), .mov .rbp (.reg .r13), .alu .add .rbp (.imm (BitVec.ofNat 32 (1024 * k))),
     .mov32 .r10 (.imm 21)]
 
-/-- 168 iterations of the loop on the output of seed `k`, to polynomial
-`k`. `vzeroupper` then clears the upper halves of the vector registers, so
-that the SSE code that runs next (the caller's, or
-`vg_mlkem_sample_ntt`'s) does not pay for mixing them. -/
-def parse (k : Nat) : Prog isa :=
-  .seq (.block (setup k ++ cstLoad)) (.seq (.loop vbody .ne) (.seq (.block [.vop .vzeroupper]) (fallback k)))
-
 /-- Return `r14`, and restore the callee-saved registers (`rbx` last). -/
 def epi : List Instr :=
   .mov32 .rax (.reg .r14) ::
     ((List.range 4).map fun k => .mov (saved.getD (4 - k) .rbx) (.mem (at_ .rbx (oSave + 8 * (4 - k))))) ++
     [.mov .rbx (.mem (at_ .rbx oSave))]
 
+/-- 168 iterations of the loop on the buffer of seed `k`, to polynomial
+`k`, and `j` kept. -/
+def run1 (k : Nat) : Prog isa :=
+  .seq (.block (setup k ++ cstLoad)) (.seq (.loop vbody .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
+
+/-- The setup of the continuation of seed `k`: from `j` kept. -/
+def contSetup (k : Nat) : List Instr :=
+  [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * k))),
+    .mov .rdi (.mem (at_ .rbx (oCnt + 8 * k))), .mov .rbp (.reg .r13),
+    .alu .add .rbp (.imm (BitVec.ofNat 32 (1024 * k))), .mov32 .r10 (.imm 14)]
+
+/-- 112 more iterations of the loop, on the buffer of seed `k` (bytes 504
+to 839 of its output), and `j` kept. -/
+def run2 (k : Nat) : Prog isa :=
+  .seq (.block (contSetup k ++ cstLoad)) (.seq (.loop vbody .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
+
+/-- `r14` is 1 if every seed has 256 coefficients, and 0 otherwise: the AND of
+the seeds' `j >> 8` (`j ≤ 256`). -/
+def cntFlags : List Instr := .mov32 .r14 (.imm 1) :: (List.range 4).flatMap fun k =>
+  [.mov .rax (.mem (at_ .rbx (oCnt + 8 * k))), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax)]
+
+/-- Two more blocks of each seed, and 112 more iterations on each. -/
+def more4 (fast : Bool := false) : Prog isa :=
+  .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast)
+    (.seq (run2 0) (.seq (run2 1) (.seq (run2 2) (.seq (run2 3) (.block cntFlags))))))
+
+/-- If a seed has fewer than 256 coefficients, `more4`; then the return
+value. `vzeroupper` clears the upper halves of the vector registers, so that
+the caller's SSE code does not pay for mixing them. -/
+def tail4 (fast : Bool := false) : Prog isa :=
+  .seq (.block (cntFlags ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr)))
+    (.seq (.ite .e (more4 fast) (.block [])) (.block (([.vop .vzeroupper] : List Instr) ++ epi)))
+
 /-- `vg_mlkem_sample_ntt4_avx2`. -/
 def sampleNTT4Avx2 (fast : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
     (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
-      (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi)))))))
+      (.seq (run1 0) (.seq (run1 1) (.seq (run1 2) (.seq (run1 3) (tail4 fast)))))))
 
 /-- `vg_mlkem_sample_ntt` on seed `k`, and `r14 ← r14 ∧ result`. -/
 def callK (k : Nat) : Prog isa :=

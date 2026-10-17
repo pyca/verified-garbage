@@ -113,7 +113,7 @@ end VG.Proof.MlKem.X86_64
 namespace VG.Proof.MlKem.X86_64.S4
 
 open VG VG.X86_64
-open VG.Impl.MlKem.X86_64.Sample4 (vcand vput tabE aV setBits)
+open VG.Impl.MlKem.X86_64.Sample4 (vcand vput tabE aV setBits oTab)
 open VG.Proof.Sha3.X86_64 (WP.cons Upd)
 
 def shuf0 : BitVec 128 := 0x80800504808004038080020180800100#128
@@ -614,20 +614,21 @@ theorem ymm_halves (x : BitVec 256) : x.extractLsb' 128 128 ++ x.extractLsb' 0 1
   · rw [itF h]; simp only [show j - 128 < 128 by bdd_omega, decide_true, Bool.true_and]; exact congrArg _ (by bdd_omega)
 
 theorem ea_tabE {s : State} {M : Nat} (h : s.gpr .rax = BitVec.ofNat 64 M) :
-    s.ea tabE = s.gpr .rbx + BitVec.ofNat 64 (8 * M) := by
-  simp only [State.ea, tabE, h, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
-  congr 1
+    s.ea tabE = s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M) := by
+  simp only [State.ea, tabE, h, show BitVec.ofInt 64 (oTab : Int) = BitVec.ofNat 64 oTab from rfl]
+  rw [BitVec.add_assoc]
+  refine congrArg (s.gpr .rbx + ·) ?_
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_mul, BitVec.toNat_ofNat]
+  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
   omega
 
 theorem ea_tabE4 {s : State} {M : Nat} (h : s.gpr .rax = BitVec.ofNat 64 M) :
-    s.ea { tabE with disp := 4 } = s.gpr .rbx + BitVec.ofNat 64 (8 * M + 4) := by
-  simp only [State.ea, tabE, h]
+    s.ea { tabE with disp := oTab + 4 } = s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M + 4) := by
+  simp only [State.ea, tabE, h, show BitVec.ofInt 64 ((oTab : Int) + 4) = BitVec.ofNat 64 (oTab + 4) from rfl]
   rw [BitVec.add_assoc]
-  congr 1
+  refine congrArg (s.gpr .rbx + ·) ?_
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, show BitVec.ofInt 64 4 = 4#64 from rfl]
+  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
   omega
 
 theorem ea_aV (s : State) : s.ea aV = s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat) := by
@@ -640,24 +641,24 @@ theorem ea_aV (s : State) : s.ea aV = s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .
 /-- The doublewords stored: candidate `E / 16ⁱ mod 8` in doubleword `i`. -/
 theorem vput_ok {s : State} (hc : VC s) {L : BitVec 128} (h0 : ∀ l < 2, s.lane .xmm0 l = candV L l)
     {M : Nat} (hrax : s.gpr .rax = BitVec.ofNat 64 M)
-    (hin : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 (8 * M)) 16)
-    (hin4 : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 (8 * M + 4)) 4)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M)) 16)
+    (hin4 : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M + 4)) 4)
     (hout : InRegions s.wr (s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat)) 32)
     (hd : ∀ V : BitVec 256, (s.mem.writeW (s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat)) V).readW
-      (s.gpr .rbx + BitVec.ofNat 64 (8 * M + 4)) 32 = s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (8 * M + 4)) 32) :
+      (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M + 4)) 32 = s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M + 4)) 32) :
     WP isa (.block vput) s fun s' =>
       (∃ V : BitVec 256, s'.mem = s.mem.writeW (s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat)) V ∧
         ∀ i < 8, V.extractLsb' (32 * i) 32 = BitVec.ofNat 32 (candN (fun i => (byte L i).toNat)
-          ((dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (8 * M)) 128) 0).toNat / 16 ^ i % 8))) ∧
+          ((dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M)) 128) 0).toNat / 16 ^ i % 8))) ∧
       s'.gpr .rdi = (((s.gpr .rdi).setWidth 32 +
-        s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (8 * M + 4)) 32).setWidth 64) ∧
+        s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M + 4)) 32).setWidth 64) ∧
       s'.gpr .rsi = s.gpr .rsi + 12 ∧ VC s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ∀ r, r ≠ .rdi → r ≠ .rsi → s'.gpr r = s.gpr r := by
   refine wp_vld128 (ea_tabE hrax) hin fun s1 u1 => wp_vpbcastd fun s2 u2 => wp_vvar fun s3 u3 => wp_vpermd fun s4 u4 => ?_
   have g4 : s4.gpr = s.gpr := by rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr]
   refine wp_vst256 (a := s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat)) (by rw [ea_aV, g4])
     (by rw [u4.wr, u3.wr, u2.wr, u1.wr]; exact hout) fun s5 g5 l5 m5 r5 w5 => ?_
-  refine wp_add32m (a' := s.gpr .rbx + BitVec.ofNat 64 (8 * M + 4)) (by rw [← ea_tabE4 hrax]; simp only [State.ea, g5, g4])
+  refine wp_add32m (a' := s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M + 4)) (by rw [← ea_tabE4 hrax]; simp only [State.ea, g5, g4])
     (by rw [r5, w5, u4.rd, u3.rd, u2.rd, u1.rd, u4.wr, u3.wr, u2.wr, u1.wr]; exact hin4) fun s6 u6 =>
     wp_addi' fun s7 u7 => WP.block_nil ?_
   have c4 : VC s4 := ((hc.lupd u1 (.inr rfl)).lupd u2 (.inr rfl)).lupd u3 (.inr rfl) |>.lupd u4 (.inl rfl)
@@ -677,17 +678,17 @@ theorem vput_ok {s : State} (hc : VC s) {L : BitVec 128} (h0 : ∀ l < 2, s.lane
         u2.other .xmm0 (by decide) 1 (by decide), u2.other .xmm0 (by decide) 0 (by decide),
         u1.other .xmm0 (by decide) 1 (by decide), u1.other .xmm0 (by decide) 0 (by decide), h0 1 (by decide),
         h0 0 (by decide)]
-    have hi3 : s3.ymm .xmm1 = idxV (dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (8 * M)) 128) 0) := by
+    have hi3 : s3.ymm .xmm1 = idxV (dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M)) 128) 0) := by
       rw [State.ymm_eq, u3.val 1 (by decide), u3.val 0 (by decide), u2.val 1 (by decide), u2.val 0 (by decide),
         u2.other .xmm13 (by decide) 1 (by decide), u2.other .xmm13 (by decide) 0 (by decide),
         u1.other .xmm13 (by decide) 1 (by decide), u1.other .xmm13 (by decide) 0 (by decide),
         u1.val 0 (by decide), hc.c13 1 (by decide), hc.c13 0 (by decide)]
       rfl
     rw [hy4, dw8_permDwords _ _ hi, hi3, idx_toNat _ hi, hx3]
-    have hp : (dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (8 * M)) 128) 0).toNat / 16 ^ i % 8 < 8 :=
+    have hp : (dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M)) 128) 0).toNat / 16 ^ i % 8 < 8 :=
       Nat.mod_lt _ (by decide)
     rw [ext_app2 _ _ hp]
-    by_cases h4 : (dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (8 * M)) 128) 0).toNat / 16 ^ i % 8 < 4
+    by_cases h4 : (dword (s.mem.readW (s.gpr .rbx + BitVec.ofNat 64 (oTab + 8 * M)) 128) 0).toNat / 16 ^ i % 8 < 4
     · rw [itT h4, cand_dword _ (show 0 < 2 by decide) (Nat.mod_lt _ (by decide))]
       congr 2; omega
     · rw [itF h4, cand_dword _ (show 1 < 2 by decide) (Nat.mod_lt _ (by decide))]
