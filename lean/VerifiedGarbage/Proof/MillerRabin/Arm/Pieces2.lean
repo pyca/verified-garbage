@@ -6,10 +6,10 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
-/-! # The Miller–Rabin round on ARMv7: more of its steps as pieces
+/-! # The Miller–Rabin round on ARMv7: the blocks on the header words as pieces
 
-The top bit of `c`'s copy shifted out (`St.pbitOut`), the flag and the count
-(`St.pflag`), and the flag and the count set (`St.pinit`).
+The counts (`St.ptabCnt`, `St.pcnt`, `St.pwinCnt`, `St.psqFour`), a
+squaring's flag (`St.psqFlag`) and a window's end (`St.pwinEnd`).
 -/
 
 @[expose] public section
@@ -20,93 +20,22 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
 
-/-- The flag's arithmetic on bits. -/
-theorem flag_bv {b e1 e2 f : Nat} (hb : b ≤ 1) (h1 : e1 ≤ 1) (h2 : e2 ≤ 1) (hf : f ≤ 1) :
-    (((BitVec.ofNat 32 e1 &&& BitVec.ofNat 32 b) ||| BitVec.ofNat 32 e2) |||
-      (BitVec.ofNat 32 f &&& (BitVec.ofNat 32 b ^^^ 1))).toNat =
-      (if b = 1 then (decide (e1 = 1) || decide (e2 = 1)) else (decide (f = 1) || decide (e2 = 1))).toNat := by
-  rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> rcases (by omega : e1 = 0 ∨ e1 = 1) with rfl | rfl <;>
-    rcases (by omega : e2 = 0 ∨ e2 = 1) with rfl | rfl <;> rcases (by omega : f = 0 ∨ f = 1) with rfl | rfl <;>
-    decide
+theorem ofNat_toNat32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 32 v).toNat = v := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+
+theorem ofNat_shr32 {v : Nat} (h : v < 2 ^ 32) (n : Nat) : BitVec.ofNat 32 v >>> n = BitVec.ofNat 32 (v / 2 ^ n) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, ofNat_toNat32 h, Nat.shiftRight_eq_div_pow,
+    ofNat_toNat32 (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) h)]
+
+/-- The flag of a squaring on bits. -/
+theorem sqflag_bits (f e m : Bool) :
+    (BitVec.ofNat 32 f.toNat ||| (BitVec.ofNat 32 e.toNat &&& BitVec.ofNat 32 m.toNat)).toNat = (f || (m && e)).toNat := by
+  cases f <;> cases e <;> cases m <;> decide
 
 section
 variable {P : MP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
   {LS : List Nat}
-
-/-- After the pointer of `c`'s copy, the count and the carry in. -/
-abbrev BitH (P : MP) (E : State → Prop) (A : State → Nat → Nat) (L : List Nat) (V : State → Nat → Nat)
-    (LS : List Nat) (σ s : State) : Prop :=
-  St P E A L V LS σ s ∧ s.gpr .r0 = P.B + BitVec.ofNat 32 (arr P.W aE) ∧ s.gpr .lr = BitVec.ofNat 32 (2 * P.w) ∧
-    s.gpr .r11 = 0
-
-/-- The top bit of `[aE]` shifted out into `sBit`. -/
-theorem St.pbitOut (hE : aE ∈ L) (hEv : ∀ σ, E σ → A σ aE < P.R) :
-    VP (St P E A L V LS) (seqs bitOut)
-      (St P E (fun σ => upd (A σ) aE (2 * A σ aE % P.R)) L (fun σ => upd (V σ) sBit (2 * A σ aE / P.R))
-        (sBit :: LS)) := by
-  simp only [bitOut, seqs]
-  let G2 := fun σ s => St P E (fun σ => upd (A σ) aE (2 * A σ aE % P.R)) L V LS σ s ∧
-    (s.gpr .r11).toNat = 2 * A σ aE / P.R
-  refine VP.seq (G := BitH P E A L V LS) ?_ (VP.seq (G := G2) ?_ ?_)
-  -- The pointer, the count and the carry.
-  · refine VP.kv bitHead_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
-    have w128 := h.pre.w128
-    refine ptr_ok hw (r := .r0) (by decide) (j := aE) (by decide) fun s1 p1 r1 m1 hw1 => ?_
-    refine wp_dp (op2_imm (by decide)) fun s2 u2 => ?_
-    refine wp_mov (op2_imm (by decide)) fun t u3 => WP.block_nil ?_
-    have rt : Rest [.r0, .lr, .r11] s t := (r1.mono (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
-    have mt : t.mem = s.mem := u3.mem.trans (u2.mem.trans m1)
-    refine ⟨⟨e, h.of_rest rt mt,
-      (hw1.of_upd u2 (by decide) (by decide) (by decide)).of_upd u3 (by decide) (by decide) (by decide)⟩, ?_, ?_, ?_⟩
-    · rw [u3.other _ (by decide), u2.other _ (by decide), p1]
-    · rw [u3.other _ (by decide), u2.gpr, dpVal, hw1.r9, show (2 : BitVec 32) = BitVec.ofNat 32 2 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by simp only [MP.W]; omega)]
-      show BitVec.ofNat 32 (2 * P.w + 2 - 2) = _
-      rw [Nat.add_sub_cancel]
-    · rw [u3.gpr]
-  -- The shift.
-  · refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s ⟨⟨e, h, hw⟩, r0, lr, r11⟩ => ?_
-    · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
-      exact ⟨shiftLeft_ct s₁ s₂ t₁ t₂ u₁ u₂ trivial trivial
-        ⟨hp.1.2.1.trans hp.2.2.1.symm, hp.1.2.2.1.trans hp.2.2.2.1.symm⟩ e₁ e₂, trivial⟩
-    · have pre := h.pre
-      have hS := pre.S_eq
-      have hW : P.W = 2 * P.w + 2 := rfl
-      have fitE := hw.arr_fit (j := aE) (by decide)
-      rw [hS] at fitE
-      have ev := hEv σ e
-      have hR : 2 ^ (32 * (2 * P.w)) = P.R := by simp only [MP.R]; rw [← Nat.mul_assoc]
-      have nE := h.arrs aE hE
-      have split : ∀ m : Mem, num m P.B P.W aE = val32 m (State.addr P.B) (arr P.W aE) (2 * P.w) +
-          P.R * val32 m (State.addr P.B) (arr P.W aE + 4 * (2 * P.w)) 2 := fun m => by
-        simp only [num, MP.W]; rw [val32_append, hR]
-      have lowS : val32 s.mem (State.addr P.B) (arr P.W aE) (2 * P.w) = A σ aE := by
-        rw [val32_low _ _ _ (2 * P.w) 2, show 2 * P.w + 2 = P.W from rfl, hR]
-        simp only [num] at nE; rw [nE]; exact Nat.mod_eq_of_lt ev
-      have padS : val32 s.mem (State.addr P.B) (arr P.W aE + 4 * (2 * P.w)) 2 = 0 := by
-        have := split s.mem; rw [nE, lowS] at this
-        rcases Nat.eq_zero_or_pos (val32 s.mem (State.addr P.B) (arr P.W aE + 4 * (2 * P.w)) 2) with z | z
-        · exact z
-        · have := Nat.le_mul_of_pos_right P.R z; omega
-      have ctx : ShiftLeftCtx s P.B P.Z (arr P.W aE) (2 * P.w) :=
-        ⟨hw.nowrap, by omega, hw.writable⟩
-      refine WP.mono (shiftLeft_ok s ctx (by have := pre.w4; omega) r0 lr (by rw [r11]; decide))
-        fun t inv => ?_
-      obtain ⟨vt, ct⟩ := inv.result
-      have z0 : (0 : BitVec 32).toNat = 0 := rfl
-      rw [r11, lowS, z0, Nat.add_zero, hR] at vt ct
-      have k : Keep P.B P.W [aE] [] s.mem t.mem := Keep.of_arr (d := 0) (by simpa using inv.outside)
-        (by rw [hS]; omega) (by simp)
-      have padT : val32 t.mem (State.addr P.B) (arr P.W aE + 4 * (2 * P.w)) 2 = 0 := by
-        rw [inv.outside.val32 (by omega) (by have := pre.Z_le; omega), padS]
-      have hl := h.write1 k (by decide) (by simp) inv.rest.sp inv.rest.rd inv.rest.wr
-        (x := 2 * A σ aE % P.R) (by rw [split, vt, padT, Nat.mul_zero, Nat.add_zero]) (by simp)
-      refine ⟨⟨e, hl.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩),
-        hw.rest inv.rest⟩, ct⟩
-  -- The bit stored.
-  · refine VP.kv bitStore_taint (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, r11⟩ => ?_
-    refine h.str hw (d := sBit) (by decide) (r := .r11) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
-    rwa [r11] at ht
 
 /-- `str t, [r8, #d]`, keeping the flags. -/
 theorem KS.strz {σ s : State} {A : Nat → Nat} {V : Nat → Nat} {d : Nat} (h : KS P σ A L V LS s)
@@ -121,77 +50,40 @@ theorem KS.strz {σ s : State} {A : Nat → Nat} {V : Nat → Nat} {d : Nat} (h 
     rw [m.mem]; exact keep_write _ _ (by simp) (by simp only [hdr] at hd'; omega)
   exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) z m.gpr
 
-/-- The new flag. -/
-def flagv (V : Nat → Nat) : Nat :=
-  (if V sBit = 1 then (decide (V sE1 = 1) || decide (V sE2 = 1)) else (decide (V sF = 1) || decide (V sE2 = 1))).toNat
+/-- The count of the table's entries. -/
+theorem St.ptabCnt :
+    VP (St P E A L V LS) (.block tabCnt) (St P E A L (fun σ => upd (V σ) sK 14) (sK :: LS)) := by
+  refine VP.kv tabCnt_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+  refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
+  have h1 := h.of_rest (u1.rest (ws := [.r1]) (by simp)) u1.mem
+  have hw1 := hw.of_upd u1 (by decide) (by decide) (by decide)
+  refine h1.str hw1 (d := sK) (by decide) (r := .r1) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
+  rw [u1.gpr] at ht; exact ht
 
-/-- The flag, and the count decremented. -/
-theorem St.pflag (hb : sBit ∈ LS) (h1 : sE1 ∈ LS) (h2 : sE2 ∈ LS) (hf : sF ∈ LS) (hk : sK ∈ LS)
-    (vb : ∀ σ, E σ → V σ sBit ≤ 1) (v1 : ∀ σ, E σ → V σ sE1 ≤ 1) (v2 : ∀ σ, E σ → V σ sE2 ≤ 1)
-    (vf : ∀ σ, E σ → V σ sF ≤ 1) (vk1 : ∀ σ, E σ → 1 ≤ V σ sK) (vk2 : ∀ σ, E σ → V σ sK < 2 ^ 32) :
-    VP (St P E A L V LS) (.block (flagUpd ++ cntNext))
-      (fun σ s => St P E A L (fun σ => upd (upd (V σ) sF (flagv (V σ))) sK (V σ sK - 1)) (sK :: sF :: LS) σ s ∧
-        s.z = decide (V σ sK - 1 = 0)) := by
-  refine VP.kv flag_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
-  have hr : ∀ r : Reg, r ∈ [Reg.r1, .r2, .r3, .r4] → r ∉ [Reg.r7, .r8, .r9] := by decide
-  simp only [flagUpd, cntNext, List.cons_append, List.nil_append]
-  refine h.ldr hw hb (r := .r1) (by decide) fun s1 h1' hw1 u1 => ?_
-  refine h1'.ldr hw1 h1 (r := .r2) (by decide) fun s2 h2' hw2 u2 => ?_
-  refine h2'.ldr hw2 h2 (r := .r3) (by decide) fun s3 h3' hw3 u3 => ?_
-  refine h3'.ldr hw3 hf (r := .r4) (by decide) fun s4 h4' hw4 u4 => ?_
-  refine wp_dp (op2_reg _ _) fun s5 u5 => ?_
-  refine wp_dp (op2_imm (by decide)) fun s6 u6 => ?_
-  refine wp_dp (op2_reg _ _) fun s7 u7 => ?_
-  refine wp_dp (op2_reg _ _) fun s8 u8 => ?_
-  refine wp_dp (op2_reg _ _) fun s9 u9 => ?_
-  have r59 : Rest [.r1, .r2, .r4] s4 s9 := (u5.rest (by simp)).trans ((u6.rest (by simp)).trans
-    ((u7.rest (by simp)).trans ((u8.rest (by simp)).trans (u9.rest (by simp)))))
-  have m59 : s9.mem = s4.mem := u9.mem.trans (u8.mem.trans (u7.mem.trans (u6.mem.trans u5.mem)))
-  have h9 := h4'.of_rest r59 m59
-  have hw9 := hw4.rest r59
-  have g1 : s4.gpr .r1 = BitVec.ofNat 32 (V σ sBit) := by
-    rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr]
-  have g2 : s4.gpr .r2 = BitVec.ofNat 32 (V σ sE1) := by
-    rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr]
-  have g3 : s4.gpr .r3 = BitVec.ofNat 32 (V σ sE2) := by rw [u4.other _ (by decide), u3.gpr]
-  have g4 : s4.gpr .r4 = BitVec.ofNat 32 (V σ sF) := u4.gpr
-  have g5 : s5.gpr .r2 = BitVec.ofNat 32 (V σ sE1) &&& BitVec.ofNat 32 (V σ sBit) := by
-    rw [u5.gpr, dpVal, g2, g1]
-  have g6 : s6.gpr .r1 = BitVec.ofNat 32 (V σ sBit) ^^^ 1 := by
-    rw [u6.gpr, dpVal, u5.other _ (by decide), g1]
-  have g7 : s7.gpr .r4 = BitVec.ofNat 32 (V σ sF) &&& (BitVec.ofNat 32 (V σ sBit) ^^^ 1) := by
-    rw [u7.gpr, dpVal, u6.other _ (by decide), u5.other _ (by decide), g4, g6]
-  have g8 : s8.gpr .r2 = (BitVec.ofNat 32 (V σ sE1) &&& BitVec.ofNat 32 (V σ sBit)) ||| BitVec.ofNat 32 (V σ sE2) := by
-    rw [u8.gpr, dpVal, u7.other _ (by decide), u6.other _ (by decide), g5, u7.other _ (by decide),
-      u6.other _ (by decide), u5.other _ (by decide), g3]
-  have val : (s9.gpr .r2).toNat = flagv (V σ) := by
-    rw [u9.gpr, dpVal, g8, u8.other _ (by decide), g7]
-    exact flag_bv (vb σ e) (v1 σ e) (v2 σ e) (vf σ e)
-  refine h9.str hw9 (d := sF) (by decide) (r := .r2) fun s10 h10 hw10 _ => ?_
-  rw [val] at h10
-  have hk' : sK ∈ sF :: LS := List.mem_cons_of_mem _ hk
-  refine h10.ldr hw10 hk' (r := .r1) (by decide) fun s11 h11 hw11 u11 => ?_
-  have kv : upd (V σ) sF (flagv (V σ)) sK = V σ sK := upd_ne _ _ (by decide)
-  rw [kv] at u11
-  refine wp_subs (op2_imm (by decide)) fun s12 u12 z12 => ?_
-  have h12 := h11.of_rest (u12.rest (ws := [.r1]) (by simp)) u12.mem
-  have hw12 := hw11.of_upd u12 (by decide) (by decide) (by decide)
-  refine KS.strz h12 hw12 (d := sK) (by decide) (r := .r1) fun t ht hwt zt _ => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
-  · have e12 : (s12.gpr .r1).toNat = V σ sK - 1 := by
-      rw [u12.gpr, u11.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (vk1 σ e), BitVec.toNat_ofNat]
-      have := vk2 σ e; omega
-    rwa [e12] at ht
-  · rw [zt, z12, u11.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (vk1 σ e), ofNat_beq_zero (by have := vk2 σ e; omega)]
+/-- The count decremented. -/
+theorem St.pcnt {n : Nat} (hk : sK ∈ LS) (vk : ∀ σ, E σ → V σ sK = n + 1) (hn : n + 1 < 2 ^ 32) :
+    VP (St P E A L V LS) (.block cntNext)
+      (fun σ s => St P E A L (fun σ => upd (V σ) sK n) (sK :: LS) σ s ∧ s.z = decide (n = 0)) := by
+  refine VP.kv cnt_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+  simp only [cntNext]
+  refine h.ldr hw hk (r := .r1) (by decide) fun s1 h1 hw1 u1 => ?_
+  rw [vk σ e] at u1
+  refine wp_subs (op2_imm (by decide)) fun s2 u2 z2 => ?_
+  have h2 := h1.of_rest (u2.rest (ws := [.r1]) (by simp)) u2.mem
+  have hw2 := hw1.of_upd u2 (by decide) (by decide) (by decide)
+  have e2 : s2.gpr .r1 = BitVec.ofNat 32 n := by
+    rw [u2.gpr, u1.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel]
+  refine KS.strz h2 hw2 (d := sK) (by decide) (r := .r1) fun t ht hwt zt _ => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
+  · rwa [e2, ofNat_toNat32 (by omega)] at ht
+  · rw [zt, z2, show s1.gpr .r1 - 1 = s2.gpr .r1 from u2.gpr.symm, e2, ofNat_beq_zero (by omega)]
 
-/-- The flag 0 and the count `64 w − 1`. -/
-theorem St.pinit :
-    VP (St P E A L V LS) (.block initBlock)
-      (St P E A L (fun σ => upd (upd (V σ) sF 0) sK (64 * P.w - 1)) (sK :: sF :: LS)) := by
-  refine VP.kv init_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+/-- The flag 0 and the count of windows `16 w`. -/
+theorem St.pwinCnt :
+    VP (St P E A L V LS) (.block winCnt)
+      (St P E A L (fun σ => upd (upd (V σ) sF 0) sK (16 * P.w)) (sK :: sF :: LS)) := by
+  refine VP.kv winCnt_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
   have w128 := h.pre.w128
-  have w4 := h.pre.w4
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
   have h1 := h.of_rest (u1.rest (ws := [.r1]) (by simp)) u1.mem
   have hw1 := hw.of_upd u1 (by decide) (by decide) (by decide)
@@ -203,15 +95,181 @@ theorem St.pinit :
   have h4 := h2.of_rest r34 (u4.mem.trans u3.mem)
   have hw4 := hw2.rest r34
   refine h4.str hw4 (d := sK) (by decide) (r := .r1) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
-  have e4 : (s4.gpr .r1).toNat = 64 * P.w - 1 := by
+  have e4 : (s4.gpr .r1).toNat = 16 * P.w := by
     rw [u4.gpr, dpVal, u3.gpr, m2.gpr, u1.other _ (by decide), hw.r9,
-      show (65 : BitVec 32) = BitVec.ofNat 32 65 from rfl]
+      show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl]
     rw [BitVec.toNat_sub_of_le (by
       rw [BitVec.le_def, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
       simp only [MP.W]; omega), BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     simp only [MP.W]; omega
   rw [e4, show (0 : BitVec 32).toNat = 0 from rfl] at ht
   exact ht
+
+/-- Four squarings' count and threshold. -/
+theorem St.psqFour :
+    VP (St P E A L V LS) (.block sqFour)
+      (St P E A L (fun σ => upd (upd (V σ) sR 0) sQ 4) (sQ :: sR :: LS)) := by
+  refine VP.kv sqFour_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+  refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
+  have h1 := h.of_rest (u1.rest (ws := [.r1]) (by simp)) u1.mem
+  have hw1 := hw.of_upd u1 (by decide) (by decide) (by decide)
+  refine h1.str hw1 (d := sR) (by decide) (r := .r1) fun s2 h2 hw2 m2 => ?_
+  rw [u1.gpr] at h2
+  refine wp_mov (op2_imm (by decide)) fun s3 u3 => ?_
+  have h3 := h2.of_rest (u3.rest (ws := [.r1]) (by simp)) u3.mem
+  have hw3 := hw2.of_upd u3 (by decide) (by decide) (by decide)
+  refine h3.str hw3 (d := sQ) (by decide) (r := .r1) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
+  rw [u3.gpr] at ht; exact ht
+
+/-- A squaring's flag: or'ed with `e₂` if the threshold is below the count
+`k + 1`; the count decremented. -/
+theorem St.psqFlag {k : Nat} {r : State → Nat} {fb eb : State → Bool} (hq : sQ ∈ LS) (hr : sR ∈ LS)
+    (he : sE2 ∈ LS) (hf : sF ∈ LS) (vq : ∀ σ, E σ → V σ sQ = k + 1) (vr : ∀ σ, E σ → V σ sR = r σ)
+    (rl : ∀ σ, E σ → r σ < 2 ^ 31) (hk : k + 1 < 2 ^ 31)
+    (ve : ∀ σ, E σ → V σ sE2 = (eb σ).toNat) (vf : ∀ σ, E σ → V σ sF = (fb σ).toNat) :
+    VP (St P E A L V LS) (.block sqFlag)
+      (fun σ s => St P E A L (fun σ => upd (upd (V σ) sF (fb σ || (decide (r σ < k + 1) && eb σ)).toNat) sQ k)
+        (sQ :: sF :: LS) σ s ∧ s.z = decide (k = 0)) := by
+  refine VP.kv sqFlag_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+  simp only [sqFlag]
+  refine h.ldr hw hq (r := .r1) (by decide) fun s1 h1 hw1 u1 => ?_
+  refine h1.ldr hw1 hr (r := .r2) (by decide) fun s2 h2 hw2 u2 => ?_
+  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun s4 u4 => ?_
+  have r34 : Rest [.r2] s2 s4 := (u3.rest (by simp)).trans (u4.rest (by simp))
+  have h4 := h2.of_rest r34 (u4.mem.trans u3.mem)
+  have hw4 := hw2.rest r34
+  refine h4.ldr hw4 he (r := .r3) (by decide) fun s5 h5 hw5 u5 => ?_
+  refine wp_dp (op2_reg _ _) fun s6 u6 => ?_
+  have h6 := h5.of_rest (u6.rest (ws := [.r3]) (by simp)) u6.mem
+  have hw6 := hw5.of_upd u6 (by decide) (by decide) (by decide)
+  refine h6.ldr hw6 hf (r := .r4) (by decide) fun s7 h7 hw7 u7 => ?_
+  refine wp_dp (op2_reg _ _) fun s8 u8 => ?_
+  have h8 := h7.of_rest (u8.rest (ws := [.r4]) (by simp)) u8.mem
+  have hw8 := hw7.of_upd u8 (by decide) (by decide) (by decide)
+  have g1 : s8.gpr .r1 = BitVec.ofNat 32 (k + 1) := by
+    rw [u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide), u5.other _ (by decide),
+      u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr, vq σ e]
+  have a1 : s2.gpr .r1 = BitVec.ofNat 32 (k + 1) := by rw [u2.other _ (by decide), u1.gpr, vq σ e]
+  have a2 : s2.gpr .r2 = BitVec.ofNat 32 (r σ) := by rw [u2.gpr, vr σ e]
+  have g4 : s4.gpr .r2 = BitVec.ofNat 32 (decide (r σ < k + 1)).toNat := by
+    rw [u4.gpr, u3.gpr, dpVal, a1, a2]
+    apply BitVec.eq_of_toNat_eq
+    rw [mask_lt (rl σ e) hk, ofNat_toNat32 (by cases decide (r σ < k + 1) <;> decide)]
+  have g8 : (s8.gpr .r4).toNat = (fb σ || (decide (r σ < k + 1) && eb σ)).toNat := by
+    rw [u8.gpr, dpVal, u7.gpr, vf σ e, u7.other _ (by decide), u6.gpr, dpVal, u5.gpr, ve σ e,
+      u5.other _ (by decide), g4]
+    exact sqflag_bits _ _ _
+  refine h8.str hw8 (d := sF) (by decide) (r := .r4) fun s9 h9 hw9 m9 => ?_
+  rw [g8] at h9
+  refine wp_subs (op2_imm (by decide)) fun s10 u10 z10 => ?_
+  have h10 := h9.of_rest (u10.rest (ws := [.r1]) (by simp)) u10.mem
+  have hw10 := hw9.of_upd u10 (by decide) (by decide) (by decide)
+  have e10 : s10.gpr .r1 = BitVec.ofNat 32 k := by
+    rw [u10.gpr, m9.gpr, g1, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel]
+  refine KS.strz h10 hw10 (d := sQ) (by decide) (r := .r1) fun t ht hwt zt _ => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
+  · rwa [e10, ofNat_toNat32 (by omega)] at ht
+  · rw [zt, z10, m9.gpr, g1, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel, ofNat_beq_zero (by omega)]
+
+/-- The digit at the top of the word `v`. -/
+abbrev digitOf (v : Nat) : Nat := v / 2 ^ 28
+
+/-- A window's end: the flag `y = 1 ∨ y = −1` if the digit is not 0, the
+word shifted, the count of windows decremented, Z at the word's end. -/
+theorem St.pwinEnd {K : Nat} {v : State → Nat} {e1 e2 fb : State → Bool} (hv : sV ∈ LS) (h1 : sE1 ∈ LS)
+    (h2 : sE2 ∈ LS) (hf : sF ∈ LS) (hk : sK ∈ LS) (vv : ∀ σ, E σ → V σ sV = v σ) (vl : ∀ σ, E σ → v σ < 2 ^ 32)
+    (v1 : ∀ σ, E σ → V σ sE1 = (e1 σ).toNat) (v2 : ∀ σ, E σ → V σ sE2 = (e2 σ).toNat)
+    (vf : ∀ σ, E σ → V σ sF = (fb σ).toNat) (vk : ∀ σ, E σ → V σ sK = K + 1) (hK : K + 1 < 2 ^ 32) :
+    VP (St P E A L V LS) (.block winEnd)
+      (fun σ s => St P E A L (fun σ => upd (upd (upd (V σ) sF
+          (if digitOf (v σ) = 0 then fb σ else (e1 σ || e2 σ)).toNat) sV (BitVec.ofNat 32 (v σ) <<< 4).toNat) sK K)
+        (sK :: sV :: sF :: LS) σ s ∧ s.z = decide (K % 8 = 0)) := by
+  refine VP.kv winEnd_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+  have dl : digitOf (v σ) < 16 := by have := vl σ e; simp only [digitOf]; omega
+  simp only [winEnd]
+  refine h.ldr hw hv (r := .r1) (by decide) fun s1 h1' hw1 u1 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun s2 u2 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun s4 u4 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s5 u5 => ?_
+  have r5 : Rest [.r2, .r3] s1 s5 :=
+    (u2.rest (by simp)).trans ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp))))
+  have h5 := h1'.of_rest r5 (u5.mem.trans (u4.mem.trans (u3.mem.trans u2.mem)))
+  have hw5 := hw1.rest r5
+  refine h5.ldr hw5 h1 (r := .r4) (by decide) fun s6 h6 hw6 u6 => ?_
+  refine h6.ldr hw6 h2 (r := .r5) (by decide) fun s7 h7 hw7 u7 => ?_
+  refine wp_dp (op2_reg _ _) fun s8 u8 => ?_
+  refine wp_dp (op2_reg _ _) fun s9 u9 => ?_
+  have r9 : Rest [.r4] s7 s9 := (u8.rest (by simp)).trans (u9.rest (by simp))
+  have h9 := h7.of_rest r9 (u9.mem.trans u8.mem)
+  have hw9 := hw7.rest r9
+  refine h9.ldr hw9 hf (r := .r5) (by decide) fun s10 h10 hw10 u10 => ?_
+  refine wp_dp (op2_reg _ _) fun s11 u11 => ?_
+  refine wp_dp (op2_reg _ _) fun s12 u12 => ?_
+  have r12 : Rest [.r4, .r5] s10 s12 := (u11.rest (by simp)).trans (u12.rest (by simp))
+  have h12 := h10.of_rest r12 (u12.mem.trans u11.mem)
+  have hw12 := hw10.rest r12
+  -- The values.
+  have gz : s4.gpr .r2 = BitVec.ofNat 32 (decide (digitOf (v σ) = 0)).toNat := by
+    rw [u4.gpr, u3.gpr, dpVal, u2.gpr, u1.gpr, vv σ e, ofNat_shr32 (vl σ e)]
+    apply BitVec.eq_of_toNat_eq
+    rw [mask_zero _ dl, ofNat_toNat32 (by cases decide (digitOf (v σ) = 0) <;> decide)]
+  have x5 : s5.gpr .r3 = BitVec.ofNat 32 (decide (digitOf (v σ) = 0)).toNat ^^^ 1 := by
+    rw [u5.gpr, dpVal, gz]
+  have x7r3 : s7.gpr .r3 = s5.gpr .r3 := by rw [u7.other _ (by decide), u6.other _ (by decide)]
+  have x7r4 : s7.gpr .r4 = BitVec.ofNat 32 (e1 σ).toNat := by rw [u7.other _ (by decide), u6.gpr, v1 σ e]
+  have x7r5 : s7.gpr .r5 = BitVec.ofNat 32 (e2 σ).toNat := by rw [u7.gpr, v2 σ e]
+  have x9 : s9.gpr .r4 = (BitVec.ofNat 32 (e1 σ).toNat ||| BitVec.ofNat 32 (e2 σ).toNat) &&&
+      (BitVec.ofNat 32 (decide (digitOf (v σ) = 0)).toNat ^^^ 1) := by
+    rw [u9.gpr, dpVal, u8.gpr, dpVal, x7r4, x7r5, u8.other _ (by decide), x7r3, x5]
+  have x10r2 : s10.gpr .r2 = s4.gpr .r2 := by
+    rw [u10.other _ (by decide), r9.gpr _ (by decide), u7.other _ (by decide), u6.other _ (by decide),
+      u5.other _ (by decide)]
+  have x11 : s11.gpr .r5 = BitVec.ofNat 32 (fb σ).toNat &&& BitVec.ofNat 32 (decide (digitOf (v σ) = 0)).toNat := by
+    rw [u11.gpr, dpVal, u10.gpr, vf σ e, x10r2, gz]
+  have gF : (s12.gpr .r4).toNat = (if digitOf (v σ) = 0 then fb σ else (e1 σ || e2 σ)).toNat := by
+    rw [u12.gpr, dpVal, x11, u11.other _ (by decide), u10.other _ (by decide), x9]
+    have := flag_bits (decide (digitOf (v σ) = 0)) (e1 σ) (e2 σ) (fb σ)
+    simp only [decide_eq_true_eq] at this
+    exact this
+  refine h12.str hw12 (d := sF) (by decide) (r := .r4) fun s13 h13 hw13 m13 => ?_
+  rw [gF] at h13
+  refine wp_mov (op2_lsl (by decide)) fun s14 u14 => ?_
+  have h14 := h13.of_rest (u14.rest (ws := [.r1]) (by simp)) u14.mem
+  have hw14 := hw13.of_upd u14 (by decide) (by decide) (by decide)
+  have g14 : s14.gpr .r1 = BitVec.ofNat 32 (v σ) <<< 4 := by
+    rw [u14.gpr, m13.gpr, u12.other _ (by decide), u11.other _ (by decide), u10.other _ (by decide),
+      u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide),
+      r5.gpr _ (by decide), u1.gpr, vv σ e]
+  refine h14.str hw14 (d := sV) (by decide) (r := .r1) fun s15 h15 hw15 m15 => ?_
+  rw [g14] at h15
+  refine h15.ldr hw15 (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hk)) (r := .r1) (by decide)
+    fun s16 h16 hw16 u16 => ?_
+  have k16 : upd (upd (V σ) sF (if digitOf (v σ) = 0 then fb σ else (e1 σ || e2 σ)).toNat)
+      sV (BitVec.ofNat 32 (v σ) <<< 4).toNat sK = K + 1 := by
+    simp only [upd, show sK ≠ sV by decide, show sK ≠ sF by decide, ↓reduceIte]; exact vk σ e
+  rw [k16] at u16
+  refine wp_dp (op2_imm (by decide)) fun s17 u17 => ?_
+  have h17 := h16.of_rest (u17.rest (ws := [.r1]) (by simp)) u17.mem
+  have hw17 := hw16.of_upd u17 (by decide) (by decide) (by decide)
+  have e17 : s17.gpr .r1 = BitVec.ofNat 32 K := by
+    rw [u17.gpr, dpVal, u16.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel]
+  refine h17.str hw17 (d := sK) (by decide) (r := .r1) fun s18 h18 hw18 m18 => ?_
+  rw [e17, ofNat_toNat32 (by omega)] at h18
+  refine wp_dp (op2_imm (by decide)) fun s19 u19 => ?_
+  refine wp_cmp (op2_imm (by decide)) fun t u20 z20 => WP.block_nil ⟨⟨e, ?_, ?_⟩, ?_⟩
+  · exact h18.of_rest ((u19.rest (ws := [.r1]) (by simp)).trans (u20.rest _)) (u20.mem.trans u19.mem)
+  · exact (hw18.of_upd u19 (by decide) (by decide) (by decide)).rest (u20.rest [])
+  · rw [z20, u19.gpr, dpVal, m18.gpr, e17]
+    have : BitVec.ofNat 32 K &&& 7 = BitVec.ofNat 32 (K % 8) := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_and, ofNat_toNat32 (by omega), show (7 : BitVec 32).toNat = 2 ^ 3 - 1 from rfl,
+        Nat.and_two_pow_sub_one_eq_mod, ofNat_toNat32 (by omega)]
+    rw [this, show BitVec.ofNat 32 (K % 8) - 0 = BitVec.ofNat 32 (K % 8) from BitVec.sub_zero _,
+      ofNat_beq_zero (by omega)]
 
 end
 

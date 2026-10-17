@@ -14,11 +14,12 @@ import all Init.Data.Vector.Basic
 
 `roundContract`: the round's contract, as the code needs it and its callers
 establish it: the working space laid out for Montgomery multiplication
-(`LayoutLite`, with its first 15 arrays) and the candidate, the witness and
-Montgomery one and minus one in it (`PreparedLite`), without the shifted
-exponent of the shared contract, which this implementation does not read.
-Only the arrays and header words of `wJs` and `wDs` change (`KeepsLite`).
-It implies `Spec.MillerRabin.roundContract` (`Proof/MillerRabin/Arm/Implies.lean`).
+(`LayoutLite`, with its first 28 arrays) and the candidate, the witness,
+Montgomery one and minus one, the exponent and the word `2^(t mod 64)` after
+it in it (`PreparedLite`), as in the shared contract, without its
+representation's choice and stride. Only the arrays `wJs` and the header
+words 23, 26, 29 and 30 change (`KeepsLite`).
+It implies `Spec.MillerRabin.roundContract` (`round_implies`, `Proof/MillerRabin/Arm/Verified.lean`).
 -/
 
 @[expose] public section
@@ -37,11 +38,14 @@ def PreparedLite (m : Mem) (ws : Addr) : Prop :=
   3 ≤ c ∧ c % 2 = 1 ∧
     ((m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64).toNat * (wordAt m ws Spec.Rsa.Mont.minvWord).toNat + 1) %
       2 ^ 64 = 0 ∧
-    numAt m ws w 5 < c ∧ numAt m ws w 9 = R % c ∧ numAt m ws w 10 = c - R % c
+    numAt m ws w 5 < c ∧ numAt m ws w 9 = R % c ∧ numAt m ws w 10 = c - R % c ∧
+    numAt m ws w 27 = Spec.MillerRabin.exponent c ∧
+    m.readW (ws + BitVec.ofNat 64 (arrAt w 27 + 8 * w)) 64 =
+      BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64)
 
-/-- Only the header words 23, 26 and 29 and the arrays `wJs` change. -/
+/-- Only the header words 23, 26, 29 and 30 and the arrays `wJs` change. -/
 def KeepsLite (ws : Addr) (len w : Nat) (m m' : Mem) : Prop :=
-  ∀ i < 8 * len, (∀ k ∈ [23, 26, 29], i < 8 * k ∨ 8 * k + 8 ≤ i) →
+  ∀ i < 8 * len, (∀ k ∈ [23, 26, 29, 30], i < 8 * k ∨ 8 * k + 8 ≤ i) →
     (∀ j ∈ wJs, i < arrAt w j ∨ arrAt w j + 8 * (w + 2) ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
@@ -85,7 +89,7 @@ theorem readW_congr_on (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws
 theorem layout_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i))
     (hl : LayoutLite m ws len) : LayoutLite m' ws len ∧ wOf m' ws = wOf m ws := by
   obtain ⟨lay, w4, w128, fits⟩ := hl
-  have h256 : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have h256 : 256 ≤ 8 * len := Nat.le_trans (Nat.le_add_right _ _) fits
   have hw : wOf m' ws = wOf m ws := congrArg BitVec.toNat (readW_congr_on h (d := 8 * 6) (by omega))
   refine ⟨⟨?_, by rw [hw]; exact w4, by rw [hw]; exact w128, by rw [hw]; exact fits⟩, hw⟩
   unfold Spec.Rsa.Mont.Layout at lay ⊢
@@ -105,19 +109,22 @@ theorem prepared_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws
   have fits := hl.2.2.2
   have w4 := hl.2.1
   generalize hW : wOf m ws = w at fits w4
-  have fit : ∀ j < 11, arrAt w j + 8 * w ≤ 8 * len := fun j hj => by
-    have : j * (8 * (w + 2)) ≤ 14 * (8 * (w + 2)) := Nat.mul_le_mul_right _ (by omega)
-    simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at fits ⊢; omega
-  have f0 : 256 + 8 * w ≤ 8 * len := by have := fit 0 (by omega); simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this; omega
+  have fit : ∀ j < 28, arrAt w j + 8 * (w + 2) ≤ 8 * len := fun j hj => by
+    have : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ (by omega)
+    simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at fits ⊢
+    generalize 8 * (w + 2) = S at this fits ⊢
+    omega
   unfold PreparedLite at hp ⊢
   simp only [hw, hW] at hp ⊢
-  rw [numAt_congr h (fit 0 (by omega)), numAt_congr h (fit 5 (by omega)), numAt_congr h (fit 9 (by omega)),
-    numAt_congr h (fit 10 (by omega))]
+  rw [numAt_congr h (by have := fit 0 (by omega); omega), numAt_congr h (by have := fit 5 (by omega); omega),
+    numAt_congr h (by have := fit 9 (by omega); omega), numAt_congr h (by have := fit 10 (by omega); omega),
+    numAt_congr h (by have := fit 27 (by omega); omega),
+    readW_congr_on h (d := arrAt w 27 + 8 * w) (by have := fit 27 (by omega); omega)]
   refine ⟨hp.1, hp.2.1, ?_, hp.2.2.2⟩
   have e1 : m'.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64 = m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64 :=
-    readW_congr_on h (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
+    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this ⊢; omega)
   have e2 : wordAt m' ws Spec.Rsa.Mont.minvWord = wordAt m ws Spec.Rsa.Mont.minvWord :=
-    readW_congr_on h (by simp only [Spec.Rsa.Mont.minvWord]; omega)
+    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Spec.Rsa.Mont.hdrBytes, Spec.Rsa.Mont.minvWord] at this ⊢; omega)
   rw [e1, e2]
   exact hp.2.2.1
 

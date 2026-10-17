@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.Arm.Loop
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Win
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -8,8 +8,9 @@ import all Init.Data.Vector.Basic
 
 /-! # The Miller–Rabin round on ARMv7: the body
 
-From the state `σ` after the push (`In P σ`, `ws` in `r0`): the copies,
-`y := 1`, the flag and the count (`prep_vp`), the `64 w − 1` bits, and the
+From the state `σ` after the push (`In P σ`, `ws` in `r0`): the table's
+first entries (`tabInit_vp`), its loop, the windows' start (`winInit_vp`),
+the words, the last three squarings with the threshold `4 − σ`, and the
 flag into `r0` (`body_vp`).
 -/
 
@@ -20,83 +21,136 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.MillerRabin.Arm VG.Pro
 open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Spec.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.RsaKeyGen (sigOf sigOf_pos)
 
 /-- The body's start. -/
 def Start (P : MP) (σ s : State) : Prop := s = σ ∧ In P σ ∧ σ.gpr .r0 = P.ws
 
+/-- The threshold of the last squarings: `4 − σ`. -/
+abbrev rEnd (P : MP) (σ : State) : Nat := 4 - sigOf (tOf P σ % 64)
+
+/-- The flag after the last squarings. -/
+abbrev fl (P : MP) (σ : State) : Bool := (sqst P 3 (rEnd P) (fun σ => wst P σ (16 * P.w)) σ 3).2
+
 /-- The body's end: the flag in `r0`. -/
 def Done (P : MP) (σ s : State) : Prop :=
-  KS P σ (AL P (64 * P.w - 1) σ) LL (VL P (64 * P.w - 1) σ) LSL s ∧
-    s.gpr .r0 = BitVec.ofNat 32 (fv P σ (64 * P.w - 1)).toNat
+  (∃ A L V LS, KS P σ A L V LS s) ∧ s.gpr .r0 = BitVec.ofNat 32 (fl P σ).toNat
+
+/-- The arrays the table's loop starts from: `x` and the original arrays it shifts. -/
+abbrev L0 : List Nat := [aX, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
 
 section
 variable {P : MP}
 
-/-- The arrays once copied. -/
-def AP (P : MP) (σ : State) : Nat → Nat :=
-  upd (upd (upd (upd (upd (fun _ => 0) aE (cOf P σ.mem)) aB (xOf P σ)) aOne (oOf P σ)) aM1 (mOf P σ)) aY (oOf P σ)
+/-- `x`'s top words cleared. -/
+theorem St.pclrX {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
+    {LS : List Nat} (hx : aX ∈ L) (hv : ∀ σ, E σ → A σ aX = num σ.mem P.B P.W aX) :
+    VP (St P E A L V LS) (.block (Impl.Rsa.Arm.Recover.clrTop aX))
+      (St P E (fun σ => upd (A σ) aX (xOf P σ)) (aX :: L) V LS) := by
+  refine VP.kv clrX_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
+  rw [← List.append_nil (Impl.Rsa.Arm.Recover.clrTop aX)]
+  refine h.clrTop_ok hw (by decide) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
+  have pre := h.pre
+  have a1 := (h.arrs aX hx).trans (hv σ e)
+  have e1 : val32 s.mem (State.addr P.B) (arr P.W aX) (2 * P.w) = xOf P σ :=
+    calc val32 s.mem (State.addr P.B) (arr P.W aX) (2 * P.w)
+        = num s.mem P.B P.W aX % 2 ^ (32 * (2 * P.w)) := val32_low _ _ _ _ 2
+      _ = num σ.mem P.B P.W aX % 2 ^ (32 * (2 * P.w)) := by rw [a1]
+      _ = val32 σ.mem (State.addr P.B) (arr P.W aX) (2 * P.w) := (val32_low _ _ _ _ 2).symm
+      _ = xOf P σ := (pre.numAt_val32 σ.mem aX).symm
+  rwa [e1] at ht
 
-theorem prep_vp : VP (Start P) (seqs prep) (Lp P (64 * P.w - 1)) := by
-  simp only [prep, seqs]
-  let E := In P
-  let A0 := fun σ : State => upd (fun _ : Nat => 0) aX (num σ.mem P.B P.W aX)
-  let K0 := St P E A0 [aX] (fun _ _ => 0) []
-  let A1 := fun σ => upd (A0 σ) aE (numAt σ.mem (State.addr P.ws) P.w 0)
-  let A2 := fun σ => upd (A1 σ) aB (numAt σ.mem (State.addr P.ws) P.w aX)
-  let A3 := fun σ => upd (A2 σ) aOne (numAt σ.mem (State.addr P.ws) P.w 9)
-  let A4' := fun σ => upd (A3 σ) aM1 (numAt σ.mem (State.addr P.ws) P.w 10)
-  let A5 := fun σ => upd (A4' σ) aY (A4' σ aOne)
-  refine VP.seq (G := K0) ?_ (VP.seq (G := St P E A1 [aE, aX] (fun _ _ => 0) []) ?_
-    (VP.seq (G := St P E A2 [aB, aE, aX] (fun _ _ => 0) []) ?_
-    (VP.seq (G := St P E A3 [aOne, aB, aE, aX] (fun _ _ => 0) []) ?_
-    (VP.seq (G := St P E A4' [aM1, aOne, aB, aE, aX] (fun _ _ => 0) []) ?_
-    (VP.seq (G := St P E A5 (aY :: [aM1, aOne, aB, aE, aX]) (fun _ _ => 0) []) ?_ ?_)))))
-  -- The context.
+theorem tabInit_vp : VP (Start P) (seqs tabInit) (TS P 14) := by
+  simp only [tabInit, seqs]
+  let A0 := fun σ : State => fun j => num σ.mem P.B P.W j
+  refine VP.seq (G := St P (In P) A0 L0 (fun _ _ => 0) []) ?_ ?_
   · refine VP.taint [.r0] ctx_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s ⟨hs, pre, r0⟩ => ?_
     · simp only [List.mem_singleton] at hr; subst hr
       rw [h₁.1, h₂.1, h₁.2.2, h₂.2.2]
-    · rw [hs]
-      rw [← List.append_nil ctx]
-      have k0 : KS P σ (A0 σ) [aX] (fun _ => 0) [] σ :=
-        ⟨pre, rfl, rfl, rfl, Keep.refl _ _ _ _ _, fun j hj => by
-          simp only [List.mem_singleton] at hj; subst hj; exact (upd_self _ _ _).symm,
-          fun _ h => absurd h List.not_mem_nil, by decide, fun _ h => absurd h List.not_mem_nil⟩
+    · rw [hs, ← List.append_nil ctx]
+      have k0 : KS P σ (A0 σ) L0 (fun _ => 0) [] σ :=
+        ⟨pre, rfl, rfl, rfl, Keep.refl _ _ _ _ _, fun j _ => rfl, fun _ h => absurd h List.not_mem_nil,
+          by decide, fun _ h => absurd h List.not_mem_nil⟩
       exact k0.ctx_ok r0 fun t ht hwt _ _ => WP.block_nil ⟨pre, ht, hwt⟩
-  · exact St.pcopyClr cE_taint (by decide) (by decide) (by decide) (by decide)
-  · exact St.pcopyClrL cB_taint (by decide) (by decide) (by decide) fun σ _ => by
-      show upd (A0 σ) aE _ aX = _; rfl
-  · exact St.pcopyClr cOne_taint (by decide) (by decide) (by decide) (by decide)
-  · exact St.pcopyClr cM1_taint (by decide) (by decide) (by decide) (by decide)
-  · exact St.pcopy yOne_taint (by decide) (by decide) (by decide)
-  · refine St.pinit.mono (fun _ _ h => h) fun σ s h => ⟨by have := h.1.w4; omega, ?_⟩
-    have pre := h.1
-    rw [Nat.sub_self]
-    refine h.mono (fun i hi => ⟨?_, ?_⟩) (fun d hd => ⟨by simpa using hd, ?_⟩)
-    · exact (by decide : ∀ i ∈ LL, i ∈ aY :: [aM1, aOne, aB, aE, aX]) i hi
-    · simp only [LL, List.mem_cons, List.not_mem_nil, or_false] at hi
-      rcases hi with rfl | rfl | rfl | rfl | rfl
-      · rfl
-      · rfl
-      · rfl
-      · rfl
-      · show numAt σ.mem (State.addr P.ws) P.w 0 = cOf P σ.mem * 2 ^ 0 % P.R
-        rw [Nat.pow_zero, Nat.mul_one, Nat.mod_eq_of_lt pre.c_lt]
-    · simp only [LSL, List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl
-      · show 64 * P.w - 1 = 64 * P.w - 1 - 0; rfl
-      · rfl
+  refine VP.seq (St.pcopyClr cT0_taint (by decide) (by decide) (by decide) (by decide)) ?_
+  refine VP.seq (St.pclrX (by decide) fun σ _ => rfl) ?_
+  refine VP.seq (St.pcopy cT1_taint (by decide) (by decide) (by decide)) ?_
+  refine VP.seq (St.pcopy cYX_taint (by decide) (by decide) (by decide)) ?_
+  refine St.ptabCnt.mono (fun _ _ h => h) fun σ s h => ⟨by decide, h.mono (fun i hi => ⟨?_, ?_⟩)
+    (fun d hd => ⟨by simp only [List.mem_singleton] at hd; simp [hd], by
+      simp only [List.mem_singleton] at hd; subst hd; rfl⟩)⟩
+  · exact (by decide : ∀ i ∈ LT, i ∈ aY :: (aT0 + 1) :: aX :: aT0 :: L0) i hi
+  · simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl <;> rfl
+
+theorem tab_final {σ : State} : ∀ i ∈ LT, i ≠ aY → i ≠ aX → AT P 14 σ i = tv P σ (i - aT0) := by
+  intro i hi h1 h2
+  simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl
+  · exact absurd rfl h1
+  · exact absurd rfl h2
+  all_goals rfl
+
+theorem winInit_vp : VP (TS P 0) (seqs winInit) (WO P (2 * P.w)) := by
+  simp only [winInit, seqs]
+  refine VP.mono (F := St P (In P) (AT P 14) LT (fun _ => upd (fun _ => 0) sK 0) [sK]) ?_ (fun σ s h => h.2)
+    (fun _ _ h => h)
+  refine VP.seq (St.pcopyClr cM1_taint (by decide) (by decide) (by decide) (by decide)) ?_
+  refine VP.seq (St.pcopy cY0_taint (by decide) (by decide) (by decide)) ?_
+  refine St.pwinCnt.mono (fun _ _ h => h) fun σ s h => ⟨le_refl _, h.mono (fun i hi => ⟨?_, ?_⟩)
+    (fun d hd => ⟨?_, ?_⟩)⟩
+  · exact (by decide : ∀ i ∈ LW, i ∈ aY :: aM1 :: LT) i hi
+  · rw [show 16 * P.w - 8 * (2 * P.w) = 0 by omega]
+    rcases List.mem_cons.mp hi with rfl | hi
+    · rfl
+    rcases List.mem_cons.mp hi with rfl | hi
+    · rfl
+    · obtain ⟨h1, h2, h3⟩ := Lt_ne i hi
+      rw [upd_ne _ _ h1, upd_ne _ _ h3, tab_final i ((by decide : ∀ i ∈ Lt, i ∈ LT) i hi) h1 h2, AW_tab hi]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; rcases hd with rfl | rfl <;> simp
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl
+    · rw [upd_self, upd_self]; omega
+    · rw [upd_ne _ _ (by decide), upd_self, upd_ne _ _ (by decide), upd_self,
+        show 16 * P.w - 8 * (2 * P.w) = 0 by omega]
+      rfl
+
+/-- The threshold from the word `2^(t mod 64)`. -/
+theorem rEnd_eq {σ : State} (pre : In P σ) :
+    (foldR (BitVec.ofNat 32 (ew P σ (2 * P.w))) (BitVec.ofNat 32 (ew P σ (2 * P.w + 1)))).toNat = rEnd P σ := by
+  obtain ⟨e1, e2⟩ := pre.ew_low
+  rw [e1, e2, foldR_eq _ (Nat.mod_lt _ (by decide)), ofNat_toNat32 (by omega)]
 
 theorem body_vp : VP (Start P) body (Done P) := by
   simp only [body, seqs]
-  refine prep_vp.seq (VP.seq (G := Lp P 0) ?_ ?_)
-  · refine (VP.loop (I := fun k => Lp P k) (fun n => step_vp n) (64 * P.w - 2)).mono (fun σ s h => ?_)
-      (fun _ _ h => h)
-    have := h.2.2.1.pre.w4
-    rw [show 64 * P.w - 2 + 1 = 64 * P.w - 1 by omega]
-    exact h
-  · refine VP.kv ret_taint (fun _ _ h => h.2.2.2) fun σ s ⟨_, e, h, hw⟩ => ?_
-    refine h.ldr hw (d := sF) (by decide) (r := .r0) (by decide) fun t ht _ u => WP.block_nil ⟨?_, u.gpr⟩
-    simpa using ht
+  refine VP.seq tabInit_vp (VP.seq tab_loop (VP.seq winInit_vp (VP.seq words_loop ?_)))
+  refine VP.mono (F := St P (In P) (AW P (16 * P.w)) LW
+    (fun σ => upd (upd (fun _ => 0) sF (wst P σ (16 * P.w)).2.toNat) sK 0) [sK, sF]) ?_ (fun σ s h => h.2)
+    (fun _ _ h => h)
+  let V' := fun σ => upd (upd (upd (fun _ => 0) sF (wst P σ (16 * P.w)).2.toNat) sK 0) sR (rEnd P σ)
+  refine VP.seq (G := SqS P (In P) (AW P (16 * P.w)) LW.tail V' [sQ, sR, sK, sF] 3 (rEnd P)
+    (fun σ => wst P σ (16 * P.w)) 3) ?_ ?_
+  · refine (St.plowBits (fun σ e => e)).mono (fun _ _ h => h) fun σ s h => ⟨by decide,
+      h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨hd, ?_⟩)⟩
+    · rcases List.mem_cons.mp hi with rfl | hi
+      · rw [upd_self]; unfold AW; rw [ite_eq_left rfl]; rfl
+      · exact (upd_ne _ _ ((by decide : ∀ i ∈ LW.tail, i ≠ aY) i hi)).symm
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl
+      · simp only [upd_self]
+      · simp only [V', upd, show sR ≠ sQ by decide, show sR ≠ sF by decide, ↓reduceIte]
+        exact rEnd_eq h.1
+      · simp only [V', upd, show sK ≠ sQ by decide, show sK ≠ sF by decide, show sK ≠ sR by decide, ↓reduceIte]
+      · simp only [V', upd, show sF ≠ sQ by decide, show sF ≠ sR by decide, ↓reduceIte]; rfl
+  refine VP.seq (sq_loop (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (fun σ _ => rfl) (fun σ _ => upd_self _ _ _)
+    (fun σ _ => by show 4 - sigOf (tOf P σ % 64) < 2 ^ 31; omega) (by decide) (fun σ e => wst_lt e _) 2) ?_
+  refine VP.kv ret_taint (fun _ _ h => h.2.2.2) fun σ s ⟨_, e, h, hw⟩ => ?_
+  refine h.ldr hw (d := sF) (by decide) (r := .r0) (by decide) fun t ht _ u => WP.block_nil ⟨⟨_, _, _, _, ht⟩, ?_⟩
+  rw [u.gpr]
+  simp only [upd, show sF ≠ sQ by decide, ↓reduceIte]
 
 end
 
