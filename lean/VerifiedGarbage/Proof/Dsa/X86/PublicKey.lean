@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Domain
 public import VerifiedGarbage.Proof.Dsa.X86.Subgroup
+public import VerifiedGarbage.Proof.Dsa.Accepted
 
 /-! # Complete algebraic checks of public DSA components -/
 
@@ -9,13 +10,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Subgroup
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86
-
-def publicChecks (p q g y : Nat) : Prop :=
-  ((1 < g ∧ g < p) ∧ (1 < y ∧ y < p)) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1 ∧ y ^ q % p = 1
-
-instance (p q g y : Nat) : Decidable (publicChecks p q g y) := by
-  unfold publicChecks
-  infer_instance
 
 theorem publicKey_ok {base : Addr} {size pLen qLen p q g y : Nat} {s0 : State}
     (M : Moduli base size pLen qLen p q s0)

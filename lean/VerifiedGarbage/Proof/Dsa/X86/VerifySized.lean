@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Sized
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyBodySpec
-public import VerifiedGarbage.Proof.Dsa.X86.InvalidShapeSpec
+public import VerifiedGarbage.Proof.Dsa.Accepted
 public import VerifiedGarbage.Proof.Dsa.X86.Failure
 
 /-! # The complete public-size verifier, including invalid domain rejection -/

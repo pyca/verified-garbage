@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
-public import VerifiedGarbage.Proof.Dsa.X86.DigestSlice
+public import VerifiedGarbage.Proof.Dsa.OutputBytes
 
 /-! # Public shape rejection before the arithmetic body -/
 

@@ -1,11 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.Accepted
 public import VerifiedGarbage.Proof.Dsa.PackedBytes
 
-/-! # Joining the two encoded scalars into the packed signature result -/
+/-! # DSA's output bytes, on any target
+
+A signature's bytes are the two encoded scalars (`signatureBytes`), and the
+digest's prefix that DSA uses is a prefix of its bytes (`bytesAt_prefix`),
+of at most 32 bytes for a supported domain (`shape_digest_width`).
+-/
 
 @[expose] public section
-namespace VG.Proof.Dsa.X86
+namespace VG.Proof.Dsa
 open VG
 
 theorem bytesAt_split (mem : Mem) (ptr : Addr) (a b : Nat) :
@@ -26,4 +32,18 @@ theorem signatureBytes {mem : Mem} {ptr : Addr} {len rv sv : Nat} (accepted : Pr
   rw [Nat.two_mul, bytesAt_split, R, S]
   by_cases H : accepted <;> simp only [H, ite_true, ite_false, List.replicate_append_replicate]
 
-end VG.Proof.Dsa.X86
+theorem shape_digest_width {p q : Nat} (H : shapeValid p q) :
+    Spec.Dsa.bitLength q = 8 * (Spec.Dsa.bitLength q / 8) ∧ Spec.Dsa.bitLength q / 8 ≤ 32 := by
+  have S := H.1
+  unfold Spec.Dsa.supportedSizes at S
+  omega
+
+theorem bytesAt_prefix (mem : Mem) (ptr : Addr) (total count : Nat) :
+    Spec.Rsa.bytesAt mem ptr (min total count) = (Spec.Rsa.bytesAt mem ptr total).take count := by
+  apply List.ext_getElem
+  · simp only [Spec.Rsa.bytesAt, List.length_take, List.length_map, List.length_range]
+    omega
+  · intro i hi hj
+    simp only [List.getElem_take, Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
+
+end VG.Proof.Dsa
