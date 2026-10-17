@@ -1,0 +1,45 @@
+module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
+public import VerifiedGarbage.Proof.Bignum.Arm.InverseReady
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Integer import preserves the RSA layout and the modulus parity -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Proof.Mont
+open VG.Spec.Rsa.Mont (arrAt numAt wOf Layout)
+
+theorem numAt_low_odd (mem : Mem) (base : Addr) {w o : Nat} (hw : 0 < w)
+    (odd : numAt mem base w o % 2 = 1) :
+    (VG.Proof.Mont.word mem base (arrAt w o)).toNat % 2 = 1 := by
+  have split : numAt mem base w o = (VG.Proof.Mont.word mem base (arrAt w o)).toNat +
+      2 ^ 64 * VG.Proof.Mont.wordsVal mem base (arrAt w o + 8) (w - 1) := by
+    unfold numAt
+    rw [read_eq_wordsVal]
+    exact congrArg (fun n => VG.Proof.Mont.wordsVal mem base (arrAt w o) n)
+      (show w = (w - 1) + 1 by omega)
+  rw [split] at odd
+  omega
+
+theorem array_outside_layout {m m' : Mem} {base : Addr} {len w o : Nat}
+    (outside : VG.Proof.Mont.Outside base (arrAt w o) (8 * w) m m')
+    (layout : Layout m base len) : wOf m' base = wOf m base ∧ Layout m' base len := by
+  have start : 256 ≤ arrAt w o := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
+  have width : wOf m' base = wOf m base :=
+    congrArg BitVec.toNat (outside.word (d := 48) (by omega) (by decide))
+  refine ⟨width, ?_⟩
+  unfold Layout
+  rw [width]
+  refine ⟨layout.1, layout.2.1, layout.2.2.1, ?_⟩
+  intro j hj
+  change VG.Proof.Mont.word m' base (8 * (8 + j)) = _
+  rw [outside.word (by omega) (by omega)]
+  exact layout.2.2.2 j hj
+
+end VG.Proof.Bignum.Arm

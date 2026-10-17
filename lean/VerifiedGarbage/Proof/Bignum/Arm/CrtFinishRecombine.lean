@@ -1,0 +1,75 @@
+module
+
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFinishRecombine
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineValue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Exact CRT product-plus-residue reconstruction -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+structure CrtFinishInput (base : BitVec 32) (size len w o d : Nat) (s : State) : Prop where
+  padding : CrtPadInput base size len w d s
+  row : RowCtx s base size o d (4 * w)
+  outputFits : o + 4 * (4 * w + 2) ≤ size
+  separate : o + 4 * (4 * w + 2) ≤ d
+  output : s.mem.readW (off (State.addr base) 232) 32 = base + BitVec.ofNat 32 o
+  sumFits : val32 s.mem (State.addr base) o (4 * w + 2) + numAt s.mem (State.addr base) w 1 < 2 ^ (32 * (4 * w + 2))
+
+theorem crt_finishPad_ready (s : State) {base : BitVec 32} {size len w o d : Nat}
+    (h : CrtFinishInput base size len w o d s) :
+    WP isa (padModulus 1) s fun t => CrtAddWideInput base size o d w t ∧
+      val32 t.mem (State.addr base) o (4 * w + 2) = val32 s.mem (State.addr base) o (4 * w + 2) ∧
+      val32 t.mem (State.addr base) d (4 * w) = numAt s.mem (State.addr base) w 1 ∧
+      Outside (State.addr base) d (4 * (4 * w + 2)) s.mem t.mem ∧
+      Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have p := h.padding
+  have small := p.layout.size
+  have nowrap := p.workspace.nowrap
+  have sep := p.separate
+  have fits := p.fits
+  refine WP.mono (crt_padModulus_ok s p 1) ?_
+  rintro u ⟨padded, outside, ptrU, restU⟩
+  have low := crt_paddedResidue_low padded
+  have product := outside.val32 (d := o) (k := 4 * w + 2) (Or.inl h.separate) (by have := h.outputFits; omega)
+  have frame := outside_workspace outside p.fits
+  have count := p.layout.nativeCount p.main
+  have ready : CrtAddWideInput base size o d w u := by
+    refine ⟨p.workspace.congr restU.wr, by omega,
+      ⟨h.row.nowrap, h.row.outFits, h.row.inFits, h.row.separate, by rw [restU.wr]; exact h.row.writable⟩,
+      ?_, h.outputFits, ptrU, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · have hw := p.layout.width ▸ p.layout.layout.1; omega
+    · rw [outside_read32 outside (d := 48) (by omega) (by decide)]; exact count
+    · rw [outside_read32 outside (d := 232) (by omega) (by decide)]; exact h.output
+    · rw [outside_read32 outside (d := 240) (by omega) (by decide)]; exact p.link
+    · rw [product, low]; exact h.sumFits
+    · rw [restU.rd, restU.wr, restU.sp]; exact p.stackRead
+    · rw [restU.sp]; exact p.stackSep
+    · exact saved_base_kept frame p.stackSep p.saved restU.sp
+  exact ⟨ready, product, low, outside, frame, restU⟩
+
+theorem crt_finishRecombine_ok (s : State) {base : BitVec 32} {size len w o d : Nat}
+    (h : CrtFinishInput base size len w o d s) :
+    WP isa finishRecombine s fun t =>
+      val32 t.mem (State.addr base) o (4 * w + 2) =
+        val32 s.mem (State.addr base) o (4 * w + 2) + numAt s.mem (State.addr base) w 1 ∧
+      Outs (State.addr base) [(d, 4 * (4 * w + 2)), (o, 4 * (4 * w + 2))] s.mem t.mem ∧
+      Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ t.gpr .r0 = base ∧ Rest roundClobbers s t := by
+  rw [finishRecombine, WP.seq_iff]
+  refine WP.mono (crt_finishPad_ready s h) ?_
+  rintro u ⟨ready, product, low, outside, frame, restU⟩
+  refine WP.mono (crt_addWide_ok u ready) ?_
+  rintro t ⟨value, outsideT, frameT, ptrT, restT⟩
+  rw [product, low] at value
+  exact ⟨value, (Outs.of_outside outside (by simp)).trans (Outs.of_outside outsideT (by simp)),
+    frame.trans frameT, ptrT, restU.trans restT⟩
+
+end VG.Proof.Bignum.Arm

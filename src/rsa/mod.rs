@@ -60,7 +60,7 @@
 //! scheme.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -129,8 +129,8 @@ impl Backend {
     }
 
     /// The best implementation a CPU with the features `f` can run: on
-    /// AArch64, the baseline is the only one.
-    #[cfg(target_arch = "aarch64")]
+    /// AArch64 and ARMv7, the baseline is the only one.
+    #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
     pub(crate) fn select(_f: Features) -> Backend {
         Backend::Baseline
     }
@@ -360,6 +360,8 @@ pub(crate) mod tests {
     }
 
     /// `composite(32, false)` loaded, with `d = 1`, and its public key.
+    // Only the padding schemes' tests use it: ARMv7 has no padding schemes yet.
+    #[cfg(not(target_arch = "arm"))]
     pub(crate) fn composite_key() -> (PrivateKey, PublicKey) {
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         (

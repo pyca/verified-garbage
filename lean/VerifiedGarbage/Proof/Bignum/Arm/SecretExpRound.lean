@@ -1,0 +1,70 @@
+module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpBit
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Execute a private exponent bit and advance public loop controls -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Spec.Rsa.Mont (arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem secretExpRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
+    (h : ExpState base len w M x E s) (hv : V < 2 ^ 32) (hc : 0 < c) (hc' : c < 2 ^ 32)
+    (byte : s.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 V)
+    (count : s.mem.readW (VG.Proof.Mont.off (State.addr base) 192) 32 = BitVec.ofNat 32 c) :
+    WP isa secretExpRound s fun t => ExpState base len w M x (2 * E + V / 128 % 2) t ∧
+      t.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 (V + V) ∧
+      t.mem.readW (VG.Proof.Mont.off (State.addr base) 192) 32 = BitVec.ofNat 32 (c - 1) ∧
+      t.z = decide (c = 1) ∧
+      (∀ d, d + 4 ≤ 192 → t.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32 =
+        s.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32) ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have size : 256 ≤ 8 * len := by
+    have := h.ready.layout.2.2.1
+    simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at this
+    omega
+  rw [secretExpRound, WP.seq_iff]
+  refine WP.mono (secretExpBit_ok s h hv byte) ?_
+  rintro u ⟨stateU, headerU, frameU, restU⟩
+  have byteU := (headerU 200 (by decide)).trans byte
+  have countU := (headerU 192 (by decide)).trans count
+  rw [WP.seq_iff]
+  refine WP.mono (expShift_ok u stateU.ready.workspace (by omega) stateU.ready.ptr byteU) ?_
+  rintro v ⟨memV, restV⟩
+  obtain ⟨stateV, frameV⟩ := stateU.after_header (d := 200) (by decide) (by decide) memV restV
+    ((restV.gpr .r0 (by simp)).trans stateU.ready.ptr)
+  have byteV : v.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 (V + V) := by
+    rw [memV, Mem.readW_writeW_self32]
+  have countV : v.mem.readW (VG.Proof.Mont.off (State.addr base) 192) 32 = BitVec.ofNat 32 c := by
+    have outside := writeW32_outside u.mem (State.addr base) (d := 200) (BitVec.ofNat 32 (V + V)) (by decide)
+    rw [← memV] at outside
+    rw [outside_read32 outside (d := 192) (by decide) (by decide)]
+    exact countU
+  refine WP.mono (expDecrement_ok v stateV.ready.workspace (by omega) stateV.ready.ptr hc hc' countV) ?_
+  rintro t ⟨memT, flag, restT⟩
+  obtain ⟨stateT, frameT⟩ := stateV.after_header (d := 192) (by decide) (by decide) memT restT
+    ((restT.gpr .r0 (by simp)).trans stateV.ready.ptr)
+  refine ⟨stateT, ?_, ?_, flag, ?_, frameU.trans (frameV.trans frameT),
+    restU.trans ((restV.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers])))⟩
+  · have outside := writeW32_outside v.mem (State.addr base) (d := 192) (BitVec.ofNat 32 (c - 1)) (by decide)
+    rw [← memT] at outside
+    rw [outside_read32 outside (d := 200) (by decide) (by decide)]
+    exact byteV
+  · rw [memT, Mem.readW_writeW_self32]
+  · intro d hd
+    have outsideV := writeW32_outside u.mem (State.addr base) (d := 200) (BitVec.ofNat 32 (V + V)) (by decide)
+    have outsideT := writeW32_outside v.mem (State.addr base) (d := 192) (BitVec.ofNat 32 (c - 1)) (by decide)
+    rw [← memV] at outsideV
+    rw [← memT] at outsideT
+    rw [outside_read32 outsideT (d := d) (by omega) (by omega),
+      outside_read32 outsideV (d := d) (by omega) (by omega),
+      headerU d (by omega)]
+
+end VG.Proof.Bignum.Arm
