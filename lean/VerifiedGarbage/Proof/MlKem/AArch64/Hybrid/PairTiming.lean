@@ -51,7 +51,7 @@ theorem prepare3_ok (L : KemLay) {s : State} {p seed outA outB table e st : Addr
     WP isa (prepare3Code L sb ss a b i) s
       (Prepared3 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) oa ob p table s) := by
   refine WP.seq (WP.mono_syms (start3_ok (a := a) (b := b) L hss hsb h8b h.ptr h.seedPtr h.readable h.separate
-    hh.lay hh.h25 hh.h28 hb h8 hlim hash hE) fun u ⟨ku, fu, _, u19, _, _, buA, buB, _⟩ sy => ?_)
+    hh.lay hh.h25 hh.h28 hb h8 hlim hash hE) fun u ⟨ku, fu, _, u19, _, buA, buB, _, _⟩ sy => ?_)
   have cu : Context p outA outB table u := Context.frame3 h.context ku.rd ku.wr fu hh.tS hh.tF
   refine WP.mono_syms (Rej8.constants_ok u (by
     rw [u19]; exact Noise.inScratch cu.scratch (by decide) (by decide))) fun v ⟨kv, cv, mv, tv⟩ syv => ?_
@@ -156,8 +156,12 @@ theorem prepare3_relCT (L : KemLay) {σ₁ σ₂ : State} {p seed outA outB tabl
       (by rw [ku₂.get .x25]; exact hh₂.h25) (by rw [ku₂.get .x28]; exact hh₂.h28)
       (by rw [ku₁.sp, ku₂.sp, sp])
       (sinv3_zero L h19₁ h20₁ h21₁ pair₁ hs₁ he₁) (sinv3_zero L h19₂ h20₂ h21₂ pair₂ hs₂ he₂) habs
-  · exact rel_taint [.x28] (by rw [hw₁.1.sp, hw₂.1.sp, sp])
-      (by intro r hr; rw [List.mem_singleton.mp hr, hw₁.1.get .x28 (by decide), hw₂.1.get .x28 (by decide), b28])
+  · exact rel_taint [.x19, .x28] (by rw [hw₁.1.sp, hw₂.1.sp, sp])
+      (by
+        intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hw₁.2.2.2.1, hw₂.2.2.2.1]
+        · rw [hw₁.1.get .x28 (by decide), hw₂.1.get .x28 (by decide), b28])
       ⟨_, by taint_decide⟩
 
 theorem begin3_relCT (L : KemLay) {σ₁ σ₂ : State} {p seed outA outB table e st : Addr}
