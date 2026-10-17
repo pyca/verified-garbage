@@ -25,7 +25,7 @@ namespace VG.AArch64
 def storesAt (ok : Nat → Bool) : Instr → Bool
   | .str .x _ .x3 d => ok d
   | .strq _ .x3 d => ok d && ok (d + 8)
-  | .str .. | .strb .. | .strq .. | .stp .. | .push _ | .pop _ | .alloc _ | .free _ => false
+  | .str .. | .strb .. | .strSp .. | .strq .. | .stp .. | .push _ | .pop _ | .alloc _ | .free _ => false
   | i => !clobbers i .x3
 
 /-- The byte at `a` is in no store at `base + d`, for `ok d`. -/
@@ -34,8 +34,10 @@ def Unstored (ok : Nat → Bool) (base a : Addr) : Prop :=
 
 theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
     (hi : ∀ sz t n off, i ≠ .str sz t n off) (hb : ∀ t n off, i ≠ .strb t n off)
-    (hq : ∀ t n off, i ≠ .strq t n off) (hp : ∀ t1 t2 n off, i ≠ .stp t1 t2 n off) : s'.mem = s.mem := by
+    (hq : ∀ t n off, i ≠ .strq t n off) (hp : ∀ t1 t2 n off, i ≠ .stp t1 t2 n off)
+    (hsp : ∀ t off, i ≠ .strSp t off) : s'.mem = s.mem := by
   cases i with
+  | strSp t off => exact absurd rfl (hsp t off)
   | stp t1 t2 n off => exact absurd rfl (hp t1 t2 n off)
   | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
   | str sz t n off => exact absurd rfl (hi sz t n off)
@@ -114,7 +116,7 @@ theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : store
     all_goals first
       | exact absurd hi (by decide)
       | exact congrFun (exec_mem_of_noStore h (by intros; simp_all) (by intros; simp_all)
-          (by intros; simp_all) (by intros; simp_all)) a
+          (by intros; simp_all) (by intros; simp_all) (by intros; simp_all)) a
   unfold storeGet
   rw [h3]
   refine Prod.ext rfl (funext fun a => ?_)

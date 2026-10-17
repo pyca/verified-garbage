@@ -206,6 +206,10 @@ theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.
   | ldrSp t off =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp h; rfl
+  | strSp t off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [State.store] at h
+    split at h <;> cases h; rfl
   | ldp t1 t2 n off =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
