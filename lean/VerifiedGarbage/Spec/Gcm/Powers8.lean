@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Spec.Gcm.Prepared
 
 /-!
@@ -15,10 +14,13 @@ of its own. It is a storage convention, not a change to GCM's field
 arithmetic (NIST SP 800-38D §6.3).
 
 No function computes the buffer on its own. Each `*_store_powers` function is
-a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`,
-`vg_aes_gcm_seal_gather`, `vg_ghash`), with its unchanged postcondition, that
-also writes to a 128-byte buffer the powers of the hash subkey that it
-computes for its own GHASH. A caller uses it for the call that first needs
+a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, `vg_ghash`), with its
+unchanged postcondition, that also writes to a 128-byte buffer the powers of
+the hash subkey that it computes for its own GHASH. `vg_aes_gcm_seal_store_powers`
+and `vg_aes_gcm_open_store_powers` require the lengths of a TLS record (a
+12-byte nonce, at most 16 bytes of additional data and, for `open`, a tag
+length §5.2.1.2 allows: `storePowersOk`), the calls whose GHASH computes the
+powers. A caller uses it for the call that first needs
 them; every other call takes the plain functions or the `*_with_powers`
 ones, which read the key context and the powers through two pointers, so
 that nothing copies the key context.
@@ -73,6 +75,16 @@ def withPowersSafety : String :=
 
 /-! ## Writing the powers -/
 
+/-- What `vg_aes_gcm_seal_store_powers` and `vg_aes_gcm_open_store_powers`
+require beyond the plain functions: a 12-byte nonce and at most 16 bytes of
+additional data. -/
+def storePowersOk {pb : Nat} (nonceLen aadLen : BitVec pb) : Prop :=
+  nonceLen.toNat = 12 ∧ aadLen.toNat ≤ 16
+
+/-- `storePowersOk` in the safety documentation. -/
+def storePowersSafety : String :=
+  "`nonce_len` must be 12 and `aad_len` at most 16 (`VG.Spec.Gcm.storePowersOk`)."
+
 /-- `vg_aes_gcm_seal_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *mut [u64; 16])`:
 `sealSig` and the powers' buffer. -/
 def sealStorePowersSig : Sig where
@@ -84,11 +96,12 @@ def sealStorePowersPost (pb : Nat) : sealStorePowersSig.Post pb :=
     sealPost pb ctx rounds nonce nonceLen aad aadLen data len tag m m' r ∧
       Powers8Repr m' pw (ctxH m ctx)
 
-/-- `sealPre`, and `sealStorePowersPost`. -/
+/-- `sealPre` and `storePowersOk`, and `sealStorePowersPost`. -/
 def sealStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealStorePowersSig.contract A
-    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _pw =>
-      sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
+    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _pw m =>
+      sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag m ∧
+        storePowersOk nonceLen aadLen)
     (post := sealStorePowersPost A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_seal_store_powers` on every target. -/
@@ -99,7 +112,7 @@ def sealStorePowersApi : Api where
   writeArgs := true
   contracts := some fun A stack => sealStorePowersContract A stack
   summary := storePowersSummary "vg_aes_gcm_seal" "sealStorePowersContract"
-  safety := sealApi.safety
+  safety := sealApi.safety ++ [storePowersSafety]
 
 /-- `vg_aes_gcm_open_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *mut [u64; 16]) -> u32`:
 `openSig` and the powers' buffer. -/
@@ -114,11 +127,13 @@ def openStorePowersPost (pb : Nat) : openStorePowersSig.Post pb :=
     openPost pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r ∧
       Powers8Repr m' pw (ctxH m ctx)
 
-/-- `openPre`, `openStorePowersPost`, and what `openContract` may leak. -/
+/-- `openPre`, `storePowersOk` and a tag length §5.2.1.2 allows (`tagLenOk`),
+`openStorePowersPost`, and what `openContract` may leak. -/
 def openStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openStorePowersSig.contract A
-    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw =>
-      openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw m =>
+      openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen m ∧
+        storePowersOk nonceLen aadLen ∧ tagLenOk tagLen.toNat)
     (post := openStorePowersPost A.ptrBits) (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
@@ -132,37 +147,8 @@ def openStorePowersApi : Api where
   contracts := some fun A stack => openStorePowersContract A stack
   summary := storePowersSummary "vg_aes_gcm_open" "openStorePowersContract" ++
     " It writes the powers whether or not the tag matches: they depend only on the key."
-  safety := openApi.safety
-
-/-- `vg_aes_gcm_seal_gather_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *mut [u64; 16])`:
-`sealGatherSig` and the powers' buffer. -/
-def sealGatherStorePowersSig : Sig where
-  params := sealGatherSig.params ++ [storePowersParam]
-
-/-- `sealGatherPost`, and the powers of the key context's hash subkey at `pw`. -/
-def sealGatherStorePowersPost (pb : Nat) : sealGatherStorePowersSig.Post pb :=
-  fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag pw m m' r =>
-    sealGatherPost pb ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag m m' r ∧
-      Powers8Repr m' pw (ctxH m ctx)
-
-/-- `sealGatherPre`, and `sealGatherStorePowersPost`. -/
-def sealGatherStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherStorePowersSig.contract A
-    (pre := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _pw =>
-      sealGatherPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
-    (post := sealGatherStorePowersPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_gather_store_powers` on every target. -/
-def sealGatherStorePowersApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_gather_store_powers"
-  sig := sealGatherStorePowersSig
-  writeArgs := true
-  contracts := some fun A stack => sealGatherStorePowersContract A stack
-  summary := storePowersSummary "vg_aes_gcm_seal_gather" "sealGatherStorePowersContract"
-  safety := sealGatherApi.safety
-
-/-! ## Reading the powers -/
+  safety := openApi.safety ++ [storePowersSafety,
+    "`tag_len` must be 4, 8, 12, 13, 14, 15 or 16 (`VG.Spec.Gcm.tagLenOk`)."]
 
 /-- `vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16])`:
 `sealSig` and the powers' buffer. -/
