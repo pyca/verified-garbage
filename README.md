@@ -1704,7 +1704,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅ public keys by a fixed-base comb on edwards25519</td>
+<td>✅ s2n-bignum's <code>_alt</code> ladder; public keys by a fixed-base comb on edwards25519</td>
 
 <td>✅</td>
 
