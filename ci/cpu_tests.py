@@ -91,12 +91,11 @@ GROUPS = {
         "tests": ["wycheproof::aes_siv"],
     },
     "argon2": {
-        "lib": ["argon2", "argon2_hprime_tests"],
+        "lib": ["argon2"],
         "tests": [],
     },
     "blake2": {
         "lib": [
-            "argon2_hprime_tests::hprime_matches_blake2b_composition",
             "hashes::blake2",
             "hashes::blake2b",
             "hashes::blake2s",

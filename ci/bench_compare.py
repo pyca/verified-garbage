@@ -80,7 +80,12 @@ up to 9.4% on an EPYC 9V74 and 4.6% on an EPYC 7763 for
 `mlkem1024_keygen` (17.18–18.81 µs), and up to 14% for `mlkem768_decaps`,
 and one run of each side of a change that left `keygen_mul` byte for byte
 the same reported ML-KEM-1024's key generation 4–5% slower or faster,
-where the fastest copies of the two sides were within 0.3%. So do HMAC's
+where the fastest copies of the two sides were within 0.3%. So do SHA-256's
+and SHA-224's digests, HMACs and PBKDF2's: eight copies of one binary on an
+Arm Neoverse N2 spread by up to 3.5% for `sha256` at 32 bytes
+(47.22–48.85 ns), 2.1% for `sha224` at 32, 8.6% for `pbkdf2-hmac-sha224`
+at 64 (5.16–5.60 µs) and 1.6% for `hmac-sha256` at 32, more than the 0.7%
+by which a pull request's code layout already moves them. So do HMAC's
 with the SHA-512 family's hashes, which run the same compression function
 as their digests: on an EPYC 9V45, one function's 16 KiB time (HMAC-SHA-384,
 -512, -512/224 or -512/256) sat at 13.55–13.64 µs from some call sites and
@@ -121,18 +126,20 @@ TARGET = pathlib.Path("bench-target").resolve()
 # The benchmark groups (`<primitive>`s) whose time depends on the physical
 # pages that hold the binary (see the module docstring): those that read a
 # comb's table of hundreds of kilobytes, ChaCha20-Poly1305's, AES-GCM's,
-# the SHA-512 family's digests, HMAC's and PBKDF2's, and ML-KEM's.
+# the SHA-512 family's digests, HMAC's and PBKDF2's, ML-KEM's, and SHA-256's and
+# SHA-224's digests, HMACs and PBKDF2's.
 # They run from `--copies` copies of each binary.
 FRESH_COPIES = re.compile(
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
-    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$"
-    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$|mlkem(?:768|1024)_)")
+    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_"
+    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$"
+    r"|sha(?:224|256)$|(?:hmac|pbkdf2-hmac)-sha(?:224|256)(?:-verify)?$)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
 # whose benchmarks hold those groups. The binary sets up every selected
 # benchmark before criterion's filter applies (RSA keys of up to 4096 bits
 # among them), which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem"
+FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem sha256"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.

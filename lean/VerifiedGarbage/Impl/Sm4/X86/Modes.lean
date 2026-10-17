@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86.Ecb
 public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.CbcChained
 
 /-!
 # SM4's core for the modes on x86 (32-bit)
@@ -30,10 +31,10 @@ def dirCore (d : Dir) : Modes.X86.Core where
   G := 8
   bw := 4
 
-/-- `vg_sm4_cbc_encrypt`, with its scratch buffer as the fifth argument. -/
-def cbcEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEnc 4)
+/-- `vg_sm4_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
+def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
-/-- `vg_sm4_cbc_decrypt`, with its scratch buffer as the fifth argument. -/
-def cbcDecrypt : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDec 4)
+/-- `vg_sm4_cbc_decrypt_chained`, with its scratch buffer as the fifth argument. -/
+def cbcDecryptChained : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDecChained 4)
 
 end VG.Impl.Sm4.X86

@@ -171,6 +171,25 @@ def stream : Stream :=
 def copy32 (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
   (List.range n).flatMap (Impl.Pbkdf2.X86_64.cp32 src dst so d)
 
+/-- 16-byte word `k` from `[src + o₁]` to `[dst + o₂]`, through `xmm0`. -/
+def cp128 (src dst : Reg) (o₁ o₂ k : Nat) : List Instr :=
+  [.movdquLoad .xmm0 (at_ src (o₁ + 16 * k)), .movdquStore (at_ dst (o₂ + 16 * k)) .xmm0]
+
+/-- `n` bytes (a multiple of 4) from `[src + so]` to `[dst + d]`: 16 at a
+time, then 8 and 4. Each of the compression function's loads of what it
+writes then reads a single store of it (when the store and the load start
+at the same multiple of 16), which a core forwards. -/
+def copyWide (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
+  (List.range (n / 16)).flatMap (cp128 src dst so d) ++
+    ((if n % 16 ≥ 8 then [.mov .rax (.mem (at_ src (so + 16 * (n / 16)))),
+      .store (at_ dst (d + 16 * (n / 16))) .rax] else []) ++
+    (if n % 8 = 4 then Impl.Pbkdf2.X86_64.cp32 src dst (so + (n - 4)) (d + (n - 4)) 0 else []) : List Instr)
+
+/-- `n` bytes from `[src + so]` to `[dst + d]`: 16 at a time (`copyWide`)
+if `wide`, otherwise 32-bit words. -/
+def copyW (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
+  if wide then copyWide src so dst d n else copy32 src so dst d (n / 4)
+
 /-! ## HMAC's `init`
 
 Registers: `rbx` = `inner`, `r12` = `outer`, `r15` = `scratch`, `rbp` =
@@ -238,19 +257,45 @@ message, as in `iterate` (`Impl/Pbkdf2/X86_64.lean`). The inner state is no
 longer needed, so it holds them: its hash value at `rbx` and the block in
 its buffer, at `rbp = rbx + N`. -/
 
+/-- Where the padding's 16-byte words start: the first multiple of 16
+after `D` (`D` itself holds `0x80`). -/
+def padA : Nat := 16 * (H.D / 16 + 1)
+
+/-- The rest of the outer block after the `D`-byte digest, the end of a
+`B + D`-byte message, at `rbp`, in 16-byte stores where it can: `0x80` and
+zeros up to `padA` (one 16-byte store when `D` is a multiple of 16, words
+otherwise), zeros up to the last 16 bytes, and those (zeros, then the length
+field) as `P.lenV` builds them in `xmm7` from the length in `r12`. -/
+def padW : List Instr :=
+  (if H.D % 16 = 0 then
+    ([.mov32 .rax (.imm 0x80), .xop (.movq .xmm1 .rax), .movdquStore (at_ .rbp H.D) .xmm1] : List Instr)
+  else Impl.Pbkdf2.X86_64.padFrom H.D H.padA) ++
+    .xop (.bin .pxor .xmm0 .xmm0) ::
+    (List.range ((H.P.B - 16 - H.padA) / 16)).map (fun k => .movdquStore (at_ .rbp (H.padA + 16 * k)) .xmm0) ++
+    .mov32 .r12 (.imm (BitVec.ofNat 32 (H.P.B + H.D))) :: H.P.lenV ++
+    ([.movdquStore (at_ .rbp (H.P.B - 16)) .xmm7] : List Instr)
+
+/-- Whether `finalize` moves 16 bytes at a time (`copyWide`, `padW`): for
+the SHA-512 family's 128-byte blocks. For 64-byte blocks the 32-bit copies
+and `padLen` measured as fast (#2208). -/
+def wide : Bool := H.P.B == 128
+
+/-- The outer block's padding: `padW` if `wide`, otherwise `padLen`. -/
+def padSel : List Instr := if H.wide then H.padW else Impl.Pbkdf2.X86_64.padLen H.P H.D
+
 /-- The outer hash value over the inner state's, the inner digest into its
-buffer, then the padding after it (`padLen`), and the block's address for
+buffer, then the padding after it (`padSel`), and the block's address for
 the compression function. -/
 def finMid : List Instr :=
-  copy32 .r12 0 .rbx 0 (H.P.N / 4) ++ copy32 .r15 H.stream.buf .rbx H.P.N (H.D / 4) ++
+  copyW H.wide .r12 0 .rbx 0 H.P.N ++ copyW H.wide .r15 H.stream.buf .rbx H.P.N H.D ++
     ([.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] : List Instr) ++
-    Impl.Pbkdf2.X86_64.padLen H.P H.D ++ ([.mov .rsi (.reg .rbp)] : List Instr)
+    H.padSel ++ ([.mov .rsi (.reg .rbp)] : List Instr)
 
 /-- The MAC to `out`: the digest of the hash value, written there directly,
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into
 the block and its first `D` bytes copied; and our caller's registers back. -/
 def finOut : List Instr :=
-  (if H.D < H.P.N then H.P.out ++ copy32 .rbp 0 .r13 0 (H.D / 4) else .mov .rbp (.reg .r13) :: H.P.out) ++
+  (if H.D < H.P.N then H.P.out ++ copyW H.wide .rbp 0 .r13 0 H.D else .mov .rbp (.reg .r13) :: H.P.out) ++
     H.stream.restore
 
 def hmacFin : Prog isa :=

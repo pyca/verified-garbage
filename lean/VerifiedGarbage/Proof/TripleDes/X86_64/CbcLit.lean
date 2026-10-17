@@ -17,9 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 namespace VG
 
-materialize_code Impl.TripleDes.X86_64.cbcEncrypt
-materialize_code Impl.TripleDes.X86_64.cbcDecrypt
-materialize_code Impl.TripleDes.X86_64.cbcEncryptI
-materialize_code Impl.TripleDes.X86_64.cbcDecryptI
+materialize_code Impl.TripleDes.X86_64.cbcEncryptChained
+materialize_code Impl.TripleDes.X86_64.cbcDecryptChained
+materialize_code Impl.TripleDes.X86_64.cbcEncryptChainedI
+materialize_code Impl.TripleDes.X86_64.cbcDecryptChainedI
 
 end VG

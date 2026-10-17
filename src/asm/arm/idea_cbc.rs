@@ -2,21 +2,21 @@
 //! Verified `idea_cbc` functions for `arm`.
 #![allow(dead_code)]
 
-/// IDEA-CBC encryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is IDEA under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them. No padding is added.
+/// IDEA-CBC encryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is IDEA under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them. No padding is added.
 ///
-/// Contract: `VG.Spec.Idea.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_idea_ecb` (under the encryption subkeys) on each block in a 56-byte working space on the stack, zeroed on return.
+/// Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_idea_ecb` (under the encryption subkeys) on each block in a 56-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_idea_cbc_encrypt(schedule: *const [u8; 104], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_cbc_encrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #64
 add r12, sp, #0
@@ -68,6 +68,10 @@ bne 22b
 b 21f
 20:
 21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
 ldr r4, [r8, #0]
 ldr r5, [r8, #4]
 ldr r6, [r8, #8]
@@ -99,21 +103,21 @@ bx lr",
     )
 }
 
-/// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
+/// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
-/// Contract: `VG.Spec.Idea.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_idea_ecb` (under the decryption subkeys) on each block in place, with the chaining value in a 56-byte working space on the stack, zeroed on return.
+/// Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_idea_ecb` (under the decryption subkeys) on each block in place, with the chaining value in a 56-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_idea_cbc_decrypt(schedule: *const [u8; 104], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_cbc_decrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #64
 add r12, sp, #0
@@ -169,6 +173,10 @@ bne 22b
 b 21f
 20:
 21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
 ldr r4, [r8, #0]
 ldr r5, [r8, #4]
 ldr r6, [r8, #8]
