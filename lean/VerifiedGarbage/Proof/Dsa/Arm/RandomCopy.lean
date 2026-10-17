@@ -113,6 +113,46 @@ theorem drawBytes_length {s₀ : State} {used : Nat} (hfull : used + rWidth s₀
     (drawBytes s₀ used).length = rWidth s₀ := by
   simp only [drawBytes, List.length_take, List.length_drop]; omega
 
+/-- The draw's source, count and place. -/
+theorem copyHeader_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {used : Nat}
+    (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
+    (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)) :
+    WP isa (.block copyHeader) t fun t₈ => RReady s₀ t₈ ∧ t₈.mem = t.mem ∧ Rest [.r0, .r1, .r2, .r4, .r7] t t₈ ∧
+      t₈.gpr .r1 = stackArg s₀ 5 + BitVec.ofNat 32 used ∧ t₈.gpr .r2 = BitVec.ofNat 32 (rWidth s₀) ∧
+      t₈.gpr .r4 = t₈.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀) := by
+  have hql := rQBytes_le A
+  have hqn := rQBytes_length A
+  have hwq := rWidth_le s₀
+  unfold copyHeader
+  refine wp_ldArg A h (j := 5) (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
+    wp_dp (op2_reg _ _) fun t₃ u₃ => wp_ld ((h.upd u₁).upd u₂ |>.upd u₃) (by decide) fun t₄ u₄ =>
+    wp_dp (op2_imm (by decide)) fun t₅ u₅ => wp_ldArg A ((((h.upd u₁).upd u₂).upd u₃).upd u₄ |>.upd u₅)
+      (j := 2) (by decide) fun t₆ u₆ => wp_dp (op2_reg _ _) fun t₇ u₇ => wp_dp (op2_reg _ _) fun t₈ u₈ =>
+      WP.block_nil ?_
+  have h₈ := (((((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅).upd u₆).upd u₇).upd u₈
+  have m₈ : t₈.mem = t.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have R₈ : Rest [.r0, .r1, .r2, .r4, .r7] t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
+    ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans ((u₆.rest (by decide)).trans
+    ((u₇.rest (by decide)).trans (u₈.rest (by decide))))))))
+  refine ⟨h₈, m₈, R₈, ?_, ?_, ?_⟩
+  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
+      u₄.other _ (by decide), u₃.gpr]
+    show t₂.gpr .r1 + t₂.gpr .r0 = _
+    rw [u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, hu]
+  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
+      u₃.mem, u₂.mem, u₁.mem, hw]
+  · rw [u₈.gpr]
+    show t₇.gpr .r4 - t₇.gpr .r2 = _
+    rw [u₇.gpr, u₇.other .r2 (by decide)]
+    show t₆.gpr .r4 + t₆.gpr .r0 - t₆.gpr .r2 = _
+    rw [u₆.gpr, u₆.other .r4 (by decide), u₆.other .r2 (by decide), u₅.gpr, u₅.other .r2 (by decide),
+      R₈.gpr .r11 (by decide), u₄.gpr, u₃.mem, u₂.mem, u₁.mem, hw, u₄.other .r11 (by decide), u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide)]
+    show t.gpr .r11 + BitVec.ofNat 32 oNonce + stackArg s₀ 2 - BitVec.ofNat 32 (rWidth s₀) = _
+    rw [show stackArg s₀ 2 = BitVec.ofNat 32 (rQBytes s₀).length by rw [hqn, BitVec.ofNat_toNat, BitVec.setWidth_eq],
+      BitVec.add_assoc, BitVec.ofNat_add_ofNat, add_ofNat_sub32 _ (by omega) (by unfold oNonce; omega)]
+    unfold drawPlace; congr 2; omega
+
 /-- The draw's source, count and place, and its first byte, masked. -/
 theorem copyInit_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {used : Nat}
     (hu : slot t.mem (rBase s₀) oUsed = BitVec.ofNat 32 used)
@@ -123,7 +163,6 @@ theorem copyInit_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {u
       (drawBytes s₀ used) (maskValue (rLead s₀).toNat) 1 u ∧ u.z = decide (rWidth s₀ - 1 = 0) := by
   have hF : frameBytes = 112 := rfl
   have hql := rQBytes_le A
-  have hqn := rQBytes_length A
   have hwq := rWidth_le s₀
   have hdl := drawBytes_length hfull
   have hdp := drawPlace_le A
@@ -131,38 +170,9 @@ theorem copyInit_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {u
   have hin := h.draw A (used := used) (by omega) (rWidth s₀)
   have hfit := hin.fit
   rw [hdl] at hfit
-  have hrf := h.rf
-  unfold copyInit copyHeader copyFirst
-  simp only [List.cons_append, List.nil_append]
-  refine wp_ldArg A h (j := 5) (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
-    wp_dp (op2_reg _ _) fun t₃ u₃ => wp_ld ((h.upd u₁).upd u₂ |>.upd u₃) (by decide) fun t₄ u₄ =>
-    wp_dp (op2_imm (by decide)) fun t₅ u₅ => wp_ldArg A ((((h.upd u₁).upd u₂).upd u₃).upd u₄ |>.upd u₅)
-      (j := 2) (by decide) fun t₆ u₆ => wp_dp (op2_reg _ _) fun t₇ u₇ => wp_dp (op2_reg _ _) fun t₈ u₈ => ?_
-  have h₈ := (((((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅).upd u₆).upd u₇).upd u₈
-  have m₈ : t₈.mem = t.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have R₈ : Rest [.r0, .r1, .r2, .r4, .r7] t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
-    ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans ((u₆.rest (by decide)).trans
-    ((u₇.rest (by decide)).trans (u₈.rest (by decide))))))))
-  have r1₈ : t₈.gpr .r1 = stackArg s₀ 5 + BitVec.ofNat 32 used := by
-    rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
-      u₄.other _ (by decide), u₃.gpr]
-    show t₂.gpr .r1 + t₂.gpr .r0 = _
-    rw [u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, hu]
-  have r2₈ : t₈.gpr .r2 = BitVec.ofNat 32 (rWidth s₀) := by
-    rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
-      u₃.mem, u₂.mem, u₁.mem, hw]
-  have r4₈ : t₈.gpr .r4 = t₈.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀) := by
-    rw [u₈.gpr]
-    show t₇.gpr .r4 - t₇.gpr .r2 = _
-    rw [u₇.gpr, u₇.other .r2 (by decide)]
-    show t₆.gpr .r4 + t₆.gpr .r0 - t₆.gpr .r2 = _
-    rw [u₆.gpr, u₆.other .r4 (by decide), u₆.other .r2 (by decide), u₅.gpr, u₅.other .r2 (by decide), R₈.gpr .r11 (by decide),
-      u₄.gpr, u₃.mem, u₂.mem, u₁.mem, hw, u₄.other .r11 (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide)]
-    show t.gpr .r11 + BitVec.ofNat 32 oNonce + stackArg s₀ 2 - BitVec.ofNat 32 (rWidth s₀) = _
-    rw [show stackArg s₀ 2 = BitVec.ofNat 32 (rQBytes s₀).length by rw [hqn, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      BitVec.add_assoc, BitVec.ofNat_add_ofNat, add_ofNat_sub32 _ (by omega) (by unfold oNonce; omega)]
-    unfold drawPlace; congr 2; omega
+  unfold copyInit
+  refine VG.Proof.X25519.Arm.WP.append (copyHeader_ok A h hu hw) fun t₈ ⟨h₈, m₈, R₈, r1₈, r2₈, r4₈⟩ => ?_
+  unfold copyFirst
   -- The first byte.
   have hb0 : 0 < (drawBytes s₀ used).length := by omega
   refine wp_ldrb (a := State.addr (stackArg s₀ 5 + BitVec.ofNat 32 used) + BitVec.ofNat 64 0) (by decide)
