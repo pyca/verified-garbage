@@ -670,7 +670,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
                 .unwrap();
             assert_eq!((&record[..], aws_lc_tag.as_ref()), (&ct[..], &tag[..]));
 
-            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal{label}"));
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
             g.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
@@ -715,7 +715,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
 
             // Each iteration opens the record again from its ciphertext.
             let mut buf = Aligned::new(&ct, offsets.input);
-            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open{label}"));
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
             g.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
