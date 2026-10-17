@@ -299,8 +299,9 @@ def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
 /-! ## The vector code (`rbx` the area) -/
 
 /-- `[S] := T_v` for each prime, `v` the top 4 bits of the quadword at `oV`:
-for each entry `j`, OR'ed in under the mask of `j = v`, in registers
-`0`–`R - 1`, with the mask in `R` and a temporary in `R + 1`. -/
+for each entry `j`, OR'ed in under the mask of `j = v` (one `vpternlogq`
+per register), in registers `0`–`R - 1`, with the mask in `R` and a
+temporary in `R + 1`. -/
 def select (p : Nat) : List (Prog isa) :=
   [.block (([.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 (l.D * p + l.oTab))),
       .mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))), .shift .shr .rdx 60,
@@ -308,8 +309,7 @@ def select (p : Nat) : List (Prog isa) :=
     .loop (.block (([.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
         .alu .sbb .rax (.reg .rax), .eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] : List Instr) ++
       ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
-        .eop (.bin .vpandq (vreg (l.R + 1)) (vreg (l.R + 1)) (vreg l.R)),
-        .eop (.bin .vporq (vreg k) (vreg k) (vreg (l.R + 1)))]) ++
+        .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)]) ++
       ([.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)] : List Instr))) .ne,
     .block ((List.range l.R).map fun k => .evStore (at_ .rbx (l.D * p + l.oS + 32 * k)) (vreg k))]
 
