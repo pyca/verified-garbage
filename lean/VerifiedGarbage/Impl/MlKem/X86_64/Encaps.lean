@@ -18,7 +18,7 @@ in `r14`), and is `kemEncapsH` but for `H(ek)`:
 * With one (`c.batchH = some b`, AVX2 or AVX-512), the matrix is sampled
   first, three entries at a time with `b` (`Sample4.sampleH`), whose fourth
   Keccak state absorbs `pad(ek)`, three blocks of 136 bytes at a time:
-  `m` to `M` and `ρ` to `SB`; the sponge's state, at `HS` in the working
+  `ρ` to `SB`; the sponge's state, at `HS` in the working
   space of `vg_mlkem_sample_ntt4` (polynomial `pW`), zeroed; for each
   `i < nb` (`nb = |pad(ek)| / 408`), the 408 bytes of `pad(ek)` from `408 i`
   to `HB` (`hblk`: from `ek`, and for the last, its rest, zeros, SHA-3's
@@ -26,7 +26,7 @@ in `r14`), and is `kemEncapsH` but for `H(ek)`:
   entries `3i` to `3i + 3`, and `b`, which samples the first three to
   `Â`; then `H(ek)`, the first 32 bytes of the sponge's state, to `H`; the
   remaining entries of `Â` as `kemEncapsH` samples them (four at a time with
-  `c`); `G(m ‖ H(ek))` to `G`; and `kemEncapsH`'s rest of `K-PKE.Encrypt`
+  `c`); `m` to `M` and `G(m ‖ H(ek))` to `G` (`EncapsH.hashes`); and `kemEncapsH`'s rest of `K-PKE.Encrypt`
   and outputs, if every `SampleNTT` succeeded.
 
 ML-KEM-768's key is 9 blocks (three `b`), and ML-KEM-1024's 12 (four `b`,
@@ -63,7 +63,7 @@ def hzero : List Instr := .mov32 .rax (.imm 0) :: zeroSt .rbx (oHS L)
 /-- The rest of the last 408 bytes of `pad(ek)`, after the `len` bytes of
 `ek`: zeros, and the suffix and the last bit of the padding. -/
 def padTail (len : Nat) : List Instr :=
-  .mov32 .rax (.imm 0) :: (List.range ((408 - len) / 8)).map (fun j => .store (at_ .rbx (oHB L + len + 8 * j)) .rax) ++
+  .mov32 .rax (.imm 0) :: (List.range ((408 - len) / 8)).flatMap (fun j => [.store (at_ .rbx (oHB L + len + 8 * j)) .rax]) ++
     setB (sc (oHB L + len)) 6 ++ setB (sc (oHB L + 407)) 0x80
 
 /-- Bytes `408 i` to `408 i + 407` of `pad(ek)` to `HB`. -/
@@ -90,9 +90,6 @@ def matH (c : Callee4) (b : Prog isa) : Prog isa :=
   .seq (copy (sc oSB) (.r14, 384 * L.k) 32) (.seq (.block (hzero L)) (.seq (seqR (frag L b) 0 (nb L))
     (.seq (copy (sc oH) (sc (oHS L)) 32) (L.ents c (3 * nb L) (L.k * L.k - 3 * nb L)))))
 
-/-- `G(m ‖ H(ek))`, with `m` at `M` and `H(ek)` at `H`. -/
-def gHash : Prog isa := hashAt [(sc oM, 32), (sc oH, 32)] 72 6 (sc oG) 64
-
 end Encaps
 
 open Encaps in
@@ -101,8 +98,8 @@ def kemEncaps (L : Kem) (c : Callee4) : Prog isa :=
   match c.batchH with
   | none => .seq (.block pro) (.seq (hashEk L) (.seq EncapsH.hashes (.seq (encrypt L c (.r14, 0))
       (.seq (EncapsH.out L) (.block topEpi)))))
-  | some b => .seq (.block pro) (.seq (copy (sc oM) (.rbp, 0) 32) (.seq (matH L c b) (.seq gHash
-      (.seq (ifOk (Encrypt.rest L c (.r14, 0))) (.seq (EncapsH.out L) (.block topEpi))))))
+  | some b => .seq (.block pro) (.seq (matH L c b) (.seq EncapsH.hashes
+      (.seq (ifOk (Encrypt.rest L c (.r14, 0))) (.seq (EncapsH.out L) (.block topEpi)))))
 
 /-- `vg_mlkem768_encaps`. -/
 abbrev encaps (c : Callee4) : Prog isa := kemEncaps kem768 c
