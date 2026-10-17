@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyBody
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyBytesSpec
+public import VerifiedGarbage.Proof.Dsa.Accepted
 
 /-! # The post-shape verifier returns the packed-byte specification result -/
 
