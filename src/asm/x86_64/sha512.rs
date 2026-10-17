@@ -3629,13 +3629,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -3841,13 +3843,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -3985,13 +3989,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -4201,13 +4207,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -4345,13 +4353,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -4561,13 +4571,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -4862,13 +4874,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -5191,13 +5205,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -5408,13 +5424,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -5723,13 +5741,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -6060,13 +6080,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -6281,13 +6303,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -6596,13 +6620,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -6933,13 +6959,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -7154,13 +7182,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -7300,13 +7330,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -7506,13 +7538,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -7644,13 +7678,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -7854,13 +7890,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -7992,13 +8030,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -8202,13 +8242,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -8336,13 +8378,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -8542,13 +8586,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -8680,13 +8726,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -8890,13 +8938,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
@@ -9028,13 +9078,15 @@ jmp 214f
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 214:
 jmp 24f
 23:
@@ -9238,13 +9290,15 @@ movdqu XMMWORD PTR [rbx+176], xmm0
 mov rax, r12
 shr rax, 61
 bswap rax
-mov QWORD PTR [rbx+176], rax
+movq xmm7, rax
 mov rax, r12
 add rax, rax
 add rax, rax
 add rax, rax
 bswap rax
-mov QWORD PTR [rbx+184], rax
+movq xmm8, rax
+punpcklqdq xmm7, xmm8
+movdqu XMMWORD PTR [rbx+176], xmm7
 mov rsi, rbx
 add rsi, 64
 mov rdi, rbx
