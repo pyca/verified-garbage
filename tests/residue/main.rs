@@ -29,6 +29,7 @@
 ))]
 
 mod aes_gcm;
+mod block_ciphers;
 mod chacha20poly1305;
 mod hmac;
 mod sha256;
@@ -36,7 +37,40 @@ mod sha256;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 /// The operations that must leave no residue.
-const CLEAN: &[&str] = &["control"];
+const CLEAN: &[&str] = &[
+    "control",
+    "aes_cbc",
+    "aes_cfb",
+    "aes_cfb8",
+    "aes_ctr",
+    "aes_ecb",
+    "aes_ofb",
+    "blowfish_cbc",
+    "blowfish_cfb",
+    "blowfish_ofb",
+    "camellia_cbc",
+    "camellia_cfb",
+    "camellia_ctr",
+    "camellia_ecb",
+    "camellia_ofb",
+    "cast5_ecb",
+    "idea_cfb",
+    "idea_ofb",
+    "seed_cbc",
+    "seed_cfb",
+    "seed_ecb",
+    "seed_ofb",
+    "sm4_cbc",
+    "sm4_cfb",
+    "sm4_ctr",
+    "sm4_ecb",
+    "sm4_ofb",
+    "triple_des_cbc",
+    "triple_des_cfb",
+    "triple_des_cfb8",
+    "triple_des_ecb",
+    "triple_des_ofb",
+];
 
 /// The bytes of the stack each operation runs on.
 const STACK: usize = 256 << 10;

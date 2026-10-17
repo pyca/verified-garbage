@@ -11,6 +11,10 @@
 //!   PBKDF2 or keyed BLAKE2) wipes it when it is dropped.
 //! * The password KDFs' `verify` functions wipe the key they derive once
 //!   they have compared it with the expected one.
+//! * The block ciphers' modes expand a key's schedule into a local of
+//!   their constructor (`Wiped`), which they wipe once it is copied into the
+//!   object they return: `tests/residue/` checks that optimized code leaves
+//!   no copy of it on the stack.
 //!
 //! What is not: the working space (`scratch`) of the symmetric algorithms'
 //! calls, and the copies of states the Rust code makes on the stack when
@@ -71,6 +75,18 @@ pub(crate) unsafe fn zeroize_raw(p: *mut u8, len: usize) {
     // SAFETY: the caller's.
     unsafe { crate::arch::zeroize::vg_zeroize(p, len) };
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+}
+
+/// An array that is wiped when it is dropped: a local a constructor fills
+/// with a secret (e.g. a key schedule) before copying it into the object it
+/// returns, which Rust may build elsewhere (`memcpy`): the local's copy is
+/// then wiped, not left in the constructor's dead frame.
+pub(crate) struct Wiped<T: Int, const N: usize>(pub(crate) [T; N]);
+
+impl<T: Int, const N: usize> Drop for Wiped<T, N> {
+    fn drop(&mut self) {
+        zeroize(&mut self.0);
+    }
 }
 
 #[cfg(test)]

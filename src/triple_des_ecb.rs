@@ -108,16 +108,20 @@ impl TripleDesEcb {
         if !matches!(key.len(), 16 | 24) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut schedule = [0; 384];
+        // Chosen first: a call evaluated after the schedule's copy, in the
+        // object's fields, would keep that copy in a temporary of its own.
+        let backend = Backend::select(detected());
+        // Wiped once copied into the object returned (`Wiped`).
+        let mut schedule = crate::zeroize::Wiped([0; 384]);
         // SAFETY: the key has a validated length; key and schedule are
         // separate valid buffers of the required sizes. The function zeroes
         // its working space on its own stack before returning.
         unsafe {
-            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self {
-            schedule,
-            backend: Backend::select(detected()),
+            schedule: schedule.0,
+            backend,
         })
     }
 

@@ -44,12 +44,15 @@ impl TripleDesOfb {
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 384];
+        // Wiped once copied into the object returned (`Wiped`).
+        let mut schedule = crate::zeroize::Wiped([0; 384]);
         // SAFETY: the key has a validated length; key and schedule are
         // separate valid buffers of the required sizes. The function zeroes
         // its working space on its own stack before returning.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule) };
-        Ok(Self { schedule })
+        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        Ok(Self {
+            schedule: schedule.0,
+        })
     }
 
     /// Encrypts or decrypts (the same operation) `buffer` in place, from the

@@ -47,7 +47,7 @@ BINARIES = ("lib", "tests")
 GROUPS = {
     "aes_cbc": {
         "lib": ["aes_cbc"],
-        "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
+        "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc", "residue::block_ciphers::aes_cbc"],
     },
     "aes_ccm": {
         "lib": ["aes_ccm"],
@@ -55,7 +55,7 @@ GROUPS = {
     },
     "aes_ecb": {
         "lib": ["aes_ecb"],
-        "tests": ["cavp::aes_ecb"],
+        "tests": ["cavp::aes_ecb", "residue::block_ciphers::aes_ecb"],
     },
     "aes_gcm": {
         "lib": ["aes_gcm", "aes_gcm_siv"],
@@ -71,19 +71,19 @@ GROUPS = {
     },
     "aes_ofb": {
         "lib": ["aes_ofb"],
-        "tests": ["cavp::aes_ofb"],
+        "tests": ["cavp::aes_ofb", "residue::block_ciphers::aes_ofb"],
     },
     "aes_cfb": {
         "lib": ["aes_cfb"],
-        "tests": ["cavp::aes_cfb"],
+        "tests": ["cavp::aes_cfb", "residue::block_ciphers::aes_cfb"],
     },
     "aes_cfb8": {
         "lib": ["aes_cfb8"],
-        "tests": ["cavp::aes_cfb8"],
+        "tests": ["cavp::aes_cfb8", "residue::block_ciphers::aes_cfb8"],
     },
     "aes_ctr": {
         "lib": ["aes_ctr"],
-        "tests": ["rfc3686"],
+        "tests": ["rfc3686", "residue::block_ciphers::aes_ctr"],
     },
     "aes_xts": {
         "lib": ["aes_xts"],
@@ -402,7 +402,7 @@ GROUPS = {
     },
     "triple_des_ecb": {
         "lib": ["triple_des_ecb"],
-        "tests": ["cavp::triple_des_ecb"],
+        "tests": ["cavp::triple_des_ecb", "residue::block_ciphers::triple_des_ecb"],
     },
     "x25519": {
         "lib": ["x25519"],

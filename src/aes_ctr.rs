@@ -124,14 +124,15 @@ impl AesCtr {
             vg_aes_expand_key_aesni,
             vg_aes_expand_key_aes
         );
-        let mut schedule = [0; 240];
+        // Wiped once copied into the object returned (`Wiped`).
+        let mut schedule = crate::zeroize::Wiped([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the
         // schedule are separate valid buffers of the sizes of the signature,
         // and `select` chose `expand` for the CPU's features. The function
         // zeroes its working space on its own stack before returning.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
-            schedule,
+            schedule: schedule.0,
             rounds: key.len() / 4 + 6,
             backend,
         })

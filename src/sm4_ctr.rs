@@ -41,14 +41,17 @@ pub struct Sm4Ctr {
 impl Sm4Ctr {
     /// Expands a 16-byte key.
     pub fn new(key: &[u8; 16]) -> Self {
-        let mut schedule = [0; 128];
+        // Wiped once copied into the object returned (`Wiped`).
+        let mut schedule = crate::zeroize::Wiped([0; 128]);
         // SAFETY: key and schedule are separate valid buffers of the
         // required sizes. The function zeroes its working space on its own
         // stack before returning.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule);
+            vg_sm4_expand_key(key, &mut schedule.0);
         }
-        Self { schedule }
+        Self {
+            schedule: schedule.0,
+        }
     }
 
     /// Encrypts or decrypts (the same operation) `buffer` in place, from the

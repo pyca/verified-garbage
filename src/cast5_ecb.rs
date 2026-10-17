@@ -47,18 +47,19 @@ impl Cast5Ecb {
         if !(5..=16).contains(&key.len()) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut schedule = [0; 128];
+        // Wiped once copied into the object returned (`Wiped`).
+        let mut schedule = crate::zeroize::Wiped([0; 128]);
         let mut scratch = [0; 32];
         // SAFETY: the key has a validated length; the key, schedule and
         // scratch space are separate valid objects of the sizes of the
         // signature.
         unsafe {
-            vg_cast5_expand_key(key.as_ptr(), key.len(), &mut schedule, &mut scratch);
+            vg_cast5_expand_key(key.as_ptr(), key.len(), &mut schedule.0, &mut scratch);
         }
         // The scratch space holds the intermediate values of key expansion.
         zeroize(&mut scratch);
         Ok(Self {
-            schedule,
+            schedule: schedule.0,
             rounds: if key.len() <= 10 { 12 } else { 16 },
         })
     }

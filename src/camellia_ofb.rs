@@ -45,12 +45,16 @@ impl CamelliaOfb {
             24 | 32 => 24,
             _ => return Err(InvalidKeyLength),
         };
-        let mut schedule = [0; 272];
+        // Wiped once copied into the object returned (`Wiped`).
+        let mut schedule = crate::zeroize::Wiped([0; 272]);
         // SAFETY: the key has a validated length; key and schedule are
         // separate valid buffers of the required sizes. The function zeroes
         // its working space on its own stack before returning.
-        unsafe { vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule) };
-        Ok(Self { schedule, rounds })
+        unsafe { vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        Ok(Self {
+            schedule: schedule.0,
+            rounds,
+        })
     }
 
     /// Encrypts or decrypts (the same operation) `buffer` in place, from the
