@@ -62,7 +62,7 @@ structure WsR (s : State) (B : BitVec 32) (Z w N : Nat) : Prop where
   writable : (⟨State.addr B, Z⟩ : Region) ∈ s.wr
   fits : arr w N ≤ Z
   wpos : 0 < w
-  wle : w ≤ 256
+  wle : w ≤ 1024
   r8 : s.gpr .r8 = B
 
 theorem Ws.toR {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) : WsR s B Z w N :=

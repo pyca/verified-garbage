@@ -129,11 +129,11 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
       show (3 : BitVec 32).toNat = 3 from rfl]
     simp only [Geo.w, fK] at *
     omega
-  refine stride_ok w16.2 h9 fun s9 h7 r9 m9 => ?_
+  refine stride_ok (by omega) h9 fun s9 h7 r9 m9 => ?_
   have r79 : Rest [.r9, .r7] s6 s9 := (u7.rest (by simp)).trans ((u8.rest (by simp)).trans (r9.mono (by simp)))
   have m79 : s9.mem = s6.mem := m9.trans (u8.mem.trans u7.mem)
   have ws9 : Ws s9 (geo iS σ).B (geo iS σ).Z (geo iS σ).w nArr :=
-    ⟨fS, by rw [r79.wr, r6'.wr, b1.wr, h.wr]; simp, fits, by omega, w16.2, h7,
+    ⟨fS, by rw [r79.wr, r6'.wr, b1.wr, h.wr]; simp, fits, by omega, by omega, h7,
       by rw [r79.gpr _ (by decide), e8], by rw [r9.gpr _ (by decide), h9]⟩
   have b9 := b6.of_rest r79 m79
   refine wp_strSlot ws9 (d := 16) (by decide) fun s10 u10 => ?_

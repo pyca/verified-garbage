@@ -33,7 +33,7 @@ structure BodyIn (g : Geo) (v : Vals) (s : State) : Prop where
   vdTop : w32 s.mem (State.addr g.B) (arr g.w aVD + 4 * g.w) = 0
 
 /-- `stride`: `r7 = 4 (r9 + 2)`. -/
-theorem stride_ok {s : State} {w : Nat} (_hw : w ≤ 256) (h9 : s.gpr .r9 = BitVec.ofNat 32 w)
+theorem stride_ok {s : State} {w : Nat} (_hw : w ≤ 1024) (h9 : s.gpr .r9 = BitVec.ofNat 32 w)
     {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, t.gpr .r7 = BitVec.ofNat 32 (S w) → Rest [.r7] s t → t.mem = s.mem → WP isa (.block rest) t Q) :
     WP isa (.block (stride ++ rest)) s Q := by
@@ -89,11 +89,11 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
       BitVec.toNat_ofNat, show (3 : BitVec 32).toNat = 3 from rfl]
     simp only [Geo.w]
     omega
-  refine stride_ok hw16.2 h9 fun s3 h7 r3 m3 => ?_
+  refine stride_ok (by omega) h9 fun s3 h7 r3 m3 => ?_
   have r12 : Rest [.r9, .r7] s s3 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (r3.mono (by simp)))
   have m12 : s3.mem = s.mem := m3.trans (u2.mem.trans u1.mem)
   have ws : Ws s3 g.B g.Z g.w nArr :=
-    ⟨h.nowrap, by rw [r12.wr]; exact h.writable, h.fits, by omega, hw16.2, h7,
+    ⟨h.nowrap, by rw [r12.wr]; exact h.writable, h.fits, by omega, by omega, h7,
       by rw [r12.gpr _ (by decide), h.r8], by rw [r3.gpr _ (by decide), h9]⟩
   refine setOne_ok ws (j := aOne) (by decide) (by decide) fun s4 h4 k4 e4 r4 => ?_
   rw [← List.append_nil (bitOf sMask aP)]
