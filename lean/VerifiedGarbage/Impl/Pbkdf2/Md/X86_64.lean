@@ -276,7 +276,7 @@ def padW : List Instr :=
     ([.movdquStore (at_ .rbp (H.P.B - 16)) .xmm7] : List Instr)
 
 /-- EXPERIMENT: which copies of `finMid` are 16 bytes at a time. -/
-def wideState : Bool := true
+def wideState : Bool := false
 def wideDigest : Bool := true
 
 /-- The outer hash value over the inner state's, the inner digest into its

@@ -437,10 +437,22 @@ mov rdx, r15
 add rdx, 656
 mov rcx, r15
 call {vg_sha256_finalize_scratch}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r12+16]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r12+20]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r12+24]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r12+28]
+mov DWORD PTR [rbx+28], eax
 movdqu xmm0, XMMWORD PTR [r15+656]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r15+672]
@@ -678,10 +690,22 @@ mov rdx, r15
 add rdx, 656
 mov rcx, r15
 call {vg_sha256_finalize_scratch}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r12+16]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r12+20]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r12+24]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r12+28]
+mov DWORD PTR [rbx+28], eax
 movdqu xmm0, XMMWORD PTR [r15+656]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r15+672]
@@ -1189,10 +1213,22 @@ mov rdx, r15
 add rdx, 656
 mov rcx, r15
 call {vg_sha256_finalize_scratch_avx2}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r12+16]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r12+20]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r12+24]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r12+28]
+mov DWORD PTR [rbx+28], eax
 movdqu xmm0, XMMWORD PTR [r15+656]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r15+672]
@@ -1438,10 +1474,22 @@ mov rdx, r15
 add rdx, 656
 mov rcx, r15
 call {vg_sha256_finalize_scratch_avx2}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r12+16]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r12+20]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r12+24]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r12+28]
+mov DWORD PTR [rbx+28], eax
 movdqu xmm0, XMMWORD PTR [r15+656]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r15+672]
@@ -1949,10 +1997,22 @@ mov rdx, r15
 add rdx, 656
 mov rcx, r15
 call {vg_sha256_finalize_scratch_shani}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r12+16]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r12+20]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r12+24]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r12+28]
+mov DWORD PTR [rbx+28], eax
 movdqu xmm0, XMMWORD PTR [r15+656]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r15+672]
@@ -2198,10 +2258,22 @@ mov rdx, r15
 add rdx, 656
 mov rcx, r15
 call {vg_sha256_finalize_scratch_shani}
-movdqu xmm0, XMMWORD PTR [r12]
-movdqu XMMWORD PTR [rbx], xmm0
-movdqu xmm0, XMMWORD PTR [r12+16]
-movdqu XMMWORD PTR [rbx+16], xmm0
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r12+20]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r12+24]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r12+28]
+mov DWORD PTR [rbx+28], eax
 movdqu xmm0, XMMWORD PTR [r15+656]
 movdqu XMMWORD PTR [rbx+32], xmm0
 movdqu xmm0, XMMWORD PTR [r15+672]
