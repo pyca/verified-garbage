@@ -54,11 +54,15 @@ materialize_code tailABTT := tailAB true true
 materialize_code tailO4 := tailO false 4
 materialize_code tailO8 := tailO true 8
 materialize_code tailO12 := tailO true 12
-materialize_code tailKABF := tailKAB false
-materialize_code tailKABT := tailKAB true
+materialize_code tailKABFF := tailKAB false false
+materialize_code tailKABFT := tailKAB false true
+materialize_code tailKABTF := tailKAB true false
+materialize_code tailKABTT := tailKAB true true
 
 materialize_code bulkF := bulk false
 materialize_code bulkT := bulk true
+materialize_code tailPF := tailP false
+materialize_code tailPT := tailP true
 materialize_code bulkPF := bulkP false
 materialize_code bulkPT := bulkP true
 materialize_code bulkOF := bulkO false
