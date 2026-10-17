@@ -128,7 +128,7 @@ theorem loadArg_vp {o j : Nat} {E : State → Prop} {A : State → Nat → Nat} 
     (hj : j < nArr) (ho : 56 ≤ o) (ho' : o + 8 ≤ 88) (ho4 : o % 4 = 0)
     (hin : ∀ σ, In P σ → fw σ.mem P o = src ∧ fw σ.mem P (o + 4) = BitVec.ofNat 32 k ∧
       InRegions (σ.rd ++ σ.wr) (State.addr src) k ∧ Region.Disjoint ⟨State.addr src, k⟩ P.rS ∧
-      Region.Disjoint ⟨State.addr src, k⟩ P.rF ∧ src.toNat + k ≤ 2 ^ 32 ∧ 0 < k ∧ k ≤ P.K) :
+      Region.Disjoint ⟨State.addr src, k⟩ P.rFr ∧ src.toNat + k ≤ 2 ^ 32 ∧ 0 < k ∧ k ≤ P.K) :
     VP (fun σ s => E σ ∧ LS P σ (A σ) s) (seqs (loadArg o j)) (fun σ s => E σ ∧
       LS P σ (upd (A σ) j (Spec.Rsa.os2ip (Spec.Rsa.bytesAt σ.mem (State.addr src) k))) s) := by
   simp only [loadArg, seqs]

@@ -19,7 +19,7 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 theorem load_ok' {P : RP} {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w nArr) {j : Nat}
     (hj : j < nArr) {src : BitVec 32} {k : Nat}
     (rd : InRegions (σ.rd ++ σ.wr) (State.addr src) k) (sepS : Region.Disjoint ⟨State.addr src, k⟩ P.rS)
-    (sepF : Region.Disjoint ⟨State.addr src, k⟩ P.rF) (fit : src.toNat + k ≤ 2 ^ 32) (hk : 0 < k)
+    (sepF : Region.Disjoint ⟨State.addr src, k⟩ P.rFr) (fit : src.toNat + k ≤ 2 ^ 32) (hk : 0 < k)
     (hkK : k ≤ P.K) (p4 : s.gpr .r4 = src) (p6 : s.gpr .r6 = BitVec.ofNat 32 k) :
     WP isa (VG.Impl.Rsa.Arm.CrtValues.load j) s fun t => Bs P σ t ∧ Ws t P.B P.Z P.w nArr ∧
       Keep P.B P.w [j] [] s.mem t.mem ∧
@@ -71,7 +71,7 @@ theorem load_ok' {P : RP} {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact sepS
-    · exact sepF.sub_right (Offset.sub_base (State.addr P.sp) (d := 0) (n := 4) (k := 88) (by decide)) |>
+    · exact sepF.sub_right (Offset.sub_base (State.addr P.sp) (d := 0) (n := 4) (k := 56) (by decide)) |>
         fun d => by simpa using d) (by omega)]
 
 end VG.Proof.Rsa.Arm.Recover

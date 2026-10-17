@@ -48,7 +48,7 @@ theorem Bs.nB {σ s : State} (h : Bs P σ s) : Spec.Rsa.bytesAt s.mem (State.add
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact pre.sN.symm
-    · exact pre.nF.sub_right (Offset.sub_base (State.addr P.sp) (d := 0) (n := 4) (k := 88) (by decide) |>
+    · exact pre.nF.sub_right (Offset.sub_base (State.addr P.sp) (d := 0) (n := 4) (k := 56) (by decide) |>
         fun d => by simpa using d)) (by have := pre.k2; omega), pre.nB]
 
 theorem fitsM : arrAt P.w6 8 ≤ 8 * P.lenM := by
