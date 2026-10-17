@@ -26,7 +26,7 @@
 /// * `e_len` must be in 1..=`n_len`.
 /// * `msg_len + 11` must be at most `n_len`.
 /// * `ps_len` must be `n_len - msg_len - 3`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
