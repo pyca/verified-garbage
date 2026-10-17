@@ -118,13 +118,14 @@ TARGET = pathlib.Path("bench-target").resolve()
 # They run from `--copies` copies of each binary.
 FRESH_COPIES = re.compile(
     r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
-    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_)")
+    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_"
+    r"|sha(?:224|256)$|hmac-sha(?:224|256)(?:-verify)?$|pbkdf2-hmac-sha(?:224|256)$)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
 # whose benchmarks hold those groups. The binary sets up every selected
 # benchmark before criterion's filter applies (RSA keys of up to 4096 bits
 # among them), which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem"
+FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem sha256"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
@@ -397,7 +398,7 @@ def fmt_time(ns):
     for unit, scale in (("ms", 1e6), ("µs", 1e3)):
         if ns >= scale:
             return f"{ns / scale:.2f} {unit}"
-    return f"{ns:.0f} ns"
+    return f"{ns:.2f} ns"
 
 
 def main():
