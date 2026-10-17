@@ -333,7 +333,7 @@ theorem call_okA (v : PublicImpl)
     exact fun hcache => hpost _ (bytesAt_length ..) hcache
 
 
-theorem arg_readA {s u : State} (hp : VPreA G s) (hrd : u.rd = s.rd) {j : Nat} (hj : j < 10) :
+theorem varg_rdA {s u : State} (hp : VPreA G s) (hrd : u.rd = s.rd) {j : Nat} (hj : j < 10) :
     InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
   rw [hrd]
   apply hp.hrd.left
@@ -360,7 +360,7 @@ theorem load_preA {s t : State} (hp : VPreA G s) (hsp : t.gpr .rsp = fb s) (hrd 
       Keep [.rdx, .rcx] t u ∧ u.mem = t.mem ∧
         u.gpr .rdx = stackArg s 6 ∧ u.gpr .rcx = stackArg s 7 := by
   refine WP.keep [.rdx, .rcx] ?_ rfl |> WP.mono <| fun u ⟨h, k⟩ => ⟨k, h⟩
-  xrun [arg, ea_sp, hsp, arg_readA hp hrd (show 6 < 10 by decide), arg_readA hp hrd (show 7 < 10 by decide),
+  xrun [arg, ea_sp, hsp, varg_rdA hp hrd (show 6 < 10 by decide), varg_rdA hp hrd (show 7 < 10 by decide),
     arg_keepA hp hf (show 6 < 10 by decide), arg_keepA hp hf (show 7 < 10 by decide)]
 
 theorem args_okA {s u : State} (hp : VPreA G s) (L : Lay u (fb s) (stackArg s 4))

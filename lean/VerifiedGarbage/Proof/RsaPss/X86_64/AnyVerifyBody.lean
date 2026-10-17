@@ -49,7 +49,7 @@ theorem vn0_okA {s t : State} (hp : VPreA G s) (L : Lay t (fb s) (stackArg s 4))
   rw [zext8, BitVec.and_self, ofNat_beq_zero (by have := (s.mem (s.gpr .rdi)).isLt; omega)]
   exact ⟨rfl, rfl⟩
 
-theorem fail_doneA {H G : Spec.Mgf1.Hash} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem vfail_doneA {H G : Spec.Mgf1.Hash} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay t (fb s) (stackArg s 4)) (R : Rep t.mem (fb s) (stackArg s 4) V W) (hw : t.wr = frR s :: s.wr)
     (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r)
     (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp) (h43 : W 43 = s.gpr .r12) (hf : verifyOutA H G s = false) :
@@ -66,7 +66,7 @@ theorem fail_doneA {H G : Spec.Mgf1.Hash} {s t : State} {V : Nat → Byte} {W : 
   · rw [R'.rd (d := sR12) 43 rfl (by decide), h43]
   · rw [hax]; rfl
 
-theorem restore_okA {H G : Spec.Mgf1.Hash} {s t : State} (d : DoneA H G s t) :
+theorem vrestore_okA {H G : Spec.Mgf1.Hash} {s t : State} (d : DoneA H G s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
       (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧
       (validCacheA s → ((freedF t').gpr .rax).setWidth 32 = if verifyOutA H G s then 1 else 0) := by
@@ -132,7 +132,7 @@ theorem code_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
     have : r ∉ [Reg.rsi, .rax] := by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp
     rw [k2.gpr this, k1.gpr (by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)]
     simp only [allocState_gpr']; rw [ifn (by simp at hr; rcases hr with rfl | rfl | rfl <;> simp)]
-  refine WP.seq (WP.mono (Q := DoneA lk.G lkG.G s) ?_ fun t3 D => WP.mono (restore_okA D)
+  refine WP.seq (WP.mono (Q := DoneA lk.G lkG.G s) ?_ fun t3 D => WP.mono (vrestore_okA D)
     fun t' ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, h3, fun H' G' hH' hG' hc => by
       rw [hsk, hHs] at hH'
       rw [hsg, hGs] at hG'
@@ -152,7 +152,7 @@ theorem code_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < 
       Rep t.mem (fb s) (stackArg s 4) V W → t.wr = frR s :: s.wr →
       (∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r) →
       W 41 = s.gpr .rbx → W 42 = s.gpr .rbp → W 43 = s.gpr .r12 → verifyOutA lk.G lkG.G s = false →
-      WP isa verifyFail t (DoneA lk.G lkG.G s) := fun L R hw hcs a b c d => fail_doneA L R hw hcs a b c d
+      WP isa verifyFail t (DoneA lk.G lkG.G s) := fun L R hw hcs a b c d => vfail_doneA L R hw hcs a b c d
   refine WP.ite (M := isa) _ (show isa.eval .e t2 = _ from hz2) (fun hb => ?_) (fun hb => ?_)
   · -- `n₀ = 0`: refused.
     rw [decide_eq_true_eq] at hb

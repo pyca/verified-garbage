@@ -16,8 +16,8 @@ use crate::arch::rsa_pss::{
     VG_RSA_PSS_SIGN_HASH_SHANI_AVX2_CRT_IFMA_FEATURES, VG_RSA_PSS_SIGN_HASH_SHANI_AVX2_FEATURES,
     VG_RSA_PSS_SIGN_HASH_SHANI_CRT_ADX_FEATURES, VG_RSA_PSS_SIGN_HASH_SHANI_CRT_IFMA_FEATURES,
     VG_RSA_PSS_SIGN_HASH_SHANI_FEATURES, VG_RSA_PSS_SIGN_HASH_SHANI_SHA512_CRT_ADX_FEATURES,
-    VG_RSA_PSS_SIGN_HASH_SHANI_SHA512_CRT_IFMA_FEATURES, VG_RSA_PSS_SIGN_HASH_SHANI_SHA512_FEATURES,
-    VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_AVX2_FEATURES,
+    VG_RSA_PSS_SIGN_HASH_SHANI_SHA512_CRT_IFMA_FEATURES,
+    VG_RSA_PSS_SIGN_HASH_SHANI_SHA512_FEATURES, VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_AVX2_FEATURES,
     VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_AVX2_RSA_ADX_FEATURES,
     VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHANI_AVX2_FEATURES,
     VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHANI_AVX2_RSA_ADX_FEATURES,
@@ -38,8 +38,7 @@ use crate::arch::rsa_pss::{
     vg_rsa_pss_verify_precomputed_hash_shani_avx2_rsa_adx,
     vg_rsa_pss_verify_precomputed_hash_shani_rsa_adx,
     vg_rsa_pss_verify_precomputed_hash_shani_sha512,
-    vg_rsa_pss_verify_precomputed_hash_shani_sha512_rsa_adx,
-    vg_rsa_pss_verify_precomputed_rsa_adx,
+    vg_rsa_pss_verify_precomputed_hash_shani_sha512_rsa_adx, vg_rsa_pss_verify_precomputed_rsa_adx,
 };
 use crate::cpu::Features;
 use crate::hashes::tier::Tier;

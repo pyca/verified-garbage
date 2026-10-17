@@ -9,7 +9,14 @@
 
 #![cfg(all(target_arch = "aarch64", feature = "alloc"))]
 
-use crate::arch::rsa_pss_sha512_224_mgf1_sha512_224::{VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_SHA3_FEATURES, VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512_224_SHA3_FEATURES, vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_sha512_224_sha3, vg_rsa_pss_sha512_224_mgf1_sha512_224_verify_precomputed_sha512_224_sha3, vg_rsa_pss_sha512_224_mgf1_sha512_224_sign, vg_rsa_pss_sha512_224_mgf1_sha512_224_verify_precomputed};
+use crate::arch::rsa_pss_sha512_224_mgf1_sha512_224::{
+    VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_SHA3_FEATURES,
+    VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_PRECOMPUTED_SHA512_224_SHA3_FEATURES,
+    vg_rsa_pss_sha512_224_mgf1_sha512_224_sign,
+    vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_sha512_224_sha3,
+    vg_rsa_pss_sha512_224_mgf1_sha512_224_verify_precomputed,
+    vg_rsa_pss_sha512_224_mgf1_sha512_224_verify_precomputed_sha512_224_sha3,
+};
 use crate::hashes::sha512_224::Sha512_224Backend;
 
 super::pss_hash!(28, Sha512_224Backend {

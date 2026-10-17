@@ -46,8 +46,11 @@ theorem verifyAny_xd {hs : List Hash} (ht : TierOk hs) (v : PublicImpl) :
   have h2 := verifyTailD_xd ht
   simp only [AnyHash.pubArgs, AnyHash.verify, AnyHash.verifyBody, seqs, AnyHash.verifyMain, Code.x86_64Depth,
     x86_64Depth_zero v.nosp v.depth, verifyFail, emLenAny, AnyHash.anyArgs, posScan, byteLoop,
-    X86_64.Instr.frameBytes, Nat.max_le]
+    X86_64.Instr.frameBytes]
   unfold verifyStack frameBytes at *
+  rw [Nat.add_comm _ 392]
+  refine Nat.add_le_add_left ?_ 392
+  simp only [Nat.max_le]
   omega
 
 theorem verify_okA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < hs.length)
