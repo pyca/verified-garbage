@@ -199,6 +199,7 @@ theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.
   | ldr sz t n off | ldrb t n off | ldrq t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h; rfl
+  | ldrqTbl t n off name ws => simp only [exec] at h; split at h <;> cases h; rfl
   | vop op =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨⟨_, _⟩, -, rfl⟩ := h; rfl

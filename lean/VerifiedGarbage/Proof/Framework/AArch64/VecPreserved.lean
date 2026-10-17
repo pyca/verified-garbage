@@ -27,7 +27,7 @@ def VOp.dst : VOp → VReg
 /-- The vector register an instruction writes, if any. -/
 def vdstOf : Instr → Option VReg
   | .vop op => some op.dst
-  | .ldrq d .. => some d
+  | .ldrq d .. | .ldrqTbl d .. => some d
   | _ => none
 
 theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
@@ -60,6 +60,12 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
   | ldrq t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
+    have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
+    simp only [State.setV, ht, ite_false]
+  | ldrqTbl t n off name ws =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    cases h
     have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
     simp only [State.setV, ht, ite_false]
   | vop op =>

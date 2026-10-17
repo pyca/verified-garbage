@@ -71,6 +71,23 @@ Modelling choices:
   `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
   `add`, resolved by the linker) puts in a register. No instruction changes
   `syms`: a static's address is fixed for the run of the program.
+* A table of constants an instruction carries (`ldrqTbl`, its name and its
+  words) is the `static` of that name the emitter writes from it
+  (`TCB/Rust.lean`), as x86-64's `aluTbl` and `vmovdquTbl` are
+  (`TCB/X86_64/Isa.lean`): for the whole run of the program it is mapped
+  readable at `State.syms name` and holds exactly those words, 8 bytes each,
+  little-endian, and does not wrap around the address space; and no memory
+  any code writes overlaps it: no region a contract lets a function write,
+  nor the stack. This is what a Rust `static` without interior mutability
+  is: an immutable object, which the linker places in read-only memory,
+  apart from every other object and from the stack, and which no `&mut`
+  (safe Rust cannot make one to it) nor any other pointer the program may
+  write through can reach. So the model reads the words from the
+  instruction rather than from `State.mem`, whose writes never reach it,
+  and no contract states any of this. Unlike x86-64's forms, whose operand
+  the printer writes with the symbol, the printed `ldr q` reads wherever its
+  base register points, so the model faults unless that register holds
+  `State.syms name`: an instruction that executes reads the static.
 * The stack pointer is always 16-byte aligned (AAPCS64 §6.4.5.1, "SP mod 16
   = 0"), and a frame moves it by 16 bytes, so the model does not check the
   stack alignment that the push and pop of a frame require.
@@ -475,6 +492,11 @@ inductive Instr
   /-- `str qt, [n, #off]` (STR (immediate, SIMD&FP), 128-bit, unsigned offset,
   as for `ldrq`) -/
   | strq (t : VReg) (n : Reg) (off : Nat)
+  /-- `ldr qt, [n, #off]` (as `ldrq`), whose base register holds the address
+  of the `static` `name`, whose words are `words`: the emitter writes that
+  static from this instruction (`TCB/Rust.lean`), as for x86-64's
+  `vmovdquTbl`. -/
+  | ldrqTbl (t : VReg) (n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
   /-- `umov wd, vn.s[i]` / `umov xd, vn.d[i]` (UMOV) -/
   | umov (sz : Size) (d : Reg) (n : VReg) (i : Nat)
   deriving DecidableEq, Repr
@@ -1095,6 +1117,18 @@ def exec : Instr → State → Option State
   | .vop op, s => (op.eval s).map fun (d, x) => s.setV d x
   | .ldrq t n off, s => (addr s 16 n off).bind fun a => (s.load a 16).map fun x => s.setV t x
   | .strq t n off, s => (addr s 16 n off).bind fun a => s.store a 16 (s.v t)
+  -- `ldrqTbl`: as `ldrq t n off`, its source the 16 bytes at `n + off`,
+  -- little-endian: when `n` holds the static's address and `off` is an
+  -- offset `ldrq` encodes (a multiple of 16, less than 65536: the scaled
+  -- 12-bit immediate of LDR (immediate, SIMD&FP), DDI 0487 C7.2) with two
+  -- words of the table from there, words `off / 8` and `off / 8 + 1` of the
+  -- static `name` (bits 63:0 the first); otherwise it faults. The static is
+  -- the immutable object of these words the emitter writes (see the module
+  -- docs), so the bytes there are always these.
+  | .ldrqTbl t n off name ws, s =>
+    if s.gpr n = s.syms name ∧ off % 16 = 0 ∧ off < 65536 ∧ off / 8 + 2 ≤ ws.length then
+      some (s.setV t (ws.getD (off / 8 + 1) 0 ++ ws.getD (off / 8) 0))
+    else none
   | .umov sz d n i, s =>
     if i * sz.bits < 128 then some (s.write sz d ((s.v n).extractLsb' (sz.bits * i) sz.bits))
     else none
@@ -1110,6 +1144,9 @@ def addrs : Instr → State → List Addr
     [s.gpr n + BitVec.ofNat 64 off, s.gpr n + BitVec.ofNat 64 off + 8]
   | .ldrq _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .strq _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
+  -- The offset in the table: the static's address does not depend on the
+  -- data (see the module docs).
+  | .ldrqTbl _ _ off .., _ => [BitVec.ofNat 64 off]
   | .ldrSp _ off, s => [s.sp + BitVec.ofNat 64 off]
   | .push _, s => [s.sp - 16]
   | .pop _, s => [s.sp]

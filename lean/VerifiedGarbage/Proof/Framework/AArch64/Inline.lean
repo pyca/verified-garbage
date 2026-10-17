@@ -40,7 +40,7 @@ def dstOf : Instr → Option Reg
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .movz _ d ..
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
   | .cselc _ d .. | .csneg _ d .. => some d
-  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .strq .. | .tst .. | .ccmp ..
+  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
   | .ldp .. | .stp .. => none
 
 /-- The general-purpose registers instruction `i` writes. -/
@@ -139,6 +139,14 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
     obtain ⟨a, ha, v, hv, rfl⟩ := h
     exact ⟨a, ha, v, load_widen hc hv, rfl⟩
+  | ldrqTbl t n off name ws =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hk; cases h]
+    cases h
+    have e₁ : (s.withRegions rd wr).gpr = s.gpr := rfl
+    have e₂ : (s.withRegions rd wr).syms = s.syms := rfl
+    simp only [e₁, e₂, ite_eq_left hk]
+    rfl
   | strq t n off =>
     simp only [exec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
@@ -218,6 +226,8 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  | ldrqTbl t n off name ws =>
+    simp only [exec] at h; split at h <;> cases h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | ldp t1 t2 n off =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
@@ -285,6 +295,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     rfl
+  | ldrqTbl t n off name ws => simp only [exec] at h; split at h <;> cases h; rfl
   | ldp t1 t2 n off =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h

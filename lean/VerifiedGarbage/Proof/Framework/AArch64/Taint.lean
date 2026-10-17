@@ -72,6 +72,9 @@ def stepFn : Instr → Step
   | .stp _ _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   | .vop _ => ⟨fun τ => some τ⟩
   | .ldrq _ n _ | .strq _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  -- Words of a table of constants, into a vector register, which this
+  -- domain does not track; its offset in the table, an immediate, is observed.
+  | .ldrqTbl .. => ⟨fun τ => some τ⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
@@ -335,6 +338,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
+    exact ⟨ha.1, ha.2⟩
+  | ldrqTbl t n off name ws =>
+    obtain rfl := Option.some.inj hs
+    refine ⟨rfl, ?_⟩
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
     exact ⟨ha.1, ha.2⟩
   | strq t n off =>
     simp only [step, stepFn] at hs
