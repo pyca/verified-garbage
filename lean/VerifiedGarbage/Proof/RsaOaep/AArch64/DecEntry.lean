@@ -27,15 +27,15 @@ open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (q_add add_add read8 write8 toNat_sub_k preserved_ne)
 
 /-- The shared contract, with `P + 288` bytes of stack. -/
-abbrev decSpec (H G : Spec.Mgf1.Hash) (P : Nat) : Contract isa :=
-  Spec.RsaOaep.decryptContract H G AArch64.abi (P + 288)
+abbrev decSpec (P : Nat) : Contract isa :=
+  Spec.RsaOaep.decryptAnyContract AArch64.abi (P + 288)
 
 /-- The layout of a call from `s`, with `P` bytes of stack for the calls. -/
 def lay (P : Nat) (s : State) : DLay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
     stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6,
     stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11, stackArg s 12, stackArg s 13,
-    stackArg s 14, s.sp - BitVec.ofNat 64 288, P⟩
+    stackArg s 14, stackArg s 15, stackArg s 16, s.sp - BitVec.ofNat 64 288, P⟩
 
 theorem lay_Q (P : Nat) (s : State) : (lay P s).Q + BitVec.ofNat 64 288 = s.sp := BitVec.sub_add_cancel _ _
 
@@ -54,19 +54,19 @@ theorem forall_ro {L : DLay} {F : Region → Prop}
   obtain ⟨a, b, c, d, e, f, g, i, j⟩ := h
   rcases hR with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem lay_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H G P).pre s) : (lay P s).Ok := by
-  sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
+theorem lay_ok {P : Nat} {s : State} (h : (decSpec P).pre s) : (lay P s).Ok := by
+  sig_pre [Spec.RsaOaep.decryptAnyContract, Spec.RsaOaep.decryptAnySig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   sig_split h
   rename_i hsp hsp2 hdrop1 hdrop2 oM oN oE oP oQ oDP oDQ oQI oL oC oS oA mN mE mP mQ mDP mDQ mQI mL mC mS mA
     nS eS pS qS dpS dqS qiS lS cS sA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS hdrop3 bO bM bN bE bP bQ bDP bDQ
-    bQI bL bC bS kv hk1 hk2 el1 elk pl1 plk ql1 qlk hdp hqi hdq
+    bQI bL bC bS hhk ghk kv hk1 hk2 el1 elk pl1 plk ql1 qlk hdp hqi hdq
   clear hdrop1 hdrop2 hdrop3
   have slk := h
   clear h
   simp only [hk1, hk2, hdp, hqi, hdq] at oA oN oE oP oQ oDP oDQ oQI oL oC oS oM mC mDP mDQ mQI cS dpS dqS qiS
   simp only [hk1, hk2, hdp, hqi, hdq] at kO kC kDP kDQ kQI bO bC bDP bDQ bQI
-  have eA : (lay P s).ARGS = ⟨stackArgAddr s 0, 120⟩ := by simp only [DLay.ARGS, lay_args]
+  have eA : (lay P s).ARGS = ⟨stackArgAddr s 0, 136⟩ := by simp only [DLay.ARGS, lay_args]
   have eK : (lay P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 288), P + 288⟩ := by
     show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 288⟩ : Region) = _
     rw [lay_stk]
@@ -76,7 +76,8 @@ theorem lay_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H G P)
     forall_ro ⟨nS.symm, eS.symm, pS.symm, qS.symm, dpS.symm, dqS.symm, qiS.symm, lS.symm, cS.symm⟩, eA ▸ oA,
     eA ▸ mA, eA ▸ sA, eK ▸ kO, eK ▸ kM, eK ▸ kS, forall_ro ⟨eK ▸ kN, eK ▸ kE, eK ▸ kP, eK ▸ kQ, eK ▸ kDP,
     eK ▸ kDQ, eK ▸ kQI, eK ▸ kL, eK ▸ kC⟩, bO, bM, bS, forall_ro ⟨bN, bE, bP, bQ, bDP, bDQ, bQI, bL, bC⟩,
-    by omega, by simp only [lay] at hQ ⊢; omega, kv, hk1, hk2, el1, elk, pl1, plk, ql1, qlk, hdp, hqi, hdq, slk⟩
+    by omega, by simp only [lay] at hQ ⊢; omega, kv, hk1, hk2, el1, elk, pl1, plk, ql1, qlk, hdp, hqi, hdq, slk,
+    hhk, ghk⟩
 
 /-! ## Moving the stack arguments -/
 
@@ -107,7 +108,7 @@ theorem moveMem_frame {l : List (Nat × Nat)} (hl : MoveOk l) {B : Addr} (m m₀
       (h.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by unfold frameBytes; omega) (by omega)))
 
 theorem moveMem_read {l : List (Nat × Nat)} (hl : MoveOk l) {B : Addr} (m m₀ : Mem) {a : Nat}
-    (ha : ∀ p ∈ l, p.2 + 8 ≤ a ∨ a + 8 ≤ p.2) (ha' : a + 8 ≤ 408) :
+    (ha : ∀ p ∈ l, p.2 + 8 ≤ a ∨ a + 8 ≤ p.2) (ha' : a + 8 ≤ 424) :
     (moveMem m B m₀ l).readW (B + BitVec.ofNat 64 a) 64 = m.readW (B + BitVec.ofNat 64 a) 64 := by
   induction l generalizing m with
   | nil => rfl
@@ -231,10 +232,10 @@ theorem entered_mem (P : Nat) (s : State) :
   show s.mem.write (s.sp - 16) 8 (s.gpr .x30) = _
   rw [lr_slot P, write8]
 
-theorem ourArg_lay (P : Nat) (s : State) : ∀ j, j < 15 → ourArg (lay P s) j = stackArg s j
+theorem ourArg_lay (P : Nat) (s : State) : ∀ j, j < 17 → ourArg (lay P s) j = stackArg s j
   | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | 3, _ => rfl | 4, _ => rfl | 5, _ => rfl | 6, _ => rfl
   | 7, _ => rfl | 8, _ => rfl | 9, _ => rfl | 10, _ => rfl | 11, _ => rfl | 12, _ => rfl | 13, _ => rfl
-  | 14, _ => rfl
+  | 14, _ => rfl | 15, _ => rfl | 16, _ => rfl | _ + 17, h => absurd h (by omega)
 
 /-- The register arguments' slots. -/
 abbrev saveList : List (Reg × Nat) := [(.x0, sOut), (.x2, sMl), (.x3, sN), (.x4, sK), (.x5, sE), (.x6, sEl), (.x7, 0)]
@@ -262,11 +263,11 @@ theorem argMoves_apart {a : Nat} (ha : a ∈ saveList.map Prod.snd) :
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The regions the contract grants. -/
-theorem spec_rdwr {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H G P).pre s) :
+theorem spec_rdwr {P : Nat} {s : State} (h : (decSpec P).pre s) :
     s.rd = [(lay P s).N, (lay P s).E, (lay P s).PP, (lay P s).QQ, (lay P s).DP, (lay P s).DQ, (lay P s).QI,
       (lay P s).LAB, (lay P s).CT, (lay P s).ARGS] ∧ s.wr = [(lay P s).OUT, (lay P s).ML, (lay P s).SCR] := by
   have hL := lay_ok h
-  sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
+  sig_pre [Spec.RsaOaep.decryptAnyContract, Spec.RsaOaep.decryptAnySig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   obtain ⟨-, -, hrd, hwr, -⟩ := h
   have hk1 : (s.gpr .x1).toNat = (s.gpr .x4).toNat := hL.olk
@@ -283,7 +284,7 @@ structure Prologued (L : DLay) (W : Nat → BitVec 64) : Prop where
   p : W 0 = L.p
   args : ∀ j < 9, W (j + 1) = ourArg L j
 
-theorem prologue_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H G P).pre s) :
+theorem prologue_ok {P : Nat} {s : State} (h : (decSpec P).pre s) :
     WP isa (.block decPrologue) (entered s) fun t => Ctx (lay P s) s.gpr s.v s.mem t ∧
       t.gpr .x9 = (lay P s).Q ∧ Prologued (lay P s) (fun j => word t.mem (lay P s).Q (8 * j)) := by
   have hL := lay_ok h
@@ -294,12 +295,12 @@ theorem prologue_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H
       InRegions u.wr ((lay P s).Q + BitVec.ofNat 64 d) n :=
     fun u d n hu hd => ⟨(lay P s).FR, by rw [hu, entered_wr P]; simp,
       Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
-  have harg : ∀ (u : State) d, u.rd = s.rd → 288 ≤ d → d + 8 ≤ 408 →
+  have harg : ∀ (u : State) d, u.rd = s.rd → 288 ≤ d → d + 8 ≤ 424 →
       InRegions (u.rd ++ u.wr) ((lay P s).Q + BitVec.ofNat 64 d) 8 :=
     fun u d hu h₁ h₂ => ⟨(lay P s).ARGS, by rw [hu, hrd]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
   have eLr : (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 272) 64 = s.gpr .x30 := by
     rw [entered_mem P, Mem.readW_writeW_self64]
-  have eArg : ∀ j, j < 15 → (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 (288 + 8 * j)) 64 =
+  have eArg : ∀ j, j < 17 → (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 (288 + 8 * j)) 64 =
       stackArg s j := by
     intro j hj
     rw [entered_mem P, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
@@ -348,13 +349,13 @@ theorem prologue_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H
   have S2 : Spill.Saved (lay P s).Q ((entered s).write .x .x9 (lay P s).Q).gpr saveList t₂.mem := by
     rw [M2]; exact Spill.saveMem_saved (by decide) _ _ _
   have U : u.mem = moveMem t₂.mem (lay P s).Q t₂.mem argMoves := by rw [hm.mem, hsp₂]
-  have hi₂ : ∀ d, 224 ≤ d → d + 8 ≤ 408 → t₂.mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 =
+  have hi₂ : ∀ d, 224 ≤ d → d + 8 ≤ 424 → t₂.mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 =
       (entered s).mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     F2.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)
   -- Our stack arguments, unchanged.
-  have uArg : ∀ j, j < 15 → u.mem.readW ((lay P s).Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = stackArg s j := by
+  have uArg : ∀ j, j < 17 → u.mem.readW ((lay P s).Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = stackArg s j := by
     intro j hj
     rw [U, moveMem_read argMoves_ok _ _ (fun p hp => by
       have := (argMoves_ok p hp).2.1; unfold frameBytes at this; omega) (by omega),
@@ -363,7 +364,7 @@ theorem prologue_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H
     intro p hp
     have := (argMoves_ok p hp).2.2
     rw [U, moveMem_moved argMoves_ok argMoves_nodup _ _ p hp, show arg p.1 = 288 + 8 * p.1 from rfl,
-      hi₂ _ (by omega) (by omega), eArg _ this]
+      hi₂ _ (by omega) (by omega), eArg _ (by omega)]
   have uSv : ∀ r d, (r, d) ∈ saveList → u.mem.readW ((lay P s).Q + BitVec.ofNat 64 d) 64 = s.gpr r := by
     intro r d hrd
     rw [U, moveMem_read argMoves_ok _ _ (argMoves_apart (List.mem_map_of_mem (f := Prod.snd) hrd))

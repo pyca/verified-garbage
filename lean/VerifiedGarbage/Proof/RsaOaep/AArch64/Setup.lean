@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Tier
 public import VerifiedGarbage.Spec.RsaOaep.AnyHash
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
@@ -57,6 +58,15 @@ theorem tier_num (t : Tier) {k : Nat} (hk : k ∈ Spec.RsaOaep.hashIds) :
   simp only [List.getElem?_map, List.getElem?_range (show k < 8 by omega), Option.map_some] at this
   rw [List.getElem?_eq_getElem (by omega)] at this
   exact (Option.some.inj this).symm ▸ rfl
+
+/-- MGF1's hash function, as a hash function of `MdHash` takes it, is valid. -/
+theorem mgf_valid {H : Hash} {hH : Proof.Pbkdf2.Md.AArch64.HashOK H} (lk : Proof.Pbkdf2.Md.AArch64.MgfLink H hH) :
+    Proof.Mgf1.Valid lk.G := by
+  have hD := hH.sizes.D0
+  refine ⟨by rw [lk.len]; exact hD, fun x => ?_⟩
+  rw [lk.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, lk.len]
+  have := hH.sizes.DN
+  omega
 
 /-! ## The number and its length to their slots -/
 
@@ -116,6 +126,27 @@ theorem selArg_ok {hs : List Hash} {k : Nat} {G : Hash} (hn : Num hs k G) (hD : 
       ifn (Ne.symm ha12)]
   · rw [hm4, hm]
     exact Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ (cF F (by unfold nW frameBytes at *; omega))
+
+/-- `x11` all ones iff `k < 2 hLen + 2`, with `hLen` in its slot. -/
+theorem chkK_ok {u : State} {F S : Addr} (Ly : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {D k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hl : W 4 = BitVec.ofNat 64 D)
+    (hk' : k ≤ 1024) (hD : D ≤ 64) :
+    WP isa (.block chkK) u fun u' => Lay u' F S ∧ Step F S [] u u' ∧ u'.mem = u.mem ∧
+      u'.gpr .x11 = if 2 * D + 2 ≤ k then 0 else BitVec.allOnes 64 := by
+  have h168 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 168) 8 := Ly.ld (d := 168) (by decide)
+  have h32 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 32) 8 := Ly.ld (d := 32) (by decide)
+  have rk := R.rdK hk
+  have rl := R.rd8 (d := 32) (k := 4) rfl (by decide) hl
+  refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧
+      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
+      u'.gpr .x11 = if 2 * D + 2 ≤ k then 0 else BitVec.allOnes 64) ?_
+    fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11⟩ =>
+      ⟨Ly.congr hsp hwr (by rw [hm]), Step.blk _ hrd hwr hsp hv hcs hm, hm, x11⟩
+  oaep_run [chkK, sK, sHl, h168, h32, Ly.sp, rk, rl, sbc_self, BitVec.ofNat_add_ofNat,
+    show D + D + 2 = 2 * D + 2 by omega]
+  refine ⟨trivial, trivial, trivial, trivial, trivial, cs_rfl, ?_⟩
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
+    Nat.mod_eq_of_lt (show 2 * D + 2 < 2 ^ 64 by omega)]
 
 /-! ## In constant time -/
 

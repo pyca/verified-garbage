@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Setup
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -58,6 +59,9 @@ structure DLay where
   cl : BitVec 64
   scr : Addr
   sl : BitVec 64
+  /-- The hash functions' numbers, `hash` and `mgf1_hash`. -/
+  hh : BitVec 64
+  gh : BitVec 64
   Q : Addr
   P : Nat
 
@@ -79,7 +83,7 @@ abbrev CT : Region := ⟨L.ct, L.k.toNat⟩
 abbrev SCR : Region := ⟨L.scr, L.sl.toNat * 8⟩
 abbrev FR : Region := ⟨L.Q, frameBytes⟩
 abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 272, 16⟩
-abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, 120⟩
+abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, 136⟩
 abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
 abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 288⟩
 
@@ -109,7 +113,7 @@ structure Ok : Prop where
   bM : L.ml.toNat + 8 ≤ 2 ^ 64
   bS : L.scr.toNat + L.sl.toNat * 8 ≤ 2 ^ 64
   bR : ∀ R ∈ L.ro, R.base.toNat + R.len ≤ 2 ^ 64
-  nQ : L.Q.toNat + 408 ≤ 2 ^ 64
+  nQ : L.Q.toNat + 424 ≤ 2 ^ 64
   pQ : L.P ≤ L.Q.toNat
   /-- The lengths. -/
   kv : Spec.Rsa.lenValid L.k.toNat
@@ -125,6 +129,9 @@ structure Ok : Prop where
   qil : L.qil.toNat = L.pl.toNat
   dql : L.dql.toNat = L.ql.toNat
   slk : Spec.RsaPss.scratchWords L.k.toNat ≤ L.sl.toNat
+  /-- The hash functions' numbers. -/
+  hhk : L.hh.toNat ∈ Spec.RsaOaep.hashIds
+  ghk : L.gh.toNat ∈ Spec.RsaOaep.hashIds
 
 end DLay
 
@@ -165,11 +172,11 @@ omit h in
 theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
 
 /-- A range in our frames misses the stack the calls use. -/
-theorem fr_low {d n : Nat} (hd : d + n ≤ 408) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
+theorem fr_low {d n : Nat} (hd : d + n ≤ 424) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
   Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega)
 
 /-- Two ranges in our frames and arguments, apart. -/
-theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 408) (h₂ : d' + n' ≤ 408) :
+theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 424) (h₂ : d' + n' ≤ 424) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ ⟨L.Q + BitVec.ofNat 64 d', n'⟩ :=
   Offset.disjoint _ hs (by have := h.nQ; omega) (by have := h.nQ; omega)
 
@@ -183,7 +190,7 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 288) {R : Region} (hR : InW L R) :
   · exact (h.kS.sub_left hs).sub_right hR
 
 /-- A range in our stack arguments misses the writable buffers. -/
-theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 408) {R : Region} (hR : InW L R) :
+theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 424) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
   have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
   rcases hR with hR | hR | hR
@@ -221,7 +228,8 @@ end DLay.Ok
 /-- Our stack argument `j`. -/
 def ourArg (L : DLay) : Nat → BitVec 64
   | 0 => L.pl | 1 => L.q | 2 => L.ql | 3 => L.dp | 4 => L.dpl | 5 => L.dq | 6 => L.dql | 7 => L.qi
-  | 8 => L.qil | 9 => L.lab | 10 => L.labl | 11 => L.ct | 12 => L.cl | 13 => L.scr | _ => L.sl
+  | 8 => L.qil | 9 => L.lab | 10 => L.labl | 11 => L.ct | 12 => L.cl | 13 => L.scr | 14 => L.sl | 15 => L.hh
+  | _ => L.gh
 
 /-- The state between the slots' writes and the frames' pops: `g` and `vv`
 are the registers on entry, `m₀` the memory. -/
@@ -233,7 +241,7 @@ structure Ctx (L : DLay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m�
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
   vs : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (vv r).extractLsb' 0 64
   lr : t.mem.readW (L.Q + BitVec.ofNat 64 272) 64 = g .x30
-  args : ∀ j < 15, t.mem.readW (L.Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = ourArg L j
+  args : ∀ j < 17, t.mem.readW (L.Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = ourArg L j
   frame : Frame [L.OUT, L.ML, L.SCR, L.STK] m₀ t.mem
 
 /-- The slots of our arguments, as the frame's words `W`. -/
@@ -266,7 +274,7 @@ include hc hL
 omit hc in
 /-- The words `Ctx` keeps miss what a step writes. -/
 theorem kept_apart (hP : 16 ≤ L.P) {ws : List Region} (hws : ∀ r ∈ ws, r = L.OUT ∨ r = L.ML) {d : Nat}
-    (hd : 272 ≤ d) (hd₂ : d + 8 ≤ 288 ∨ 288 ≤ d) (hd' : d + 8 ≤ 408) :
+    (hd : 272 ≤ d) (hd₂ : d + 8 ≤ 288 ∨ 288 ≤ d) (hd' : d + 8 ≤ 424) :
     ∀ r ∈ ⟨L.Q, frameBytes⟩ :: ⟨L.scr, oRsa⟩ :: retR L.Q :: ws, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ r := by
   have hb : ∀ R, InW L R → Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := fun R hR =>
     hd₂.elim (fun h₁ => hL.stk_buf h₁ hR) fun h₁ => hL.args_buf h₁ hd' hR
@@ -286,7 +294,7 @@ theorem kept_apart (hP : 16 ≤ L.P) {ws : List Region} (hws : ∀ r ∈ ws, r =
 our working space, keeps `Ctx`. -/
 theorem step (hP : 16 ≤ L.P) {ws : List Region} (hS : Step L.Q L.scr ws t t')
     (hws : ∀ r ∈ ws, r = L.OUT ∨ r = L.ML) : Ctx L g vv m₀ t' := by
-  have hk : ∀ d, 272 ≤ d → (d + 8 ≤ 288 ∨ 288 ≤ d) → d + 8 ≤ 408 →
+  have hk : ∀ d, 272 ≤ d → (d + 8 ≤ 288 ∨ 288 ≤ d) → d + 8 ≤ 424 →
       t'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ h₃ => hS.frame.readW (Region.contains_self _ _) (kept_apart hL hP hws h₁ h₂ h₃) (by decide)
   refine ⟨hS.rd.trans hc.rd, hS.wr.trans hc.wr, hS.sp.trans hc.sp,

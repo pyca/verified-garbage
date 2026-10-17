@@ -295,7 +295,7 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
     · exact .inl (Offset.sub_base _ (by omega))
     · exact .inl (Offset.sub_base _ (by rw [hsl]; omega))
     · exact .inr hlow
-  have hfr : ∀ d, d + 8 ≤ 408 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  have hfr : ∀ d, d + 8 ≤ 424 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       ∀ X ∈ privWr L ++ [below t.sp (16 * v.code.aarch64Depth)], Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ X :=
     fun d h₁ h₂ X hX => by
       rcases hws X hX with hs | hs
@@ -303,7 +303,7 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
         · exact hL.stk_buf h₂ (.inr (.inr hs))
         · exact hL.args_buf h₂ h₁ (.inr (.inr hs))
       · exact (hL.fr_low h₁).sub_right hs
-  have hk' : ∀ d, d + 8 ≤ 408 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  have hk' : ∀ d, d + 8 ≤ 424 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       s'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (Region.contains_self _ _) (hfr d h₁ h₂) (by decide)
   have hc' : Ctx L g vv m₀ s' :=

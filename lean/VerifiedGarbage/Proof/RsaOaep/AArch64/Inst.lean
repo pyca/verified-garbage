@@ -29,14 +29,6 @@ open VG VG.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK MgfLink MdHash mdHashes)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 
-/-- MGF1's hash function, as a hash function of `MdHash` takes it, is valid. -/
-theorem mgf_valid {H : Hash} {hH : HashOK H} (lk : MgfLink H hH) : Proof.Mgf1.Valid lk.G := by
-  have hD := hH.sizes.D0
-  refine ⟨by rw [lk.len]; exact hD, fun x => ?_⟩
-  rw [lk.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, lk.len]
-  have := hH.sizes.DN
-  omega
-
 namespace Inst
 
 /-- Whether `vg_rsa_oaep_<H>_mgf1_<G>_*` is emitted for `H`'s variant `v` and
