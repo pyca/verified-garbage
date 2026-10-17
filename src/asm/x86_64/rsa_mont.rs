@@ -1847,6 +1847,7 @@ mov r10, rbx
 mov r15d, 0
 mov ebp, 0
 mov r14d, 0
+.p2align 6
 235:
 mov rdx, QWORD PTR [r9+rbp*8]
 mov r11, QWORD PTR [r8+r14*8]
@@ -1943,6 +1944,7 @@ mov rcx, QWORD PTR [rdi+80]
 add rcx, 16
 mov eax, 0
 mov QWORD PTR [rcx-16], rax
+.p2align 6
 236:
 mov rsi, rcx
 mov rbp, QWORD PTR [rdi+64]
@@ -2527,6 +2529,7 @@ mov rsi, QWORD PTR [rdi+80]
 mov rbx, QWORD PTR [rdi+128]
 mov ebp, 0
 mov r14, 0
+.p2align 5
 240:
 add rbp, rbp
 mov rax, QWORD PTR [r8+r14*8]
@@ -2562,6 +2565,7 @@ add rbp, rbp
 sbb rax, 0
 sbb rbp, rbp
 mov r14, 0
+.p2align 5
 241:
 add rbp, rbp
 mov rax, QWORD PTR [rsi+r14*8]
@@ -4452,6 +4456,7 @@ mov r10, rbx
 mov r15d, 0
 mov ebp, 0
 mov r14d, 0
+.p2align 6
 235:
 mov rdx, QWORD PTR [r9+rbp*8]
 mov r11, QWORD PTR [r8+r14*8]
@@ -4548,6 +4553,7 @@ mov rcx, QWORD PTR [rdi+80]
 add rcx, 16
 mov eax, 0
 mov QWORD PTR [rcx-16], rax
+.p2align 6
 236:
 mov rsi, rcx
 mov rbp, QWORD PTR [rdi+64]
@@ -5133,6 +5139,7 @@ mov r13d, 0
 sub r13, QWORD PTR [r8+r12*8]
 mov ebp, 0
 mov r14, 0
+.p2align 5
 240:
 mov rcx, r13
 and rcx, QWORD PTR [r10+r14*8]
