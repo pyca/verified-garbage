@@ -490,7 +490,8 @@ pub fn bench(c: &mut Criterion) {
 /// records, and the point where the powers are computed, are counted too.
 ///
 /// Each record's buffers sit at fixed offsets from a 4 KiB boundary
-/// (`Offsets::DEFAULT`), the same at every size and in every build: where an
+/// (`Offsets::DEFAULT`, where rustls puts them), the same at every size and
+/// in every build: where an
 /// allocator puts them otherwise depends on what was allocated before, and
 /// moves some sizes' times by several percent on some cores (Apple's).
 #[cfg(any(
@@ -535,12 +536,15 @@ struct Offsets {
     target_arch = "x86"
 ))]
 impl Offsets {
-    /// The rows' offsets: the output half a page from the input, so that
-    /// sealing out of place never loads and stores at the same address
-    /// modulo 4 KiB.
+    /// The rows' offsets: where rustls puts a record's payload, 5 bytes (the
+    /// TLS record header) past the start of an allocation (`PrefixedPayload`,
+    /// sealed in place; and the first record in the receive buffer,
+    /// `DeframerIter`, opened in place), and the output half a page from the
+    /// input, so that sealing out of place never loads and stores at the same
+    /// address modulo 4 KiB.
     const DEFAULT: Offsets = Offsets {
-        input: 0,
-        output: 2048,
+        input: 5,
+        output: 2048 + 5,
         aad: 0,
     };
 }
