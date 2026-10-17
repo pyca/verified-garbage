@@ -2,14 +2,17 @@
 //! (`vg_ecdsa_brainpoolp512r1_sha512_sign`, which calls `vg_ecdsa_brainpoolp512r1_sign`), public
 //! keys (`vg_ec_brainpoolp512r1_public_key`), and verification (`vg_ecdsa_brainpoolp512r1_verify`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
+use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_sha3;
+#[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::{
-    vg_ecdsa_brainpoolp512r1_sha512_sign, vg_ecdsa_brainpoolp512r1_sha512_sign_avx2,
-    vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
+    vg_ecdsa_brainpoolp512r1_sha512_sign_avx2, vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
 };
 use crate::hashes::sha512::{Sha512, Sha512Backend};
 use crate::zeroize::zeroize;
@@ -43,7 +46,11 @@ impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
         let sign = match Sha512Backend::select(crate::cpu::detected()) {
             Sha512Backend::Scalar => vg_ecdsa_brainpoolp512r1_sha512_sign,
+            #[cfg(target_arch = "aarch64")]
+            Sha512Backend::Sha3 => vg_ecdsa_brainpoolp512r1_sha512_sign_sha3,
+            #[cfg(target_arch = "x86_64")]
             Sha512Backend::ShaNi => vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
+            #[cfg(target_arch = "x86_64")]
             Sha512Backend::Avx2 => vg_ecdsa_brainpoolp512r1_sha512_sign_avx2,
         };
         let mut out = [0; 128];

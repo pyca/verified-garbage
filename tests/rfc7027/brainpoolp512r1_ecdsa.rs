@@ -1,6 +1,6 @@
 //! RFC 7027 §A.3's brainpoolP512r1 keys, signing and verifying with ECDSA.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::ecdsa::{BrainpoolP512r1, Error, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha512::Sha512;

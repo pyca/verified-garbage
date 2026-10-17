@@ -146,8 +146,7 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
   have nB := hL.nB
   cases hw : P.R.wide
   · have hLw : L.wide = false := hk.2.2.trans hw
-    have hn := hk.2.1 hLw
-    have he : L.e = 0 := by rw [L.ew, hLw]; rfl
+    have hn := hk.2.1.1 hLw
     simp only [dgAddr, hLw, Bool.false_eq_true, ite_false]
     have hD : Region.Sub ⟨L.dg, P.Q⟩ L.DG := Region.sub_prefix hn
     rcases h with rfl | rfl | rfl | rfl | ⟨h, -⟩
