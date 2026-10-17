@@ -338,4 +338,166 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
       ((Keeps.regs ke).mono (by decide))).trans (kf.trans (kg.mono (by decide)))).trans
       (kh.trans (ki.mono (by decide)))).trans (kt.mono (by decide))
 
+/-- `2p - u` (`2p = 2²⁵⁶ - 38`) into `x8`, `x9`, `x11`, `x10`. -/
+theorem neg_ok (s : State) (h9 : s.gpr .x9 = BitVec.ofNat 64 (2 ^ 64 - 38))
+    (h10 : s.gpr .x10 = BitVec.allOnes 64) (hu : r4 s ≤ 2 ^ 256 - 38) :
+    WP isa (.block [.subs .x .x8 .x9 .x2, .sbcs .x .x9 .x10 .x3, .sbcs .x .x11 .x10 .x4,
+        .sbc .x .x10 .x10 .x5]) s fun t =>
+      val4 (t.gpr .x8) (t.gpr .x9) (t.gpr .x11) (t.gpr .x10) = 2 ^ 256 - 38 - r4 s ∧
+      Keeps [.x8, .x9, .x10, .x11] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, h9, h10, ite_true, ite_false, reduceCtorEq, Option.some.injEq,
+    exists_eq_left']
+  have h := sub4_value (BitVec.ofNat 64 (2 ^ 64 - 38)) (BitVec.allOnes 64) (BitVec.allOnes 64)
+    (BitVec.allOnes 64) (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) true
+  have hl := val4_lt (addCarry (BitVec.ofNat 64 (2 ^ 64 - 38)) (~~~s.gpr .x2) true)
+    (addCarry (BitVec.allOnes 64) (~~~s.gpr .x3)
+      (carryOut (BitVec.ofNat 64 (2 ^ 64 - 38)) (~~~s.gpr .x2) true))
+    (addCarry (BitVec.allOnes 64) (~~~s.gpr .x4) (carryOut (BitVec.allOnes 64) (~~~s.gpr .x3)
+      (carryOut (BitVec.ofNat 64 (2 ^ 64 - 38)) (~~~s.gpr .x2) true)))
+    (addCarry (BitVec.allOnes 64) (~~~s.gpr .x5) (carryOut (BitVec.allOnes 64) (~~~s.gpr .x4)
+      (carryOut (BitVec.allOnes 64) (~~~s.gpr .x3)
+        (carryOut (BitVec.ofNat 64 (2 ^ 64 - 38)) (~~~s.gpr .x2) true))))
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  · dsimp only [addCarry, carryOut, Size.bits] at h hl ⊢
+    have e : val4 (BitVec.ofNat 64 (2 ^ 64 - 38)) (BitVec.allOnes 64) (BitVec.allOnes 64)
+      (BitVec.allOnes 64) = 2 ^ 256 - 38 := by decide
+    rw [e] at h
+    simp only [r4] at hu ⊢
+    have key : ∀ (b : Bool) (W R : Nat), W + R + (1 - true.toNat) = 2 ^ 256 - 38 + 2 ^ 256 * (1 - b.toNat) →
+        W < 2 ^ 256 → R ≤ 2 ^ 256 - 38 → W = 2 ^ 256 - 38 - R := by
+      intro b W R h1 h2 h3; cases b <;> simp only [Bool.toNat_true, Bool.toNat_false] at h1 <;> omega
+    exact key _ _ _ h hl hu
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- The mask of `f`'s sign into `x13`. -/
+theorem sgn_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x12 = 0) :
+    WP isa (.block [ld .x13 (F + 24), .lsr .x .x13 .x13 63, .sub .x .x13 .x12 .x13]) s fun t =>
+      t.gpr .x13 = mask (decide (2 ^ 255 ≤ fe s.mem base F)) ∧ Keeps [.x13] s t := by
+  have _hmin := workSize_ge large
+  change WP isa (.block (([ld .x13 (F + 24)] : List Instr) ++
+    ([.lsr .x .x13 .x13 63, .sub .x .x13 .x12 .x13] : List Instr))) s _
+  rw [WP.block_append_iff]
+  refine WP.mono (ld_ok hs (by decide) (by simp only [F]; omega) .x13) fun a ⟨a13, ka⟩ => ?_
+  have az : a.gpr .x12 = 0 := (ka.gpr _ (by decide)).trans hz
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, VG.Proof.X25519.AArch64.exec_lsr
+    (by decide : 63 < 64), VG.Proof.X25519.AArch64.exec_sub_x, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨fun r hr => ?_, ka.mem, ka.rd, ka.wr, ka.sp⟩⟩
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, az, a13]
+    rw [mask_eq]
+    have l0 := (word s.mem base F).isLt
+    have l1 := (word s.mem base (F + 8)).isLt
+    have l2 := (word s.mem base (F + 16)).isLt
+    have l3 := (word s.mem base (F + 24)).isLt
+    simp only [maskN, mask, BitVec.msb_eq_decide, AArch64.fe, val4]
+    congr 1
+    apply propext
+    simp only [decide_eq_true_eq]
+    omega
+  · simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_write, hr, ite_false]
+    exact ka.gpr r (by simpa using hr)
+
+/-- `[slot 15] ≡ ±u` (mod `p`), `-` if `f < 0`; `x1` back. -/
+theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
+    WP isa (.block finish) s fun t =>
+      ((fe t.mem base 544 : Nat) : Int) % P =
+        (if 2 ^ 255 ≤ fe s.mem base F then -(fe s.mem base U : Int) else fe s.mem base U) % P ∧
+      t.gpr .x1 = word s.mem base X1SAVE ∧ Outside base 544 32 s.mem t.mem ∧
+      KeepRegs batchRegs s t := by
+  have _hmin := workSize_ge large
+  have _hcap := workSize_le large
+  simp only [finish, List.append_assoc]
+  change WP isa (.block (([.movz .x .x12 0 0] : List Instr) ++ ([.movz .x .x6 19 0] ++ _))) s _
+  rw [WP.block_append_iff]
+  refine WP.mono (movz_ok s .x12 0) fun a ⟨a12, ka⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (movz_ok a .x6 19) fun b ⟨b6, kb⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (const64_ok b .x7 0x7fffffffffffffff) fun c ⟨c7, kc⟩ => ?_
+  have hsc := ((hs.of_keeps ka (by decide)).of_keeps kb (by decide)).of_keeps kc (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (loads_ok hsc (o := U) ⟨by decide, by simp only [U]; omega⟩ (by decide))
+    fun d ⟨d2, d3, d4, d5, kd⟩ => ?_
+  have hsd := hsc.of_keeps kd (by decide)
+  have z12 : d.gpr .x12 = 0 := by
+    rw [kd.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide), a12]; rfl
+  have z6 : d.gpr .x6 = 19 := by rw [kd.gpr _ (by decide), kc.gpr _ (by decide), b6]; rfl
+  have z7 : d.gpr .x7 = 0x7fffffffffffffff := by rw [kd.gpr _ (by decide), c7]
+  rw [WP.block_append_iff]
+  refine WP.mono (fold_ok d z12 z6 z7) fun e ⟨ev, eb, ke⟩ => ?_
+  have hse := hsd.of_keeps ke (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (const64_ok e .x9 (BitVec.ofNat 64 (2 ^ 64 - 38))) fun f ⟨f9, kf⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (const64_ok f .x10 (BitVec.allOnes 64)) fun g ⟨g10, kg⟩ => ?_
+  have hsg := (hse.of_keeps kf (by decide)).of_keeps kg (by decide)
+  have rg : r4 g = r4 e := by
+    simp only [r4]
+    rw [kg.gpr _ (by decide), kg.gpr _ (by decide), kg.gpr _ (by decide), kg.gpr _ (by decide),
+      kf.gpr _ (by decide), kf.gpr _ (by decide), kf.gpr _ (by decide), kf.gpr _ (by decide)]
+  rw [WP.block_append_iff]
+  refine WP.mono (neg_ok g (by rw [kg.gpr _ (by decide), f9]) g10
+    (by rw [rg]; omega)) fun h ⟨hv, kh⟩ => ?_
+  have hsh := hsg.of_keeps kh (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (sgn_ok hsh (by rw [kh.gpr _ (by decide), kg.gpr _ (by decide), kf.gpr _ (by decide),
+    ke.gpr _ (by decide), z12])) fun i ⟨i13, ki⟩ => ?_
+  have hsi := hsh.of_keeps ki (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (sel_ok i i13 .x8 .x9 .x11 .x10 (by decide)) fun j ⟨jv, kj⟩ => ?_
+  have hsj := hsi.of_keeps kj (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (stores_ok hsj (o := offset 15) ⟨by decide, by simp only [offset]; omega⟩
+    .x2 .x3 .x4 .x5) fun k hk => ?_
+  subst hk
+  refine WP.mono (ld_ok (hsj.setMem _) (d := X1SAVE) (by decide) (by simp only [X1SAVE]; omega) .x1)
+    fun t ⟨t1, kt⟩ => ?_
+  -- the memory
+  have mh : h.mem = s.mem := by
+    rw [kh.mem, kg.mem, kf.mem, ke.mem, kd.mem, kc.mem, kb.mem, ka.mem]
+  have mi : i.mem = s.mem := ki.mem.trans mh
+  have mj : j.mem = s.mem := kj.mem.trans mi
+  have ok : Outside base 544 32 j.mem (st4 j.mem base 544 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4)
+      (j.gpr .x5)) := st4_outside _ _ (by decide) _ _ _ _
+  have ot : Outside base 544 32 s.mem t.mem := by rw [kt.mem, ← mj]; exact ok
+  refine ⟨?_, by rw [t1, ← kt.mem]; exact (ot.word (by decide) (by decide)), ot, ?_⟩
+  · rw [kt.mem]
+    show ((fe (st4 j.mem base 544 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4) (j.gpr .x5)) base 544 : Nat) : Int) % P = _
+    rw [fe_st4 _ _ (by decide), show val4 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4) (j.gpr .x5) = r4 j from rfl,
+      jv]
+    have hu : r4 d = fe s.mem base U := by
+      simp only [r4]; rw [d2, d3, d4, d5, kc.mem, kb.mem, ka.mem]
+    have ri : r4 i = r4 e := by
+      simp only [r4]
+      rw [ki.gpr _ (by decide), ki.gpr _ (by decide), ki.gpr _ (by decide), ki.gpr _ (by decide),
+        kh.gpr _ (by decide), kh.gpr _ (by decide), kh.gpr _ (by decide), kh.gpr _ (by decide)]
+      exact rg
+    have vi : val4 (i.gpr .x8) (i.gpr .x9) (i.gpr .x11) (i.gpr .x10) = 2 ^ 256 - 38 - r4 e := by
+      rw [ki.gpr _ (by decide), ki.gpr _ (by decide), ki.gpr _ (by decide), ki.gpr _ (by decide), hv, rg]
+    rw [ri, vi, mh]
+    rw [hu] at ev
+    generalize r4 e = W at ev eb
+    generalize fe s.mem base U = X at ev
+    have hP : (P : Int) = 2 ^ 255 - 19 := P_val
+    simp only [P] at ev
+    rw [hP]
+    by_cases hc : 2 ^ 255 ≤ fe s.mem base F
+    · simp only [hc, decide_true, ite_true]
+      omega
+    · simp only [hc, decide_false, Bool.false_eq_true, ite_false]
+      omega
+  · exact ((((((((((Keeps.regs ka).mono (by decide)).trans ((Keeps.regs kb).mono (by decide))).trans
+      ((Keeps.regs kc).mono (by decide))).trans ((Keeps.regs kd).mono (by decide))).trans
+      ((Keeps.regs ke).mono (by decide))).trans ((Keeps.regs kf).mono (by decide))).trans
+      ((Keeps.regs kg).mono (by decide))).trans ((Keeps.regs kh).mono (by decide))).trans
+      ((Keeps.regs ki).mono (by decide))).trans
+      (((Keeps.regs kj).mono (by decide)).trans ((⟨fun _ _ => rfl, rfl, rfl, rfl⟩ : KeepRegs batchRegs j
+        { j with mem := st4 j.mem base 544 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4) (j.gpr .x5) }).trans
+        ((Keeps.regs kt).mono (by decide))))
+
 end VG.Proof.Ed25519.AArch64.Inv
