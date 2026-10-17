@@ -1,11 +1,12 @@
 //! HMAC-SHA-512/224: `vg_hmac_sha512_224_init`, `vg_sha512_update` and
 //! `vg_hmac_sha512_224_finalize` (contracts
-//! `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.sha512_224I`,
+//! `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_224I`,
 //! `VG.Spec.Sha512.updateContract` and
-//! `VG.Spec.Hmac.Instance.finalizeContract`) compute `H((K₀ ⊕ opad) ‖ H((K₀ ⊕
-//! ipad) ‖ text))` (`VG.Spec.Hmac.hmacBlockKey`), keeping the two SHA-512/224
-//! streaming states. `init` and `finalize` are the one HMAC implementation for
-//! every streaming hash function, calling SHA-512/224's verified functions.
+//! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
+//! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
+//! keeping the two SHA-512/224 streaming states. `init` and `finalize` are the
+//! one HMAC implementation for every streaming hash function, calling
+//! SHA-512/224's verified functions.
 //!
 //! On x86-64, they follow the implementation of SHA-512's streaming functions
 //! that `Sha512_224` runs on this CPU: e.g. `vg_hmac_sha512_224_init_shani` and
