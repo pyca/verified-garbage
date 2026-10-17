@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
@@ -96,5 +99,79 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+
+/-- The arguments' bytes miss the comb's tables. -/
+theorem anyMem_comb (a : Addr) (h : 0x100000 ≤ a.toNat) : anyMem combSatMem a = combSatMem a := by
+  have ne : ∀ c : Addr, c.toNat < 0x100000 → (a = c) = False := fun c hc => eq_false fun e => by subst e; omega
+  have hs : ((a - 0x20004).toNat < 24) = False := by
+    refine eq_false fun h' => ?_
+    rw [BitVec.toNat_sub, show (131076 : Addr).toNat = 131076 from rfl] at h'
+    have := a.isLt
+    omega
+  unfold anyMem
+  simp only [ne 0x20005 (by decide), ne 0x20009 (by decide), ne 0x2000d (by decide), ne 0x20010 (by decide),
+    ne 0x20015 (by decide), ne 0x20018 (by decide), hs, ite_false]
+
+/-- The state, with P-256's comb tables. -/
+abbrev combAny : State := anySat combSatMem (fun _ => 0x100000) 32 [⟨0x100000, 151552⟩]
+
+/-- A state with P-256's comb tables that satisfies the shared contract. -/
+theorem sat_comb (I₀ : Spec.Ecdsa.Rfc6979.Instance) (hE : I₀.ecdsa = Spec.Ecdsa.P256.inst)
+    (hS : I₀.scratchWords = 1024) :
+    ∃ s, (I₀.signAnyContract (X86.abi.withConsts p256Comb.combConsts) 536).pre s := by
+  refine ⟨combAny, ?_⟩
+  have ha := anySat_args combSatMem (fun _ => 0x100000) 32 [⟨0x100000, 151552⟩]
+  have a0 : arg combAny 0 = 0x1000 := ha.1
+  have a1 : arg combAny 1 = 0x2000 := ha.2.1
+  have a2 : arg combAny 2 = 0x3000 := ha.2.2.1
+  have a3 : arg combAny 3 = 32 := ha.2.2.2.1
+  have a4 : arg combAny 4 = 0x8000 := ha.2.2.2.2.1
+  have a5 : arg combAny 5 = 3 := ha.2.2.2.2.2
+  clear ha
+  have aa : argAddr combAny 0 = 0x20004 := rfl
+  have esp : combAny.gpr .esp = 0x20000 := rfl
+  have sy : combAny.syms "VG_P256_COMB" = 0x100000 := rfl
+  have held : ∀ i < p256W.length, combAny.mem.readW
+      ((combAny.syms "VG_P256_COMB").setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := by
+    intro i hi
+    rw [← combSatMem_held i hi, sy, show BitVec.setWidth 64 (0x100000 : BitVec 32) = 0x100000 by decide]
+    apply Mem.readW_congr
+    intro j hj
+    apply anyMem_comb
+    have hl := p256W_length
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x100000 : Addr).toNat = 0x100000 from rfl]
+    omega
+  have hrd : combAny.rd = [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x100000, 151552⟩] := rfl
+  have hwr : combAny.wr = [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 24⟩] := rfl
+  generalize combAny = s at a0 a1 a2 a3 a4 a5 aa esp sy held hrd hwr ⊢
+  sig_pre [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig, hE, hS,
+    Spec.Ecdsa.P256.inst, Spec.P256.curve, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  simp only [a0, a1, a2, a3, a4, a5, aa, esp, sy, hrd, hwr, hE, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve]
+  rw [sy] at held
+  simp only [p256W_length] at held ⊢
+  repeat' apply And.intro
+  all_goals first
+    | exact held
+    | decide
+    | rfl
+    | exact Region.disjoint_of_sep (by decide)
+    | (intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+       rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+    | (intro H h; simp only [Spec.HashId.mgf1] at h; cases h; rfl)
+
+
+/-- `vg_ecdsa_p256_rfc6979_sign`, with the hash functions of the tier `t`,
+meets the shared contract. -/
+theorem p256_any (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds)
+    (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    Verified X86.target (cfgAny (p256 hL hI) t.fns Spec.Ecdsa.Rfc6979.P256Sha256.inst).sign
+      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signAnyContract (X86.abi.withConsts (p256 hL hI).E.combConsts) 536) :=
+  sign_verified _ _ rfl (by decide) (by decide) rfl t (sat_comb _ rfl rfl)
+
+/-- No instruction of `vg_ecdsa_p256_rfc6979_sign` writes `esp` but the frames'. -/
+theorem p256_spSafe (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    (cfgAny (p256 hL hI) t.fns Spec.Ecdsa.Rfc6979.P256Sha256.inst).sign.all (fun i => !isa.writesSp i) = true :=
+  any_spSafe _ _ rfl (by decide) (by decide) t
 
 end VG.Proof.Ecdsa.Rfc6979.X86

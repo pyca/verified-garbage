@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -54,5 +56,17 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := nofun
+
+/-- `vg_ecdsa_p521_rfc6979_sign`, with the hash functions of the tier `t`,
+meets the shared contract. -/
+theorem p521_any (hL : Weierstrass.Law Spec.P521.curve) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    Verified X86.target (cfgAny (p521 hL) t.fns Spec.Ecdsa.Rfc6979.P521Sha512.inst).sign
+      (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signAnyContract (X86.abi.withConsts (p521 hL).E.combConsts) 536) :=
+  sign_verified _ _ rfl (by decide) (by decide) rfl t (sat_nil _ rfl (by decide))
+
+/-- No instruction of `vg_ecdsa_p521_rfc6979_sign` writes `esp` but the frames'. -/
+theorem p521_spSafe (hL : Weierstrass.Law Spec.P521.curve) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    (cfgAny (p521 hL) t.fns Spec.Ecdsa.Rfc6979.P521Sha512.inst).sign.all (fun i => !isa.writesSp i) = true :=
+  any_spSafe _ _ rfl (by decide) (by decide) t
 
 end VG.Proof.Ecdsa.Rfc6979.X86

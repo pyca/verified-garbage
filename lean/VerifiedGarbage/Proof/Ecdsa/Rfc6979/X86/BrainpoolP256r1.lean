@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
@@ -66,5 +68,17 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proo
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+
+/-- `vg_ecdsa_brainpoolp256r1_rfc6979_sign`, with the hash functions of the tier `t`,
+meets the shared contract. -/
+theorem brainpoolp256r1_any (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    Verified X86.target (cfgAny (brainpoolp256r1 hL hI) t.fns Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst).sign
+      (Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst.signAnyContract (X86.abi.withConsts (brainpoolp256r1 hL hI).E.combConsts) 536) :=
+  sign_verified _ _ rfl (by decide) (by decide) rfl t (sat_nil _ rfl (by decide))
+
+/-- No instruction of `vg_ecdsa_brainpoolp256r1_rfc6979_sign` writes `esp` but the frames'. -/
+theorem brainpoolp256r1_spSafe (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    (cfgAny (brainpoolp256r1 hL hI) t.fns Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst).sign.all (fun i => !isa.writesSp i) = true :=
+  any_spSafe _ _ rfl (by decide) (by decide) t
 
 end VG.Proof.Ecdsa.Rfc6979.X86

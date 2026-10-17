@@ -114,6 +114,12 @@ theorem any_verified (R : RfcCurve) (I₀ : Spec.Ecdsa.Rfc6979.Instance) (hE : I
     rw [← mkP_I (hE := hE) (htp := htp) (htl := htl) (t := t) hi] at hp₁ hp₂ hpub
     exact sign_ct (P := mkP R I₀ hE htp htl t i hi) s₁ s₂ t₁ t₂ s₁' s₂' hp₁ hp₂ hpub e₁ e₂
 
+/-- No instruction of the code for any tier writes `esp` but the frames'. -/
+theorem any_spSafe (R : RfcCurve) (I₀ : Spec.Ecdsa.Rfc6979.Instance) (hE : I₀.ecdsa = R.inst)
+    (htp : 0 < I₀.tries) (htl : I₀.tries < 2 ^ 32) (t : Tier) :
+    (cfgAny R t.fns I₀).sign.all (fun i => !isa.writesSp i) = true :=
+  sign_spSafe (mkP R I₀ hE htp htl t 0 (by decide))
+
 /-! ## The shared contract -/
 
 /-- The regions `rfcX86` reads: the arguments' slots, among them. -/
@@ -283,5 +289,25 @@ theorem sign_verified (R : RfcCurve) (I₀ : Spec.Ecdsa.Rfc6979.Instance) (hE : 
     have hl₂ : (instOf I₀ (i + 1)).hashLen = (arg s₂ 3).toNat := by rw [← a3, hl]
     rw [hk, hk₂, anyResult_eq I₀ hi _ _ _ hl, anyResult_eq I₀ hi _ _ _ hl₂] at hl'
     exact hl'
+
+/-! ## The documentation -/
+
+/-- The notes on the implementation, for scalars of `q` bytes (of `nb` bits)
+signed by `core`, with the hash functions of the tier `t`. -/
+def anyNotes (t : Tier) (q nb : Nat) (core : String) : String :=
+  "Calls the hash function `hash` names through a comparison of `hash` with each number in turn: \
+  HMAC's `init` and `finalize` and the streaming `update`, " ++
+  ", ".intercalate (t.hashes.map fun h => "`" ++ h.F.hiN ++ "`, `" ++ h.F.H.updN ++ "`, `" ++ h.F.hfN ++ "`") ++
+  ". The hash function's sizes are stored once in the stack frame, so the rest of the code is the same for \
+  every hash function. Computes `h = bits2octets(digest)` from the digest's leftmost " ++ toString q ++
+  " bytes (with zero bytes before a shorter digest) by a conditional subtraction of `n`, using the start of \
+  `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost " ++
+  toString nb ++ " bits of as many successive `V`s as that takes" ++
+  (if nb % 8 = 0 then "" else ", shifted into " ++ toString q ++ " bytes as is the digest") ++
+  ", is tried with `" ++ core ++ "`, which uses all of `scratch`; whether to try another is computed without \
+  branches from its result and the count of candidates left, so the code branches only on that and on \
+  `hash`. `K`, `V`, `h`, the hash function's sizes, the count, our caller's registers, the candidate and the \
+  digest are kept in a 460-byte stack frame, whose secrets are cleared before it is released; the calls use \
+  the 76 bytes below it."
 
 end VG.Proof.Ecdsa.Rfc6979.X86

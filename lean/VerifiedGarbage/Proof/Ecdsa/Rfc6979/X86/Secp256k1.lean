@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
@@ -66,5 +68,17 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstras
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+
+/-- `vg_ecdsa_secp256k1_rfc6979_sign`, with the hash functions of the tier `t`,
+meets the shared contract. -/
+theorem secp256k1_any (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    Verified X86.target (cfgAny (secp256k1 hL hI) t.fns Spec.Ecdsa.Rfc6979.Secp256k1Sha256.inst).sign
+      (Spec.Ecdsa.Rfc6979.Secp256k1Sha256.inst.signAnyContract (X86.abi.withConsts (secp256k1 hL hI).E.combConsts) 536) :=
+  sign_verified _ _ rfl (by decide) (by decide) rfl t (sat_nil _ rfl (by decide))
+
+/-- No instruction of `vg_ecdsa_secp256k1_rfc6979_sign` writes `esp` but the frames'. -/
+theorem secp256k1_spSafe (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) (t : Proof.Pbkdf2.Whole.X86.Tier) :
+    (cfgAny (secp256k1 hL hI) t.fns Spec.Ecdsa.Rfc6979.Secp256k1Sha256.inst).sign.all (fun i => !isa.writesSp i) = true :=
+  any_spSafe _ _ rfl (by decide) (by decide) t
 
 end VG.Proof.Ecdsa.Rfc6979.X86
