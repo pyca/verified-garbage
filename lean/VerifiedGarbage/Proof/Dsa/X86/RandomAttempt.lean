@@ -21,6 +21,43 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random VG.Impl.Dsa.X86.RandomSign
 
+/-- Record the signer's status `st`, and test it. -/
+theorem finHead_ok {s₀ u : State} (h : Ready s₀ u) {st : Nat} (hst : st ≤ 1)
+    (he : u.gpr .eax = BitVec.ofNat 32 st) :
+    WP isa (.block [.store (sp oStatus) .eax, .alu .cmp .eax (.imm 0)]) u fun v => Ready s₀ v ∧
+      Keeps [.eax] u v ∧ v.mem = u.mem.writeW (off (rBase s₀) oStatus) (BitVec.ofNat 32 st) ∧
+      v.zf = some (decide (st = 0)) := by
+  refine wp_slot h.rf (by decide) he fun v₁ f₁ m₁ g₁ r₁ w₁ _ _ => wp_cmpi fun v₂ fv₂ _ z₂ => WP.block_nil ?_
+  have k₂ : Keeps [.eax] u v₂ := Keeps.trans (⟨fun r _ => by rw [g₁], r₁, w₁⟩ : Keeps [.eax] u v₁) (fv₂.keeps _)
+  have m₂ : v₂.mem = u.mem.writeW (off (rBase s₀) oStatus) (BitVec.ofNat 32 st) := by rw [fv₂.mem, m₁]
+  have h₂ : Ready s₀ v₂ := h.congr k₂ (by rw [m₂]; exact frame_store s₀ _ (by decide) _)
+  rw [g₁, he, show (BitVec.ofNat 32 st - 0 : BitVec 32) = BitVec.ofNat 32 st - BitVec.ofNat 32 0 from rfl,
+    sub_beq (by omega) (by decide)] at z₂
+  exact ⟨h₂, k₂, m₂, z₂⟩
+
+/-- Spend an attempt. -/
+theorem finDec_ok {s₀ v₂ : State} (h₂ : Ready s₀ v₂) {f : Nat}
+    (ha : slot v₂.mem (rBase s₀) oAttempts = BitVec.ofNat 32 (f + 1)) (hf : f + 1 ≤ 8) :
+    WP isa (.block [.mov .eax (.mem (sp oAttempts)), .alu .sub .eax (.imm 1), .store (sp oAttempts) .eax]) v₂
+      fun v₅ => Ready s₀ v₅ ∧ Keeps [.eax] v₂ v₅ ∧
+        v₅.mem = v₂.mem.writeW (off (rBase s₀) oAttempts) (BitVec.ofNat 32 f) ∧ v₅.zf = some (decide (f = 0)) := by
+  refine wp_movS (v := BitVec.ofNat 32 (f + 1)) (by rw [h₂.rf.readSlot (by decide)]; exact congrArg some ha)
+    fun v₃ u₃ _ => wp_subi fun v₄ u₄ _ z₄ => ?_
+  have e₄ : v₄.gpr .eax = BitVec.ofNat 32 f := by
+    rw [u₄.gpr, u₃.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega)]; rfl
+  have f₄ := h₂.rf.of_keeps ((u₃.keeps.mono (by decide)).trans u₄.keeps)
+  refine wp_slot f₄ (by decide) e₄ fun v₅ f₅ m₅ g₅ r₅ w₅ zf₅ _ => WP.block_nil ?_
+  have k₅ : Keeps [.eax] v₂ v₅ := ((u₃.keeps.mono (by decide)).trans u₄.keeps).trans
+    ⟨fun r _ => by rw [g₅], r₅, w₅⟩
+  have hm₅ : v₅.mem = v₂.mem.writeW (off (rBase s₀) oAttempts) (BitVec.ofNat 32 f) := by
+    rw [m₅, u₄.mem, u₃.mem]
+  have h₅ : Ready s₀ v₅ := h₂.congr (rs := [.eax]) ((u₃.keeps.trans u₄.keeps).trans ⟨fun r _ => by rw [g₅], r₅, w₅⟩)
+    (by rw [hm₅]; exact frame_store s₀ _ (by decide) _)
+  have z₅ : v₅.zf = some (decide (f = 0)) := by
+    rw [zf₅, z₄, u₃.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
+    exact congrArg some (decide_eq_decide.mpr (by omega))
+  exact ⟨h₅, k₅, hm₅, z₅⟩
+
 /-- Record the signer's status `st`, and spend an attempt on a failure. -/
 theorem callFinish_ok {s₀ u : State} (h : Ready s₀ u) {st f : Nat} (hst : st ≤ 1)
     (he : u.gpr .eax = BitVec.ofNat 32 st) (ha : slot u.mem (rBase s₀) oAttempts = BitVec.ofNat 32 (f + 1))
@@ -31,36 +68,18 @@ theorem callFinish_ok {s₀ u : State} (h : Ready s₀ u) {st f : Nat} (hst : st
       (st = 0 → slot v.mem (rBase s₀) oAttempts = BitVec.ofNat 32 f ∧
         slot v.mem (rBase s₀) oStatus = (if f = 0 then 0 else 4)) := by
   unfold callFinish
-  refine WP.seq (wp_slot h.rf (by decide) he fun v₁ f₁ m₁ g₁ r₁ w₁ _ _ => wp_cmpi fun v₂ fv₂ _ z₂ =>
-    WP.block_nil ?_)
-  have k₂ : Keeps [.eax] u v₂ := Keeps.trans (⟨fun r _ => by rw [g₁], r₁, w₁⟩ : Keeps [.eax] u v₁) (fv₂.keeps _)
-  have m₂ : v₂.mem = u.mem.writeW (off (rBase s₀) oStatus) (BitVec.ofNat 32 st) := by rw [fv₂.mem, m₁]
-  have h₂ : Ready s₀ v₂ := h.congr k₂ (by rw [m₂]; exact frame_store s₀ _ (by decide) _)
-  rw [g₁, he, show (BitVec.ofNat 32 st - 0 : BitVec 32) = BitVec.ofNat 32 st - BitVec.ofNat 32 0 from rfl,
-    sub_beq (by omega) (by decide)] at z₂
+  refine WP.seq (WP.mono (finHead_ok h hst he) fun v₂ ⟨h₂, k₂, m₂, z₂⟩ => ?_)
   have o₂ : Outs (rBase s₀) [(oAttempts, 4), (oStatus, 4)] u.mem v₂.mem := by
     rw [m₂]; exact store_outs _ _ _ (by decide)
   by_cases h0 : st = 0
   · subst h0
     refine WP.ite true (by simp only [eval, z₂, decide_true]) (fun _ => ?_) (fun e => Bool.noConfusion e)
-    refine WP.seq (wp_movS (v := BitVec.ofNat 32 (f + 1))
-      (by rw [h₂.rf.readSlot (by decide), m₂]
-          exact congrArg some ((slot_write_ne _ _ _ (by decide) (by decide) (by decide)).trans ha)) fun v₃ u₃ _ => wp_subi fun v₄ u₄ _ z₄ => ?_)
-    have e₄ : v₄.gpr .eax = BitVec.ofNat 32 f := by
-      rw [u₄.gpr, u₃.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega)]; rfl
-    have f₄ := h₂.rf.of_keeps ((u₃.keeps.mono (by decide)).trans u₄.keeps)
-    refine wp_slot f₄ (by decide) e₄ fun v₅ f₅ m₅ g₅ r₅ w₅ zf₅ _ => WP.block_nil ?_
-    have k₅ : Keeps [.eax] u v₅ := ((k₂.trans (u₃.keeps.mono (by decide))).trans u₄.keeps).trans
-      ⟨fun r _ => by rw [g₅], r₅, w₅⟩
-    have hm₅ : v₅.mem = v₂.mem.writeW (off (rBase s₀) oAttempts) (BitVec.ofNat 32 f) := by
-      rw [m₅, u₄.mem, u₃.mem]
-    have h₅ : Ready s₀ v₅ := h₂.congr (rs := [.eax]) ((u₃.keeps.trans u₄.keeps).trans ⟨fun r _ => by rw [g₅], r₅, w₅⟩)
-      (by rw [hm₅]; exact frame_store s₀ _ (by decide) _)
+    have ha₂ : slot v₂.mem (rBase s₀) oAttempts = BitVec.ofNat 32 (f + 1) := by
+      rw [m₂, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact ha
+    refine WP.seq (WP.mono (finDec_ok h₂ ha₂ hf) fun v₅ ⟨h₅, k₅', hm₅, z₅⟩ => ?_)
+    have k₅ : Keeps [.eax] u v₅ := k₂.trans k₅'
     have o₅ : Outs (rBase s₀) [(oAttempts, 4), (oStatus, 4)] u.mem v₅.mem := by
       rw [hm₅]; exact o₂.trans (store_outs _ _ _ (by decide))
-    have z₅ : v₅.zf = some (decide (f = 0)) := by
-      rw [zf₅, z₄, u₃.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
-      exact congrArg some (decide_eq_decide.mpr (by omega))
     by_cases hf0 : f = 0
     · refine WP.ite false (by simp only [eval, z₅, hf0, decide_true, Option.map_some, Bool.not_true])
         (fun e => Bool.noConfusion e) (fun _ => WP.block_nil ?_)
@@ -129,6 +148,17 @@ theorem frameOuts_bytes {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
     exact Offset.contains_base _ (by omega) (by omega)
   · right; omega
 
+/-- The key's bytes, while the frame is allocated. -/
+theorem callKey {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
+    Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (X86.arg s₀ 4).toNat = (rInput s₀).key := by
+  refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
+  simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact A.stackKey.symm
+  · exact A.outKey.symm
+  · exact A.keyScratch
+  · exact A.usedKey.symm
+
 /-- The signer's input is the specification's, with the sampled nonce. -/
 theorem callResult_eq {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) {k : Nat}
     (hn : Spec.Rsa.bytesAt t.mem (off (rBase s₀) oNonce) (rQBytes s₀).length =
@@ -136,14 +166,7 @@ theorem callResult_eq {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ 
     callResult s₀ t = Spec.Dsa.signBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key
       (Spec.Dsa.encodeBE (rInput s₀).qLen k) (rInput s₀).digest := by
   have hqn := rQBytes_length A
-  have hkey : Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (X86.arg s₀ 4).toNat = (rInput s₀).key := by
-    refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-    simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact A.stackKey.symm
-    · exact A.outKey.symm
-    · exact A.keyScratch
-    · exact A.usedKey.symm
+  have hkey := callKey A h
   have hdig : Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 7) (X86.arg s₀ 8).toNat = (rInput s₀).digest := by
     refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
     simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -181,14 +204,19 @@ theorem outs_frame_bytes {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : O
     have := hrs r hr
     rw [ofs_off B (by omega)]; right; omega
 
-/-- What an attempt leaves: another attempt to make, or the result. -/
-def AttemptOut (s₀ : State) (f : Nat) (u : State) : Prop :=
-  (slot u.mem (rBase s₀) oStatus = 4 ∧ 1 ≤ f ∧ ∃ used', Att s₀ used' f u) ∨
-    (slot u.mem (rBase s₀) oStatus ≠ 4 ∧ Done s₀ u)
+/-- What an attempt from `used` with `f + 1` attempts left leaves: another
+attempt to make after a retry, which its signing trace records, or the result. -/
+def AttemptOut (s₀ : State) (used f : Nat) (u : State) : Prop :=
+  (slot u.mem (rBase s₀) oStatus = 4 ∧ 1 ≤ f ∧ Att s₀ (used + (spl s₀ 128 used).used) f u ∧
+    VG.Proof.Dsa.randomSigningTrace (VG.Proof.Dsa.randomSignRemaining (rInput s₀) used (f + 1)).trace =
+      6 :: (VG.Proof.Dsa.randomSignRemaining (rInput s₀) (used + (spl s₀ 128 used).used) f).trace) ∨
+    (slot u.mem (rBase s₀) oStatus ≠ 4 ∧ Done s₀ u ∧
+      ¬ ((VG.Proof.Dsa.randomSigningTrace
+        (VG.Proof.Dsa.randomSignRemaining (rInput s₀) used (f + 1)).trace).head? = some 6 ∧ 1 ≤ f))
 
 theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used f : Nat}
     (T : Att s₀ used (f + 1) t) (hf : f + 1 ≤ 8) (hq : 1 < rq s₀) :
-    WP isa (attempt F.name F.code) t fun u => AttemptOut s₀ f u := by
+    WP isa (attempt F.name F.code) t fun u => AttemptOut s₀ used f u := by
   have hql := rQBytes_le A
   obtain ⟨d₀, Sm⟩ := T.smp
   unfold attempt
@@ -209,7 +237,8 @@ theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used 
       (fun _ => WP.block_nil ?_)
     obtain ⟨-, hstat, hused⟩ := T.rel.sample_none hsc
     obtain ⟨d', S'⟩ := O.smp
-    refine .inr ⟨?_, ⟨d', ?_⟩, ?_, fun e => absurd (hstat ▸ e) hst, (by rw [m₂]; exact sv₁)⟩
+    refine .inr ⟨?_, ⟨⟨d', ?_⟩, ?_, fun e => absurd (hstat ▸ e) hst, (by rw [m₂]; exact sv₁)⟩,
+      by rw [VG.Proof.Dsa.random_sign_trace_none _ _ _ hsc]; simp⟩
     · rw [m₂, O.status]
       intro e
       have := congrArg BitVec.toNat e
@@ -251,7 +280,8 @@ theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used 
     | some sig =>
       obtain ⟨st₅, -⟩ := hT1 (by rw [hsb]; rfl)
       obtain ⟨hsig, hstat, hused⟩ := T.rel.success hsc hsb
-      refine .inr ⟨by rw [st₅]; decide, ⟨d', ?_⟩, by rw [st₅, hstat]; rfl, fun _ => ?_, sv₅⟩
+      refine .inr ⟨by rw [st₅]; decide, ⟨⟨d', ?_⟩, by rw [st₅, hstat]; rfl, fun _ => ?_, sv₅⟩,
+        by rw [VG.Proof.Dsa.random_sign_trace_success _ _ _ _ hsc hsb]; simp⟩
       · have e : (rResult s₀).used = used + (spl s₀ 128 used).used := (Nat.zero_add _).symm.trans hused
         rw [e]; exact S₅
       · rw [frameOuts_bytes o₅ (by decide) A.stackOut (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _)
@@ -262,10 +292,13 @@ theorem attempt_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) {used 
       by_cases hf0 : f = 0
       · subst hf0
         obtain ⟨-, hstat, hused⟩ := R'.exhausted
-        refine .inr ⟨by rw [st₅]; decide, ⟨d', ?_⟩, by rw [st₅, hstat]; rfl, fun e => absurd e (by omega), sv₅⟩
+        refine .inr ⟨by rw [st₅]; decide, ⟨⟨d', ?_⟩, by rw [st₅, hstat]; rfl, fun e => absurd e (by omega), sv₅⟩,
+          fun h => absurd h.2 (by decide)⟩
         have e : (rResult s₀).used = used + (spl s₀ 128 used).used := (Nat.zero_add _).symm.trans hused
         rw [e]; exact S₅
-      · refine .inl ⟨by rw [st₅]; simp only [hf0, ↓reduceIte], by omega, used + (spl s₀ 128 used).used,
-          ⟨d', S₅⟩, at₅, sv₅, R'⟩
+      · refine .inl ⟨by rw [st₅]; simp only [hf0, ↓reduceIte], by omega, ⟨⟨d', S₅⟩, at₅, sv₅, R'⟩,
+          ?_⟩
+        obtain ⟨f', rfl⟩ : ∃ f', f = f' + 1 := ⟨f - 1, by omega⟩
+        exact VG.Proof.Dsa.random_sign_trace_retry _ _ _ _ hsc hsb
 
 end VG.Proof.Dsa.X86

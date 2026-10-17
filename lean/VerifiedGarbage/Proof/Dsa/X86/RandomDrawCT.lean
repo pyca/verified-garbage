@@ -85,7 +85,7 @@ theorem copyInit_ct : RelCT isa (Two fun a => At (DrawFull a) a.pub) (.block cop
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact esp
-  · rw [x₁, x₂, pub_arg e]
+  · rw [x₁, x₂, pub_arg e 9 (by decide)]
   · rw [c₁, c₂, pub_rWidth e]
   · rw [d₁, d₂, esp]
     simp only [drawPlace, pub_qBytes e, pub_rWidth e]
@@ -107,7 +107,7 @@ theorem copy_ct : RelCT isa (Two fun a => At (DrawFull a) a.pub) copy fun _ _ =>
     have e := e₁.trans e₂.symm
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · rw [I₁.esi, I₂.esi, pub_arg e]
+    · rw [I₁.esi, I₂.esi, pub_arg e 9 (by decide)]
     · rw [I₁.edx, I₂.edx, esp_of_rf I₁.ready.rf (pub_rBase e ▸ I₂.ready.rf)]
       simp only [drawPlace, pub_qBytes e, pub_rWidth e]
     · rw [I₁.ecx, I₂.ecx, l₁, l₂, pub_rWidth e]

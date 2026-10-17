@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
-public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
+public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 public import VerifiedGarbage.Proof.Dsa.RandomSign
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

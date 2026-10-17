@@ -140,17 +140,17 @@ theorem body_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) :
     obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega⟩
     refine WP.seq (WP.mono (attempt_ok F A T hn8 hq) fun v hv => ?_)
     have hrv : Ready s₀ v := by
-      rcases hv with ⟨_, _, _, T'⟩ | ⟨_, D⟩
+      rcases hv with ⟨_, _, T', _⟩ | ⟨_, D, _⟩
       · obtain ⟨_, S⟩ := T'.smp; exact S.ready
       · obtain ⟨_, S⟩ := D.smp; exact S.ready
     refine wp_movS (hrv.rf.readSlot (by decide)) fun v₁ uv₁ _ => wp_cmpi fun v₂ fv₂ _ zv₂ => WP.block_nil ?_
     have hv₂ := (hrv.upd uv₁ (by decide)).fupd fv₂
     have mv₂ : v₂.mem = v.mem := by rw [fv₂.mem, uv₁.mem]
     rw [uv₁.gpr] at zv₂
-    rcases hv with ⟨st, h1f, used', T'⟩ | ⟨st, D⟩
+    rcases hv with ⟨st, h1f, T', _⟩ | ⟨st, D, _⟩
     · right
       have st' : v.mem.readW (off (rBase s₀) oStatus) 32 = 4 := st
-      refine ⟨by simp only [eval, zv₂, st']; rfl, f, by omega, used', h1f, by omega, T'.mem A hv₂ mv₂⟩
+      refine ⟨by simp only [eval, zv₂, st']; rfl, f, by omega, _, h1f, by omega, T'.mem A hv₂ mv₂⟩
     · left
       refine ⟨?_, finish_ok A ((D.mem A hv₂ mv₂).fin) (rResult_status_le A) (rResult_signature A)⟩
       have hle := rResult_status_le A

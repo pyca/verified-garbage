@@ -21,10 +21,10 @@ open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random
 /-- The public data of an entry state. -/
 structure Pub where
   esp : BitVec 32
-  args : Nat → BitVec 32
+  args : List (BitVec 32)
   qBytes : List Byte
 
-def pubOf (s₀ : State) : Pub := ⟨s₀.gpr .esp, X86.arg s₀, rQBytes s₀⟩
+def pubOf (s₀ : State) : Pub := ⟨s₀.gpr .esp, (List.range 13).map (X86.arg s₀), rQBytes s₀⟩
 
 /-- Some entry state with public data `a` relates to `t` by `P`. -/
 def At (P : State → State → Prop) (a : Pub) (t : State) : Prop :=
@@ -35,16 +35,18 @@ variable {s₁ s₂ : State} (h : pubOf s₁ = pubOf s₂)
 include h
 
 theorem pub_esp : s₁.gpr .esp = s₂.gpr .esp := congrArg Pub.esp h
-theorem pub_arg (j : Nat) : X86.arg s₁ j = X86.arg s₂ j := congrFun (congrArg Pub.args h) j
+theorem pub_arg (j : Nat) (hj : j < 13) : X86.arg s₁ j = X86.arg s₂ j := by
+  have := congrArg (fun a => a.args[j]?) h
+  simpa only [pubOf, List.getElem?_map, List.getElem?_range hj, Option.map_some, Option.some.injEq] using this
 theorem pub_qBytes : rQBytes s₁ = rQBytes s₂ := congrArg Pub.qBytes h
 theorem pub_rLow : rLow s₁ = rLow s₂ := by rw [rLow, rLow, pub_esp h]
 theorem pub_rBase : rBase s₁ = rBase s₂ := by rw [rBase, rBase, pub_rLow h]
-theorem pub_rQ : rQ s₁ = rQ s₂ := by rw [rQ, rQ, pub_arg h, pub_arg h]
+theorem pub_rQ : rQ s₁ = rQ s₂ := by rw [rQ, rQ, pub_arg h 3 (by decide), pub_arg h 5 (by decide)]
 theorem pub_rWidth : rWidth s₁ = rWidth s₂ := by rw [rWidth, rWidth, pub_qBytes h]
 theorem pub_rLead : rLead s₁ = rLead s₂ := by rw [rLead, rLead, pub_qBytes h]
 theorem pub_rq : rq s₁ = rq s₂ := by rw [rq, rq, pub_qBytes h]
 theorem pub_randLen : (rInput s₁).rand.length = (rInput s₂).rand.length := by
-  simp only [rInput, rBytes_length, pub_arg h]
+  simp only [rInput, rBytes_length, pub_arg h 10 (by decide)]
 end
 
 /-- Two states whose frames have the same base agree on `esp`. -/
