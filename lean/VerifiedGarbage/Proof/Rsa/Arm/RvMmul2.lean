@@ -25,7 +25,7 @@ theorem KS.of_rest (h : KS P σ A live AW liveW V ls s) {rs : List Reg} (r : Res
     h.liveW_lt, h.ls_ok⟩
 
 theorem MM.of_rest (h : MM P s) {rs : List Reg} (r : Rest rs s t) (m : t.mem = s.mem) : MM P t :=
-  ⟨h.mr.of_read (fun d n _ => by rw [m]) (by rw [m, r.sp]) r.sp r.rd r.wr, m ▸ h.n0, m ▸ h.r2⟩
+  ⟨h.mr.of_read (fun d n _ => by rw [m]) (by rw [m, r.sp]) r.sp r.rd r.wr, m ▸ h.n0⟩
 
 theorem AfterM.of_rest {o T : Nat} (h : AfterM P σ o T A live AW liveW V ls s) {rs : List Reg} (r : Rest rs s t)
     (m : t.mem = s.mem) : AfterM P σ o T A live AW liveW V ls t :=
@@ -44,7 +44,7 @@ theorem AfterM.clr {o T : Nat} (h : AfterM P σ o T A live AW liveW V ls s) (hw 
   have hds : ∀ d ∈ ([] : List Nat), SlotOk d := by simp
   refine ⟨⟨h.bs.of_frame (k.frameS (by simpa using fitZ_w sz hj) (by simp) (hdr_Z sz)) r.sp r.rd r.wr, ht.r8,
     ?_, ?_, ?_, ?_, ?_, h.liveW_lt, h.ls_ok⟩, h.mm.of_keep h.bs k (by
-      simp only [List.mem_singleton]; rintro j rfl; right; simp only [mBase, mR2, nArr]; omega)
+      simp only [List.mem_singleton]; rintro j rfl; right; simp only [mBase, nArr]; omega)
       (by simp) r.sp r.rd r.wr, ht⟩
   · refine (BitVec.eq_of_toNat_eq ?_).trans h.cnt
     exact k.slot (e := 16) (by decide) (by simp)
