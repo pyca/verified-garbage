@@ -56,7 +56,7 @@ theorem verifyOut_zero {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s
     verifyOut H G s = false := by
   unfold verifyOut
   rw [bytesAt_cons _ _ hk, h0]
-  exact RsaPss.verify_zero₂ H G ..
+  exact RsaPss.Any.verify_zero H G ..
 
 theorem emLen_eq {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s.gpr .x0) ≠ 0) :
     Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
@@ -70,7 +70,7 @@ theorem verifyOut_short {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (
     (h : (s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat < H.len + (sLenV s).getD 0 + 2) :
     verifyOut H G s = false := by
   unfold verifyOut
-  refine RsaPss.verify_short₂ H G _ _ _ ?_
+  refine RsaPss.Any.verify_short H G _ _ _ ?_
   rw [emLen_eq hk h0, expected_eq]
   exact h
 
@@ -93,7 +93,7 @@ theorem verifyOut_iff (hG : Proof.Mgf1.Valid G) {s : State} (hk : 1 ≤ (s.gpr .
     (h0 : s.mem (s.gpr .x0) ≠ 0)
     (hfit : H.len + (sLenV s).getD 0 + 2 ≤ (s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat) :
     verifyOut H G s = true ↔ (loV (s.mem (s.gpr .x0)).toNat = 1 → (pubX s).getD 0 0 = 0) ∧
-      RsaPss.EncOk₂ H G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.len) ((pubX s).drop (loV (s.mem (s.gpr .x0)).toNat))
+      RsaPss.Any.EncOk H G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.len) ((pubX s).drop (loV (s.mem (s.gpr .x0)).toNat))
         ((s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat)
         (8 * ((s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat) - (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
           (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)) - 1)) (sLenV s) := by
@@ -105,7 +105,7 @@ theorem verifyOut_iff (hG : Proof.Mgf1.Valid G) {s : State} (hk : 1 ≤ (s.gpr .
   rw [bytesAt_cons _ _ hk] at hnB
   subst hnB
   have hlo : loV (s.mem (s.gpr .x0)).toNat ≤ 1 := by unfold loV; split <;> omega
-  rw [RsaPss.verify_bytes₂ H G hG (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _)
+  rw [RsaPss.Any.verify_bytes H G hG (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _)
     (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length, hnl]) rfl hel (by rw [hnl]; omega) hlo hfit]
   rw [hnl]
   rfl

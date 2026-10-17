@@ -1,14 +1,18 @@
-//! RSASSA-PSS on x86-64 with the hash functions as arguments:
+//! RSASSA-PSS with the hash functions as arguments:
 //! `vg_rsa_pss_sign` and `vg_rsa_pss_verify_precomputed` (contracts
 //! `VG.Spec.RsaPss.signAnyContract` and `VG.Spec.RsaPss.verifyAnyContract`),
 //! which take the hash value's hash function and MGF1's by their numbers
 //! (`VG.Spec.HashId.mgf1`, [`Hash::id`]), for each tier of the hash
 //! functions' implementations ([`Tier`]) and each implementation of the RSA
-//! operation ([`Backend`]).
+//! operation (`crate::rsa::Backend`).
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use super::{Hash, public_scratch_words, scratch_words};
+#[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pss::{
     VG_RSA_PSS_SIGN_CRT_ADX_FEATURES, VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES,
     VG_RSA_PSS_SIGN_HASH_AVX2_CRT_ADX_FEATURES, VG_RSA_PSS_SIGN_HASH_AVX2_CRT_IFMA_FEATURES,
@@ -40,12 +44,33 @@ use crate::arch::rsa_pss::{
     vg_rsa_pss_verify_precomputed_hash_shani_sha512,
     vg_rsa_pss_verify_precomputed_hash_shani_sha512_rsa_adx, vg_rsa_pss_verify_precomputed_rsa_adx,
 };
+#[cfg(target_arch = "aarch64")]
+use crate::arch::rsa_pss::{
+    VG_RSA_PSS_SIGN_HASH_SHA2_FEATURES, VG_RSA_PSS_SIGN_HASH_SHA2_SHA3_FEATURES,
+    VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHA2_FEATURES,
+    VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHA2_SHA3_FEATURES, vg_rsa_pss_sign,
+    vg_rsa_pss_sign_hash_sha2, vg_rsa_pss_sign_hash_sha2_sha3, vg_rsa_pss_verify_precomputed,
+    vg_rsa_pss_verify_precomputed_hash_sha2, vg_rsa_pss_verify_precomputed_hash_sha2_sha3,
+};
 use crate::cpu::Features;
 use crate::hashes::tier::Tier;
-use crate::rsa::{Backend, PrivateKey, PublicKey};
+#[cfg(target_arch = "x86_64")]
+use crate::rsa::Backend;
+use crate::rsa::{PrivateKey, PublicKey};
+
+/// The type of a verified function with the arguments `$t`: of the System V
+/// calling convention on x86-64, and of the target's on AArch64.
+#[cfg(target_arch = "x86_64")]
+macro_rules! verified_fn {
+    ($($t:ty),* $(,)?) => { unsafe extern "sysv64" fn($($t),*) -> u32 };
+}
+#[cfg(target_arch = "aarch64")]
+macro_rules! verified_fn {
+    ($($t:ty),* $(,)?) => { unsafe extern "C" fn($($t),*) -> u32 };
+}
 
 /// `vg_rsa_pss_sign`'s signature.
-type SignFn = unsafe extern "sysv64" fn(
+type SignFn = verified_fn!(
     *mut u8,
     usize,
     *const u8,
@@ -70,10 +95,10 @@ type SignFn = unsafe extern "sysv64" fn(
     usize,
     usize,
     usize,
-) -> u32;
+);
 
 /// `vg_rsa_pss_verify_precomputed`'s signature.
-type VerifyFn = unsafe extern "sysv64" fn(
+type VerifyFn = verified_fn!(
     *const u8,
     usize,
     *const u8,
@@ -90,12 +115,13 @@ type VerifyFn = unsafe extern "sysv64" fn(
     usize,
     usize,
     usize,
-) -> u32;
+);
 
 /// For each tier, its `sign` for each RSA backend and its `verify` for
 /// the baseline public-key operation and the ADX one, with the CPU
 /// features each needs: `functions(f)`, those of a CPU with the features
 /// `f`, and the features they need.
+#[cfg(target_arch = "x86_64")]
 macro_rules! tiers {
     ($(
         $tier:ident => {
@@ -126,6 +152,7 @@ macro_rules! tiers {
     };
 }
 
+#[cfg(target_arch = "x86_64")]
 tiers! {
     Base => {
         sign: [
@@ -182,6 +209,39 @@ tiers! {
             vg_rsa_pss_verify_precomputed_hash_shani_sha512_rsa_adx [VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHANI_SHA512_RSA_ADX_FEATURES]
         ],
     },
+}
+
+/// The functions a CPU with the features `f` runs best, each with the
+/// features it needs: those of its tier, which call RSA's baseline code
+/// (the only implementation on AArch64).
+#[cfg(target_arch = "aarch64")]
+fn functions(f: Features) -> ((SignFn, Features), (VerifyFn, Features)) {
+    match Tier::select(f) {
+        Tier::Base => (
+            (vg_rsa_pss_sign, Features::all(&[])),
+            (vg_rsa_pss_verify_precomputed, Features::all(&[])),
+        ),
+        Tier::Sha2 => (
+            (
+                vg_rsa_pss_sign_hash_sha2,
+                VG_RSA_PSS_SIGN_HASH_SHA2_FEATURES,
+            ),
+            (
+                vg_rsa_pss_verify_precomputed_hash_sha2,
+                VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHA2_FEATURES,
+            ),
+        ),
+        Tier::Sha2Sha3 => (
+            (
+                vg_rsa_pss_sign_hash_sha2_sha3,
+                VG_RSA_PSS_SIGN_HASH_SHA2_SHA3_FEATURES,
+            ),
+            (
+                vg_rsa_pss_verify_precomputed_hash_sha2_sha3,
+                VG_RSA_PSS_VERIFY_PRECOMPUTED_HASH_SHA2_SHA3_FEATURES,
+            ),
+        ),
+    }
 }
 
 /// `vg_rsa_pss_sign` for this CPU, on the key, the hash value of `hash`

@@ -5,7 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.RsaPss.VerifyAny
+public import VerifiedGarbage.Proof.RsaPss.AnyHash
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltSelect
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
@@ -164,7 +164,7 @@ theorem check_ok {hs : List Hash} {K : Nat} {s t : State} (P : Pick hs s) (hp : 
     WP isa (seqs [.block acc0, mgfXorAny hs, .block clearTop, posScan, posCheck,
       onHash sHash hs Impl.RsaPss.AArch64.FixedSalt.select]) t fun u => Mid s u ∧ (Cons s →
       ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
-        RsaPss.EncOk₂ P.Hs P.Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x4) P.H.D) ((pubX s).drop lo)
+        RsaPss.Any.EncOk P.Hs P.Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x4) P.H.D) ((pubX s).drop lo)
           ((s.gpr .x1).toNat - lo) z (sLenV s)) →
         u.gpr .x0 = if b then 1#64 else 0#64) := by
   have hk1 := hp.k1; have hk2 := hp.k2
@@ -271,7 +271,7 @@ theorem main_ok {hs : List Hash} (c : PdChecked) {K : Nat} {s w : State} (P : Pi
     (hsl : anyV s = 0 → (stackArg s 1).toNat < (s.gpr .x1).toNat - lo - P.H.D - 1) :
     WP isa (verifyMain hs c.name c.code) w fun u => Mid s u ∧ (Cons s →
       ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
-        RsaPss.EncOk₂ P.Hs P.Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x4) P.H.D) ((pubX s).drop lo)
+        RsaPss.Any.EncOk P.Hs P.Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x4) P.H.D) ((pubX s).drop lo)
           ((s.gpr .x1).toNat - lo) z (sLenV s)) →
         u.gpr .x0 = if b then 1#64 else 0#64) := by
   unfold verifyMain seqs seqs seqs

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignMain
-public import VerifiedGarbage.Proof.RsaPss.SignAny
+public import VerifiedGarbage.Proof.RsaPss.AnyHash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -50,7 +50,7 @@ theorem signOut_zero {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.g
     signOut H G s = .invalid := by
   unfold signOut
   rw [bytesAt_cons _ _ hk, h0]
-  exact RsaPss.sign_zero_any H G ..
+  exact RsaPss.Any.sign_zero H G ..
 
 theorem emLen_eq {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.gpr .x2) ≠ 0) :
     Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
@@ -64,7 +64,7 @@ theorem signOut_long {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.g
     (h : (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat < H.len + (stackArg s 11).toNat + 2) :
     signOut H G s = .invalid := by
   unfold signOut
-  refine RsaPss.sign_long_any H G _ _ _ _ _ _ _ _ ?_
+  refine RsaPss.Any.sign_long H G _ _ _ _ _ _ _ _ ?_
   rw [emLen_eq hk h0, VG.Proof.RsaPkcs1Sig.bytesAt_length]
   exact h
 
@@ -79,7 +79,7 @@ theorem signOut_eq (hH : Proof.Mgf1.Valid H) (hG : Proof.Mgf1.Valid G) {s : Stat
   generalize hnB : Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = nB at hel ⊢
   rw [bytesAt_cons _ _ hk] at hnB
   subst hnB
-  rw [RsaPss.sign_eq_any H G hH hG h0 (lo := loV (s.mem (s.gpr .x2)).toNat)
+  rw [RsaPss.Any.sign_eq H G hH hG h0 (lo := loV (s.mem (s.gpr .x2)).toNat)
     (db := (s.gpr .x3).toNat - loV (s.mem (s.gpr .x2)).toNat - H.len - 1)
     (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) rfl hel
     (by rw [List.length_cons, VG.Proof.RsaPkcs1Sig.bytesAt_length]; unfold loV; split <;> omega) rfl
