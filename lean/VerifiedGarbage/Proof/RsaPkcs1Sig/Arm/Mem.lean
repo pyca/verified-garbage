@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.Arm.Isa
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -94,5 +95,11 @@ theorem ne_counter {k : Nat} (h : k + 1 < 2 ^ 32) :
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
       exact hk this
     rw [this]; simp; omega
+
+/-- An immediate below 256 is encodable (rotation 0). -/
+theorem encodable_of_lt {v : BitVec 32} (h : v.toNat < 256) : VG.Arm.encodable v = true :=
+  List.any_eq_true.2 ⟨0, by simp, by
+    have h0 : v.rotateLeft (2 * 0) = v := by ext i; simp
+    simpa only [h0, decide_eq_true_eq] using h⟩
 
 end VG.Proof.RsaPkcs1Sig.Arm
