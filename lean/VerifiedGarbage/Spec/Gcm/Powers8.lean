@@ -169,20 +169,20 @@ def sealGatherStorePowersApi : Api where
 
 /-! ## Reading the powers -/
 
-/-- `vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], pw: *const [u64; 16], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`:
-`sealSig` with the powers' buffer after the key context. -/
+/-- `vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16])`:
+`sealSig` and the powers' buffer. -/
 def sealWithPowersSig : Sig where
-  params := sealSig.params.take 1 ++ [withPowersParam] ++ sealSig.params.drop 1
+  params := sealSig.params ++ [withPowersParam]
 
 /-- `sealPre`, and the powers of the key context's hash subkey at `pw`. -/
 def sealWithPowersPre (pb : Nat) : Curry (sealWithPowersSig.words pb) (Mem → Prop) :=
-  fun ctx pw rounds nonce nonceLen aad aadLen data len tag m =>
+  fun ctx rounds nonce nonceLen aad aadLen data len tag pw m =>
     sealPre pb ctx rounds nonce nonceLen aad aadLen data len tag m ∧
       Powers8Repr m pw (ctxH m ctx)
 
 /-- `sealPost`, which does not depend on `pw`. -/
 def sealWithPowersPost (pb : Nat) : sealWithPowersSig.Post pb :=
-  fun ctx _pw rounds nonce nonceLen aad aadLen data len tag m m' r =>
+  fun ctx rounds nonce nonceLen aad aadLen data len tag _pw m m' r =>
     sealPost pb ctx rounds nonce nonceLen aad aadLen data len tag m m' r
 
 /-- `sealWithPowersPre` and `sealWithPowersPost`. -/
@@ -200,26 +200,26 @@ def sealWithPowersApi : Api where
   summary := withPowersSummary "vg_aes_gcm_seal" "sealWithPowersContract"
   safety := sealApi.safety ++ [withPowersSafety]
 
-/-- `vg_aes_gcm_open_with_powers(ctx: *const [u64; 32], pw: *const [u64; 16], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`:
-`openSig` with the powers' buffer after the key context. -/
+/-- `vg_aes_gcm_open_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32`:
+`openSig` and the powers' buffer. -/
 def openWithPowersSig : Sig where
-  params := openSig.params.take 1 ++ [withPowersParam] ++ openSig.params.drop 1
+  params := openSig.params ++ [withPowersParam]
   ret := some .u32
 
 /-- `openPre`, and the powers of the key context's hash subkey at `pw`. -/
 def openWithPowersPre (pb : Nat) : Curry (openWithPowersSig.words pb) (Mem → Prop) :=
-  fun ctx pw rounds nonce nonceLen aad aadLen data len tag tagLen m =>
+  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen pw m =>
     openPre pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m ∧
       Powers8Repr m pw (ctxH m ctx)
 
 /-- `openPost`, which does not depend on `pw`. -/
 def openWithPowersPost (pb : Nat) : openWithPowersSig.Post pb :=
-  fun ctx _pw rounds nonce nonceLen aad aadLen data len tag tagLen m m' r =>
+  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw m m' r =>
     openPost pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r
 
 /-- `openLeak`, which does not depend on `pw`. -/
 def openWithPowersLeak (pb : Nat) : Curry (openWithPowersSig.words pb) (Mem → List Nat) :=
-  fun ctx _pw rounds nonce nonceLen aad aadLen data len tag tagLen =>
+  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw =>
     openLeak pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen
 
 /-- `openWithPowersPre`, `openWithPowersPost`, and what `openContract` may
@@ -239,21 +239,21 @@ def openWithPowersApi : Api where
   summary := withPowersSummary "vg_aes_gcm_open" "openWithPowersContract"
   safety := openApi.safety ++ [withPowersSafety]
 
-/-- `vg_aes_gcm_seal_gather_with_powers(ctx: *const [u64; 32], pw: *const [u64; 16], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`:
-`sealGatherSig` with the powers' buffer after the key context. -/
+/-- `vg_aes_gcm_seal_gather_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16])`:
+`sealGatherSig` and the powers' buffer. -/
 def sealGatherWithPowersSig : Sig where
-  params := sealGatherSig.params.take 1 ++ [withPowersParam] ++ sealGatherSig.params.drop 1
+  params := sealGatherSig.params ++ [withPowersParam]
 
 /-- `sealGatherPre`, and the powers of the key context's hash subkey at `pw`. -/
 def sealGatherWithPowersPre (pb : Nat) :
     Curry (sealGatherWithPowersSig.words pb) (Mem → Prop) :=
-  fun ctx pw rounds nonce nonceLen aad aadLen src srcCount dst len tag m =>
+  fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag pw m =>
     sealGatherPre pb ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag m ∧
       Powers8Repr m pw (ctxH m ctx)
 
 /-- `sealGatherPost`, which does not depend on `pw`. -/
 def sealGatherWithPowersPost (pb : Nat) : sealGatherWithPowersSig.Post pb :=
-  fun ctx _pw rounds nonce nonceLen aad aadLen src srcCount dst len tag m m' r =>
+  fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _pw m m' r =>
     sealGatherPost pb ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag m m' r
 
 /-- `sealGatherWithPowersPre` and `sealGatherWithPowersPost`. -/
@@ -297,18 +297,17 @@ def ghashStorePowersApi : Api where
     " Only the pointers and `n` may affect timing."
   safety := ghashApi.safety ++ [storePowersSafety]
 
-/-- `vg_ghash_with_powers(h: *const [u8; 16], pw: *const [u64; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32])`:
-`ghashSig` with the powers' buffer after the hash subkey. `scratch` is
-working space. -/
+/-- `vg_ghash_with_powers(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *const [u64; 16])`:
+`ghashSig` and the powers' buffer. `scratch` is working space. -/
 def ghashWithPowersSig : Sig where
-  params := ghashSig.params.take 1 ++ [withPowersParam] ++ ghashSig.params.drop 1
+  params := ghashSig.params ++ [withPowersParam]
 
 /-- `ghashContract`'s postcondition, given the powers of the hash subkey at
 `h` at `pw`. -/
 def ghashWithPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ghashWithPowersSig.contract A
-    (pre := fun h pw _y _data _n _scratch m => Powers8Repr m pw (blockAt m h))
-    (post := fun h _pw y data n _scratch m m' _ =>
+    (pre := fun h _y _data _n _scratch pw m => Powers8Repr m pw (blockAt m h))
+    (post := fun h y data n _scratch _pw m m' _ =>
       blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
     (stack := stack)
 
