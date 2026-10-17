@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenFinal
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.EncapsVerified
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsVerified
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
 public import VerifiedGarbage.Proof.Framework.Registration

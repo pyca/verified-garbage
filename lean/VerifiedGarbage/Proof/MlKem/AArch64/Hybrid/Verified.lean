@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.EncapsVerified
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.EncapsChecks
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
