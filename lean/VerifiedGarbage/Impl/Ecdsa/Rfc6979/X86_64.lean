@@ -30,12 +30,14 @@ Two kinds of curve and hash function:
   and that digest are made in `Q` bytes above the frame's pointers, through
   words at `scratch + sSlot` (`loadBytes`, `shrWords`, `storeBytes`).
 
-Everything runs in one stack frame of 27 words, 45 if `wide`, pushed from
-(if `wide`, 18 copies of `rax`), `rdi`, `rsi`, `rdx`, `rcx` and 23 copies of
-`rax`: from `rsp`, `K` and `V` (64 bytes each, of which the first `D` are
-used), `h` (`bits2octets`, in 48 bytes, unless `wide`), the number of
-candidates left, then `scratch`, `digest`, `d` and `out`, and, if `wide`,
-the digest for `core` and the candidate (72 bytes each). The layout is the
+Everything runs in one stack frame of 27 words, 45 if `wide` and 35 if
+`hHigh`, pushed from (if `wide`, 18 copies of `rax`; if `hHigh`, 8), `rdi`,
+`rsi`, `rdx`, `rcx` and 23 copies of `rax`: from `rsp`, `K` and `V` (64
+bytes each, of which the first `D` are used), `h` (`bits2octets`, in 48
+bytes, unless `wide` or `hHigh`), the number of candidates left, then
+`scratch`, `digest`, `d` and `out`, and, if `wide`, the digest for `core`
+and the candidate (72 bytes each), or, if `hHigh` (64-byte scalars, as
+brainpoolP512r1's), `h` in 64 bytes. The layout is the
 same for every hash function. The calls use only `scratch`, which `core`
 overwrites entirely, and the frame, which they cannot change; `K`, `V`, `h`
 and the candidate are cleared before the frame is popped. In `scratch`:
@@ -116,6 +118,9 @@ structure Cfg where
   wide : Bool := false
   /-- The bits `core` shifts its digest right by, `8 Q - qlen`. -/
   sh : Nat := 0
+  /-- Whether `h` is kept above the frame's pointers, in 8 more words: for
+  scalars of 64 bytes, which the 48 bytes below them do not hold. -/
+  hHigh : Bool := false
   /-- The order of the curve's base point. -/
   n : Nat
   /-- The most candidates to try. -/
@@ -127,6 +132,9 @@ structure Cfg where
 namespace Cfg
 
 variable (c : Cfg)
+
+/-- Where `h` is in the frame. -/
+def fHo : Nat := if c.hHigh then fX else fH
 
 /-- `d ← [rsp + o] + a`: an address in `scratch`. -/
 def scr (d : Reg) (a : Nat) : List Instr :=
@@ -191,9 +199,9 @@ def msgPtrs (wide : Bool) : List Instr :=
 /-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
 `scratch + sMsg`, for `V` of `D` bytes, with `scratch` in `rdi`, `d` in
 `rsi` (and, if `wide`, `digest` in `rdx`): `V` from the frame, `b` a byte,
-and `h` from the frame, or, if `wide`, `Q - D` zero bytes (a zero word,
-which the digest's words then overwrite but for them) and the digest. -/
-def msg (Q D b : Nat) (full wide : Bool) : List Instr :=
+and `h` from the frame at `ho`, or, if `wide`, `Q - D` zero bytes (a zero
+word, which the digest's words then overwrite but for them) and the digest. -/
+def msg (Q D b : Nat) (full wide : Bool) (ho : Nat := fH) : List Instr :=
   copyBytes D .rsp fV .rdi sMsg ++
     ([.mov32 .rax (.imm (BitVec.ofNat 32 b)), .store8 (at_ .rdi (sMsg + D)) .rax] : List Instr) ++
     (if full then
@@ -201,12 +209,12 @@ def msg (Q D b : Nat) (full wide : Bool) : List Instr :=
         copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++
           ([.alu32 .xor .rax (.reg .rax), .store (at_ .rdi (sMsg + D + 1 + Q)) .rax] : List Instr) ++
           copyN (D / 8) .rdx 0 .rdi (sMsg + 1 + 2 * Q)
-      else copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++ copyBytes Q .rsp fH .rdi (sMsg + D + 1 + Q))
+      else copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++ copyBytes Q .rsp ho .rdi (sMsg + D + 1 + Q))
     else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block (msgPtrs c.wide)) (.seq (.block (msg c.len c.H.D b true c.wide))
+  .seq (.block (msgPtrs c.wide)) (.seq (.block (msg c.len c.H.D b true c.wide c.fHo))
     (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 2 * c.len + 1) fK) c.hmacV))
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
@@ -265,7 +273,7 @@ first bytes. -/
 def selWord (j : Nat) : List Instr :=
   [.mov .rax (.mem (stk (fV + 8 * j))), .mov .rcx (.mem (stk (fK + 8 * j))), .alu .xor .rax (.reg .rcx),
     .alu .and .rax (.reg .rdx), .alu .xor .rax (.reg .rcx), .bswap .rax,
-    .store (stk (fH + c.len - 8 * (j + 1))) .rax]
+    .store (stk (c.fHo + c.len - 8 * (j + 1))) .rax]
 
 /-- `h`: the `Q` bytes at `digest` (in `rsi`), as a big-endian number,
 minus `n` if that does not borrow, big-endian into the frame's `Q` bytes at
@@ -328,7 +336,7 @@ def tryOne : Prog isa :=
     (.ite .ne (.seq c.rekey (.block again)) (.block stop)))))
 
 /-- The words above the frame's pointers. -/
-def extra : Nat := if c.wide then 18 else 0
+def extra : Nat := if c.wide then 18 else if c.hHigh then 8 else 0
 
 /-- `K`, `V` and `h` cleared, and the words above the pointers (`rax`, the
 result, kept). -/
