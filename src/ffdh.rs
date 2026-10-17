@@ -6,12 +6,10 @@
 //! All domain arithmetic and secret exponentiation run in verified code.
 //! Private-key generation samples and validates the scalar in verified code,
 //! which also retries rejected attempts and asks for the random bytes they
-//! need. Rust obtains random bytes and packs inputs and results. On x86-64,
-//! parameter generation runs entirely in verified code,
-//! including its attempt limit and entropy requests; Rust allocates and
-//! fills the random tape it asks for. On AArch64, Rust still runs the search
-//! with the shared verified Miller–Rabin round, preparing its workspace and
-//! selecting independent witnesses.
+//! need. Rust obtains random bytes and packs inputs and results. Parameter
+//! generation runs entirely in verified code, including its attempt limit
+//! and entropy requests; Rust allocates and fills the random tape it asks
+//! for.
 //! Imported parameters receive structural and algebraic checks; callers must
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.

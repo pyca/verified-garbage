@@ -18,6 +18,9 @@ open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Impl.MillerRabin.AArch64
 structure RoundImpl where
   mont : Mont
   noFrames : (round mont.mm).noFrames = true
+  /-- Its Montgomery multiplication has no frames, so a caller of it that is
+  called itself uses no stack (e.g. `vg_ffdh_parameter_candidate`). -/
+  mmNoFrames : ∀ o a b, (mont.mm o a b).noFrames = true
   suffix : String
   features : List String
 

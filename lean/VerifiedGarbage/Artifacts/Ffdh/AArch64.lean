@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Verified
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -70,6 +71,9 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.AArch64.Domain.GenerateKey.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.GenerateKey.gk_verified _ _ _ },
+  Spec.Ffdh.parameterInitApi.artifact target {
+    code := Impl.Ffdh.AArch64.Generation.init
+    verified := Proof.Ffdh.AArch64.Generation.init_verified },
   Spec.Ffdh.keyInitApi.artifact target {
     code := Impl.Ffdh.AArch64.KeyGeneration.init
     verified := Proof.Ffdh.AArch64.KeyGeneration.init_verified },
