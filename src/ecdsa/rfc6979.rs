@@ -65,23 +65,24 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" 
     usize,
 ) -> u32;
 
-/// The signature `r ‖ s` of `digest`, a hash with `H`, with the key `d`, by
-/// `sign`.
+/// The signature `r ‖ s` of `digest`, a hash with the function numbered
+/// `hash`, with the key `d`, by `sign`.
 ///
 /// # Safety
 ///
-/// `sign` needs no CPU feature that this CPU lacks.
-pub(super) unsafe fn sign<H: HashId, const Q: usize, const S: usize>(
+/// `sign` needs no CPU feature that this CPU lacks, and `hash` is one of
+/// 1..=7 (a [`HashId::ID`]) whose function's output is as long as `digest`.
+pub(super) unsafe fn sign<const Q: usize, const S: usize>(
     sign: SignFn<Q, S>,
     d: &[u8; Q],
-    digest: &H::Output,
+    digest: &[u8],
+    hash: usize,
 ) -> Result<[u8; S], Error> {
-    let digest = digest.as_ref();
     let mut out = [0; S];
     let mut scratch = [0u64; 1024];
     // SAFETY: `out` is valid for reads and writes of `S` bytes, `d` for reads
-    // of `Q`, `digest` of its `H::OUTPUT_SIZE` bytes (the output length of
-    // the hash function `H::ID` names, one of 1..=7) and `scratch` for reads
+    // of `Q`, `digest` of its length (the output length of the hash function
+    // `hash` names, one of 1..=7, as the caller guarantees) and `scratch` for reads
     // and writes of 8192; `out` and `scratch` are distinct objects from each
     // other and the others, so none overlaps another or the call's stack
     // frame, and, as Rust objects, none wraps around the address space. The
@@ -93,7 +94,7 @@ pub(super) unsafe fn sign<H: HashId, const Q: usize, const S: usize>(
             digest.as_ptr(),
             digest.len(),
             &mut scratch,
-            H::ID,
+            hash,
         )
     };
     zeroize(&mut scratch);
@@ -151,8 +152,16 @@ macro_rules! any_hash {
             ) -> Result<<$curve as $crate::ecdsa::Curve>::Signature, $crate::ecdsa::Error> {
                 let sign = $sign($crate::cpu::detected());
                 // SAFETY: `$sign` chooses a function that needs no CPU
-                // feature that this CPU lacks.
-                unsafe { $crate::ecdsa::rfc6979::sign::<$h, _, _>(sign, d, digest) }
+                // feature that this CPU lacks, and `digest` is a hash with
+                // the function `$h`, numbered `ID`.
+                unsafe {
+                    $crate::ecdsa::rfc6979::sign(
+                        sign,
+                        d,
+                        digest.as_ref(),
+                        <$h as $crate::ecdsa::rfc6979::HashId>::ID,
+                    )
+                }
             }
 
             fn verify(
