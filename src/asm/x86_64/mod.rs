@@ -269,6 +269,9 @@ pub(crate) mod gf25519_r64;
 pub(crate) mod gf448_r64;
 
 #[rustfmt::skip]
+pub(crate) mod hash_any;
+
+#[rustfmt::skip]
 pub(crate) mod hmac_md5;
 
 #[rustfmt::skip]
