@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
+public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Spec.Hmac.Generic
 
 /-!
 # HMAC-SHA-256: PPC64LE implementation
@@ -20,6 +22,14 @@ streaming states (`inner`, `outer`; see `VG.Spec.Hmac`).
 
 Both move the link register to `r0` and save it in a frame around the
 whole function, as the streaming SHA-256 functions do.
+
+`vg_hmac_sha256_init`, which takes a key of any length, chooses on entry
+(`initAny`): a key of at most 64 bytes goes to `init` in a frame of its own,
+as `vg_hmac_sha256_init_scratch` does with its caller's; a longer one to
+`initLong`, which hashes it with SHA-256's verified streaming functions
+(`vg_sha256_update_scratch` and `vg_sha256_finalize_scratch`) and calls
+`vg_hmac_sha256_init_scratch` with its digest, in a frame it zeroes before
+returning, since it holds the digest and the hash's state.
 -/
 
 @[expose] public section
@@ -121,5 +131,66 @@ def finalizeMain : Prog isa :=
 
 def finalize : Prog isa :=
   .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0) finalizeMain (.pop .r0)) (.block [.mtlr .r0]))
+
+/-! ## `init` for a key of any length
+
+`initLong(inner = r3, outer = r4, key = r5, key_len = r6, scratch = r7)`,
+for a key longer than 64 bytes. Its scratch space: `scratch[0..160)` is
+that of the functions it calls, `scratch[160..256)` the SHA-256 state the key
+is hashed in, `scratch[256..288)` the digest, and our caller's `r20`–`r24` are
+saved in `scratch[288..328)`. Across the calls, which neither write nor even
+save them (so the taint analysis knows they stay public), `r20` =
+the SHA-256 state, `r21` = `scratch`, `r22` = `inner`, `r23` = `outer` and
+`r24` = `key_len`. -/
+
+/-- A call of `vg_sha256_update_scratch`. -/
+def sha256Update : Prog isa :=
+  .call Spec.Sha256.updateScratchApi.name Impl.Sha256.PPC64LE.Stream.update
+
+/-- A call of `vg_hmac_sha256_init_scratch`. -/
+def hmacInitScratch : Prog isa := .call Spec.Hmac.sha256I.initScratchApi.name init
+
+/-- `initLong`, but for saving the link register. -/
+def initLongMain : Prog isa :=
+  .seq (.block ([.store .d .r20 .r7 288, .store .d .r21 .r7 296, .store .d .r22 .r7 304,
+      .store .d .r23 .r7 312, .store .d .r24 .r7 320,
+      mov .r21 .r7, mov .r22 .r3, mov .r23 .r4, mov .r24 .r6, .addi .r20 .r7 160] ++ h0 .r20 ++
+      [mov .r3 .r20, .li .r4 0, mov .r7 .r21]))
+  (.seq sha256Update
+  (.seq (.block [mov .r3 .r20, mov .r4 .r24, .addi .r5 .r21 256, mov .r6 .r21])
+  (.seq sha256Finalize
+  (.seq (.block [mov .r3 .r22, mov .r4 .r23, .addi .r5 .r21 256, .li .r6 32, mov .r7 .r21])
+  (.seq hmacInitScratch
+    (.block [.load .d .r20 .r21 288, .load .d .r22 .r21 304, .load .d .r23 .r21 312,
+      .load .d .r24 .r21 320, .load .d .r21 .r21 296]))))))
+
+def initLong : Prog isa :=
+  .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0) initLongMain (.pop .r0)) (.block [.mtlr .r0]))
+
+/-- Sets `r12` to a nonzero value exactly when `key_len` (`r6`) is more than
+64: `key_len >> 7` (nonzero from 128) plus `((key_len & 127) + 63) >> 7`
+(1 from 65 to 127). It writes only `r11` and `r12`, and no memory. -/
+def entryCmp : List Instr :=
+  [.lsr .d .r12 .r6 7, .li .r11 127, .logic .and .r11 .r6 .r11, .addi .r11 .r11 63,
+    .lsr .d .r11 .r11 7, .add .r12 .r12 .r11]
+
+/-- Runs `long` for a key longer than 64 bytes, out of line, and `short`
+otherwise. -/
+def initEntry (short long : Prog isa) : Prog isa :=
+  .seq (.block entryCmp) (Code.iteCold (.nonzero .d .r12) long short)
+
+/-- The frame of `initLong`, sized so that both paths take the same stack:
+`initLong`'s frame and that of the functions it calls (96 bytes) and this
+one, as `init`'s frame (864 bytes) and its own (48 bytes). -/
+def longFrame : Nat := 816
+
+/-- The doublewords of `initLong`'s scratch space it writes, which are zeroed
+before returning. -/
+def longWords : Nat := 41
+
+/-- `vg_hmac_sha256_init`, for a key of any length. -/
+def initAny : Prog isa :=
+  initEntry (Impl.StackScratch.PPC64LE.withStackScratch 864 .r7 init)
+    (Impl.StackScratch.PPC64LE.withStackScratchWiped longFrame .r7 longWords initLong)
 
 end VG.Impl.Hmac.PPC64LE
