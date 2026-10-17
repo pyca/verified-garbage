@@ -502,6 +502,49 @@ theorem any_pre_of (hcs : TblShape A.R.E.combConsts) {s : State} {k : Nat} (hk :
     · exact hdis _ (by simp)
     · exact hdis _ (by simp)
 
+/-- SHA-256, the hash function `3`, has a 32-byte output. -/
+theorem d3 (h3 : 3 ∈ Spec.Ecdsa.Rfc6979.hashIds) : (A.hashAt 3 h3).H.D = 32 := by
+  refine (A.digestLen h3 (x := 32) fun H hH => ?_).symm
+  simp only [Spec.HashId.mgf1, Spec.Mgf1.hashes, List.getElem?_cons_succ, List.getElem?_cons_zero,
+    Option.some.injEq] at hH
+  subst hH; decide
+
+/-- The witness's separation, for scalars of `Q` bytes and SHA-256's digest:
+its regions do not wrap around, and those the contract keeps apart are apart. -/
+def SatSep (Q : Nat) : Prop :=
+  Region.sep ⟨0x1000, 2 * Q⟩ ⟨0x2000, Q⟩ = true ∧ Region.sep ⟨0x1000, 2 * Q⟩ ⟨0x3000, 32⟩ = true ∧
+    Region.sep ⟨0x1000, 2 * Q⟩ ⟨0x8000, 8192⟩ = true ∧ Region.sep ⟨0x2000, Q⟩ ⟨0x8000, 8192⟩ = true ∧
+    Region.sep ⟨0x3000, 32⟩ ⟨0x8000, 8192⟩ = true ∧ Region.sep ⟨0x20000, 8⟩ ⟨0x1000, 2 * Q⟩ = true ∧
+    Region.sep ⟨0x20000, 8⟩ ⟨0x2000, Q⟩ = true ∧ Region.sep ⟨0x20000, 8⟩ ⟨0x3000, 32⟩ = true ∧
+    Region.sep ⟨0x20000, 8⟩ ⟨0x8000, 8192⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x1000, 2 * Q⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x2000, Q⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x3000, 32⟩ = true ∧
+    Region.sep ⟨0x20000 - BitVec.ofNat 64 544, 544⟩ ⟨0x8000, 8192⟩ = true ∧
+    0x1000 + 2 * Q ≤ 2 ^ 64 ∧ 0x2000 + Q ≤ 2 ^ 64
+
+instance (Q : Nat) : Decidable (SatSep Q) := by unfold SatSep; infer_instance
+
+/-- A state the contract permits: the arguments at fixed addresses, SHA-256
+(the hash function `3`) with a 32-byte digest, and the memory `m` holding the
+tables `Tr` (if any) at `0x100000`. -/
+theorem sat_of (hcs : TblShape A.R.E.combConsts) {m : Mem} {Tr : List Region}
+    (hTr : Tr = Abi.constRegions (fun _ => 0x100000) A.R.E.combConsts) (hsep : SatSep A.I0.ecdsa.curve.len)
+    (htb : TblsOk A.R.E.combConsts (satState A.I0.ecdsa.curve.len 32 3 m Tr)
+      [⟨0x1000, 2 * A.I0.ecdsa.curve.len⟩, ⟨0x8000, 8192⟩, ⟨0x20000, 8⟩, ⟨0x20000 - BitVec.ofNat 64 544, 544⟩]) :
+    ∃ s, A.contract.pre s := by
+  have h3 : 3 ∈ Spec.Ecdsa.Rfc6979.hashIds := by decide
+  refine ⟨_, A.any_pre_of hcs h3 (s := satState A.I0.ecdsa.curve.len 32 3 m Tr) (by rw [A.d3]; rfl) ?_⟩
+  obtain ⟨s₁, s₂, s₃, s₄, s₅, s₆, s₇, s₈, s₉, s₁₀, s₁₁, s₁₂, s₁₃, b₁, b₂⟩ := hsep
+  dsimp only [RfcAny.K, rfcX86_64]
+  rw [A.d3 h3]
+  exact ⟨rfl, show 544 ≤ (0x20000 : BitVec 64).toNat by decide, by rw [hTr]; rfl, rfl, Region.disjoint_of_sep s₁, Region.disjoint_of_sep s₂,
+    Region.disjoint_of_sep s₃, Region.disjoint_of_sep s₄, Region.disjoint_of_sep s₅, Region.disjoint_of_sep s₆,
+    Region.disjoint_of_sep s₇, Region.disjoint_of_sep s₈, Region.disjoint_of_sep s₉, Region.disjoint_of_sep s₁₀,
+    Region.disjoint_of_sep s₁₁, Region.disjoint_of_sep s₁₂, Region.disjoint_of_sep s₁₃, b₁, b₂,
+    show (0x3000 : BitVec 64).toNat + 32 ≤ 2 ^ 64 by decide,
+    show (0x8000 : BitVec 64).toNat + 8192 ≤ 2 ^ 64 by decide, htb⟩
+
 /-- The code meets the contract with the hash function as an argument, given
 a state the contract permits. -/
 theorem verified (hcs : TblShape A.R.E.combConsts) (hsat : ∃ s, A.contract.pre s) :
