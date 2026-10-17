@@ -87,35 +87,43 @@ theorem enc_sat {H : Spec.Mgf1.Hash} (G : Spec.Mgf1.Hash) (hH : H ∈ mdHashes) 
   rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.md5
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha1
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha224
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha256
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha384
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha512
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha512_224
   · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
       AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
-      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords,
+      Spec.Rsa.precomputedWords]
       [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha512_256
 
 /-- A state meeting decryption's contract: a 512-bit modulus, one-byte `e`,

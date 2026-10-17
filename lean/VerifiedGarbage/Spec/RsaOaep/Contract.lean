@@ -36,7 +36,8 @@ whether the decoding is valid, where the message starts and its length:
 only the returned value says whether decryption succeeded, and the message
 and its length are its output.
 
-`scratch` is working space of at least `RsaPss.scratchWords n_len` `u64`s,
+`scratch` is working space of at least `RsaPss.publicScratchWords n_len`
+`u64`s when encrypting and `RsaPss.scratchWords n_len` when decrypting,
 whose contents on return are unspecified. `stack` is the number of bytes
 below the stack pointer that an implementation's calls and frames use. The
 functions may overwrite their arguments passed in memory, where the calling
@@ -49,7 +50,7 @@ namespace VG.Spec.RsaOaep
 
 open Mgf1 (Hash)
 open Rsa (bytesAt lenValid written exponentDoc Outcome)
-open RsaPss (scratchWords scratchSafety)
+open RsaPss (scratchWords scratchSafety publicScratchWords publicScratchSafety)
 
 variable (H G : Hash)
 
@@ -74,7 +75,7 @@ def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed _scratch
         scratchLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
-        eLen.toNat ≤ nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat)
+        eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _scratch _scratchLen
         m m' r =>
       written m' out nLen.toNat r
@@ -104,7 +105,7 @@ def encryptApi : Api where
     pointers, the lengths and the contents of `n` and `e`, not on the message, the label or \
     the seed."
   safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`."] ++ scratchSafety
+    "`e_len` must be in 1..=`n_len`."] ++ publicScratchSafety
 
 /-! ## `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` -/
 

@@ -51,7 +51,7 @@ def recContract : Contract isa where
       Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ 1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
       (∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h ∧
         (s.gpr .rsi).toNat = h.len) ∧
-      Spec.Rsa.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
   post s s' := ∀ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h →
     Spec.Rsa.written s'.mem (s.gpr .rdi) (s.gpr .rsi).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Sig.recover (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)

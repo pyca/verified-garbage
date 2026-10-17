@@ -320,7 +320,7 @@ theorem pdOk_of (c : PdChecked) {D K : Nat} {s t : State} (hp : PreV D K s) (hcK
   case h7 => rw [ha.x7, ha.x1]
   case he1 => rw [ha.x5]; exact hp.e1
   case he2 => rw [ha.x5, ha.x1]; exact hp.e2
-  case hs => rw [ha.a1, ha.x1, hsc]; unfold Spec.Rsa.scratchWords; omega
+  case hs => rw [ha.a1, ha.x1, hsc]; unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega
 
 theorem call_ok (c : PdChecked) {D K : Nat} {s t : State} (hp : PreV D K s) (hcK : c.stack ≤ K)
     {lo : Nat} {cb : Byte} (ha : AtCall D s lo cb t) :

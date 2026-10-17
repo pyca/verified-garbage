@@ -5008,7 +5008,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_RSA_ADX_FEATUR
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -5992,7 +5992,7 @@ ret
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -6978,7 +6978,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_AVX2_RS
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -7965,7 +7965,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_AVX2_FE
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -8952,7 +8952,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_SHANI_R
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -9939,7 +9939,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_SHANI_F
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).

@@ -34,9 +34,10 @@ verification computes from them (`EM`, `DB`, where its padding ends, the
 salt and its length, whether each check passes) are secret, and only the
 returned bit tells whether the signature is valid.
 
-`scratch` is working space of at least `scratchWords n_len` `u64`s (that of
-the RSA primitives, and room for the encoding, the hash functions' states
-and their working space), whose contents on return are unspecified.
+`scratch` is working space of at least `scratchWords n_len` `u64`s when
+signing and `publicScratchWords n_len` when verifying (that of the RSA
+primitive, and room for the encoding, the hash functions' states and their
+working space), whose contents on return are unspecified.
 `stack` is the number of bytes below the stack pointer that an
 implementation's calls and frames use. The functions may overwrite their
 arguments passed in memory, where the calling convention allows it
@@ -54,9 +55,22 @@ open Rsa (bytesAt lenValid writtenOutcome exponentDoc)
 RSA primitives' (`Rsa.scratchWords`), and 1024 more. -/
 def scratchWords (nLen : Nat) : Nat := Rsa.scratchWords nLen + 1024
 
+/-- The least working space, in `u64`s, of verification (and of OAEP
+encryption) for a modulus of `nLen` octets: the public-key operation's
+(`Rsa.publicScratchWords`), and the 1024 words the encoding and the hash
+functions use. -/
+def publicScratchWords (nLen : Nat) : Nat := Rsa.publicScratchWords nLen + 1024
+
 /-- The `# Safety` items on the working space. -/
 def scratchSafety : List String :=
   ["`scratch_len` must be at least `16 * n_len + 1056`.",
+    "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
+      must destroy them after use."]
+
+/-- The `# Safety` items on the working space of verification (and of OAEP
+encryption). -/
+def publicScratchSafety : List String :=
+  ["`scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.",
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use."]
 
@@ -157,7 +171,7 @@ def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   (verifySig H).contract A
     (pre := fun _n nLen _e eLen _digest _sig sigLen _saltLen _anySaltLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        sigLen.toNat = nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat)
+        sigLen.toNat = nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun n nLen e eLen digest sig _sigLen saltLen anySaltLen _scratch _scratchLen m _m'
         r =>
       r = if verify H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m digest H.len)
@@ -186,6 +200,6 @@ def verifyApi : Api where
     pointers, the lengths, `salt_len`, `any_salt_len` and the contents of `n` and `e`, not on \
     the digest, the signature or anything computed from them but the result."
   safety := ["`n_len` must be in 64..=1024.", "`sig_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`."] ++ scratchSafety
+    "`e_len` must be in 1..=`n_len`."] ++ publicScratchSafety
 
 end VG.Spec.RsaPss

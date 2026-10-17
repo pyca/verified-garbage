@@ -131,7 +131,7 @@ theorem pub_pre {s t : State} (hp : EPre s) (h : PreCall s t) (hdi : t.gpr .rdi 
   refine ⟨by omega, rfl, rfl, dOn, dOe, (dKo.sub_left sM).symm, dOs, (dKo.sub_left sA).symm, hp.dns, hp.des,
     (hp.dKs.sub_left sM), (hp.dKs.sub_left sA).symm, dKo.sub_left sR, hp.dKn.sub_left sR, hp.dKe.sub_left sR,
     dRM, hp.dKs.sub_left sR, dRA, wO, hp.wN, hp.wE, wM, hp.wS, ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2,
-    VG.Proof.Rsa.publicScratch_le ⟨hk1, hk2⟩ hp.hsl⟩
+    hp.hsl⟩
 
 theorem pub_covers {s t : State} (hp : EPre s) (h : PreCall s t) :
     Covers (pubRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by

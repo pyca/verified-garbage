@@ -57,7 +57,7 @@ def verifyK : Contract isa where
       (stackArg s 3).toNat + (stackArg s 4).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rsi).toNat ∧ 1 ≤ (s.gpr .rcx).toNat ∧ (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat ∧
       (stackArg s 0).toNat = (s.gpr .rsi).toNat ∧
-      Spec.RsaPss.scratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
+      Spec.RsaPss.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
   post s s' :=
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPss.verify G G (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) G.len)

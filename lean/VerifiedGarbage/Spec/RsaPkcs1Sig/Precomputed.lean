@@ -19,7 +19,7 @@ and the timing guarantee still apply. Existing contracts are unchanged.
 
 namespace VG.Spec.RsaPkcs1Sig
 
-open Rsa (bytesAt lenValid scratchWords)
+open Rsa (bytesAt lenValid publicScratchWords)
 
 /-- `verifySig` with a final read-only slice of precomputed `u64` words. -/
 def verifyPrecomputedSig : Sig where
@@ -36,7 +36,7 @@ def verifyPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
   verifyPrecomputedSig.contract A
     (pre := fun _n nLen _e eLen _hash _digest _digestLen _sig _sigLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun n nLen e eLen hash digest digestLen sig sigLen _scratch _scratchLen pre preLen m _m' r =>
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
@@ -85,7 +85,7 @@ def recoverPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
     (pre := fun _out outLen _n nLen _e eLen hash _sig _sigLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         (∃ h, Hash.ofId hash.toNat = some h ∧ outLen.toNat = h.len) ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out outLen n nLen e eLen hash sig sigLen _scratch _scratchLen pre preLen m m' r =>
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →

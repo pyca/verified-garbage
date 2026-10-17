@@ -69,7 +69,7 @@ def encK : Contract isa where
       (stackArg s 5).toNat + (stackArg s 6).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ (s.gpr .rsi).toNat = (s.gpr .rcx).toNat ∧
       1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
-      Spec.RsaPss.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 6).toNat
+      Spec.RsaPss.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 6).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaOaep.encrypt H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)

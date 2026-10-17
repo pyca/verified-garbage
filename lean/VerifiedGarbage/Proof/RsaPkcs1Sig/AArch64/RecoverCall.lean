@@ -118,7 +118,7 @@ theorem pubOk_of (c : PubChecked) {s t : State} (hp : PreR c.stack s) (ha : AtCa
   case h7 => rw [ha.x7, ha.x3]
   case he1 => rw [ha.x5]; exact hp.e1
   case he2 => rw [ha.x5, ha.x3]; exact hp.e2
-  case hs => rw [ha.x3, ha.a1]; unfold Spec.Rsa.scratchWords; exact hp.hs
+  case hs => rw [ha.x3, ha.a1]; exact hp.hs
 
 /-- The bytes of `n`, `e` and the signature at the call are the entry
 state's. -/

@@ -62,7 +62,7 @@ def encK (P : Nat) : Contract isa where
       1 ≤ (s.gpr .x5).toNat ∧ (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧
       (s.gpr .x7).toNat + 11 ≤ (s.gpr .x3).toNat ∧
       (stackArg s 1).toNat = (s.gpr .x3).toNat - (s.gpr .x7).toNat - 3 ∧
-      Spec.Rsa.scratchWords (s.gpr .x3).toNat ≤ (stackArg s 3).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 3).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .x0) (s.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
       (Spec.RsaPkcs1Enc.encrypt (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
@@ -158,7 +158,7 @@ structure Ok : Prop where
   elk : L.el.toNat ≤ L.k.toNat
   mlk : L.ml.toNat + 11 ≤ L.k.toNat
   plk : L.pl.toNat = L.k.toNat - L.ml.toNat - 3
-  slk : Spec.Rsa.scratchWords L.k.toNat ≤ L.sl.toNat
+  slk : Spec.Rsa.publicScratchWords L.k.toNat ≤ L.sl.toNat
   al32 : 32 ≤ L.al
   al64 : L.al ≤ 64
   nQa : L.Q.toNat + 1088 + L.al ≤ 2 ^ 64
