@@ -82,8 +82,8 @@ theorem car_eq (a b : Word) (h : absN a + absN b < 2 ^ 64) :
 
 /-- A row of `f` and `g` as integers. -/
 theorem rowF_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256)
-    (h : (W + 2 ^ 256 * (topN a X + topN b Y)) % 2 ^ 320 =
-      (negN a + negN b + flipN a X * absN a + flipN b Y * absN b) % 2 ^ 320) :
+    (h : (W + 2 ^ 256 * (topN a X + topN b Y)) % (2 ^ 256 * 2 ^ 64) =
+      (negN a + negN b + flipN a X * absN a + flipN b Y * absN b) % (2 ^ 256 * 2 ^ 64)) :
     (W : Int) % 2 ^ 320 = (a.toInt * sv X + b.toInt * sv Y) % 2 ^ 320 := by
   have e1 := fterm a hX
   have e2 := fterm b hY
@@ -92,13 +92,12 @@ theorem rowF_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256
   generalize flipN a X * absN a = P1 at e1 h
   generalize flipN b Y * absN b = P2 at e2 h
   rw [show (2 : Int) ^ 320 = 2 ^ 256 * 2 ^ 64 by rw [← pow_add]]
-  rw [show (2 : Nat) ^ 320 = 2 ^ 256 * 2 ^ 64 by rw [← pow_add]] at h
   omega
 
 /-- A row of `u` and `v` as integers. -/
 theorem rowU_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256)
-    (h : (W + 2 ^ 256 * (negN a + negN b)) % 2 ^ 320 =
-      (negN a + negN b + flipN a X * absN a + flipN b Y * absN b) % 2 ^ 320) :
+    (h : (W + 2 ^ 256 * (negN a + negN b)) % (2 ^ 256 * 2 ^ 64) =
+      (negN a + negN b + flipN a X * absN a + flipN b Y * absN b) % (2 ^ 256 * 2 ^ 64)) :
     (W : Int) % 2 ^ 320 = (a.toInt * X + b.toInt * Y) % 2 ^ 320 := by
   have e1 := uterm a hX
   have e2 := uterm b hY
@@ -107,7 +106,6 @@ theorem rowU_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256
   generalize flipN a X * absN a = P1 at e1 h
   generalize flipN b Y * absN b = P2 at e2 h
   rw [show (2 : Int) ^ 320 = 2 ^ 256 * 2 ^ 64 by rw [← pow_add]]
-  rw [show (2 : Nat) ^ 320 = 2 ^ 256 * 2 ^ 64 by rw [← pow_add]] at h
   omega
 
 end VG.Proof.Ed25519.AArch64.Inv

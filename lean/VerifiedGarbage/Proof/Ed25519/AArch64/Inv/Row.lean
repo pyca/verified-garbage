@@ -269,9 +269,9 @@ theorem row_arith {C P0 P1 P2 P3 Q0 Q1 Q2 Q3 w0 w1 w2 w3 w4 c1 c2 c3 K : Nat}
     (d0 : w0 + 2 ^ 64 * c1 = C + P0 + Q0) (d1 : w1 + 2 ^ 64 * c2 = c1 + P1 + Q1)
     (d2 : w2 + 2 ^ 64 * c3 = c2 + P2 + Q2)
     (d3 : (w3 + 2 ^ 64 * w4 + 2 ^ 64 * K) % 2 ^ 128 = (c3 + P3 + Q3) % 2 ^ 128) :
-    (w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * w4 + 2 ^ 256 * K) % 2 ^ 320 =
+    (w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * w4 + 2 ^ 256 * K) % (2 ^ 256 * 2 ^ 64) =
       (C + (P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3) +
-        (Q0 + 2 ^ 64 * Q1 + 2 ^ 128 * Q2 + 2 ^ 192 * Q3)) % 2 ^ 320 := by
+        (Q0 + 2 ^ 64 * Q1 + 2 ^ 128 * Q2 + 2 ^ 192 * Q3)) % (2 ^ 256 * 2 ^ 64) := by
   omega
 
 theorem val4_mul (x0 x1 x2 x3 : Word) (a : Nat) :
@@ -291,9 +291,9 @@ theorem row_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool)
       (val5 u.mem base t + 2 ^ 256 *
           ((corrV signed (word s.mem base (xo + 24) ^^^ s.gpr sa) (s.gpr ma) (s.gpr sa)).toNat +
             (corrV signed (word s.mem base (yo + 24) ^^^ s.gpr sb) (s.gpr mb) (s.gpr sb)).toNat)) %
-          2 ^ 320 =
+          (2 ^ 256 * 2 ^ 64) =
         ((s.gpr car).toNat + flip4 s.mem base xo (s.gpr sa) * (s.gpr ma).toNat +
-          flip4 s.mem base yo (s.gpr sb) * (s.gpr mb).toNat) % 2 ^ 320 ∧
+          flip4 s.mem base yo (s.gpr sb) * (s.gpr mb).toNat) % (2 ^ 256 * 2 ^ 64) ∧
       Outside base t 40 s.mem u.mem ∧ KeepRegs [.x1, .x2, .x3, .x8, .x9, .x10] s u := by
   have _hcap := workSize_le large
   have hrr := hr
