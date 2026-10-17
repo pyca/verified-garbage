@@ -9,7 +9,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_AVX2_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -72,71 +72,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -149,91 +92,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -525,10 +395,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -586,7 +456,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -602,10 +472,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -700,131 +570,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_avx2}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_avx2 = sym super::hash_any::vg_hmac_init_scratch_avx2,
@@ -841,7 +596,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES: crate::cpu::
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -904,71 +659,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -981,91 +679,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -1357,10 +982,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -1418,7 +1043,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -1434,10 +1059,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -1532,131 +1157,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_avx2}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_avx2 = sym super::hash_any::vg_hmac_init_scratch_avx2,
@@ -1670,7 +1180,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -1732,71 +1242,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -1809,91 +1262,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -2185,10 +1565,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -2246,7 +1626,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -2262,10 +1642,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -2360,131 +1740,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch = sym super::hash_any::vg_hmac_init_scratch,
@@ -2501,7 +1766,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_ADX_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -2564,71 +1829,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -2641,91 +1849,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -3017,10 +2152,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3078,7 +2213,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -3094,10 +2229,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -3192,131 +2327,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch = sym super::hash_any::vg_hmac_init_scratch,
@@ -3333,7 +2353,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -3396,71 +2416,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -3473,91 +2436,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -3849,10 +2739,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -3910,7 +2800,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -3926,10 +2816,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -4024,131 +2914,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_shani = sym super::hash_any::vg_hmac_init_scratch_shani,
@@ -4165,7 +2940,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES: crate::cpu:
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -4228,71 +3003,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -4305,91 +3023,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -4681,10 +3326,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -4742,7 +3387,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -4758,10 +3403,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -4856,131 +3501,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_shani = sym super::hash_any::vg_hmac_init_scratch_shani,
@@ -4997,7 +3527,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES: crate::cpu
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -5060,71 +3590,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -5137,91 +3610,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -5513,10 +3913,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -5574,7 +3974,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -5590,10 +3990,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -5688,131 +4088,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_avx2}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_shani_avx2 = sym super::hash_any::vg_hmac_init_scratch_shani_avx2,
@@ -5829,7 +4114,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES: crate:
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -5892,71 +4177,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -5969,91 +4197,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -6345,10 +4500,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_avx2}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -6406,7 +4561,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -6422,10 +4577,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -6520,131 +4675,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_avx2}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_shani_avx2 = sym super::hash_any::vg_hmac_init_scratch_shani_avx2,
@@ -6661,7 +4701,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES: crate::c
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -6724,71 +4764,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -6801,91 +4784,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -7177,10 +5087,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_sha512}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -7238,7 +5148,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -7254,10 +5164,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -7352,131 +5262,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_sha512}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_shani_sha512 = sym super::hash_any::vg_hmac_init_scratch_shani_sha512,
@@ -7493,7 +5288,7 @@ pub(crate) const VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES: crat
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers, `hash`, `digest_len` and that number, not otherwise on the key or the hash.
 ///
-/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Calls the tier's `vg_hmac_init_scratch`, `vg_hash_update_scratch` and `vg_hmac_finalize_scratch` with `hash` (a public argument), which call the functions of the hash function it names, using the start of `scratch` for HMAC's states, working space and messages. Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost 32 bytes of successive `V`s. Each candidate is tried with `vg_ecdsa_p256_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -7556,71 +5351,14 @@ jmp 21f
 mov r10d, 20
 mov r11d, 64
 21:
-push rax
-push r10
-push r11
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rdi
-push rsi
-push rdx
-push rcx
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
-push rax
+lea rsp, [rsp-520]
+mov QWORD PTR [rsp+512], rax
+mov QWORD PTR [rsp+504], r10
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+208], rdi
+mov QWORD PTR [rsp+200], rsi
+mov QWORD PTR [rsp+192], rdx
+mov QWORD PTR [rsp+184], rcx
 mov rsi, QWORD PTR [rsp+192]
 mov rdi, QWORD PTR [rsp+184]
 xor ecx, ecx
@@ -7633,91 +5371,18 @@ mov QWORD PTR [rsp+256], rcx
 mov QWORD PTR [rsp+264], rcx
 mov QWORD PTR [rsp+272], rcx
 mov QWORD PTR [rsp+280], rcx
-mov rax, QWORD PTR [rsp+512]
-cmp rax, 1
-je 212f
-cmp rax, 2
-je 214f
-cmp rax, 3
-je 216f
-cmp rax, 4
-je 218f
-cmp rax, 5
-je 220f
-cmp rax, 6
-je 222f
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-jmp 223f
-222:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-223:
-jmp 221f
-220:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-221:
-jmp 219f
-218:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-219:
-jmp 217f
-216:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+216], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+224], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+232], rax
-mov rax, QWORD PTR [rsi+24]
-mov QWORD PTR [rsp+240], rax
-217:
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+220], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+16]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+20]
-mov QWORD PTR [rsp+240], rax
-215:
-jmp 213f
+mov rcx, QWORD PTR [rsp+504]
+mov eax, 32
+cmp rcx, rax
+cmovae rcx, rax
+mov rdx, rsp
+add rdx, 248
+sub rdx, rcx
 212:
-mov rax, QWORD PTR [rsi]
-mov QWORD PTR [rsp+228], rax
-mov rax, QWORD PTR [rsi+8]
-mov QWORD PTR [rsp+236], rax
-mov rax, QWORD PTR [rsi+12]
-mov QWORD PTR [rsp+240], rax
-213:
+sub rcx, 4
+mov eax, DWORD PTR [rsi+rcx*1]
+mov DWORD PTR [rdx+rcx*1], eax
+jne 212b
 mov rsi, rsp
 add rsi, 216
 mov rax, QWORD PTR [rsi+24]
@@ -8009,10 +5674,10 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_sha512}
 mov eax, 8
 mov QWORD PTR [rsp+176], rax
-224:
+213:
 xor eax, eax
 mov QWORD PTR [rsp+128], rax
-225:
+214:
 mov rdi, QWORD PTR [rsp+184]
 add rdi, 0
 mov rsi, QWORD PTR [rsp+184]
@@ -8070,7 +5735,7 @@ mov rcx, QWORD PTR [rsp+128]
 add rcx, QWORD PTR [rsp+504]
 mov QWORD PTR [rsp+128], rcx
 cmp rcx, 32
-jb 225b
+jb 214b
 mov rdi, QWORD PTR [rsp+208]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, rsp
@@ -8086,10 +5751,10 @@ cmp eax, 1
 sbb rdx, rdx
 and rdx, rcx
 test rdx, rdx
-jne 226f
+jne 215f
 xor edx, edx
-jmp 227f
-226:
+jmp 216f
+215:
 mov rdi, QWORD PTR [rsp+184]
 mov rsi, QWORD PTR [rsp+200]
 mov rdx, QWORD PTR [rsp+504]
@@ -8184,131 +5849,16 @@ mov r9, QWORD PTR [rsp+512]
 call {vg_hmac_finalize_scratch_shani_sha512}
 mov edx, 1
 test rdx, rdx
-227:
-jne 224b
-xor ecx, ecx
-mov QWORD PTR [rsp], rcx
-mov QWORD PTR [rsp+8], rcx
-mov QWORD PTR [rsp+16], rcx
-mov QWORD PTR [rsp+24], rcx
-mov QWORD PTR [rsp+32], rcx
-mov QWORD PTR [rsp+40], rcx
-mov QWORD PTR [rsp+48], rcx
-mov QWORD PTR [rsp+56], rcx
-mov QWORD PTR [rsp+64], rcx
-mov QWORD PTR [rsp+72], rcx
-mov QWORD PTR [rsp+80], rcx
-mov QWORD PTR [rsp+88], rcx
-mov QWORD PTR [rsp+96], rcx
-mov QWORD PTR [rsp+104], rcx
-mov QWORD PTR [rsp+112], rcx
-mov QWORD PTR [rsp+120], rcx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], rcx
-mov QWORD PTR [rsp+144], rcx
-mov QWORD PTR [rsp+152], rcx
-mov QWORD PTR [rsp+160], rcx
-mov QWORD PTR [rsp+168], rcx
-mov QWORD PTR [rsp+216], rcx
-mov QWORD PTR [rsp+224], rcx
-mov QWORD PTR [rsp+232], rcx
-mov QWORD PTR [rsp+240], rcx
-mov QWORD PTR [rsp+248], rcx
-mov QWORD PTR [rsp+256], rcx
-mov QWORD PTR [rsp+264], rcx
-mov QWORD PTR [rsp+272], rcx
-mov QWORD PTR [rsp+280], rcx
-mov QWORD PTR [rsp+288], rcx
-mov QWORD PTR [rsp+296], rcx
-mov QWORD PTR [rsp+304], rcx
-mov QWORD PTR [rsp+312], rcx
-mov QWORD PTR [rsp+320], rcx
-mov QWORD PTR [rsp+328], rcx
-mov QWORD PTR [rsp+336], rcx
-mov QWORD PTR [rsp+344], rcx
-mov QWORD PTR [rsp+352], rcx
-mov QWORD PTR [rsp+360], rcx
-mov QWORD PTR [rsp+368], rcx
-mov QWORD PTR [rsp+376], rcx
-mov QWORD PTR [rsp+384], rcx
-mov QWORD PTR [rsp+392], rcx
-mov QWORD PTR [rsp+400], rcx
-mov QWORD PTR [rsp+408], rcx
-mov QWORD PTR [rsp+416], rcx
-mov QWORD PTR [rsp+424], rcx
-mov QWORD PTR [rsp+432], rcx
-mov QWORD PTR [rsp+440], rcx
-mov QWORD PTR [rsp+448], rcx
-mov QWORD PTR [rsp+456], rcx
-mov QWORD PTR [rsp+464], rcx
-mov QWORD PTR [rsp+472], rcx
-mov QWORD PTR [rsp+480], rcx
-mov QWORD PTR [rsp+488], rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
-pop rcx
+216:
+jne 213b
+xor edx, edx
+mov ecx, 136
+217:
+sub rcx, 8
+mov QWORD PTR [rsp+rcx*1], rdx
+mov QWORD PTR [rsp+rcx*1+360], rdx
+jne 217b
+lea rsp, [rsp+520]
 ret
 .p2align 6",
         vg_hmac_init_scratch_shani_sha512 = sym super::hash_any::vg_hmac_init_scratch_shani_sha512,
