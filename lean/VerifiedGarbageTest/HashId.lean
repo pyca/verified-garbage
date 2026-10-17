@@ -4,6 +4,7 @@ import VerifiedGarbage.Spec.RsaOaep.AnyHash
 import VerifiedGarbage.Spec.RsaPss.AnyHash
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.AnyHash
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
+import VerifiedGarbage.Spec.Hmac.Any
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.X86.Target
@@ -54,6 +55,8 @@ def sha12 : List (Option String) :=
 #guard RsaOaep.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == sha12
 #guard Ecdsa.Rfc6979.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == sha12
 #guard RsaPss.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == some "md5" :: sha12
+#guard Hmac.Any.hashIds.map (fun i => (Hmac.Any.inst i).map (·.rust)) == sha12
+#guard Hmac.Any.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == sha12
 
 /-- Whether `A` models the arguments of `sig`. -/
 def modeled {M : ISA} (A : Abi M) (sig : Sig) : Bool :=
@@ -62,7 +65,8 @@ def modeled {M : ISA} (A : Abi M) (sig : Sig) : Bool :=
 /-- The signatures taking hash functions as arguments. -/
 def sigs : List Sig :=
   [RsaOaep.encryptAnySig, RsaOaep.decryptAnySig, RsaPss.signAnySig, RsaPss.verifyAnySig,
-    Ecdsa.Rfc6979.Instance.signAnySig Ecdsa.Rfc6979.P521Sha512.inst]
+    Ecdsa.Rfc6979.Instance.signAnySig Ecdsa.Rfc6979.P521Sha512.inst, Hmac.Any.initSig,
+    Hmac.Any.updateSig, Hmac.Any.finalizeSig]
 
 #guard sigs.all (modeled AArch64.abi)
 #guard sigs.all (modeled Arm.abi)
