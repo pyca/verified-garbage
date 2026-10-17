@@ -439,13 +439,14 @@ mod tests {
     #[test]
     fn length_limits() {
         assert!(valid(1, 8, 1, [u32::MAX as usize; 5]));
-        // A length above 2³² - 1 exists only where `usize` is wider.
-        if let Some(too_long) = (u32::MAX as usize).checked_add(1) {
-            for j in 0..5 {
-                let mut lengths = [0, 0, 0, 0, 4];
-                lengths[j] = too_long;
-                assert!(!valid(1, 8, 1, lengths));
-            }
+        // A length above 2³² - 1 exists only where `usize` is wider (a
+        // `cfg` rather than a test of the width, so that each architecture
+        // runs every line it builds).
+        #[cfg(target_pointer_width = "64")]
+        for j in 0..5 {
+            let mut lengths = [0, 0, 0, 0, 4];
+            lengths[j] = u32::MAX as usize + 1;
+            assert!(!valid(1, 8, 1, lengths));
         }
     }
 

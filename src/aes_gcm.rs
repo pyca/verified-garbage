@@ -2326,10 +2326,10 @@ mod tests {
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x5a; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
-            for &(b, need) in Backend::ALL {
-                if !detected().contains(need) {
-                    continue;
-                }
+            for &(b, _) in Backend::ALL
+                .iter()
+                .filter(|(_, need)| detected().contains(*need))
+            {
                 let k = k.with_backend(b);
                 // `encrypt` copies texts shorter than 768 bytes and seals
                 // them in place, and streams longer ones, on the backends
@@ -2379,10 +2379,10 @@ mod tests {
         for key_len in [16, 32] {
             let k = AesGcm::new(&[0x6b; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
-            for &(b, need) in Backend::ALL {
-                if !detected().contains(need) {
-                    continue;
-                }
+            for &(b, _) in Backend::ALL
+                .iter()
+                .filter(|(_, need)| detected().contains(*need))
+            {
                 let k = k.with_backend(b);
                 for al in [0, 13, 16] {
                     for len in 1024..=1040 {
@@ -2412,10 +2412,10 @@ mod tests {
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x2d; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
-            for &(b, need) in Backend::ALL {
-                if !detected().contains(need) {
-                    continue;
-                }
+            for &(b, _) in Backend::ALL
+                .iter()
+                .filter(|(_, need)| detected().contains(*need))
+            {
                 let k = k.with_backend(b);
                 for len in (256..=656).step_by(16).flat_map(|l| [l, l + 5]) {
                     let mut want = msg;

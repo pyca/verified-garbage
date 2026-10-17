@@ -657,12 +657,14 @@ jobs:
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           # Ubuntu 26.04's x86-64 userspace is built for x86-64-v3 (AVX2), so
           # SDE stops on its dynamic loader's AVX instructions: this CPU runs
-          # on 24.04, whose userspace is the baseline ISA's.
+          # on 24.04, whose userspace is the baseline ISA's. The only x86-64 CPU
+          # here to choose AES-CCM's baseline AES, and P-256's signatures with
+          # SHA-256's baseline code and the baseline multiplication.
           - chip: p4p
             arch: x86_64
             runner: ubuntu-24.04
             runs: |
-              - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa p256_sha message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
           # it, and P-256's and P-384's signatures with SHA-384 and P-521's
