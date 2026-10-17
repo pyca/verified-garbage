@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.X25519.x25519Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function saves the callee-saved registers it uses (`x19`–`x24`, and the low halves of `v8`–`v15`) in `scratch`. Field elements use four 64-bit words with `mul`/`umulh`, dedicated squaring, and reduction modulo 2^255 - 19. Each ladder step computes the products `DA` and `CB` with AdvSIMD, in radix 2^25.5 (`umull`/`umlal` on two lanes), interleaved with the scalar field operations that do not depend on them. The inversion uses the ref10 addition chain (254 squarings and 11 multiplications).
+/// The function saves the callee-saved registers it uses (`x19`–`x24`) in `scratch`. The ladder is that of s2n-bignum's `curve25519_x25519_byte_alt`, operation for operation: field elements of four 64-bit words, below 2·(2^255 - 19) between operations, with `mul`/`umulh` products and squares, sums and differences folding one carry, and `mux_4` choosing the point to double rather than swapping the points. Unlike s2n-bignum, all 255 iterations run (bits 254 down to 0). The inversion uses Bernstein–Yang divsteps.
 ///
 /// # Safety
 ///
@@ -938,1325 +938,941 @@ str x6, [x0, #656]
 str x7, [x0, #664]
 movz x2, #0, lsl #0
 str x2, [x0, #768]
-str q8, [x0, #1152]
-str q9, [x0, #1168]
-str q10, [x0, #1184]
-str q11, [x0, #1200]
-str q12, [x0, #1216]
-str q13, [x0, #1232]
-str q14, [x0, #1248]
-str q15, [x0, #1264]
-movz x2, #65535, lsl #0
-movk x2, #1023, lsl #16
-str x2, [x0, #1104]
-str x2, [x0, #1112]
-movz x2, #65535, lsl #0
-movk x2, #511, lsl #16
-str x2, [x0, #1120]
-str x2, [x0, #1128]
-movz x2, #19, lsl #0
-movk x2, #19, lsl #32
-str x2, [x0, #1136]
-str x2, [x0, #1144]
 movz x19, #255, lsl #0
 20:
+movz x17, #0, lsl #0
+ldp x5, x6, [x0, #160]
+ldp x4, x3, [x0, #192]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #176]
+ldp x4, x3, [x0, #208]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #256]
+stp x7, x8, [x0, #272]
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #128]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #112]
+ldp x7, x8, [x0, #144]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #224]
+stp x5, x6, [x0, #240]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #128]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #144]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #128]
+stp x7, x8, [x0, #144]
+ldp x3, x4, [x0, #160]
+ldp x7, x8, [x0, #192]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #176]
+ldp x7, x8, [x0, #208]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #192]
+stp x5, x6, [x0, #208]
+ldp x3, x4, [x0, #224]
+ldp x7, x8, [x0, #256]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #272]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #240]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #288]
+stp x14, x15, [x0, #304]
 sub x19, x19, #1
 add x8, x0, x19
 ldrb w2, [x8, #1984]
 ldr x3, [x0, #768]
 str x2, [x0, #768]
-eor x3, x3, x2
-movz x10, #0, lsl #0
-sub x3, x10, x3
-ldr x4, [x0, #96]
-ldr x5, [x0, #104]
-ldr x6, [x0, #112]
-ldr x7, [x0, #120]
-ldr x21, [x0, #160]
-ldr x22, [x0, #168]
-ldr x23, [x0, #176]
-ldr x24, [x0, #184]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
-str x4, [x0, #96]
-str x5, [x0, #104]
-str x6, [x0, #112]
-str x7, [x0, #120]
-str x21, [x0, #160]
-str x22, [x0, #168]
-str x23, [x0, #176]
-str x24, [x0, #184]
-ldr x4, [x0, #128]
-ldr x5, [x0, #136]
-ldr x6, [x0, #144]
-ldr x7, [x0, #152]
-ldr x21, [x0, #192]
-ldr x22, [x0, #200]
-ldr x23, [x0, #208]
-ldr x24, [x0, #216]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
-str x4, [x0, #128]
-str x5, [x0, #136]
-str x6, [x0, #144]
-str x7, [x0, #152]
-str x21, [x0, #192]
-str x22, [x0, #200]
-str x23, [x0, #208]
-str x24, [x0, #216]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-ldr x4, [x0, #96]
-ldr x9, [x0, #128]
-adds x4, x4, x9
-ldr x5, [x0, #104]
-ldr x9, [x0, #136]
-adcs x5, x5, x9
-ldr x6, [x0, #112]
-ldr x9, [x0, #144]
-adcs x6, x6, x9
-ldr x7, [x0, #120]
-ldr x9, [x0, #152]
-adcs x7, x7, x9
-csel x8, x11, x10, hs
-adds x4, x4, x8
-adcs x5, x5, x10
-adcs x6, x6, x10
-adcs x7, x7, x10
-str x4, [x0, #224]
-str x5, [x0, #232]
-str x6, [x0, #240]
-str x7, [x0, #248]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-ldr x4, [x0, #96]
-ldr x9, [x0, #128]
-subs x4, x4, x9
-ldr x5, [x0, #104]
-ldr x9, [x0, #136]
-sbcs x5, x5, x9
-ldr x6, [x0, #112]
-ldr x9, [x0, #144]
-sbcs x6, x6, x9
-ldr x7, [x0, #120]
-ldr x9, [x0, #152]
-sbcs x7, x7, x9
-sbcs x8, x10, x10
-and x8, x8, x11
-subs x4, x4, x8
-sbcs x5, x5, x10
-sbcs x6, x6, x10
-sbcs x7, x7, x10
-str x4, [x0, #256]
-str x5, [x0, #264]
-str x6, [x0, #272]
-str x7, [x0, #280]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-ldr x4, [x0, #160]
-ldr x9, [x0, #192]
-adds x4, x4, x9
-ldr x5, [x0, #168]
-ldr x9, [x0, #200]
-adcs x5, x5, x9
-ldr x6, [x0, #176]
-ldr x9, [x0, #208]
-adcs x6, x6, x9
-ldr x7, [x0, #184]
-ldr x9, [x0, #216]
-adcs x7, x7, x9
-csel x8, x11, x10, hs
-adds x4, x4, x8
-adcs x5, x5, x10
-adcs x6, x6, x10
-adcs x7, x7, x10
-str x4, [x0, #288]
-str x5, [x0, #296]
-str x6, [x0, #304]
-str x7, [x0, #312]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-ldr x4, [x0, #160]
-ldr x9, [x0, #192]
-subs x4, x4, x9
-ldr x5, [x0, #168]
-ldr x9, [x0, #200]
-sbcs x5, x5, x9
-ldr x6, [x0, #176]
-ldr x9, [x0, #208]
-sbcs x6, x6, x9
-ldr x7, [x0, #184]
-ldr x9, [x0, #216]
-sbcs x7, x7, x9
-sbcs x8, x10, x10
-and x8, x8, x11
-subs x4, x4, x8
-sbcs x5, x5, x10
-sbcs x6, x6, x10
-sbcs x7, x7, x10
-str x4, [x0, #320]
-str x5, [x0, #328]
-str x6, [x0, #336]
-str x7, [x0, #344]
-movz w10, #0, lsl #0
-ldr q24, [x0, #1104]
-ldr x12, [x0, #224]
-ldr q25, [x0, #1120]
-ldr x13, [x0, #232]
-ldr x14, [x0, #240]
-ldr q27, [x0, #320]
-ldr x15, [x0, #248]
-ldr q28, [x0, #288]
-mul x5, x12, x13
-mul x6, x12, x14
-trn1 v19.2d, v27.2d, v28.2d
-mul x7, x12, x15
-trn2 v20.2d, v27.2d, v28.2d
-umulh x2, x12, x13
-umulh x8, x12, x14
-ldr q27, [x0, #336]
-umulh x9, x12, x15
-ldr q28, [x0, #304]
-adds x6, x6, x2
-adcs x7, x7, x8
-trn1 v21.2d, v27.2d, v28.2d
-adcs x21, x9, x10
-trn2 v22.2d, v27.2d, v28.2d
-mul x2, x13, x14
-mul x8, x13, x15
-and v28.16b, v19.16b, v24.16b
-umulh x9, x13, x14
-uzp1 v30.4s, v28.4s, v28.4s
-umulh x16, x13, x15
-adds x7, x7, x2
-str q30, [x0, #784]
-adcs x21, x21, x8
-ushr v28.2d, v19.2d, #26
-adcs x22, x16, x10
-adds x21, x21, x9
-and v28.16b, v28.16b, v25.16b
-adcs x22, x22, x10
-shl v29.2d, v28.2d, #1
-mul x2, x14, x15
-umulh x8, x14, x15
-uzp1 v30.4s, v28.4s, v29.4s
-adds x22, x22, x2
-adcs x23, x8, x10
-str q30, [x0, #800]
-adds x5, x5, x5
-ushr v28.2d, v19.2d, #51
-adcs x6, x6, x6
-adcs x7, x7, x7
-shl v29.2d, v20.2d, #13
-adcs x21, x21, x21
-add v28.2d, v28.2d, v29.2d
-adcs x22, x22, x22
-adcs x23, x23, x23
-and v28.16b, v28.16b, v24.16b
-adcs x24, x10, x10
-uzp1 v30.4s, v28.4s, v28.4s
-mul x4, x12, x12
-umulh x2, x12, x12
-str q30, [x0, #816]
-mul x8, x13, x13
-ushr v28.2d, v20.2d, #13
-umulh x9, x13, x13
-mul x16, x14, x14
-and v28.16b, v28.16b, v25.16b
-umulh x17, x14, x14
-shl v29.2d, v28.2d, #1
-mul x3, x15, x15
-umulh x11, x15, x15
-uzp1 v30.4s, v28.4s, v29.4s
-adds x5, x5, x2
-str q30, [x0, #832]
+subs x3, x3, x2
+ldp x4, x5, [x0, #256]
+ldp x6, x7, [x0, #128]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #320]
+ldp x4, x5, [x0, #272]
+ldp x6, x7, [x0, #144]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #336]
+ldp x4, x5, [x0, #192]
+ldp x6, x7, [x0, #224]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #96]
+ldp x4, x5, [x0, #208]
+ldp x6, x7, [x0, #240]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #112]
+ldp x3, x4, [x0, #192]
+ldp x7, x8, [x0, #128]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #144]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #208]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #160]
+stp x14, x15, [x0, #176]
+ldp x2, x3, [x0, #320]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #336]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #320]
+stp x10, x11, [x0, #336]
+ldp x5, x6, [x0, #288]
+ldp x4, x3, [x0, #160]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #304]
+ldp x4, x3, [x0, #176]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #192]
+stp x7, x8, [x0, #208]
+ldp x2, x3, [x0, #96]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #112]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #96]
+stp x10, x11, [x0, #112]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #160]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #304]
+ldp x7, x8, [x0, #176]
+adcs x5, x5, x7
 adcs x6, x6, x8
-adcs x7, x7, x9
-ushr v28.2d, v20.2d, #38
-adcs x21, x21, x16
-uzp1 v30.4s, v28.4s, v28.4s
-adcs x22, x22, x17
-adcs x23, x23, x3
-str q30, [x0, #848]
-adcs x24, x24, x11
-movz w11, #38, lsl #0
-and v28.16b, v21.16b, v25.16b
-mul x2, x11, x21
-shl v29.2d, v28.2d, #1
-adds x4, x4, x2
-mul x8, x11, x22
-uzp1 v30.4s, v28.4s, v29.4s
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #160]
+stp x5, x6, [x0, #176]
+ldp x2, x3, [x0, #192]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #208]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #192]
+stp x10, x11, [x0, #208]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #320]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #336]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #288]
+stp x7, x8, [x0, #304]
+ldp x2, x3, [x0, #160]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #176]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #160]
+stp x10, x11, [x0, #176]
+add x20, x1, #0
+movz x1, #56130, lsl #0
+movk x1, #1, lsl #16
+ldp x7, x8, [x0, #288]
+ldp x9, x10, [x0, #304]
+mul x3, x1, x7
+mul x4, x1, x8
+mul x5, x1, x9
+mul x6, x1, x10
+umulh x7, x1, x7
+umulh x8, x1, x8
+umulh x9, x1, x9
+umulh x10, x1, x10
+adds x4, x4, x7
 adcs x5, x5, x8
-str q30, [x0, #864]
-mul x9, x11, x23
 adcs x6, x6, x9
-ushr v28.2d, v21.2d, #25
-mul x16, x11, x24
-and v28.16b, v28.16b, v24.16b
-adcs x7, x7, x16
-adcs x20, x10, x10
-uzp1 v30.4s, v28.4s, v28.4s
-umulh x2, x11, x21
-str q30, [x0, #880]
-umulh x8, x11, x22
-umulh x9, x11, x23
-ushr v28.2d, v21.2d, #51
-umulh x16, x11, x24
-shl v29.2d, v22.2d, #13
-adds x7, x7, x9
-adcs x20, x20, x16
-add v28.2d, v28.2d, v29.2d
-adds x16, x7, x7
-and v28.16b, v28.16b, v25.16b
-adc x9, x20, x20
-lsr x7, x16, #1
-shl v29.2d, v28.2d, #1
-movz w11, #19, lsl #0
-uzp1 v30.4s, v28.4s, v29.4s
-mul x9, x9, x11
-adds x4, x4, x9
-str q30, [x0, #896]
-adcs x5, x5, x2
-ushr v28.2d, v22.2d, #12
+adc x10, x10, x17
+ldp x7, x8, [x0, #320]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x7, x8, [x0, #336]
+adcs x5, x5, x7
 adcs x6, x6, x8
-adcs x7, x7, x10
-and v28.16b, v28.16b, v24.16b
-str x4, [x0, #352]
-str x5, [x0, #360]
-uzp1 v30.4s, v28.4s, v28.4s
-str x6, [x0, #368]
-str q30, [x0, #912]
-str x7, [x0, #376]
-movz w10, #0, lsl #0
-ushr v28.2d, v22.2d, #38
-ldr x12, [x0, #256]
-shl v29.2d, v28.2d, #1
-ldr x13, [x0, #264]
-ldr x14, [x0, #272]
-uzp1 v30.4s, v28.4s, v29.4s
-ldr x15, [x0, #280]
-str q30, [x0, #928]
-mul x5, x12, x13
-mul x6, x12, x14
-ldr q24, [x0, #1104]
-mul x7, x12, x15
-ldr q25, [x0, #1120]
-umulh x2, x12, x13
-umulh x8, x12, x14
-ldr q26, [x0, #1136]
-umulh x9, x12, x15
-ldr q27, [x0, #224]
-adds x6, x6, x2
-adcs x7, x7, x8
-ldr q28, [x0, #256]
-adcs x21, x9, x10
-trn1 v19.2d, v27.2d, v28.2d
-mul x2, x13, x14
-mul x8, x13, x15
-trn2 v20.2d, v27.2d, v28.2d
-umulh x9, x13, x14
-ldr q27, [x0, #240]
-umulh x16, x13, x15
-adds x7, x7, x2
-ldr q28, [x0, #272]
-adcs x21, x21, x8
-adcs x22, x16, x10
-trn1 v21.2d, v27.2d, v28.2d
-adds x21, x21, x9
-trn2 v22.2d, v27.2d, v28.2d
-adcs x22, x22, x10
-mul x2, x14, x15
-and v28.16b, v19.16b, v24.16b
-umulh x8, x14, x15
-uzp1 v0.4s, v28.4s, v28.4s
-adds x22, x22, x2
-adcs x23, x8, x10
-ushr v28.2d, v19.2d, #26
-adds x5, x5, x5
-and v28.16b, v28.16b, v25.16b
-adcs x6, x6, x6
-adcs x7, x7, x7
-uzp1 v1.4s, v28.4s, v28.4s
-adcs x21, x21, x21
-ushr v28.2d, v19.2d, #51
-adcs x22, x22, x22
-adcs x23, x23, x23
-shl v29.2d, v20.2d, #13
-adcs x24, x10, x10
-add v28.2d, v28.2d, v29.2d
-mul x4, x12, x12
-umulh x2, x12, x12
-and v28.16b, v28.16b, v24.16b
-mul x8, x13, x13
-uzp1 v2.4s, v28.4s, v28.4s
-umulh x9, x13, x13
-mul x16, x14, x14
-ushr v28.2d, v20.2d, #13
-umulh x17, x14, x14
-and v28.16b, v28.16b, v25.16b
-mul x3, x15, x15
-umulh x11, x15, x15
-uzp1 v3.4s, v28.4s, v28.4s
-adds x5, x5, x2
-ushr v28.2d, v20.2d, #38
-adcs x6, x6, x8
-adcs x7, x7, x9
-uzp1 v4.4s, v28.4s, v28.4s
-adcs x21, x21, x16
-adcs x22, x22, x17
-and v28.16b, v21.16b, v25.16b
-adcs x23, x23, x3
-uzp1 v5.4s, v28.4s, v28.4s
-adcs x24, x24, x11
-movz w11, #38, lsl #0
-ushr v28.2d, v21.2d, #25
-mul x2, x11, x21
-and v28.16b, v28.16b, v24.16b
-adds x4, x4, x2
-mul x8, x11, x22
-uzp1 v6.4s, v28.4s, v28.4s
-adcs x5, x5, x8
-ushr v28.2d, v21.2d, #51
-mul x9, x11, x23
-adcs x6, x6, x9
-shl v29.2d, v22.2d, #13
-mul x16, x11, x24
-add v28.2d, v28.2d, v29.2d
-adcs x7, x7, x16
-adcs x20, x10, x10
-and v28.16b, v28.16b, v25.16b
-umulh x2, x11, x21
-uzp1 v7.4s, v28.4s, v28.4s
-umulh x8, x11, x22
-umulh x9, x11, x23
-ushr v28.2d, v22.2d, #12
-umulh x16, x11, x24
-and v28.16b, v28.16b, v24.16b
-adds x7, x7, x9
-adcs x20, x20, x16
-uzp1 v8.4s, v28.4s, v28.4s
-adds x16, x7, x7
-ushr v28.2d, v22.2d, #38
-adc x9, x20, x20
-lsr x7, x16, #1
-uzp1 v9.4s, v28.4s, v28.4s
-movz w11, #19, lsl #0
-mul x9, x9, x11
-mul v10.4s, v1.4s, v26.4s
-adds x4, x4, x9
-mul v11.4s, v2.4s, v26.4s
-adcs x5, x5, x2
-adcs x6, x6, x8
-mul v12.4s, v3.4s, v26.4s
-adcs x7, x7, x10
-mul v13.4s, v4.4s, v26.4s
-str x4, [x0, #384]
-str x5, [x0, #392]
-mul v14.4s, v5.4s, v26.4s
-str x6, [x0, #400]
-mul v15.4s, v6.4s, v26.4s
-str x7, [x0, #408]
-movz w10, #0, lsl #0
-mul v16.4s, v7.4s, v26.4s
-movz w11, #38, lsl #0
-mul v17.4s, v8.4s, v26.4s
-ldr x4, [x0, #352]
-ldr x9, [x0, #384]
-mul v18.4s, v9.4s, v26.4s
-subs x4, x4, x9
-ldr q29, [x0, #784]
-ldr x5, [x0, #360]
-ldr x9, [x0, #392]
-umull v19.2d, v29.2s, v0.2s
-sbcs x5, x5, x9
-umull v20.2d, v29.2s, v1.2s
-ldr x6, [x0, #368]
-ldr x9, [x0, #400]
-umull v21.2d, v29.2s, v2.2s
-sbcs x6, x6, x9
-umull v22.2d, v29.2s, v3.2s
-ldr x7, [x0, #376]
-ldr x9, [x0, #408]
-umull v23.2d, v29.2s, v4.2s
-sbcs x7, x7, x9
-umull v24.2d, v29.2s, v5.2s
-sbcs x8, x10, x10
-and x8, x8, x11
-umull v25.2d, v29.2s, v6.2s
-subs x4, x4, x8
-sbcs x5, x5, x10
-umull v26.2d, v29.2s, v7.2s
-sbcs x6, x6, x10
-umull v27.2d, v29.2s, v8.2s
-sbcs x7, x7, x10
-str x4, [x0, #416]
-umull v28.2d, v29.2s, v9.2s
-str x5, [x0, #424]
-ldr q29, [x0, #800]
-str x6, [x0, #432]
-str x7, [x0, #440]
-umlal2 v19.2d, v29.4s, v18.4s
-movz w10, #0, lsl #0
-umlal v20.2d, v29.2s, v0.2s
-ldr x12, [x0, #384]
-ldr x13, [x0, #392]
-umlal2 v21.2d, v29.4s, v1.4s
-ldr x14, [x0, #400]
-umlal v22.2d, v29.2s, v2.2s
-ldr x15, [x0, #408]
-ldr x3, [x0, #352]
-umlal2 v23.2d, v29.4s, v3.4s
-mul x4, x3, x12
-umlal v24.2d, v29.2s, v4.2s
-mul x5, x3, x13
-mul x6, x3, x14
-umlal2 v25.2d, v29.4s, v5.4s
-mul x7, x3, x15
-umlal v26.2d, v29.2s, v6.2s
-umulh x2, x3, x12
-umulh x8, x3, x13
-umlal2 v27.2d, v29.4s, v7.4s
-umulh x9, x3, x14
-umlal v28.2d, v29.2s, v8.2s
-umulh x16, x3, x15
-adds x5, x5, x2
-ldr q29, [x0, #816]
-adcs x6, x6, x8
-adcs x7, x7, x9
-umlal v19.2d, v29.2s, v17.2s
-adcs x21, x16, x10
-umlal v20.2d, v29.2s, v18.2s
-ldr x3, [x0, #360]
-mul x2, x3, x12
-umlal v21.2d, v29.2s, v0.2s
-mul x8, x3, x13
-umlal v22.2d, v29.2s, v1.2s
-mul x9, x3, x14
-mul x16, x3, x15
-umlal v23.2d, v29.2s, v2.2s
-adds x5, x5, x2
-umlal v24.2d, v29.2s, v3.2s
-adcs x6, x6, x8
-adcs x7, x7, x9
-umlal v25.2d, v29.2s, v4.2s
-adcs x21, x21, x16
-umlal v26.2d, v29.2s, v5.2s
-adcs x22, x10, x10
-umulh x2, x3, x12
-umlal v27.2d, v29.2s, v6.2s
-umulh x8, x3, x13
-umlal v28.2d, v29.2s, v7.2s
-umulh x9, x3, x14
-umulh x16, x3, x15
-ldr q29, [x0, #832]
-adds x6, x6, x2
-umlal2 v19.2d, v29.4s, v16.4s
-adcs x7, x7, x8
-adcs x21, x21, x9
-umlal v20.2d, v29.2s, v17.2s
-adcs x22, x22, x16
-umlal2 v21.2d, v29.4s, v18.4s
-ldr x3, [x0, #368]
-mul x2, x3, x12
-umlal v22.2d, v29.2s, v0.2s
-mul x8, x3, x13
-umlal2 v23.2d, v29.4s, v1.4s
-mul x9, x3, x14
-mul x16, x3, x15
-umlal v24.2d, v29.2s, v2.2s
-adds x6, x6, x2
-adcs x7, x7, x8
-umlal2 v25.2d, v29.4s, v3.4s
-adcs x21, x21, x9
-umlal v26.2d, v29.2s, v4.2s
-adcs x22, x22, x16
-adcs x23, x10, x10
-umlal2 v27.2d, v29.4s, v5.4s
-umulh x2, x3, x12
-umlal v28.2d, v29.2s, v6.2s
-umulh x8, x3, x13
-umulh x9, x3, x14
-ldr q29, [x0, #848]
-umulh x16, x3, x15
-umlal v19.2d, v29.2s, v15.2s
-adds x7, x7, x2
-adcs x21, x21, x8
-umlal v20.2d, v29.2s, v16.2s
-adcs x22, x22, x9
-umlal v21.2d, v29.2s, v17.2s
-adcs x23, x23, x16
-ldr x3, [x0, #376]
-umlal v22.2d, v29.2s, v18.2s
-mul x2, x3, x12
-umlal v23.2d, v29.2s, v0.2s
-mul x8, x3, x13
-mul x9, x3, x14
-umlal v24.2d, v29.2s, v1.2s
-mul x16, x3, x15
-umlal v25.2d, v29.2s, v2.2s
-adds x7, x7, x2
-adcs x21, x21, x8
-umlal v26.2d, v29.2s, v3.2s
-adcs x22, x22, x9
-umlal v27.2d, v29.2s, v4.2s
-adcs x23, x23, x16
-adcs x24, x10, x10
-umlal v28.2d, v29.2s, v5.2s
-umulh x2, x3, x12
-umulh x8, x3, x13
-ldr q29, [x0, #864]
-umulh x9, x3, x14
-umlal2 v19.2d, v29.4s, v14.4s
-umulh x16, x3, x15
-adds x21, x21, x2
-umlal v20.2d, v29.2s, v15.2s
-adcs x22, x22, x8
-umlal2 v21.2d, v29.4s, v16.4s
-adcs x23, x23, x9
-adcs x24, x24, x16
-umlal v22.2d, v29.2s, v17.2s
-movz w11, #38, lsl #0
-umlal2 v23.2d, v29.4s, v18.4s
-mul x2, x11, x21
-adds x4, x4, x2
-umlal v24.2d, v29.2s, v0.2s
-mul x8, x11, x22
-umlal2 v25.2d, v29.4s, v1.4s
-adcs x5, x5, x8
-mul x9, x11, x23
-umlal v26.2d, v29.2s, v2.2s
-adcs x6, x6, x9
-umlal2 v27.2d, v29.4s, v3.4s
-mul x16, x11, x24
-adcs x7, x7, x16
-umlal v28.2d, v29.2s, v4.2s
-adcs x20, x10, x10
-ldr q29, [x0, #880]
-umulh x2, x11, x21
-umulh x8, x11, x22
-umlal v19.2d, v29.2s, v13.2s
-umulh x9, x11, x23
-umlal v20.2d, v29.2s, v14.2s
-umulh x16, x11, x24
-adds x7, x7, x9
-umlal v21.2d, v29.2s, v15.2s
-adcs x20, x20, x16
-umlal v22.2d, v29.2s, v16.2s
-adds x16, x7, x7
-adc x9, x20, x20
-umlal v23.2d, v29.2s, v17.2s
-lsr x7, x16, #1
-movz w11, #19, lsl #0
-umlal v24.2d, v29.2s, v18.2s
-mul x9, x9, x11
-umlal v25.2d, v29.2s, v0.2s
-adds x4, x4, x9
-adcs x5, x5, x2
-umlal v26.2d, v29.2s, v1.2s
-adcs x6, x6, x8
-umlal v27.2d, v29.2s, v2.2s
-adcs x7, x7, x10
-str x4, [x0, #96]
-umlal v28.2d, v29.2s, v3.2s
-str x5, [x0, #104]
-ldr q29, [x0, #896]
-str x6, [x0, #112]
-str x7, [x0, #120]
-umlal2 v19.2d, v29.4s, v12.4s
-movz w10, #0, lsl #0
-umlal v20.2d, v29.2s, v13.2s
-movz x3, #56129, lsl #0
-movk x3, #1, lsl #16
-umlal2 v21.2d, v29.4s, v14.4s
-movk x3, #0, lsl #32
-umlal v22.2d, v29.2s, v15.2s
-movk x3, #0, lsl #48
-ldr x12, [x0, #416]
-umlal2 v23.2d, v29.4s, v16.4s
-ldr x13, [x0, #424]
-umlal v24.2d, v29.2s, v17.2s
-ldr x14, [x0, #432]
-ldr x15, [x0, #440]
-umlal2 v25.2d, v29.4s, v18.4s
-mul x4, x3, x12
-umlal v26.2d, v29.2s, v0.2s
-mul x5, x3, x13
-mul x6, x3, x14
-umlal2 v27.2d, v29.4s, v1.4s
-mul x7, x3, x15
-umulh x2, x3, x12
-umlal v28.2d, v29.2s, v2.2s
-umulh x8, x3, x13
-ldr q29, [x0, #912]
-umulh x9, x3, x14
-umulh x16, x3, x15
-umlal v19.2d, v29.2s, v11.2s
-adds x5, x5, x2
-umlal v20.2d, v29.2s, v12.2s
-adcs x6, x6, x8
-adcs x7, x7, x9
-umlal v21.2d, v29.2s, v13.2s
-adcs x21, x16, x10
-umlal v22.2d, v29.2s, v14.2s
-add x20, x21, #0
-movz w11, #38, lsl #0
-umlal v23.2d, v29.2s, v15.2s
-mul x8, x20, x11
-umlal v24.2d, v29.2s, v16.2s
-adds x4, x4, x8
-adcs x5, x5, x10
-umlal v25.2d, v29.2s, v17.2s
-adcs x6, x6, x10
-umlal v26.2d, v29.2s, v18.2s
-adcs x7, x7, x10
-csel x8, x11, x10, hs
-umlal v27.2d, v29.2s, v0.2s
-add x4, x4, x8
-umlal v28.2d, v29.2s, v1.2s
-str x4, [x0, #128]
-str x5, [x0, #136]
-ldr q29, [x0, #928]
-str x6, [x0, #144]
-umlal2 v19.2d, v29.4s, v10.4s
-str x7, [x0, #152]
-movz w10, #0, lsl #0
-umlal v20.2d, v29.2s, v11.2s
-movz w11, #38, lsl #0
-umlal2 v21.2d, v29.4s, v12.4s
-ldr x4, [x0, #352]
-ldr x9, [x0, #128]
-umlal v22.2d, v29.2s, v13.2s
-adds x4, x4, x9
-ldr x5, [x0, #360]
-umlal2 v23.2d, v29.4s, v14.4s
-ldr x9, [x0, #136]
-umlal v24.2d, v29.2s, v15.2s
-adcs x5, x5, x9
-ldr x6, [x0, #368]
-umlal2 v25.2d, v29.4s, v16.4s
-ldr x9, [x0, #144]
-umlal v26.2d, v29.2s, v17.2s
-adcs x6, x6, x9
-ldr x7, [x0, #376]
-umlal2 v27.2d, v29.4s, v18.4s
-ldr x9, [x0, #152]
-umlal v28.2d, v29.2s, v0.2s
-adcs x7, x7, x9
-csel x8, x11, x10, hs
-ldr q0, [x0, #1104]
-adds x4, x4, x8
-ldr q1, [x0, #1120]
-adcs x5, x5, x10
-adcs x6, x6, x10
-ushr v2.2d, v27.2d, #26
-adcs x7, x7, x10
-and v27.16b, v27.16b, v0.16b
-csel x8, x11, x10, hs
-add x4, x4, x8
-add v28.2d, v28.2d, v2.2d
-str x4, [x0, #128]
-ushr v2.2d, v26.2d, #25
-str x5, [x0, #136]
-str x6, [x0, #144]
-and v26.16b, v26.16b, v1.16b
-str x7, [x0, #152]
-add v27.2d, v27.2d, v2.2d
-movz w10, #0, lsl #0
-ldr x12, [x0, #128]
-ushr v2.2d, v25.2d, #26
-ldr x13, [x0, #136]
-ldr x14, [x0, #144]
-and v25.16b, v25.16b, v0.16b
-ldr x15, [x0, #152]
-add v26.2d, v26.2d, v2.2d
-ldr x3, [x0, #416]
-mul x4, x3, x12
-ushr v2.2d, v24.2d, #25
-mul x5, x3, x13
-and v24.16b, v24.16b, v1.16b
-mul x6, x3, x14
-mul x7, x3, x15
-add v25.2d, v25.2d, v2.2d
-umulh x2, x3, x12
-ushr v2.2d, v23.2d, #26
-umulh x8, x3, x13
-umulh x9, x3, x14
-and v23.16b, v23.16b, v0.16b
-umulh x16, x3, x15
-add v24.2d, v24.2d, v2.2d
-adds x5, x5, x2
-adcs x6, x6, x8
-ushr v2.2d, v22.2d, #25
-adcs x7, x7, x9
-and v22.16b, v22.16b, v1.16b
-adcs x21, x16, x10
-ldr x3, [x0, #424]
-add v23.2d, v23.2d, v2.2d
-mul x2, x3, x12
-ushr v2.2d, v21.2d, #26
-mul x8, x3, x13
-mul x9, x3, x14
-and v21.16b, v21.16b, v0.16b
-mul x16, x3, x15
-add v22.2d, v22.2d, v2.2d
-adds x5, x5, x2
-adcs x6, x6, x8
-ushr v2.2d, v20.2d, #25
-adcs x7, x7, x9
-and v20.16b, v20.16b, v1.16b
-adcs x21, x21, x16
-adcs x22, x10, x10
-add v21.2d, v21.2d, v2.2d
-umulh x2, x3, x12
-umulh x8, x3, x13
-ushr v2.2d, v19.2d, #26
-umulh x9, x3, x14
-and v19.16b, v19.16b, v0.16b
-umulh x16, x3, x15
-adds x6, x6, x2
-add v20.2d, v20.2d, v2.2d
-adcs x7, x7, x8
-ushr v2.2d, v28.2d, #25
-adcs x21, x21, x9
-adcs x22, x22, x16
-and v28.16b, v28.16b, v1.16b
-ldr x3, [x0, #432]
-shl v3.2d, v2.2d, #4
-mul x2, x3, x12
-mul x8, x3, x13
-add v3.2d, v3.2d, v2.2d
-mul x9, x3, x14
-add v2.2d, v2.2d, v2.2d
-mul x16, x3, x15
-adds x6, x6, x2
-add v2.2d, v3.2d, v2.2d
-adcs x7, x7, x8
-add v19.2d, v19.2d, v2.2d
-adcs x21, x21, x9
-adcs x22, x22, x16
-ushr v2.2d, v27.2d, #26
-adcs x23, x10, x10
-and v27.16b, v27.16b, v0.16b
-umulh x2, x3, x12
-umulh x8, x3, x13
-add v28.2d, v28.2d, v2.2d
-umulh x9, x3, x14
-ushr v2.2d, v26.2d, #25
-umulh x16, x3, x15
-adds x7, x7, x2
-and v26.16b, v26.16b, v1.16b
-adcs x21, x21, x8
-adcs x22, x22, x9
-add v27.2d, v27.2d, v2.2d
-adcs x23, x23, x16
-ushr v2.2d, v25.2d, #26
-ldr x3, [x0, #440]
-mul x2, x3, x12
-and v25.16b, v25.16b, v0.16b
-mul x8, x3, x13
-add v26.2d, v26.2d, v2.2d
-mul x9, x3, x14
-mul x16, x3, x15
-ushr v2.2d, v24.2d, #25
-adds x7, x7, x2
-and v24.16b, v24.16b, v1.16b
-adcs x21, x21, x8
-adcs x22, x22, x9
-add v25.2d, v25.2d, v2.2d
-adcs x23, x23, x16
-ushr v2.2d, v23.2d, #26
-adcs x24, x10, x10
-umulh x2, x3, x12
-and v23.16b, v23.16b, v0.16b
-umulh x8, x3, x13
-add v24.2d, v24.2d, v2.2d
-umulh x9, x3, x14
-umulh x16, x3, x15
-ushr v2.2d, v22.2d, #25
-adds x21, x21, x2
-and v22.16b, v22.16b, v1.16b
-adcs x22, x22, x8
-adcs x23, x23, x9
-add v23.2d, v23.2d, v2.2d
-adcs x24, x24, x16
-ushr v2.2d, v21.2d, #26
-movz w11, #38, lsl #0
-mul x2, x11, x21
-and v21.16b, v21.16b, v0.16b
-adds x4, x4, x2
-add v22.2d, v22.2d, v2.2d
-mul x8, x11, x22
-adcs x5, x5, x8
-ushr v2.2d, v20.2d, #25
-mul x9, x11, x23
-adcs x6, x6, x9
-and v20.16b, v20.16b, v1.16b
-mul x16, x11, x24
-add v21.2d, v21.2d, v2.2d
-adcs x7, x7, x16
-adcs x20, x10, x10
-ushr v2.2d, v19.2d, #26
-umulh x2, x11, x21
-and v19.16b, v19.16b, v0.16b
-umulh x8, x11, x22
-umulh x9, x11, x23
-add v20.2d, v20.2d, v2.2d
-umulh x16, x11, x24
-str q19, [x0, #944]
-adds x7, x7, x9
-adcs x20, x20, x16
-str q20, [x0, #960]
-adds x16, x7, x7
-str q21, [x0, #976]
-adc x9, x20, x20
-lsr x7, x16, #1
-str q22, [x0, #992]
-movz w11, #19, lsl #0
-str q23, [x0, #1008]
-mul x9, x9, x11
-adds x4, x4, x9
-str q24, [x0, #1024]
-adcs x5, x5, x2
-str q25, [x0, #1040]
-adcs x6, x6, x8
-adcs x7, x7, x10
-str q26, [x0, #1056]
-str x4, [x0, #128]
-str q27, [x0, #1072]
-str x5, [x0, #136]
-str x6, [x0, #144]
-str q28, [x0, #1088]
-str x7, [x0, #152]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-ldr x12, [x0, #944]
-ldr x13, [x0, #952]
-add x12, x12, x13
-add x4, x12, #0
-ldr x12, [x0, #960]
-ldr x13, [x0, #968]
-add x12, x12, x13
-lsl x2, x12, #26
-ldr x12, [x0, #976]
-ldr x13, [x0, #984]
-add x12, x12, x13
-lsl x14, x12, #51
-add x4, x4, x14
-lsr x5, x12, #13
-ldr x12, [x0, #992]
-ldr x13, [x0, #1000]
-add x12, x12, x13
-lsl x3, x12, #13
-ldr x12, [x0, #1008]
-ldr x13, [x0, #1016]
-add x12, x12, x13
-lsl x14, x12, #38
-add x5, x5, x14
-lsr x6, x12, #26
-ldr x12, [x0, #1024]
-ldr x13, [x0, #1032]
-add x12, x12, x13
-add x8, x12, #0
-ldr x12, [x0, #1040]
-ldr x13, [x0, #1048]
-add x12, x12, x13
-lsl x14, x12, #25
-add x6, x6, x14
-ldr x12, [x0, #1056]
-ldr x13, [x0, #1064]
-add x12, x12, x13
-lsl x14, x12, #51
-add x8, x8, x14
-lsr x21, x12, #13
-ldr x12, [x0, #1072]
-ldr x13, [x0, #1080]
-add x12, x12, x13
-lsl x7, x12, #12
-ldr x12, [x0, #1088]
-ldr x13, [x0, #1096]
-add x12, x12, x13
-lsl x14, x12, #38
-add x21, x21, x14
-lsr x15, x12, #26
-adds x4, x4, x2
-adcs x5, x5, x3
-adcs x6, x6, x8
-adcs x7, x7, x21
-adcs x20, x15, x10
-mul x8, x20, x11
-adds x4, x4, x8
-adcs x5, x5, x10
-adcs x6, x6, x10
-adcs x7, x7, x10
-csel x8, x11, x10, hs
-add x4, x4, x8
-str x4, [x0, #160]
-str x5, [x0, #168]
-str x6, [x0, #176]
-str x7, [x0, #184]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-movz w9, #65460, lsl #0
-movk w9, #4095, lsl #16
-movz w16, #65532, lsl #0
-movk w16, #4095, lsl #16
-movz w17, #65532, lsl #0
-movk w17, #2047, lsl #16
-ldr x12, [x0, #944]
-ldr x13, [x0, #952]
-add x12, x12, x9
-sub x12, x12, x13
-add x4, x12, #0
-ldr x12, [x0, #960]
-ldr x13, [x0, #968]
-add x12, x12, x17
-sub x12, x12, x13
-lsl x2, x12, #26
-ldr x12, [x0, #976]
-ldr x13, [x0, #984]
-add x12, x12, x16
-sub x12, x12, x13
-lsl x14, x12, #51
-add x4, x4, x14
-lsr x5, x12, #13
-ldr x12, [x0, #992]
-ldr x13, [x0, #1000]
-add x12, x12, x17
-sub x12, x12, x13
-lsl x3, x12, #13
-ldr x12, [x0, #1008]
-ldr x13, [x0, #1016]
-add x12, x12, x16
-sub x12, x12, x13
-lsl x14, x12, #38
-add x5, x5, x14
-lsr x6, x12, #26
-ldr x12, [x0, #1024]
-ldr x13, [x0, #1032]
-add x12, x12, x17
-sub x12, x12, x13
-add x8, x12, #0
-ldr x12, [x0, #1040]
-ldr x13, [x0, #1048]
-add x12, x12, x16
-sub x12, x12, x13
-lsl x14, x12, #25
-add x6, x6, x14
-ldr x12, [x0, #1056]
-ldr x13, [x0, #1064]
-add x12, x12, x17
-sub x12, x12, x13
-lsl x14, x12, #51
-add x8, x8, x14
-lsr x21, x12, #13
-ldr x12, [x0, #1072]
-ldr x13, [x0, #1080]
-add x12, x12, x16
-sub x12, x12, x13
-lsl x7, x12, #12
-ldr x12, [x0, #1088]
-ldr x13, [x0, #1096]
-add x12, x12, x17
-sub x12, x12, x13
-lsl x14, x12, #38
-add x21, x21, x14
-lsr x15, x12, #26
-adds x4, x4, x2
-adcs x5, x5, x3
-adcs x6, x6, x8
-adcs x7, x7, x21
-adcs x20, x15, x10
-mul x8, x20, x11
-adds x4, x4, x8
-adcs x5, x5, x10
-adcs x6, x6, x10
-adcs x7, x7, x10
-csel x8, x11, x10, hs
-add x4, x4, x8
-str x4, [x0, #192]
-str x5, [x0, #200]
-str x6, [x0, #208]
-str x7, [x0, #216]
-movz w10, #0, lsl #0
-ldr x12, [x0, #160]
-ldr x13, [x0, #168]
-ldr x14, [x0, #176]
-ldr x15, [x0, #184]
-mul x5, x12, x13
-mul x6, x12, x14
-mul x7, x12, x15
-umulh x2, x12, x13
-umulh x8, x12, x14
-umulh x9, x12, x15
-adds x6, x6, x2
-adcs x7, x7, x8
-adcs x21, x9, x10
-mul x2, x13, x14
-mul x8, x13, x15
-umulh x9, x13, x14
-umulh x16, x13, x15
-adds x7, x7, x2
-adcs x21, x21, x8
-adcs x22, x16, x10
-adds x21, x21, x9
-adcs x22, x22, x10
-mul x2, x14, x15
-umulh x8, x14, x15
-adds x22, x22, x2
-adcs x23, x8, x10
-adds x5, x5, x5
-adcs x6, x6, x6
-adcs x7, x7, x7
-adcs x21, x21, x21
-adcs x22, x22, x22
-adcs x23, x23, x23
-adcs x24, x10, x10
-mul x4, x12, x12
-umulh x2, x12, x12
-mul x8, x13, x13
-umulh x9, x13, x13
-mul x16, x14, x14
-umulh x17, x14, x14
-mul x3, x15, x15
-umulh x11, x15, x15
-adds x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x9
-adcs x21, x21, x16
-adcs x22, x22, x17
-adcs x23, x23, x3
-adcs x24, x24, x11
-movz w11, #38, lsl #0
-mul x2, x11, x21
-adds x4, x4, x2
-mul x8, x11, x22
-adcs x5, x5, x8
-mul x9, x11, x23
-adcs x6, x6, x9
-mul x16, x11, x24
-adcs x7, x7, x16
-adcs x20, x10, x10
-umulh x2, x11, x21
-umulh x8, x11, x22
-umulh x9, x11, x23
-umulh x16, x11, x24
-adds x7, x7, x9
-adcs x20, x20, x16
-adds x16, x7, x7
-adc x9, x20, x20
-lsr x7, x16, #1
-movz w11, #19, lsl #0
-mul x9, x9, x11
-adds x4, x4, x9
-adcs x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x10
-str x4, [x0, #160]
-str x5, [x0, #168]
-str x6, [x0, #176]
-str x7, [x0, #184]
-movz w10, #0, lsl #0
-ldr x12, [x0, #192]
-ldr x13, [x0, #200]
-ldr x14, [x0, #208]
-ldr x15, [x0, #216]
-mul x5, x12, x13
-mul x6, x12, x14
-mul x7, x12, x15
-umulh x2, x12, x13
-umulh x8, x12, x14
-umulh x9, x12, x15
-adds x6, x6, x2
-adcs x7, x7, x8
-adcs x21, x9, x10
-mul x2, x13, x14
-mul x8, x13, x15
-umulh x9, x13, x14
-umulh x16, x13, x15
-adds x7, x7, x2
-adcs x21, x21, x8
-adcs x22, x16, x10
-adds x21, x21, x9
-adcs x22, x22, x10
-mul x2, x14, x15
-umulh x8, x14, x15
-adds x22, x22, x2
-adcs x23, x8, x10
-adds x5, x5, x5
-adcs x6, x6, x6
-adcs x7, x7, x7
-adcs x21, x21, x21
-adcs x22, x22, x22
-adcs x23, x23, x23
-adcs x24, x10, x10
-mul x4, x12, x12
-umulh x2, x12, x12
-mul x8, x13, x13
-umulh x9, x13, x13
-mul x16, x14, x14
-umulh x17, x14, x14
-mul x3, x15, x15
-umulh x11, x15, x15
-adds x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x9
-adcs x21, x21, x16
-adcs x22, x22, x17
-adcs x23, x23, x3
-adcs x24, x24, x11
-movz w11, #38, lsl #0
-mul x2, x11, x21
-adds x4, x4, x2
-mul x8, x11, x22
-adcs x5, x5, x8
-mul x9, x11, x23
-adcs x6, x6, x9
-mul x16, x11, x24
-adcs x7, x7, x16
-adcs x20, x10, x10
-umulh x2, x11, x21
-umulh x8, x11, x22
-umulh x9, x11, x23
-umulh x16, x11, x24
-adds x7, x7, x9
-adcs x20, x20, x16
-adds x16, x7, x7
-adc x9, x20, x20
-lsr x7, x16, #1
-movz w11, #19, lsl #0
-mul x9, x9, x11
-adds x4, x4, x9
-adcs x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x10
-add x12, x4, #0
-add x13, x5, #0
-add x14, x6, #0
-add x15, x7, #0
-ldr x3, [x0, #64]
-mul x4, x3, x12
-mul x5, x3, x13
-mul x6, x3, x14
-mul x7, x3, x15
-umulh x2, x3, x12
-umulh x8, x3, x13
-umulh x9, x3, x14
-umulh x16, x3, x15
-adds x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x9
-adcs x21, x16, x10
-ldr x3, [x0, #72]
-mul x2, x3, x12
-mul x8, x3, x13
-mul x9, x3, x14
-mul x16, x3, x15
-adds x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x9
-adcs x21, x21, x16
-adcs x22, x10, x10
-umulh x2, x3, x12
-umulh x8, x3, x13
-umulh x9, x3, x14
-umulh x16, x3, x15
-adds x6, x6, x2
-adcs x7, x7, x8
-adcs x21, x21, x9
-adcs x22, x22, x16
-ldr x3, [x0, #80]
-mul x2, x3, x12
-mul x8, x3, x13
-mul x9, x3, x14
-mul x16, x3, x15
-adds x6, x6, x2
-adcs x7, x7, x8
-adcs x21, x21, x9
-adcs x22, x22, x16
-adcs x23, x10, x10
-umulh x2, x3, x12
-umulh x8, x3, x13
-umulh x9, x3, x14
-umulh x16, x3, x15
-adds x7, x7, x2
-adcs x21, x21, x8
-adcs x22, x22, x9
-adcs x23, x23, x16
-ldr x3, [x0, #88]
-mul x2, x3, x12
-mul x8, x3, x13
-mul x9, x3, x14
-mul x16, x3, x15
-adds x7, x7, x2
-adcs x21, x21, x8
-adcs x22, x22, x9
-adcs x23, x23, x16
-adcs x24, x10, x10
-umulh x2, x3, x12
-umulh x8, x3, x13
-umulh x9, x3, x14
-umulh x16, x3, x15
-adds x21, x21, x2
-adcs x22, x22, x8
-adcs x23, x23, x9
-adcs x24, x24, x16
-movz w11, #38, lsl #0
-mul x2, x11, x21
-adds x4, x4, x2
-mul x8, x11, x22
-adcs x5, x5, x8
-mul x9, x11, x23
-adcs x6, x6, x9
-mul x16, x11, x24
-adcs x7, x7, x16
-adcs x20, x10, x10
-umulh x2, x11, x21
-umulh x8, x11, x22
-umulh x9, x11, x23
-umulh x16, x11, x24
-adds x7, x7, x9
-adcs x20, x20, x16
-adds x16, x7, x7
-adc x9, x20, x20
-lsr x7, x16, #1
-movz w11, #19, lsl #0
-mul x9, x9, x11
-adds x4, x4, x9
-adcs x5, x5, x2
-adcs x6, x6, x8
-adcs x7, x7, x10
-str x4, [x0, #192]
-str x5, [x0, #200]
-str x6, [x0, #208]
-str x7, [x0, #216]
+adc x10, x10, x17
+adds x7, x6, x6
+lsr x6, x7, #1
+adc x8, x10, x10
+movz w9, #19, lsl #0
+mul x7, x8, x9
+adds x3, x3, x7
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #128]
+stp x5, x6, [x0, #144]
+add x1, x20, #0
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #112]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #96]
+stp x14, x15, [x0, #112]
+ldp x3, x4, [x0, #192]
+ldp x7, x8, [x0, #64]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #80]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #208]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #192]
+stp x14, x15, [x0, #208]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #128]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #144]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #304]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #128]
+stp x14, x15, [x0, #144]
 cbnz x19, 20b
 ldr x3, [x0, #768]
 movz x10, #0, lsl #0
@@ -4826,14 +4442,6 @@ str x13, [x0, #552]
 str x8, [x0, #560]
 str x9, [x0, #568]
 add x1, x20, #0
-ldr q8, [x0, #1152]
-ldr q9, [x0, #1168]
-ldr q10, [x0, #1184]
-ldr q11, [x0, #1200]
-ldr q12, [x0, #1216]
-ldr q13, [x0, #1232]
-ldr q14, [x0, #1248]
-ldr q15, [x0, #1264]
 movz w10, #0, lsl #0
 ldr x12, [x0, #544]
 ldr x13, [x0, #552]
