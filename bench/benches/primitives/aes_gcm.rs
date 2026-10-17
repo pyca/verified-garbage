@@ -68,11 +68,21 @@ pub fn bench(c: &mut Criterion) {
 
         let mut g = c.benchmark_group("aes-128-gcm-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
+        // Measurement only: the text 64-byte aligned.
+        let mut store = vec![0u8; size + 128];
+        let off = store.as_ptr().align_offset(64);
+        let mut printed = false;
         g.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 let k = AesGcm::new(black_box(&key)).unwrap();
-                k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
-                    .unwrap()
+                let abuf = &mut store[off..off + size];
+                if !printed {
+                    printed = true;
+                    let [p, n, a] = k.bench_layout();
+                    eprintln!("LAYOUT encrypt/{size}: buf%128={} ctx%128={} size={n} align={a}",
+                        abuf.as_ptr() as usize % 128, p % 128);
+                }
+                k.encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(abuf)).unwrap()
             })
         });
         let mut t = [0u8; 16];
@@ -225,12 +235,19 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
+        let mut dprinted = false;
         let mut g = c.benchmark_group("aes-128-gcm-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
         g.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 let k = AesGcm::new(black_box(&key)).unwrap();
+                if !dprinted {
+                    dprinted = true;
+                    let [p, n, a] = k.bench_layout();
+                    eprintln!("LAYOUT decrypt/{size}: buf%128={} ctx%128={} size={n} align={a}",
+                        buf.as_ptr() as usize % 128, p % 128);
+                }
                 k.decrypt_in_place(
                     black_box(&nonce),
                     black_box(&aad),
