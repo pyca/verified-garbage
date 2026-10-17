@@ -12,14 +12,21 @@
 use super::{BrainpoolP256r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key;
 use crate::arch::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify;
+#[cfg(target_arch = "x86")]
+use crate::arch::ecdsa_brainpoolp256r1_rfc6979::{
+    vg_ecdsa_brainpoolp256r1_rfc6979_sign, vg_ecdsa_brainpoolp256r1_rfc6979_sign_hash_shani,
+};
+#[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign_avx2;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp256r1_sha256::vg_ecdsa_brainpoolp256r1_sha256_sign_shani;
-use crate::hashes::sha256::{Sha256, Sha256Backend};
+use crate::hashes::sha256::Sha256;
+#[cfg(not(target_arch = "x86"))]
+use crate::hashes::sha256::Sha256Backend;
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP256r1> {
@@ -48,12 +55,23 @@ impl SigningKey<BrainpoolP256r1> {
 }
 
 impl sealed::Functions<BrainpoolP256r1> for Sha256 {
+    #[cfg(target_arch = "x86")]
+    fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha256, 32, 64>(
+            vg_ecdsa_brainpoolp256r1_rfc6979_sign,
+            vg_ecdsa_brainpoolp256r1_rfc6979_sign_hash_shani,
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "x86"))]
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let sign = match Sha256Backend::select(crate::cpu::detected()) {
             Sha256Backend::Scalar => vg_ecdsa_brainpoolp256r1_sha256_sign,
             #[cfg(target_arch = "aarch64")]
             Sha256Backend::Sha2 => vg_ecdsa_brainpoolp256r1_sha256_sign_sha2,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            #[cfg(target_arch = "x86_64")]
             Sha256Backend::ShaNi => vg_ecdsa_brainpoolp256r1_sha256_sign_shani,
             #[cfg(target_arch = "x86_64")]
             Sha256Backend::Avx2 => vg_ecdsa_brainpoolp256r1_sha256_sign_avx2,

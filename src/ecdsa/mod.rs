@@ -50,6 +50,7 @@ mod p224;
 mod p256;
 mod p384;
 mod p521;
+mod rfc6979;
 mod secp256k1;
 
 pub use crate::ec::{

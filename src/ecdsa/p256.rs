@@ -15,16 +15,22 @@ use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_adx;
+#[cfg(target_arch = "x86")]
+use crate::arch::ecdsa_p256_rfc6979::{
+    vg_ecdsa_p256_rfc6979_sign, vg_ecdsa_p256_rfc6979_sign_hash_shani,
+};
+#[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha256::{
     vg_ecdsa_p256_sha256_sign_adx, vg_ecdsa_p256_sha256_sign_avx2,
     vg_ecdsa_p256_sha256_sign_avx2_adx, vg_ecdsa_p256_sha256_sign_shani_adx,
 };
+#[cfg(not(target_arch = "x86"))]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
@@ -36,8 +42,13 @@ use crate::arch::ecdsa_p256_sha384::{
 };
 use crate::cpu::detected;
 use crate::ec::p256::{Mul, public_key};
-use crate::hashes::sha256::{Sha256, Sha256Backend};
-use crate::hashes::sha384::{Sha384, Sha384Backend};
+use crate::hashes::sha256::Sha256;
+#[cfg(not(target_arch = "x86"))]
+use crate::hashes::sha256::Sha256Backend;
+use crate::hashes::sha384::Sha384;
+#[cfg(not(target_arch = "x86"))]
+use crate::hashes::sha384::Sha384Backend;
+#[cfg(not(target_arch = "x86"))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P256> {
@@ -61,7 +72,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u64; 1024],
 ) -> u32;
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 
@@ -70,6 +81,7 @@ type SignFn<const N: usize> =
 /// # Safety
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
+#[cfg(not(target_arch = "x86"))]
 unsafe fn sign_with<const N: usize>(
     sign: SignFn<N>,
     d: &[u8; 32],
@@ -119,13 +131,24 @@ fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), E
 }
 
 impl sealed::Functions<P256> for Sha256 {
+    #[cfg(target_arch = "x86")]
+    fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha256, 32, 64>(
+            vg_ecdsa_p256_rfc6979_sign,
+            vg_ecdsa_p256_rfc6979_sign_hash_shani,
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "x86"))]
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign = match (Sha256Backend::select(f), Mul::select(f)) {
             (Sha256Backend::Scalar, Mul::Baseline) => vg_ecdsa_p256_sha256_sign,
             #[cfg(target_arch = "aarch64")]
             (Sha256Backend::Sha2, Mul::Baseline) => vg_ecdsa_p256_sha256_sign_sha2,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            #[cfg(target_arch = "x86_64")]
             (Sha256Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p256_sha256_sign_shani,
             #[cfg(target_arch = "x86_64")]
             (Sha256Backend::Avx2, Mul::Baseline) => vg_ecdsa_p256_sha256_sign_avx2,
@@ -149,6 +172,17 @@ impl sealed::Functions<P256> for Sha256 {
 impl SignatureHash<P256> for Sha256 {}
 
 impl sealed::Functions<P256> for Sha384 {
+    #[cfg(target_arch = "x86")]
+    fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha384, 32, 64>(
+            vg_ecdsa_p256_rfc6979_sign,
+            vg_ecdsa_p256_rfc6979_sign_hash_shani,
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "x86"))]
     fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign = match (Sha384Backend::select(f), Mul::select(f)) {

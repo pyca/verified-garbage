@@ -10,7 +10,7 @@
 //! matches (one with SHA-512's but not SHA-256's faster code, which no CPU
 //! is) gets the fastest tier it can run.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 // The functions that take the hash function as an argument use it.
 #![cfg_attr(not(test), allow(dead_code))]
 
@@ -29,7 +29,7 @@ pub(crate) enum Tier {
     Avx2,
     /// SHA-1's and SHA-256's with the SHA extensions, SHA-512's in scalar
     /// code (`_shani`).
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     ShaNi,
     /// SHA-1's and SHA-256's with the SHA extensions, SHA-512's with AVX2
     /// (`_shani_avx2`).
@@ -67,6 +67,11 @@ impl Tier {
             (Sha1Backend::ShaNi, Sha256Backend::ShaNi, Sha512Backend::Avx2) => Self::ShaNiAvx2,
             (Sha1Backend::ShaNi, Sha256Backend::ShaNi, _) => Self::ShaNi,
             (_, Sha256Backend::Avx2, Sha512Backend::Avx2 | Sha512Backend::ShaNi) => Self::Avx2,
+            _ => Self::Base,
+        };
+        #[cfg(target_arch = "x86")]
+        return match (sha1, sha256, sha512) {
+            (Sha1Backend::ShaNi, Sha256Backend::ShaNi, Sha512Backend::Scalar) => Self::ShaNi,
             _ => Self::Base,
         };
         #[cfg(target_arch = "aarch64")]
@@ -111,6 +116,22 @@ mod tests {
             (A::Scalar, B::Scalar, C::Scalar, Tier::Base),
         ] {
             assert_eq!(Tier::of(a, b, c), t);
+        }
+    }
+
+    #[cfg(target_arch = "x86")]
+    #[test]
+    fn of() {
+        use Sha1Backend as A;
+        use Sha256Backend as B;
+        use Sha512Backend as C;
+        for (a, b, t) in [
+            (A::ShaNi, B::ShaNi, Tier::ShaNi),
+            (A::Scalar, B::ShaNi, Tier::Base),
+            (A::ShaNi, B::Scalar, Tier::Base),
+            (A::Scalar, B::Scalar, Tier::Base),
+        ] {
+            assert_eq!(Tier::of(a, b, C::Scalar), t);
         }
     }
 
