@@ -951,12 +951,14 @@ variable (b ix sc) in
 def footprints : Footprints isa where
   Fp := Fp
   fp := fp b ix sc
+  Inv _ := True
+  preserves _ _ _ _ _ := trivial
   empty := .empty
   union := Fp.union
   indep := Fp.indep (baseMask b ix)
   indep_union_left := indep_union_left
   indep_union_right := indep_union_right
-  comm hx hy h s := exec_comm hx hy (Indep.of h) s
+  comm hx hy h s _ := exec_comm hx hy (Indep.of h) s
 
 end
 

@@ -34,11 +34,13 @@ theorem indep_union_right {xb : Reg} {A B C : Fp} (h : A.indep xb (B.union C) = 
 def footprints (xb : Reg) : VG.Interleave.Footprints isa where
   Fp := Fp
   fp := fp xb
+  Inv _ := True
+  preserves _ _ _ _ _ := trivial
   empty := .empty
   union := Fp.union
   indep := Fp.indep xb
   indep_union_left := indep_union_left
   indep_union_right := indep_union_right
-  comm hx hy h s := exec_comm hx hy (Indep.of h) s
+  comm hx hy h s _ := exec_comm hx hy (Indep.of h) s
 
 end VG.AArch64.Interleave

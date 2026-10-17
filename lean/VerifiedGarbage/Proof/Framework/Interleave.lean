@@ -7,10 +7,14 @@ public import VerifiedGarbage.Impl.Weave
 # Interleaving independent code, for any ISA
 
 Untrusted: everything here is checked by Lean. Two instructions *commute*
-(`Commute`) when running them in either order faults alike or ends in the
-same state. Any interleaving (`Merge`) of two blocks whose instructions
-commute pairwise runs as the first block and then the second (`run_merge`,
-`WP.merge`, `WP.weave`).
+from the states of `P` (`CommuteOn`) when running them in either order from
+such a state faults alike or ends in the same state. Any interleaving
+(`Merge`) of two blocks whose instructions keep `P` and commute pairwise
+from its states runs, from a state of `P`, as the first block and then the
+second (`run_merge`, `WP.merge`, `WP.weave`). `P` is what commuting needs of
+the state beyond the instructions themselves: for code reading and writing
+at several base registers, that their regions are disjoint; nothing
+(`fun _ => True`) for code at one base.
 
 An ISA shows instructions commute through their *footprints*
 (`Footprints`): what each instruction of a class may read and write, as
@@ -67,16 +71,39 @@ theorem weave_merge {α : Type} (a b : List α) : Merge (VG.Impl.Weave.weave a b
 
 /-! ## Commuting instructions -/
 
-/-- Running `x` then `y` faults alike, or ends in the same state, as `y` then `x`. -/
-def Commute (M : ISA) (x y : M.Instr) : Prop :=
-  ∀ s, (M.exec x s).bind (M.exec y) = (M.exec y s).bind (M.exec x)
+/-- Running `x` then `y` from a state of `P` faults alike, or ends in the
+same state, as `y` then `x`. -/
+def CommuteOn (M : ISA) (P : M.State → Prop) (x y : M.Instr) : Prop :=
+  ∀ s, P s → (M.exec x s).bind (M.exec y) = (M.exec y s).bind (M.exec x)
 
-theorem Commute.symm {x y : M.Instr} (h : Commute M x y) : Commute M y x := fun s => (h s).symm
+theorem CommuteOn.symm {P : M.State → Prop} {x y : M.Instr} (h : CommuteOn M P x y) : CommuteOn M P y x :=
+  fun s hs => (h s hs).symm
 
-/-- Every instruction of `a` commutes with every instruction of `b`. -/
-def Indeps (M : ISA) (a b : List M.Instr) : Prop := ∀ x ∈ a, ∀ y ∈ b, Commute M x y
+/-- `x` keeps `P`. -/
+def Preserves (M : ISA) (P : M.State → Prop) (x : M.Instr) : Prop :=
+  ∀ s s', P s → M.exec x s = some s' → P s'
 
-theorem comm_block {y : M.Instr} {a : List M.Instr} (ha : ∀ x ∈ a, Commute M x y) (s : M.State) :
+/-- The instructions of `a` and `b` keep `P`, and from its states every
+instruction of `a` commutes with every instruction of `b`. `P` is what
+commuting needs of the state beyond the instructions (e.g. that regions
+at different base registers are disjoint); `fun _ => True` when nothing. -/
+structure Indeps (M : ISA) (P : M.State → Prop) (a b : List M.Instr) : Prop where
+  left : ∀ x ∈ a, Preserves M P x
+  right : ∀ y ∈ b, Preserves M P y
+  comm : ∀ x ∈ a, ∀ y ∈ b, CommuteOn M P x y
+
+theorem runBlock_preserves {P : M.State → Prop} {a : List M.Instr} (ha : ∀ x ∈ a, Preserves M P x) :
+    ∀ {s s' : M.State}, P s → runBlock M a s = some s' → P s' := by
+  induction a with
+  | nil => intro s s' hs h; cases h; exact hs
+  | cons x a ih =>
+    intro s s' hs h
+    simp only [runBlock, Option.bind_eq_some_iff] at h
+    obtain ⟨u, hu, h⟩ := h
+    exact ih (fun x' hx' => ha x' (List.mem_cons_of_mem _ hx')) (ha x List.mem_cons_self s u hs hu) h
+
+theorem comm_block {P : M.State → Prop} {y : M.Instr} {a : List M.Instr}
+    (ha : ∀ x ∈ a, Preserves M P x ∧ CommuteOn M P x y) {s : M.State} (hs : P s) :
     (M.exec y s).bind (runBlock M a) = (runBlock M a s).bind (M.exec y) := by
   induction a generalizing s with
   | nil =>
@@ -85,10 +112,12 @@ theorem comm_block {y : M.Instr} {a : List M.Instr} (ha : ∀ x ∈ a, Commute M
   | cons x a ih =>
     show (M.exec y s).bind (fun u => (M.exec x u).bind (runBlock M a)) =
       ((M.exec x s).bind (runBlock M a)).bind (M.exec y)
-    rw [← Option.bind_assoc, ((ha x List.mem_cons_self).symm s), Option.bind_assoc, Option.bind_assoc]
-    congr 1
-    funext u
-    exact ih (fun x' hx' => ha x' (List.mem_cons_of_mem _ hx')) u
+    rw [← Option.bind_assoc, ← (ha x List.mem_cons_self).2 s hs, Option.bind_assoc, Option.bind_assoc]
+    cases hx : M.exec x s with
+    | none => rfl
+    | some u =>
+      exact ih (fun x' hx' => ha x' (List.mem_cons_of_mem _ hx'))
+        ((ha x List.mem_cons_self).1 s u hs hx)
 
 theorem runBlock_append (a b : List M.Instr) (s : M.State) :
     runBlock M (a ++ b) s = (runBlock M a s).bind (runBlock M b) := by
@@ -101,24 +130,32 @@ theorem runBlock_append (a b : List M.Instr) (s : M.State) :
     funext u
     exact ih u
 
-/-- An interleaving of blocks whose instructions commute runs as the first and then the second. -/
-theorem run_merge {c a b : List M.Instr} (hm : Merge c a b) (hind : Indeps M a b) (s : M.State) :
-    runBlock M c s = runBlock M (a ++ b) s := by
+/-- An interleaving of blocks whose instructions commute runs, from a state of
+`P`, as the first and then the second. -/
+theorem run_merge {P : M.State → Prop} {c a b : List M.Instr} (hm : Merge c a b) (hind : Indeps M P a b)
+    {s : M.State} (hs : P s) : runBlock M c s = runBlock M (a ++ b) s := by
   induction hm generalizing s with
   | nil => rfl
   | @left x c a b _ ih =>
     show (M.exec x s).bind (runBlock M c) = (M.exec x s).bind (runBlock M (a ++ b))
-    congr 1
-    funext u
-    exact ih (fun x' hx' y hy => hind x' (List.mem_cons_of_mem _ hx') y hy) u
+    cases hx : M.exec x s with
+    | none => rfl
+    | some u =>
+      exact ih ⟨fun x' hx' => hind.left x' (List.mem_cons_of_mem _ hx'), hind.right,
+        fun x' hx' y hy => hind.comm x' (List.mem_cons_of_mem _ hx') y hy⟩
+        (hind.left x List.mem_cons_self s u hs hx)
   | @right y c a b _ ih =>
     show (M.exec y s).bind (runBlock M c) = runBlock M (a ++ y :: b) s
-    have ih' : runBlock M c = runBlock M (a ++ b) :=
-      funext (ih (fun x hx y' hy' => hind x hx y' (List.mem_cons_of_mem _ hy')))
+    have hind' : Indeps M P a b := ⟨hind.left, fun y' hy' => hind.right y' (List.mem_cons_of_mem _ hy'),
+      fun x hx y' hy' => hind.comm x hx y' (List.mem_cons_of_mem _ hy')⟩
+    have e : (M.exec y s).bind (runBlock M c) = (M.exec y s).bind (runBlock M (a ++ b)) := by
+      cases hy : M.exec y s with
+      | none => rfl
+      | some u => exact ih hind' (hind.right y List.mem_cons_self s u hs hy)
     have ap : runBlock M (a ++ b) = fun u => (runBlock M a u).bind (runBlock M b) :=
       funext (runBlock_append a b)
-    rw [ih', ap, runBlock_append, ← Option.bind_assoc,
-      comm_block (fun x hx => hind x hx y List.mem_cons_self) s, Option.bind_assoc]
+    rw [e, ap, runBlock_append, ← Option.bind_assoc,
+      comm_block (fun x hx => ⟨hind.left x hx, hind.comm x hx y List.mem_cons_self⟩) hs, Option.bind_assoc]
     rfl
 
 theorem runBlock_of_WP {is : List M.Instr} {s : M.State} {Q : M.State → Prop} (h : WP M (.block is) s Q) :
@@ -131,33 +168,38 @@ theorem runBlock_of_WP {is : List M.Instr} {s : M.State} {Q : M.State → Prop} 
     exact ⟨s', by show (M.exec i s).bind (runBlock M is) = _; rw [h₁]; exact h', hq⟩
 
 /-- An interleaving of independent blocks runs as the first block and then the second. -/
-theorem WP.merge {c a b : List M.Instr} (hm : Merge c a b) (hind : Indeps M a b) {s : M.State}
-    {Q : M.State → Prop} (h : WP M (.block (a ++ b)) s Q) : WP M (.block c) s Q := by
+theorem WP.merge {P : M.State → Prop} {c a b : List M.Instr} (hm : Merge c a b) (hind : Indeps M P a b)
+    {s : M.State} (hs : P s) {Q : M.State → Prop} (h : WP M (.block (a ++ b)) s Q) : WP M (.block c) s Q := by
   obtain ⟨s', h', hq⟩ := runBlock_of_WP h
-  exact WP.of_runBlock ⟨s', by rw [run_merge hm hind]; exact h', hq⟩
+  exact WP.of_runBlock ⟨s', by rw [run_merge hm hind hs]; exact h', hq⟩
 
 /-- Independent blocks, woven (`Impl.Weave.weave`), run as the first and then the second. -/
-theorem WP.weave {a b : List M.Instr} (hind : Indeps M a b) {s : M.State}
+theorem WP.weave {P : M.State → Prop} {a b : List M.Instr} (hind : Indeps M P a b) {s : M.State} (hs : P s)
     {Q : M.State → Prop} (h : WP M (.block a) s fun t => WP M (.block b) t Q) :
     WP M (.block (VG.Impl.Weave.weave a b)) s Q :=
-  WP.merge (weave_merge a b) hind (WP.block_append_iff.mpr h)
+  WP.merge (weave_merge a b) hind hs (WP.block_append_iff.mpr h)
 
 /-! ## Footprints -/
 
 /-- What the instructions of a class may read and write (`fp`, `none` outside
 the class), as data whose independence (`indep`) is checked by evaluation:
-instructions with independent footprints commute (`comm`). `indep` of a
+instructions with independent footprints commute (`comm`) from the states
+of `Inv`, which the class's instructions keep (`preserves`). `indep` of a
 union implies it of each part, so it is checked once on the union of each
 block's footprints. -/
 structure Footprints (M : ISA) where
   Fp : Type
   fp : M.Instr → Option Fp
+  /-- What commuting needs of the state, e.g. that regions at different
+  bases are disjoint; `fun _ => True` when nothing. -/
+  Inv : M.State → Prop
+  preserves : ∀ {x : M.Instr} {F : Fp}, fp x = some F → Preserves M Inv x
   empty : Fp
   union : Fp → Fp → Fp
   indep : Fp → Fp → Bool
   indep_union_left : ∀ {A B C : Fp}, indep (union A B) C = true → indep A C = true ∧ indep B C = true
   indep_union_right : ∀ {A B C : Fp}, indep A (union B C) = true → indep A B = true ∧ indep A C = true
-  comm : ∀ {x y : M.Instr} {F G : Fp}, fp x = some F → fp y = some G → indep F G = true → Commute M x y
+  comm : ∀ {x y : M.Instr} {F G : Fp}, fp x = some F → fp y = some G → indep F G = true → CommuteOn M Inv x y
 
 namespace Footprints
 
@@ -170,8 +212,20 @@ def blockFp : List M.Instr → Option P.Fp
 
 variable {P}
 
+theorem preserves_of {a : List M.Instr} {A : P.Fp} (ha : P.blockFp a = some A) :
+    ∀ x ∈ a, Preserves M P.Inv x := by
+  induction a generalizing A with
+  | nil => intro x hx; cases hx
+  | cons z a ih =>
+    simp only [blockFp, Option.bind_eq_some_iff, Option.map_eq_some_iff] at ha
+    obtain ⟨F, hz, A', ha', rfl⟩ := ha
+    intro x hx
+    rcases List.mem_cons.mp hx with rfl | hx
+    · exact P.preserves hz
+    · exact ih ha' x hx
+
 theorem indeps_right {x : M.Instr} {F : P.Fp} (hx : P.fp x = some F) {b : List M.Instr} {B : P.Fp}
-    (hb : P.blockFp b = some B) (hi : P.indep F B = true) : ∀ y ∈ b, Commute M x y := by
+    (hb : P.blockFp b = some B) (hi : P.indep F B = true) : ∀ y ∈ b, CommuteOn M P.Inv x y := by
   induction b generalizing B with
   | nil => intro y hy; cases hy
   | cons z b ih =>
@@ -184,7 +238,8 @@ theorem indeps_right {x : M.Instr} {F : P.Fp} (hx : P.fp x = some F) {b : List M
     · exact ih hb' hB' y hy
 
 theorem indeps_of {a b : List M.Instr} {A B : P.Fp} (ha : P.blockFp a = some A) (hb : P.blockFp b = some B)
-    (hi : P.indep A B = true) : Indeps M a b := by
+    (hi : P.indep A B = true) : Indeps M P.Inv a b := by
+  refine ⟨preserves_of ha, preserves_of hb, ?_⟩
   induction a generalizing A with
   | nil => intro x hx; cases hx
   | cons z a ih =>
@@ -199,7 +254,7 @@ theorem indeps_of {a b : List M.Instr} {A B : P.Fp} (ha : P.blockFp a = some A) 
 /-- Independence by evaluating both blocks' footprints. -/
 theorem indeps_of_check {a b : List M.Instr}
     (h : ((P.blockFp a).bind fun A => (P.blockFp b).map fun B => P.indep A B) = some true) :
-    Indeps M a b := by
+    Indeps M P.Inv a b := by
   cases ha : P.blockFp a with
   | none => rw [ha] at h; cases h
   | some A =>
