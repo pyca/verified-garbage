@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+public import VerifiedGarbage.Impl.MlKem.X86_64.SampleH
 
 /-!
 # ML-KEM on x86-64: the pieces of the top-level functions
@@ -347,13 +347,20 @@ structure Callee4 where
   prfs : Nat → Nat → Nat → Nat → Prog isa
   /-- The polynomial arithmetic that goes with it. -/
   arith : Arith
+  /-- The fragment encapsulation inlines to sample three entries of the
+  matrix while absorbing three blocks of `ek` into `H`'s sponge
+  (`Sample4.sampleH`), if the implementation has one. -/
+  batchH : Option (Prog isa)
 
-def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse⟩
-def Callee4.avx2 : Callee4 := ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, (fun n k o w => prfsAvx2 n k o w), .avx2⟩
+def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none⟩
+def Callee4.avx2 : Callee4 :=
+  ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, (fun n k o w => prfsAvx2 n k o w), .avx2,
+    some Sample4.sampleH⟩
 
 /-- Four-way sampling with AVX-512VL quadword rotates. -/
 def Callee4.avx512 : Callee4 :=
-  ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, (fun n k o w => prfsAvx2 n k o w true), .avx2⟩
+  ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, (fun n k o w => prfsAvx2 n k o w true), .avx2,
+    some (Sample4.sampleH true)⟩
 
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
 `a`, with the working space `scr` (8192 bytes), and `r15 ← r15 ∧ result`. -/
