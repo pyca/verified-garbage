@@ -5,6 +5,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-!
 # P-384's inversions modulo `p` and `n` on AArch64
@@ -32,7 +33,7 @@ def note (mod : String) : String :=
   word-by-word Montgomery multiplication with `mul` and `umulh`, its temporary area at bytes \
   4048 to 4095; nothing depends on the numbers but through masks and `csel`."
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   C.invPApi.artifact AArch64.target {
     notes := [note "p"]
     code := p384.invFn p384.pPowI
