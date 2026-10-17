@@ -2,21 +2,23 @@
 //! Verified `blowfish_cbc` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Blowfish-CBC encryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`. No padding is added.
+/// Blowfish-CBC encryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Blowfish.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Blowfish.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline AArch64: sixteen blocks at a time, through the batch of `vg_blowfish_ecb_encrypt` and `vg_blowfish_ecb_decrypt` (inlined): each S-box lookup is `tbl`/`tbx` over the whole box in AdvSIMD registers, so no address depends on the key or the data; the schedule is read where it is. Decryption deciphers sixteen blocks per batch; encryption, which is sequential, one. The mode is the generic CBC of `Impl/Modes/AArch64/`.
+///
+/// The IV's address is kept in `x25`, which the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #224
 add x4, sp, #0
@@ -31,6 +33,7 @@ str x25, [x5, #176]
 str x26, [x5, #184]
 str x27, [x5, #192]
 str x28, [x5, #200]
+add x25, x1, #0
 cbz x3, 20f
 ldr x6, [x2, #0]
 ldr x7, [x1, #0]
@@ -944,6 +947,8 @@ b 27f
 27:
 add x23, x23, #8
 cbnz x24, 24b
+ldr x6, [x5, #0]
+str x6, [x25, #0]
 b 23f
 22:
 23:
@@ -993,21 +998,23 @@ ret
     )
 }
 
-/// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
+/// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Blowfish.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Blowfish.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline AArch64: sixteen blocks at a time, through the batch of `vg_blowfish_ecb_encrypt` and `vg_blowfish_ecb_decrypt` (inlined): each S-box lookup is `tbl`/`tbx` over the whole box in AdvSIMD registers, so no address depends on the key or the data; the schedule is read where it is. Decryption deciphers sixteen blocks per batch; encryption, which is sequential, one. The mode is the generic CBC of `Impl/Modes/AArch64/`.
+///
+/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #224
 add x4, sp, #0
@@ -1024,28 +1031,37 @@ str x27, [x5, #192]
 str x28, [x5, #200]
 ldr x6, [x1, #0]
 str x6, [x5, #208]
+cbz x3, 20f
+sub x7, x3, #1
+lsl x7, x7, #3
+add x7, x7, x2
+ldr x6, [x7, #0]
+str x6, [x1, #0]
+b 21f
+20:
+21:
 add x23, x2, #0
 add x24, x3, #0
-cbz x24, 20f
-22:
-lsr x13, x24, #4
-cbnz x13, 23f
-add x16, x24, #0
-b 24f
-23:
-movz x16, #16, lsl #0
+cbz x24, 22f
 24:
+lsr x13, x24, #4
+cbnz x13, 25f
+add x16, x24, #0
+b 26f
+25:
+movz x16, #16, lsl #0
+26:
 add x14, x5, #0
 add x14, x14, #0
 add x15, x23, #0
 add x17, x16, #0
-25:
+27:
 ldr x8, [x15, #0]
 str x8, [x14, #0]
 add x14, x14, #8
 add x15, x15, #8
 sub x17, x17, #1
-cbnz x17, 25b
+cbnz x17, 27b
 umov x8, v8.d[0]
 umov x9, v9.d[0]
 umov x10, v10.d[0]
@@ -1086,7 +1102,7 @@ uzp1 v7.4s, v20.4s, v21.4s
 uzp2 v11.4s, v20.4s, v21.4s
 add x5, x0, #68
 movz x7, #8, lsl #0
-26:
+28:
 ldr w6, [x5, #4096]
 dup v0.4s, w6
 eor v4.16b, v4.16b, v0.16b
@@ -1886,7 +1902,7 @@ eor v6.16b, v6.16b, v14.16b
 eor v7.16b, v7.16b, v15.16b
 sub x5, x5, #4
 sub x7, x7, #1
-cbnz x7, 26b
+cbnz x7, 28b
 ldr w6, [x0, #4100]
 dup v0.4s, w6
 eor v4.16b, v4.16b, v0.16b
@@ -1933,17 +1949,17 @@ dup v14.2d, x14
 dup v15.2d, x15
 add x5, x16, #0
 lsr x13, x24, #4
-cbnz x13, 27f
+cbnz x13, 29f
 add x16, x24, #0
-b 28f
-27:
+b 210f
+29:
 movz x16, #16, lsl #0
-28:
+210:
 add x14, x5, #0
 add x14, x14, #0
 add x15, x23, #0
 add x17, x16, #0
-29:
+211:
 ldr x8, [x14, #0]
 ldr x9, [x5, #208]
 eor x8, x8, x9
@@ -1955,13 +1971,13 @@ str x8, [x15, #0]
 add x14, x14, #8
 add x15, x15, #8
 sub x17, x17, #1
-cbnz x17, 29b
+cbnz x17, 211b
 add x23, x15, #0
 sub x24, x24, x16
-cbnz x24, 22b
-b 21f
-20:
-21:
+cbnz x24, 24b
+b 23f
+22:
+23:
 ldr x19, [x5, #128]
 ldr x20, [x5, #136]
 ldr x21, [x5, #144]

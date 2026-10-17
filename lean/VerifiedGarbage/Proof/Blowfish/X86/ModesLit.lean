@@ -23,8 +23,8 @@ than build the code again.
 
 namespace VG.Proof.Blowfish.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Blowfish.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Blowfish.X86.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Blowfish.X86.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Blowfish.X86.cbcDecryptChained
 materialize_flat_code ofbCode := Impl.Blowfish.X86.ofb
 materialize_flat_code cfbEncryptCode := Impl.Blowfish.X86.cfbEncrypt
 materialize_flat_code cfbDecryptCode := Impl.Blowfish.X86.cfbDecrypt

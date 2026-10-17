@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Blowfish.Arm
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Impl.Modes.Arm.CbcChained
 public import VerifiedGarbage.Spec.Blowfish.Contract
 
 /-!
@@ -31,11 +31,11 @@ def ecbCore (up : Bool) : Core where
   code := ecbCode up
   bw := 2
 
-/-- `vg_blowfish_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (ecbCore true).seq cbcEnc
+/-- `vg_blowfish_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (ecbCore true).seq cbcEncChained
 
-/-- `vg_blowfish_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (ecbCore false).seq cbcDec
+/-- `vg_blowfish_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (ecbCore false).seq cbcDecChained
 
 /-- `vg_blowfish_ofb`. -/
 def ofb : Prog isa := (ecbCore true).seq Modes.Arm.ofb
