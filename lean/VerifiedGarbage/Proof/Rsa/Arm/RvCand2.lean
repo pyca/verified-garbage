@@ -77,7 +77,7 @@ abbrev Mg (P : RP) (E : State → Prop) (j i : Nat) : State → State → Prop :
 /-- The bit `i` of `r` and the multiplicand. -/
 theorem expA_vp {E : State → Prop} {j i : Nat} {R : Prog isa} {G : State → State → Prop}
     (hR : VP (Ms P E j i) R G) :
-    VP (Xs P E j i) (.seq (.block (ctxW ++ bitOf sBit wRc ++ [.mov .r11 (.imm 0)]))
+    VP (Xs P E j i) (.seq (.block (ctxW ++ bitOf sBit wRc ++ ([.mov .r11 (.imm 0)] : List Instr)))
       (.seq (half wRc) (.seq (.block ctxw) (.seq (sel mXm aO mG sBit) R)))) G := by
   rw [expHead_eq]
   refine VP.seq (VP.block_append St.pctxW (St.pexpTail (by decide))) ?_

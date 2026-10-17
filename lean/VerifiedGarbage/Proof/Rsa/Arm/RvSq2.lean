@@ -104,7 +104,7 @@ theorem sqM_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (hcl : P.c < 2 ^ 31) {E : State �
   · exact fun x hx => ⟨hx, rfl⟩
   · exact fun x hx => ⟨hx, rfl⟩
   · intro d hd
-    refine ⟨by simp only [List.mem_cons] at hd ⊢; tauto, ?_⟩
+    refine ⟨by simp only [List.mem_cons] at hd ⊢; grind, ?_⟩
     simp only [LSq, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · simp only [upd_self, liveB]

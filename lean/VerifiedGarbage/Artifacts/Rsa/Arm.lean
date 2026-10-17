@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CkVerified
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on ARMv7 -/
@@ -90,6 +91,21 @@ def artifacts : List Artifact := [
         under masks."]
     code := Impl.Rsa.Arm.CheckCrtKey.code
     stack := 0
-    verified := Proof.Rsa.Arm.CheckCrtKey.check_crt_key_verified }]
+    verified := Proof.Rsa.Arm.CheckCrtKey.check_crt_key_verified },
+  Spec.Rsa.recoverPrimesApi.artifact Arm.target {
+    notes := ["Baseline ARMv7: `n` is checked first. The numbers are read into 32-bit limbs; \
+        `M = d e` by binary multiplication over the bits of `e`, at twice the width of `n`, and \
+        `M - 1 = 2^t r` by a fixed number (`8 (d_len + e_len)`) of halvings, each selected under \
+        a mask. For the candidates `g = 2, 3, …` (at most 100; how many are tried is the one \
+        branch on the key, which the contract lets leak), `g^r` by Montgomery multiplication \
+        (`vg_rsa_public_checked`'s, at the width of `n`) over the same fixed number of bits, \
+        the multiplicand chosen under a mask, then as many squarings, each kept under masks \
+        until a square root of 1 other than ±1 is found. `p = gcd(y - 1, n)` by a binary \
+        extended Euclidean algorithm of a fixed number of steps and `q = n / p` by a \
+        fixed-iteration long division; the larger is written first, under the mask of \
+        whether a candidate gave them, and zeros otherwise."]
+    code := Impl.Rsa.Arm.Recover.code
+    stack := 56
+    verified := Proof.Rsa.Arm.Recover.recover_primes_verified }]
 
 end VG.Artifacts.Rsa.Arm

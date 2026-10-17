@@ -55,17 +55,19 @@ theorem CIn.frameE (h : CIn s) : Frame [cF s] s.mem (entryMem s) := by
   simp only [Region.Contains, off]
   rw [h.sp', Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; decide
 
-/-- The entry: `p` saved, and Z iff `n` is valid. -/
-theorem entry_run (h : CIn s) :
-    WP isa (.block entry) (pcPushed s) fun u => u.sp = s.sp - BitVec.ofNat 32 56 ∧ u.rd = s.rd ∧
-      u.wr = (pcPushed s).wr ∧ u.mem = entryMem s ∧
-      u.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0))
-        (stackArg s 1).toNat)) (stackArg s 1).toNat := by
+/-- The entry before the check of `n`. -/
+def entryHead : List Instr := [.addSp .r12 0, .str .r0 .r12 oP, .ldrSp .r4 aoN, .ldrSp .r6 aoK]
+
+theorem entry_eq : entry = entryHead ++ VG.Impl.Bignum.Arm.modulusCheck := rfl
+
+/-- The entry's head: `p` saved, `n` and `n_len` loaded. -/
+theorem head_run (h : CIn s) :
+    WP isa (.block entryHead) (pcPushed s) fun u => u.sp = s.sp - BitVec.ofNat 32 56 ∧ u.rd = s.rd ∧
+      u.wr = (pcPushed s).wr ∧ u.mem = entryMem s ∧ u.gpr .r4 = stackArg s 0 ∧ u.gpr .r6 = stackArg s 1 := by
   have spLo := h.spLo; have spHi := h.spHi
   have sp' : (pcPushed s).sp = s.sp - BitVec.ofNat 32 56 := rfl
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
-  unfold entry
-  simp only [List.cons_append, List.nil_append]
+  unfold entryHead
   refine wp_stackAddr (r := .r12) (d := 0) (by decide) fun u1 h1 => ?_
   have stackW : (⟨State.addr (pcPushed s).sp, 56⟩ : Region) ∈ (pcPushed s).wr := List.mem_cons_self
   refine wp_str (a := off (State.addr (s.sp - BitVec.ofNat 32 56)) 4) (by decide)
@@ -91,21 +93,29 @@ theorem entry_run (h : CIn s) :
   refine wp_loadStack (d := aoN) (a := stackArgAddr s 0) (by decide) (spA 0 (by decide)) (argRead 0 (by decide))
     fun u3 h3 => ?_
   refine wp_loadStack (d := aoK) (a := stackArgAddr s 1) (by decide) (by rw [h3.sp]; exact spA 1 (by decide))
-    (by rw [h3.rd, h3.wr]; exact argRead 1 (by decide)) fun u4 h4 => ?_
+    (by rw [h3.rd, h3.wr]; exact argRead 1 (by decide)) fun u4 h4 => WP.block_nil ?_
+  exact ⟨by rw [h4.sp, h3.sp, m2.sp, h1.sp]; rfl, by rw [h4.rd, h3.rd, m2.rd, h1.rd]; rfl,
+    by rw [h4.wr, h3.wr, m2.wr, h1.wr], by rw [h4.mem, h3.mem, mem2],
+    by rw [h4.other _ (by decide), h3.gpr, argVal 0 (by decide)], by rw [h4.gpr, h3.mem, argVal 1 (by decide)]⟩
+
+/-- The entry: `p` saved, and Z iff `n` is valid. -/
+theorem entry_run (h : CIn s) :
+    WP isa (.block entry) (pcPushed s) fun u => u.sp = s.sp - BitVec.ofNat 32 56 ∧ u.rd = s.rd ∧
+      u.wr = (pcPushed s).wr ∧ u.mem = entryMem s ∧
+      u.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0))
+        (stackArg s 1).toNat)) (stackArg s 1).toNat := by
+  rw [entry_eq, WP.block_append_iff]
+  refine WP.mono (head_run h) fun u4 ⟨sp4, rd4, wr4, mem4, r4, r6⟩ => ?_
   have hk := h.valid
   simp only [Spec.Rsa.lenValid] at hk
   have readN : InRegions (u4.rd ++ u4.wr) (State.addr (stackArg s 0)) (stackArg s 1).toNat :=
-    ⟨cN s, List.mem_append_left _ (by rw [h4.rd, h3.rd, m2.rd, h1.rd]; show cN s ∈ s.rd; rw [h.rd]; simp),
-      Region.contains_self _ _⟩
+    ⟨cN s, List.mem_append_left _ (by rw [rd4]; show cN s ∈ s.rd; rw [h.rd]; simp), Region.contains_self _ _⟩
   refine WP.mono (modulusCheck_ok u4 (src := stackArg s 0) (k := (stackArg s 1).toNat) hk.1 hk.2 h.fn readN
-    (by rw [h4.other _ (by decide), h3.gpr, argVal 0 (by decide)])
-    (by rw [h4.gpr, h3.mem, argVal 1 (by decide)]; simp)) fun t ⟨z, m, r⟩ => ?_
-  have mt : t.mem = entryMem s := by rw [m, h4.mem, h3.mem, mem2]
-  refine ⟨by rw [r.sp, h4.sp, h3.sp, m2.sp, h1.sp]; rfl, by rw [r.rd, h4.rd, h3.rd, m2.rd, h1.rd]; rfl,
-    by rw [r.wr, h4.wr, h3.wr, m2.wr, h1.wr], mt, ?_⟩
-  rw [z, h4.mem, h3.mem, mem2]
+    r4 (by rw [r6]; simp)) fun t ⟨z, m, r⟩ => ?_
+  refine ⟨by rw [r.sp, sp4], by rw [r.rd, rd4], by rw [r.wr, wr4], by rw [m, mem4], ?_⟩
+  rw [z, mem4]
   congr 2
-  exact VG.Proof.Rsa.Arm.CrtValues.bytes_frame fr (fun r hr => by
+  exact VG.Proof.Rsa.Arm.CrtValues.bytes_frame h.frameE (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.Fn.symm) (by omega)
 
 end
