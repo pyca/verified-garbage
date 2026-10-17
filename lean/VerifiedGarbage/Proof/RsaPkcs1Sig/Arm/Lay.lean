@@ -18,7 +18,8 @@ stack pointer in the body), its size `F`, the bytes `A` of the stack
 arguments, the arguments `argv`, and the buffers the function only reads
 (`ro`) and writes (`rw`). Above the frame are the push (`PUSH`, holding the
 register arguments, `Impl/RsaPkcs1Sig/Arm/Wrap.lean`) and the stack
-arguments (`ARGS`); below it, the 56 bytes the calls' frames use (`LOW`).
+arguments (`ARGS`); below it, the `C` bytes the calls' frames use (`LOW`,
+56 bytes unless a callee needs more).
 
 `Lay.Ok L σ`: the state `σ` the body starts from has that layout.
 `Lay.St L σ s`: a state of the body: `σ`'s stack pointer and permissions,
@@ -41,6 +42,7 @@ structure Lay where
   argv : List (BitVec 32)
   ro : List Region
   rw : List Region
+  C : Nat := 56
 
 namespace Lay
 
@@ -51,8 +53,8 @@ abbrev fr (d : Nat) : Addr := L.Q + BitVec.ofNat 64 d
 abbrev FR : Region := ⟨L.Q, L.F⟩
 abbrev PUSH : Region := ⟨L.fr L.F, 56⟩
 abbrev ARGS : Region := ⟨L.fr (L.F + 56), L.A⟩
-abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 56, 56⟩
-abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 56, 56 + L.F + 56⟩
+abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.C, L.C⟩
+abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.C, L.C + L.F + 56⟩
 /-- What the body may write. -/
 abbrev W : List Region := L.FR :: L.rw ++ [L.LOW]
 /-- Argument `j`'s place. -/
@@ -62,7 +64,7 @@ structure Ok (σ : State) : Prop where
   sp : σ.sp = L.B
   rd : σ.rd = L.ro ++ [L.ARGS]
   wr : σ.wr = L.FR :: L.PUSH :: L.rw
-  B56 : 56 ≤ L.B.toNat
+  B56 : L.C ≤ L.B.toNat
   fit : L.B.toNat + L.F + 56 + L.A ≤ 2 ^ 32
   F8 : 8 ≤ L.F
   nargs : L.argv.length = 4 + L.A / 4
@@ -101,7 +103,7 @@ theorem Ok.addrB {σ : State} (h : L.Ok σ) {d : Nat} (hd : d < L.F + 56 + L.A) 
 
 /-- A range of the frames is within our stack. -/
 theorem sub_stk {d n : Nat} (hd : d + n ≤ L.F + 56) : Region.Sub ⟨L.fr d, n⟩ L.STK := by
-  have e : L.fr d = L.Q - BitVec.ofNat 64 56 + BitVec.ofNat 64 (56 + d) := by
+  have e : L.fr d = L.Q - BitVec.ofNat 64 L.C + BitVec.ofNat 64 (L.C + d) := by
     simp only [fr]
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rw [e]
@@ -119,11 +121,12 @@ theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d
     (h₂ : d' + n' ≤ 2 ^ 32) : Region.Disjoint ⟨L.fr d, n⟩ ⟨L.fr d', n'⟩ :=
   Offset.disjoint _ hs (by omega) (by omega)
 
-/-- A range of the frames misses the 56 bytes below them. -/
-theorem fr_low {d n : Nat} (hd : d + n ≤ 2 ^ 32) : Region.Disjoint ⟨L.fr d, n⟩ L.LOW :=
+/-- A range of the frames misses the `C` bytes below them. -/
+theorem fr_low {d n : Nat} (hd : d + n ≤ 2 ^ 32) (hC : L.C ≤ 2 ^ 32 := by simp) :
+    Region.Disjoint ⟨L.fr d, n⟩ L.LOW :=
   Offset.disjoint_below _ (by omega)
 
-theorem Ok.low_eq {σ : State} (h : L.Ok σ) : FrameStack.belowA L.B 56 = L.LOW := by
+theorem Ok.low_eq {σ : State} (h : L.Ok σ) : FrameStack.belowA L.B L.C = L.LOW := by
   simp only [FrameStack.belowA, LOW, Q]
   rw [FrameStack.addr_sub' h.B56]
 
@@ -153,7 +156,7 @@ theorem Ok.arg_apart {σ : State} (h : L.Ok σ) {j : Nat} (hj : j < L.argv.lengt
     · have hw := h.wro r hr L.ARGS (List.mem_append_right _ (List.mem_singleton_self _))
       refine (hw.sub_right ?_).symm
       exact Offset.sub _ (ha.2.2.2 hj4) (by omega)
-  · exact fr_low (by omega)
+  · exact fr_low (by omega) (by have := h.B56; have := L.B.isLt; omega)
 
 /-- An argument's place may be read. -/
 theorem Ok.arg_read {σ : State} (h : L.Ok σ) {j : Nat} (hj : j < L.argv.length) :
@@ -190,7 +193,7 @@ theorem push_apart : ∀ r ∈ L.W, L.PUSH.Disjoint r := by
   rcases hr with rfl | hr | rfl
   · exact Offset.disjoint_base _ (Nat.le_refl _) (by omega)
   · exact (h.stk r (List.mem_append_right _ hr)).sub_left (sub_stk (Nat.le_refl _))
-  · exact fr_low (by omega)
+  · exact fr_low (by omega) (by have := h.B56; have := L.B.isLt; omega)
 
 end Ok
 
