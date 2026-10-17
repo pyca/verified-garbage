@@ -22,7 +22,8 @@ The function's buffers (`out` of `2 q` bytes, `d` of `q`, `digest` of `dn`,
 of HMAC's functions), then the frame of `216 + 4 e` bytes, from `B + 24`:
 `K` and `V` (64 bytes each), `h` (48 bytes, of which `q` are used), a word
 unused, our caller's `r4`–`r11` and `lr`, and `e` more words (`HIGH`, 36 if
-two `V`s make a candidate: the digest for `core` and the candidate). `Ctx`
+two `V`s make a candidate: the digest for `core` and the candidate; 16 if
+`hHigh`: `h`, for 64-byte scalars). `Ctx`
 is what holds between the frame's allocation and its release: the
 permissions, `sp`, the registers that hold the pointers (`r4`–`r6`, `r8`,
 `r11`), our caller's registers in the frame, and that memory changed only in
@@ -50,12 +51,14 @@ structure Lay (dn : Nat) where
   q : Nat
   /-- Whether two `V`s make a candidate. -/
   wide : Bool
+  /-- Whether `h` is at the frame's top. -/
+  hHigh : Bool
   /-- The words at the frame's top. -/
   e : Nat
-  ew : e = extra wide
+  ew : e = extra wide hHigh
 
 theorem Lay.he {dn : Nat} (L : Lay dn) : L.e ≤ 36 := by
-  rw [L.ew, extra]; split <;> omega
+  rw [L.ew, extra]; split <;> (try split) <;> omega
 
 namespace Lay
 
@@ -343,12 +346,14 @@ end Ctx
 /-! ## The layout of a call -/
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
-`q`, and two `V`s making a candidate if `wide`. -/
-def lay (dn q : Nat) (wide : Bool) (s : State) : Lay dn :=
-  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, s.sp, q, wide, _, rfl⟩
+`q`, two `V`s making a candidate if `wide`, and `h` at the frame's top if
+`hHigh`. -/
+def lay (dn q : Nat) (wide hHigh : Bool) (s : State) : Lay dn :=
+  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, s.sp, q, wide, hHigh, _, rfl⟩
 
-theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State}
-    (h : (rfcArm I (240 + 4 * extra wide)).pre s) : (lay I.hashLen I.ecdsa.curve.len wide s).Ok := by
+theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State}
+    (h : (rfcArm I (240 + 4 * extra wide hHigh)).pre s) :
+    (lay I.hashLen I.ecdsa.curve.len wide hHigh s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩ := h
   exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩
 
