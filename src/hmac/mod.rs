@@ -89,15 +89,21 @@ impl<H: HmacHash> Hmac<H> {
     // passes the caller's variable by its address.
     #[inline(never)]
     pub fn new(key: &[u8]) -> Self {
-        let mut h = Self::empty();
+        let mut h = core::mem::ManuallyDrop::new(Self::empty());
         H::hmac_init(&mut h.state, key);
         // Rust does not build a returned local in the caller's place:
         // returning `h` would copy it there and leave this copy as it is.
-        // Copy it to the caller's place, and wipe it here when it is dropped.
-        // SAFETY: the state is plain data (arrays and a backend), owning no
-        // resource, so its copy and `h` are independent values, each wiped
-        // when it is dropped.
-        unsafe { core::ptr::read(&h) }
+        // So the copy is read out as the function's value, straight into
+        // the caller's place, and `h`, never dropped, is zeroed when `wipe`
+        // is dropped, after the value is computed. (Binding the copy to a
+        // local first would put it in a temporary of its own, left as it
+        // is.)
+        let wipe = WipeOnDrop(&mut h);
+        // SAFETY: `h` is a computation, valid for reads, which `wipe` keeps
+        // borrowed until after the read; it is never dropped, so the copy
+        // is the only computation that owns its state, whatever the state
+        // owns.
+        unsafe { core::ptr::read(&**wipe.0) }
     }
 
     /// A computation with no key yet, for `init` to key in place.
@@ -138,6 +144,19 @@ impl<H: HmacHash> Hmac<H> {
         H::hmac_init(&mut h.state, key);
         h.update(data);
         H::hmac_finalize(&mut h.state)
+    }
+}
+
+/// Zeroes the value it borrows, never dropped, when it is dropped: `new`'s
+/// local, once its copy is the function's value.
+struct WipeOnDrop<'a, T>(&'a mut core::mem::ManuallyDrop<T>);
+
+impl<T> Drop for WipeOnDrop<'_, T> {
+    fn drop(&mut self) {
+        let p: *mut core::mem::ManuallyDrop<T> = self.0;
+        // SAFETY: the value is valid for writes of its size, and is never
+        // read or dropped again (it is in a `ManuallyDrop`).
+        unsafe { crate::zeroize::zeroize_raw(p.cast::<u8>(), core::mem::size_of::<T>()) };
     }
 }
 
