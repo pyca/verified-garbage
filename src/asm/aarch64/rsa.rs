@@ -12136,7 +12136,7 @@ ret
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
@@ -12587,7 +12587,7 @@ ret
 /// * `pre_len` must be `2 * ⌈out_len / 8⌉`.
 /// * `e_len` must be in 1..=`out_len`.
 /// * For the result to be RSAEP's, `pre` must hold what `vg_rsa_public_precompute` wrote for a modulus of `out_len` bytes (returning 1); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `pre`, `e`, `input` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `pre`, `e`, `input` and `scratch` may wrap around the end of the address space (no Rust object does).
