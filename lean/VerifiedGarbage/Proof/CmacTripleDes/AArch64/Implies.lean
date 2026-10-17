@@ -13,8 +13,8 @@ import all Init.Data.Vector.Basic
 # TDEA-CMAC on AArch64: the shared contracts imply ours
 
 The shared contracts with the working space as an argument
-(`Proof/CmacTripleDes/Scratch.lean`), which `Frame.lean` moves to the
-shared contracts of `Spec/Cmac/TripleDesContract.lean`.
+(`Proof/CmacTripleDes/Scratch.lean`), under which the streaming functions
+run this code inline (`Proof/CmacTripleDes/Stream/AArch64/Inline.lean`).
 -/
 
 @[expose] public section

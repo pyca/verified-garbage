@@ -12,9 +12,9 @@ import all Init.Data.Vector.Basic
 /-!
 # TDEA-CMAC on ARMv7: the contracts the proofs are written against
 
-Untrusted: everything here is checked by Lean. The artifacts' contracts are
-the shared ones of `Spec/Cmac/TripleDesContract.lean`, which imply these
-(`Implies.lean`). The functions call nothing and use no stack; `update` and
+Untrusted: everything here is checked by Lean. These are the contracts of
+the code the streaming functions run inline
+(`Proof/CmacTripleDes/Stream/Arm/Inline.lean`). The functions call nothing and use no stack; `update` and
 `finalize` take `scratch` on the stack.
 -/
 
