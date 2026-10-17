@@ -11,14 +11,19 @@
 //! `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
-//! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`). That code
+//! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`), or on x86 for the
+//! curve, with the hash function as an argument
+//! (`vg_ecdsa_<curve>_rfc6979_sign`, contract
+//! `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`). That code
 //! derives the per-message secret number `k` from the key and the hash with
 //! HMAC, as RFC 6979 does, and signs with the verified ECDSA of a given `k`
 //! (`vg_ecdsa_<curve>_sign`). It checks the key, and tries further
 //! candidates for `k` when one is unsuitable. It follows the implementation
 //! of the hash function that this CPU runs (e.g. on x86-64,
-//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions, or on
-//! AArch64 `vg_ecdsa_p256_sha256_sign_sha2` with the SHA-256 instructions).
+//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions, on AArch64
+//! `vg_ecdsa_p256_sha256_sign_sha2` with the SHA-256 instructions, or on
+//! x86 `vg_ecdsa_p256_rfc6979_sign_hash_shani`, of the tier of hash
+//! functions with the SHA extensions).
 //!
 //! Signing is constant time except for the number of candidates for `k`
 //! that it tries, almost always one.

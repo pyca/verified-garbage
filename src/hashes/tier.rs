@@ -2,7 +2,8 @@
 //! the verified functions that take the hash function as an argument (by
 //! its number, `VG.Spec.HashId`), and so call, of each hash function, the
 //! implementation of their tier (`Proof/Pbkdf2/Md/<Target>/Tier.lean`,
-//! `Variants/MdHashTier/<Target>/`).
+//! `Variants/MdHashTier/<Target>/`; on x86, of the functions HMAC's callers
+//! call, `Proof/Pbkdf2/Whole/X86/Tier.lean`, `Variants/HmacTier/X86/`).
 //!
 //! A CPU's tier is the one whose implementations of SHA-1's, SHA-256's and
 //! SHA-512's compression functions are those the hash functions of
