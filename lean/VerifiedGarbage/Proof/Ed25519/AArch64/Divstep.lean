@@ -26,7 +26,7 @@ namespace VG.Proof.Ed25519.AArch64.Divstep
 
 open VG VG.AArch64 VG.Proof.Ed25519.AArch64 VG.Proof.Ed25519.AArch64.Inv VG.Spec.X25519
 open VG.Proof.Mont.AArch64 (KeepRegs)
-open VG.Impl.Ed25519.AArch64.Divstep (G U V DSAVE X1SAVE batch init finish)
+open VG.Impl.Ed25519.AArch64.Divstep (G U V DSAVE batch init finish)
 open VG.Impl.Ed25519.AArch64.Divstep renaming F → oF
 
 variable {large : Bool}
@@ -86,7 +86,7 @@ theorem invert_ok [Sound] {s : State} {base : Addr} (hs : Scr s base large) :
       env t.mem base 15 = VG.Proof.X25519.invert (env s.mem base 2) ∧
       KeepRegs (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t ∧
       t.gpr .x1 = s.gpr .x1 ∧ Outside base 192 512 s.mem t.mem := by
-  refine WP.seq (WP.mono (init_ok hs) fun a ⟨ai, a20, aX, aO, ak⟩ => ?_)
+  refine WP.seq (WP.mono (init_ok hs) fun a ⟨ai, a20, a19, aO, ak⟩ => ?_)
   have hx : fe s.mem base 128 % P < P := Nat.mod_lt _ (by decide)
   refine WP.seq (WP.mono (loop_ok (scr_of hs ak (by decide)) hx ai a20) fun b ⟨bi, bO, bk⟩ => ?_)
   refine WP.mono (finish_ok (scr_of (scr_of hs ak (by decide)) bk (by decide))) fun t ⟨tv, t1, tO, tk⟩ => ?_
@@ -99,9 +99,8 @@ theorem invert_ok [Sound] {s : State} {base : Addr} (hs : Scr s base large) :
     refine Sound.sound hx bi.cu bi.z ?_
     rw [show VG.Impl.Ed25519.AArch64.offset 15 = 544 from rfl, tv, ← bi.f]
     simp only [sv_neg bi.fl]
-  · exact ((ak.trans bk).trans tk).mono (by decide)
-  · rw [t1, bO.word (by decide) (by decide)]
-    exact aX
+  · exact ((ak.trans (bk.mono (by decide))).trans (tk.mono (by decide))).mono (by decide)
+  · exact t1.trans ((bk.gpr .x19 (by decide)).trans a19)
   · exact ((aO.mono (by decide) (by decide)).trans (bO.mono (by decide) (by decide))).trans
       (tO.mono (by decide) (by decide))
 

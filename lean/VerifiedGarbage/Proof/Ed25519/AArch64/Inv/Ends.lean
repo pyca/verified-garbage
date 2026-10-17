@@ -24,7 +24,7 @@ open VG VG.AArch64 VG.Proof.Ed25519.Word64 VG.Proof.Ed25519.AArch64 VG.Spec.X255
 open VG.Proof.Mont.AArch64 (KeepRegs Keeps.regs)
 open VG.Proof.X25519.AArch64 (exec_movz)
 open VG.Impl.Ed25519.AArch64 (ld st loads stores const64 offset)
-open VG.Impl.Ed25519.AArch64.Divstep (F G U V DSAVE X1SAVE v0 storeConst fold freeze init finish)
+open VG.Impl.Ed25519.AArch64.Divstep (F G U V DSAVE v0 storeConst fold freeze init finish)
 
 variable {large : Bool}
 
@@ -169,21 +169,27 @@ theorem movz_ok (s : State) (d : Reg) (imm : BitVec 16) :
     ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr),
       rfl, rfl, rfl, rfl⟩⟩⟩
 
-theorem start_ok {s : State} {base : Addr} (hs : Scr s base large) :
-    WP isa (.block [st .x1 X1SAVE, .movz .x .x12 0 0, .movz .x .x6 19 0]) s fun t =>
-      t.mem = s.mem.writeW (off base X1SAVE) (s.gpr .x1) ∧ t.gpr .x12 = 0 ∧ t.gpr .x6 = 19 ∧
-        KeepRegs [.x6, .x12] s t := by
-  have _hmin := workSize_ge large
-  change WP isa (.block (([st .x1 X1SAVE] : List Instr) ++ (([.movz .x .x12 0 0] : List Instr) ++
+/-- `d = n`. -/
+theorem mov_ok (s : State) (d n : Reg) :
+    WP isa (.block [.addImm .x d n 0]) s fun t => t.gpr d = s.gpr n ∧ Keeps [d] s t :=
+  WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil
+    ⟨by rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]; simp only [State.read, Size.bits, BitVec.setWidth_eq, BitVec.add_zero],
+      ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr),
+        rfl, rfl, rfl, rfl⟩⟩⟩
+
+theorem start_ok (s : State) :
+    WP isa (.block [.addImm .x .x19 .x1 0, .movz .x .x12 0 0, .movz .x .x6 19 0]) s fun t =>
+      t.gpr .x19 = s.gpr .x1 ∧ t.gpr .x12 = 0 ∧ t.gpr .x6 = 19 ∧ Keeps [.x6, .x12, .x19] s t := by
+  change WP isa (.block (([.addImm .x .x19 .x1 0] : List Instr) ++ (([.movz .x .x12 0 0] : List Instr) ++
     ([.movz .x .x6 19 0] : List Instr)))) s _
   rw [WP.block_append_iff]
-  refine WP.mono (st_ok hs (by decide) (by simp only [X1SAVE]; omega) .x1) fun a ⟨ma, ka⟩ => ?_
+  refine WP.mono (mov_ok s .x19 .x1) fun a ⟨a19, ka⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (movz_ok a .x12 0) fun b ⟨b12, kb⟩ => ?_
   refine WP.mono (movz_ok b .x6 19) fun t ⟨t6, kt⟩ => ?_
-  refine ⟨by rw [kt.mem, kb.mem, ma], by rw [kt.gpr _ (by decide), b12]; rfl, by rw [t6]; rfl, ?_⟩
-  exact ((ka.mono (by simp)).trans ((Keeps.regs kb).mono (by decide))).trans
-    ((Keeps.regs kt).mono (by decide))
+  refine ⟨by rw [kt.gpr _ (by decide), kb.gpr _ (by decide), a19],
+    by rw [kt.gpr _ (by decide), b12]; rfl, by rw [t6]; rfl, ?_⟩
+  exact ((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kt.mono (by decide))
 
 theorem last_ok {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa (.block [.movz .x .x1 1 0, st .x1 DSAVE, .movz .x .x20 10 0]) s fun t =>
@@ -212,13 +218,13 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
       RInv (fe s.mem base 128 % P) 0 (word t.mem base DSAVE) (fe t.mem base F) (fe t.mem base G)
         (fe t.mem base U) (fe t.mem base V) ∧
       t.gpr .x20 = BitVec.ofNat 64 10 ∧
-      word t.mem base X1SAVE = s.gpr .x1 ∧ Outside base 192 312 s.mem t.mem ∧ KeepRegs batchRegs s t := by
+      t.gpr .x19 = s.gpr .x1 ∧ Outside base 192 312 s.mem t.mem ∧ KeepRegs (.x19 :: batchRegs) s t := by
   have _hmin := workSize_ge large
   have _hcap := workSize_le large
   simp only [init, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (start_ok hs) fun a ⟨ma, a12, a6, ka⟩ => ?_
-  have hsa := scr_of hs ka (by decide)
+  refine WP.mono (start_ok s) fun a ⟨a19, a12, a6, ka⟩ => ?_
+  have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (const64_ok a .x7 0x7fffffffffffffff) fun b ⟨b7, kb⟩ => ?_
   have hsb := hsa.of_keeps kb (by decide)
@@ -239,9 +245,8 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   have z12 : e.gpr .x12 = 0 := by
     rw [ke.gpr _ (by decide), kd.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide), a12]
   -- `x = [slot 2] mod p` in `x2`–`x5`
-  have mc : c.mem = s.mem.writeW (off base X1SAVE) (s.gpr .x1) := by rw [kc.mem, kb.mem, ma]
-  have oc : Outside base X1SAVE 8 s.mem c.mem := by
-    rw [mc]; exact writeW_outside _ _ _ (by decide)
+  have oc : Outside base 488 0 s.mem c.mem := by
+    rw [kc.mem, kb.mem, ka.mem]; exact Outside.refl _ _ _ _
   have ex : r4 e = fe s.mem base 128 % P := by
     rw [ev, dv]
     refine congrArg (· % P) ?_
@@ -313,21 +318,21 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   · intro _
     rw [fU]
     exact Int.ModEq.refl _
-  · rw [o2.word (by decide) (by decide), o1.word (by decide) (by decide), oi.word (by decide) (by decide),
-      oh.word (by decide) (by decide), og.word (by decide) (by decide), of.word (by decide) (by decide),
-      ke.mem, kd.mem, mc, word_writeW_self]
+  · exact (kt.gpr _ (by decide)).trans ((ki.gpr _ (by decide)).trans ((kg.gpr _ (by decide)).trans
+      ((ke.gpr _ (by decide)).trans ((kd.gpr _ (by decide)).trans ((kc.gpr _ (by decide)).trans
+        ((kb.gpr _ (by decide)).trans a19))))))
   · have oa : Outside base 192 312 s.mem c.mem := oc.mono (by decide) (by decide)
     rw [← kd.mem, ← ke.mem] at oa
     exact ((((oa.trans (of.mono (by decide) (by decide))).trans (og.mono (by decide) (by decide))).trans
       (oh.mono (by decide) (by decide))).trans (oi.mono (by decide) (by decide))).trans
       ((o1.mono (by decide) (by decide)).trans (o2.mono (by decide) (by decide)))
-  · have kf : KeepRegs batchRegs e
+  · have kf : KeepRegs (.x19 :: batchRegs) e
         { e with mem := st4 e.mem base G (e.gpr .x2) (e.gpr .x3) (e.gpr .x4) (e.gpr .x5) } :=
       ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-    have kh : KeepRegs batchRegs g
+    have kh : KeepRegs (.x19 :: batchRegs) g
         { g with mem := st4 g.mem base U (g.gpr .x12) (g.gpr .x12) (g.gpr .x12) (g.gpr .x12) } :=
       ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-    exact (((((((ka.mono (by decide)).trans ((Keeps.regs kb).mono (by decide))).trans
+    exact ((((((((Keeps.regs ka).mono (by decide)).trans ((Keeps.regs kb).mono (by decide))).trans
       ((Keeps.regs kc).mono (by decide))).trans ((Keeps.regs kd).mono (by decide))).trans
       ((Keeps.regs ke).mono (by decide))).trans (kf.trans (kg.mono (by decide)))).trans
       (kh.trans (ki.mono (by decide)))).trans (kt.mono (by decide))
@@ -401,7 +406,7 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa (.block finish) s fun t =>
       ((fe t.mem base 544 : Nat) : Int) % P =
         (if 2 ^ 255 ≤ fe s.mem base F then -(fe s.mem base U : Int) else fe s.mem base U) % P ∧
-      t.gpr .x1 = word s.mem base X1SAVE ∧ Outside base 544 32 s.mem t.mem ∧
+      t.gpr .x1 = s.gpr .x19 ∧ Outside base 544 32 s.mem t.mem ∧
       KeepRegs batchRegs s t := by
   have _hmin := workSize_ge large
   have _hcap := workSize_le large
@@ -449,8 +454,7 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine WP.mono (stores_ok hsj (o := offset 15) ⟨by decide, by simp only [offset]; omega⟩
     .x2 .x3 .x4 .x5) fun k hk => ?_
   subst hk
-  refine WP.mono (ld_ok (hsj.setMem _) (d := X1SAVE) (by decide) (by simp only [X1SAVE]; omega) .x1)
-    fun t ⟨t1, kt⟩ => ?_
+  refine WP.mono (mov_ok _ .x1 .x19) fun t ⟨t1, kt⟩ => ?_
   -- the memory
   have mh : h.mem = s.mem := by
     rw [kh.mem, kg.mem, kf.mem, ke.mem, kd.mem, kc.mem, kb.mem, ka.mem]
@@ -459,7 +463,7 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
   have ok : Outside base 544 32 j.mem (st4 j.mem base 544 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4)
       (j.gpr .x5)) := st4_outside _ _ (by decide) _ _ _ _
   have ot : Outside base 544 32 s.mem t.mem := by rw [kt.mem, ← mj]; exact ok
-  refine ⟨?_, by rw [t1, ← kt.mem]; exact (ot.word (by decide) (by decide)), ot, ?_⟩
+  refine ⟨?_, ?_, ot, ?_⟩
   · rw [kt.mem]
     show ((fe (st4 j.mem base 544 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4) (j.gpr .x5)) base 544 : Nat) : Int) % P = _
     rw [fe_st4 _ _ (by decide), show val4 (j.gpr .x2) (j.gpr .x3) (j.gpr .x4) (j.gpr .x5) = r4 j from rfl,
@@ -485,6 +489,16 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
       omega
     · simp only [hc, decide_false, Bool.false_eq_true, ite_false]
       omega
+  · exact t1.trans ((kj.gpr .x19 (by decide)).trans
+      ((ki.gpr .x19 (by decide)).trans
+      ((kh.gpr .x19 (by decide)).trans
+      ((kg.gpr .x19 (by decide)).trans
+      ((kf.gpr .x19 (by decide)).trans
+      ((ke.gpr .x19 (by decide)).trans
+      ((kd.gpr .x19 (by decide)).trans
+      ((kc.gpr .x19 (by decide)).trans
+      ((kb.gpr .x19 (by decide)).trans
+      (ka.gpr .x19 (by decide)))))))))))
   · exact ((((((((((Keeps.regs ka).mono (by decide)).trans ((Keeps.regs kb).mono (by decide))).trans
       ((Keeps.regs kc).mono (by decide))).trans ((Keeps.regs kd).mono (by decide))).trans
       ((Keeps.regs ke).mono (by decide))).trans ((Keeps.regs kf).mono (by decide))).trans

@@ -90,8 +90,8 @@ theorem mat_ok (s : State) :
       t.gpr .x6 = absW (s.gpr .x6) ∧ t.gpr .x16 = maskN (s.gpr .x6) ∧
       t.gpr .x7 = absW (s.gpr .x7) ∧ t.gpr .x17 = maskN (s.gpr .x7) ∧
       t.gpr .x13 = (absW (s.gpr .x4) &&& maskN (s.gpr .x4)) + (absW (s.gpr .x5) &&& maskN (s.gpr .x5)) ∧
-      t.gpr .x19 = (absW (s.gpr .x6) &&& maskN (s.gpr .x6)) + (absW (s.gpr .x7) &&& maskN (s.gpr .x7)) ∧
-      Keeps [.x4, .x5, .x6, .x7, .x8, .x9, .x12, .x13, .x14, .x15, .x16, .x17, .x19] s t := by
+      t.gpr .x11 = (absW (s.gpr .x6) &&& maskN (s.gpr .x6)) + (absW (s.gpr .x7) &&& maskN (s.gpr .x7)) ∧
+      Keeps [.x4, .x5, .x6, .x7, .x8, .x9, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s t := by
   simp only [mat, List.append_assoc]
   rw [WP.block_append_iff]
   have hz : WP isa (.block [.movz .x .x12 0 0]) s fun t => t.gpr .x12 = 0 ∧ Keeps [.x12] s t :=
@@ -136,8 +136,8 @@ theorem mat_ok (s : State) :
   refine ⟨z4, e4, e14, e5, e15, e6, e16, e7, e17, by rw [e4, e14, e5, e15],
     by rw [e6, e16, e7, e17], ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨h4, h5, h6, h7, h8, h9, h12, h13, h14, h15, h16, h17, h19⟩ := hr
-    simp only [RegUpd.gpr_write, h8, h9, h13, h19, ite_false]
+    obtain ⟨h4, h5, h6, h7, h8, h9, h11, h12, h13, h14, h15, h16, h17⟩ := hr
+    simp only [RegUpd.gpr_write, h8, h9, h11, h13, ite_false]
     rw [k4.gpr r (by simp [h7, h17]), k3.gpr r (by simp [h6, h16]), k2.gpr r (by simp [h5, h15]),
       k1.gpr r (by simp [h4, h14]), g0 r h12]
   · simp only [RegUpd.mem_write]; rw [k4.mem, k3.mem, k2.mem, k1.mem, k0.mem]

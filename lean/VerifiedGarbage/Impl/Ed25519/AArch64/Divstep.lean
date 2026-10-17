@@ -17,10 +17,10 @@ that `(f, g) ≡ x · 2^(590 - 59 i) · (u, v)` after `i` batches. Then `f = ±1
 All of it but the divsteps is in registers but for the numbers: `f` and `g`
 (signed, four words), `u` and `v` (below `2²⁵⁶`), and each row of a batch's
 products (five words) before its shift or its reduction, at byte offsets 192
-to 495 of the working space (`x0`); `d` and the output pointer `x1` are kept
-there too, and the batch counter in `x20`. A row multiplies by the magnitudes of the
-matrix entries, complementing the words for a negative one and adding the
-magnitude back, as s2n-bignum does.
+to 487 of the working space (`x0`); `d` is kept there too, the output pointer
+`x1` in `x19` and the batch counter in `x20`. A row multiplies by the
+magnitudes of the matrix entries, complementing the words for a negative one
+and adding the magnitude back, as s2n-bignum does.
 -/
 
 @[expose] public section
@@ -42,7 +42,6 @@ def TG : Nat := 360
 def TU : Nat := 400
 def TV : Nat := 440
 def DSAVE : Nat := 480
-def X1SAVE : Nat := 488
 
 /-- `2⁻⁵⁹⁰ mod p`. -/
 def v0 : Nat := 0x276508b2417706156c6c893805ac5242a8c68f3f1d132595a0f99e2375022099
@@ -116,17 +115,17 @@ def signMag (m s : Reg) : List Instr :=
   [.lsr .x s m 63, .sub .x s .x12 s, .logic .eor .x m m s, .sub .x m m s]
 
 /-- The matrix `x4`–`x7` as magnitudes and the masks `x14`–`x17`, and the
-rows' constants `x13` and `x19`. -/
+rows' constants `x13` and `x11`. -/
 def mat : List Instr :=
   [.movz .x .x12 0 0] ++ signMag .x4 .x14 ++ signMag .x5 .x15 ++ signMag .x6 .x16 ++ signMag .x7 .x17 ++
   [.logic .and .x .x8 .x4 .x14, .logic .and .x .x9 .x5 .x15, .add .x .x13 .x8 .x9,
-    .logic .and .x .x8 .x6 .x16, .logic .and .x .x9 .x7 .x17, .add .x .x19 .x8 .x9]
+    .logic .and .x .x8 .x6 .x16, .logic .and .x .x9 .x7 .x17, .add .x .x11 .x8 .x9]
 
 /-- A batch: the divsteps, the rows, their results, and the counter `x20`. -/
 def batch : List Instr :=
   [ld .x1 DSAVE, ld .x2 F, ld .x3 G] ++ VG.Impl.Weierstrass.AArch64.pwords ++ [st .x1 DSAVE] ++ mat ++
-  row true TF F G .x4 .x14 .x5 .x15 .x13 ++ row true TG F G .x6 .x16 .x7 .x17 .x19 ++
-  row false TU U V .x4 .x14 .x5 .x15 .x13 ++ row false TV U V .x6 .x16 .x7 .x17 .x19 ++
+  row true TF F G .x4 .x14 .x5 .x15 .x13 ++ row true TG F G .x6 .x16 .x7 .x17 .x11 ++
+  row false TU U V .x4 .x14 .x5 .x15 .x13 ++ row false TV U V .x6 .x16 .x7 .x17 .x11 ++
   shift F TF ++ shift G TG ++ [.movz .x .x13 19 0] ++ reduce U TU ++ reduce V TV ++
   [.subImm .x .x20 .x20 1]
 
@@ -151,7 +150,7 @@ def freeze : List Instr :=
 /-- The output pointer saved; `g = [slot 2] mod p`, `f = p`, `u = 0`, `v = 2⁻⁵⁹⁰`,
 `d = 1`, and ten batches to go. -/
 def init : List Instr :=
-  [st .x1 X1SAVE, .movz .x .x12 0 0, .movz .x .x6 19 0] ++ low63 ++
+  [.addImm .x .x19 .x1 0, .movz .x .x12 0 0, .movz .x .x6 19 0] ++ low63 ++
   loads (offset 2) .x2 .x3 .x4 .x5 ++ fold ++ freeze ++ stores G .x2 .x3 .x4 .x5 ++
   storeConst F Spec.X25519.P ++ stores U .x12 .x12 .x12 .x12 ++
   storeConst V v0 ++ [.movz .x .x1 1 0, st .x1 DSAVE, .movz .x .x20 10 0]
@@ -167,7 +166,7 @@ def finish : List Instr :=
   [ld .x13 (F + 24), .lsr .x .x13 .x13 63, .sub .x .x13 .x12 .x13] ++
   [(Reg.x2, Reg.x8), (.x3, .x9), (.x4, .x11), (.x5, .x10)].flatMap (fun (x, y) =>
     [.logic .eor .x y y x, .logic .and .x y y .x13, .logic .eor .x x x y]) ++
-  stores (offset 15) .x2 .x3 .x4 .x5 ++ [ld .x1 X1SAVE]
+  stores (offset 15) .x2 .x3 .x4 .x5 ++ [.addImm .x .x1 .x19 0]
 
 /-- `[slot 15] ≡ [slot 2]^(p - 2)` (mod `p`). -/
 def invert : Prog isa :=

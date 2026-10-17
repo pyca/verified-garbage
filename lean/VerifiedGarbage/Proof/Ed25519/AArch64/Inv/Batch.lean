@@ -31,8 +31,7 @@ variable {large : Bool}
 
 /-- The registers a batch may change. -/
 abbrev batchRegs : List Reg :=
-  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17, .x19,
-    .x20]
+  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17, .x20]
 
 /-- The low word of a field element, as an integer modulo `2⁶⁴`. -/
 theorem low_rel {m : Mem} {base : Addr} {o : Nat} {f : Int} (h : sv (fe m base o) = f) :
@@ -77,7 +76,7 @@ structure MatRegs (T : MSt) (t : State) : Prop where
   sr : t.gpr .x17 = maskN (BitVec.ofInt 64 T.r)
   c0 : t.gpr .x13 = (absW (BitVec.ofInt 64 T.u) &&& maskN (BitVec.ofInt 64 T.u)) +
     (absW (BitVec.ofInt 64 T.v) &&& maskN (BitVec.ofInt 64 T.v))
-  c1 : t.gpr .x19 = (absW (BitVec.ofInt 64 T.q) &&& maskN (BitVec.ofInt 64 T.q)) +
+  c1 : t.gpr .x11 = (absW (BitVec.ofInt 64 T.q) &&& maskN (BitVec.ofInt 64 T.q)) +
     (absW (BitVec.ofInt 64 T.r) &&& maskN (BitVec.ofInt 64 T.r))
 
 theorem MatRegs.keep {T : MSt} {t t' : State} (h : MatRegs T t)
