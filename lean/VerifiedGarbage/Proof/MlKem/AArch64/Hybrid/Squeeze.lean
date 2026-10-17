@@ -110,7 +110,7 @@ theorem SqLay.stepLay {L : Impl.MlKem.AArch64.KemLay} {p e st : Addr} {s : State
 
 theorem extend_blocks3 {m m' : Mem} {p a b st sp : Addr} {A : Spec.Sha3.State} {k : Nat} (hk : k < 3)
     (old : Blocks m a k A) (new : Rate21 m' (blockAt a k) (iterF (k + 1) A))
-    (hf : Frame (stepWrites p (blockAt a k) (blockAt b k) st sp) m m')
+    (hf : Frame (step3Writes p (blockAt a k) (blockAt b k) st sp) m m')
     (hpa : (pairR p).Disjoint (streamR a)) (hab : (streamR a).Disjoint (streamR b))
     (hwa : (callR (p + 1536)).Disjoint (streamR a)) (hsa : (stR st).Disjoint (streamR a))
     (hfa : (frame sp).Disjoint (streamR a)) : Blocks m' a (k + 1) A := by
@@ -122,7 +122,7 @@ theorem extend_blocks3 {m m' : Mem} {p a b st sp : Addr} {A : Spec.Sha3.State} {
     have hc : (rateR21 (blockAt a j)).Contains (outAddr (blockAt a j) i) 8 :=
       Offset.contains_base _ (by omega) (by omega)
     rw [hf.readW hc (by
-        intro r hr; simp only [stepWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+        intro r hr; simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
         · exact (hpa.sub_right (block_sub a (by omega))).symm
         · exact Offset.disjoint a (Or.inl (by omega)) (by omega) (by omega)
@@ -148,7 +148,7 @@ theorem sstep_ok (L : Impl.MlKem.AArch64.KemLay) {initial s : State} {p e st : A
   have fsub : Frame (squeezeWrites p st initial.sp) s.mem t.mem := by
     rw [h.keep.sp] at ft
     refine ft.sub fun r hr => ?_
-    simp only [stepWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact ⟨pairR p, by simp [squeezeWrites], fun _ h => h⟩
     · exact ⟨streamR (p + 400), by simp [squeezeWrites], block_sub _ hk⟩
@@ -175,12 +175,12 @@ theorem sstep_ok (L : Impl.MlKem.AArch64.KemLay) {initial s : State} {p e st : A
       (Offset.disjoint p (d := 400) (n := 504) (e := 904) (k := 504) (by decide) (by decide) (by decide)).symm
       (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
       (dP (by decide))
-    intro r hr; simp only [stepWrites, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    intro r hr; simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h | h | h | h | h <;> simp [h]
   · rw [st']; rfl
   · rw [VG.Proof.MlKem.bytesAt_frame ft (fun r hr => ?_) (by omega)]
     · exact h.ek
-    simp only [stepWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
     have dEP := hl.dEP
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact dEP.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048))

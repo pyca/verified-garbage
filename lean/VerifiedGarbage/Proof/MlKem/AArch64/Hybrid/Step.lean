@@ -60,7 +60,7 @@ theorem tail_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
   · rw [e2, h1.get .x21 (by decide), hu.gpr .x21 (by decide) (by decide), hb]; rfl
 
 /-- The regions a main squeeze writes. -/
-def stepWrites (p a b st sp : Addr) : List Region :=
+def step3Writes (p a b st sp : Addr) : List Region :=
   [pairR p, rateR21 a, rateR21 b, callR (p + 1536), stR st, frame sp]
 
 /-- What a main squeeze needs of its memory. -/
@@ -94,7 +94,7 @@ theorem step3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p a b e st : Addr}
     (pair : PairAt s.mem p A B) (hl : StepLay L p a b e st s) :
     WP isa (Impl.MlKem.AArch64.Hybrid.step3 L blk) s fun t =>
       Keep (clobbered ++ [.x20, .x21]) s t ∧
-      Frame (stepWrites p a b st s.sp) s.mem t.mem ∧
+      Frame (step3Writes p a b st s.sp) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
       Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
       stateAt t.mem st = hstate E (blk + 1) ∧
@@ -123,8 +123,8 @@ theorem step3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p a b e st : Addr}
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl; exact hl.dSA; exact hl.dSB
   refine ⟨(kuv.trans kt).mono (by simp [clobbered]), ?_, ?_, at', bt, ?_, t20, t21⟩
-  · refine ((fu.mono (by simp [stepWrites])).trans (fv.mono (by simp [stepWrites]))).trans
-      (ft.mono (by simp [stepWrites]))
+  · refine ((fu.mono (by simp [step3Writes])).trans (fv.mono (by simp [step3Writes]))).trans
+      (ft.mono (by simp [step3Writes]))
   · exact VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pv ft fvt
   · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame ft svt, sv, su]
 
