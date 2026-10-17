@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
+public import VerifiedGarbage.Impl.Sm4.AArch64.Prepared
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 
 /-!
@@ -11,11 +11,15 @@ public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 SM4's core, `modeCore`, with the working space in the scratch buffer
 (`Layers.lean` has its layout), which the artifact allocates on the stack.
 
-SM4's core is ECB's: `prepare` sets the masks and builds the table of
-bitsliced round keys in encryption order (`dirCore .encrypt`), once; `crypt` transforms the
-sixteen blocks of the tail buffer in place. Only the schedule's address
-(`x0`) is a key argument; both keep `x1` and `x2`, where ECB keeps the
-data's address and the blocks left too.
+SM4's core calls ECB's two halves (`Prepared.lean`): `prepare` calls
+`vg_sm4_prepare_keys`, which sets the masks and builds the table of
+bitsliced round keys in the order of the direction (`dirCore .encrypt` for
+encryption), once; `crypt` calls `vg_sm4_crypt_prepared`, which transforms
+the sixteen blocks of the tail buffer in place. Only the schedule's address
+(`x0`) is a key argument. The modes keep the data's address and the blocks
+left in `x23` and `x24`, which the calls keep in vector registers, with
+the return address and `sb`. The core's slots are the functions' 396, the
+modes' 12 after them.
 -/
 
 @[expose] public section
@@ -28,15 +32,15 @@ open VG.AArch64 VG.Impl.Aes.AArch64
 `d`: encryption's for CTR and CBC encryption, decryption's for CBC
 decryption. -/
 def dirCore (d : Dir) : Impl.Modes.AArch64.Core where
-  prepare := .seq (.block (setSlots keyMasks)) (keys d)
-  crypt := .seq (.block (slotAddr .x3 tableEnd)) crypt16
-  slots := tableEnd
-  total := slots
+  prepare := prepareCall d
+  crypt := cryptCall
+  slots := slots
+  total := slots + 12
   buf := tailSlot
   lgG := 4
   keyRegs := [.x0]
-  dataReg := .x1
-  leftReg := .x2
+  dataReg := .x23
+  leftReg := .x24
 
 /-- SM4's core for encryption. -/
 abbrev modeCore : Impl.Modes.AArch64.Core := dirCore .encrypt

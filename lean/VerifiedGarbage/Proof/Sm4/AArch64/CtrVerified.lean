@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.AArch64.Link
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
 public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
@@ -45,7 +45,7 @@ meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
 the taint analysis: the pointers, `n` and the stack pointer are public, and
 so is everything the code computes from them, which it keeps in registers;
 the counter block is secret. `ctr_framed` runs it with its working space on
-the stack, zeroed on return: 3168 bytes, the 396 words of the scratch
+the stack, zeroed on return: 3264 bytes, the 408 words of the scratch
 buffer.
 -/
 
@@ -61,11 +61,11 @@ def ctrAArch64 : Contract AArch64.isa where
     let sched : Region := ⟨s.gpr .x0, 128⟩
     let ctr : Region := ⟨s.gpr .x1, 16⟩
     let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
-    let scratch : Region := ⟨s.gpr .x4, 8 * slots⟩
+    let scratch : Region := ⟨s.gpr .x4, 8 * (slots + 12)⟩
     s.rd = [sched] ∧ s.wr = [ctr, data, scratch] ∧ sched.Disjoint ctr ∧ sched.Disjoint data ∧
       sched.Disjoint scratch ∧ ctr.Disjoint data ∧ ctr.Disjoint scratch ∧ data.Disjoint scratch ∧
       (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * slots ≤ 2 ^ 64
+      (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * (slots + 12) ≤ 2 ^ 64
   post s s' :=
     Spec.Cbc.blocksAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat =
         Spec.Ctr.crypt (Spec.Sm4.cipher (Spec.Sm4.scheduleAt s.mem (s.gpr .x0))) (Spec.Aes.bytesAt s.mem (s.gpr .x1) 16)
@@ -90,7 +90,7 @@ theorem ctr_wp {s₀ : State} (hp : ctrAArch64.pre s₀) :
     WP isa ctr s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, fitK, fitC, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.ctr_wp modeCoreSpec (r := ⟨.x1, .x2, .x3, .x4⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
@@ -119,21 +119,8 @@ theorem ctr_ct : ConstantTime isa ctrAArch64.pre ctrAArch64.pub ctr :=
 
 theorem ctr_correct (s : State) (hs : ctrAArch64.pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ ctrAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ctr_wp hs) (by lit_decide) (by lit_decide)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
-  · exact h₁ 9 (by omega)
-  · exact h₃ _ (by simp)
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ctr_keeps_x30 (ctr_wp hs)
+  exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩
 
 /-- A state satisfying the precondition (one block). -/
 def ctrSat : State where
@@ -142,10 +129,10 @@ def ctrSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 396⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 408⟩]
 
 theorem ctr_verified :
-    Verified AArch64.target ctr (Proof.Sm4.ctrScratchContract AArch64.abi slots) :=
+    Verified AArch64.target ctr (Proof.Sm4.ctrScratchContract AArch64.abi (slots + 12)) :=
   Verified.of_correct ctr_correct ctr_ct (by
     sig_implies [Proof.Sm4.ctrScratchContract, Proof.Sm4.ctrScratchSig, Proof.Sm4.ctrPost, ctrAArch64,
       AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [ctrSat] using ctrSat)
@@ -160,16 +147,16 @@ def ctrFrameSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctrFrameSat_pre : ∃ s, (Spec.Sm4.ctrContract AArch64.abi 3168).pre s := by
+theorem ctrFrameSat_pre : ∃ s, (Spec.Sm4.ctrContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
 
 /-- CTR with its working space on the stack. -/
 theorem ctr_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 ctr)
-      (Spec.Sm4.ctrContract AArch64.abi 3168) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 ctr)
+      (Spec.Sm4.ctrContract AArch64.abi 3264) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.ctrPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) ctr_verified
+    (n := 408) (post := Proof.Sm4.ctrPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) ctr_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.ctrPostOut_local _) ctrFrameSat_pre
 
 end VG.Proof.Sm4.AArch64

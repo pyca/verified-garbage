@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.AArch64.Link
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
 public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
@@ -60,7 +60,7 @@ for OFB and CFB (`fbPre`, `fbTaint_agree`): the pointers, `n` and the stack
 pointer are public, and so is everything the code computes from them, which
 it keeps in registers; the IV is secret. `cbcEncryptChained_framed` and
 `cbcDecryptChained_framed` run them with their working space on the stack,
-zeroed on return: 3168 bytes, the 396 words of the scratch buffer.
+zeroed on return: 3264 bytes, the 408 words of the scratch buffer.
 -/
 
 @[expose] public section
@@ -95,7 +95,7 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.cbcDecryptChained_wp ((dirCoreSpec .decrypt).toBlock rfl)
     (r := ⟨.x1, .x2, .x3, .x4⟩) ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
@@ -110,11 +110,10 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
   exact ⟨hdata, hiv⟩
 
 theorem cbcDecryptChained_verified :
-    Verified AArch64.target cbcDecryptChained (Proof.Sm4.cbcDecChainedScratchContract AArch64.abi slots) :=
+    Verified AArch64.target cbcDecryptChained (Proof.Sm4.cbcDecChainedScratchContract AArch64.abi (slots + 12)) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecryptChained_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcDecryptChained_keeps_x30 (cbcDecryptChained_wp hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
         (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
@@ -122,17 +121,17 @@ theorem cbcDecryptChained_verified :
       Proof.Sm4.cbcDecChainedPost, cbcDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd,
       tableSlot] [fbSat] using fbSat)
 
-theorem cbcDecFrameSat_pre : ∃ s, (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 3168).pre s := by
+theorem cbcDecFrameSat_pre : ∃ s, (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.cbcDecryptChainedContract, Spec.Sm4.cbcChainedSig, AArch64.abi, AArch64.argRegs]
     [fbFrameSat] using fbFrameSat
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 cbcDecryptChained)
-      (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 3168) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 cbcDecryptChained)
+      (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 3264) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) cbcDecryptChained_verified
+    (n := 408) (post := Proof.Sm4.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) cbcDecryptChained_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.cbcDecChainedPostOut_local _) cbcDecFrameSat_pre
 
 /-! ## Encryption -/
@@ -141,7 +140,7 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp fbCoreSpec (r := ⟨.x1, .x2, .x3, .x4⟩)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x19)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
@@ -156,11 +155,10 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
     fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [fbCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
 
 theorem cbcEncryptChained_verified :
-    Verified AArch64.target cbcEncryptChained (Proof.Sm4.cbcEncChainedScratchContract AArch64.abi slots) :=
+    Verified AArch64.target cbcEncryptChained (Proof.Sm4.cbcEncChainedScratchContract AArch64.abi (slots + 12)) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcEncryptChained_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcEncryptChained_keeps_x30 (cbcEncryptChained_wp hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
         (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
@@ -168,17 +166,17 @@ theorem cbcEncryptChained_verified :
       Proof.Sm4.cbcEncChainedPost, cbcEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd,
       tableSlot] [fbSat] using fbSat)
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 3168).pre s := by
+theorem cbcEncFrameSat_pre : ∃ s, (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.cbcEncryptChainedContract, Spec.Sm4.cbcChainedSig, AArch64.abi, AArch64.argRegs]
     [fbFrameSat] using fbFrameSat
 
 /-- CBC encryption with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 cbcEncryptChained)
-      (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 3168) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 cbcEncryptChained)
+      (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 3264) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.cbcEncChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) cbcEncryptChained_verified
+    (n := 408) (post := Proof.Sm4.cbcEncChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) cbcEncryptChained_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.cbcEncChainedPostOut_local _) cbcEncFrameSat_pre
 
 end VG.Proof.Sm4.AArch64
