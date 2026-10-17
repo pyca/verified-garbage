@@ -11,12 +11,13 @@ import Mathlib.Tactic.SplitIfs
 # Deterministic ECDSA on 32-bit ARM: one HMAC
 
 `HMAC_K(data)` (`Cfg.hmac`), for the key `K` (of the hash function's output
-length) in the frame and `len` bytes of data in the frame or in `scratch`
+length) in the frame and `D + lc` bytes of data in the frame or in `scratch`
 above HMAC's working space (`DataOk`), written to the frame at `dst`: HMAC's
 `init` with `K` (`init_step`), the streaming `update` on the inner state
-(`upd_step`), and HMAC's `finalize` (`fin_step`), each called in its frame
-as PBKDF2's code calls them (`VG.Proof.Pbkdf2.Whole.Arm`), for any hash
-function `P`. They change only HMAC's states and working space (the first
+(`upd_step`), and HMAC's `finalize` (`fin_step`), each the case of the
+dispatch on `r6` for the run's hash function `P` (`disp_wp`), called in its
+frame as PBKDF2's code calls them (`VG.Proof.Pbkdf2.Whole.Arm`), with the
+sizes `D` and `B` computed from the code in `r6`. They change only HMAC's states and working space (the first
 2256 bytes of `scratch`), the 24 bytes below the frame, and `dst`
 (`hmac_ok`).
 -/
@@ -28,6 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
 open VG.Proof.Pbkdf2.Whole.Arm (After HiArgs HfArgs UpdL hi_frame hf_frame upd_frame stk)
+open VG.Proof.X25519.Arm (wp_dp op2_imm op2_reg dpVal)
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
@@ -63,7 +65,7 @@ theorem Ctx.after (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Re
       · exact hs r hr
       · simp only [List.mem_singleton] at hr; subst hr
         rw [hc.stk_eq hL]
-        exact .inr (.inr (.inl (Region.sub_prefix (by omega))))
+        exact .inr (.inr (Region.sub_prefix (by omega)))
 
 /-- The same, for `update`, which may use the 16 bytes below the stack pointer. -/
 theorem Ctx.afterU (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region}
@@ -83,15 +85,15 @@ theorem scr_toNat (hL : L.Ok) {o : Nat} (ho : o < 8192) : (L.scr + BitVec.ofNat 
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32)]
   exact Nat.mod_eq_of_lt (by omega)
 
-theorem fp_toNat (hL : L.Ok) {o : Nat} (ho : o ≤ 216 + 4 * L.e) :
-    (L.fp + BitVec.ofNat 32 o).toNat = L.sp.toNat - (216 + 4 * L.e) + o := by
-  have := hL.nB; have := L.sp.isLt; have := L.he
-  have hfp : L.fp.toNat = L.sp.toNat - (216 + 4 * L.e) := VG.Arm.FrameStack.sub_toNat' (by omega)
+theorem fp_toNat (hL : L.Ok) {o : Nat} (ho : o ≤ 432) :
+    (L.fp + BitVec.ofNat 32 o).toNat = L.sp.toNat - 432 + o := by
+  have := hL.nB; have := L.sp.isLt; have := hL.nA
+  have hfp : L.fp.toNat = L.sp.toNat - 432 := VG.Arm.FrameStack.sub_toNat' (by omega)
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32), hfp]
   exact Nat.mod_eq_of_lt (by omega)
 
 /-- The stack below the frame and parts of it are apart from `scratch`. -/
-theorem low_scr (hL : L.Ok) {n e k : Nat} (hn : n ≤ 240) (h : e + k ≤ 8192) :
+theorem low_scr (hL : L.Ok) {n e k : Nat} (hn : n ≤ 456) (h : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, n⟩ ⟨State.addr L.scr + BitVec.ofNat 64 e, k⟩ :=
   (hL.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h)
 
@@ -126,16 +128,16 @@ theorem after_frameU (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List
 /-! ## HMAC's `init` -/
 
 /-- The arguments of HMAC's `init`. -/
-theorem initArgs_ok {t : State} (hc : Ctx L g m₀ t) {D : Nat} (hD : D < 2 ^ 16) :
-    WP isa (.block (Cfg.hmacArgs₁ D)) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
+theorem initArgs_ok (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block Cfg.hmacArgs₁) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
       t'.gpr .r0 = L.scr + BitVec.ofNat 32 0 ∧ t'.gpr .r1 = L.scr + BitVec.ofNat 32 192 ∧
-      t'.gpr .r2 = L.fp + BitVec.ofNat 32 0 ∧ t'.gpr .r3 = BitVec.ofNat 32 D ∧
+      t'.gpr .r2 = L.fp + BitVec.ofNat 32 0 ∧ t'.gpr .r3 = BitVec.ofNat 32 P.F.H.D ∧
       t'.gpr .r12 = L.scr + BitVec.ofNat 32 384 ∧ t'.gpr .r9 = t.gpr .r9 := by
   simp only [Cfg.hmacArgs₁, List.append_assoc, List.cons_append, List.nil_append]
   refine scrAt_ok hc (d := .r0) (by decide) (o := sInner) (by decide) fun t₁ c₁ m₁ v₁ k₁ => ?_
   refine scrAt_ok c₁ (d := .r1) (by decide) (o := sOuter) (by decide) fun t₂ c₂ m₂ v₂ k₂ => ?_
   refine fpAdd_ok c₂ (d := .r2) (by decide) (o := fK) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
-  refine movw_ok c₃ (d := .r3) (by decide) hD fun t₄ c₄ m₄ v₄ k₄ => ?_
+  refine dOut_ok hq c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
   rw [← List.append_nil (scrAt .r12 sWork)]
   refine scrAt_ok c₄ (d := .r12) (by decide) (o := sWork) (by decide) fun t₅ c₅ m₅ v₅ k₅ => ?_
   refine WP.block_nil ⟨c₅, by rw [m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, v₅, ?_⟩
@@ -206,10 +208,12 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
       nk := by rw [fp_toNat hL (by omega)]; anums
       nsc := by rw [scr_toNat hL (by decide)]; anums }
 
-theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.seq (.block (Cfg.hmacArgs₁ P.F.H.D))
-      (.frame (.push [.r12, .lr]) (.call P.F.hiN P.F.hiC) (.pop .r12 8))) t (Inited P L g m₀ t) := by
-  refine WP.seq (WP.mono (initArgs_ok hc (D := P.F.H.D) (by anums)) fun u ⟨hcu, hmu, h0, h1, h2, h3, h12, h9⟩ => ?_)
+theorem init_step (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.seq (.block Cfg.hmacArgs₁) ((cfgOf P).disp Cfg.callInit)) t (Inited P L g m₀ t) := by
+  refine WP.seq (WP.mono (initArgs_ok hq hc) fun u₀ ⟨hcu₀, hmu₀, h0, h1, h2, h3, h12, h9⟩ => ?_)
+  refine disp_wp hq hcu₀ fun u hcu hfl => ?_
+  have hmu : u.mem = t.mem := hfl.mem.trans hmu₀
+  rw [← hfl.gpr] at h0 h1 h2 h3 h12 h9
   refine hi_frame P.ok.hi P.ok.hiSt (initA hL hcu h0 h1 h2 h3 h12) fun u' ha hi ho => ?_
   have ek : Spec.Sha256.bytesAt u.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
     rw [hL.fpA (by omega), hmu]
@@ -226,7 +230,7 @@ theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-- Where the data may be: in the frame below `h`'s end, or in `scratch`
 above HMAC's working space. -/
 def DataOk {dn : Nat} (L : Lay dn) (da : BitVec 32) (len : Nat) : Prop :=
-  (∃ o, da = L.fp + BitVec.ofNat 32 o ∧ o + len ≤ 176) ∨
+  (∃ o, da = L.fp + BitVec.ofNat 32 o ∧ o + len ≤ 396) ∨
     (∃ o, da = L.scr + BitVec.ofNat 32 o ∧ 2256 ≤ o ∧ o + len < 8192)
 
 /-- Code that sets `r1` to the data's address `da`, changing nothing else but `r12`. -/
@@ -240,7 +244,7 @@ namespace DataOk
 variable {da : BitVec 32} {len : Nat}
 
 theorem addr (hd : DataOk L da len) (hL : L.Ok) :
-    (∃ o, State.addr da = L.B + BitVec.ofNat 64 o ∧ 24 ≤ o ∧ o + len ≤ 200) ∨
+    (∃ o, State.addr da = L.B + BitVec.ofNat 64 o ∧ 24 ≤ o ∧ o + len ≤ 420) ∨
       (∃ o, State.addr da = State.addr L.scr + BitVec.ofNat 64 o ∧ 2256 ≤ o ∧ o + len ≤ 8192) := by
   rcases hd with ⟨o, rfl, h⟩ | ⟨o, rfl, h₁, h₂⟩
   · exact .inl ⟨24 + o, hL.fpA (by omega), by omega, by omega⟩
@@ -290,30 +294,33 @@ theorem append_zero {k : Nat} (hk : k < 2 ^ 32) : (0 : BitVec 32) ++ BitVec.ofNa
     Nat.zero_shiftLeft, Nat.zero_or]
   omega
 
-theorem updArgs_ok {u : State} (hc : Ctx L g m₀ u) {dataA : List Instr} {da : BitVec 32}
-    (hdA : DataA L g m₀ dataA da) {B : Nat} (hB : B < 2 ^ 16) {len : Nat} (hlen : len < 2 ^ 16) :
-    WP isa (.block (Cfg.hmacArgs₂ B dataA len)) u fun u' => Ctx L g m₀ u' ∧
+theorem updArgs_ok (hq : HOk P L) {u : State} (hc : Ctx L g m₀ u) {dataA : List Instr} {da : BitVec 32}
+    (hdA : DataA L g m₀ dataA da) {lc : Nat} (hlc : encodable (BitVec.ofNat 32 lc) = true) :
+    WP isa (.block (Cfg.hmacArgs₂ dataA lc)) u fun u' => Ctx L g m₀ u' ∧
       u'.mem = u.mem ∧ u'.gpr .r0 = L.scr + BitVec.ofNat 32 0 ∧ u'.gpr .r1 = da ∧
-      u'.gpr .r2 = BitVec.ofNat 32 B ∧ u'.gpr .r3 = 0 ∧ u'.gpr .r7 = BitVec.ofNat 32 len ∧
+      u'.gpr .r2 = BitVec.ofNat 32 P.F.H.B ∧ u'.gpr .r3 = 0 ∧ u'.gpr .r7 = BitVec.ofNat 32 (P.F.H.D + lc) ∧
       u'.gpr .r10 = L.scr + BitVec.ofNat 32 384 ∧ u'.gpr .r9 = u.gpr .r9 := by
   simp only [Cfg.hmacArgs₂, List.append_assoc, List.cons_append, List.nil_append]
   refine scrAt_ok hc (d := .r0) (by decide) (o := sInner) (by decide) fun t₁ c₁ m₁ v₁ k₁ => ?_
   refine hdA t₁ _ _ c₁ fun t₂ c₂ m₂ v₂ k₂ => ?_
-  refine movw_ok c₂ (d := .r2) (by decide) hB fun t₃ c₃ m₃ v₃ k₃ => ?_
+  refine dBlk_ok hq c₂ (d := .r2) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
   refine mov0_ok c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
-  refine movw_ok c₄ (d := .r7) (by decide) hlen fun t₅ c₅ m₅ v₅ k₅ => ?_
+  refine dOut_ok hq c₄ (d := .r7) (by decide) fun t₅ c₅ m₅ v₅ k₅ => ?_
+  refine wp_dp (op2_imm hlc) fun t₆ u₆ => ?_
+  have c₆ := c₅.upd u₆ (by decide)
   rw [← List.append_nil (scrAt .r10 sWork)]
-  refine scrAt_ok c₅ (d := .r10) (by decide) (o := sWork) (by decide) fun t₆ c₆ m₆ v₆ k₆ => ?_
-  refine WP.block_nil ⟨c₆, by rw [m₆, m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, ?_, v₆, ?_⟩
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide),
-      k₂ _ (by decide) (by decide)]
+  refine scrAt_ok c₆ (d := .r10) (by decide) (o := sWork) (by decide) fun t₇ c₇ m₇ v₇ k₇ => ?_
+  refine WP.block_nil ⟨c₇, by rw [m₇, u₆.mem, m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, ?_, v₇, ?_⟩
+  · rw [k₇ _ (by decide) (by decide), u₆.other _ (by decide), k₅ _ (by decide), k₄ _ (by decide),
+      k₃ _ (by decide), k₂ _ (by decide) (by decide)]
     exact v₁
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), v₂]
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), v₃]
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), v₄]
-  · rw [k₆ _ (by decide) (by decide), v₅]
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide),
-      k₂ _ (by decide) (by decide), k₁ _ (by decide) (by decide)]
+  · rw [k₇ _ (by decide) (by decide), u₆.other _ (by decide), k₅ _ (by decide), k₄ _ (by decide),
+      k₃ _ (by decide), v₂]
+  · rw [k₇ _ (by decide) (by decide), u₆.other _ (by decide), k₅ _ (by decide), k₄ _ (by decide), v₃]
+  · rw [k₇ _ (by decide) (by decide), u₆.other _ (by decide), k₅ _ (by decide), v₄]
+  · rw [k₇ _ (by decide) (by decide), u₆.gpr, dpVal, v₅, BitVec.ofNat_add_ofNat]
+  · rw [k₇ _ (by decide) (by decide), u₆.other _ (by decide), k₅ _ (by decide), k₄ _ (by decide),
+      k₃ _ (by decide), k₂ _ (by decide) (by decide), k₁ _ (by decide) (by decide)]
 
 /-- After the streaming `update`: the inner state holds the data too. -/
 structure Updated (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : State)
@@ -361,13 +368,17 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : BitVec 32} {le
       nd := hn
       nsc := by rw [scr_toNat hL (by decide)]; anums }
 
-theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA : List Instr} {da : BitVec 32}
-    {len : Nat} (hdA : DataA L g m₀ dataA da) (hd : DataOk L da len) (hlen : len ≤ 256) :
-    WP isa (.seq (.block (Cfg.hmacArgs₂ P.F.H.B dataA len))
-      (.frame (.push [.r1, .r7, .r10, .r12]) (.call P.F.H.updN P.F.H.updC) (.pop .r1 16))) u
-      (Updated P L g m₀ t da len) := by
-  refine WP.seq (WP.mono (updArgs_ok hu.ctx hdA (B := P.F.H.B) (by anums) (len := len) (by omega))
-    fun w ⟨hcw, hmw, h0, h1, h2, h3, h7, h10, h9⟩ => ?_)
+theorem upd_step (hL : L.Ok) (hq : HOk P L) {t u : State} (hu : Inited P L g m₀ t u) {dataA : List Instr}
+    {da : BitVec 32} {lc : Nat} (hdA : DataA L g m₀ dataA da) (hlc : encodable (BitVec.ofNat 32 lc) = true)
+    (hd : DataOk L da (P.F.H.D + lc)) (hlen : P.F.H.D + lc ≤ 256) :
+    WP isa (.seq (.block (Cfg.hmacArgs₂ dataA lc)) ((cfgOf P).disp Cfg.callUpd)) u
+      (Updated P L g m₀ t da (P.F.H.D + lc)) := by
+  set len := P.F.H.D + lc with hlen_def
+  refine WP.seq (WP.mono (updArgs_ok hq hu.ctx hdA hlc)
+    fun w₀ ⟨hcw₀, hmw₀, h0, h1, h2, h3, h7, h10, h9⟩ => ?_)
+  refine disp_wp hq hcw₀ fun w hcw hfl => ?_
+  have hmw : w.mem = u.mem := hfl.mem.trans hmw₀
+  rw [← hfl.gpr] at h0 h1 h2 h3 h7 h10 h9
   refine upd_frame P.ok.hH (updA hL hcw hd hlen h0 h1 h7 h10) fun w' af hr => ?_
   have hws : ∀ r ∈ [(⟨State.addr (L.scr + BitVec.ofNat 32 0), P.F.H.S⟩ : Region),
       ⟨State.addr (L.scr + BitVec.ofNat 32 384), P.ok.hH.Wb⟩], Region.Sub r (WK L) := by
@@ -404,31 +415,38 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
 
 /-! ## HMAC's `finalize` -/
 
-theorem finArgs_ok {u : State} (hc : Ctx L g m₀ u) {B len dst : Nat} (hlen : B + len < 2 ^ 16)
-    (he : encodable (BitVec.ofNat 32 dst) = true) :
-    WP isa (.block (Cfg.hmacArgs₃ B len dst)) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧
+theorem finArgs_ok (hq : HOk P L) {u : State} (hc : Ctx L g m₀ u) {lc dst : Nat}
+    (hlc : encodable (BitVec.ofNat 32 lc) = true) (he : encodable (BitVec.ofNat 32 dst) = true) :
+    WP isa (.block (Cfg.hmacArgs₃ lc dst)) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧
       u'.gpr .r0 = L.scr + BitVec.ofNat 32 0 ∧ u'.gpr .r1 = L.scr + BitVec.ofNat 32 192 ∧
-      u'.gpr .r2 = BitVec.ofNat 32 (B + len) ∧ u'.gpr .r3 = 0 ∧ u'.gpr .r10 = L.fp + BitVec.ofNat 32 dst ∧
+      u'.gpr .r2 = BitVec.ofNat 32 (P.F.H.B + (P.F.H.D + lc)) ∧ u'.gpr .r3 = 0 ∧
+      u'.gpr .r10 = L.fp + BitVec.ofNat 32 dst ∧
       u'.gpr .r12 = L.scr + BitVec.ofNat 32 384 ∧ u'.gpr .r9 = u.gpr .r9 := by
   simp only [Cfg.hmacArgs₃, List.append_assoc, List.cons_append, List.nil_append]
   refine scrAt_ok hc (d := .r0) (by decide) (o := sInner) (by decide) fun t₁ c₁ m₁ v₁ k₁ => ?_
   refine scrAt_ok c₁ (d := .r1) (by decide) (o := sOuter) (by decide) fun t₂ c₂ m₂ v₂ k₂ => ?_
-  refine movw_ok c₂ (d := .r2) (by decide) hlen fun t₃ c₃ m₃ v₃ k₃ => ?_
-  refine mov0_ok c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
-  refine fpAdd_ok c₄ (d := .r10) (by decide) he fun t₅ c₅ m₅ v₅ k₅ => ?_
+  refine dBlk_ok hq c₂ (d := .r2) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
+  refine dOut_ok hq c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
+  refine wp_dp (op2_reg _ _) fun t₅ u₅ => wp_dp (op2_imm hlc) fun t₆ u₆ => ?_
+  have c₆ := (c₄.upd u₅ (by decide)).upd u₆ (by decide)
+  refine mov0_ok c₆ (d := .r3) (by decide) fun t₇ c₇ m₇ v₇ k₇ => ?_
+  refine fpAdd_ok c₇ (d := .r10) (by decide) he fun t₈ c₈ m₈ v₈ k₈ => ?_
   rw [← List.append_nil (scrAt .r12 sWork)]
-  refine scrAt_ok c₅ (d := .r12) (by decide) (o := sWork) (by decide) fun t₆ c₆ m₆ v₆ k₆ => ?_
-  refine WP.block_nil ⟨c₆, by rw [m₆, m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, ?_, v₆, ?_⟩
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide),
-      k₂ _ (by decide) (by decide)]
+  refine scrAt_ok c₈ (d := .r12) (by decide) (o := sWork) (by decide) fun t₉ c₉ m₉ v₉ k₉ => ?_
+  refine WP.block_nil ⟨c₉, by rw [m₉, m₈, m₇, u₆.mem, u₅.mem, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, ?_, v₉, ?_⟩
+  · rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), k₇ _ (by decide), u₆.other _ (by decide),
+      u₅.other _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide)]
     exact v₁
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide)]
+  · rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), k₇ _ (by decide), u₆.other _ (by decide),
+      u₅.other _ (by decide), k₄ _ (by decide), k₃ _ (by decide)]
     exact v₂
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), v₃]
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), v₄]
-  · rw [k₆ _ (by decide) (by decide), v₅]
-  · rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide),
-      k₂ _ (by decide) (by decide), k₁ _ (by decide) (by decide)]
+  · rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), k₇ _ (by decide), u₆.gpr, dpVal, u₅.gpr, dpVal,
+      k₄ _ (by decide), v₃, v₄, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, Nat.add_assoc]
+  · rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), v₇]
+  · rw [k₉ _ (by decide) (by decide), v₈]
+  · rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), k₇ _ (by decide), u₆.other _ (by decide),
+      u₅.other _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide),
+      k₁ _ (by decide) (by decide)]
 
 /-- After HMAC's `finalize`: the MAC in the frame at `dst`. -/
 structure Done (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : State)
@@ -482,12 +500,17 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dst : Nat} (hdst : 
 theorem reprOK : Proof.Pbkdf2.Whole.Arm.ReprOK P.ok.hH.SH := fun m m' p q msg hb =>
   P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi))
 
-theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu : Updated P L g m₀ t da len u)
-    (hlen : len ≤ 256) (hdst : dst + P.F.H.D ≤ 128) (he : encodable (BitVec.ofNat 32 dst) = true) :
-    WP isa (.seq (.block (Cfg.hmacArgs₃ P.F.H.B len dst))
-      (.frame (.push [.r10, .r12]) (.call P.F.hfN P.F.hfC) (.pop .r12 8))) u (Done P L g m₀ t da len dst) := by
-  refine WP.seq (WP.mono (finArgs_ok hu.ctx (B := P.F.H.B) (len := len) (by anums) he)
-    fun w ⟨hcw, hmw, h0, h1, h2, h3, h10, h12, h9⟩ => ?_)
+theorem fin_step (hL : L.Ok) (hq : HOk P L) {t u : State} {da : BitVec 32} {lc dst : Nat}
+    (hu : Updated P L g m₀ t da (P.F.H.D + lc) u) (hlc : encodable (BitVec.ofNat 32 lc) = true)
+    (hlen : P.F.H.D + lc ≤ 256) (hdst : dst + P.F.H.D ≤ 128) (he : encodable (BitVec.ofNat 32 dst) = true) :
+    WP isa (.seq (.block (Cfg.hmacArgs₃ lc dst)) ((cfgOf P).disp Cfg.callFin)) u
+      (Done P L g m₀ t da (P.F.H.D + lc) dst) := by
+  refine WP.seq (WP.mono (finArgs_ok hq hu.ctx hlc he)
+    fun w₀ ⟨hcw₀, hmw₀, h0, h1, h2, h3, h10, h12, h9⟩ => ?_)
+  refine disp_wp hq hcw₀ fun w hcw hfl => ?_
+  have hmw : w.mem = u.mem := hfl.mem.trans hmw₀
+  rw [← hfl.gpr] at h0 h1 h2 h3 h10 h12 h9
+  set len := P.F.H.D + lc with hlen_def
   refine hf_frame reprOK (by anums) P.ok.hf P.ok.hfSt (finA hL hcw hdst h0 h1 h10 h12) fun w' ha hpost => ?_
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
   have eo := hL.fpA (o := dst) (by omega)
@@ -515,8 +538,8 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
   rcases hr' with rfl | rfl | rfl
   · exact wk_safe hs
-  · exact .inr (.inr (.inl (sub_trans hs (Region.sub_prefix (by omega)))))
-  · exact .inr (.inr (.inl (sub_trans hs (Offset.sub_base _ (by anums)))))
+  · exact .inr (.inr (sub_trans hs (Region.sub_prefix (by omega))))
+  · exact .inr (.inr (sub_trans hs (Offset.sub_base _ (by anums))))
 
 /-! ## The whole HMAC -/
 
@@ -528,11 +551,12 @@ theorem seq_seq {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
   exact WP.mono h₁ hc
 
 /-- `HMAC_K(data)`, for the key `K` in the frame, to the frame at `dst`. -/
-theorem hmac_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {da : BitVec 32}
-    {len dst : Nat} (hdA : DataA L g m₀ dataA da) (hd : DataOk L da len) (hlen : len ≤ 256)
+theorem hmac_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr}
+    {da : BitVec 32} {lc dst : Nat} (hdA : DataA L g m₀ dataA da) (hlc : encodable (BitVec.ofNat 32 lc) = true)
+    (hd : DataOk L da (P.F.H.D + lc)) (hlen : P.F.H.D + lc ≤ 256)
     (hdst : dst + P.F.H.D ≤ 128) (he : encodable (BitVec.ofNat 32 dst) = true) :
-    WP isa ((cfgOf P).hmac dataA len dst) t (Done P L g m₀ t da len dst) :=
-  seq_seq (init_step hL hc) fun _ hu => seq_seq (upd_step hL hu hdA hd hlen) fun _ hw =>
-    fin_step hL hw hlen hdst he
+    WP isa ((cfgOf P).hmac dataA lc dst) t (Done P L g m₀ t da (P.F.H.D + lc) dst) :=
+  seq_seq (init_step hL hq hc) fun _ hu => seq_seq (upd_step hL hq hu hdA hlc hd hlen) fun _ hw =>
+    fin_step hL hq hw hlc hlen hdst he
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

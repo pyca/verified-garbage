@@ -71,17 +71,14 @@ def coreK (E : Impl.Ecdsa.Arm.Cfg) : Contract Arm.isa where
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
 
 /-- The code's blocks that depend on neither the hash function nor the
-functions it calls, for scalars of `E` (with `h` at the frame's top if
-`hHigh`). -/
-def cfgC (E : Impl.Ecdsa.Arm.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
-  F := ⟨⟨0, 0, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩, 0, "", .block [], "", .block [], "",
-    .block []⟩
+functions it calls, for scalars of `E`. -/
+def cfgC (E : Impl.Ecdsa.Arm.Cfg) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
+  hs := []
   w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
   n := E.C.n
   tries := 8
   coreN := ""
   coreC := .block []
-  hHigh := hHigh
 
 /-- A curve, for RFC 6979 on 32-bit ARM. -/
 structure RfcCurve where
@@ -90,8 +87,15 @@ structure RfcCurve where
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Whether the scalars are longer than any hash function's output, so
-  that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.Arm.Cfg.wide`). -/
+  /-- The instance of RFC 6979 whose contract the function meets (its hash
+  function is not used), of the curve, trying at least one candidate and as
+  many as a 16-bit immediate holds. -/
+  I : Spec.Ecdsa.Rfc6979.Instance
+  ecdsa : I.ecdsa = inst
+  tries_pos : 0 < I.tries
+  tries_lt : I.tries < 2 ^ 16
+  /-- Whether the order has fewer bits than the scalars' bytes (P-521), so
+  that `core`'s digest is shifted (`sh ≠ 0`). -/
   wide : Bool
   /-- Scalars of 3, 4, 6 or 8 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
   bits, with `2^(64 n) < 2 n`; or P-224, 28 bytes in 4 words;
@@ -100,10 +104,6 @@ structure RfcCurve where
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
     else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6 ∨ E.n = 8) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧ 2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
-  /-- Whether `h` is kept at the frame's top
-  (`Impl.Ecdsa.Rfc6979.Arm.Cfg.hHigh`): for scalars of 8 words. -/
-  hHigh : Bool := false
-  hHigh_eq : hHigh = decide (E.n = 8) := by decide
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
@@ -114,11 +114,9 @@ structure RfcCurve where
   coreCT : ConstantTime isa (coreK E).pre (coreK E).pub coreC
   /-- It uses no stack. -/
   coreStack : VG.Arm.FrameStack.armStack coreC = 0
-  /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
-  memory only from the registers that hold the pointers (the taint analysis,
-  of the block for `n`'s words). -/
-  reduceT : wide = false → ∃ hc, (VG.Taint.check taint (τr ptrRegs)
-    (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.Arm.Cfg.initKV)) hc).isSome = true
+  /-- Unless `wide`, `bits2octets` addresses memory only from the registers
+  that hold the pointers (the taint analysis, of the block for `n`'s words). -/
+  reduceT : wide = false → ∃ hc, (VG.Taint.check taint (τr ptrRegs) (.block (cfgC E).reduce) hc).isSome = true
 
 namespace RfcCurve
 

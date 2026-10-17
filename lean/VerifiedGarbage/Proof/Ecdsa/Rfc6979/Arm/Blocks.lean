@@ -139,30 +139,6 @@ theorem initCnt_ok {t : State} (hc : Ctx L g m₀ t) :
 
 /-! ## Whether to go on -/
 
-section
-variable {is : List Instr} {s : State} {Q : State → Prop}
-
-/-- `subs`, with its carry: set iff no borrow. -/
-theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
-    (k : ∀ s', Upd s s' d (s.gpr n - y) → s'.c = decide (y.toNat ≤ (s.gpr n).toNat) → WP isa (.block is) s' Q) :
-    WP isa (.block (.subs d n o :: is)) s Q :=
-  VG.Proof.X25519.Arm.WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y))
-    (by simp only [exec, ho, Option.map_some]) (k _ (Upd.subs _ _ _ _ _) rfl)
-
-/-- `mov`, keeping the carry. -/
-theorem wp_movC {d : Reg} {o : Op2} {v : BitVec 32} (ho : o.eval s = some v)
-    (k : ∀ s', Upd s s' d v → s'.c = s.c → WP isa (.block is) s' Q) : WP isa (.block (.mov d o :: is)) s Q :=
-  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d v) (by simp only [exec, ho, Option.map_some])
-    (k _ (Upd.setReg _ _ _) rfl)
-
-/-- `adc`. -/
-theorem wp_adc {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
-    (k : ∀ s', Upd s s' d (s.gpr n + y + (if s.c then 1 else 0)) → WP isa (.block is) s' Q) :
-    WP isa (.block (.adc d n o :: is)) s Q :=
-  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d (s.gpr n + y + (if s.c then 1 else 0)))
-    (by simp only [exec, ho, Option.map_some]) (k _ (Upd.setReg _ _ _))
-
-end
 
 /-- The decision's arithmetic: `(C - 1) & count`, `C` set iff `r ≥ 1`, is nonzero iff `r = 0` and
 `count ≠ 0`. -/
