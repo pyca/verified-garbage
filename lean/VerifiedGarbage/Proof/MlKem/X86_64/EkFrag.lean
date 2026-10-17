@@ -102,8 +102,8 @@ structure EkFWf : Prop extends EcWf L where
   nbK : 0 < nb L ∧ 3 * nb L ≤ L.k * L.k
   last : 272 < L.ekLen - 408 * (nb L - 1) ∧ L.ekLen - 408 * (nb L - 1) < 406 ∧ L.ekLen < 408 * nb L
   hbk : oHB L + 408 < 2 ^ 31 ∧ 408 * nb L < 2 ^ 31
-  rC : copyChk (ecB L) (ecW L) (sc oSB) (.r14, 384 * L.k) 32 && ecChk L [(sc oSB, 32)] = true
-  zC : inB (ecW L) (sc (oHS L)) 200 && fkeep L [(sc (oHS L), 200)] 0 = true
+  rC : (copyChk (ecB L) (ecW L) (sc oSB) (.r14, 384 * L.k) 32 && ecChk L [(sc oSB, 32)]) = true
+  zC : (inB (ecW L) (sc (oHS L)) 200 && fkeep L [(sc (oHS L), 200)] 0) = true
   hb : ∀ i < nb L, hbChk L i = true
   sd : ∀ i < nb L, sdChk L i = true
   sm : ∀ i < nb L, smChk L i = true

@@ -212,10 +212,12 @@ theorem pro_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) :
 abbrev EncI {L : Kem} (W : EcWf L) (σ s : State) : Prop :=
   Enc.EIn L (ekC W σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 s ∧ s.gpr .r15 = 1
 
-/-- `m` to `M`, and `G(m ‖ H(ek))`, with `H(ek)` at `H`. -/
-theorem hashes_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s : State}
-    (h : EK L σ s) (hH : bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ)) (h15 : s.gpr .r15 = 1) :
-    WP isa EncapsH.hashes s (EncI W σ) := by
+/-- `m` to `M`, and `G(m ‖ H(ek))`, with `H(ek)` at `H`: what it writes, `r15`, and the inputs of
+`K-PKE.Encrypt`. -/
+theorem hashes_okP {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s : State}
+    (h : EK L σ s) (hH : bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ)) :
+    WP isa EncapsH.hashes s fun s' => PPostB s s' ([(sc oM, 32)] ++ hW₃) ∧ s'.gpr .r15 = s.gpr .r15 ∧
+      Enc.EIn L (ekC W σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 s' := by
   have L₀ := h.lay W hp
   unfold EncapsH.hashes
   refine WP.seq (WP.mono (copy_okL L₀ (dst := sc oM) (src := (.rbp, 0)) (n := 32) (by decide) W.h₁)
@@ -237,9 +239,15 @@ theorem hashes_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s 
     have e' : (bytesAt s₃.mem (pa s₃ (sc oG)) 64).drop 32 = bytesAt s₃.mem (pa s₃ sigP) 32 := by
       rw [e, pa, pa, off_add]
     rw [← e', hb₃]; rfl
-  refine ⟨⟨⟨hp, k₃, hK⟩, k₃.ek, ?_, hr⟩, ?_⟩
-  · rw [L₁.keepBytes hP₃.b W.h₃M, hb₁]
-  · rw [hP₃.cs .r15 (by decide), hP₁.cs .r15 (by decide), h15]
+  refine ⟨PPostB.app hP₁.b hP₃.b (by decide), by rw [hP₃.cs .r15 (by decide), hP₁.cs .r15 (by decide)],
+    ⟨hp, k₃, hK⟩, k₃.ek, ?_, hr⟩
+  rw [L₁.keepBytes hP₃.b W.h₃M, hb₁]
+
+/-- `m` to `M`, and `G(m ‖ H(ek))`, with `H(ek)` at `H`. -/
+theorem hashes_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s : State}
+    (h : EK L σ s) (hH : bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ)) (h15 : s.gpr .r15 = 1) :
+    WP isa EncapsH.hashes s (EncI W σ) :=
+  WP.mono (hashes_okP W hp h hH) fun _ ⟨_, e, hi⟩ => ⟨hi, by rw [e, h15]⟩
 
 end Ek
 
