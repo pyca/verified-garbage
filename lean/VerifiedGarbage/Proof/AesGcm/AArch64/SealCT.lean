@@ -90,7 +90,7 @@ theorem frontIn_of {σ σ₀ τ : State} {n w : Nat} {V : BitVec 64} (f : OneFac
 
 /-- The entry of `seal` and `open` and its stash, in two runs: `work` at `sp + k`, and
 the stack argument at `sp + j` kept. -/
-theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k = 16) (hkw : k = 8 * w) (hj : j = 0 ∨ j = 8)
+theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 24) (hkw : k = 8 * w) (hj : j = 0 ∨ j = 8)
     (f₁ : OneFacts σ₁ σ₁ n w) (f₂ : OneFacts σ₂ σ₁ n w) (hwn : w < n) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry k ++ stashArg j)) TT := by
@@ -100,8 +100,8 @@ theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k =
   have ts : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (stashArg j)) h).isSome = true := by
     rcases hj with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   refine RelCT.block_split (rel_seq (entry_rel hk hW₁ hW₂ (f₁.hsp w hwn) (f₂.hsp w hwn) f₁.perm.w f₂.perm.w qsp hq)
-    (oneEntry_ok (by rcases hk with h | h <;> rw [h] <;> decide) hW₁ (f₁.hsp w hwn) rfl f₁.perm)
-    (oneEntry_ok (by rcases hk with h | h <;> rw [h] <;> decide) hW₂ (f₂.hsp w hwn) (hq .x0 (by simp)).symm f₂.perm)
+    (oneEntry_ok (by rcases hk with h | h | h <;> rw [h] <;> decide) hW₁ (f₁.hsp w hwn) rfl f₁.perm)
+    (oneEntry_ok (by rcases hk with h | h | h <;> rw [h] <;> decide) hW₂ (f₂.hsp w hwn) (hq .x0 (by simp)).symm f₂.perm)
     fun τ₁ τ₂ a₁ a₂ => rel_taint [.x19] (by rw [a₁.1.sp, a₂.1.sp, qsp]) (by agree_tac [a₁.1.x19, a₂.1.x19]) ts)
 
 /-- What the entry of `seal` leaves in a run from `σ`, with the values of the

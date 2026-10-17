@@ -81,13 +81,13 @@ theorem fast_hi {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 2560
 
 /-! ## The path up to the branch on the tag -/
 
-variable (c : Callees) (gh : Fn)
+variable (c : Callees) (cl : Prog isa)
 
 /-- `openRunWith` up to the branch on the tag. -/
 def openRunA : Prog isa :=
   .seq Impl.AesGcm.AArch64.Fast.front
   (.seq (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))
-  (.seq (.call gh.name gh.code)
+  (.seq cl
   (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
       [mov .x13 .x24, mov .x12 .x23]))
   (.seq Impl.AesGcm.AArch64.Fast.padMul
@@ -97,8 +97,8 @@ def openRunA : Prog isa :=
     (.block [imm .x27 1, .sub .x .x27 .x27 .x10]))))))))
 
 /-- `openRunWith` is `openRunA` then `omB`. -/
-theorem openRunWith_split : PEq (.seq (openRunA c gh) (omB c)) (Impl.AesGcm.AArch64.Fast.openRunWith c gh) := by
-  unfold openRunA omB Impl.AesGcm.AArch64.Fast.openRunWith
+theorem openRunWith_split : PEq (.seq (openRunA c cl) (omB c)) (Impl.AesGcm.AArch64.Fast.openRunWithP c cl) := by
+  unfold openRunA omB Impl.AesGcm.AArch64.Fast.openRunWithP
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
@@ -122,9 +122,9 @@ theorem openRunA_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State}
     (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) (hok : Spec.Gcm.tagLenOk tl = true)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
-      s'.rd = t.rd → s'.wr = t.wr → Frame [workR W, ⟨D, n⟩] t.mem s'.mem →
-      WP isa (.call gh.name gh.code) s' (GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb)) :
-    WP isa (openRunA v.callees gh) t (MidO (fastFrame W) Ctx W SP D Np A R 12 al n tl t) := by
+      s'.rd = t.rd → s'.wr = t.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] t.mem s'.mem →
+      WP isa cl s' (GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb)) :
+    WP isa (openRunA v.callees cl) t (MidO (fastFrame W) Ctx W SP D Np A R 12 al n tl t) := by
   have L := o.lay
   have hle := tagLenOk_le hok
   have hnlt := o.dat.ok.lt
@@ -175,7 +175,7 @@ theorem openRunA_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State}
   have rd₆' : s₆.rd = t.rd := by rw [rd₆, r₃.rd, h₂.rd]
   have wr₆' : s₆.wr = t.wr := by rw [wr₆, r₃.wr, h₂.wr]
   refine WP.seq (WP.mono (WP.with_rdwr (absCall2With_ok L (.inr rfl) h₆
-    (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' FW)))
+    (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' h₆.env.sp FW)))
     fun s₇ ⟨⟨h₇, hlt₇⟩, rd₇, wr₇⟩ => ?_)
   rw [Nat.zero_add, Nat.sub_zero] at h₇ hlt₇
   generalize hj : 16 * (n / 16) = j at h₇ hlt₇
@@ -432,15 +432,16 @@ theorem openRunWith_post (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Addr
     (hok : Spec.Gcm.tagLenOk tl = true)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
-      s'.rd = s₀.rd → s'.wr = s₀.wr → Frame [workR W, ⟨D, n⟩] s₀.mem s'.mem →
-      WP isa (.call gh.name gh.code) s' (GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb)) :
-    WP isa (Impl.AesGcm.AArch64.Fast.openRunWith v.callees gh) t (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀) := by
+      s'.rd = s₀.rd → s'.wr = s₀.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] s₀.mem s'.mem →
+      WP isa cl s' (GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb)) :
+    WP isa (Impl.AesGcm.AArch64.Fast.openRunWithP v.callees cl) t (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀) := by
   subst h12
   have L := o.lay
   have F₀ : Frame [workR W, ⟨D, n⟩] s₀.mem t.mem :=
     o.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entry16_work W r hr⟩
-  refine (openRunWith_split v.callees gh).symm.wp (WP.seq (WP.mono (openRunA_ok gh v hMK o h4 h5 h6 h7 hal hok
-    fun s' _ _ _ _ hc sY sS hrd hwr hf => hgh s' hc sY sS (hrd.trans o.rd₀) (hwr.trans o.wr₀) (F₀.trans hf))
+  refine (openRunWith_split v.callees cl).symm.wp (WP.seq (WP.mono (openRunA_ok cl v hMK o h4 h5 h6 h7 hal hok
+    fun s' _ _ _ _ hc sY sS hrd hwr hsp hf => hgh s' hc sY sS (hrd.trans o.rd₀) (hwr.trans o.wr₀) hsp
+      (F₀.trans hf))
     fun _ mo => WP.mono (omB_ok v L o.rounds o.ddW o.dcW mo (fastFrame_work W)) fun s₄ hpost => ?_))
   dsimp only at hpost
   obtain ⟨he₄, F₄, x0₄, d₄⟩ := hpost
@@ -462,17 +463,22 @@ theorem openRunWith_post (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Addr
       simp only [hc, decide_false, Bool.false_eq_true, ite_false] at x0₄ d₄
       exact ⟨by rw [x0₄]; rfl, d₄⟩
 
-/-- `vg_aes_gcm_open` with the path for TLS records, its whole blocks hashed
-by `gh`, which hashes as `vg_ghash` when called with memory changed since the
-entry only in the working space and the text. -/
-theorem openWith_wp (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s : State} (hs : openPreX extra s)
+/-- `vg_aes_gcm_open` with the path for TLS records, `work` the stack
+argument `w`, and its whole blocks hashed by `cl`, which hashes as a call of
+`vg_ghash` when run with memory changed since the entry only in the working
+space and the text. -/
+theorem openWithE_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region}
+    {s : State} (hs : openPreXW w extra s)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s 2)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s 2)) →
-      s'.rd = s.rd → s'.wr = s.wr → Frame [workR (stackArg s 2), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
-    WP isa (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) s fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
-  unfold Impl.AesGcm.AArch64.Fast.openWith
-  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hs) (by decide) (by decide))
+      Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
+      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
+    WP isa (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) s fun s' =>
+      GprAbi s s' ∧ openAArch64.post s s' := by
+  unfold Impl.AesGcm.AArch64.Fast.openWithE
+  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw hs)
+    (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
     fun s₁ ⟨⟨o₁, x12₁⟩, hx₁⟩ => ?_)
   refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
     (by rw [hx₁ .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt o₁.x24 (s.gpr .x3).isLt)
@@ -483,12 +489,25 @@ theorem openWith_wp (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s : Stat
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₁ r hr]
   by_cases hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12
   · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-    unfold Impl.AesGcm.AArch64.Fast.openFast
+    unfold Impl.AesGcm.AArch64.Fast.openFastP
     refine openRestWith_wp o₂ x12₂ fun o' hT hok hx' => ?_
     have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₂ r hr)
-    exact openRunWith_post gh v hMK o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
+    exact openRunWith_post cl v hMK o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
       (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT hok hgh
   · refine WP.ite false (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun h => by cases h) (fun _ => ?_)
     exact openRestWith_wp o₂ x12₂ fun o' hT hok _ => openMain_post v o' hT hok
+
+/-- `vg_aes_gcm_open` with the path for TLS records, its whole blocks hashed
+by `gh`, which hashes as `vg_ghash` when called with memory changed since the
+entry only in the working space and the text. -/
+theorem openWith_wp (gh : Fn) (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s : State}
+    (hs : openPreX extra s)
+    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
+      Region.Sub ⟨Y, 16⟩ (workR (stackArg s 2)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s 2)) →
+      s'.rd = s.rd → s'.wr = s.wr → Frame [workR (stackArg s 2), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
+    WP isa (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) s fun s' => GprAbi s s' ∧ openAArch64.post s s' :=
+  openWithE_wp (w := 2) (.call gh.name gh.code) v hMK (.inl rfl) (openPreX_W hs)
+    fun s' _ _ _ _ c y z r w _ f => hgh s' c y z r w f
 
 end VG.Proof.AesGcm.AArch64.Fast
