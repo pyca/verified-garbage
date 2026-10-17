@@ -411,8 +411,8 @@ theorem oc_in {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
 
 theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
-    (mo : MidO fr Ctx W SP D Np A R nl al n tl s s₇) (hfr : ∀ r ∈ fr, Region.Sub r (workR W)) :
+    (mo : MidO fr Ctx W SP D Np A R nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
     WP isa (.ite (.zero .x .x27) (.block []) (oneCrypt v.callees)) s₇ fun s₈ =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
       Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s₈.mem ∧
@@ -421,8 +421,6 @@ theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
           (bytesAt s.mem D n)).take tl = bytesAt s.mem W tl) then
         gctr (ciphOf s.mem Ctx R) (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
           (bytesAt s.mem Np nl))) (bytesAt s.mem D n) else bytesAt s.mem D n := by
-  have dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r := keep_of_sub hfr ddW
-  have dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r := keep_of_sub hfr dcW
   have hnlt := mo.data.ok.lt
   have F₇ := mo.frame
   have hD₇ : bytesAt s₇.mem D n = bytesAt s.mem D n := bytesAt_frame F₇ dD (by omega)
@@ -450,6 +448,31 @@ theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     · rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, hD₈, Proof.Gcm.gctr_eq]
       rfl
 
+/-- `omB`, with what it writes from the branch on: `omB_ok`, for a frame
+`fr` apart from the text and the key context. -/
+theorem omBX_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (mo : MidO fr Ctx W SP D Np A R nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
+    WP isa (omB v.callees) s₇ fun s' =>
+      let ciph := ciphOf s.mem Ctx R
+      let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
+      let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)
+      let b := decide (T.take tl = bytesAt s.mem W tl)
+      (Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ Frame (⟨D, n⟩ :: fr ++ crFrame (W + BitVec.ofNat 64 16) W D n) s.mem s'.mem ∧
+      s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
+      bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
+        else bytesAt s.mem D n) ∧ Frame (crFrame (W + BitVec.ofNat 64 16) W D n) s₇.mem s'.mem := by
+  unfold omB
+  refine WP.seq (WP.mono (omIte_ok v L hR mo dD dC) fun s₈ ⟨he₈, x27₈, f₈, d₈⟩ => ?_)
+  refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
+  subst hs'
+  refine ⟨⟨he₈.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl, ?_, by simp [gpr_write, x27₈, mo.x27], d₈⟩, f₈⟩
+  exact (mo.frame.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_left _ hr), fun _ h => h⟩).trans
+    (f₈.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_right _ hr), fun _ h => h⟩)
+
 theorem omB_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
@@ -462,16 +485,8 @@ theorem omB_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ Frame (⟨D, n⟩ :: fr ++ crFrame (W + BitVec.ofNat 64 16) W D n) s.mem s'.mem ∧
       s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
       bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
-        else bytesAt s.mem D n := by
-  unfold omB
-  refine WP.seq (WP.mono (omIte_ok v L hR ddW dcW mo hfr) fun s₈ ⟨he₈, x27₈, f₈, d₈⟩ => ?_)
-  refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
-  subst hs'
-  refine ⟨he₈.keep (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl, ?_, by simp [gpr_write, x27₈, mo.x27], d₈⟩
-  exact (mo.frame.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_left _ hr), fun _ h => h⟩).trans
-    (f₈.sub fun r hr => ⟨r, List.mem_cons_of_mem _ (List.mem_append_right _ hr), fun _ h => h⟩)
+        else bytesAt s.mem D n :=
+  WP.mono (omBX_ok v L hR mo (keep_of_sub hfr ddW) (keep_of_sub hfr dcW)) fun _ q => q.1
 
 theorem openMain_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {s : State}
@@ -585,7 +600,7 @@ theorem OpenIn.tagIn {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s s'
     o.sv.frame f (saved_tag16 L), o.sp₀, rd.trans o.rd₀, wr.trans o.wr₀⟩
 
 /-- `openPre`'s common arguments. -/
-theorem openCore {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w extra s) :
+theorem openCore {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW w extra s extraW) :
     oneCore (w + 1) w s := by
   simp only [openPreXW] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, -, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
@@ -593,7 +608,7 @@ theorem openCore {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w e
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `openPre` gives. -/
-theorem openLay {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w extra s) :
+theorem openLay {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW w extra s extraW) :
     OneLay s (w + 1) w ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR (stackArg s w)) := by
   have hs' := hs
@@ -602,8 +617,8 @@ theorem openLay {w : Nat} {extra : List Region} {s : State} (hs : openPreXW w ex
   exact ⟨oneLay (openCore hs), covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- `open`'s first block: the entry, the tag length and the tag. -/
-theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra : List Region} {s : State}
-    (hs : openPreXW w extra s) :
+theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region} {s : State}
+    (hs : openPreXW w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
@@ -788,6 +803,52 @@ theorem openRestWith_wp {m : Prog isa} {w : Nat} {s s₂ : State}
     fun s₄ ⟨he₄, sv₄, post₄⟩ => ?_)
   refine WP.mono (exit_ok he₄.x19 (he₄.sp.trans o₂.sp₀.symm) (covers_left he₄.perm.w) sv₄)
     fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
+  simp only [openAArch64, openRes]
+  rw [hm, hx0]
+  exact post₄
+
+/-- `oiteWith_ok` for an allowed tag length, with `Q` of the memory beside
+`OpenPost`. -/
+theorem oiteWithX_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s₃ : State}
+    {Q : Mem → Prop} (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s₃) (x12₃ : s₃.gpr .x12 = Tg)
+    (x9₃ : s₃.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk tl then 1 else 0))
+    (htl : Spec.Gcm.tagLenOk tl = true)
+    (hm : ∀ {t : State}, OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ t →
+      bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Others loopRegs s₃ t →
+      WP isa m t fun u => OpenPost Ctx W SP Np A D Tg R nl al n tl s₀ u ∧ Q u.mem) :
+    WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) s₃
+      fun u => OpenPost Ctx W SP Np A D Tg R nl al n tl s₀ u ∧ Q u.mem := by
+  have ev : isa.eval (.zero .x .x9) s₃ = some (decide ((if Spec.Gcm.tagLenOk tl then 1 else 0) = 0)) :=
+    eval_zero x9₃ (by split <;> decide)
+  refine WP.ite _ ev (fun ht => ?_) (fun _ => ?_)
+  · simp [htl] at ht
+  · have hle := tagLenOk_le htl
+    refine WP.seq (WP.mono (tagIn_ok o.env.x19 x12₃ o.x28 hle o.tagR o.env.perm.w
+      (o.dtW.sub_right (Region.sub_prefix (by decide)))) fun s₃' ⟨rt, f, og, sp, rd, wr⟩ => ?_)
+    exact hm (o.tagIn f og sp rd wr) (by rw [rt, o.tag]) og
+
+/-- `openRestWith_wp` for an allowed tag length, with `Q` of the memory. -/
+theorem openRestWithX_wp {m : Prog isa} {w : Nat} {s s₂ : State} {Q : Mem → Prop}
+    (o₂ : OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+      (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s₂)
+    (x12₂ : s₂.gpr .x12 = stackArg s 0) (htl : Spec.Gcm.tagLenOk (stackArg s 1).toNat = true)
+    (hm : ∀ {t : State}, OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s t →
+      bytesAt t.mem (stackArg s w) (stackArg s 1).toNat = bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat →
+      (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
+      WP isa m t fun u => OpenPost (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6)
+        (stackArg s 0) (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat
+        (stackArg s 1).toNat s u ∧ Q u.mem) :
+    WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
+      fun s' => (GprAbi s s' ∧ openAArch64.post s s') ∧ Q s'.mem := by
+  refine WP.seq (WP.mono (tagLenOk_ok s₂ o₂.x28 o₂.tlt) fun s₃ ⟨x9₃, r₃⟩ => ?_)
+  refine WP.seq (WP.mono (oiteWithX_ok (o₂.of_regs r₃) (by rw [r₃.others _ (by decide), x12₂]) x9₃ htl
+    fun o' hT og => hm o' hT fun r hr => by
+      rw [og r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
+        r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)])
+    fun s₄ ⟨⟨he₄, sv₄, post₄⟩, q₄⟩ => ?_)
+  refine WP.mono (exit_ok he₄.x19 (he₄.sp.trans o₂.sp₀.symm) (covers_left he₄.perm.w) sv₄)
+    fun s' ⟨ga, hm, hx0, _⟩ => ⟨⟨ga, ?_⟩, by rw [hm]; exact q₄⟩
   simp only [openAArch64, openRes]
   rw [hm, hx0]
   exact post₄

@@ -53,6 +53,15 @@ structure GhashWithImpl where
   ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.ghashWithAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
 
+/-- An implementation of `vg_ghash_store_powers` on AArch64. -/
+structure GhashStoreImpl where
+  fn : Fn
+  noFrames : fn.code.noFrames = true
+  ok : ∀ s, Proof.Gcm.ghashStoreAArch64.pre s →
+    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashStoreAArch64.post s s'
+  ct : ConstantTime isa Proof.Gcm.ghashStoreAArch64.pre Proof.Gcm.ghashStoreAArch64.pub fn.code
+  keepsV : fn.code.allInstrs keepsV = true
+
 /-- An implementation of `vg_ghash` on AArch64. -/
 structure GhashImpl where
   fn : Fn
@@ -72,6 +81,9 @@ structure GhashImpl where
   /-- Its `vg_ghash_with_powers`, if it has one, which the `*_with_powers`
   functions call on the path for TLS records. -/
   withPowers : Option GhashWithImpl := none
+  /-- Its `vg_ghash_store_powers`, if it has one, which the `*_store_powers`
+  functions call on the path for TLS records. -/
+  storePowers : Option GhashStoreImpl := none
 
 /-- An implementation of `vg_aes_expand_key_scratch` on AArch64. -/
 structure KeyImpl where
@@ -163,13 +175,14 @@ structure GhCall (s : State) (H Y D S : Addr) (n : Nat) : Prop where
   reads : Covers ([⟨H, 16⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨Y, 16⟩, ⟨S, 256⟩] s.wr
 
-/-- What a call of `vg_ghash` leaves. -/
-structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) : Prop where
+/-- What a call of `vg_ghash` leaves, and of a GHASH that also writes the
+regions `ex` (`vg_ghash_store_powers`). -/
+structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) (ex : List Region := []) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨Y, 16⟩, ⟨S, 256⟩] s.mem s'.mem
+  frame : Frame (⟨Y, 16⟩ :: ⟨S, 256⟩ :: ex) s.mem s'.mem
   out : blockAt s'.mem Y = ghashFrom (blockAt s.mem H) (blockAt s.mem Y) (blocksAt s.mem D n)
 
 theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
