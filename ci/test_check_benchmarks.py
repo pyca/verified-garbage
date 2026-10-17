@@ -751,11 +751,14 @@ class FreshCopies(unittest.TestCase):
         # ChaCha20-Poly1305's moved by up to 29% on AMD's Zen 3, and
         # AES-GCM's by up to 35%; ChaCha20's, Poly1305's and AES-GCM-SIV's
         # own groups are not known to. The SHA-512 family's digests and
-        # PBKDF2's moved by up to 11% and 9% on AMD's Zen 4; HMAC's are not
-        # known to. ML-KEM's moved by up to 14%.
+        # PBKDF2's moved by up to 11% and 9% on AMD's Zen 4, and their
+        # HMAC's by 3–4% on Zen 5; HMAC-SHA-256's are not known to.
+        # ML-KEM's moved by up to 14%.
         for group in ['mlkem768_keygen', 'mlkem768_encaps', 'mlkem768_decaps', 'mlkem1024_keygen',
                       'mlkem1024_encaps', 'mlkem1024_decaps', 'sha384', 'sha512', 'sha512-224', 'sha512-256', 'pbkdf2-hmac-sha384',
                       'pbkdf2-hmac-sha512', 'pbkdf2-hmac-sha512-224', 'pbkdf2-hmac-sha512-256',
+                      'hmac-sha384', 'hmac-sha384-verify', 'hmac-sha512', 'hmac-sha512-verify',
+                      'hmac-sha512-224', 'hmac-sha512-224-verify', 'hmac-sha512-256', 'hmac-sha512-256-verify',
                       'ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
                       'chacha20poly1305', 'chacha20poly1305-decrypt',
                       'chacha20poly1305-encrypt-out-of-place', 'chacha20poly1305-copy-encrypt-in-place',
@@ -765,7 +768,8 @@ class FreshCopies(unittest.TestCase):
         for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key',
                       'chacha20', 'poly1305', 'xchacha20poly1305',
                       'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash',
-                      'sha256', 'sha512-256-hash', 'hmac-sha512', 'pbkdf2-hmac-sha256', 'mldsa65_sign']:
+                      'sha256', 'sha512-256-hash', 'sha512-verify', 'hmac-sha256', 'hmac-sha256-verify',
+                      'pbkdf2-hmac-sha256', 'mldsa65_sign']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
     def test_the_copies_select_only_the_modules_with_those_groups(self):
@@ -780,7 +784,7 @@ class FreshCopies(unittest.TestCase):
         # beyond the four that used to run from copies, only benchmarks of
         # code built on SHA-512 (which the `sha512` module selects).
         held = ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521', 'mlkem1024', 'mlkem768',
-                'pbkdf2_sha384', 'pbkdf2_sha512', 'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'sha384', 'sha512',
+                'hmac_sha384', 'hmac_sha512', 'hmac_sha512_224', 'hmac_sha512_256', 'pbkdf2_sha384', 'pbkdf2_sha512', 'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'sha384', 'sha512',
                 'sha512_224', 'sha512_256']
         self.assertLessEqual(set(held), set(selected))
         for name in set(selected) - set(held):
@@ -796,7 +800,13 @@ class FreshCopies(unittest.TestCase):
                              ('sha512_256', 'sha512-256'), ('pbkdf2_sha384', 'pbkdf2-hmac-sha384'),
                              ('pbkdf2_sha512', 'pbkdf2-hmac-sha512'),
                              ('pbkdf2_sha512_224', 'pbkdf2-hmac-sha512-224'),
-                             ('pbkdf2_sha512_256', 'pbkdf2-hmac-sha512-256')]:
+                             ('pbkdf2_sha512_256', 'pbkdf2-hmac-sha512-256'),
+                             ('hmac_sha384', 'hmac-sha384'), ('hmac_sha384', 'hmac-sha384-verify'),
+                             ('hmac_sha512', 'hmac-sha512'), ('hmac_sha512', 'hmac-sha512-verify'),
+                             ('hmac_sha512_224', 'hmac-sha512-224'),
+                             ('hmac_sha512_224', 'hmac-sha512-224-verify'),
+                             ('hmac_sha512_256', 'hmac-sha512-256'),
+                             ('hmac_sha512_256', 'hmac-sha512-256-verify')]:
             source = (root / f'bench/benches/primitives/{bench}.rs').read_text()
             self.assertIn(f'"{group}"', source)
         source = (root / 'bench/benches/primitives/mlkem.rs').read_text()
