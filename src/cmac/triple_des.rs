@@ -1,14 +1,15 @@
 //! TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) with two- and three-key TDEA
 //! (16- and 24-byte keys) and the full 8-byte MAC.
 //!
-//! Everything but buffering is the verified assembly for the target
-//! architecture: `vg_cmac_triple_des_init` (contract
-//! `VG.Spec.Cmac.tdesInitContract`) expands the key and derives the subkeys
-//! `K1` and `K2`, `vg_cmac_triple_des_update`
-//! (`VG.Spec.Cmac.tdesUpdateContract`) chains whole blocks, and
-//! `vg_cmac_triple_des_finalize` (`VG.Spec.Cmac.tdesFinalizeContract`)
-//! masks and pads the last block and encrypts it. This module only keeps the
-//! last (possibly whole) block of what it has absorbed back for `finalize`.
+//! The computation is the verified assembly for the target architecture,
+//! on a streaming state this module holds without looking into it:
+//! `vg_cmac_triple_des_stream_init` (contract
+//! `VG.Spec.Cmac.tdesStreamInitContract`) expands the key into the state,
+//! `vg_cmac_triple_des_absorb` (`VG.Spec.Cmac.tdesAbsorbContract`) absorbs
+//! data, holding back the message's last bytes, and
+//! `vg_cmac_triple_des_finish` (`VG.Spec.Cmac.tdesFinishContract`) writes the
+//! MAC. This module keeps the length of the message so far, which the state
+//! does not store, and compares MACs.
 //!
 //! TDEA's 64-bit block makes it a poor choice for new protocols (see NIST
 //! SP 800-131A): this is for interoperating with existing ones.
@@ -22,38 +23,32 @@
 
 use super::{InvalidKeyLength, InvalidMac};
 use crate::arch::cmac_triple_des::{
-    vg_cmac_triple_des_finalize, vg_cmac_triple_des_init, vg_cmac_triple_des_update,
+    vg_cmac_triple_des_absorb, vg_cmac_triple_des_finish, vg_cmac_triple_des_stream_init,
 };
 use crate::zeroize::zeroize;
 
-/// An 8-byte block.
-type Block = [u8; 8];
+/// The streaming state, in 64-bit words.
+const STATE: usize = 52;
 
 /// An incremental TDEA-CMAC computation.
 ///
 /// A computation that has absorbed nothing yet can be cloned to MAC several
 /// messages with the same key without expanding it again.
+///
+/// Messages are limited to 2⁶⁴ − 1 bytes.
 #[derive(Clone)]
 pub struct TripleDesCmac {
-    /// The three DES key schedules (384 bytes), then the subkeys `K1 ‖ K2`.
-    key: [u8; 400],
-    /// The chaining value: the encryption of the blocks absorbed so far,
-    /// chained from the zero block.
-    state: Block,
-    /// What has been absorbed after them…
-    buf: Block,
-    /// …of which this many bytes: at most a block, and more than none once
-    /// anything has been absorbed.
-    buf_len: usize,
+    /// The streaming state (`VG.Spec.Cmac.tdesRepr`): the key schedule, the
+    /// subkeys, the chaining value and the bytes held back.
+    state: [u64; STATE],
+    /// The length of the message the state represents, in bytes.
+    count: u64,
 }
 
 impl Drop for TripleDesCmac {
-    /// Wipes the key schedule, the subkeys, the chaining value and the
-    /// buffered data.
+    /// Wipes the streaming state, which holds the key schedule.
     fn drop(&mut self) {
-        zeroize(&mut self.key);
         zeroize(&mut self.state);
-        zeroize(&mut self.buf);
     }
 }
 
@@ -69,75 +64,56 @@ impl TripleDesCmac {
             return Err(InvalidKeyLength);
         }
         let mut c = TripleDesCmac {
-            key: [0; 400],
-            state: [0; 8],
-            buf: [0; 8],
-            buf_len: 0,
+            state: [0; STATE],
+            count: 0,
         };
-        // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
-        // or 24, and `c.key` for reads and writes of 400 bytes. `c.key` is a
-        // field of a local, so it overlaps neither `key` nor the call's stack
-        // frame.
-        unsafe { vg_cmac_triple_des_init(key.as_ptr(), key.len(), &mut c.key) };
+        // SAFETY: `c.state` is valid for reads and writes of 416 bytes, and
+        // `key` for reads of `key.len()` bytes, which is 16 or 24. `c.state`
+        // is a local and `key` a borrow, so neither overlaps the other, the
+        // return address (on x86-64 and x86), the arguments on the stack (on
+        // 32-bit ARM and x86) or the stack below them that the function uses,
+        // and neither wraps around the end of the address space.
+        unsafe { vg_cmac_triple_des_stream_init(&mut c.state, key.as_ptr(), key.len()) };
         Ok(c)
     }
 
-    /// Chains the whole blocks `blocks` into the state.
-    fn blocks(&mut self, blocks: &[Block]) {
-        if blocks.is_empty() {
-            return;
-        }
-        let schedule = self.key.first_chunk::<384>().unwrap();
-        // SAFETY: `schedule` holds the key schedule written by `new`; it is
-        // valid for reads of 384 bytes, `self.state` for reads and writes of
-        // 8 and `blocks` for reads of `8 * blocks.len()`. `self.state` is a
-        // mutable borrow, so it overlaps neither another argument nor the
-        // call's stack frame.
-        unsafe {
-            vg_cmac_triple_des_update(schedule, &mut self.state, blocks.as_ptr(), blocks.len())
-        };
-    }
-
     /// Absorbs `data`.
-    pub fn update(&mut self, mut data: &[u8]) {
-        if data.is_empty() {
-            return;
-        }
-        // Fill the buffer, and chain it only if more data follows: the last
-        // block, even a whole one, is `finalize`'s.
-        if self.buf_len > 0 {
-            let n = data.len().min(8 - self.buf_len);
-            self.buf[self.buf_len..self.buf_len + n].copy_from_slice(&data[..n]);
-            self.buf_len += n;
-            data = &data[n..];
-            if data.is_empty() {
-                return;
-            }
-            let buf = self.buf;
-            self.blocks(&[buf]);
-        }
-        let (blocks, _) = data[..data.len() - 1].as_chunks::<8>();
-        self.blocks(blocks);
-        let rest = &data[8 * blocks.len()..];
-        self.buf[..rest.len()].copy_from_slice(rest);
-        self.buf_len = rest.len();
+    ///
+    /// # Panics
+    ///
+    /// If the message reaches 2⁶⁴ bytes.
+    pub fn update(&mut self, data: &[u8]) {
+        let count = self
+            .count
+            .checked_add(data.len() as u64)
+            .expect("message too long");
+        // SAFETY: `self.state` is valid for reads and writes of 416 bytes
+        // and `data` for reads of `data.len()` bytes. `self.state` is a
+        // mutable borrow and `data` a borrow, so neither overlaps the other,
+        // the return address (on x86-64 and x86), the arguments on the stack
+        // (on 32-bit ARM and x86) or the stack below them that the function
+        // uses, and neither wraps around the end of the address space. The
+        // state represents a message of `self.count` bytes, which with
+        // `data` is shorter than 2⁶⁴ bytes, as the contract's postcondition
+        // requires.
+        unsafe {
+            vg_cmac_triple_des_absorb(&mut self.state, self.count, data.as_ptr(), data.len())
+        };
+        self.count = count;
     }
 
     /// Returns the MAC of everything absorbed.
     pub fn finalize(mut self) -> [u8; 8] {
-        // SAFETY: `self.key` holds the key schedule and then its subkeys,
-        // written by `new`; it is valid for reads of 400 bytes, `self.state`
-        // for reads and writes of 8 and `self.buf` for reads of
-        // `self.buf_len` (at most 8). `self.state` is a mutable borrow, so it
-        // overlaps neither another argument nor the call's stack frame. The
-        // state is the chaining of the blocks
-        // before the buffered ones, and the buffer holds at least a byte if
-        // any were chained, as the contract's postcondition requires to give
-        // the MAC.
-        unsafe {
-            vg_cmac_triple_des_finalize(&self.key, &mut self.state, self.buf.as_ptr(), self.buf_len)
-        };
-        self.state
+        let mut mac = [0; 8];
+        // SAFETY: `self.state` is valid for reads and writes of 416 bytes
+        // and `mac` for writes of 8. `self.state` is owned and `mac` a
+        // local, so neither overlaps the other, the return address (on x86-64
+        // and x86), the arguments on the stack (on 32-bit ARM and x86) or the
+        // stack below them that the function uses, and neither wraps around
+        // the end of the address space. The state represents a message of
+        // `self.count` bytes, as the contract's postcondition requires.
+        unsafe { vg_cmac_triple_des_finish(&mut self.state, self.count, &mut mac) };
+        mac
     }
 
     /// Checks that `mac` is the MAC of everything absorbed, in constant
@@ -196,6 +172,15 @@ mod tests {
                 assert_eq!(c.finalize(), mac, "{split} of {len}");
             }
         }
+    }
+
+    /// A message of 2⁶⁴ bytes or more is refused.
+    #[test]
+    #[should_panic(expected = "message too long")]
+    fn too_long() {
+        let mut c = TripleDesCmac::new(&[0; 16]).unwrap();
+        c.count = u64::MAX;
+        c.update(b"x");
     }
 
     /// A two-key TDEA key is the three-key one with `K3 = K1`.
