@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaPss.AArch64.HashAt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -28,18 +29,6 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PrivChecked)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK mdHashes)
 open VG.Proof.RsaPss.AArch64 (PssChecks)
-
-/-- What the proofs need of the hash function numbered `k` among `hs`. -/
-structure HashAt (hs : List Hash) (k : Nat) where
-  H : Hash
-  get : hs[k]? = some H
-  ok : HashOK H
-  Hs : Spec.Mgf1.Hash
-  id : Spec.HashId.mgf1 k = some Hs
-  hh : ∀ x, Hs.hash x = ok.SH.H.hash x
-  hl : Hs.len = H.D
-  hv : Proof.Mgf1.Valid Hs
-  pss : PssChecks H.P H.D
 
 section
 variable {hs : List Hash} (A : ∀ k < 8, HashAt hs k) (hl : hs.length ≤ 4096) (c : PrivChecked)

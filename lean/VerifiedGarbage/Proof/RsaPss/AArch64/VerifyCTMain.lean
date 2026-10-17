@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+import VerifiedGarbage.Proof.RsaPss.AArch64.OnHash
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.OnHash
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks of `EM` are constant time
@@ -55,7 +57,7 @@ structure VOk (D : Nat) (a : State) : Prop where
   k2 : kV a ≤ 1024
   fit : D + 2 ≤ kV a - loA a
   lo : loA a ≤ 1
-  salt : anyV a = 0 → (a.gpr .x7).toNat < dbA D a
+  salt : anyV a = 0 → (stackArg a 1).toNat < dbA D a
 
 /-- A run after the call, from an entry state with the anchor's public data:
 the frame and the working space, and registers (`rs`) and slots (`sl`) the
@@ -124,10 +126,14 @@ def vregs (D : Nat) : List (Reg × (State → BitVec 64)) :=
     (.x24, fun a => off (scr a) (oEm + loA a)), (.x25, fun a => BitVec.ofNat 64 (dbA D a))]
 
 /-- The slots they read: `lo`, the mask, `any_salt_len`, `salt_len` and the
-digest's address. -/
-def vslots : List (Nat × (State → BitVec 64)) :=
+digest's address; the numbers of the hash functions, `kH` and `kG`, and
+`hLen`, `D`. -/
+def vslots (kH kG D : Nat) : List (Nat × (State → BitVec 64)) :=
   [(sLo, fun a => BitVec.ofNat 64 (loA a)), (sC, fun a => (cbA a).setWidth 64), (sAny, fun a => anyV a),
-    (sSaltLen, fun a => a.gpr .x7), (sDig, fun a => a.gpr .x4)]
+    (sSaltLen, fun a => stackArg a 1), (sDig, fun a => a.gpr .x4), (sHash, fun _ => BitVec.ofNat 64 kH),
+    (sMgf, fun _ => BitVec.ofNat 64 kG), (sHLen, fun _ => BitVec.ofNat 64 D)]
+
+variable {kH kG : Nat}
 
 theorem vregs_fst {D : Nat} {q : Reg × (State → BitVec 64)} (hq : q ∈ vregs D) :
     q.1 ∈ [Reg.x19, .x21, .x23, .x24, .x25] := by
@@ -138,26 +144,26 @@ theorem nk_of {D : Nat} {ks : List Reg} (h : ∀ r ∈ [Reg.x19, .x21, .x23, .x2
     ∀ q ∈ vregs D, q.1 ∉ ks :=
   fun _ hq => h _ (vregs_fst hq)
 
-theorem vslots_fb : ∀ q ∈ vslots, q.1 + 8 ≤ frameBytes := by
+theorem vslots_fb {D : Nat} : ∀ q ∈ (vslots kH kG D), q.1 + 8 ≤ frameBytes := by
   intro q hq
   simp only [vslots, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> decide
 
 /-- The slots are apart from `pos`', `nbm`'s and `done`'s. -/
-theorem vslots_d {F : Addr} : ∀ q ∈ vslots, ∀ d ∈ [sPos, sNb, sDone], Region.Disjoint (slotR F q.1) (slotR F d) := by
+theorem vslots_d {D : Nat} {F : Addr} : ∀ q ∈ (vslots kH kG D), ∀ d ∈ [sPos, sNb, sDone], Region.Disjoint (slotR F q.1) (slotR F d) := by
   intro q hq d hd
   simp only [vslots, List.mem_cons, List.not_mem_nil, or_false] at hq hd
-  rcases hq with rfl | rfl | rfl | rfl | rfl <;> rcases hd with rfl | rfl | rfl <;>
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rcases hd with rfl | rfl | rfl <;> dsimp only <;>
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
 
-theorem vslots_S {F S : Addr} {t : State} (L : Lay t F S) :
-    ∀ q ∈ vslots, ∀ r ∈ [(⟨S, oRsa⟩ : Region)], Region.Disjoint (slotR F q.1) r := fun q hq r hr => by
+theorem vslots_S {D : Nat} {F S : Addr} {t : State} (L : Lay t F S) :
+    ∀ q ∈ (vslots kH kG D), ∀ r ∈ [(⟨S, oRsa⟩ : Region)], Region.Disjoint (slotR F q.1) r := fun q hq r hr => by
   rw [List.mem_singleton.mp hr]; exact L.dFS.sub_left (Offset.sub_base F (vslots_fb q hq))
 
-theorem vslots_sNb {F : Addr} : ∀ q ∈ vslots, ∀ r ∈ [slotR F sNb], Region.Disjoint (slotR F q.1) r :=
+theorem vslots_sNb {D : Nat} {F : Addr} : ∀ q ∈ (vslots kH kG D), ∀ r ∈ [slotR F sNb], Region.Disjoint (slotR F q.1) r :=
   fun q hq r hr => by rw [List.mem_singleton.mp hr]; exact vslots_d q hq sNb (by simp)
 
-theorem vslots_sPos {F : Addr} : ∀ q ∈ vslots, ∀ r ∈ [slotR F sPos], Region.Disjoint (slotR F q.1) r :=
+theorem vslots_sPos {D : Nat} {F : Addr} : ∀ q ∈ (vslots kH kG D), ∀ r ∈ [slotR F sPos], Region.Disjoint (slotR F q.1) r :=
   fun q hq r hr => by rw [List.mem_singleton.mp hr]; exact vslots_d q hq sPos (by simp)
 
 theorem sPos_S {F S : Addr} {t : State} (L : Lay t F S) : ∀ r ∈ [(⟨S, oRsa⟩ : Region)],
@@ -179,15 +185,21 @@ theorem VR.x24 {a u : State} (h : VR D K (vregs D) sl a u) : u.gpr .x24 = off (s
 theorem VR.x25 {a u : State} (h : VR D K (vregs D) sl a u) : u.gpr .x25 = BitVec.ofNat 64 (dbA D a) :=
   h.r (.x25, fun a => BitVec.ofNat 64 (dbA D a)) (by simp [vregs])
 
-theorem VR.slo {a u : State} (h : VR D K rs vslots a u) : u.mem.readW (off (fb a) sLo) 64 = BitVec.ofNat 64 (loA a) :=
+theorem VR.slo {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sLo) 64 = BitVec.ofNat 64 (loA a) :=
   h.sl (sLo, fun a => BitVec.ofNat 64 (loA a)) (by simp [vslots])
-theorem VR.sc {a u : State} (h : VR D K rs vslots a u) : u.mem.readW (off (fb a) sC) 64 = (cbA a).setWidth 64 :=
+theorem VR.sc {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sC) 64 = (cbA a).setWidth 64 :=
   h.sl (sC, fun a => (cbA a).setWidth 64) (by simp [vslots])
-theorem VR.sany {a u : State} (h : VR D K rs vslots a u) : u.mem.readW (off (fb a) sAny) 64 = anyV a :=
+theorem VR.sany {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sAny) 64 = anyV a :=
   h.sl (sAny, fun a => anyV a) (by simp [vslots])
-theorem VR.ssl {a u : State} (h : VR D K rs vslots a u) : u.mem.readW (off (fb a) sSaltLen) 64 = a.gpr .x7 :=
-  h.sl (sSaltLen, fun a => a.gpr .x7) (by simp [vslots])
-theorem VR.sdig {a u : State} (h : VR D K rs vslots a u) : u.mem.readW (off (fb a) sDig) 64 = a.gpr .x4 :=
+theorem VR.ssl {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sSaltLen) 64 = stackArg a 1 :=
+  h.sl (sSaltLen, fun a => stackArg a 1) (by simp [vslots])
+theorem VR.shash {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sHash) 64 = BitVec.ofNat 64 kH :=
+  h.sl (sHash, fun _ => BitVec.ofNat 64 kH) (by simp [vslots])
+theorem VR.smgf {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sMgf) 64 = BitVec.ofNat 64 kG :=
+  h.sl (sMgf, fun _ => BitVec.ofNat 64 kG) (by simp [vslots])
+theorem VR.shl {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sHLen) 64 = BitVec.ofNat 64 D :=
+  h.sl (sHLen, fun _ => BitVec.ofNat 64 D) (by simp [vslots])
+theorem VR.sdig {a u : State} (h : VR D K rs (vslots kH kG D) a u) : u.mem.readW (off (fb a) sDig) 64 = a.gpr .x4 :=
   h.sl (sDig, fun a => a.gpr .x4) (by simp [vslots])
 
 /-- The bounds of `VOk`, for `omega`. -/
@@ -209,7 +221,7 @@ def PS (D : Nat) (a u : State) : Prop := ∃ pos, pos < dbA D a ∧ u.mem.readW 
 def Z (n : Nat) (a u : State) : Prop := ∀ i, n ≤ i → i < 2048 → u.mem (off (scr a) (oY + i)) = 0
 
 theorem acc0_vct {D K : Nat} :
-    RelCT isa (Two (VR D K (vregs D) vslots)) (.block acc0) (Two (VR D K (vregs D) vslots)) :=
+    RelCT isa (Two (VR D K (vregs D) (vslots kH kG D))) (.block acc0) (Two (VR D K (vregs D) (vslots kH kG D))) :=
   two_post (two_taint [.x20, .x23, .x24] (VR.pins' fun r hr => by
       simp at hr; rcases hr with rfl | rfl | rfl <;> simp [vregs]) (by taint_decide))
     fun a u h => by
@@ -217,36 +229,54 @@ theorem acc0_vct {D K : Nat} :
       exact WP.mono (acc0_ok h.L (fun _ _ => rfl) (k := kV a) (lo := loA a) (by omega) ok.k2 ok.lo h.x23 h.x24
         h.slo h.sc) fun _ ⟨O, _⟩ => h.only O (nk_of (by decide)) (by decide)
 
-section
-variable {H : Hash} (hH : HashOK H)
-
-include hH in
-theorem mgfXor_vct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
-    RelCT isa (Two (VR H.D K (vregs H.D) vslots)) (mgfXor H) (Two (VR H.D K (vregs H.D) vslots)) := by
+/-- MGF1 with `G`, of the `D` bytes of `H` after `DB`, is constant time. -/
+theorem mgfXor_vct {G : Hash} (hG : HashOK G) {D K : Nat} {Gs : Spec.Mgf1.Hash}
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
+    (hc : PssChecks G.P G.D) (hD : 0 < D ∧ D ≤ 64) :
+    RelCT isa (Two (VR D K (vregs D) (vslots kH kG D))) (mgfXor G) (Two (VR D K (vregs D) (vslots kH kG D))) := by
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
-  have hd : ∀ a : State, VOk H.D a → DbAt H.D (oEm + loA a) (dbA H.D a) := fun a ok => by
+  have hd : ∀ a : State, VOk D a → DbAt D (oEm + loA a) (dbA D a) := fun a ok => by
     have := ok.db
     exact ⟨by omega, by omega, by omega⟩
-  refine two_post (two_map (fun a => (⟨fb a, scr a, oEm + loA a, dbA H.D a⟩ : MA))
-    (fun a u h => ⟨h.L, hd a h.ok, h.x19, h.x21, h.x24, h.x25⟩) (mgfXor_ct hH hGh hGl hG hc))
-    fun a u h => WP.mono (mgfXor_ok hH hGh hGl hG h.L (fun _ _ => rfl) (hd a h.ok) h.x19 h.x21 h.x24 h.x25)
-      fun u' ⟨sp, rd, wr, cs, _, fr, _⟩ => h.congr sp rd wr (cs .x20 (by decide)) (fun q hq => ?_) fun q hq => ?_
+  refine two_post (two_map (fun a => (⟨fb a, scr a, oEm + loA a, dbA D a, D⟩ : MA))
+    (fun a u h => ⟨h.L, hd a h.ok, hD, h.shl, h.x19, h.x21, h.x24, h.x25⟩) (mgfXor_ct hG hGh hGl hGv hc))
+    fun a u h => WP.mono (mgfXor_ok hG hGh hGl hGv h.L (fun _ _ => rfl) (hd a h.ok) hD h.shl h.x19 h.x21 h.x24
+      h.x25) fun u' ⟨sp, rd, wr, cs, _, fr, _⟩ => h.congr sp rd wr (cs .x20 (by decide)) (fun q hq => ?_)
+        fun q hq => ?_
   · rw [cs q.1 ((by decide : ∀ r ∈ [Reg.x19, .x21, .x23, .x24, .x25], r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25,
       .x26]) _ (vregs_fst hq))]
     exact h.r q hq
   · rw [slot_keep fr (h.L.slotW (vslots_fb q hq) ?_ ?_)]
     · exact h.sl q hq
     · simp only [vslots, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl <;> decide
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> decide
     · simp only [vslots, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl <;> decide
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> decide
 
-end
+/-- MGF1 with the hash function `kG` of `hs` names. -/
+theorem mgfXorAny_vct {hs : List Hash} {G : Hash} (hkG : hs[kG]? = some G) (hl : hs.length ≤ 4096)
+    (hG : HashOK G) {D K : Nat} {Gs : Spec.Mgf1.Hash}
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
+    (hc : PssChecks G.P G.D) (hD : 0 < D ∧ D ≤ 64) :
+    RelCT isa (Two (VR D K (vregs D) (vslots kH kG D))) (mgfXorAny hs)
+      (Two (VR D K (vregs D) (vslots kH kG D))) := by
+  have hkl : kG < hs.length := by
+    rcases Nat.lt_or_ge kG hs.length with e | e
+    · exact e
+    · rw [List.getElem?_eq_none e] at hkG; cases hkG
+  have nk : ∀ q ∈ vregs D, q.1 ∉ [Reg.x8, .x9] := nk_of (by decide)
+  unfold mgfXorAny
+  refine onHash_two hl (by decide) (fun _ => kG) (fun a s h => ⟨ld_slot h.L (by decide),
+    by rw [h.L.sp]; exact h.smgf, hkl⟩) (fun _ _ _ h₁ h₂ => by rw [h₁.L.sp, h₂.L.sp])
+    (by taint_decide) fun a G' hG' => ?_
+  rw [hkG, Option.some.injEq] at hG'
+  subst hG'
+  exact (mgfXor_vct hG hGh hGl hGv hc hD).mono
+    (fun _ _ ⟨_, _, h₁, h₂, o₁, o₂⟩ => ⟨a, h₁.only o₁ nk (by decide), h₂.only o₂ nk (by decide)⟩) fun _ _ h => h
 
 theorem clearTop_vct {D K : Nat} :
-    RelCT isa (Two (VR D K (vregs D) vslots)) (.block clearTop) (Two (VR D K (vregs D) vslots)) :=
+    RelCT isa (Two (VR D K (vregs D) (vslots kH kG D))) (.block clearTop) (Two (VR D K (vregs D) (vslots kH kG D))) :=
   two_post (two_taint [.x24] (VR.pins' fun r hr => by simp at hr; subst hr; simp [vregs]) (by taint_decide))
     fun a u h => by
       have := h.ok.lo
@@ -255,8 +285,8 @@ theorem clearTop_vct {D K : Nat} :
           h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L)
 
 theorem posScan_vct {D K : Nat} :
-    RelCT isa (Two (VR D K (vregs D) vslots)) posScan
-      (Two fun a u => VR D K (vregs D) vslots a u ∧ ∃ pos, pos < dbA D a ∧ u.gpr .x14 = BitVec.ofNat 64 pos) :=
+    RelCT isa (Two (VR D K (vregs D) (vslots kH kG D))) posScan
+      (Two fun a u => VR D K (vregs D) (vslots kH kG D) a u ∧ ∃ pos, pos < dbA D a ∧ u.gpr .x14 = BitVec.ofNat 64 pos) :=
   two_post (two_taint [.x24, .x25] (VR.pins' fun r hr => by
       simp at hr; rcases hr with rfl | rfl <;> simp [vregs]) (by taint_decide))
     fun a u h => by
@@ -266,8 +296,8 @@ theorem posScan_vct {D K : Nat} :
           ⟨h.only O (nk_of (by decide)) (by decide), _, nz_lt (by omega), x14⟩
 
 theorem posCheck_vct {D K : Nat} :
-    RelCT isa (Two fun a u => VR D K (vregs D) vslots a u ∧ ∃ pos, pos < dbA D a ∧ u.gpr .x14 = BitVec.ofNat 64 pos)
-      posCheck (Two fun a u => VR D K (vregs D) vslots a u ∧ PS D a u) := by
+    RelCT isa (Two fun a u => VR D K (vregs D) (vslots kH kG D) a u ∧ ∃ pos, pos < dbA D a ∧ u.gpr .x14 = BitVec.ofNat 64 pos)
+      posCheck (Two fun a u => VR D K (vregs D) (vslots kH kG D) a u ∧ PS D a u) := by
   refine two_post ?_ fun a u ⟨h, pos, hpos, x14⟩ => WP.mono (posCheck_ok h.L rfl x14 rfl rfl h.x25 hpos h.sany h.ssl)
     fun t ⟨k, hm, _⟩ => ⟨h.keep k (nk_of (by decide)) (by decide) (by rw [hm]; exact frame_slot _ _ sPos _)
       vslots_sPos, pos, hpos, by rw [hm, Mem.readW_writeW_self64]⟩
@@ -287,8 +317,8 @@ theorem PS.keep {D : Nat} {a u u' : State} {F S : Addr} (L : Lay u F S) (hF : F 
   ⟨pos, hpos, by rw [← hF] at e ⊢; rw [slot_keep hf (sPos_S L)]; exact e⟩
 
 theorem clearY_vct {D K : Nat} :
-    RelCT isa (Two fun a u => VR D K (vregs D) vslots a u ∧ PS D a u) clearY
-      (Two fun a u => VR D K (vregs D) vslots a u ∧ PS D a u ∧ Z 0 a u) :=
+    RelCT isa (Two fun a u => VR D K (vregs D) (vslots kH kG D) a u ∧ PS D a u) clearY
+      (Two fun a u => VR D K (vregs D) (vslots kH kG D) a u ∧ PS D a u ∧ Z 0 a u) :=
   two_post (two_taint [.x20] (VR.pins fun r hr => by simp at hr; exact .inl hr) (by taint_decide))
     fun a u ⟨h, p⟩ => WP.mono (clearY_ok h.L (fun _ _ => rfl)) fun _ ⟨k, f, R⟩ =>
       ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L), p.keep h.L rfl f, fun i _ hi => by
@@ -299,11 +329,11 @@ variable {H : Hash} (hH : HashOK H)
 
 include hH in
 theorem copyDigest_vct {K : Nat} :
-    RelCT isa (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ PS H.D a u ∧ Z 0 a u) (copyDigest H)
-      (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ PS H.D a u ∧ Z (8 + H.D) a u) := by
+    RelCT isa (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ PS H.D a u ∧ Z 0 a u) (copyDigest H)
+      (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ PS H.D a u ∧ Z (8 + H.D) a u) := by
   have hDN := hH.sizes.DN
   have hN := hH.N_le
-  refine two_post (Φ := fun a u => VR H.D K (vregs H.D) vslots a u ∧ PS H.D a u ∧ Z 0 a u) ?_ fun a u hu => ?_
+  refine two_post (Φ := fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ PS H.D a u ∧ Z 0 a u) ?_ fun a u hu => ?_
   rotate_left
   · obtain ⟨h, p, z⟩ := hu
     exact WP.mono (copyDigest_ok hH h.L (fun _ _ => rfl) (dig := a.gpr .x4)
@@ -313,7 +343,7 @@ theorem copyDigest_vct {K : Nat} :
           rw [ite_eq_right (by rw [bytesAt_length]; omega)]; exact z i (by omega) hi'⟩
   unfold copyDigest
   refine RelCT.seq_block_append (M := isa) (l₁ := [ld .x11 sDig]) ?_
-  refine two_step (Ψ := fun a u => VR H.D K (vregs H.D ++ [(.x11, fun a => a.gpr .x4)]) vslots a u)
+  refine two_step (Ψ := fun a u => VR H.D K (vregs H.D ++ [(.x11, fun a => a.gpr .x4)]) (vslots kH kG H.D) a u)
     (two_taint [] (pins_nil fun a s₁ s₂ h₁ h₂ => by rw [h₁.1.L.sp, h₂.1.L.sp]) (by taint_decide))
     (fun a u hu => ?_)
     (two_taintE [.x11, .x20] (VR.pins' fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp)
@@ -330,8 +360,8 @@ theorem copyDigest_vct {K : Nat} :
 
 include hH in
 theorem copyDb_vct {K : Nat} :
-    RelCT isa (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ PS H.D a u ∧ Z (8 + H.D) a u) (copyDb H)
-      (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ PS H.D a u ∧ Z (8 + H.D + dbA H.D a) a u) :=
+    RelCT isa (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ PS H.D a u ∧ Z (8 + H.D) a u) (copyDb H)
+      (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ PS H.D a u ∧ Z (8 + H.D + dbA H.D a) a u) :=
   two_post (two_taintE [.x20, .x24, .x25] (VR.pins fun r hr => by
       simp at hr; rcases hr with rfl | rfl | rfl <;> simp [vregs])
     (c' := Code.eraseOff (copyDb zH)) rfl (by taint_decide))
@@ -349,8 +379,8 @@ def LX (D : Nat) (a u : State) : Prop := ∃ ℓ, u.gpr .x22 = BitVec.ofNat 64 �
 
 include hH in
 theorem shift_vct {K : Nat} :
-    RelCT isa (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ PS H.D a u ∧ Z (8 + H.D + dbA H.D a) a u) (shift H)
-      (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ LX H.D a u) :=
+    RelCT isa (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ PS H.D a u ∧ Z (8 + H.D + dbA H.D a) a u) (shift H)
+      (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ LX H.D a u) :=
   two_post (two_taintE [.x20, .x25] (VR.pins fun r hr => by
       simp at hr; rcases hr with rfl | rfl <;> simp [vregs])
     (c' := Code.eraseOff (shift zH)) rfl (by taint_decide))
@@ -369,8 +399,8 @@ theorem shift_vct {K : Nat} :
 
 include hH in
 theorem verifyNb_vct {K : Nat} :
-    RelCT isa (Two fun a u => VR H.D K (vregs H.D) vslots a u ∧ LX H.D a u) (.block (verifyNb H))
-      (Two fun a u => VR H.D K (vregs H.D) (vslots ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u ∧
+    RelCT isa (Two fun a u => VR H.D K (vregs H.D) (vslots kH kG H.D) a u ∧ LX H.D a u) (.block (verifyNb H))
+      (Two fun a u => VR H.D K (vregs H.D) ((vslots kH kG H.D) ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u ∧
         LX H.D a u) :=
   two_post (two_taintE [.x25] (VR.pins fun r hr => by simp at hr; subst hr; simp [vregs])
     (c' := Code.eraseOff (.block (verifyNb zH))) rfl (by taint_decide))
@@ -385,8 +415,8 @@ theorem verifyNb_vct {K : Nat} :
 
 include hH in
 theorem ctHash_vct {K : Nat} (hc : PssChecks H.P H.D) :
-    RelCT isa (Two fun a u => VR H.D K (vregs H.D) (vslots ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u ∧
-        LX H.D a u) (ctHash H) (Two (VR H.D K (vregs H.D) vslots)) := by
+    RelCT isa (Two fun a u => VR H.D K (vregs H.D) ((vslots kH kG H.D) ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u ∧
+        LX H.D a u) (ctHash H) (Two (VR H.D K (vregs H.D) (vslots kH kG H.D))) := by
   have hDN := hH.sizes.DN
   have hN := hH.N_le
   have hL := hH.L
@@ -406,7 +436,7 @@ theorem ctHash_vct {K : Nat} (hc : PssChecks H.P H.D) :
     show _ ≤ ((dbA H.D a + 7 + H.D + H.P.L) / H.P.B + 1) * H.P.B ∧
       ((dbA H.D a + 7 + H.D + H.P.L) / H.P.B + 1) * H.P.B ≤ 2048
     rw [hnbB]; omega
-  have nb : ∀ {a u : State}, VR H.D K (vregs H.D) (vslots ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u →
+  have nb : ∀ {a u : State}, VR H.D K (vregs H.D) ((vslots kH kG H.D) ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u →
       u.mem.readW (off (fb a) sNb) 64 = BitVec.ofNat 64 (nbA H a) := fun h =>
     h.sl (sNb, fun a => BitVec.ofNat 64 (nbA H a)) (by simp)
   refine two_post (two_map (fun a => (⟨fb a, scr a, nbA H a, none⟩ : HA)) (fun a u ⟨h, ℓ, x22, hℓ⟩ => {
@@ -435,7 +465,7 @@ theorem ctHash_vct {K : Nat} (hc : PssChecks H.P H.D) :
 
 include hH in
 theorem cmpH_vct {K : Nat} :
-    RelCT isa (Two (VR H.D K (vregs H.D) vslots)) (cmpH H) (Two fun a t => t.sp = fb a) :=
+    RelCT isa (Two (VR H.D K (vregs H.D) (vslots kH kG H.D))) (cmpH H) (Two fun a t => t.sp = fb a) :=
   two_post (two_taintE [.x21, .x24, .x25] (VR.pins' fun r hr => by
       simp at hr; rcases hr with rfl | rfl | rfl <;> simp [vregs])
     (c' := Code.eraseOff (cmpH zH)) rfl (by taint_decide))

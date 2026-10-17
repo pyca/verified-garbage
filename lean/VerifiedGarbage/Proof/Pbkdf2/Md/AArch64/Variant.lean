@@ -101,7 +101,7 @@ structure MdHash where
   I : Spec.Hmac.Instance
   /-- What the proofs know of the hash function's code (for the callers that
   work at the level of its compression function: RSASSA-PSS's,
-  `Generic/MdHash/RsaPrivateCrt/AArch64/RsaPss.lean`). -/
+  `Generic/MdHashTier/RsaPrivateCrt/AArch64/RsaPss.lean`). -/
   ok : HashOK H
   /-- The hash function as RSA's padding takes it. -/
   mgf : MgfLink H ok

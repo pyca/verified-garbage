@@ -38,7 +38,6 @@ open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep wp_nil eval_zero eval_nonzero)
 open VG.Proof.RsaPkcs1Sig.AArch64 (Two Pins two_taint two_post two_ite wp_ldrSp)
-open VG.Proof.RsaPkcs1Sig.AArch64.Pc (stackArgs_five)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off loV maskV smear_ok emLen_ok expLen_ok two_taintE zH two_step pins_nil)
@@ -52,11 +51,11 @@ structure PubV (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ argRegs, s.gpr r = a.gpr r
   a0 : (stackArg s 0).setWidth 32 = (stackArg a 0).setWidth 32
-  args : ∀ i, 0 < i → i < 5 → stackArg s i = stackArg a i
+  args : ∀ i, 0 < i → i < 8 → stackArg s i = stackArg a i
   bn : Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .x0) (a.gpr .x1).toNat
   be : Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .x2) (a.gpr .x3).toNat
-  w : Spec.Rsa.wordsAt s.mem (stackArg s 3) (stackArg s 4).toNat =
-    Spec.Rsa.wordsAt a.mem (stackArg a 3) (stackArg a 4).toNat
+  w : Spec.Rsa.wordsAt s.mem (stackArg s 4) (stackArg s 5).toNat =
+    Spec.Rsa.wordsAt a.mem (stackArg a 4) (stackArg a 5).toNat
 
 theorem PubV.refl (s : State) : PubV s s :=
   ⟨rfl, fun _ _ => rfl, rfl, fun _ _ _ => rfl, rfl, rfl, rfl⟩
@@ -65,12 +64,12 @@ theorem leak_eq2 {a b a' b' : List Byte} (ha : a.length = a'.length)
     (h : (a ++ b).map (·.toNat) = (a' ++ b').map (·.toNat)) : a = a' ∧ b = b' :=
   List.append_inj ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h) ha
 
-theorem pubV_of (G : Spec.Mgf1.Hash) {S : Nat} {s₁ s₂ : State}
-    (h : (Spec.RsaPss.verifyPrecomputedContract G G abi S).pub s₁ s₂) : PubV s₁ s₂ := by
-  sig_pub [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs, stackArgs_five,
+theorem pubV_of {S : Nat} {s₁ s₂ : State}
+    (h : (Spec.RsaPss.verifyAnyContract abi S).pub s₁ s₂) : PubV s₁ s₂ := by
+  sig_pub [Spec.RsaPss.verifyAnyContract, Spec.RsaPss.verifyAnySig, abi, argRegs, stackArgs_eight,
     List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4⟩ := h
+  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
   obtain ⟨hne, hw⟩ := List.append_inj hl (by simp [bytesAt_length, h1, h3])
   obtain ⟨hn, he⟩ := leak_eq2 (by rw [bytesAt_length, bytesAt_length, h1]) hne
   refine ⟨hsp.symm, fun r hr => ?_, a0.symm, fun i hi hi' => ?_, hn.symm, he.symm,
@@ -78,8 +77,9 @@ theorem pubV_of (G : Spec.Mgf1.Hash) {S : Nat} {s₁ s₂ : State}
   · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm]
-  · rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl
-    exacts [a1.symm, a2.symm, a3.symm, a4.symm]
+  · rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm]
 
 /-- An entry state with the anchor's public data. -/
 def E (D K : Nat) (a s : State) : Prop := PreV D K s ∧ PubV a s
@@ -99,7 +99,7 @@ theorem gpr {r : Reg} (hr : r ∈ argRegs) : s.gpr r = a.gpr r := h.2.g r hr
 
 theorem fb : fb s = fb a := by show s.sp - _ = a.sp - _; rw [h.2.sp]
 
-theorem scr : scr s = scr a := h.2.args 1 (by decide) (by decide)
+theorem scr : scr s = scr a := h.2.args 2 (by decide) (by decide)
 
 theorem k : (s.gpr .x1).toNat = (a.gpr .x1).toNat := by rw [h.gpr (r := .x1) (by decide)]
 
@@ -113,9 +113,9 @@ theorem n0 : s.mem (s.gpr .x0) = a.mem (a.gpr .x0) := by
 
 theorem nx : nxV s = nxV a := congrArg BitVec.toNat h.n0
 
-theorem any : anyV s = anyV a := by rw [anyV, anyV, h.2.a0]
+theorem any : anyV s = anyV a := by unfold anyV Sgn.zx; rw [h.2.a0]
 
-theorem sLen : sLenV s = sLenV a := by rw [sLenV, sLenV, h.any, h.gpr (r := .x7) (by decide)]
+theorem sLen : sLenV s = sLenV a := by rw [sLenV, sLenV, h.any, h.2.args 1 (by decide) (by decide)]
 
 end E
 
@@ -149,16 +149,19 @@ structure AtEV (D : Nat) (s u : State) : Prop where
   x9 : u.gpr .x9 = BitVec.ofNat 64 ((s.gpr .x1).toNat - loV (nxV s))
   x10 : (u.gpr .x10 != 0) = decide ((s.gpr .x1).toNat - loV (nxV s) < D + 2)
 
-theorem chk1_ok (H : Hash) (hD : H.D + 2 < 4096) {K : Nat} {s u : State} (hp : PreV H.D K s) (hu : AtChk s u)
+theorem chk1_ok {D : Nat} (hD : D + 2 < 4096) {K : Nat} {s u : State} (hp : PreV D K s) (hu : AtChk s u)
     (h0 : nxV s ≠ 0) :
-    WP isa (.seq (.block smear) (emLen H)) u (AtEV H.D s) := by
+    WP isa (.seq (.block smear) emLen) u (AtEV D s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have Mu : Mid s u := ⟨hu.sp, hu.rd, hu.wr, hu.v, hu.fr⟩
   have hx10 : u.gpr .x10 = BitVec.ofNat 64 (nxV s) := by rw [hu.x10, setWidth_byte]
   have hn₀ := (s.mem (s.gpr .x0)).isLt
   refine WP.seq (WP.mono (smear_ok u (x := nxV s) hn₀ h0 hx10) fun u₁ ⟨O₁, h11⟩ => ?_)
-  refine WP.mono (emLen_ok H hD (F := fb s) (by rw [O₁.sp, hu.sp]) hn₀ h0
+  refine WP.mono (emLen_ok hD (F := fb s) (by rw [O₁.sp, hu.sp]) hn₀ h0
     (by rw [O₁.wr, hu.wr]; exact in_frame s _ (by decide)) (by rw [O₁.wr, hu.wr]; exact in_frame s _ (by decide))
+    (by rw [O₁.rd, O₁.wr, hu.rd, hu.wr]
+        exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide) (by decide))))
+    (by rw [O₁.mem, hu.fr.rs (.x5, sHLen) (by simp [regSlots]), ← hp.dl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
     (k := (s.gpr .x1).toNat) (by rw [O₁.get .x23, hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega)
     (by omega) h11) fun u₂ ⟨K₂, m₂, x9₂, x10₂⟩ => ?_
   have hm₂ : u₂.mem = (u.mem.writeW (fb s + BitVec.ofNat 64 sC) (maskV (nxV s))).writeW (fb s + BitVec.ofNat 64 sLo)
@@ -194,18 +197,22 @@ theorem AtEV.lay {D K : Nat} {s u : State} (h : AtEV D s u) (hp : PreV D K s) (h
 
 theorem AtEV.any {D : Nat} {s u : State} (h : AtEV D s u) : u.mem.readW (off (fb s) sAny) 64 = anyV s := h.m.fr.any
 
-theorem AtEV.sl {D : Nat} {s u : State} (h : AtEV D s u) : u.mem.readW (off (fb s) sSaltLen) 64 = s.gpr .x7 :=
-  h.m.fr.rs (.x7, sSaltLen) (by simp [regSlots])
+theorem AtEV.sl {D : Nat} {s u : State} (h : AtEV D s u) : u.mem.readW (off (fb s) sSaltLen) 64 = stackArg s 1 :=
+  h.m.fr.sl
 
-theorem chk2_ok (H : Hash) (hD : H.D + 2 < 4096) {K : Nat} {s u : State} (hp : PreV H.D K s) (hK : 16 ≤ K)
-    (hu : AtEV H.D s u) (hk : ¬ (s.gpr .x1).toNat - loV (nxV s) < H.D + 2) :
-    WP isa (.seq expLen (.block (saltFits H))) u (AtSV H.D s) := by
+theorem chk2_ok {D : Nat} (hD : D + 2 < 4096) {K : Nat} {s u : State} (hp : PreV D K s) (hK : 16 ≤ K)
+    (hu : AtEV D s u) (hk : ¬ (s.gpr .x1).toNat - loV (nxV s) < D + 2) :
+    WP isa (.seq expLen (.block saltFits)) u (AtSV D s) := by
   have hk2 := hp.k2
   have hn₀ := (s.mem (s.gpr .x0)).isLt
   refine WP.seq (WP.mono (expLen_ok (hu.lay hp hK) hu.any hu.sl) fun u₃ ⟨O₃, x12₃⟩ => ?_)
-  refine WP.mono (saltFitsR_ok H hD (a := (s.gpr .x1).toNat - loV (nxV s)) (by omega) (by omega)
+  refine WP.mono (saltFitsR_ok hD (F := fb s) (by rw [O₃.sp, hu.m.sp])
+    (by rw [O₃.rd, O₃.wr, hu.m.rd, hu.m.wr]
+        exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide) (by decide))))
+    (by rw [O₃.mem, hu.m.fr.rs (.x5, sHLen) (by simp [regSlots]), ← hp.dl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    (a := (s.gpr .x1).toNat - loV (nxV s)) (by omega) (by omega)
     (by rw [O₃.get .x9, hu.x9]) x12₃) fun u₄ ⟨O₄, x9₄, x10₄⟩ => ?_
-  have hsv : (if anyV s = 0 then s.gpr .x7 else 0).toNat = (sLenV s).getD 0 := by
+  have hsv : (if anyV s = 0 then stackArg s 1 else 0).toNat = (sLenV s).getD 0 := by
     unfold sLenV; split <;> rfl
   rw [hsv] at x10₄
   have O : Only [.x13, .x12, .x9, .x10] u u₄ := (O₃.trans O₄).mono
