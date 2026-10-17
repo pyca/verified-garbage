@@ -842,6 +842,11 @@ pub struct AesGcm {
         feature = "alloc"
     ))]
     powers: Powers,
+    /// Measurement only: an uninitialized 128-byte home for the powers, to
+    /// price moving it with every key.
+    #[cfg(target_arch = "aarch64")]
+    #[allow(dead_code)]
+    pad: core::mem::MaybeUninit<[u64; 16]>,
 }
 
 impl Drop for AesGcm {
@@ -871,6 +876,8 @@ impl AesGcm {
                 feature = "alloc"
             ))]
             powers: Powers::new(backend),
+            #[cfg(target_arch = "aarch64")]
+            pad: core::mem::MaybeUninit::uninit(),
         };
         let init = instance!(k.backend, vg_aes_gcm_init,
             x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
