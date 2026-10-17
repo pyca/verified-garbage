@@ -41,6 +41,20 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
 open VG VG.X86_64
 
+/-- The blocks that depend on the curve, checked once. -/
+theorem p224_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.p224 false 0) where
+  prepCase := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
+  post := by exact ⟨_, by taint_decide⟩
+  msg₀ := by exact ⟨_, by taint_decide⟩
+  msg₀f := by exact ⟨_, by taint_decide⟩
+  msg₁f := by exact ⟨_, by taint_decide⟩
+  appendV := by exact ⟨_, by taint_decide⟩
+  conv := by exact ⟨_, by taint_decide⟩
+  sp := by unfold CurveInstrs; decide +kernel
+  mx := by unfold CurveInstrs; decide +kernel
+
 /-- `coreK` at P-224's sizes is `Proof.Ecdsa.X86_64.P224.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/
 theorem coreK_p224 : coreK Impl.Ecdsa.X86_64.p224 = Proof.Ecdsa.X86_64.P224.signX86_64 := by
@@ -71,8 +85,6 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blks := p224_blks
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

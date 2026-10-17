@@ -470,6 +470,38 @@ theorem any_pub (hcs : TblShape A.R.E.combConsts) {s₁ s₂ : State} (h₁ : A.
     rw [h0] at hc
     simp only [List.mem_singleton] at hc; subst hc; exact hsy
 
+/-- The contract's precondition, from the one for the hash function `k`
+with a digest of its output length: for a state that shows it satisfiable. -/
+theorem any_pre_of (hcs : TblShape A.R.E.combConsts) {s : State} {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds)
+    (hD : (s.gpr .rcx).toNat = (A.hashAt k hk).H.D) (h : (A.K k hk).pre s) : A.contract.pre s := by
+  have hsc := A.scratch
+  have hks : hashOf s = k := by
+    have h9 : (s.gpr .r9).setWidth 32 = BitVec.ofNat 32 k := h.1
+    show ((s.gpr .r9).setWidth 32).toNat = k
+    rw [h9, BitVec.toNat_ofNat]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (hashIds_lt hk) (by decide))
+  have hl : ∀ H, Spec.HashId.mgf1 k = some H → (A.hashAt k hk).H.D = H.len := fun H hH => by
+    rw [← (A.hashAt k hk).v.mgf.len]
+    exact congrArg Spec.Mgf1.Hash.len (Option.some.inj ((A.hashAt k hk).mgf_eq.trans hH))
+  unfold RfcAny.K rfcX86_64 at h
+  unfold RfcAny.contract
+  obtain ⟨-, hsp, hrd, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, held, ht⟩ := h
+  rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] at hrd held ht ⊢ <;> any_eval <;>
+    simp only [hsc, Nat.reduceMul, hD, show ((s.gpr .r9).setWidth 32).toNat = k from hks]
+  · refine ⟨hsp, by rw [hrd, Abi.constRegions_nil]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no,
+      nd, ng, nc, hk, hl⟩
+  · rw [Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single] at ht
+    rw [Abi.constRegions_cons, Abi.constRegions_nil] at hrd
+    obtain ⟨hfit, hdis⟩ := ht
+    refine ⟨hsp, by rw [hrd]; rfl, held _ (List.mem_singleton_self _), hfit, fun r hr => ?_,
+      hdis _ (by simp), hdis _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg,
+      kc, no, nd, ng, nc, hk, hl⟩
+    rw [hw] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hdis _ (by simp)
+    · exact hdis _ (by simp)
+
 /-- The code meets the contract with the hash function as an argument, given
 a state the contract permits. -/
 theorem verified (hcs : TblShape A.R.E.combConsts) (hsat : ∃ s, A.contract.pre s) :

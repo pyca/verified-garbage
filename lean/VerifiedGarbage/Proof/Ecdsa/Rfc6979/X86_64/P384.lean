@@ -52,6 +52,20 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-- The blocks that depend on the curve, checked once. -/
+theorem p384_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.p384 false 0) where
+  prepCase := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
+  post := by exact ⟨_, by taint_decide⟩
+  msg₀ := by exact ⟨_, by taint_decide⟩
+  msg₀f := by exact ⟨_, by taint_decide⟩
+  msg₁f := by exact ⟨_, by taint_decide⟩
+  appendV := by exact ⟨_, by taint_decide⟩
+  conv := by exact ⟨_, by taint_decide⟩
+  sp := by unfold CurveInstrs; decide +kernel
+  mx := by unfold CurveInstrs; decide +kernel
+
 /-- `coreK` at P-384's sizes is `Proof.Ecdsa.X86_64.P384.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/
 theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.signX86_64 := by
@@ -82,8 +96,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blks := p384_blks
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

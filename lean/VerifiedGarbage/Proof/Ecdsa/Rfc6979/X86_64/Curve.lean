@@ -114,7 +114,6 @@ structure CurveBlks (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
   conv : TaintOk [.rsp, .rdi] (c.conv Impl.Ecdsa.Rfc6979.X86_64.fC c.sh)
   sp : CurveInstrs c fun i => !isa.writesSp i
   mx : CurveInstrs c fun i => !loadsMxcsr i
-  cs : CurveInstrs c fun i => calleeSaved.all fun r => !Taint.clobbers i r
 
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where

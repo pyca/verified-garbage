@@ -57,9 +57,7 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := nofun
-  reduceSp := nofun
-  reduceMx := nofun
+  blks := p521_blks
 
 /-- P-521 with BMI2 and ADX (`adx`) or without. -/
 def p521Of (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)

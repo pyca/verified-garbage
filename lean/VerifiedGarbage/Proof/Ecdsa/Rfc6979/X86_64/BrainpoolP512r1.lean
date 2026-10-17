@@ -26,8 +26,7 @@ meta import VerifiedGarbage.Spec.EcKey.Generic
 /-!
 # Deterministic ECDSA on x86-64: brainpoolP512r1
 
-brainpoolp512r1 as the proof's curve (`brainpoolp512r1`): scalars of 64 bytes in 8 words (so `h`
-is kept above the frame's pointers, `hHigh`), the order `n` of exactly 512 bits with `2^512 < 2 n`, and `vg_ecdsa_brainpoolp512r1_sign`,
+brainpoolp512r1 as the proof's curve (`brainpoolp512r1`): scalars of 64 bytes in 8 words, the order `n` of exactly 512 bits with `2^512 < 2 n`, and `vg_ecdsa_brainpoolp512r1_sign`,
 proven correct (given the group law and the inversions'
 soundness) and constant time against its contract (`coreK` at brainpoolP512r1's sizes,
 which is `Proof.Ecdsa.X86_64.BrainpoolP512r1.signX86_64`).
@@ -45,6 +44,20 @@ theorem coreK_brainpoolp512r1 : coreK Impl.Ecdsa.X86_64.brainpoolp512r1 = Proof.
     implies_true, and_true, Proof.Ecdsa.X86_64.BrainpoolP512r1.signX86_64]
   rfl
 
+/-- The blocks that depend on the curve, checked once. -/
+theorem brainpoolp512r1_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.brainpoolp512r1 false 0) where
+  prepCase := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
+  post := by exact ⟨_, by taint_decide⟩
+  msg₀ := by exact ⟨_, by taint_decide⟩
+  msg₀f := by exact ⟨_, by taint_decide⟩
+  msg₁f := by exact ⟨_, by taint_decide⟩
+  appendV := by exact ⟨_, by taint_decide⟩
+  conv := by exact ⟨_, by taint_decide⟩
+  sp := by unfold CurveInstrs; decide +kernel
+  mx := by unfold CurveInstrs; decide +kernel
+
 /-- brainpoolp512r1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
@@ -55,7 +68,6 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
   wide := false
   sizes := ⟨.inr (.inr rfl), .inl rfl, Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
-  hHigh := true
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1_sh
   coreN := Spec.Ecdsa.BrainpoolP512r1.signApi.name
@@ -66,8 +78,6 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blks := brainpoolp512r1_blks
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

@@ -47,7 +47,6 @@ def p384x (hL : Weierstrass.Law Spec.P384.curve)
   wide := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
-  hHigh := false
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P384.p384x_sh
   coreN := Spec.Ecdsa.P384.signApi.name ++ "_adx"
@@ -58,9 +57,7 @@ def p384x (hL : Weierstrass.Law Spec.P384.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := (p384 hL hT hI).reduceT
-  reduceSp := (p384 hL hT hI).reduceSp
-  reduceMx := (p384 hL hT hI).reduceMx
+  blks := p384_blks
 
 /-- P-384 with BMI2 and ADX (`adx`) or without. -/
 def p384Of (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve)

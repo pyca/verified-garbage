@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -32,6 +34,20 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
 open VG VG.X86_64
 
+/-- The blocks that depend on the curve, checked once. -/
+theorem p521_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.p521 true 7) where
+  prepCase := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
+  post := by exact ⟨_, by taint_decide⟩
+  msg₀ := by exact ⟨_, by taint_decide⟩
+  msg₀f := by exact ⟨_, by taint_decide⟩
+  msg₁f := by exact ⟨_, by taint_decide⟩
+  appendV := by exact ⟨_, by taint_decide⟩
+  conv := by exact ⟨_, by taint_decide⟩
+  sp := by unfold CurveInstrs; decide +kernel
+  mx := by unfold CurveInstrs; decide +kernel
+
 /-- `coreK` at P-521's sizes is `Proof.Ecdsa.X86_64.P521.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/
 theorem coreK_p521 : coreK Impl.Ecdsa.X86_64.p521 = Proof.Ecdsa.X86_64.P521.signX86_64 := by
@@ -61,8 +77,6 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := nofun
-  reduceSp := nofun
-  reduceMx := nofun
+  blks := p521_blks
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
