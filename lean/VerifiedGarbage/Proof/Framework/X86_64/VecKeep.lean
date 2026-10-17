@@ -22,7 +22,7 @@ namespace VG.X86_64
 def scalarI : Instr → Bool
   | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movImm64 .. | .leaSym .. | .mul ..
   | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. | .bswap ..
-  | .store32 .. | .bswap32 .. => true
+  | .store32 .. | .bswap32 .. | .align _ => true
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :
