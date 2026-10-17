@@ -55,14 +55,13 @@ theorem pref_k0 (hl : LayOk l) {e : Nat} (he : e < 2 ^ (8 * l.E)) : e / l.T ^ (l
 theorem OutW.dig (hl : LayOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {p i : Nat} (hp : p < 2)
     (hi : i < l.ND) : dig l m' B p i = dig l m B p i := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
+  obtain ⟨d1, d2⟩ := lay_dAt hl hi
   have hD := hl.D_bounds
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-  show (m' _).toNat = (m _).toNat
-  refine congrArg _ (h _ fun p' hp' => ?_)
-  rw [ofs_off0 B (by omega_using [hi, d2, o7, o10, hD, hDp])]
+  refine congrArg (fun b : BitVec 8 => nibOf l i b.toNat) (h _ fun p' hp' => ?_)
+  rw [ofs_off0 B (by omega_using [d2, o7, o10, hD, hDp])]
   rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;>
-    omega_using [hi, o2, o4, o6, o7, o8, d1, d2, h1, h2, o10]
+    omega_using [o2, o4, o6, o7, o8, d1, d2, h1, h2, o10]
 
 /-- The next digit, `ZF` after the last window, `Y Fin`'s. -/
 theorem r13Inc_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : s.gpr .r13 = BitVec.ofNat 64 i) :
@@ -264,7 +263,6 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
   have hs := hc.scr
   have hR := hc.hR
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
   have hD := hl.D_bounds
   have hk0 := k0_le hl
   refine wp_seqs_app (by simp [convTab]) (by simp)
@@ -293,12 +291,12 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
       (by omega_using [o9, o10])
   have hdu : ∀ p < 2, ∀ i < l.ND, dig l u.mem B p i = digit l (e p) i := fun p hp i hi => by
     rw [← hd p hp i hi, mu]
-    show (s₁.mem _).toNat = (s.mem _).toNat
-    refine congrArg _ (t₁.frame _ fun p' hp' => ?_)
+    obtain ⟨d1, d2⟩ := lay_dAt hl hi
+    refine congrArg (fun b : BitVec 8 => nibOf l i b.toNat) (t₁.frame _ fun p' hp' => ?_)
     have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-    rw [ofs_off0 B (by have := hs.nowrap; omega_using [d2, o7, o10, hi, hDp, this])]
+    rw [ofs_off0 B (by have := hs.nowrap; omega_using [d2, o7, o10, hDp, this])]
     rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;>
-      omega_using [o2, o5, o6, o7, d1, d2, h2, o10, hi, h1]
+      omega_using [o2, o5, o6, o7, d1, d2, h2, o10, h1]
   have st₀ : ExpSt l u.mem B M k x Q (fun p => e p / l.T ^ (l.ND - (l.ND + 1 - (l.ND + 1 - l.k0)))) := by
     rw [mu, show l.ND + 1 - (l.ND + 1 - l.k0) = l.k0 by omega_using [hk0]]
     refine ExpSt.congrE ⟨t₁.ar, t₁.tab, t₁.yg, t₁.yv⟩ fun p hp => ?_

@@ -153,11 +153,11 @@ theorem Ar.of_hi {M k : Nat → Nat} (a : Ar l m B M k) : Ar l m' B M k := by
 
 theorem dig_of_hi {p i : Nat} (hp : p < 2) (hi : i < l.ND) : dig l m' B p i = dig l m B p i := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
+  obtain ⟨d1, d2⟩ := lay_dAt hl hi
   have := hl.D_bounds
-  exact congrArg _ (h _ (.inl (by
-    rw [ofs_off0 B (by rcases D_mul (l := l) hp with h | h <;> omega_using [d2, o7, o10, this, hi, h])]
-    rcases D_mul (l := l) hp with h | h <;> omega_using [d2, o7, o10, hi, h])))
+  exact congrArg (fun b : BitVec 8 => nibOf l i b.toNat) (h _ (.inl (by
+    rw [ofs_off0 B (by rcases D_mul (l := l) hp with h | h <;> omega_using [d2, o7, o10, this, h])]
+    rcases D_mul (l := l) hp with h | h <;> omega_using [d2, o7, o10, h])))
 
 end
 
