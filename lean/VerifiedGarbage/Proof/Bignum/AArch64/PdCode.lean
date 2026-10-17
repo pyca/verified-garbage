@@ -49,7 +49,7 @@ def pdContract : Contract isa where
       (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .x1).toNat ∧ (s.gpr .x3).toNat = Spec.Rsa.precomputedWords (s.gpr .x1).toNat ∧
       (s.gpr .x7).toNat = (s.gpr .x1).toNat ∧ 1 ≤ (s.gpr .x5).toNat ∧
-      (s.gpr .x5).toNat ≤ (s.gpr .x1).toNat ∧ Spec.Rsa.scratchWords (s.gpr .x1).toNat ≤ (stackArg s 1).toNat
+      (s.gpr .x5).toNat ≤ (s.gpr .x1).toNat ∧ Spec.Rsa.publicScratchWords (s.gpr .x1).toNat ≤ (stackArg s 1).toNat
   post s s' :=
     ∀ nB : List Byte, nB.length = (s.gpr .x1).toNat →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) →
@@ -116,7 +116,7 @@ structure PdCtx (s : State) : Prop where
   hL1 : 1 ≤ (s.gpr .x5).toNat
   hL2 : (s.gpr .x5).toNat ≤ (s.gpr .x1).toNat
   hpl : (s.gpr .x3).toNat = 2 * (((s.gpr .x1).toNat + 7) / 8)
-  hZ : 128 * (s.gpr .x1).toNat ≤ (stackArg s 1).toNat * 8
+  hZ : 64 * (((s.gpr .x1).toNat + 7) / 8) + 384 ≤ (stackArg s 1).toNat * 8
   hs : Scr s (stackArg s 0) ((stackArg s 1).toNat * 8)
   ha0 : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8
   hpr : ∀ i < 2 * (((s.gpr .x1).toNat + 7) / 8), InRegions (s.rd ++ s.wr) (off (s.gpr .x2) (8 * i)) 8
@@ -134,7 +134,7 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
   obtain ⟨hsp, hrd, hwr, dOp, dOe, dOi, dOs, dOa, dps, des, dis, dsa,
     wO, wP, wE, wI, wS, hk, hpl, hil, hL1, hL2, hsl⟩ := h
   obtain ⟨hk1, hk2⟩ := hk
-  unfold Spec.Rsa.scratchWords at hsl
+  unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
   have hs : Scr s (stackArg s 0) ((stackArg s 1).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap

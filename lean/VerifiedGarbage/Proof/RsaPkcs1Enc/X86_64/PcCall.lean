@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.Scratch
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86-64: the call
@@ -130,7 +131,7 @@ theorem call_pre {s t : State} (hp : PPre s) (h : J5 s t) :
   refine ⟨by omega, rfl, rfl, dOq, dOe, (dKo.sub_left sM).symm, dOs, (dKo.sub_left sA).symm, hp.preScr, hp.des,
     (hp.dKs.sub_left sM), (hp.dKs.sub_left sA).symm, dKo.sub_left sR, hp.preStack.symm.sub_left sR,
     hp.dKe.sub_left sR, dRM, hp.dKs.sub_left sR, dRA, wO, hp.preWrap, hp.wE, wM, hp.wS, ⟨hk1, hk2⟩, hp.preLen,
-    trivial, hp.L1, hp.L2, hp.hsl⟩
+    trivial, hp.L1, hp.L2, VG.Proof.Rsa.publicScratch_le ⟨hk1, hk2⟩ hp.hsl⟩
 
 theorem call_covers {s t : State} (hp : PPre s) (h : PreCall s t) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by

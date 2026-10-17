@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.Scratch
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precompute`
@@ -141,7 +142,8 @@ theorem pc_pre {s t : State} (hp : PreF s) (he : Env s t) (hdi : t.gpr .rdi = of
     have e3 : frameBytes = 3240 := rfl
     rw [fb_off, ← off, toNat_off (by omega)]; omega
   exact ⟨trivial, rfl, hp.dKn.sub_left sP, hp.dKs.sub_left sP, hp.dns, dRP, hp.dKn.sub_left sR,
-    hp.dKs.sub_left sR, wP, hp.wN, hp.wS, ⟨hp.k1, hp.k2⟩, trivial, hp.hsl⟩
+    hp.dKs.sub_left sR, wP, hp.wN, hp.wS, ⟨hp.k1, hp.k2⟩, trivial,
+    VG.Proof.Rsa.publicScratch_le ⟨hp.k1, hp.k2⟩ hp.hsl⟩
 
 /-- The regions `vg_rsa_public_precompute` is given: `n`, and the precomputed
 values and the working space. -/
