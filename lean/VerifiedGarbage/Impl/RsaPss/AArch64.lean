@@ -443,7 +443,7 @@ def sign : Prog isa := .frame (.alloc frameBytes) (signBody hs privN privC) (.fr
 /-! ## Verifying
 
 `verifyPrecomputed(n = x0, n_len = x1, e = x2, e_len = x3, digest = x4,
-digest_len = x5, sig = x6, sig_len = x7, salt_len, any_salt_len, scratch,
+digest_len = x5, sig = x6, sig_len = x7, any_salt_len, salt_len, scratch,
 scratch_len, pre, pre_len, hash, mgf1_hash)`, the last eight on the
 stack. -/
 
@@ -451,8 +451,8 @@ stack. -/
 `any_salt_len`'s 32 bits, and `sSaltLen` is `salt_len`. -/
 def verifyPrologue : List Instr :=
   save ++ ([.str .x .x0 .x16 sN, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl, .str .x .x4 .x16 sDig,
-    .str .x .x5 .x16 sHLen, .str .x .x6 .x16 sOut, mov .x23 .x1, arg .x9 0, .str .x .x9 .x16 sSaltLen,
-    arg .x9 1, .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 2, arg .x9 3,
+    .str .x .x5 .x16 sHLen, .str .x .x6 .x16 sOut, mov .x23 .x1, arg .x9 0, .addImm .w .x9 .x9 0,
+    .str .x .x9 .x16 sAny, arg .x9 1, .str .x .x9 .x16 sSaltLen, arg .x20 2, arg .x9 3,
     .str .x .x9 .x16 sScrLen, arg .x9 4, .str .x .x9 .x16 sPre, arg .x9 5, .str .x .x9 .x16 sPreLen] :
     List Instr) ++ hashArgs 6 ++ regsUp
 

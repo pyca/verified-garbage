@@ -7,6 +7,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+public import VerifiedGarbage.Proof.RsaPss.AArch64.OnHash
 
 /-!
 # RSASSA-PSS verification on AArch64: unmasking `DB`
@@ -79,21 +80,22 @@ theorem nz_lt {f : Nat → Byte} {j : Nat} (hj : 0 < j) : (nz f j).getD 0 < j :=
   | none => exact hj
   | some i => exact (nz_some h).1
 
-section
-variable {H : Hash} (hH : HashOK H)
-
-include hH in
-/-- From RSAVP1's result in `EM` (`V`), `DB` at `oEm + lo`, to `B1`. -/
-theorem b1_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V)
-    {k lo db : Nat} {c : Byte} {any sv : BitVec 64} (hk : lo + db + H.D + 1 = k) (hdb : 1 ≤ db)
+/-- From RSAVP1's result in `EM` (`V`), `DB` at `oEm + lo`, to `B1`, with MGF1's hash function `G`
+(`kG` of `hs`) and `D` bytes of `H`. -/
+theorem b1_ok {hs : List Hash} {kG : Nat} {Gi : Hash} (hkG : hs[kG]? = some Gi) (hl : hs.length ≤ 4096)
+    (hGi : HashOK Gi) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hGi.SH.H.hash x) (hGl : G.len = Gi.D)
+    (hG : Proof.Mgf1.Valid G) {D : Nat} (hD : 0 < D ∧ D ≤ 64) {t : State} {F S : Addr} (L : Lay t F S)
+    {V : Nat → Byte} (R : Rep t.mem S V)
+    (hsG : t.mem.readW (off F sMgf) 64 = BitVec.ofNat 64 kG)
+    (hsD : t.mem.readW (off F sHLen) 64 = BitVec.ofNat 64 D)
+    {k lo db : Nat} {c : Byte} {any sv : BitVec 64} (hk : lo + db + D + 1 = k) (hdb : 1 ≤ db)
     (hk2 : k ≤ 1024) (hlo : lo ≤ 1) (h19 : t.gpr .x19 = off S oSt) (h21 : t.gpr .x21 = off S oDig)
     (h23 : t.gpr .x23 = BitVec.ofNat 64 k) (h24 : t.gpr .x24 = off S (oEm + lo))
     (h25 : t.gpr .x25 = BitVec.ofNat 64 db) (hLo : t.mem.readW (off F sLo) 64 = BitVec.ofNat 64 lo)
     (hC : t.mem.readW (off F sC) 64 = c.setWidth 64) (hA : t.mem.readW (off F sAny) 64 = any)
     (hS : t.mem.readW (off F sSaltLen) 64 = sv) {rest : Prog isa} {Q : State → Prop}
-    (hQ : ∀ u, B1 G H.D t F S V k lo db c any sv u → WP isa rest u Q) :
-    WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck, rest]) t Q := by
+    (hQ : ∀ u, B1 G D t F S V k lo db c any sv u → WP isa rest u Q) :
+    WP isa (seqs [.block acc0, mgfXorAny hs, .block clearTop, posScan, posCheck, rest]) t Q := by
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
   have c6 : oRsa = 8192 := rfl
@@ -105,12 +107,27 @@ theorem b1_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl
   refine WP.seq (WP.mono (acc0_ok L R (by omega) hk2 hlo h23 h24 hLo hC) fun u1 ⟨O1, x26₁⟩ => ?_)
   have L1 := L.congr O1.sp O1.wr (O1.get .x20)
   have R1 : Rep u1.mem S V := O1.mem ▸ R
-  -- The mask.
-  refine WP.seq (WP.mono (mgfXor_ok hH hGh hGl hG L1 R1 (e := oEm + lo) (db := db) ⟨by omega, hdb, by omega⟩
-    (by rw [O1.get .x19, h19]) (by rw [O1.get .x21, h21]) (by rw [O1.get .x24, h24]) (by rw [O1.get .x25, h25]))
-    fun u2 ⟨sp2, rd2, wr2, cs2, v2, fr2, em2⟩ => ?_)
+  -- The mask, with `G`.
+  refine WP.seq (onHash_wp hkG hl (by decide) (ld_slot L1 (by decide)) (by rw [L1.sp, O1.mem, hsG])
+    fun u1' O1' => ?_)
+  have L1' := L1.congr O1'.sp O1'.wr (O1'.get .x20)
+  have g1 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u1'.gpr r = u1.gpr r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact O1'.get _ (by decide)
+  refine WP.mono (mgfXor_ok hGi hGh hGl hG L1' (O1'.mem ▸ R1) (sd := D) (e := oEm + lo) (db := db)
+    ⟨by omega, hdb, by omega⟩ hD (by rw [O1'.mem, O1.mem, hsD])
+    (by rw [g1 .x19 (by decide), O1.get .x19, h19]) (by rw [g1 .x21 (by decide), O1.get .x21, h21])
+    (by rw [g1 .x24 (by decide), O1.get .x24, h24]) (by rw [g1 .x25 (by decide), O1.get .x25, h25]))
+    fun u2 ⟨sp2', rd2', wr2', cs2', v2', fr2, em2⟩ => ?_
+  have sp2 : u2.sp = u1.sp := sp2'.trans O1'.sp
+  have rd2 : u2.rd = u1.rd := rd2'.trans O1'.rd
+  have wr2 : u2.wr = u1.wr := wr2'.trans O1'.wr
+  have cs2 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u2.gpr r = u1.gpr r := fun r hr =>
+    (cs2' r hr).trans (g1 r hr)
+  have v2 : ∀ r ∈ preservedV, (u2.v r).extractLsb' 0 64 = (u1.v r).extractLsb' 0 64 := fun r hr =>
+    (v2' r hr).trans (O1'.vcs r hr)
   have L2 := L1.congr sp2 wr2 (cs2 .x20 (by decide))
-  have F2 : Frame (mgfWr F S) t.mem u2.mem := by rw [O1.mem] at fr2; exact fr2
+  have F2 : Frame (mgfWr F S) t.mem u2.mem := by rw [O1'.mem, O1.mem] at fr2; exact fr2
   -- `DB`'s top bits.
   refine WP.seq (WP.mono (clearTop_ok L2 (fun _ _ => rfl) (e := oEm + lo) (c := c)
     (by rw [cs2 .x24 (by decide), O1.get .x24, h24]) (by omega)
@@ -120,8 +137,8 @@ theorem b1_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl
       u3.mem.readW (off F d) 64 = t.mem.readW (off F d) 64 := fun hd h1 h2 => by
     rw [slot_keep f3 (L.slotSd hd), hW hd h1 h2 F2]
   -- The first nonzero byte.
-  generalize hmk : mkB G H.D V (oEm + lo) db = mk
-  have hmk' : Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (oEm + lo + db + i)) db = mk := hmk
+  generalize hmk : mkB G D V (oEm + lo) db = mk
+  have hmk' : Spec.Mgf1.mgf1 G ((List.range D).map fun i => V (oEm + lo + db + i)) db = mk := hmk
   rw [hmk'] at em2
   have hv : ∀ o, oEm ≤ o → o < oY →
       upd (fun o => u2.mem (off S o)) (oEm + lo) (u2.mem (off S (oEm + lo)) &&& c) o =
@@ -161,7 +178,5 @@ theorem b1_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl
     em := fun o h1 h2 => by rw [R5 o (by omega), hv o h1 h2]
     pos := by rw [m5, Mem.readW_writeW_self64]
     acc := x26₅ }
-
-end
 
 end VG.Proof.RsaPss.AArch64
