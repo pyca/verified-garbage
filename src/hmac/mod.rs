@@ -35,15 +35,20 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     /// The state of an HMAC computation.
     #[doc(hidden)]
     type State: Clone;
-    /// Starts an HMAC computation with a key of any length.
+    /// A state with no key yet, for [`HmacHash::hmac_init`] to key in place:
+    /// it holds nothing secret, so it may be moved.
     #[doc(hidden)]
-    fn hmac_init(key: &[u8]) -> Self::State;
+    fn hmac_empty() -> Self::State;
+    /// Starts an HMAC computation in `state` with a key of any length.
+    #[doc(hidden)]
+    fn hmac_init(state: &mut Self::State, key: &[u8]);
     /// Absorbs `data`.
     #[doc(hidden)]
     fn hmac_update(state: &mut Self::State, data: &[u8]);
-    /// Returns the MAC.
+    /// Returns the MAC, finalizing `state` in place (where it is wiped when
+    /// it is dropped).
     #[doc(hidden)]
-    fn hmac_finalize(state: Self::State) -> Self::Output;
+    fn hmac_finalize(state: &mut Self::State) -> Self::Output;
 }
 
 /// The MAC did not match: the message or the key is not what was
@@ -62,6 +67,14 @@ impl core::fmt::Display for InvalidMac {
 impl core::error::Error for InvalidMac {}
 
 /// An incremental HMAC computation with the hash function `H`.
+///
+/// Its state, which represents the key, is wiped when it is dropped. The
+/// computation keys and finalizes it in place, and leaves no copy of it
+/// behind: [`Hmac::new`] moves it to the caller and wipes its own. A copy the
+/// caller makes (by [`Clone`], or by moving the value) is wiped only where
+/// it is dropped, and is not wiped where it was moved from: this includes the
+/// copy Rust may make of a variable to pass it to [`Hmac::finalize`] or
+/// [`Hmac::verify`], which take it by value. [`Hmac::mac`] makes none.
 #[derive(Clone)]
 pub struct Hmac<H: HmacHash> {
     state: H::State,
@@ -70,9 +83,27 @@ pub struct Hmac<H: HmacHash> {
 impl<H: HmacHash> Hmac<H> {
     /// Starts an HMAC computation with `key`, of any length (a key longer
     /// than the block size is hashed first).
+    // Never inlined, here and in `finalize` and `verify`: inlined, a call
+    // copies the state between the caller's variable and the function's,
+    // and leaves the copy wiped at the end unwiped where it was; a call
+    // passes the caller's variable by its address.
+    #[inline(never)]
     pub fn new(key: &[u8]) -> Self {
+        let mut h = Self::empty();
+        H::hmac_init(&mut h.state, key);
+        // Rust does not build a returned local in the caller's place:
+        // returning `h` would copy it there and leave this copy as it is.
+        // Copy it to the caller's place, and wipe it here when it is dropped.
+        // SAFETY: the state is plain data (arrays and a backend), owning no
+        // resource, so its copy and `h` are independent values, each wiped
+        // when it is dropped.
+        unsafe { core::ptr::read(&h) }
+    }
+
+    /// A computation with no key yet, for `init` to key in place.
+    fn empty() -> Self {
         Hmac {
-            state: H::hmac_init(key),
+            state: H::hmac_empty(),
         }
     }
 
@@ -82,16 +113,18 @@ impl<H: HmacHash> Hmac<H> {
     }
 
     /// Returns the MAC of everything absorbed.
-    pub fn finalize(self) -> H::Output {
-        H::hmac_finalize(self.state)
+    #[inline(never)]
+    pub fn finalize(mut self) -> H::Output {
+        H::hmac_finalize(&mut self.state)
     }
 
     /// Checks that `mac` is the MAC of everything absorbed, in constant
     /// time: the time taken does not depend on where, or whether, `mac`
     /// differs from it (its length is public). `mac` must be the whole MAC,
     /// of `H::OUTPUT_SIZE` bytes; a truncated one is rejected.
-    pub fn verify(self, mac: &[u8]) -> Result<(), InvalidMac> {
-        if crate::ct::eq(self.finalize().as_ref(), mac) {
+    #[inline(never)]
+    pub fn verify(mut self, mac: &[u8]) -> Result<(), InvalidMac> {
+        if crate::ct::eq(H::hmac_finalize(&mut self.state).as_ref(), mac) {
             Ok(())
         } else {
             Err(InvalidMac)
@@ -100,9 +133,11 @@ impl<H: HmacHash> Hmac<H> {
 
     /// The MAC of `data` with `key`.
     pub fn mac(key: &[u8], data: &[u8]) -> H::Output {
-        let mut h = Self::new(key);
+        // Keyed and finalized in place, and wiped when it is dropped.
+        let mut h = Self::empty();
+        H::hmac_init(&mut h.state, key);
         h.update(data);
-        h.finalize()
+        H::hmac_finalize(&mut h.state)
     }
 }
 
@@ -161,36 +196,38 @@ macro_rules! streaming_hmac {
         impl super::HmacHash for $hash {
             type State = super::StreamingHmacState<$hash, $state>;
 
-            fn hmac_init(key: &[u8]) -> Self::State {
+            fn hmac_empty() -> Self::State {
                 let backend = $backend::select($crate::cpu::detected());
-                let init = match backend {
+                super::StreamingHmacState {
+                    inner: $hash::from_state([0; $state], Self::BLOCK_SIZE as u64, backend),
+                    outer: [0; $state],
+                }
+            }
+
+            fn hmac_init(state: &mut Self::State, key: &[u8]) {
+                let init = match state.inner.backend() {
                     $backend::$base => $init,
                     $($(#[$attr])* $backend::$variant => $vinit,)*
                 };
                 // The states are written in place, where they are wiped when
                 // the computation is dropped. Once `init` has run, the inner
                 // one represents `K₀ ⊕ ipad`, of a block.
-                let mut state = super::StreamingHmacState {
-                    inner: $hash::from_state([0; $state], Self::BLOCK_SIZE as u64, backend),
-                    outer: [0; $state],
-                };
                 let (inner, _) = state.inner.state_mut();
                 // SAFETY: `inner` and `state.outer` are valid for reads and
                 // writes of a streaming state and `key` for reads of
                 // `key.len()` bytes (of any length); they are distinct
                 // objects or fields, so they do not overlap each other or the
                 // call's stack frame, nor wrap around the address space.
-                // `init` needs no CPU feature that `backend` was not selected
-                // for (`tests::backend_features`).
+                // `init` needs no CPU feature that the hash's implementation
+                // was not selected for (`tests::backend_features`).
                 unsafe { init(inner, &mut state.outer, key.as_ptr(), key.len()) };
-                state
             }
 
             fn hmac_update(state: &mut Self::State, data: &[u8]) {
                 state.inner.update(data);
             }
 
-            fn hmac_finalize(mut state: Self::State) -> [u8; $output] {
+            fn hmac_finalize(state: &mut Self::State) -> [u8; $output] {
                 let finalize = match state.inner.backend() {
                     $backend::$base => $finalize,
                     $($(#[$attr])* $backend::$variant => $vfinalize,)*
