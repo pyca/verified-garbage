@@ -193,12 +193,18 @@ theorem digestOut_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (.block (
   obtain ⟨_, hcl⟩ := hc.digestOut
   exact two_taint [.x20, .x21] (HE.pins fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp) hcl
 
-theorem fixedPad_ct (ℓ : Nat) (h4 : oY + ℓ < 4096) :
-    RelCT isa (Two fun a u => HE H a u ∧ a.fx = some ℓ) (fixedPad80 ℓ) (Two (HE H)) := by
-  refine two_post (two_taintE [.x20] (fun a s₁ s₂ h₁ h₂ => HE.pins (H := H) (rs := [.x20])
-      (fun r hr => by simp at hr; exact .inr (.inl hr)) a s₁ s₂ h₁.1 h₂.1)
-    (c' := .block [.addImm .x .x10 .x20 0, .ldrb .x9 .x10 0, .movz .x .x13 0 0, .logic .orr .x .x9 .x9 .x13,
-      .strb .x9 .x10 0]) rfl (by taint_decide)) fun a u ⟨h, hf⟩ => ?_
+/-- A public length: MGF1's. -/
+def FxOk (a : HA) : Prop := ∃ ℓ, ℓ < 2048 ∧ a.fx = some ℓ
+
+theorem fixedPad_ct : RelCT isa (Two fun a u => HE H a u ∧ FxOk a) fixedPad80 (Two (HE H)) := by
+  refine two_post (two_taintE [.x20, .x22] (fun a s₁ s₂ h₁ h₂ => ⟨by rw [h₁.1.L.sp, h₂.1.L.sp], fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      obtain ⟨ℓ, -, hf⟩ := h₁.2
+      rcases hr with rfl | rfl
+      · rw [h₁.1.L.x20, h₂.1.L.x20]
+      · rw [h₁.1.fx ℓ hf, h₂.1.fx ℓ hf]⟩)
+    (c' := .block [.add .x .x10 .x20 .x22, .addImm .x .x10 .x10 0, .ldrb .x9 .x10 0, .movz .x .x13 0 0,
+      .logic .orr .x .x9 .x9 .x13, .strb .x9 .x10 0]) rfl (by taint_decide)) fun a u ⟨h, ℓ, hℓ4, hf⟩ => ?_
   have hℓ : ℓ < a.nbm * H.P.B := by
     obtain ⟨ℓ', e, f⟩ := h.len
     have e' := h.fx ℓ hf
@@ -207,7 +213,9 @@ theorem fixedPad_ct (ℓ : Nat) (h4 : oY + ℓ < 4096) :
     have := congrArg BitVec.toNat e'
     rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
     omega
-  exact WP.mono (fixedPad_ok h.L (fun _ _ => rfl) hℓ h4) fun u' ⟨k, fr, _⟩ => h.keep k (by decide) fr
+  have := h.hnb
+  exact WP.mono (fixedPad_ok h.L (fun _ _ => rfl) hℓ (by unfold oY oRsa; omega) (h.fx ℓ hf))
+    fun u' ⟨k, fr, _⟩ => h.keep k (by decide) fr
 
 include hH in
 theorem pad80_ct : RelCT isa (Two (HE H)) (pad80 H) (Two (HE H)) := by
@@ -498,10 +506,8 @@ theorem ctHash_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (ctHash H) f
 
 include hH in
 theorem mgfHash_ct (hc : PssChecks H.P H.D) :
-    RelCT isa (Two fun a u => HE H a u ∧ a.fx = some (H.D + 4)) (mgfHash H) fun _ _ => True := by
-  have hDN := hH.sizes.DN
-  have hN := hH.N_le
-  exact ctHashWith_ct hH hc (fixedPad_ct (H.D + 4) (by unfold oY; omega))
+    RelCT isa (Two fun a u => HE H a u ∧ FxOk a) (mgfHash H) fun _ _ => True :=
+  ctHashWith_ct hH hc fixedPad_ct
 
 end
 

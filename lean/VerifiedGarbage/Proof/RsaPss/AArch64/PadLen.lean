@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 /-!
 # RSASSA-PSS on AArch64: `0x80` at a public offset, and the length field
 
-`fixedPad80` ORs `0x80` into byte `ℓ` of `Y` (`fixedPad_ok`); `lenField`
+`fixedPad80` ORs `0x80` into byte `ℓ` (in `x22`) of `Y` (`fixedPad_ok`); `lenField`
 writes the length field to `scratch + oLen` with `H`'s code
 (`lenField_ok`), and `lenLoop` ORs it into the end of block
 `⌊(ℓ + L) / B⌋` of `Y` through a mask for each block (`lenLoop_ok`).
@@ -26,7 +26,7 @@ namespace VG.Proof.RsaPss.AArch64
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64 VG.WriteBytes
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_addImm wp_subImm wp_eor wp_orr wp_and wp_lsl
-  wp_lsr wp_ldrb wp_strb wp_sub)
+  wp_lsr wp_ldrb wp_strb wp_sub wp_add)
 open VG.Proof.RsaPkcs1Sig.AArch64 (wp_ldrSp wp_countdown wp_mov)
 open VG.Proof.MdStream (Md)
 open VG.Proof.RsaPkcs1Sig (frame_writeBytes)
@@ -50,19 +50,21 @@ theorem or80 (b : Byte) : (BitVec.setWidth 64 b ||| (BitVec.ofNat 16 0x80).setWi
   revert b; decide
 
 theorem fixedPad_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V)
-    {ℓ n : Nat} (hℓ : ℓ < n) (h4 : oY + ℓ < 4096) :
-    WP isa (fixedPad80 ℓ) t fun t' => Keep [.x10, .x9, .x13] t t' ∧
+    {ℓ n : Nat} (hℓ : ℓ < n) (h4 : oY + ℓ < oRsa) (h22 : t.gpr .x22 = BitVec.ofNat 64 ℓ) :
+    WP isa fixedPad80 t fun t' => Keep [.x10, .x9, .x13] t t' ∧
       Frame [⟨S, oRsa⟩] t.mem t'.mem ∧ Rep t'.mem S (v80 V ℓ n) := by
   unfold fixedPad80
-  refine wp_addImm h4 fun u₁ o₁ e₁ => ?_
+  refine wp_add fun u₀ o₀ e₀ => wp_addImm (by decide) fun u₁ o₁ e₁ => ?_
   have hY : oY + ℓ + 1 ≤ oRsa := by unfold oY oRsa at *; omega
-  refine wp_ldrb (by decide) (by rw [e₁, L.x20, BitVec.add_zero]) (by rw [o₁.rd, o₁.wr]; exact L.ld hY)
+  have a₁ : u₁.gpr .x10 = off S (oY + ℓ) := by
+    rw [e₁, e₀, L.x20, h22, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_comm ℓ]
+  refine wp_ldrb (by decide) (by rw [a₁, BitVec.add_zero]) (by rw [o₁.rd, o₁.wr, o₀.rd, o₀.wr]; exact L.ld hY)
     fun u₂ o₂ e₂ => wp_movz fun u₃ o₃ e₃ => wp_orr fun u₄ o₄ e₄ => ?_
-  have O₄ : Only [.x10, .x9, .x13] t u₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine wp_strb (by decide) (by rw [o₄.get .x10, o₃.get .x10, o₂.get .x10, e₁,
-      L.x20, BitVec.add_zero]) (by rw [O₄.wr]; exact L.st hY) fun u₅ m₅ => wp_nil ?_
+  have O₄ : Only [.x10, .x9, .x13] t u₄ := (o₀.trans (o₁.trans (o₂.trans (o₃.trans o₄)))).mono
+  refine wp_strb (by decide) (by rw [o₄.get .x10, o₃.get .x10, o₂.get .x10, a₁, BitVec.add_zero])
+    (by rw [O₄.wr]; exact L.st hY) fun u₅ m₅ => wp_nil ?_
   have hb : (u₄.gpr .x9).setWidth 8 = V (oY + ℓ) ||| 0x80 := by
-    rw [e₄, o₃.get .x9, e₂, e₃, o₁.mem, R (oY + ℓ) (by omega)]
+    rw [e₄, o₃.get .x9, e₂, e₃, o₁.mem, o₀.mem, R (oY + ℓ) (by omega)]
     exact or80 _
   refine ⟨(O₄.keep.trans m₅.keep).mono, ?_, ?_⟩
   · rw [m₅.mem, O₄.mem]

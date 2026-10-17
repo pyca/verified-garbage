@@ -307,19 +307,16 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
     ⟨k.mono, f, r⟩
 
 theorem mgfHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
-    (R : Rep t.mem S V) {msg : List Byte} {nbm : Nat} (hml : msg.length = H.D + 4) (h19 : t.gpr .x19 = off S oSt)
+    (R : Rep t.mem S V) {msg : List Byte} {nbm : Nat} (h19 : t.gpr .x19 = off S oSt)
     (h21 : t.gpr .x21 = off S oDig) (h22 : t.gpr .x22 = BitVec.ofNat 64 msg.length)
     (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
     (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
     (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
     WP isa (mgfHash H) t fun t' => CtOut t F S V t' ∧
       Spec.Rsa.bytesAt t'.mem (off S oDig) H.D = hH.SH.H.hash msg := by
-  have := hH.sizes.DN
-  have := hH.N_le
-  refine ctHashWith_ok hH _ L R h19 h21 h22 hNb hfit hnb hY fun L' R' _ _ => ?_
-  rw [hml]
-  exact WP.mono (fixedPad_ok L' R' (n := nbm * H.P.B) (by omega_arith) (by unfold oY; omega_arith)) fun _ ⟨k, f, r⟩ =>
-    ⟨k.mono, f, r⟩
+  refine ctHashWith_ok hH _ L R h19 h21 h22 hNb hfit hnb hY fun L' R' h22' _ => ?_
+  exact WP.mono (fixedPad_ok L' R' (n := nbm * H.P.B) (by omega_arith) (by unfold oY oRsa; omega_arith) h22')
+    fun _ ⟨k, f, r⟩ => ⟨k.mono, f, r⟩
 
 end
 

@@ -39,6 +39,16 @@ theorem slot_keep {F : Addr} {d : Nat} {rs : List Region} {m m' : Mem} (hf : Fra
     m'.readW (off F d) 64 = m.readW (off F d) 64 :=
   hf.readW (r := slotR F d) (Region.contains_self _ _) hd (by decide)
 
+theorem Lay.hlD {t : State} {F S : Addr} (L : Lay t F S) :
+    ∀ r ∈ mgfWr F S, Region.Disjoint (slotR F sHLen) r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact L.dFS.sub_left (Offset.sub_base F (by decide))
+  · exact slot_not_below F (by decide)
+  · exact Offset.disjoint F (by decide) (by decide) (by decide)
+  · exact Offset.disjoint F (by decide) (by decide) (by decide)
+
 theorem Lay.doneD {t : State} {F S : Addr} (L : Lay t F S) :
     ∀ r ∈ [(⟨S, oRsa⟩ : Region), below F 16, slotR F sNb], Region.Disjoint (slotR F sDone) r := by
   intro r hr
@@ -71,14 +81,15 @@ section
 variable {H : Hash} (hH : HashOK H)
 
 theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {e db c : Nat}
-    (hd : DbAt H.D e db) (h19 : t.gpr .x19 = off S oSt) (h21 : t.gpr .x21 = off S oDig)
+    (hG : Proof.Mgf1.Valid G) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {sd e db c : Nat}
+    (hd : DbAt sd e db) (hsd : 0 < sd ∧ sd ≤ 64) (hsl : t.mem.readW (off F sHLen) 64 = BitVec.ofNat 64 sd)
+    (h19 : t.gpr .x19 = off S oSt) (h21 : t.gpr .x21 = off S oDig)
     (h24 : t.gpr .x24 = off S e) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) {v : State}
-    (I : MgfI t F S V (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db) e db H.D c v)
+    (I : MgfI t F S V (Spec.Mgf1.mgf1 G ((List.range sd).map fun i => V (e + db + i)) db) e db H.D c v)
     (hc : c * H.D < db) :
-    WP isa (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) v
+    WP isa (seqs [clearBlock H, copyH, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) v
       fun v' => (v'.gpr .x10 != 0) = decide ((c + 1) * H.D < db) ∧
-        MgfI t F S V (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db) e db H.D (c + 1) v' := by
+        MgfI t F S V (Spec.Mgf1.mgf1 G ((List.range sd).map fun i => V (e + db + i)) db) e db H.D (c + 1) v' := by
   have hD := hH.sizes.D0
   have hDN := hH.sizes.DN
   have hN := hH.N_le
@@ -88,22 +99,26 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   have c2 : oY = 3584 := rfl
   have c3 : oDig = 2304 := rfl
   have c6 : oRsa = 8192 := rfl
-  obtain ⟨hnb1, hnb, _⟩ := mgfNb_spec hH
+  obtain ⟨hnb1, hnb, _⟩ := nbOf_spec hH hsd.2
+  have hsl' : ∀ {m : Mem}, Frame (mgfWr F S) t.mem m → m.readW (off F sHLen) 64 = BitVec.ofNat 64 sd :=
+    fun hf => by rw [slot_keep hf L.hlD, hsl]
   have hcD : c ≤ c * H.D := Nat.le_mul_of_pos_right _ hD
   have hs1 : (c + 1) * H.D = c * H.D + H.D := Nat.succ_mul _ _
-  generalize hseed : (List.range H.D).map (fun i => V (e + db + i)) = seed at I ⊢
+  generalize hseed : (List.range sd).map (fun i => V (e + db + i)) = seed at I ⊢
   generalize hmk : Spec.Mgf1.mgf1 G seed db = mk at I ⊢
   have Lv : Lay v F S := L.congr I.sp I.wr (I.cs .x20 (by decide))
   have Rv : Rep v.mem S (fun o => v.mem (off S o)) := fun _ _ => rfl
   unfold seqs seqs seqs seqs seqs
   -- `Y` cleared.
-  refine WP.seq (WP.mono (clearBlock_ok hH Lv Rv) fun u1 ⟨k1, f1, R1⟩ => ?_)
+  refine WP.seq (WP.mono (clearBlock_ok hH Lv Rv (hsl' I.fr) hsd.2) fun u1 ⟨k1, f1, R1⟩ => ?_)
+  have F1 : Frame (mgfWr F S) t.mem u1.mem := I.fr.trans (f1.mono (by simp))
   have L1 := Lv.congr k1.sp k1.wr (k1.get .x20)
   -- `H`.
-  refine WP.seq (WP.mono (copyH_ok hH L1 R1 hd (by rw [k1.get .x24, I.cs .x24 (by decide), h24])
-    (by rw [k1.get .x25, I.cs .x25 (by decide), h25])) fun u2 ⟨k2, f2, R2⟩ => ?_)
+  refine WP.seq (WP.mono (copyH_ok L1 R1 hd hsd.1 (by rw [k1.get .x24, I.cs .x24 (by decide), h24])
+    (by rw [k1.get .x25, I.cs .x25 (by decide), h25]) (hsl' F1)) fun u2 ⟨k2, f2, R2⟩ => ?_)
+  have F2 : Frame (mgfWr F S) t.mem u2.mem := F1.trans (f2.mono (by simp))
   have L2 := L1.congr k2.sp k2.wr (k2.get .x20)
-  have hs : (List.range H.D).map (fun i => clr (fun o => v.mem (off S o)) oY (mgfNb H * H.P.B) (e + db + i)) =
+  have hs : (List.range sd).map (fun i => clr (fun o => v.mem (off S o)) oY (nbOf H sd * H.P.B) (e + db + i)) =
       seed := by
     rw [← hseed]
     refine List.map_congr_left fun i hi => ?_
@@ -114,28 +129,29 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     rw [ite_eq_right (by omega_using [])]
   rw [hs] at R2
   -- The counter.
-  refine WP.seq (WP.mono (counter_ok hH L2 R2 (c := c) (by rw [k2.get .x28, k1.get .x28, I.x28]) (by omega_using [hc, hfit, c2, hcD]))
+  refine WP.seq (WP.mono (counter_ok hH L2 R2 (c := c) (by rw [k2.get .x28, k1.get .x28, I.x28]) (by omega_using [hc, hfit, c2, hcD])
+    (hsl' F2) hsd.2)
     fun u3 ⟨k3, x22₃, nb₃, f3, R3⟩ => ?_)
   have L3 := L2.congr k3.sp k3.wr (k3.get .x20)
-  have hsl : seed.length = H.D := by rw [← hseed, List.length_map, List.length_range]
-  have hml : (seed ++ Spec.Rsa.i2osp c 4).length = H.D + 4 := by
-    rw [List.length_append, hsl, i2osp_len]
+  have hsdl : seed.length = sd := by rw [← hseed, List.length_map, List.length_range]
+  have hml : (seed ++ Spec.Rsa.i2osp c 4).length = sd + 4 := by
+    rw [List.length_append, hsdl, i2osp_len]
   have g3 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u3.gpr r = t.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rw [k3.get _ (by decide), k2.get _ (by decide), k1.get _ (by decide), I.cs _ (by decide)]
   -- The digest of `H ‖ C`.
-  refine WP.seq (WP.mono (mgfHash_ok hH L3 R3 (msg := seed ++ Spec.Rsa.i2osp c 4) hml
+  refine WP.seq (WP.mono (mgfHash_ok hH L3 R3 (msg := seed ++ Spec.Rsa.i2osp c 4)
     (by rw [g3 .x19 (by decide), h19]) (by rw [g3 .x21 (by decide), h21]) (by rw [x22₃, hml]) nb₃
     (by rw [hml]; omega_using [hnb1]) (by omega_using [hnb]) (fun i hi => ?_)) fun u4 ⟨O4, d4⟩ => ?_)
-  · rw [getD_app, hsl]
-    by_cases h1 : i < H.D
+  · rw [getD_app, hsdl]
+    by_cases h1 : i < sd
     · simp (disch := omega_arith) only [ctrV, updL, ↓ite_eq_left, ↓ite_eq_right]
       rw [Nat.add_sub_cancel_left]
-    · by_cases h2 : i < H.D + 4
+    · by_cases h2 : i < sd + 4
       · simp (disch := omega_arith) only [ctrV, ↓ite_eq_left, ↓ite_eq_right]
-        rw [show oY + i - (oY + H.D) = i - H.D by omega_using []]
+        rw [show oY + i - (oY + sd) = i - sd by omega_using []]
       · simp (disch := omega_arith) only [ctrV, updL, clr, ↓ite_eq_left, ↓ite_eq_right]
         rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [i2osp_len]; omega_using [h2])]
         rfl
@@ -157,7 +173,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   -- The next counter.
   refine WP.mono (nextCtr_ok hH L5 (c := c) (db := db)
     (by rw [k5.get .x28, O4.cs .x28 (by decide), k3.get .x28, k2.get .x28, k1.get .x28, I.x28])
-    (by rw [k5.get .x25, g4 .x25 (by decide), h25]) done₅ (by omega_using [hc, hfit, c2]) (by omega_using [hfit, c2]))
+    (by rw [k5.get .x25, g4 .x25 (by decide), h25]) done₅ (by omega_using [hc, hfit, c2, hDN, hN]) (by omega_using [hfit, c2]))
     fun u6 ⟨k6, x28₆, x10₆, m6⟩ => ⟨by rw [x10₆, hs1], ?_⟩
   have R6 : Rep u6.mem S _ := R5.frame (m' := u6.mem) (rs := [slotR F sDone])
     (by rw [m6]; exact frame_slot _ F sDone _) (L.slotS (by decide))
@@ -201,20 +217,21 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
 /-- `DB ⊕= MGF1(H, dbLen)`, where `H` is the `hLen` bytes after `DB`. -/
 theorem mgfXor_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
     (hG : Proof.Mgf1.Valid G) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V)
-    {e db : Nat} (hd : DbAt H.D e db) (h19 : t.gpr .x19 = off S oSt) (h21 : t.gpr .x21 = off S oDig)
-    (h24 : t.gpr .x24 = off S e) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) :
+    {sd e db : Nat} (hd : DbAt sd e db) (hsd : 0 < sd ∧ sd ≤ 64)
+    (hsl : t.mem.readW (off F sHLen) 64 = BitVec.ofNat 64 sd) (h19 : t.gpr .x19 = off S oSt)
+    (h21 : t.gpr .x21 = off S oDig) (h24 : t.gpr .x24 = off S e) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) :
     WP isa (mgfXor H) t fun t' => t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], t'.gpr r = t.gpr r) ∧
       (∀ r ∈ preservedV, (t'.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) ∧
       Frame (mgfWr F S) t.mem t'.mem ∧
       ∀ o, oEm ≤ o → o < oY →
-        t'.mem (off S o) = mixV V (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db) e db o := by
+        t'.mem (off S o) = mixV V (Spec.Mgf1.mgf1 G ((List.range sd).map fun i => V (e + db + i)) db) e db o := by
   have hD := hH.sizes.D0
   have hdb1 := hd.db1
   have hfit := hd.fit
   have c2 : oY = 3584 := rfl
   have c6 : oRsa = 8192 := rfl
-  generalize hmk : Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db = mk
+  generalize hmk : Spec.Mgf1.mgf1 G ((List.range sd).map fun i => V (e + db + i)) db = mk
   unfold mgfXor st
   simp only [List.cons_append, List.nil_append]
   refine WP.seq (wp_movz fun u₁ o₁ e₁ => wp_movz fun u₂ o₂ e₂ => wp_addSp (by decide) fun u₃ o₃ e₃ => ?_)
@@ -238,7 +255,7 @@ theorem mgfXor_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) 
     ?_ (db - 0 * H.D) v ⟨0, rfl, by omega_using [hdb1], I0⟩
   rintro n w ⟨c, rfl, hc, I⟩
   subst hmk
-  refine WP.mono (round_ok hH hGh hGl hG L hd h19 h21 h24 h25 I hc) fun w' ⟨hx, I'⟩ => ?_
+  refine WP.mono (round_ok hH hGh hGl hG L hd hsd hsl h19 h21 h24 h25 I hc) fun w' ⟨hx, I'⟩ => ?_
   have hs1 : (c + 1) * H.D = c * H.D + H.D := Nat.succ_mul _ _
   by_cases h : (c + 1) * H.D < db
   · exact .inr ⟨by rw [eval_nonzero, hx, decide_eq_true h], _, by omega_using [hD, hs1, h], c + 1, rfl, h, I'⟩

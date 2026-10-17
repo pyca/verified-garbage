@@ -2,16 +2,27 @@ module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
+public import VerifiedGarbage.Impl.Dispatch.AArch64
 
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1) on AArch64
 
-`sign` and `verifyPrecomputed`, for a Merkle–Damgård hash function `H` (an
-`Impl.Pbkdf2.Md.AArch64.Hash`) as both the hash function and MGF1's, as on
-x86-64 (`Impl/RsaPss/X86_64.lean`), whose design this follows: `H`'s
-compression function and streaming `init`, and the RSA operation
+`sign` and `verifyPrecomputed`, with the hash function `H` and MGF1's hash
+function `G` chosen at run time by their numbers (`Spec/HashId.lean`), the
+public arguments `hash` and `mgf1_hash`, among the Merkle–Damgård hash
+functions `hs` (`Impl.Pbkdf2.Md.AArch64.Hash`, the `i`th numbered `i`). The
+design follows x86-64's (`Impl/RsaPss/X86_64.lean`): the hash functions'
+compression functions and streaming `init`, and the RSA operation
 (`vg_rsa_private_checked` when signing, a precomputed public operation when
 verifying).
+
+The code that depends on `H` alone (hashing `M'`, and placing or comparing
+the salt and `H`) runs as one region for each hash function, chosen by a
+dispatch on `hash` (`onHash`, `Impl/Dispatch/AArch64.lean`), and MGF1's loop
+as one for each hash function, chosen by `mgf1_hash`; within a region the
+hash function's sizes are immediates. The digest's length `hLen` (the public
+`digest_len`, which the contract makes `H`'s) is kept in a slot (`sHLen`),
+from which the checks and MGF1's seed read it.
 
 The first 8192 bytes of `scratch` are ours (`oCW`, …); the RSA operation
 gets the rest. The callees preserve `x19`–`x28`, which hold our variables:
@@ -90,9 +101,14 @@ def sPl : Nat := 296
 def sPos : Nat := 304
 def sPre : Nat := 312
 def sPreLen : Nat := 320
+/-- `hash` and `mgf1_hash`, zero-extended from 32 bits. -/
+def sHash : Nat := 328
+def sMgf : Nat := 336
+/-- `hLen`: `digest_len`. -/
+def sHLen : Nat := 344
 
 /-- The size of the frame. -/
-def frameBytes : Nat := 336
+def frameBytes : Nat := 352
 
 /-- `x16 := sp`, and the registers of `saved` stored. -/
 def save : List Instr := .addSp .x16 0 :: saved.map fun (r, d) => .str .x r .x16 d
@@ -108,6 +124,19 @@ def st (r : Reg) (o : Nat) : List Instr := [.addSp .x16 0, .str .x r .x16 o]
 
 /-- `d := n` for `n < 2^16`. -/
 def movi (d : Reg) (n : Nat) : Instr := .movz .x d (BitVec.ofNat 16 n) 0
+
+/-! ## Choosing the hash function -/
+
+/-- The cases of a dispatch on the hash function: `f` of each of `hs`, keyed
+by its number, from `i`. -/
+def byHash (f : Hash → Prog isa) : Nat → List Hash → List (Nat × Prog isa)
+  | _, [] => []
+  | i, H :: hs => (i, f H) :: byHash f (i + 1) hs
+
+/-- `f` of the hash function whose number is in the slot `d` (`sHash` or
+`sMgf`): the selector into `x8`, and a dispatch on it with `x9` as scratch. -/
+def onHash (d : Nat) (hs : List Hash) (f : Hash → Prog isa) : Prog isa :=
+  .seq (.block [ld .x8 d]) (Dispatch.AArch64.chain .x9 .x8 (byHash f 0 hs))
 
 /-! ## Our part of `scratch` -/
 
@@ -203,35 +232,51 @@ def ctHashWith (padding : Prog isa) : Prog isa :=
 `scratch + oDig`, without revealing `ℓ`. -/
 def ctHash : Prog isa := ctHashWith H (pad80 H)
 
-/-- A message of public length `ℓ` (less than 2048) needs one padding
-write. -/
-def fixedPad80 (ℓ : Nat) : Prog isa :=
-  .block [.addImm .x .x10 .x20 (oY + ℓ), .ldrb .x9 .x10 0, movi .x13 0x80, .logic .orr .x .x9 .x9 .x13,
-    .strb .x9 .x10 0]
+/-- The padding of a message whose length `ℓ` (in `x22`) is public: one
+write, `0x80` ORed into byte `ℓ` of `Y`. -/
+def fixedPad80 : Prog isa :=
+  .block [.add .x .x10 .x20 .x22, .addImm .x .x10 .x10 oY, .ldrb .x9 .x10 0, movi .x13 0x80,
+    .logic .orr .x .x9 .x9 .x13, .strb .x9 .x10 0]
 
-/-- MGF1's message, `H ‖ C`, of a length fixed by the hash function. -/
-def mgfHash : Prog isa := ctHashWith H (fixedPad80 (H.D + 4))
+/-- MGF1's message, `H ‖ C`, of the public length `hLen + 4`. -/
+def mgfHash : Prog isa := ctHashWith H fixedPad80
 
-/-! ## MGF1 -/
+/-! ## MGF1
 
-/-- The blocks MGF1 hashes `H ‖ C` in: `⌊(hLen + 4 + L) / B⌋ + 1`. -/
-def mgfNb : Nat := (H.D + 4 + H.P.L) / H.P.B + 1
+MGF1 with the hash function `H` (`G` above) of a seed of `hLen` bytes, the
+length in the slot `sHLen`. -/
 
-/-- `Y`'s first `mgfNb` blocks cleared, eight bytes at a time. -/
-def clearBlock : Prog isa :=
-  .seq (.block [.addImm .x .x10 .x20 oY, movi .x9 0, movi .x12 (mgfNb H * H.P.B / 8)])
-    (.loop (.block [.str .x .x9 .x10 0, .addImm .x .x10 .x10 8, .subImm .x .x12 .x12 1]) (.nonzero .x .x12))
+/-- `d := ⌊(r + L) / B⌋ + 1`, the blocks a message of `r` bytes is hashed
+in. -/
+def blocksOf (d r : Reg) : List Instr := [.addImm .x d r H.P.L, .lsr .x d d (lgB H), .addImm .x d d 1]
+
+/-- From `hLen` in `x12`: `x10 := Y`, `x9 := 0`, and `x12` the words of
+`⌊(hLen + 4 + L) / B⌋ + 1` blocks. -/
+def clearCount : List Instr :=
+  ([.addImm .x .x10 .x20 oY, movi .x9 0, .addImm .x .x12 .x12 4] : List Instr) ++ blocksOf H .x12 .x12 ++
+    ([.lsl .x .x12 .x12 (lgB H - 3)] : List Instr)
+
+/-- `x12` words of zeros from `x10`. -/
+def clearLoop : Prog isa :=
+  .loop (.block [.str .x .x9 .x10 0, .addImm .x .x10 .x10 8, .subImm .x .x12 .x12 1]) (.nonzero .x .x12)
+
+/-- `Y`'s first `⌊(hLen + 4 + L) / B⌋ + 1` blocks cleared, eight bytes at a
+time. -/
+def clearBlock : Prog isa := .seq (.block (ld .x12 sHLen :: clearCount H)) clearLoop
 
 /-- `H` (at `DB + dbLen`) to `Y`. -/
 def copyH : Prog isa :=
-  .seq (.block [.add .x .x11 .x24 .x25, .addImm .x .x14 .x20 oY, movi .x12 H.D]) copyLoop
+  .seq (.block [ld .x12 sHLen, .add .x .x11 .x24 .x25, .addImm .x .x14 .x20 oY]) copyLoop
 
-/-- The counter (`x28`), big-endian, after `H` in `Y`; the message's length,
-`hLen + 4`, and its `mgfNb` blocks, for `mgfHash`. -/
-def counter : List Instr :=
-  ([.addImm .x .x10 .x20 (oY + H.D), .lsr .x .x9 .x28 24, .strb .x9 .x10 0, .lsr .x .x9 .x28 16,
-    .strb .x9 .x10 1, .lsr .x .x9 .x28 8, .strb .x9 .x10 2, .strb .x28 .x10 3, movi .x22 (H.D + 4),
-    movi .x9 (mgfNb H)] : List Instr) ++ st .x9 sNb
+/-- From `hLen` in `x22`: the counter (`x28`), big-endian, after `H` in `Y`;
+the message's length, `hLen + 4`, and its blocks, for `mgfHash`. -/
+def counterRest : List Instr :=
+  ([.add .x .x10 .x20 .x22, .addImm .x .x10 .x10 oY, .lsr .x .x9 .x28 24, .strb .x9 .x10 0,
+    .lsr .x .x9 .x28 16, .strb .x9 .x10 1, .lsr .x .x9 .x28 8, .strb .x9 .x10 2, .strb .x28 .x10 3,
+    .addImm .x .x22 .x22 4] : List Instr) ++ blocksOf H .x9 .x22 ++ st .x9 sNb
+
+/-- The counter after `H` in `Y`, and the message's length and blocks. -/
+def counter : List Instr := ld .x22 sHLen :: counterRest H
 
 /-- The first `min(hLen, dbLen - done)` bytes of the digest XORed into `DB`
 at `done`. -/
@@ -250,8 +295,12 @@ def nextCtr : List Instr :=
 /-- `DB ⊕= MGF1(H, dbLen)`. -/
 def mgfXor : Prog isa :=
   .seq (.block ([movi .x28 0, movi .x9 0] ++ st .x9 sDone))
-    (.loop (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)])
+    (.loop (seqs [clearBlock H, copyH, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)])
       (.nonzero .x .x10))
+
+/-- `DB ⊕= MGF1(G, dbLen)`, for the hash function `G` of `hs` that
+`mgf1_hash` names. -/
+def mgfXorAny (hs : List Hash) : Prog isa := onHash sMgf hs mgfXor
 
 /-- `DB`'s first byte ANDed with the mask `0xFF >> z` (`sC`). -/
 def clearTop : List Instr :=
@@ -267,20 +316,23 @@ def smear : List Instr :=
   [.lsr .x .x11 .x10 1, .lsr .x .x12 .x11 1, .logic .orr .x .x11 .x11 .x12, .lsr .x .x12 .x11 2,
     .logic .orr .x .x11 .x11 .x12, .lsr .x .x12 .x11 4, .logic .orr .x .x11 .x11 .x12]
 
+/-- `x13 := hLen + 2`. -/
+def hLen2 : List Instr := [ld .x13 sHLen, .addImm .x .x13 .x13 2]
+
 /-- The mask `sC` and `lo` (`sLo`); `x9 := emLen = k - lo`, and `x10`
 nonzero if `emLen < hLen + 2`. -/
 def emLen : Prog isa :=
   .seq (.ite (.zero .x .x11) (.block [movi .x11 0xFF, movi .x12 1]) (.block [movi .x12 0]))
-    (.block (st .x11 sC ++ st .x12 sLo ++
-      ([.sub .x .x9 .x23 .x12, .subImm .x .x10 .x9 (H.D + 2), .lsr .x .x10 .x10 63] : List Instr)))
+    (.block (hLen2 ++ st .x11 sC ++ st .x12 sLo ++
+      ([.sub .x .x9 .x23 .x12, .sub .x .x10 .x9 .x13, .lsr .x .x10 .x10 63] : List Instr)))
 
 /-- `x9 := emLen - hLen - 2`, the longest salt, and `x10` nonzero if it is
 less than the salt's length in `x12` (any 64-bit value: its top bit is
 ORed in, since the borrow of `x9 - x12` is the comparison only below
 `2^63`). -/
 def saltFits : List Instr :=
-  [.subImm .x .x9 .x9 (H.D + 2), .sub .x .x10 .x9 .x12, .lsr .x .x10 .x10 63, .lsr .x .x13 .x12 63,
-    .logic .orr .x .x10 .x10 .x13]
+  hLen2 ++ ([.sub .x .x9 .x9 .x13, .sub .x .x10 .x9 .x12, .lsr .x .x10 .x10 63, .lsr .x .x13 .x12 63,
+    .logic .orr .x .x10 .x10 .x13] : List Instr)
 
 /-- `dbLen = emLen - hLen - 1` (from `x9 = emLen - hLen - 2`) and
 `DB = scratch + oEm + lo`. -/
@@ -306,17 +358,25 @@ def regsUp : List Instr := [.addImm .x .x19 .x20 oSt, .addImm .x .x21 .x20 oDig]
 
 `sign(out = x0, out_len = x1, n = x2, n_len = x3, e = x4, e_len = x5,
 p = x6, p_len = x7, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest,
-salt, salt_len, scratch, scratch_len)`, the last thirteen on the stack. -/
+digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1_hash)`, the last
+sixteen on the stack. -/
 
 /-- The stack argument `j` of the function into `r`. -/
 def arg (r : Reg) (j : Nat) : Instr := .ldrSp r (frameBytes + 8 * j)
+
+/-- The hash functions' numbers (the stack arguments `j` and `j + 1`),
+zero-extended from 32 bits, into `sHash` and `sMgf`. -/
+def hashArgs (j : Nat) : List Instr :=
+  [arg .x9 j, .addImm .w .x9 .x9 0, .str .x .x9 .x16 sHash, arg .x9 (j + 1), .addImm .w .x9 .x9 0,
+    .str .x .x9 .x16 sMgf]
 
 /-- The registers saved, and the arguments into their places. -/
 def signPrologue : List Instr :=
   save ++ ([.str .x .x0 .x16 sOut, .str .x .x2 .x16 sN, .str .x .x4 .x16 sE, .str .x .x5 .x16 sEl,
     .str .x .x6 .x16 sP, .str .x .x7 .x16 sPl, mov .x23 .x3, arg .x9 8, .str .x .x9 .x16 sDig,
-    arg .x9 9, .str .x .x9 .x16 sSalt, arg .x9 10, .str .x .x9 .x16 sSaltLen, arg .x20 11, arg .x9 12,
-    .str .x .x9 .x16 sScrLen] : List Instr) ++ regsUp
+    arg .x9 9, .str .x .x9 .x16 sHLen, arg .x9 10, .str .x .x9 .x16 sSalt, arg .x9 11,
+    .str .x .x9 .x16 sSaltLen, arg .x20 12, arg .x9 13, .str .x .x9 .x16 sScrLen] : List Instr) ++
+    hashArgs 14 ++ regsUp
 
 /-- Zeros to `out` and 0 returned. -/
 def signFail : Prog isa :=
@@ -355,40 +415,46 @@ def privArgs : List Instr :=
       .str .x .x9 .x16 88, ld .x0 sOut, mov .x1 .x23, ld .x2 sN, mov .x3 .x23, ld .x4 sE, ld .x5 sEl,
       .addImm .x .x6 .x20 oEm, mov .x7 .x23]
 
-variable (privN : String) (privC : Prog isa)
+variable (hs : List Hash) (privN : String) (privC : Prog isa)
+
+/-- What of the encoding depends on `H` alone: `M'` in `Y` and hashed,
+then `EM` cleared, `0x01` and the salt, `H` and `0xbc` put in place. -/
+def encH : Prog isa :=
+  seqs [clearY, copyDigest H, copySaltY H, .block (signLen H), ctHash H, clearEm, putSalt, putH H]
 
 /-- After the checks: `EM` at `scratch + oEm`. -/
 def signEnc : Prog isa :=
-  seqs [.block dbRegs, clearY, copyDigest H, copySaltY H, .block (signLen H), ctHash H, clearEm,
-    putSalt, putH H, mgfXor H, .block clearTop]
+  seqs [.block dbRegs, onHash sHash hs encH, mgfXorAny hs, .block clearTop]
 
 /-- After the checks: the encoding, and the private-key operation. -/
-def signMain : Prog isa := seqs [signEnc H, .block privArgs, .call privN privC]
+def signMain : Prog isa := seqs [signEnc hs, .block privArgs, .call privN privC]
 
 /-- The checks, then `signMain`. -/
 def signBody : Prog isa :=
   seqs [.block (signPrologue ++ n0 .x2),
-    .ite (.zero .x .x10) signFail (seqs [.block smear, emLen H,
-      .ite (.nonzero .x .x10) signFail (seqs [.block ([ld .x12 sSaltLen] ++ saltFits H),
-        .ite (.nonzero .x .x10) signFail (signMain H privN privC)])]),
+    .ite (.zero .x .x10) signFail (seqs [.block smear, emLen,
+      .ite (.nonzero .x .x10) signFail (seqs [.block ([ld .x12 sSaltLen] ++ saltFits),
+        .ite (.nonzero .x .x10) signFail (signMain hs privN privC)])]),
     .block restore]
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`. -/
-def sign : Prog isa := .frame (.alloc frameBytes) (signBody H privN privC) (.free frameBytes)
+/-- `vg_rsa_pss_sign`, with the hash functions `hs` to choose from. -/
+def sign : Prog isa := .frame (.alloc frameBytes) (signBody hs privN privC) (.free frameBytes)
 
 /-! ## Verifying
 
 `verifyPrecomputed(n = x0, n_len = x1, e = x2, e_len = x3, digest = x4,
-sig = x5, sig_len = x6, salt_len = x7, any_salt_len, scratch, scratch_len,
-pre, pre_len)`, the last five on the stack. -/
+digest_len = x5, sig = x6, sig_len = x7, salt_len, any_salt_len, scratch,
+scratch_len, pre, pre_len, hash, mgf1_hash)`, the last eight on the
+stack. -/
 
 /-- The registers saved, and the arguments into their places; `sAny` is
 `any_salt_len`'s 32 bits, and `sSaltLen` is `salt_len`. -/
 def verifyPrologue : List Instr :=
   save ++ ([.str .x .x0 .x16 sN, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl, .str .x .x4 .x16 sDig,
-    .str .x .x5 .x16 sOut, .str .x .x7 .x16 sSaltLen, mov .x23 .x1, arg .x9 0,
-    .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 1, arg .x9 2, .str .x .x9 .x16 sScrLen,
-    arg .x9 3, .str .x .x9 .x16 sPre, arg .x9 4, .str .x .x9 .x16 sPreLen] : List Instr) ++ regsUp
+    .str .x .x5 .x16 sHLen, .str .x .x6 .x16 sOut, mov .x23 .x1, arg .x9 0, .str .x .x9 .x16 sSaltLen,
+    arg .x9 1, .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 2, arg .x9 3,
+    .str .x .x9 .x16 sScrLen, arg .x9 4, .str .x .x9 .x16 sPre, arg .x9 5, .str .x .x9 .x16 sPreLen] :
+    List Instr) ++ hashArgs 6 ++ regsUp
 
 /-- `x12 :=` the expected salt length for the check, 0 if any. -/
 def expLen : Prog isa :=
@@ -497,20 +563,20 @@ variable (pubN : String) (pubC : Prog isa)
 
 /-- After the public checks. -/
 def verifyMain : Prog isa :=
-  seqs [.block dbRegs, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop, posScan,
-    posCheck, FixedSalt.select H]
+  seqs [.block dbRegs, .block pubArgs, .call pubN pubC, .block acc0, mgfXorAny hs, .block clearTop, posScan,
+    posCheck, onHash sHash hs FixedSalt.select]
 
 /-- The checks, then `verifyMain`. -/
 def verifyBody : Prog isa :=
   seqs [.block (verifyPrologue ++ n0 .x0),
-    .ite (.zero .x .x10) verifyFail (seqs [.block smear, emLen H,
-      .ite (.nonzero .x .x10) verifyFail (seqs [expLen, .block (saltFits H),
-        .ite (.nonzero .x .x10) verifyFail (verifyMain H pubN pubC)])]),
+    .ite (.zero .x .x10) verifyFail (seqs [.block smear, emLen,
+      .ite (.nonzero .x .x10) verifyFail (seqs [expLen, .block saltFits,
+        .ite (.nonzero .x .x10) verifyFail (verifyMain hs pubN pubC)])]),
     .block restore]
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`, calling a precomputed
-public operation (`pubN`, `pubC`). -/
+/-- `vg_rsa_pss_verify_precomputed`, with the hash functions `hs` to choose
+from, calling a precomputed public operation (`pubN`, `pubC`). -/
 def verifyPrecomputed : Prog isa :=
-  .frame (.alloc frameBytes) (verifyBody H pubN pubC) (.free frameBytes)
+  .frame (.alloc frameBytes) (verifyBody hs pubN pubC) (.free frameBytes)
 
 end VG.Impl.RsaPss.AArch64
