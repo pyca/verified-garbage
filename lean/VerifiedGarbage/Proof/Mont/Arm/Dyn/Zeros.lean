@@ -27,6 +27,11 @@ theorem at_ptr {t : State} {p : Reg} {B : BitVec 32} {K x : Nat} (hp : t.gpr p =
     (hB : t.gpr .r12 = B) : t.gpr p = t.gpr .r12 + BitVec.ofNat 32 (K + x) := by
   rw [hp, hB, Offset.add_add]
 
+/-- A pointer `K` bytes into the working space. -/
+theorem at_ptr' {t : State} {p : Reg} {B : BitVec 32} {K : Nat} (hp : t.gpr p = B + BitVec.ofNat 32 K)
+    (hB : t.gpr .r12 = B) : t.gpr p = t.gpr .r12 + BitVec.ofNat 32 K := by
+  rw [hp, hB]
+
 /-- A pointer moved up a step. -/
 theorem ptr_step {x B : BitVec 32} {K st j : Nat} (h : x = B + BitVec.ofNat 32 K + BitVec.ofNat 32 (st * j)) :
     x + BitVec.ofNat 32 st = B + BitVec.ofNat 32 K + BitVec.ofNat 32 (st * (j + 1)) := by
