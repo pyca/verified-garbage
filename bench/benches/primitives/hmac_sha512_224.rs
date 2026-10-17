@@ -26,7 +26,7 @@ pub fn bench(c: &mut Criterion) {
 // call sites of its own, at 64 bytes and 16 KiB. Id: variant (1 SHA-384,
 // 2 SHA-512, 3 SHA-512/224, 4 SHA-512/256, 5 SHA-256, 6 SHA-224) * 1000000
 // + site * 100000 + size.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn probe(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use std::hint::black_box;
@@ -71,7 +71,7 @@ fn probe(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 fn probe(_: &mut Criterion) {}
 
 #[cfg(not(any(
