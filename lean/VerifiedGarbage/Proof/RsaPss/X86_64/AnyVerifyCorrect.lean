@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.AnyVerifyBody
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -28,10 +27,16 @@ open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 
+theorem public_safe (v : PublicImpl) : v.code.allInstrs safeI = true := by
+  rw [safeI_eq, allInstrs_and, v.mxSafe, Bool.and_true, Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  rw [(SpSafe.of_all v.spSafe) i hi]
+  rfl
+
 theorem verifyAny_safe {hs : List Hash} (ht : TierOk hs) (v : PublicImpl) :
     (AnyHash.verify hs v.name v.code).allInstrs safeI = true := by
   simp only [AnyHash.pubArgs, AnyHash.verify, AnyHash.verifyBody, seqs, AnyHash.verifyMain, Code.allInstrs,
-    mgfXorAny_safe ht, verifyTailD_safe ht, Pc.public_safe v, rec_all, List.all_append, verifyFail, emLenAny,
+    mgfXorAny_safe ht, verifyTailD_safe ht, public_safe v, rec_all, List.all_append, verifyFail, emLenAny,
     AnyHash.anyArgs, posScan, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
@@ -41,7 +46,7 @@ theorem verifyAny_xd {hs : List Hash} (ht : TierOk hs) (v : PublicImpl) :
   have h2 := verifyTailD_xd ht
   simp only [AnyHash.pubArgs, AnyHash.verify, AnyHash.verifyBody, seqs, AnyHash.verifyMain, Code.x86_64Depth,
     x86_64Depth_zero v.nosp v.depth, verifyFail, emLenAny, AnyHash.anyArgs, posScan, byteLoop,
-    X86_64.Instr.frameBytes]
+    X86_64.Instr.frameBytes, Nat.max_le]
   unfold verifyStack frameBytes at *
   omega
 

@@ -3,10 +3,10 @@
 //! with the CRT keys of the RSAES decryption vectors
 //! (`rsa_pkcs1_*_test.json`).
 //!
-//! A group with MGF1 over the hash value's hash function is checked: a
-//! `valid` signature must verify with the group's salt length and with any,
-//! an `invalid` one must not verify with the group's. MGF1 over another hash
-//! function is not supported, so nothing verifies with it.
+//! Each group is checked: a `valid` signature must verify with the group's
+//! salt length and with any, an `invalid` one must not verify with the
+//! group's. On AArch64, MGF1 over another hash function than the hash
+//! value's is not supported, so nothing verifies with it.
 
 #![cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
@@ -130,6 +130,7 @@ fn rsa_pss_test() {
             let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
             let ok = verify(key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
             let any = verify(key, sig, &d, h, mgf, SaltLength::Any);
+            #[cfg(target_arch = "aarch64")]
             if mgf != h {
                 assert!(!ok && !any, "{name} tcId {id}");
                 return;
@@ -145,13 +146,14 @@ fn rsa_pss_test() {
             }
         });
         let (accepted, rejected) = (accepted.get(), rejected.get());
+        #[cfg(target_arch = "aarch64")]
         if name.contains("mgf1sha1") {
             assert_eq!(accepted + rejected, 0, "{name}");
-        } else {
-            // The miscellaneous vectors are all valid.
-            let both = rejected > 0 || name.contains("misc");
-            assert!(accepted > 0 && both, "{name}");
+            continue;
         }
+        // The miscellaneous vectors are all valid.
+        let both = rejected > 0 || name.contains("misc");
+        assert!(accepted > 0 && both, "{name}");
     }
 }
 
@@ -159,7 +161,8 @@ fn rsa_pss_test() {
 /// their messages with every hash function, with salts of no bytes and of
 /// the hash value's length: the signature verifies with its salt length and
 /// with any, and not with another; and two signatures with random salts
-/// differ. Every size of key, even where the other RSA tests leave out
+/// differ. On x86-64, with MGF1 over the next hash function too. Every size
+/// of key, even where the other RSA tests leave out
 /// those of 3072 and 4096 bits (`harness::rsa_bits_tested`).
 #[test]
 fn rsa_pss_sign_test() {
@@ -203,6 +206,17 @@ fn rsa_pss_sign_test() {
                 let a = sign(&private, &d, *h, *h, 16).unwrap();
                 let b = sign(&private, &d, *h, *h, 16).unwrap();
                 assert_ne!(a, b, "{name} tcId {id}");
+                // MGF1 over the next hash function: it verifies with that
+                // one, and not with the hash value's.
+                #[cfg(target_arch = "x86_64")]
+                {
+                    let i = HASHES.iter().position(|(_, x)| x == h).unwrap();
+                    let g = HASHES[(i + 1) % HASHES.len()].1;
+                    let sig = sign(&private, &d, *h, g, h.digest_len())
+                        .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+                    assert!(verify(&public, &sig, &d, *h, g, SaltLength::Any));
+                    assert!(!verify(&public, &sig, &d, *h, *h, SaltLength::Any));
+                }
             }
         });
     }

@@ -4,11 +4,13 @@
 
 use criterion::Criterion;
 
-/// The module `rsa_pss`, each hash function's Rust module (`rsa_pss_<H>`,
-/// `src/rsa_pss/<H>.rs`) and its generated one
-/// (`rsa_pss_<H>_mgf1_<H>`), and the modules they call.
+/// The module `rsa_pss` (on x86-64, its generated one too, which takes the
+/// hash functions as arguments, and their tiers, `tier`), each hash
+/// function's Rust module (`rsa_pss_<H>`, `src/rsa_pss/<H>.rs`) and its
+/// generated one (`rsa_pss_<H>_mgf1_<H>`), and the modules they call.
 pub const USES: &[&str] = &[
     "rsa_pss",
+    "tier",
     "rsa_pss_md5",
     "rsa_pss_md5_mgf1_md5",
     "rsa_pss_sha1",

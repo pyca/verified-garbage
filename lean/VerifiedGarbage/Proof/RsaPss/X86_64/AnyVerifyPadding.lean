@@ -104,6 +104,9 @@ theorem posCheck_safe (H : Hash) : (posCheck H).allInstrs safeI = true := by
   simp only [posCheck, Code.allInstrs, Bool.and_true]
   rfl
 
+theorem posCheck_xd (H : Hash) : (posCheck H).x86_64Depth ≤ 8 := by
+  simp only [posCheck, Code.x86_64Depth]; decide
+
 /-- Padding verification depends only on the recovered bytes, not on how
 RSA produced them: MGF1 with `hs[g]`, the rest with `hs[kh] = H`. -/
 theorem vpadding_doneA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg : g < hs.length)
@@ -184,7 +187,7 @@ theorem vpadding_doneA {hs : List Hash} {kh g : Nat} (hkh : kh < hs.length) (hg 
   have h23' : W3 23 = off (stackArg s 4) (oEm + lo) := by
     rw [hW3 23 (by decide) (.inl (by decide)) (by decide), h23]
   -- `acc`'s checks.
-  refine WP.seq (WP.mono (WP.keepIn (posCheck_safe H) (by simp only [posCheck, Code.x86_64Depth]; decide)
+  refine WP.seq (WP.mono (WP.keepIn (posCheck_safe H) (posCheck_xd H)
     (posCheck_ok hH Lv Rv (db := db) (pos := pos) (fd := fd) (val := val) h24' h35' hpd
       (by rw [kv.gpr (by decide), hdx4]; simp only [fd]; by_cases hc : lz dbL < db <;> simp [hc])
       (by rw [kv.gpr (by decide), hsi4])

@@ -11,8 +11,8 @@
 //! is) gets the fastest tier it can run.
 
 #![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-// The functions that take the hash function as an argument use it.
-#![cfg_attr(not(test), allow(dead_code))]
+// On AArch64, no function takes the hash function as an argument yet.
+#![cfg_attr(all(not(test), target_arch = "aarch64"), allow(dead_code))]
 
 use super::sha1::Sha1Backend;
 use super::sha256::Sha256Backend;

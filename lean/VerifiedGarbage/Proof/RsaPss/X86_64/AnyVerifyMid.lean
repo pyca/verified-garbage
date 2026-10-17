@@ -40,7 +40,7 @@ theorem vmidA_safe {hs : List Hash} (ht : TierOk hs) :
 theorem vmidA_xd {hs : List Hash} (ht : TierOk hs) :
     (seqs [.block acc0, mgfXorAny hs, .block clearTop, posScan]).x86_64Depth ≤ 8 := by
   have := mgfXorAny_xd ht
-  simp only [seqs, posScan, byteLoop, Code.x86_64Depth]
+  simp only [seqs, posScan, byteLoop, Code.x86_64Depth, Nat.max_le]
   omega
 
 theorem verifyTail_safe {H : Hash} (hH : HashOK H) (K : Callees H) : (verifyTail H).allInstrs safeI = true := by

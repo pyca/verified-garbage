@@ -63,7 +63,7 @@ theorem signAny_xd (hs : List Hash) (ht : TierOk hs) {privN : String} {privC : P
     (AnyHash.sign hs privN privC).x86_64Depth ≤ signStack := by
   have he := signEncAny_xd ht
   simp only [AnyHash.sign, AnyHash.signBody, seqs, AnyHash.signMain, Code.x86_64Depth, signFail,
-    AnyHash.emLenAny, byteLoop, X86_64.Instr.frameBytes, Nat.zero_max, Nat.max_zero]
+    AnyHash.emLenAny, byteLoop, X86_64.Instr.frameBytes, Nat.zero_max, Nat.max_zero, Nat.max_le]
   unfold signStack Rsa.X86_64.stackBytes frameBytes at *
   omega
 
