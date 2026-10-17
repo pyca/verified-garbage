@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Impl.Ecdh.P256.X86_64
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-256 on x86-64: the code as a literal

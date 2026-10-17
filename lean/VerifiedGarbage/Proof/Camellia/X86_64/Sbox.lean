@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced Camellia S-box on x86-64

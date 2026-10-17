@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPriv
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
 public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `D = I2OSP(d, k)`

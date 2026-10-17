@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficient
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete coefficient phase with stable q residue and acceptance bit -/
 

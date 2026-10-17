@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 public import VerifiedGarbage.Proof.Aes.Arm.Linear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Encrypting two blocks, bitsliced, on ARMv7

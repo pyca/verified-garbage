@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Verified
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 public import VerifiedGarbage.Proof.Rc2.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

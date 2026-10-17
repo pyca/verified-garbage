@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Loading the AES schedule into the high registers -/
 

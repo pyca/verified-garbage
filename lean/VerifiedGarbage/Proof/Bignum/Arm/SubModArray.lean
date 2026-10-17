@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.SubModBuffers
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Modular subtraction preserves the shared workspace invariant -/
 

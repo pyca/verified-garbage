@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_keygen_candidate` on ARMv7 is verified against the shared contract
 

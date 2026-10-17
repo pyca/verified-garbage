@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, each instruction agrees

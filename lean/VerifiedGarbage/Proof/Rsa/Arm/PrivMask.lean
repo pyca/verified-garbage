@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Branchless fault status and the mask controlling private-result release -/
 

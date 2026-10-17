@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import all Init.Data.Nat.Bitwise.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the reductions modulo `q`

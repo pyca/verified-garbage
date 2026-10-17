@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdAccepted
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseInput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Establish the complete exponentiation precondition from public RSA arguments -/
 

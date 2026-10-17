@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Scalars
 import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd

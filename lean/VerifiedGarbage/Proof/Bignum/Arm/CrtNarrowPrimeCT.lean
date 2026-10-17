@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Preparing the factor in the narrow workspace hides the factor and acceptance -/
 

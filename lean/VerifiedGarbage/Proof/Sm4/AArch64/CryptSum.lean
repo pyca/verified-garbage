@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # A summary of the sixteen-block encryption

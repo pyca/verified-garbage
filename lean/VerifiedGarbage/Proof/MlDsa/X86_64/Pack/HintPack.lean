@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.Framework.WriteBytes

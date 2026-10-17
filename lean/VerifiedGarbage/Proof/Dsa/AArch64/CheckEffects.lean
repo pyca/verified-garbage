@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyChecks
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 public import VerifiedGarbage.Proof.Dsa.AArch64.ModulusMinus
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.Equal
 import VerifiedGarbage.Proof.Dsa.AArch64.Range

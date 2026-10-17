@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV's interleaved loop: from the setup on

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdAcceptCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PdControlsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PdFinishCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete public RSA arithmetic path is constant-time with respect to the input -/
 

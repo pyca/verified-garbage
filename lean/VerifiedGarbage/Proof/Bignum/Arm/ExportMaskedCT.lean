@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportMasked
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportBECT
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Serialization and rejection masking reveal no result or acceptance bits -/
 

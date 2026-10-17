@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
 public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
 meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.NativeTaint

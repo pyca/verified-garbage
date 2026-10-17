@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SaveAcceptance
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.SaveAcceptance
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Saving acceptance leaks only the public stack address -/
 

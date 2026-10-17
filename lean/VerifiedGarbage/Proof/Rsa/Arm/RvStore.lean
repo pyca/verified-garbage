@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvStore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An array of the key working space written out under the mask (`store_ok'`)
 

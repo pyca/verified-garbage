@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

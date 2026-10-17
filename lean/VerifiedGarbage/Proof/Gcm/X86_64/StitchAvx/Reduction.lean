@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Folding the three GHASH product words directly

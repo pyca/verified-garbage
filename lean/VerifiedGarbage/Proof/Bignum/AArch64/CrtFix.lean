@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
 import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A full byte comparison terminates without disclosing the first mismatch -/
 

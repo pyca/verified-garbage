@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Framework.Bswap
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function: the padded keys

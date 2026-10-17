@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Copy
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.CutOctets
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates on x86-64: the witness's high-byte mask -/

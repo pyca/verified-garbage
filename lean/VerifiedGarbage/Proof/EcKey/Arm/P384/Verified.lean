@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.EcKey.P384.Arm
 meta import VerifiedGarbage.Impl.EcKey.P384.Arm
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-384 public keys on 32-bit ARM: `Verified`

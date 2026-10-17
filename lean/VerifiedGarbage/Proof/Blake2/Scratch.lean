@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2's streaming postconditions read memory only within the buffers

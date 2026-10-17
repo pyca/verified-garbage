@@ -30,10 +30,6 @@ public import VerifiedGarbage.Impl.Sha3.X86.Stream
 meta import VerifiedGarbage.Impl.Sha3.X86.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 

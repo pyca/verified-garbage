@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.LeafCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.CTTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An attempt leaks only the domain and its status (AArch64)
 

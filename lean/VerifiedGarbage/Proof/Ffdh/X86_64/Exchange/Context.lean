@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH exchange on x86-64: memory and lengths -/

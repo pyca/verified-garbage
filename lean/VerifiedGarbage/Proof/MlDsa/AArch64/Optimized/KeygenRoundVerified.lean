@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

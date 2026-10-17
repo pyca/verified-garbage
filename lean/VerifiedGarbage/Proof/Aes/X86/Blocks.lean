@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Aes.X86.Ecb
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86 (32-bit): the whole functions

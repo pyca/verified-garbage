@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One in-place selection iteration preserves the full prefix invariant -/
 

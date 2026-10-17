@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time but for `n`, `e` and the tries

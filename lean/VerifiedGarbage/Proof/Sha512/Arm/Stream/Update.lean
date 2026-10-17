@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.Sha512.Arm.Stream
 meta import VerifiedGarbage.Impl.Sha512.Arm.Stream
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on ARMv7: `update`

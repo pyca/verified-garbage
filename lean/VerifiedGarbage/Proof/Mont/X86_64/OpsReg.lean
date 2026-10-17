@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.MulS
 import VerifiedGarbage.Proof.Mont.X86_64.SqrM
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers

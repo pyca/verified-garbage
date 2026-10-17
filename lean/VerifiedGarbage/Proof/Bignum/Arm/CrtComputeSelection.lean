@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Retain safe private arithmetic and output bounds between the computation stages -/
 

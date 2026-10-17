@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.AesCcm.Bytes
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Ocb.Bytes
 public import VerifiedGarbage.Proof.Ocb.Nonce
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

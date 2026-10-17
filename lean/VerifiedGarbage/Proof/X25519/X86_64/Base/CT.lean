@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86_64.Setup
 meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
 import VerifiedGarbage.Proof.Ed25519.Recode

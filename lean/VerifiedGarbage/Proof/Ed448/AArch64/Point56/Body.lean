@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyRoot
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: what the functions compute

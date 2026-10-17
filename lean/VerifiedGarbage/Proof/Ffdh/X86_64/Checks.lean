@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Bignum.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: comparisons over all words -/

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Eight-coefficient decoding loop -/
 

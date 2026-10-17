@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.AesXts.X86Unit
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES of data units on x86 (32-bit): the contract the proofs are written against

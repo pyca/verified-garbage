@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.WideMul
 public import VerifiedGarbage.Proof.Bignum.Arm.WideValue
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # ARMv7 full-width multiplication: instruction-level correctness -/
 

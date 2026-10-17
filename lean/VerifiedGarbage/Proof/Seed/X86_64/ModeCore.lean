@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Seed.X86_64.Lit
 public import VerifiedGarbage.Impl.Seed.X86_64.Modes
 public import VerifiedGarbage.Spec.Seed.Cbc
 public import VerifiedGarbage.Proof.Seed.ModeBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

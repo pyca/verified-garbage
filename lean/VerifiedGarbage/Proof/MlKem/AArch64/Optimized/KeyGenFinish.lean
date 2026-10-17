@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenEncode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Key generation after paired noise sampling -/
 

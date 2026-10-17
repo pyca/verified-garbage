@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.Decode
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! Merged from `Proof.Ed25519.AArch64.DecodeLoad`. -/

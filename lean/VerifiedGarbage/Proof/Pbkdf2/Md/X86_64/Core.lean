@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.X86_64.IterateCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacInit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFin
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 

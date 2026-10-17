@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleJointCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleJointCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.MdStream.Spec

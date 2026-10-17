@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpBit
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Execute a private exponent bit and advance public loop controls -/
 

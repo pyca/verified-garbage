@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportResidueCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The coefficient phase hides both residues, p and qInv -/
 

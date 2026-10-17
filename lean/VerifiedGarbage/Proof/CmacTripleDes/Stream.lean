@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC: lemmas about the state

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.Idea.Ofb
 public import VerifiedGarbage.Spec.Idea.Cfb
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Idea.Arith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # IDEA-OFB and -CFB64 with their working space as an argument

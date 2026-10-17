@@ -60,6 +60,12 @@ without building. Exits non-zero on violations.
     literals and tries wrong assignments (seconds per chain). Give the lemmas
     their arguments, or prove the fact by `simp only [gpr_setV, …]`.
     `PLACEHOLDER_CHAIN_ALLOWED` counts the uses that remain.
+  * No `import all` of a core module (`Init.*`, `Std.*`, `Lean.*`) but
+    those in `IMPORT_ALL_CORE_ALLOWED`, which a proof imports only when it
+    needs them (see CLAUDE.md): since Lean 4.35 the kernel reduces core's
+    arrays and vectors across modules, and `import all` of
+    `Init.Data.Array.Basic` and the like made the modules that had it 11%
+    slower to build, up to 25% for contracts' proofs.
   * A module with `#guard_msgs` turns the profiler off
     (`set_option profiler false`, on a line of its own): the lakefile turns
     it on for every module (`ci/lean_profile.py`), and `#guard_msgs` would
@@ -77,6 +83,8 @@ LEAN = ROOT / "lean"
 LIMITS = r"(?:maxHeartbeats|maxRecDepth|synthInstance\.maxHeartbeats|synthInstance\.maxSize)"
 SET_LIMIT = re.compile(rf"\bset_option\s+{LIMITS}\b")
 LAKEFILE_LIMIT = re.compile(rf"^\s*{LIMITS}\s*=", re.M)
+IMPORT_ALL_CORE = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+all\s+((?:Init|Std|Lean)(?:\.\S+)?)\s*$", re.M)
+IMPORT_ALL_CORE_ALLOWED = {"Init.Data.Nat.Power2.Basic", "Init.Data.Nat.Bitwise.Basic"}
 BIG_IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(Mathlib|Mathlib\.Tactic)\s*$", re.M)
 SIMP_ARGS = re.compile(r"\bsimp(?:_all|a)?\b[^\[\n]*\[([^\]]*)\]")
 UNFOLD = re.compile(r"(?<![\w.])(runBlock|runStep)(?![\w.])")
@@ -402,6 +410,10 @@ def main() -> int:
             )
         for m in (SET_LIMIT.finditer(text) if any(k in text for k in ("maxHeartbeats", "maxRecDepth", "synthInstance.max")) else ()):
             errors.append(f"{rel}:{line_of(text, m.start())}: changes a resource limit; make the proof faster instead")
+        for m in (IMPORT_ALL_CORE.finditer(text) if "import all" in text else ()):
+            if m.group(1) not in IMPORT_ALL_CORE_ALLOWED:
+                errors.append(f"{rel}:{line_of(text, m.start())}: `import all {m.group(1)}` makes the module "
+                              "slower to build; the kernel reduces core's definitions without it")
         for m in (BIG_IMPORT.finditer(text) if "import Mathlib" in text else ()):
             errors.append(f"{rel}:{line_of(text, m.start())}: imports {m.group(1)}; import the modules you use")
         if module.startswith("VerifiedGarbage.Proof."):

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked

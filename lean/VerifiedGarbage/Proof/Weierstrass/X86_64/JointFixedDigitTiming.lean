@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay

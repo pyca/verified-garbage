@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Each layer increases the nonnegative coefficient bound by 2q, while
 preserving the residues of the specification's canonical NTT. -/

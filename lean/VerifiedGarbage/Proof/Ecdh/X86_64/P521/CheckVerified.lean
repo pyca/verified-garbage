@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb

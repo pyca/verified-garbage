@@ -9,10 +9,6 @@ public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
 import VerifiedGarbage.Proof.Framework.Range
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

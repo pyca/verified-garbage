@@ -6,10 +6,6 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 meta import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Normalization observes only the public workspace and limb count -/
 

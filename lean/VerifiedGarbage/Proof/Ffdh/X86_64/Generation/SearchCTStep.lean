@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public successor states for the native parameter-search timing proof -/
 

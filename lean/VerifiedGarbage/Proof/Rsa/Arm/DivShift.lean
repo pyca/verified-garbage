@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Shift the quotient's high bit into the extended remainder -/
 

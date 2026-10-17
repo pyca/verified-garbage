@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.SecretExp
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A private exponent bit has the same trace even when both exponents differ -/
 

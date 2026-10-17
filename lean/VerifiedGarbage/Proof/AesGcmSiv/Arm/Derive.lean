@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Env
 public import VerifiedGarbage.Proof.GcmSiv.Ctr
 public import VerifiedGarbage.Proof.Cmac.Block32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: the message keys (`derive`)

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Mont.X86.Dynamic
 public import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Idea.CbcScratch
 meta import VerifiedGarbage.Proof.Idea.CbcScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Idea-CBC on x86 (32-bit) meets its contracts

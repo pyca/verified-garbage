@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PcValid
 public import VerifiedGarbage.Proof.Bignum.Arm.PcFail
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The RSA precomputation body implements both outcomes of the shared specification -/
 

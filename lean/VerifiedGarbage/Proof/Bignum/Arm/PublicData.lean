@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Immutable input buffers shared by ordinary and precomputed public RSA -/
 

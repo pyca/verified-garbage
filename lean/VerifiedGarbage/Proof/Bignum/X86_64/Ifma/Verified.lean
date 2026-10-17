@@ -26,10 +26,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 

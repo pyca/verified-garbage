@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Arm.Prf
 meta import VerifiedGarbage.Proof.MlKem.Arm.Prf
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT

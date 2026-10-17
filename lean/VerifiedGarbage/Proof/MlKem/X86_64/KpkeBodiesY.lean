@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR101
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the AVX2 arithmetic without its MXCSR region

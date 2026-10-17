@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Shared literals for code used by signing, public-key derivation and ECDH.
 Each generator is checked once here; callers reuse its kernel-checked equality. -/

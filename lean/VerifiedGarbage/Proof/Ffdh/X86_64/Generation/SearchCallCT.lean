@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Internal candidate calls retain the existing public-tape timing contract -/
 

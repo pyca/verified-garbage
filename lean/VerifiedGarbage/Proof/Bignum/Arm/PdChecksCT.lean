@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Precomputation validation performs the same checks for every public key -/
 

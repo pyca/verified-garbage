@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.Point
 meta import VerifiedGarbage.Impl.Weierstrass.X86.Point
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Literals of P-384's x86 point addition and doubling

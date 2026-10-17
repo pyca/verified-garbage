@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exact full-width addition in the CRT result buffer -/
 

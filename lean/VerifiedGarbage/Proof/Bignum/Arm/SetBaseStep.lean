@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SetBases
 public import VerifiedGarbage.Proof.Bignum.Arm.Store64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One shared-header pointer store -/
 

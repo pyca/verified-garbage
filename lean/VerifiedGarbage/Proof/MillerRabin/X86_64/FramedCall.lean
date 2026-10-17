@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallBody
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
 import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Actual Montgomery calls within the saved round frames -/
 

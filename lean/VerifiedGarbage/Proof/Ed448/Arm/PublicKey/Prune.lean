@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Ed448.PruneBytes
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import VerifiedGarbage.Proof.X25519.Arm.Instr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on ARMv7: pruning the hash in place

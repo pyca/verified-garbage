@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBoth
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon

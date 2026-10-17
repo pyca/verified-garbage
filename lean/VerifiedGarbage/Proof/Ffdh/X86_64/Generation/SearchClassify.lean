@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAcceptDone
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRejectStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native controller classifies candidate outcomes without host decisions -/

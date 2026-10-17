@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: arithmetic modulo `q`, for every target
@@ -62,8 +58,7 @@ theorem val_pow (a : Zq) (k : Nat) : (a ^ k).val = a.val ^ k % q := by
   induction k with
   | zero => rfl
   | succ k ih =>
-    change (a ^ k * a).val = _
-    rw [val_mul, ih, Nat.mod_mul_mod, Nat.pow_succ]
+    rw [Fin.pow_succ, val_mul, ih, Nat.mod_mul_mod, Nat.pow_succ]
 
 /-- The integer that represents an element of `ℤ_q` is less than 8380417. -/
 theorem val_lt (a : Zq) : a.val < 8380417 := a.isLt

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 public import VerifiedGarbage.Proof.Aes.X86.Sbox
 

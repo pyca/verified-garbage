@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResult
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 public import VerifiedGarbage.Proof.Bignum.Math
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One CRT factor's private power, computed at the factor's own width
 

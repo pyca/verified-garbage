@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # State carried from CRT workspace initialization to modulus import -/
 

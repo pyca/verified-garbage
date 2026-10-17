@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Rsa.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The re-exponentiation call satisfies the shared buffer contract -/
 

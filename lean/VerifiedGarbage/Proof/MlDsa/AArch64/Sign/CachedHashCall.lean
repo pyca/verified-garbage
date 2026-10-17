@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal

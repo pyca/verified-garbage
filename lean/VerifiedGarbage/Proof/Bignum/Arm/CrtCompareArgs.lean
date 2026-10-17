@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCompareProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public pointers and word count for the full CRT product comparison -/
 

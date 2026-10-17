@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 

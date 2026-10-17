@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Additions with a carry kept in a register, one instruction at a time -/
 

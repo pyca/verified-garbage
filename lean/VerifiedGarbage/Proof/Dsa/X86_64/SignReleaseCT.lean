@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CTR2

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native byte accounting and budget decrement after candidate rejection -/

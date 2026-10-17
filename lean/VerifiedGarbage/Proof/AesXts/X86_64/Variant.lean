@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
 public import VerifiedGarbage.Impl.AesXts.X86_64Unit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64

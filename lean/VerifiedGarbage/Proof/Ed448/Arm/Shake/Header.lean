@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Ed448.Scalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on ARMv7: the header of `dom4`

@@ -18,10 +18,6 @@ public import VerifiedGarbage.Impl.Md5.X86.Stream
 meta import VerifiedGarbage.Impl.Md5.X86.Stream
 import VerifiedGarbage.Proof.Md5.X86.Lit
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming MD5 on x86 (32-bit): `update` and `finalize`

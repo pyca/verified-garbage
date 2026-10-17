@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete generation controller's instruction safety and stack bound -/
 

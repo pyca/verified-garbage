@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
 meta import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on x86-64 with the SHA512 extension

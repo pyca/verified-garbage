@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRoundCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Eight exponent-bit steps reveal only the public exponent byte -/
 

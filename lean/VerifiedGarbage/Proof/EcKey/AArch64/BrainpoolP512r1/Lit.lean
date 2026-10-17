@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.AArch64
 meta import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # brainpoolP512r1 public keys on AArch64: the code as a literal

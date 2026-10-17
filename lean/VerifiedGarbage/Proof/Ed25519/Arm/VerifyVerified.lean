@@ -22,10 +22,6 @@ import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGHash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The blocks after the last group, as a masked group: after the rounds

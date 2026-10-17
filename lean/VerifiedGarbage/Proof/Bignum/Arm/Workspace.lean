@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Mont.Words32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Address and memory facts for a runtime-sized ARMv7 RSA workspace -/
 

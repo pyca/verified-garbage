@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.X448.Edwards.URep
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
 public import VerifiedGarbage.Proof.X448.Bytes
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Pratt
 
 /-!

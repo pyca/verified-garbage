@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 and X25519 on AArch64: the inversion by divsteps

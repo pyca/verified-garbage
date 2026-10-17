@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: coefficients in the lanes of AVX2 registers

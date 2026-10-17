@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_ctr32` on x86-64

@@ -13,10 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 

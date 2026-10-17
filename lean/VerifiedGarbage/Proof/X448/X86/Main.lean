@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.X448.X86.FinalSwap
 public import VerifiedGarbage.Proof.X448.X86.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.X86.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X448.X86.Setup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.X86.FnLit

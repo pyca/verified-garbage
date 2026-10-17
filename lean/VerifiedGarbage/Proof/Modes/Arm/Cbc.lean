@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.SboxSpec

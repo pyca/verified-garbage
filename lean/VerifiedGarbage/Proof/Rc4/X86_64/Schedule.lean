@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rc4.X86_64.Replace
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RC4 on x86-64: key scheduling -/
 

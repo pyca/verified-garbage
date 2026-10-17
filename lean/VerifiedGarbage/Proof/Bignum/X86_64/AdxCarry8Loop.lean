@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.Rectangular
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8AddChain
 

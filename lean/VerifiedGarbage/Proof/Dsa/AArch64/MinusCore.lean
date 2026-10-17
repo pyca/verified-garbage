@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Exact subtraction of a small public value from the modulus -/

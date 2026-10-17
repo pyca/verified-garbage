@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # `vg_p224_inv_mod_p` and `_n` on x86-64: the code, as literals

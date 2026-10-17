@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Native private-CRT arguments satisfy the shared API's buffer contract -/
 

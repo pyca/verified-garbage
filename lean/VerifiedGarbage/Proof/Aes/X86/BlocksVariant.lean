@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 meta import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on x86

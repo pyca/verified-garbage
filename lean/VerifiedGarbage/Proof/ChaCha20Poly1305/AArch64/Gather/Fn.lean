@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
 
 /-!

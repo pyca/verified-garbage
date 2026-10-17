@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Lit
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Lit
 public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Compress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2s compression function on x86-64 with AVX

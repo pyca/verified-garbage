@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedFixedCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedFixedCT
 meta import VerifiedGarbage.Impl.Rsa.AArch64.Folded
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call

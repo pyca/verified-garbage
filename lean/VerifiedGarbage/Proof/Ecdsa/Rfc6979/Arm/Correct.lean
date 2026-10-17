@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves

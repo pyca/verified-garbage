@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Argon2.FillPositions
 
 @[expose] public section

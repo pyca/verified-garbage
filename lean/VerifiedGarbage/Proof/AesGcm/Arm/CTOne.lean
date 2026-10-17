@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTVerify
 import VerifiedGarbage.Proof.AesGcm.Arm.Open
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 import VerifiedGarbage.Proof.AesGcm.Arm.CTFn

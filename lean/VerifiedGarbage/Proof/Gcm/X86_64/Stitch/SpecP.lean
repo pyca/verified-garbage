@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 public import VerifiedGarbage.Spec.Gcm.Precomputed
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved loops with the powers of the hash subkey in the key context

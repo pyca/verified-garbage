@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.Sm4.X86_64.Fb
 meta import VerifiedGarbage.Impl.Sm4.X86_64.Fb
 public import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
 meta import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SM4's modes on x86-64: the code as literals

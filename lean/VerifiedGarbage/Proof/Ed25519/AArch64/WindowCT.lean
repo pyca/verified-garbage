@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Nibbles
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Nibbles
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 public import VerifiedGarbage.Spec.Rc2.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Streaming RC2-CBC on AArch64: the contracts the proofs use
 

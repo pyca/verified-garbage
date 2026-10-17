@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the SHA-256 and HMAC-SHA-256 functions it calls

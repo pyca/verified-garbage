@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesSiv.Key
 meta import VerifiedGarbage.Proof.AesSiv.Key
 public import VerifiedGarbage.Impl.AesSiv.X86
 meta import VerifiedGarbage.Impl.AesSiv.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

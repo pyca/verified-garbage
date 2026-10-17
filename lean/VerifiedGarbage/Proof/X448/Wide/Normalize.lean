@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Fold
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted: normalize wide coefficients and restore the field-slot interface. -/

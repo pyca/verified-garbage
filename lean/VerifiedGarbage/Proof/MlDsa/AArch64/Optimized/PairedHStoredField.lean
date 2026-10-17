@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
 

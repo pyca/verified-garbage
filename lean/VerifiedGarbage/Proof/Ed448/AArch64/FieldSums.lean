@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The taint of the AArch64 point addition and power, analysed once

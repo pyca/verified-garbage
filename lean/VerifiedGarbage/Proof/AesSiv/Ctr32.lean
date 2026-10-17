@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.AesSiv.Words
 public import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.Cmac.Dbl32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: CTR with `vg_aes_ctr32`

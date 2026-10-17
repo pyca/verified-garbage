@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.MlDsa.ResponseZ

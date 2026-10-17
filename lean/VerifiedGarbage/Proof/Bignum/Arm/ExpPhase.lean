@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The ARMv7 RSA arithmetic phase implements the shared modular-exponentiation specification -/
 

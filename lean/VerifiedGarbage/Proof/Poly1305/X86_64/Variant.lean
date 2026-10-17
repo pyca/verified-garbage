@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_poly1305_blocks` on x86-64

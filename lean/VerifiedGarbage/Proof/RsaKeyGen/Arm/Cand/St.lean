@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvSk
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint0
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: the operations as pieces
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: gathering the slices

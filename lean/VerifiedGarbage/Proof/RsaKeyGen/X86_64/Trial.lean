@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
@@ -137,7 +133,6 @@ theorem flag_eq (a b : BitVec 64) :
   rw [h1, h2, mask_or']
   unfold mask
   congr 3
-  exact (Bool.decide_or _ _).symm
 
 theorem sxFFFF : BitVec.signExtend 64 (0xFFFF : BitVec 32) = 0xFFFF := by decide
 

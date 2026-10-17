@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The register-resident CMAC loop, proven against the existing shared
 contract. Memory is unchanged until the final chaining value is stored. -/

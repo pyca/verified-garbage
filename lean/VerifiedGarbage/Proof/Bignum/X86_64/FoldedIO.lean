@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
 public import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Sse

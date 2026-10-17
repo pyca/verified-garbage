@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
 import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCopy
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCopy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Fixed-length verification copies and hashes only public lengths. -/
 

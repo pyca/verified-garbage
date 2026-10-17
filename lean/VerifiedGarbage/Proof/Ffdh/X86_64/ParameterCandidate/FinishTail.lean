@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WriteUsed
 import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: the callable's final store and ABI return -/

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Selftest.X86_64
 import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Selftest.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Pipeline self-test: x86-64 proof -/
 

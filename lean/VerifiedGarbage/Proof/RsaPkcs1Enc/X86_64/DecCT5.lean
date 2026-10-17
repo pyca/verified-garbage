@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 

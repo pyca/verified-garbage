@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
 import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.KPke
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Impl.MlKem.X86.Sample

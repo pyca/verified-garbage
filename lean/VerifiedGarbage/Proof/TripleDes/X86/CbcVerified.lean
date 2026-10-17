@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 public import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC on x86 (32-bit) meets its contracts

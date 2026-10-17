@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: random-tape slices and frames -/

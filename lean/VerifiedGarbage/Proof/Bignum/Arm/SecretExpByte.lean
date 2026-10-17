@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteNext
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpBits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One private exponent byte appends eight bits using a fixed schedule -/
 

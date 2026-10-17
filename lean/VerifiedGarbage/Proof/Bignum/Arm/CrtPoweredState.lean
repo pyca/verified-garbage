@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A completed factor power independent of the currently selected workspace -/
 

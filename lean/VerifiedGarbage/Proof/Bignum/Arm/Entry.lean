@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Preserve the RSA workspace while saving registers and loading the fifth argument -/
 

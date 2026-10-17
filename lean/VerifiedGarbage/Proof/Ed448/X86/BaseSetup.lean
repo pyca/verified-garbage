@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.X448.X86.RowMem
 public import VerifiedGarbage.Proof.X448.X86.Bits
 public import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.Lit

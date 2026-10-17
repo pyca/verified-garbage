@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: correctness and `Verified`

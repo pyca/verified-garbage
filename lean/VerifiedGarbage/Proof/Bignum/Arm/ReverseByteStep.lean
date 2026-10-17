@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ReverseBytes
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One endian-conversion byte and its exact memory effect -/
 

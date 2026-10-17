@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!

@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Idea.KeyLit32
 meta import VerifiedGarbage.Proof.Idea.KeyLit32
 public import VerifiedGarbage.Impl.Idea.X86
 meta import VerifiedGarbage.Impl.Idea.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

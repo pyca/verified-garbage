@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86 (32-bit): what keeps the filling state, and data-dependent addressing

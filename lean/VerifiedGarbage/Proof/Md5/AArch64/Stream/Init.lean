@@ -10,10 +10,6 @@ public import VerifiedGarbage.Impl.Md5.AArch64.Stream
 meta import VerifiedGarbage.Impl.Md5.AArch64.Stream
 import VerifiedGarbage.Proof.Md5.Stream
 meta import VerifiedGarbage.Proof.Md5.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming MD5 on AArch64: `init`

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
 import VerifiedGarbage.Proof.Ocb.Stretch
 public import VerifiedGarbage.Proof.Ocb.Stretch32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `Offset_0` (`offset0`)

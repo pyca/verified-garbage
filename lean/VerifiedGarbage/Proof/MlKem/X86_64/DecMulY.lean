@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttAccY
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_decrypt_mul_avx2`, row by row

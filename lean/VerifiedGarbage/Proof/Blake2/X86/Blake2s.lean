@@ -16,10 +16,6 @@ public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.X86.Sse

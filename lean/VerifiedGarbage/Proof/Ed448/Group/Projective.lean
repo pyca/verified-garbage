@@ -7,10 +7,6 @@ public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Spec.Ed448
 public import Mathlib.FieldTheory.Finite.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The specification's projective points represent points of the group

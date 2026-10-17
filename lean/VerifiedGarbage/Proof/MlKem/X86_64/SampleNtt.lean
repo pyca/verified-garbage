@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import VerifiedGarbage.Proof.MlKem.KPke
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 
 /-!

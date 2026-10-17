@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on x86-64: one block

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Zero-extended import into an RSA workspace array -/
 

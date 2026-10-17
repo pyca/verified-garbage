@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi

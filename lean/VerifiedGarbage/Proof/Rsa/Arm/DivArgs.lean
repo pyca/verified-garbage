@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Division loop arguments depend only on the public header -/
 

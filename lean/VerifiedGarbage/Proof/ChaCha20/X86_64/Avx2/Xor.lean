@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 public import VerifiedGarbage.Proof.Framework.Range

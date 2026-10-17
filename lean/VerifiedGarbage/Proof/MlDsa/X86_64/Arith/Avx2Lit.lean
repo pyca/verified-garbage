@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the AVX2 arithmetic as literals

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeWidth
-import all Init.Data.Nat.Bitwise.Basic
 
 /-! # Low-word parity checks before Montgomery initialization -/
 

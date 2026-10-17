@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Layout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

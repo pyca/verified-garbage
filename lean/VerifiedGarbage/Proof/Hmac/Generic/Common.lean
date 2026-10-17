@@ -6,10 +6,6 @@ import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.Spec.Md5
 import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.Proof.Framework.OmegaLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any streaming hash function: lemmas shared by every target

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2 compression function on ARMv7: the contract

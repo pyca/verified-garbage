@@ -7,10 +7,6 @@ meta import VerifiedGarbage.Impl.MillerRabin.X86_64.Caller
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Saving and restoring the caller uses only public addresses -/
 

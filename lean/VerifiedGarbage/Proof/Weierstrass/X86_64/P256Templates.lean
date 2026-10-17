@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The field operations of P-256's code without BMI2 and ADX, modulo `p` and
 `n`, as templates (`materialize_template`): every product, sum and difference

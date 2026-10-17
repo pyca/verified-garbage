@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtTimesInverse
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Loading and multiplying by qInv exposes no inverse or residue values -/
 

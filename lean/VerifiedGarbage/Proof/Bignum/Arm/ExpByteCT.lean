@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpBitsCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.Exp
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Processing one exponent byte reveals only that public byte and its address -/
 

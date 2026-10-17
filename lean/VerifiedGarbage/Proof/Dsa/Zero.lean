@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.RsaPss.Params
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MdStream.Spec

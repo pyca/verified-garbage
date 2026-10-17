@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Restore a private operand's pointer and length from the call frame -/
 

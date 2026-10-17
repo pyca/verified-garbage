@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.TripleDes.Core
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.X86_64.Box
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 

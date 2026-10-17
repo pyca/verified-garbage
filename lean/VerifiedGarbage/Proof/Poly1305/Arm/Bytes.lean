@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.TCB.Arm.Target
 
 -- Formerly the module `VerifiedGarbage.Proof.Poly1305.Arm.Common`.
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.RegSet

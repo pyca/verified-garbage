@@ -9,10 +9,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Preserve
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Impl.Mont.Mod

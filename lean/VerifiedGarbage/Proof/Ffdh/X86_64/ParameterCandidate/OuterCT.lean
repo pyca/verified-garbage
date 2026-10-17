@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 

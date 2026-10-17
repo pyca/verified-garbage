@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect

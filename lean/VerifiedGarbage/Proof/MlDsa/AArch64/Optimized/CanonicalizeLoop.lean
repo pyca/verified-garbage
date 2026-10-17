@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 

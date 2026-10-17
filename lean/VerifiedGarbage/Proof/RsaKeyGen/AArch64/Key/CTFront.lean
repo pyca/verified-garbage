@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the entry, the loads, the order and `p − 1`, `q − 1`

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rc4.X86_64
 public import VerifiedGarbage.Proof.Rc4.Qword
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RC4 on x86-64: the table lookup, a quadword at a time -/
 

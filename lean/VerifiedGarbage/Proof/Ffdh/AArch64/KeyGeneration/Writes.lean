@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key-generation controller's writes of its own words (AArch64)

@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 meta import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

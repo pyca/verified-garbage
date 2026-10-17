@@ -10,10 +10,6 @@ public import VerifiedGarbage.Spec.Cmac.Contract
 meta import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

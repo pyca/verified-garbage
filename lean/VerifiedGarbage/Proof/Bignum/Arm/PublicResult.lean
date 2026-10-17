@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicControls
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhase
 import VerifiedGarbage.Proof.Rsa.Octets
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The exponentiation result fits the RSA output buffer and retains acceptance -/
 

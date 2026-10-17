@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
 import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Spec.Cast5.Ofb
 public import VerifiedGarbage.Spec.Cast5.Cfb
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 with their working space as an argument

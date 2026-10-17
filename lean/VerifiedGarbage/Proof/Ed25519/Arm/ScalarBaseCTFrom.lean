@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 

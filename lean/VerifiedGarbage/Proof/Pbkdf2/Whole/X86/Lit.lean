@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
 meta import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the functions it calls, and its code as literals

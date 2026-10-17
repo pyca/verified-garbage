@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
 public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 public import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # brainpoolP512r1's configuration for public keys and ECDH on X86 -/
 

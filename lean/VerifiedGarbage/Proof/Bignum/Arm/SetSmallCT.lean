@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SetSmall
 meta import VerifiedGarbage.Impl.Bignum.Arm.SetSmall
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Small-integer initialization reveals only pointers and word count -/
 

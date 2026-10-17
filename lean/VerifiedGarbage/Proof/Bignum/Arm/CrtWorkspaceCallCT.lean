@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Switching the active workspace leaks only the public stack address -/
 

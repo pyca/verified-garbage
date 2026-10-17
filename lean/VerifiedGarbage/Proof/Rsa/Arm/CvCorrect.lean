@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvValid
 public import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_crt_values` on ARMv7: correctness
 

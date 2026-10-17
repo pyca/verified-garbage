@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: the p primality phase -/

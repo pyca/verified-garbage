@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass2
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: `vg_mlkem_ntt_inv`

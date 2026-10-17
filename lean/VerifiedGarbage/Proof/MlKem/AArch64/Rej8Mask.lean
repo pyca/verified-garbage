@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Sum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Connecting acceptance predicates to the packed table index and count -/
 

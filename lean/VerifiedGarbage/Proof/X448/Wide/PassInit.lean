@@ -1,10 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.X448.Wide.CarryStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X448.Wide.Column
 import Mathlib.Tactic.SplitIfs
 

@@ -20,10 +20,6 @@ import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
 public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.SplitIfs

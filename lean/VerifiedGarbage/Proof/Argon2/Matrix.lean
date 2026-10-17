@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Relate the lane-major assembly allocation to the specification's block array. -/
 

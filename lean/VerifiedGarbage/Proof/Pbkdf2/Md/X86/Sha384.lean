@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 

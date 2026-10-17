@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrimeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInputCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExpCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResultCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A factor's narrow private power hides the factor, exponent, input and acceptance
 

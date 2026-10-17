@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_ctr32` on AArch64

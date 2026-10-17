@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.SignBody
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
 public import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT

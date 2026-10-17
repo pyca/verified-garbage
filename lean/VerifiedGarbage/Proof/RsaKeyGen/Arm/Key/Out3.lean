@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: the seven outputs and the mask returned (`stores_vp`), or zeros and 2 (`zeros_vp`) -/
 

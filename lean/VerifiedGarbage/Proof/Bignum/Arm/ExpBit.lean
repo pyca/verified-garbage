@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpBitTest
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One binary exponent bit updates the proved Montgomery power -/
 

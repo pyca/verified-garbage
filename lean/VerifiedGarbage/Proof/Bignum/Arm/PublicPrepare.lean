@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Prepare the shared workspace for a validated public RSA modulus -/
 

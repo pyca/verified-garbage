@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.SignTiming
 public import VerifiedGarbage.Proof.Dsa.X86.SignatureTiming
 public import VerifiedGarbage.Proof.Dsa.X86.SignCompute
-import all Init.Data.Nat.Bitwise.Basic
 
 /-! # Constant-time post-shape DSA bodies, including status and output -/
 

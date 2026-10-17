@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.X448.X86_64.Pow223
 public import VerifiedGarbage.Proof.Ed448.Root
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the square root's power

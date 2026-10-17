@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
 import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 import VerifiedGarbage.TCB.Axioms

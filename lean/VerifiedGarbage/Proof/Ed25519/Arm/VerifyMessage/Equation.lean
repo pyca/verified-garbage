@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
 public import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

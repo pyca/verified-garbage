@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
 public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The callable private wrapper leaks only public layout and key bytes -/
 

@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CAST5-CBC on x86-64 meets its contracts

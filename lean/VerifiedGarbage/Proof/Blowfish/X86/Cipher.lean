@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.F
 public import VerifiedGarbage.Proof.Blowfish.Feistel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

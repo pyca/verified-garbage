@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidInput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Private RSA body state before validating the public modulus -/
 

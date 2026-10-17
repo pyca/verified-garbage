@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Sha3
 public import VerifiedGarbage.Impl.Sha3.Tables
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-3: lemmas about the specification

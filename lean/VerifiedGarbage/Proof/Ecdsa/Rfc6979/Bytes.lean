@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
 public import VerifiedGarbage.Spec.Ecdsa.P256
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA: big-endian numbers

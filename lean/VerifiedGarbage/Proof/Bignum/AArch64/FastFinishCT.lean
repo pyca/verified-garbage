@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCtContext
 public import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCtContext
 meta import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega

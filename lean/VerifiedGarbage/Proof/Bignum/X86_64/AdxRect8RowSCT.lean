@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega

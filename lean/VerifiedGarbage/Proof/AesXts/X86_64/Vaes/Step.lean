@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Common
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # One-pass XTS-AES on x86-64: the tweaks times `α⁸`

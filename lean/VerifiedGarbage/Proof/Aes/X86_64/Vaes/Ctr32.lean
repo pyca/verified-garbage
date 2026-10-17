@@ -5,10 +5,6 @@ meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section

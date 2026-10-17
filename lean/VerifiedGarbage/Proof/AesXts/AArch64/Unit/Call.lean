@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesXts.AArch64.Verified
 public import VerifiedGarbage.Proof.AesXts.Unit
 public import VerifiedGarbage.Impl.AesXts.AArch64Unit
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES of data units on AArch64: a call of a whole-block function

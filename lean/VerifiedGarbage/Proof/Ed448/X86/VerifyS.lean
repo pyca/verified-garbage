@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
 import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Proof.X448.X86.Decode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.Lit

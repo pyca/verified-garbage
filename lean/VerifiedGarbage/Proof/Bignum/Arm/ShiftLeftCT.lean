@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.ShiftLeft
 meta import VerifiedGarbage.Impl.Bignum.Arm.ShiftLeft
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Only the shiftLeft pointer and word count are public -/
 

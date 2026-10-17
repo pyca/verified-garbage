@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # A candidate for an RSA prime on x86-64: the contract the proofs use

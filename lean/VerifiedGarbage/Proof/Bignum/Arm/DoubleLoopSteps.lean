@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public indices and public counter for the modular-doubling loop -/
 

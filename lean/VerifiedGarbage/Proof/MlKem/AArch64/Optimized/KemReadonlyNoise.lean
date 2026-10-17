@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Paired encryption noise preserves read inputs and caller state -/
 

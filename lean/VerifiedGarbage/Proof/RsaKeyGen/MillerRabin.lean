@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Miller–Rabin without splitting `w − 1`

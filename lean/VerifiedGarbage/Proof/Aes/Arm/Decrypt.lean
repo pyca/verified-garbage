@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 public import VerifiedGarbage.Proof.Aes.Arm.Group
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
 public import VerifiedGarbage.Proof.Aes.Ct32.InvBitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Decrypting two blocks, bitsliced, on ARMv7

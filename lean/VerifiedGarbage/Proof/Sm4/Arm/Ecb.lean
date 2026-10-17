@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Sm4.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

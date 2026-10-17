@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.ShiftRight
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Mont.Words32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A runtime-length in-place one-bit right shift
 

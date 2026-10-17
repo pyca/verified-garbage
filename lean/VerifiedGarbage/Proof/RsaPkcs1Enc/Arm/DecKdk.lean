@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecHash
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 public import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Proof.Sha256.Md
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `KDK = HMAC(DH, C)`

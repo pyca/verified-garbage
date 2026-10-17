@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming

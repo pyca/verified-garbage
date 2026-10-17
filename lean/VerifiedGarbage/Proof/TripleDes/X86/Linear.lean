@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

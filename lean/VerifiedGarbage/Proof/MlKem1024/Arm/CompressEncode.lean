@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.Compress1024
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

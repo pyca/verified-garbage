@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: relating two runs

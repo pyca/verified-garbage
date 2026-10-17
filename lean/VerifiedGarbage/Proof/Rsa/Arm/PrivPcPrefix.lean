@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveResult
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyIncoming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Save the CRT status and prepare the precomputation scratch arguments -/
 

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Rounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule, as `G` of 32 inputs

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`

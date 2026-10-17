@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Pre
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message`: the call of the signing function on `μ`

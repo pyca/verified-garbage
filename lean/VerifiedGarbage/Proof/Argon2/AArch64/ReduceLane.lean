@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
 import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
 import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Argon2.AArch64.HPrime

@@ -18,10 +18,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the instances

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: `vg_cmac_triple_des_finalize` is correct

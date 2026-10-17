@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sm4.CtrCipher
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.SboxSpec

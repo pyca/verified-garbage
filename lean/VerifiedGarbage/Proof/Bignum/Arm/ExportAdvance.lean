@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportStateCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Move to the second half of the RSA precomputation output -/
 

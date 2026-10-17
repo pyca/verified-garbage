@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
 public import VerifiedGarbage.Proof.Bignum.Arm.SubRow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Final modular reduction: subtraction followed by secret-bit selection -/
 

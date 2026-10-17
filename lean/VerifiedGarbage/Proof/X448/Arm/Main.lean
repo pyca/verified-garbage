@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.X448.Arm.FinalSwap
 public import VerifiedGarbage.Proof.X448.Arm.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-!

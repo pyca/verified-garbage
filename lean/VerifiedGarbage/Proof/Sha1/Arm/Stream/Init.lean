@@ -10,10 +10,6 @@ public import VerifiedGarbage.Impl.Sha1.Arm.Stream
 meta import VerifiedGarbage.Impl.Sha1.Arm.Stream
 import VerifiedGarbage.Proof.Sha1.StateMem
 meta import VerifiedGarbage.Proof.Sha1.StateMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 

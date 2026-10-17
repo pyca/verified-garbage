@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Unaligned SSE2 copy and XOR, preserving every general-purpose register. -/
 

@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, word by word, agrees

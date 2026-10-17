@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnBase
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The checks of an RSA key on ARMv7: the entry's first block, and every array zeroed
 

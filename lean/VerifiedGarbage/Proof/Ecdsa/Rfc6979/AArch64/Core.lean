@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: signing with a candidate

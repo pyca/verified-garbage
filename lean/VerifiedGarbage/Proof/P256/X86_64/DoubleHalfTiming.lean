@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The forwarded point doubler's addresses depend only on the scratch pointer. -/
 

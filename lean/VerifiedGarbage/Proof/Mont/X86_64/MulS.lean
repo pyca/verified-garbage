@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86_64.SqrS
 public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the rounds of P-384's multiplication with BMI2 and ADX

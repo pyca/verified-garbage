@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 

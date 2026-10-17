@@ -22,10 +22,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
 import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.X25519.X86.Column
 

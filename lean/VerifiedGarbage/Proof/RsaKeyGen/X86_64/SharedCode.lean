@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete candidate with the callable shared Miller–Rabin round -/
 

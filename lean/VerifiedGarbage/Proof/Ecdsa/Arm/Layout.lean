@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
 import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
 

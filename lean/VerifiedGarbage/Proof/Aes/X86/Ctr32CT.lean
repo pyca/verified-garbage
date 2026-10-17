@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Aes.X86.Common
 meta import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES counter mode on x86 (32-bit): the contract, and constant time

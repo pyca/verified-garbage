@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
 public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: decoding's blocks

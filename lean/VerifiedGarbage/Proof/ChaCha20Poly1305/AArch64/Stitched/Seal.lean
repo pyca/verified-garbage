@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 

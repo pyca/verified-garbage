@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.X86.Dec
 meta import VerifiedGarbage.Proof.AesSiv.X86.Dec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: `encrypt` and `decrypt` are constant time

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Aes.Blocks
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

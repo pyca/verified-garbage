@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega

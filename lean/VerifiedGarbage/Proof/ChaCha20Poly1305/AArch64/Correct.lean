@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH shaped candidates give structurally valid PKCS #3 domains -/

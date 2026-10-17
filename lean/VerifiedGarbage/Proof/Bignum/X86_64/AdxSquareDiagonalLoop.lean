@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.Square
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The complete diagonal-addition loop for an ADX square. -/
 

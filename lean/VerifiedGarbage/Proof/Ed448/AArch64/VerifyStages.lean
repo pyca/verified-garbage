@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyDecode
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: decoding `A`

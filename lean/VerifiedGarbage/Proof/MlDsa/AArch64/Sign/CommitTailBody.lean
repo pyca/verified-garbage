@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Sha3.AArch64.Callee

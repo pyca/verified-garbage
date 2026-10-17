@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.X86_64.FinalizeCorrect
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.CT
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Implies
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
 
 /-!

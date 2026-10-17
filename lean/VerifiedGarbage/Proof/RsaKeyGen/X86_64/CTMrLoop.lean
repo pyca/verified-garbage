@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 meta import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega

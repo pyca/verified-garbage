@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
 public import VerifiedGarbage.Proof.Argon2.Serialization
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the final block and the tag

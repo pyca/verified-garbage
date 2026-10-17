@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskOutput
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Form an all-zero or all-one mask without branching on acceptance -/
 

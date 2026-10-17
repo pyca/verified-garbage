@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
 meta import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
 public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
 meta import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SM4 on X86_64: the code as literals

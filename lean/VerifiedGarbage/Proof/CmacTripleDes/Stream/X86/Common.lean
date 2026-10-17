@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.MdStream.X86.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Omega

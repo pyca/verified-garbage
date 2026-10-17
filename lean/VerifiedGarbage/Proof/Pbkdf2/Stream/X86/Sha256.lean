@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Code
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256's streaming functions on x86 (32-bit), for every backend

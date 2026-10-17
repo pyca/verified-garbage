@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Restore the saved registers before the frame pops its first word -/
 

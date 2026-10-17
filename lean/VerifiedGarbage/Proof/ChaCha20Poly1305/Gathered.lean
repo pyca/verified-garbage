@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 out of place: the slices

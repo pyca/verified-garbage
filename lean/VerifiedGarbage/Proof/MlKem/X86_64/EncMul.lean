@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
@@ -468,8 +464,8 @@ theorem innerStep_ok {j i : Nat} {c14 : BitVec 64} (hj : j < k) (hi : i < k) {s 
   · subst h; rw [ifp (Nat.lt_succ_self _)]; exact hP1
   · have := R.frame hf1 (fu i' hi' h) (hI.acc i' hi')
     by_cases h' : i' < i
-    · rwa [ifp h', ifp (by omega)] at *
-    · rwa [ifn h', ifn (by omega)] at *
+    · rw [ifp h', ifp (by omega)] at *; with_reducible assumption
+    · rw [ifn h', ifn (by omega)] at *; with_reducible assumption
 
 /-- The products of the terms `j` of the sums `i, …, k - 1`. -/
 theorem innerE_ok {j : Nat} {c14 : BitVec 64} (hj : j < k) :

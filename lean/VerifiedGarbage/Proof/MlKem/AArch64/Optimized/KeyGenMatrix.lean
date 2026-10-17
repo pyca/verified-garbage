@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixLast
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete paired key-generation matrix satisfies the existing invariant -/
 @[expose] public section

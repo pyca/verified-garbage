@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
 public import VerifiedGarbage.Proof.Rsa.Arm.KcTaint
 public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The checks of an RSA key on ARMv7: constant time
 

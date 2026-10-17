@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Copy
 public import VerifiedGarbage.Proof.Gcm.SealGather
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: gathering the slices

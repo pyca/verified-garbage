@@ -16,10 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ed448.Contract
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: `Verified`

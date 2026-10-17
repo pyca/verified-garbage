@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValid
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Inputs to the private RSA path after checking the public modulus -/
 

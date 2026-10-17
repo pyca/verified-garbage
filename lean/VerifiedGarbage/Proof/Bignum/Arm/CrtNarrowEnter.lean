@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
 public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Set up and select the narrow workspace at a factor's own width -/
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!

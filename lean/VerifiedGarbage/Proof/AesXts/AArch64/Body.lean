@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesXts.AArch64.Steps
 public import VerifiedGarbage.Proof.AesXts.Batch
 import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 
 /-!

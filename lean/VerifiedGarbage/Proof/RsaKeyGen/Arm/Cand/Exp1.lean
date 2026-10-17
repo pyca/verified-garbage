@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Gcd
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint5
 public import VerifiedGarbage.Proof.Rsa.RecoverMath
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the exponent of 2 in `c − 1` (`halving_vp`)
 

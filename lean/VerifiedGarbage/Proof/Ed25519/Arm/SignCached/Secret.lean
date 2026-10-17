@@ -13,10 +13,6 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Signing
 public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.HashSteps`. -/
 

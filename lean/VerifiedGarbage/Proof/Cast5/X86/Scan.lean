@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Framework.X86.SseLanes
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
 public import VerifiedGarbage.Proof.Framework.CallLay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.ReadHalves
 
 /-!

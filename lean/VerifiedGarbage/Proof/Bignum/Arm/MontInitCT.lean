@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MontInit
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontInit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Initialization leaks only the temporary, accumulator, and packed-word count -/
 

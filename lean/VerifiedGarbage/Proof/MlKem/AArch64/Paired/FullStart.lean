@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullInit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Single
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Singleton fallback through all five SHAKE128 blocks -/
 @[expose] public section

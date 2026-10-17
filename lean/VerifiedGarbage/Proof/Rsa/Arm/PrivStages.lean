@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Intermediate states for composing independent secret executions -/
 

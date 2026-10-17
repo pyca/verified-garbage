@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Blake2.Cols
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2s on x86-64 with AVX: a round

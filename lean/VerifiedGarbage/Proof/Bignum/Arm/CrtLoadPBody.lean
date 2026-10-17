@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Import p and qInv and accumulate the exact qInv < p check -/
 

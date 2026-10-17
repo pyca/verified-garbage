@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: rejection-loop state -/

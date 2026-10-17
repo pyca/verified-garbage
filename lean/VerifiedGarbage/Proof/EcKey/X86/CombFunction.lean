@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.X86.CombBodyCT
 meta import VerifiedGarbage.Proof.EcKey.X86.CombBodyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.X86.Sse

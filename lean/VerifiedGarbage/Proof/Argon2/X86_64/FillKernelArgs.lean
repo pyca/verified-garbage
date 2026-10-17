@@ -16,10 +16,6 @@ import VerifiedGarbage.Proof.Argon2.X86_64.Relative
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
 public import VerifiedGarbage.Proof.GcmSiv.MulX
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: the encryption key's schedule and GHASH's key

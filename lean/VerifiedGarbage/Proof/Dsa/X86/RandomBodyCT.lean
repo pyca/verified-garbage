@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomPrepareCT
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptCT
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomPrepareCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

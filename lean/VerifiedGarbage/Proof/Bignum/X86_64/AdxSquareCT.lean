@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltHash
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! A known salt length changes only the hash of already rejected encodings. -/
 

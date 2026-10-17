@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontFn
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Rsa.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The shared RSA Montgomery contract under AAPCS -/
 

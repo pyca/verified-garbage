@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeBit
 public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A rejected factor is replaced by three before Montgomery arithmetic -/
 

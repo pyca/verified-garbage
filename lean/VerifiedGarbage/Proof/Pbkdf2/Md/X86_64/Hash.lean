@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
 public import VerifiedGarbage.Spec.Mgf1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 

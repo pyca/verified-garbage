@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.StagesCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # FFDH key generation on x86-64: constant time under the shared contract -/
 

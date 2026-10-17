@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptU
 public import VerifiedGarbage.Impl.MlKem.AArch64.ReadonlyDecrypt
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemEncrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Ciphertext vector transformation with an explicit memory footprint -/
 

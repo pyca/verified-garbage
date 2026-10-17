@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Entry and return traces depend only on caller stack and scratch addresses -/
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.Lit

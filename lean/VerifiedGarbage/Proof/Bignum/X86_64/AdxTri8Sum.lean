@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 import VerifiedGarbage.Proof.Bignum.Triangular
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 

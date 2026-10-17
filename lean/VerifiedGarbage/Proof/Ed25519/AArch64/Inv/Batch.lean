@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Conn
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Out
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Step
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A batch of the inversion modulo `p` on AArch64
 

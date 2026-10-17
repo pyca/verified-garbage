@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The private exponentiation in the narrow workspace -/
 

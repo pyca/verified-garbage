@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
 public import VerifiedGarbage.Proof.Argon2.X86_64.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX2: the first and last XOR

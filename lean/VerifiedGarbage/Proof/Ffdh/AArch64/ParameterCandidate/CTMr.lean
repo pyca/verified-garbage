@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
 

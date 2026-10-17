@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.KeyExp

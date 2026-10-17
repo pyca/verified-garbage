@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.X25519.X86_64.Bits

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Load the modulus's low byte and the public sanity-check bit -/
 

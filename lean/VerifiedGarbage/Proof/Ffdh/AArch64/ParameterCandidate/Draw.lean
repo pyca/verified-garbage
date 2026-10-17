@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWit
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 import VerifiedGarbage.Proof.Framework.Omega
 

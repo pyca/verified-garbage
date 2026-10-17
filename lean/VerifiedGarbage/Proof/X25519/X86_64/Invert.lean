@@ -20,10 +20,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.X25519.Field64
 meta import VerifiedGarbage.Spec.X25519.Field64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: `vg_gf25519_r64_invert`, verified

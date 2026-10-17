@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit

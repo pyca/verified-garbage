@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA array export has public addresses and byte count -/
 

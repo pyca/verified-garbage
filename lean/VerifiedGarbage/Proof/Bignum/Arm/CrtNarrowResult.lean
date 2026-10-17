@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduce
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 public import VerifiedGarbage.Proof.Bignum.Arm.TransferPadded
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Return the narrow power to the factor's full-width workspace -/
 

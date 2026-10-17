@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Rc4.X86.Schedule
 public import VerifiedGarbage.Proof.Rc4.X86.Save
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! # RC4 on x86 (32-bit): checked initialization -/

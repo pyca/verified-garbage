@@ -12,10 +12,6 @@ public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.X86.Sse

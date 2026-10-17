@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
 import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
 import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `vg_aes_ccm_seal`

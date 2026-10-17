@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.TripleDes.Bitslice.TransposeIdx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Lit

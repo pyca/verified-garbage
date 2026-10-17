@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused

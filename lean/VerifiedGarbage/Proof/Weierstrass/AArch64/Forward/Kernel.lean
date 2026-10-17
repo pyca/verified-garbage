@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AllBelow
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import Mathlib.Logic.Function.Basic
@@ -344,7 +340,7 @@ theorem valid_of_validK {nodes : Certificate} (h : validK nodes=true) : CertVali
     congr
     funext i n
     cases n with
-    | app => exact Bool.eq_iff_iff.mpr (by simp [Node.before,Nat.blt_eq,and_assoc]; exact decide_eq_true_iff)
+    | app => exact Bool.eq_iff_iff.mpr (by simp [Node.before,Nat.blt_eq,and_assoc])
     | _ => rfl
 
 /-- Word `i` of the certificate's extent is input `i+1`. -/

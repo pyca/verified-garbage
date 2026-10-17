@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The frames of the ARMv7 PKCS #1 v1.5 functions: correctness and constant time

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX2: two blocks at counters `0` and `c`

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRun
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvModel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` on registers

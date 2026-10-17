@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Validate
 public import VerifiedGarbage.Proof.Ecdh.Exchange
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep

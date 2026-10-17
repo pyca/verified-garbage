@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-521 on AArch64: the code as a literal

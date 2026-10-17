@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!

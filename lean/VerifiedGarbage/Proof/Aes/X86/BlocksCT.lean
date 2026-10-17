@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Aes.X86.Blocks
 meta import VerifiedGarbage.Proof.Aes.X86.Blocks
 public import VerifiedGarbage.Spec.Aes.Contract
 meta import VerifiedGarbage.Spec.Aes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
 

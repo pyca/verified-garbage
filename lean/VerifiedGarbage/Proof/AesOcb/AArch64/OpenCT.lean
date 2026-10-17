@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesOcb.AArch64.SealCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.SealCT
 import VerifiedGarbage.Proof.AesOcb.AArch64.Open
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
 import VerifiedGarbage.Proof.Ocb.Bytes

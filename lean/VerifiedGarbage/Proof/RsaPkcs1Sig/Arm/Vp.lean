@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: pieces correct and constant time at once

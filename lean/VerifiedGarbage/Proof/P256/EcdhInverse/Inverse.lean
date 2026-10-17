@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Loop
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Finish
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Extra
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 

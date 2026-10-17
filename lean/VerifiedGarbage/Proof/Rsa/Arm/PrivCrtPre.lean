@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The private CRT call satisfies the shared buffer contract -/
 

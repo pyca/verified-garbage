@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 meta import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
 meta import VerifiedGarbage.Impl.Rc2.AArch64.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 

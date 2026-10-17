@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicValid
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Validate the public modulus and implement both outcomes of the checked RSA contract -/
 

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Idea.Scratch32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.RegSet
@@ -265,8 +261,6 @@ theorem ecb_wp (s : State) (hs : contract.pre s) :
       show some s₂.z = _
       rw [z₂, show s.gpr .r2 - 0 = s.gpr .r2 from BitVec.sub_zero _]
       congr 1
-      rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-      exact ⟨fun h => by simp only [n, h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩
     refine WP.ite _ hz (fun h0 => ?_) (fun h0 => ?_)
     · have h0 : n = 0 := by simpa using h0
       exact WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, Frame.refl _ _, fun j hj => by omega⟩

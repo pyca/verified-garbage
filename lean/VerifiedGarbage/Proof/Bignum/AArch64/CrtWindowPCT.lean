@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 meta import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup

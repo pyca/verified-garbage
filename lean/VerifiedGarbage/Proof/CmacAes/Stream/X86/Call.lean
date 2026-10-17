@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.CmacAes.X86.Verified
 import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
 
 @[expose] public section

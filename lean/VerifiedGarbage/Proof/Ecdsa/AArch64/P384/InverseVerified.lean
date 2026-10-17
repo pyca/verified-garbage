@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 meta import VerifiedGarbage.Spec.Weierstrass.Inverse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
@@ -71,6 +67,10 @@ theorem dec_eq {m : Nat} [NeZero m] (h1 : 1 < m) (he : m - 2 < 2 ^ 400)
     rw [← ofNat_mul', ← ofNat_mod, h]; rfl
   have hr := mul_rinv (m := m) ⟨_, hR⟩
   have : Fin.ofNat m (Pratt.powMod m 400 (2 ^ (64 * C.k)) (m - 2)) = rinv m (2 ^ (64 * C.k)) := by
+    -- Hide `2 ^ 384` and the like from `grind`'s arithmetic, which would
+    -- evaluate it.
+    clear h he hp
+    generalize 2 ^ (64 * C.k) = R at hR hr ⊢
     grind
   unfold Spec.Weierstrass.Inverse.Curve.dec toM
   rw [hp, this]

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Step
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 

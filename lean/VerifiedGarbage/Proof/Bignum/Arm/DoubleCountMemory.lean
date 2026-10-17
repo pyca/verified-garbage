@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A loop-counter update preserves the RSA header, numbers, and saved base -/
 

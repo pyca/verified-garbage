@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # CBD sampling and optional transform of one paired PRF output -/
 @[expose] public section

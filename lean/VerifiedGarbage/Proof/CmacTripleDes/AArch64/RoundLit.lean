@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
 meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The DES block's AArch64 code as literals, for kernel-evaluated checks

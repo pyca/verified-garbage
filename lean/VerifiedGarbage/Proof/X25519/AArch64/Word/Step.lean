@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
 import VerifiedGarbage.Proof.X25519.AArch64.Word.Small
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! One complete four-word ladder iteration. -/

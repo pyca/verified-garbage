@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Aese
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCT
 
 @[expose] public section

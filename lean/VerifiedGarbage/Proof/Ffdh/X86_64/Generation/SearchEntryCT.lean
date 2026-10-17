@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Native search entry exposes pointers and public policy, never saved registers -/
 

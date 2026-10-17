@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Ed448.Group.Decode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase

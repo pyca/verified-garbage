@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKey
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningKey
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.StageFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BoundaryCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Constant time of the round with Montgomery calls

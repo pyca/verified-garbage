@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.AesOcb.AArch64.Words
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
 public import VerifiedGarbage.Proof.Ocb.State
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the functions called

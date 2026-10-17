@@ -16,10 +16,6 @@ import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT

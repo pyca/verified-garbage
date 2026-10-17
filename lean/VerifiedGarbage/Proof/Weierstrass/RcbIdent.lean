@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.Rcb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Polynomial identities of the complete addition formulas

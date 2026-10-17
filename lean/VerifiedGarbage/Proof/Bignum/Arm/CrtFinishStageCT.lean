@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMaskedCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Reconstruction and masked output hide both the result and acceptance -/
 

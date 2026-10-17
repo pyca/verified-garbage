@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAll
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrimeCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Per-execution invariants for the complete setup timing proof -/
 

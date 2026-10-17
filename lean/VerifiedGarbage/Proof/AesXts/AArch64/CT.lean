@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Body
 meta import VerifiedGarbage.Proof.AesXts.AArch64.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.CT

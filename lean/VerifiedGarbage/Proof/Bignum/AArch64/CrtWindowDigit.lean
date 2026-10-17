@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 
 @[expose] public section

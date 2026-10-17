@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Lift the saved arithmetic body to actual Montgomery calls -/
 

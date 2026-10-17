@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: calling `vg_aes_ctr32` from the pieces

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Lit
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Lit
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, the run of its terms

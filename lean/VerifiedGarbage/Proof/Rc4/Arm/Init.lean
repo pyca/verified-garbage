@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rc4.Arm.Schedule
 public import VerifiedGarbage.Proof.Rc4.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! # RC4 on ARMv7: checked initialization -/

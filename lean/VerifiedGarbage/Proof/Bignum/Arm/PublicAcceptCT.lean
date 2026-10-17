@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicAccept
 public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Comparing and saving secret input acceptance reveals no acceptance decision -/
 

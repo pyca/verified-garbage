@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Restore the sampler caller while retaining its accumulated success flag -/
 @[expose] public section

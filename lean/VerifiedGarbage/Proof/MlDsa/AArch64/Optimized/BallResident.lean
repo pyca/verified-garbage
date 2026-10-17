@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 meta import Mathlib.Tactic.SplitIfs

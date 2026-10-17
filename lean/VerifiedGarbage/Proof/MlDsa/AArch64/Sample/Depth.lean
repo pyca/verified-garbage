@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt

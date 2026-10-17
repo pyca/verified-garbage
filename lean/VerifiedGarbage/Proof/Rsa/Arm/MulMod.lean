@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.AddMod
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `mulMod` on ARMv7: `[a] = ([a] + ([y] mod 2^k) [x]) mod [m]`
 

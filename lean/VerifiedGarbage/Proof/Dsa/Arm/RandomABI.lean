@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The randomized signer's resources on 32-bit ARM, from the shared contract

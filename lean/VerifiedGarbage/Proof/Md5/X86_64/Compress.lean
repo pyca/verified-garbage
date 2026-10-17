@@ -28,10 +28,6 @@ import VerifiedGarbage.Proof.Md5.X86_64.Lit
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # MD5 compression function on x86-64: the 64 operations

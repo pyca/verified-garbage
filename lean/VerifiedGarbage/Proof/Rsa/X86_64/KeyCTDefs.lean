@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

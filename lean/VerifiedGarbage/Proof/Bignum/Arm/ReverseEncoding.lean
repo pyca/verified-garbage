@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Rsa.Octets
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Byte reversal implements RSA's OS2IP -/
 

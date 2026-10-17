@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskSetup
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: the complete masked scalar store -/

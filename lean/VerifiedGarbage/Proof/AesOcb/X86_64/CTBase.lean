@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: relating two runs

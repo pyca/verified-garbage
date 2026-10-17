@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Range checking does not require a prevalidated modulus -/
 

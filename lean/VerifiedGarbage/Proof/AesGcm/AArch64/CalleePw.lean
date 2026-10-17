@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 meta import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_ghash_with_powers`, called with `pw` from the stack

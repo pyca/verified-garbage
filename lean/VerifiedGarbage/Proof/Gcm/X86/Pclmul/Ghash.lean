@@ -26,10 +26,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86.Pclmul.Const`.
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Result
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Result
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -9,10 +9,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: the additional data

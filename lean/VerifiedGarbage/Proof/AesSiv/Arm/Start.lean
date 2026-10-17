@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Ctr
 import VerifiedGarbage.Proof.AesGcm.Arm.Fn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: the entry, and S2V's first state

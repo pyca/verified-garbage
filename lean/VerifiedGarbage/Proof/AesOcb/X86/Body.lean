@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.RestTag
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesOcb.X86.Whole
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.Framework.Omega

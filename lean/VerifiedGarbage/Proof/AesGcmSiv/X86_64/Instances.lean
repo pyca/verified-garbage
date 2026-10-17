@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.OpenCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch

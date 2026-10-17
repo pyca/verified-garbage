@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Prologue
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit

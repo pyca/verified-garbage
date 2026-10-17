@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStartTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The odd final matrix entry has public-seed-only timing -/
 @[expose] public section

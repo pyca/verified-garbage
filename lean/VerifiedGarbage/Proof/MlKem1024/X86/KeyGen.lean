@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

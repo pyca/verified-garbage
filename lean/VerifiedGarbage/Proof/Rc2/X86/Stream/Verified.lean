@@ -28,10 +28,6 @@ public import VerifiedGarbage.Proof.Rc2.X86.Stream.UpdateLong
 meta import VerifiedGarbage.Proof.Rc2.X86.Stream.UpdateLong
 public import VerifiedGarbage.Proof.Rc2.Scratch
 meta import VerifiedGarbage.Proof.Rc2.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs

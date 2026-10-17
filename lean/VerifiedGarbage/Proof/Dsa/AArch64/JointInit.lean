@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
 import VerifiedGarbage.Proof.Dsa.AArch64.JointByte
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.Dsa
 
 /-! # Public exponent pointers for joint DSA verification -/

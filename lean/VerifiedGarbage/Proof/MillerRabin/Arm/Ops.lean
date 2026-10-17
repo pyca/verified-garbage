@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The Miller–Rabin round on ARMv7: the operations on a stage
 

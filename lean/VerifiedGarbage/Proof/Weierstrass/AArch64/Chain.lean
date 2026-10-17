@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Range

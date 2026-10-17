@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-384's Montgomery product modulo `p` as a function on AArch64

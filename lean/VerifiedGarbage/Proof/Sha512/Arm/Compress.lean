@@ -16,10 +16,6 @@ public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sha512.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on ARMv7: the whole function

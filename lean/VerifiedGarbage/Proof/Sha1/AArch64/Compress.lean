@@ -28,10 +28,6 @@ import VerifiedGarbage.Proof.Sha1.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Lit
 public import VerifiedGarbage.Proof.Sha1.StateMem
 meta import VerifiedGarbage.Proof.Sha1.StateMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 compression function on AArch64: the message schedule and the rounds

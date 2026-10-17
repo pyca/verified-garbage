@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Private RSA computation through exact masked output -/
 

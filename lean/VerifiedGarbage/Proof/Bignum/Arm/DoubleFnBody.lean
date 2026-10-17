@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 public import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Modular doubling from the shared RSA header preserves all unrelated arrays -/
 

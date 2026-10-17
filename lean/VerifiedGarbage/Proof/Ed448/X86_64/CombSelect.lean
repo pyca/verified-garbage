@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 public import VerifiedGarbage.Proof.Ed448.Comb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Constant-time selection of the compact four-column comb's affine point. -/

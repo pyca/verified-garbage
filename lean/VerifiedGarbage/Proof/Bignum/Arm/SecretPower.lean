@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretPowerImport
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpPhase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A prepared private modular power implements the shared RSA specification -/
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Selecting a CRT workspace preserves all shared inputs and initializes its saved base -/
 

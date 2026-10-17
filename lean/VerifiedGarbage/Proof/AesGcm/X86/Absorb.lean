@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Common
 meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Gcm.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: GHASH absorbing a piece (`absorb`)

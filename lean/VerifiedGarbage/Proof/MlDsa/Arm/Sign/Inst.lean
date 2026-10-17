@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Arm.Prf
 
 /-!

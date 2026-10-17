@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Arm
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.X25519

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Shared BrainpoolP512r1 Montgomery multiplication on x86-64 -/
 

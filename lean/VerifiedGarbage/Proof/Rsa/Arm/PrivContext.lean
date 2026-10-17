@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Immutable sources and incoming arguments survive calls and local frame writes -/
 

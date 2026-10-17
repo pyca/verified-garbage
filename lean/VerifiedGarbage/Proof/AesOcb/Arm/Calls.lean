@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.Words
 import VerifiedGarbage.Proof.Ocb.State
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the calls

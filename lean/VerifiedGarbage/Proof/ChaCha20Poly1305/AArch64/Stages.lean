@@ -15,10 +15,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

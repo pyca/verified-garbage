@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
 import VerifiedGarbage.Proof.Gcm.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: counter mode over a piece (`crypt`), the definitions

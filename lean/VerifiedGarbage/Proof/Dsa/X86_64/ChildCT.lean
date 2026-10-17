@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Child
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Child
 public import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
 import VerifiedGarbage.Proof.Framework.X86_64.Call

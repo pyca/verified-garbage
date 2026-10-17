@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.Arm.Words
 public import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
 public import VerifiedGarbage.Proof.Cmac.Block

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha1
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
 public import VerifiedGarbage.TCB.Registration
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 backends on x86

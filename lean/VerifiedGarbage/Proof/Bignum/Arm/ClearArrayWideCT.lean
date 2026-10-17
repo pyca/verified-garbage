@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 public import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Clearing an extended result array leaks only its public layout -/
 

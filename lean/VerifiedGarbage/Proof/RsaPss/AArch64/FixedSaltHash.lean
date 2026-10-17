@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCopy
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Hashing the fixed-length salt after all encoding checks. -/
 

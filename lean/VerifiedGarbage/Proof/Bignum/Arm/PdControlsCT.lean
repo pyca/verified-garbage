@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PdControls
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exponent-control initialization is independent of secret input and acceptance -/
 

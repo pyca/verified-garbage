@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Vals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: the result, as the body computes it
 

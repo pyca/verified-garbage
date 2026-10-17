@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The key-generation controller's correctness -/
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
 public import VerifiedGarbage.Proof.Idea.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Impl.StackScratch.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Verified IDEA ECB on x86-64

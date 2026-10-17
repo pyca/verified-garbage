@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Exponent
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

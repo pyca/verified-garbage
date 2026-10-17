@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!

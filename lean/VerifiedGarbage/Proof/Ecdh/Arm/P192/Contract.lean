@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Ecdh.P192
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-192 on 32-bit ARM: the contract the proof is written against

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 meta import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 public import VerifiedGarbage.Proof.Dsa.PackedBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Memory-safe component and digest slices of external DSA inputs -/

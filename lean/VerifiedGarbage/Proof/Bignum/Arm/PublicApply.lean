@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicImport
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicAccept
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The complete checked-input RSA arithmetic path, from bytes to masked output -/
 

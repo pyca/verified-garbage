@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRound
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant time of RSA's witness policy with the callable shared round -/
 

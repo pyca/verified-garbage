@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.X86_64.KeyLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Rc2.Expansion
 public import VerifiedGarbage.Proof.Rc2.X86_64.Save
 import VerifiedGarbage.Proof.Framework.Omega

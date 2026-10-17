@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Seed.X86.Round
 public import VerifiedGarbage.Proof.Seed.Rounds
 public import VerifiedGarbage.Proof.Seed.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!

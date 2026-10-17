@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesXts.X86_64.Variant
 public import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES of data units on x86-64: a call of a whole-block function

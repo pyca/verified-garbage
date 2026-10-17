@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.Framework.Mem
 public import Mathlib.Data.List.Induction
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Blocks as bytes, and the counter blocks of `inc₃₂`

@@ -14,10 +14,6 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Summaries for the constant-time checks of the sponge's callers

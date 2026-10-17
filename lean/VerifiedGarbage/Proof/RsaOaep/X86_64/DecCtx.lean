@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused

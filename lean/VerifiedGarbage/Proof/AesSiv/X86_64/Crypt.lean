@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
 import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
 import VerifiedGarbage.Proof.Cmac.Dbl32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
 
 /-!

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PublicBody
 public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Checked public RSA permits different secret inputs with identical leakage -/
 

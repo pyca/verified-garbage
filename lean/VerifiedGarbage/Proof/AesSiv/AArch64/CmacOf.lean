@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
 meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 meta import VerifiedGarbage.Proof.AesSiv.CtrPart
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: the CMAC of a string (`cmacOf`)

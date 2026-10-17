@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: `Verified`

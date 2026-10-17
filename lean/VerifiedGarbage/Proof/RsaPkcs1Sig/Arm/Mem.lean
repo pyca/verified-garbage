@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Arm.Isa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: bytes and words in memory

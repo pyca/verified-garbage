@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Proof.Sha3.Compl
 public import VerifiedGarbage.Impl.Sha3.X86_64
 meta import VerifiedGarbage.Impl.Sha3.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] on x86-64: a round, by evaluation

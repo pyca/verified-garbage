@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.Extra
 public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

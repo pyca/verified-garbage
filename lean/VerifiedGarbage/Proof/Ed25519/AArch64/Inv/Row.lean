@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Half
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.X25519.AArch64.Ops
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The inversion's rows
 

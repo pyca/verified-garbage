@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 
 /-!

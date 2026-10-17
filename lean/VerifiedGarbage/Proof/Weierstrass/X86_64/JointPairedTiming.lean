@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay

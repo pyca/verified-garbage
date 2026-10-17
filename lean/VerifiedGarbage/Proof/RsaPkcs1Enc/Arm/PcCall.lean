@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcPieces
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: the call and the masks

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The Miller–Rabin round on ARMv7: the public parameters and the stages
 

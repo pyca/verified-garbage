@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
 meta import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 

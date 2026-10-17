@@ -10,10 +10,6 @@ public import VerifiedGarbage.Impl.Md5.Arm.Stream
 meta import VerifiedGarbage.Impl.Md5.Arm.Stream
 import VerifiedGarbage.Proof.Md5.StateMem
 meta import VerifiedGarbage.Proof.Md5.StateMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming MD5 on ARMv7: `init`

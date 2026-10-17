@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvChecksB
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 public import VerifiedGarbage.Proof.Bignum.Arm.ReverseBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_crt_values` on ARMv7: an array written out under the mask (`store_ok`) -/
 

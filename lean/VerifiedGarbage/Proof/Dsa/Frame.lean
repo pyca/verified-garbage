@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Spec.Rsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

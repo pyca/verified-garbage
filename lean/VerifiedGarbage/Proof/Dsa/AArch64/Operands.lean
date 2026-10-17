@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.Layout
 public import VerifiedGarbage.Impl.Dsa.AArch64.Core
 public import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Passing DSA operands through the parent workspace's call header -/

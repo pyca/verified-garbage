@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Field arithmetic without its displacements, for constant time

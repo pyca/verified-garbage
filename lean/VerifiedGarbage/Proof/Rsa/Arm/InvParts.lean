@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
 public import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `inverse` on ARMv7: the differences and halvings modulo `m`
 

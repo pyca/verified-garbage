@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant time of complete joint DSA exponentiation -/
 

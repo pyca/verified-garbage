@@ -10,10 +10,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.Layout

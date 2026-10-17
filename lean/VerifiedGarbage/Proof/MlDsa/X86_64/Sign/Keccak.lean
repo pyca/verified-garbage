@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.X25519.Edwards.Ladder
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Scalar clamping and the Edwards-to-Montgomery map, shared by fixed-base implementations. -/
 

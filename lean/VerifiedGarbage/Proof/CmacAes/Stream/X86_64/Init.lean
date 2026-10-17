@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call

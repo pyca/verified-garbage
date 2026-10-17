@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call

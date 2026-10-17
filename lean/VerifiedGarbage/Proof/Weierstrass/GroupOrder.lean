@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Group
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import Mathlib.SetTheory.Cardinal.Finite
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # A curve of prime order, from the order of its base point

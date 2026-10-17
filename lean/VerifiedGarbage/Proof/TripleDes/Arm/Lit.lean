@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.TripleDes.Arm.Block
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Block
 public import VerifiedGarbage.Impl.TripleDes.Arm.Permutation
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Permutation
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

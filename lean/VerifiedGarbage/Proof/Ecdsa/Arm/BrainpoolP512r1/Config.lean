@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
 public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # brainpoolP512r1's configuration for public keys and ECDH on Arm -/
 

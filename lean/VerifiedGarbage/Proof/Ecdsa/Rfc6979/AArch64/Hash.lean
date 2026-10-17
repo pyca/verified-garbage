@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MdStream.AArch64.Words

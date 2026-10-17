@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC on AArch64: constant time

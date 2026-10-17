@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
@@ -75,7 +71,7 @@ theorem pairedHintPoly_field {m : Mem} {c secret low high : Addr} {gamma j : Nat
   have hg' := VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg
   apply Vector.ext
   intro i hi
-  simp only [pairedHintPoly,Vector.getElem_ofFn,Vector.getElem_zipWith,pairedProduct,hc.value,hs.value]
+  rw [pairedHintPoly,Vector.getElem_ofFn,Vector.getElem_zipWith,pairedProduct,hc.value,hs.value]
   rw [Response.responseHintBase_parts hg' (Response.hintLow_exact hg' hl i hi) (Response.hintHigh_exact hh i hi)]
   simp only [getElem!_pos f i hi,getElem!_pos (nttInv (multiplyNTT ch sk)) i hi]
 

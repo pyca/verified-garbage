@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.P256.EcdhInverse
 public import VerifiedGarbage.Proof.P256.EcdhInverse.First40
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk19
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Divstep.WordBasic
@@ -64,6 +60,9 @@ theorem packed_low_ok (s : State) (d : Int)
     have ha := msteps_d (MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) 20
     have hb := msteps_d (MSt.init a.d a.f a.g) 20
     change |a.d|≤|d|+2*20 at ha
+    -- `(MSt.init a.d a.f a.g).d` is `a.d` by a lemma: matching them by `change` unfolds
+    -- `a` (`msteps 20 …`) first.
+    rw [show ∀ x y z, (MSt.init x y z).d = x from fun _ _ _ => rfl] at hb
     change |b.d|≤|a.d|+2*20 at hb
     omega
   refine WP.mono (first40_ok s d hd hz hf (by omega))

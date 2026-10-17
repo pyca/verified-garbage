@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
 public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-224 on x86-64: the code as a literal

@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

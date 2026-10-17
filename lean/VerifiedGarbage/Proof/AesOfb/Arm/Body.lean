@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 public import VerifiedGarbage.Impl.AesOfb.Arm
 meta import VerifiedGarbage.Impl.AesOfb.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OFB on ARMv7: one block, and constant time

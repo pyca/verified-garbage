@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Caller
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Instruction safety of generic RSA candidate callers -/
 

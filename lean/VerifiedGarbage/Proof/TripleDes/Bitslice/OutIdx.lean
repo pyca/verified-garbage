@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Which S-box output goes into which word, relative to the written half

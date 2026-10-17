@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the fields of a group of bytes, for every target

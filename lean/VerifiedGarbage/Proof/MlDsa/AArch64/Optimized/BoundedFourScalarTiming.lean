@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarPai
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarPair
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTaint
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs

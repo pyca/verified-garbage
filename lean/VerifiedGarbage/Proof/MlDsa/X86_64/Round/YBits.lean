@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_high_bits_avx2` and `vg_mldsa_low_bits_avx2`

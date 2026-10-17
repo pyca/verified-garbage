@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Divstep.State
 import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Divstep.Word
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by batches of divsteps

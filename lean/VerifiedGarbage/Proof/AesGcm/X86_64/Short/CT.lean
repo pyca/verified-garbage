@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT

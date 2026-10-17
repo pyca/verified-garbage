@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! ## From `ResponseZSemantic.lean` -/

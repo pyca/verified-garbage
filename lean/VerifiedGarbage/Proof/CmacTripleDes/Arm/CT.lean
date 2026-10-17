@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: constant time

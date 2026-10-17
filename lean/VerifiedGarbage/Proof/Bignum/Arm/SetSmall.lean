@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.SetSmall
 public import VerifiedGarbage.Proof.Bignum.Arm.Zero
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The initialized array is exactly the chosen native-word integer -/
 

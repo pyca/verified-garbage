@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Blowfish.X86.Modes
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.Blocks
 

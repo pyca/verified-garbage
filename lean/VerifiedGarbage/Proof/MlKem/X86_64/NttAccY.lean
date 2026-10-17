@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR101
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `NTT` to an accumulator, with AVX2

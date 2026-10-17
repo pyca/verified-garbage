@@ -9,10 +9,6 @@ public import Mathlib.Algebra.Group.Basic
 public import VerifiedGarbage.Spec.Ed25519
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Algebra.Group.Nat.Even
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Group.Field`. -/
 

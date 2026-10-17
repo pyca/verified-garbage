@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Spec.Gcm.Prepared
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with PMULL: the prepared powers are its keys

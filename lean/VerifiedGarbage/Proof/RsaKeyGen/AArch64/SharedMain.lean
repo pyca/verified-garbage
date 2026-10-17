@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 

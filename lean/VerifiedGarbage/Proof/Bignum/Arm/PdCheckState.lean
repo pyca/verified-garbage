@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Stable workspace and stack geometry for public precomputation checks -/
 

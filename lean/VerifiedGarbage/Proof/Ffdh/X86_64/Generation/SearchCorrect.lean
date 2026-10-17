@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete native parameter-generation correctness -/
 

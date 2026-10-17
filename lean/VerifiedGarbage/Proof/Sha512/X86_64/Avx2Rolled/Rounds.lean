@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 with AVX2 on x86-64, rolled: rounds and schedule steps through the index

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ReadyByteChecksCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Validation timing steps that preserve the complete schedule state -/

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Prologue
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sm4.Common
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 

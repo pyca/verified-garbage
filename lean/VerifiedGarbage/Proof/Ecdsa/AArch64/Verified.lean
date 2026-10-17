@@ -16,10 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P256.Prime
 meta import VerifiedGarbage.Proof.P256.Prime
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

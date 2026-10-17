@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
 meta import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
 public import VerifiedGarbage.Proof.Sha1.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Compress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 with the SHA extensions: the values in the SSE registers

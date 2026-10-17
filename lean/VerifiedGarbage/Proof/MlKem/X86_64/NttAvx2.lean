@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunRdi1

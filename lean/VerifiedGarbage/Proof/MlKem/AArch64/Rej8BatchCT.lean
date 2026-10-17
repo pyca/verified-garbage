@@ -7,10 +7,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Vector rejection leaks only its public matrix candidates and cursors -/
 

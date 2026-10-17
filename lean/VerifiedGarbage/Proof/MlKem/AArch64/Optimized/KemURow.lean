@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReady
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemAdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # One fused ciphertext row using retained noise -/
 

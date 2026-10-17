@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrTab
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 

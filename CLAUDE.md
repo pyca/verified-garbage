@@ -270,7 +270,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Md5
-import all Init.Data.Array.Basic        -- proofs only: see below
 
 /-! # What the file is -/
 
@@ -294,12 +293,14 @@ namespace VG.Proof.Md5.X86_64
   `run_cmd`, `materialize_*`, `taint_decide`, `taint_summary`) also has a
   `meta import` of each of its imports, so that what it evaluates is
   available to the compiler.
-* A proof (under `Proof/`, not the framework) has `import all` of the core
-  modules whose definitions proofs evaluate (`decide`, `rfl`, the kernel)
-  but core does not expose to modules: `Init.Data.Array.Basic`,
-  `Init.Data.Array.DecidableEq`, `Init.Data.Nat.Bitwise.Basic` and
-  `Init.Data.Vector.Basic`, and `Init.Data.Nat.Power2.Basic` if it unfolds
-  `Nat.isPowerOfTwo`.
+* Never `import all` a core module, but two, each only in a proof that
+  needs it: `Init.Data.Nat.Bitwise.Basic` when the kernel evaluates `Nat`'s
+  bitwise operations (bit vectors' `0#8`, `Mem.read`'s equations, a
+  `taint_decide` over them) and fails with an "application type mismatch"
+  or a failed `rfl` without it; `Init.Data.Nat.Power2.Basic` when the proof
+  unfolds `Nat.isPowerOfTwo`. The kernel evaluates core's arrays and
+  vectors without `import all`, which makes a module up to a quarter slower
+  to build (`ci/check_lean_speed.py` checks it).
 * The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
   `#assert_spec_origin`) run only in files that are not modules (the
   emitter's drivers, `Artifacts.lean`, `VerifiedGarbageTest/`), and refuse
@@ -515,6 +516,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower.
+* **Concrete data under `rfl`:** never close a goal holding a large concrete
+  value (a key schedule read from memory, a table) by `rfl`, `decide` or
+  `change`, nor split a case on an index (`rcases … with rfl | rfl`) in a
+  context that holds one: the kernel may evaluate the value to compare the
+  two sides (Blowfish's `step_run`: a minute in the kernel, after an
+  unrelated upgrade of Lean). Prove the step once with the value a
+  variable, and apply it (`fAcc_step`, `Proof/Blowfish/F.lean`), or
+  `generalize` the value before `rfl`.
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
@@ -607,9 +616,17 @@ linters, 5–8% of the build: never turn them back on in a module), but not
 its profiler:
 
 ```sh
+lake setup-file --log-level=warning VerifiedGarbage/Proof/….lean > .lake/setup.json
 opts=$(grep -oE "^weak\.[A-Za-z_.]+ = (true|false)" lakefile.toml | sed -E 's/ = /=/; s/^/-D/' | tr '\n' ' ')
-perf stat -e instructions:u -x, lake env lean $opts VerifiedGarbage/Proof/….lean
+perf stat -e instructions:u -x, lake env lean --setup .lake/setup.json $opts -Dprofiler=false VerifiedGarbage/Proof/….lean
+perf stat -e instructions:u -x, lake env true   # Lake's own startup: subtract it
 ```
+
+`--setup` loads the precompiled libraries (`Native*` in the lakefile) as
+`lake build` does; without it the interpreter runs their tactics, many
+times slower. The setup file serves edited copies of the module too.
+`lake env` starts Lake for every command (about 3.5e9 instructions), which
+a build does once: subtract it before quoting a relative change.
 
 `set_option diagnostics true in` before a slow theorem lists the
 definitions unfolded while elaborating it, which finds failing unfoldings.

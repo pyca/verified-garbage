@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightColumns
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call

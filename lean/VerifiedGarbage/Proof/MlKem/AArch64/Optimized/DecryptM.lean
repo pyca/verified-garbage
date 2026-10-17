@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptReadonlyTail
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptReadonlyU
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete decryption using a single fused secret-vector dot product -/
 

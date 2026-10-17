@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: its code without the arithmetic, as literals

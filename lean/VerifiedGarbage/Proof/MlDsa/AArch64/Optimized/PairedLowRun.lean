@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 /-! ## `PairedLowStep` -/

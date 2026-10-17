@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 

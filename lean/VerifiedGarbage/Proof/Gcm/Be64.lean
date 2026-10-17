@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Gcm.Bits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # GCM: the lengths block from byte-reversed words

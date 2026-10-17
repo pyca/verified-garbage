@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall

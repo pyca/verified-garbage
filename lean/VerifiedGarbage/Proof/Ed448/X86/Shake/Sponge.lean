@@ -9,12 +9,9 @@ import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Impl.Ed448.X86.Shake
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MdStream.Spec
+import all Init.Data.Nat.Bitwise.Basic
 
 /-!
 # Ed448 on x86 (32-bit): the calls of the sponge functions

@@ -18,10 +18,6 @@ import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: calling the primitives

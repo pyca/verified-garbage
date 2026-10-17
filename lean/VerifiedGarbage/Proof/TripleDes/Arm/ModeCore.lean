@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 import VerifiedGarbage.Proof.TripleDes.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.SboxSpec

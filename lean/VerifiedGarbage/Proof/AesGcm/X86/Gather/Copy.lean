@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 
 /-!

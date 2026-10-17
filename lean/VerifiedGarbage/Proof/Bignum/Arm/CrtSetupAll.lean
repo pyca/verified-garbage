@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLeavePrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete CRT workspace initialization preserves all three layouts -/
 

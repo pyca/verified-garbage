@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: constant time

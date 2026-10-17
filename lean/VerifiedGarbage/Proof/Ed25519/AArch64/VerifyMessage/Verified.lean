@@ -14,10 +14,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Framework.KernelRfl

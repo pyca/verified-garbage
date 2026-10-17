@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
 import VerifiedGarbage.Proof.P256.Order
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified

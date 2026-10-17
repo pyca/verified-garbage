@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 

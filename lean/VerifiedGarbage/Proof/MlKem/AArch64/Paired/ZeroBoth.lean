@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Finalize both bounded matrix samples, retaining zero-filled failure outputs -/
 @[expose] public section

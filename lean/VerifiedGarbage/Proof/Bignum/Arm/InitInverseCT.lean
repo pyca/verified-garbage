@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Inverse initialization uses only public memory addresses -/
 

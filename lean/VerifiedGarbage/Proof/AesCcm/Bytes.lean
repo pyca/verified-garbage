@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.AesCcm.Mac
 public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM: the bytes of a buffer after writes

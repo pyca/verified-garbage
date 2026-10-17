@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Ed25519.WindowNibble
 import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!

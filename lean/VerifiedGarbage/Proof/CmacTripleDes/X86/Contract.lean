@@ -4,10 +4,6 @@ import VerifiedGarbage.Impl.CmacTripleDes.X86
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86: the contracts the proofs are written against

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp3
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the masks of the shift and the word `2^(t mod 64)`
 

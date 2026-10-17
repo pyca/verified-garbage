@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
 public import VerifiedGarbage.Proof.Framework.CallLay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public precomputation arguments saved in the outer frame -/
 

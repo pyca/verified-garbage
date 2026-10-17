@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.RowStep
 meta import VerifiedGarbage.Impl.Bignum.Arm.RowStep
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # ARMv7 Montgomery row-step leakage: only the two pointers are public -/
 

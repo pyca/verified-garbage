@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpPhaseCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The narrow exponentiation hides the factor, the reduced input and the exponent -/
 

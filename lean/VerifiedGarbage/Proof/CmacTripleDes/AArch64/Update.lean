@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.Cmac.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_update`

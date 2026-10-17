@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMont3
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_recover_primes` on ARMv7: Montgomery multiplication's working space set up
 

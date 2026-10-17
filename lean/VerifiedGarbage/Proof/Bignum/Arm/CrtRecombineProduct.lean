@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishRecombine
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadAfterProduct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Multiplying h and q establishes the final CRT addition precondition -/
 

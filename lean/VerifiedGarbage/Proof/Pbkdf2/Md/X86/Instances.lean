@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 public import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `init` and `finalize` and PBKDF2's `iterate` on x86 (32-bit): the instances

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap

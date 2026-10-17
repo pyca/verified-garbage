@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvSt
 public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_recover_primes` on ARMv7: more steps of the candidates as pieces
 

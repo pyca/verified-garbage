@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.X86.Lookup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! # RC4 on x86 (32-bit): our caller's registers, saved in `scratch` -/

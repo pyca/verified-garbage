@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Impl.Mont.Mod
 

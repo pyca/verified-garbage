@@ -4,10 +4,6 @@ import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: the contract the proof is written against

@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyOut
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.PairTail
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Paired PRF call, both polynomial outputs and register restoration -/
 @[expose] public section

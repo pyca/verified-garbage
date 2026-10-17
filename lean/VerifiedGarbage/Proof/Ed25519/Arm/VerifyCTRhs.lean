@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint

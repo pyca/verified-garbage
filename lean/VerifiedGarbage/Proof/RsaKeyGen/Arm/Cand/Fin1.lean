@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint5
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.Store64
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the results (`finNone_vp`, `finUsed_vp`, `finPrime_vp`)
 

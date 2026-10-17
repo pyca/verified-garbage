@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpRoundCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpBits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Eight private exponent-bit steps have a secret-independent trace -/
 

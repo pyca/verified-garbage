@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Export the wide reconstruction using the original output buffer and acceptance bit -/
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductGeometry
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProduct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Comparison-buffer bounds for private RSA factor validation -/
 

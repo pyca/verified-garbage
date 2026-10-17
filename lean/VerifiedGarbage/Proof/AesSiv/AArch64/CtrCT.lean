@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: CTR is constant time

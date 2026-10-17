@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Spec.Aes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # OCB: blocks in memory as AES states

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The secret remainder comparison only controls masked selection -/
 

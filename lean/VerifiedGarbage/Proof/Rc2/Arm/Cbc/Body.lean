@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.Arm.Block
 public import VerifiedGarbage.Impl.Rc2.Arm.Cbc
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 

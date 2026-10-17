@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Impl.Argon2.Arm.HPrime
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

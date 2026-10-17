@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the call of the whole blocks

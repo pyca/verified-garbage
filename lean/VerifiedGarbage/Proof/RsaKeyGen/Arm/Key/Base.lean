@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: the public parameters and the stages
 

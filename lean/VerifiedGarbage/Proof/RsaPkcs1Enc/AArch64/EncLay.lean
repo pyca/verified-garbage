@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bswap

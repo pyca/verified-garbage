@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified

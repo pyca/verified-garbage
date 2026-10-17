@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # VAES: decrypting the lanes of the block registers

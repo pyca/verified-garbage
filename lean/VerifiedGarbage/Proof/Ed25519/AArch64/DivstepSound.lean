@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Ends
 public import VerifiedGarbage.Proof.Divstep.Iter
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvPacked
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 and X25519 on AArch64: the inversion by divsteps is sound modulo `p = 2²⁵⁵ - 19`

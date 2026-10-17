@@ -66,10 +66,6 @@ import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv

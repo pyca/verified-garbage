@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Init
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Init
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Initialization only exposes its public pointer, bit count and u32 generator -/
 

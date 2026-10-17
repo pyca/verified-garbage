@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 public import VerifiedGarbage.Spec.X25519.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.Words
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Camellia.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's cipher for the modes, on any target

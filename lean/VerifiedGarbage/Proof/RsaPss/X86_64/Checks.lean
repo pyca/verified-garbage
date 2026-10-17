@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.RsaPss.X86_64
 meta import VerifiedGarbage.Impl.RsaPss.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: the taint checks of each hash function

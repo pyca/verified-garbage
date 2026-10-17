@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: GHASH over blocks of the state, `T` or the data

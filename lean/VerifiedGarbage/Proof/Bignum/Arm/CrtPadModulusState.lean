@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportPadded
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Preserve the modulus workspace while clearing its extended comparison buffer -/
 

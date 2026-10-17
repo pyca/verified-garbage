@@ -16,10 +16,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame

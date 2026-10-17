@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 public import VerifiedGarbage.Proof.AesOfb.AArch64.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OFB on AArch64: `Verified`

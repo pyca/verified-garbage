@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 public import VerifiedGarbage.Proof.Cmac.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.SboxSpec

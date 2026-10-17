@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractInput
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFn
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Checked private RSA implements the shared contract and its permitted leakage -/
 

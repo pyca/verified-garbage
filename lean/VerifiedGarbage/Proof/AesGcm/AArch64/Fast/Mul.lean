@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: GHASH in registers
@@ -95,8 +91,7 @@ theorem consts_sp (s : State) :
   simp only [Impl.Gcm.AArch64.Pmull.consts, tReg, sReg, runBlock_cons, runStep_some, runBlock_nil,
     exec_movz_x (show 16 * 3 < 64 by decide), exec_movz_x (show 16 * 0 < 64 by decide),
     exec_dup_d2, exec_ins_d2 (show 0 < 2 by decide), exec_ins_d2 (show 1 < 2 by decide),
-    Option.some.injEq, exists_eq_left', sp_setV]
-  rfl
+    Option.some.injEq, exists_eq_left', sp_setV, sp_write]
 
 /-- `H'` and its halves swapped, from the hash subkey `H` loaded from `x0`. -/
 theorem key_ok {H : Block} {s : State} (hin : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 0) 16)

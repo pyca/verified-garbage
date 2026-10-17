@@ -9,10 +9,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMiddle
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal

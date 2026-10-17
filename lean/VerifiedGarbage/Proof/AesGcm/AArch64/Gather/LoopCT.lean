@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Gathering a list of slices, AArch64: constant time

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

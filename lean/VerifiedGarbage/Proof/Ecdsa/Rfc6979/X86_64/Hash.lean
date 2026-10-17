@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc

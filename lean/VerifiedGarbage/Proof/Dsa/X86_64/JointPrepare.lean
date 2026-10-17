@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
 public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 
 /-! # Loading and preparing both bases for joint DSA exponentiation -/

@@ -8,10 +8,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith

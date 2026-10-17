@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Preserve coefficient preconditions through workspace selection and residue import -/
 

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.OneShot
 meta import VerifiedGarbage.Proof.MdStream.X86_64.OneShot
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # One-shot Merkle–Damgård digests on x86-64: constant time

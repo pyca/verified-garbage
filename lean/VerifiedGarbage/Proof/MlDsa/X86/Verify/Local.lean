@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the code between the calls

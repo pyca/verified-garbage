@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Inv
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
 public import VerifiedGarbage.Proof.Rsa.Arm.RvProd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # An RSA key on ARMv7: the numbers the body computes
 

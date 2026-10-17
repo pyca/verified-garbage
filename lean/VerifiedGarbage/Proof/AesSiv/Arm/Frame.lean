@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7, with the working space on the stack

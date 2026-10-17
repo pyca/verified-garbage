@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
 public import VerifiedGarbage.Proof.Mont.AArch64.Csub
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Omega

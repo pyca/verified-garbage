@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 meta import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 meta import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant-time CBC callers -/
 

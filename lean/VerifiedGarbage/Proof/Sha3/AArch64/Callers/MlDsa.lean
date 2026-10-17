@@ -16,10 +16,6 @@ import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Constant time of ML-DSA's calls of the sponge, for any Keccak backend

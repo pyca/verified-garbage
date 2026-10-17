@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpBytesCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete RSA exponentiation reveals no input-dependent trace -/
 

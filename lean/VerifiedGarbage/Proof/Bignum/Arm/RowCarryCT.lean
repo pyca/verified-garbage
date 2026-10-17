@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.RowCarry
 meta import VerifiedGarbage.Impl.Bignum.Arm.RowCarry
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # ARMv7 Montgomery carry propagation: only the top-word pointer is public -/
 

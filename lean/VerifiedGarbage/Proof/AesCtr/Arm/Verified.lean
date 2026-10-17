@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.AesCbc.Arm.Verified
 public import VerifiedGarbage.Proof.AesCtr.Arm.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on ARMv7: `Verified`

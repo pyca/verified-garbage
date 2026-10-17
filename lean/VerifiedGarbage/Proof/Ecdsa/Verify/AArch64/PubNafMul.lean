@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!

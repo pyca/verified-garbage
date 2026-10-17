@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Load1
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Inv
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: too close to `p` (`closeCheck_vp`)
 

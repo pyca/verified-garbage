@@ -6,10 +6,6 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Minus
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Spec.Dsa.SignVerify

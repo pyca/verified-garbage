@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckRead
 public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCalc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # ARMv7 modulus validation is exactly the shared RSA validity predicate -/
 

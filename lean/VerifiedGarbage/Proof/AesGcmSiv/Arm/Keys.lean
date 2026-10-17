@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
 public import VerifiedGarbage.Proof.GcmSiv.Words32
 import VerifiedGarbage.Proof.Gcm.Arm.Ghash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: the encryption key's schedule and GHASH's key

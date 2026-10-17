@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.X86.Syms

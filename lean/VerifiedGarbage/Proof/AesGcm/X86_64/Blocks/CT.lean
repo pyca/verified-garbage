@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase

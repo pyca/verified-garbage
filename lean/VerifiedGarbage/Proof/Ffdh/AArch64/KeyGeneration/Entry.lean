@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key-generation controller's entry (AArch64)

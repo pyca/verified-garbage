@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Encode

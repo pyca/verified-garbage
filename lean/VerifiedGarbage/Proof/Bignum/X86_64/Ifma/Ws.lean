@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 public import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.Amm52
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym

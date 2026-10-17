@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Spec.Dsa
 

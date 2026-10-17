@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlDsa.DecideAt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

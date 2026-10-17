@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInputCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBodyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProductCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The private RSA validation stages hide all key and ciphertext bytes -/
 

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli

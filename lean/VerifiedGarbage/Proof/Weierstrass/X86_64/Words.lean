@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Mont.X86_64.Csub
 public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 public import VerifiedGarbage.Proof.Weierstrass.Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: numbers as words, bits and bytes

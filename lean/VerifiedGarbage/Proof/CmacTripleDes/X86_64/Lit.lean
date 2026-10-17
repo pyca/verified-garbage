@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.X86_64.KeysLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86_64.KeysLit
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # TDEA-CMAC's x86-64 code as literals, for kernel-evaluated checks -/
 

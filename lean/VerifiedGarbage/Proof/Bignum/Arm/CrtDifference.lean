@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtDifference
 public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Exact residue subtraction for CRT recombination -/
 

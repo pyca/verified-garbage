@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Final
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.Arm.Main
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 
 /-!

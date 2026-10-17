@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Rotation
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Store
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

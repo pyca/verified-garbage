@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
 import VerifiedGarbage.Proof.Cmac.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: copying a slice

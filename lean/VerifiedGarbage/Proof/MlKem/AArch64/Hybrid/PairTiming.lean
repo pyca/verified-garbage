@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Pair
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Rej8
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # A hashing pair leaks only public pointers and the public seed

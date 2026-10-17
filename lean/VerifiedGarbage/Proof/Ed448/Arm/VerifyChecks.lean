@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
 import VerifiedGarbage.Proof.X448.Arm.Freeze
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Range
 

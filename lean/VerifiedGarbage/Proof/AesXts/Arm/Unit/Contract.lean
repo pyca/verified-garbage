@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.AesXts.ArmUnit
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES of data units on ARMv7: the contract the proofs are written against

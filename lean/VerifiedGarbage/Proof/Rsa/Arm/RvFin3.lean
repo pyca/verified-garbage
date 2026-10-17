@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin2
 public import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `q = n / p` (`div_vp`) -/
 

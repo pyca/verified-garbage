@@ -6,10 +6,6 @@ public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The AdvSIMD S-box circuits' and transposition's code, and the circuits' output registers, as literals -/
 

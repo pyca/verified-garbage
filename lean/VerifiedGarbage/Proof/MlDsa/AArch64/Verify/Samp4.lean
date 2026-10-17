@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4

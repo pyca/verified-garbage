@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the AVX2 accumulator added to a polynomial

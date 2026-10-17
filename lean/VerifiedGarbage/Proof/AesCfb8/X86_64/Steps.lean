@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb8.X86_64.Loop
 import VerifiedGarbage.Proof.AesCbc.X86_64.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on x86-64: the code between the calls

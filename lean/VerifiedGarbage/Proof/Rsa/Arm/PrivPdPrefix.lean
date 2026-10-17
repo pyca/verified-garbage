@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveResult
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyRetained
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyIncoming
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivStoreTemporary
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Prepare all six stack arguments for the public re-exponentiation check -/
 

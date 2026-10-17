@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.P384.Prime
 public import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Weierstrass.Group
 public import VerifiedGarbage.Proof.Weierstrass.Cubic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-384 is a curve the proofs apply to

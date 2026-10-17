@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Streaming TDEA-CMAC on x86-64: the contracts the proofs are written against

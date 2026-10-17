@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.Spec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512: `Σ`, `σ` and `Maj` as code without rotations computes them

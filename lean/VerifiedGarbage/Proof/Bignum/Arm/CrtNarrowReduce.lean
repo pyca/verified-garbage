@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Reduce the input modulo a prepared factor at the modulus width
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32

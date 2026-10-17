@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 import VerifiedGarbage.Proof.Framework.X86_64.Call

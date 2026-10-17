@@ -10,10 +10,6 @@ public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 meta import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the code as literals

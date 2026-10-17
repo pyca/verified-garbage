@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCallMont

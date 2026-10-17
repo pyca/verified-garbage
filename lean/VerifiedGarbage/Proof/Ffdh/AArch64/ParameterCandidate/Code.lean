@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Main
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86-64: the hash of the seed

@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 

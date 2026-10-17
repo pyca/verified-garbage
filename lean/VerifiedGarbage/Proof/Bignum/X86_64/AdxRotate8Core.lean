@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Eight rotating columns compute an exact multiply-add and one-word shift. -/

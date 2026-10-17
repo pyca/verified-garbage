@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Spec.Sha3.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-3 on ARMv7: the shared contracts

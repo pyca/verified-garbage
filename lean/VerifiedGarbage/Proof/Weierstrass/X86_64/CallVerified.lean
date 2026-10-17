@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.EcKey.Generic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Verified elliptic-curve functions that call the field products

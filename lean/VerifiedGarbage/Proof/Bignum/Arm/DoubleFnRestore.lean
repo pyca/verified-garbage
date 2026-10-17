@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Compose modular doubling inside the outer RSA stack frame -/
 

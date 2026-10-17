@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
 public import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
 import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 public import VerifiedGarbage.Proof.X448.AArch64.Counters

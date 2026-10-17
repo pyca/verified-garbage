@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Tab
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: trial division by one prime (`prime_ok`)
 

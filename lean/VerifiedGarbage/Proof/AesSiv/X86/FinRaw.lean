@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 public import VerifiedGarbage.Proof.AesSiv.X86.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacAes.X86.Finalize
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.SboxSpec

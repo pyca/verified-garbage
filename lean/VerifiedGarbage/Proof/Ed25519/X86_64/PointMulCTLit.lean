@@ -12,10 +12,6 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The point arithmetic and the inversions, for each field arithmetic, as literals
 (`materialize_value`, `materialize_code`), which the literals of the code

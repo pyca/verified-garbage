@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.LitShare

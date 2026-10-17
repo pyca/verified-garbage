@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.EcdhJac.First
 public import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming

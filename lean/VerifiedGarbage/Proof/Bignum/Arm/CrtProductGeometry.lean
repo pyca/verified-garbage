@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Derive exact wide-product inputs from the live CRT workspace layouts -/
 

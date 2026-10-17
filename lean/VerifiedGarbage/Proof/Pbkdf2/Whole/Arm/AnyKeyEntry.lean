@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

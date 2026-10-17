@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckState
 public import VerifiedGarbage.Proof.Bignum.Arm.PdOdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Check the supplied R² range and modulus parity, retaining the public conjunction -/
 

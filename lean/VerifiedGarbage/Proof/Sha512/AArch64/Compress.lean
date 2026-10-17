@@ -26,10 +26,6 @@ import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Sha512.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on AArch64: the message schedule and the rounds

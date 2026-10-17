@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce

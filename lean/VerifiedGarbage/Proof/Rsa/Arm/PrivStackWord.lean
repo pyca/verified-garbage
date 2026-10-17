@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Copy an incoming stack argument into the outgoing call area -/
 

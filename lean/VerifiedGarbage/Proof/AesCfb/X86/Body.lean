@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.AesOfb.X86.Body
 meta import VerifiedGarbage.Proof.AesOfb.X86.Body
 public import VerifiedGarbage.Impl.AesCfb.X86
 meta import VerifiedGarbage.Impl.AesCfb.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 

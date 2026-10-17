@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Establish arithmetic readiness without recomputing the packed R² -/
 

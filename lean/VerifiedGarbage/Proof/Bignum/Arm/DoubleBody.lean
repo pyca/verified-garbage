@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCore
 public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete modular doubling from pointers and a packed-word count -/
 

@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the public parameters and the stages
 

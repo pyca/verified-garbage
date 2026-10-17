@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomBorrow
 public import VerifiedGarbage.Proof.Dsa.RandomRange
 public import VerifiedGarbage.Proof.Dsa.AArch64.CopyMasked
 public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Correctness of the sampler's right-to-left range check. -/

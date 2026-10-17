@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Base
 public import VerifiedGarbage.Proof.RsaKeyGen.Generate
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 public import VerifiedGarbage.Proof.Rsa.Octets
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A candidate on ARMv7: the numbers, as the specification has them
 

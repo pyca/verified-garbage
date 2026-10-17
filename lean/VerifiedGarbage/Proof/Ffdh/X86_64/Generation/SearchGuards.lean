@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public native loop guards and normalized u32 candidate statuses -/

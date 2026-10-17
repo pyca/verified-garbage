@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.LoadBE
 meta import VerifiedGarbage.Impl.Bignum.Arm.LoadBE
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Zero-extended integer import reveals only pointers and lengths -/
 

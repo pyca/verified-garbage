@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 public import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.MdStream.Spec

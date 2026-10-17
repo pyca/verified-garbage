@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Scalars
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on 32-bit ARM: `[u]G + [v]Q`

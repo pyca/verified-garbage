@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms

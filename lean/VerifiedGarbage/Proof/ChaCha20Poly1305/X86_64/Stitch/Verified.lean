@@ -9,10 +9,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `bulk` is constant time

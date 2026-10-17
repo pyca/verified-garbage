@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stage
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The saved bookkeeping corresponds to the caller's original header -/
 

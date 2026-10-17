@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.AesSiv.X86.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesSiv.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: where everything is

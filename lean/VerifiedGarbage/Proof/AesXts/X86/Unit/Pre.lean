@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES of data units on x86: the arguments of each call

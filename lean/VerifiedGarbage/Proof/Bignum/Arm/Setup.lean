@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.SetBases
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Establish the shared RSA workspace contract on ARMv7 -/
 

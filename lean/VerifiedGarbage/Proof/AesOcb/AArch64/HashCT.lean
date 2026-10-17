@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `HASH` is constant time

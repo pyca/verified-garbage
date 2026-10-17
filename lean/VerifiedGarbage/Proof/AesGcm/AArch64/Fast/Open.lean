@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.Cmac.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `open`'s path for TLS records

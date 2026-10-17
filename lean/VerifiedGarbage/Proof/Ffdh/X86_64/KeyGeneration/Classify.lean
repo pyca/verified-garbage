@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Rejects
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptStep
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # After an attempt: the key, or one fewer scalar or key -/

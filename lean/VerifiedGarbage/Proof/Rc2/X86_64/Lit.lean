@@ -8,10 +8,6 @@ public import VerifiedGarbage.Impl.Rc2.X86_64.Block
 meta import VerifiedGarbage.Impl.Rc2.X86_64.Block
 public import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
 meta import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Literal RC2 programs for kernel-evaluated checks -/
 

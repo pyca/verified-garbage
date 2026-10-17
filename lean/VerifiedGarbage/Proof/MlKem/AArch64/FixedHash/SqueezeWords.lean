@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Copy a bounded sequence of state words without touching the source -/
 @[expose] public section

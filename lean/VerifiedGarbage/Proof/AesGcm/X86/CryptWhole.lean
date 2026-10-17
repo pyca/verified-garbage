@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
 meta import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: whole blocks of the text (`cryptWhole`)

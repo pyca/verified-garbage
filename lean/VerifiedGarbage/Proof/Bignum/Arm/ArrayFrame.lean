@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Translate native-array byte frames to the shared RSA workspace -/
 

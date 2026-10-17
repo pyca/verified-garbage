@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivCallsCT
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivTailCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The full private body has the same trace for independent secret inputs -/
 

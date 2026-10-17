@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideScalars
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Load the public pointers and width for final CRT addition -/
 

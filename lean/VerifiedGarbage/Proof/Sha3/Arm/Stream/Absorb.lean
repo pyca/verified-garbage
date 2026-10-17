@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Arm.Permute
 meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arith
+import all Init.Data.Nat.Bitwise.Basic
 
 /-!
 # The SHA-3 sponge on ARMv7: `absorb`

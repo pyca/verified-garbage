@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPairTail
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Complete paired-noise operation -/
 @[expose] public section

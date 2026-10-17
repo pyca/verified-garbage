@@ -4,10 +4,6 @@ public import Mathlib.Tactic.Ring
 public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.Horner
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305: Horner's rule in two lanes of two blocks

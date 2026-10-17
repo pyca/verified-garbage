@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreOps
 public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 public import VerifiedGarbage.Proof.Dsa.SameTrace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

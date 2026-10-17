@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Seed.X86.Key
 meta import VerifiedGarbage.Proof.Seed.X86.Key
 public import VerifiedGarbage.Proof.Seed.X86.Verified
 meta import VerifiedGarbage.Proof.Seed.X86.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The SEED key schedule on x86 (32-bit) meets its contracts

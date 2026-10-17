@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
 import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` on registers, the words of its layers

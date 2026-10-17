@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Optimized decapsulation satisfies the original outcome and ABI -/
 @[expose] public section

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: calling the primitives on the buffers of a `Site`

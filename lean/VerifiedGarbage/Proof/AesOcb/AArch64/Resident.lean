@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Vector
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Register-resident offsets and checksums for payload batches. -/
 

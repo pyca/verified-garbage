@@ -5,10 +5,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant-time scalar wrappers around the public rejection loop -/
 

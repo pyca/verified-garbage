@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Mont.Arm.Context
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Proof.Framework.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: constant time

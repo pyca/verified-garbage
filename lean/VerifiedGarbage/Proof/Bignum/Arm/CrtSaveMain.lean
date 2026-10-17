@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportModulus
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutExternal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Reuse the imported modulus pointer's stack slot for the main workspace -/
 

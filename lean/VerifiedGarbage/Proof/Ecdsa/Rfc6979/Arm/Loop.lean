@@ -3,10 +3,6 @@ module
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
 import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Spec.Rc2

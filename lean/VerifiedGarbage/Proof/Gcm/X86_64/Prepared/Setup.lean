@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! # Preparing the AVX-512 loop state by loading encoded powers -/

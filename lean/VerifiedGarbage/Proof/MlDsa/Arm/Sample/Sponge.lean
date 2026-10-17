@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 meta import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the sampling functions' SHAKE

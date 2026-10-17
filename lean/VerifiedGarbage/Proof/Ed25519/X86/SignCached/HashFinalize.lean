@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.FinalizeArgs`. -/

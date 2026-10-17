@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 

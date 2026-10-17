@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedKMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
 
 /-! # Correctness of the RSA candidate calling shared Miller–Rabin -/

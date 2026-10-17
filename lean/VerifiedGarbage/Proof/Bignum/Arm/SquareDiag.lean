@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareDouble
 public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 public import VerifiedGarbage.Proof.Bignum.Arm.Mac
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The squares of the operand's words added to the doubled cross products -/
 

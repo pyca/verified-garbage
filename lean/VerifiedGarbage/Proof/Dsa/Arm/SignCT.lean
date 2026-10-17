@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

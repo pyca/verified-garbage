@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductControl
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Factor-product setup hides both factors while exposing only public buffer geometry -/
 

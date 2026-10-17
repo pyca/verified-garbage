@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 

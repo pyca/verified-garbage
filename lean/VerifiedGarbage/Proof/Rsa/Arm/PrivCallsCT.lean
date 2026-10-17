@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCallPublic
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivStages
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Each nested call leaks only the shared public key and layout -/
 

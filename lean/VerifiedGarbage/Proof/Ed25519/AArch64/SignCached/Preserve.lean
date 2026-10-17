@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Impl.Mont.Mod

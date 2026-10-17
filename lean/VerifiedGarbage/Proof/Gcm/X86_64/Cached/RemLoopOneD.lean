@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
 import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 
