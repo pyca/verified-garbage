@@ -181,7 +181,7 @@ theorem row_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
   · simpa only [show 8*(k+1)=8*k+8 by omega] using it
 
 theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : StartGood ps L s) :
-    WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) s
+    WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax,.align 6]) s
       (fun t => 0<L.n-1 ∧ LoopStateQ ps L 0 t) := by
   obtain ⟨h1,⟨mi,hg⟩,hv⟩ := h
   have hZ := L.hZ
