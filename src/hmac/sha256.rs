@@ -1,11 +1,12 @@
 //! HMAC-SHA-256: `vg_hmac_sha256_init`, `vg_sha256_update` and
-//! `vg_hmac_sha256_finalize` (contracts `VG.Spec.Hmac.Instance.initContract`
-//! of `VG.Spec.Hmac.sha256I`, `VG.Spec.Sha256.updateContract` and
-//! `VG.Spec.Hmac.Instance.finalizeContract`) compute `H((K₀ ⊕ opad) ‖ H((K₀ ⊕
-//! ipad) ‖ text))` (`VG.Spec.Hmac.hmacBlockKey`), keeping the two SHA-256
-//! streaming states. `init` and `finalize` are the one HMAC implementation
-//! for every Merkle–Damgård hash function, calling SHA-256's verified
-//! functions.
+//! `vg_hmac_sha256_finalize` (contracts
+//! `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha256I`,
+//! `VG.Spec.Sha256.updateContract` and
+//! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
+//! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
+//! keeping the two SHA-256 streaming states. `init` and `finalize` are the one
+//! HMAC implementation for every Merkle–Damgård hash function, calling
+//! SHA-256's verified functions.
 //!
 //! They follow the implementation of SHA-256 that `Sha256` runs on this CPU:
 //! on x86-64 and x86, e.g. `vg_hmac_sha256_init_shani` and

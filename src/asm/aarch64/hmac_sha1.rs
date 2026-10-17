@@ -2,22 +2,26 @@
 //! Verified `hmac_sha1` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Starts an HMAC-SHA-1 computation with a key of at most 64 bytes: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
+/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
 /// * `outer` must be valid for reads and writes of 84 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be at most 64.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #448
+        r"movz x10, #64, lsl #0
+movz x12, #0, lsl #0
+subs x11, x10, x3
+csel x9, x12, x3, hs
+cbnz x9, 20f
+sub sp, sp, #448
 add x4, sp, #0
 str x19, [x4, #160]
 str x20, [x4, #168]
@@ -55,8 +59,8 @@ str w14, [x19, #72]
 str w14, [x19, #76]
 str w14, [x19, #80]
 movz x10, #0, lsl #0
-cbz x24, 20f
-22:
+cbz x24, 22f
+24:
 add x13, x22, x10
 ldrb w9, [x13, #0]
 eor x9, x9, x14
@@ -64,10 +68,10 @@ add x12, x19, x10
 strb w9, [x12, #20]
 add x10, x10, #1
 sub x11, x24, x10
-cbnz x11, 22b
-b 21f
-20:
-21:
+cbnz x11, 24b
+b 23f
+22:
+23:
 movz w15, #27242, lsl #0
 movk w15, #27242, lsl #16
 ldr w9, [x19, #20]
@@ -137,10 +141,213 @@ ldr x24, [x23, #192]
 ldr x30, [x23, #200]
 ldr x23, [x23, #208]
 add sp, sp, #448
+21:
 ret
+20:
+sub sp, sp, #1120
+add x4, sp, #0
+str x19, [x4, #448]
+str x20, [x4, #456]
+str x21, [x4, #464]
+str x22, [x4, #472]
+str x24, [x4, #480]
+str x30, [x4, #488]
+str x23, [x4, #496]
+add x23, x4, #0
+add x19, x2, #0
+add x20, x3, #0
+add x21, x0, #0
+add x22, x1, #0
+lsr x9, x20, #6
+cbz x9, 25f
+sub x9, x20, #64
+cbz x9, 27f
+add x0, x23, #780
+bl {vg_sha1_init}
+add x0, x23, #780
+movz x1, #0, lsl #0
+add x2, x19, #0
+add x3, x20, #0
+add x4, x23, #0
+bl {vg_sha1_update_scratch}
+add x0, x23, #780
+add x1, x20, #0
+add x2, x23, #904
+add x3, x23, #0
+bl {vg_sha1_finalize_scratch}
+add x2, x23, #904
+movz x3, #20, lsl #0
+b 28f
+27:
+add x2, x19, #0
+add x3, x20, #0
+28:
+b 26f
+25:
+add x2, x19, #0
+add x3, x20, #0
+26:
+add x0, x21, #0
+add x1, x22, #0
+add x4, x23, #0
+bl {vg_hmac_sha1_init_scratch}
+ldr x19, [x23, #448]
+ldr x20, [x23, #456]
+ldr x21, [x23, #464]
+ldr x22, [x23, #472]
+ldr x24, [x23, #480]
+ldr x30, [x23, #488]
+ldr x23, [x23, #496]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+str x17, [x16, #1024]
+str x17, [x16, #1032]
+str x17, [x16, #1040]
+str x17, [x16, #1048]
+str x17, [x16, #1056]
+str x17, [x16, #1064]
+str x17, [x16, #1072]
+str x17, [x16, #1080]
+str x17, [x16, #1088]
+str x17, [x16, #1096]
+str x17, [x16, #1104]
+str x17, [x16, #1112]
+add sp, sp, #1120
+b 21b
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
+        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch,
     )
 }
 
@@ -505,23 +712,27 @@ ret
 /// The CPU features `vg_hmac_sha1_init_sha2` requires (`Artifact.features`).
 pub(crate) const VG_HMAC_SHA1_INIT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
-/// Starts an HMAC-SHA-1 computation with a key of at most 64 bytes: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
+/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
 /// * `outer` must be valid for reads and writes of 84 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be at most 64.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".arch_extension sha2
+movz x10, #64, lsl #0
+movz x12, #0, lsl #0
+subs x11, x10, x3
+csel x9, x12, x3, hs
+cbnz x9, 20f
 sub sp, sp, #448
 add x4, sp, #0
 str x19, [x4, #160]
@@ -560,8 +771,8 @@ str w14, [x19, #72]
 str w14, [x19, #76]
 str w14, [x19, #80]
 movz x10, #0, lsl #0
-cbz x24, 20f
-22:
+cbz x24, 22f
+24:
 add x13, x22, x10
 ldrb w9, [x13, #0]
 eor x9, x9, x14
@@ -569,10 +780,10 @@ add x12, x19, x10
 strb w9, [x12, #20]
 add x10, x10, #1
 sub x11, x24, x10
-cbnz x11, 22b
-b 21f
-20:
-21:
+cbnz x11, 24b
+b 23f
+22:
+23:
 movz w15, #27242, lsl #0
 movk w15, #27242, lsl #16
 ldr w9, [x19, #20]
@@ -642,11 +853,214 @@ ldr x24, [x23, #192]
 ldr x30, [x23, #200]
 ldr x23, [x23, #208]
 add sp, sp, #448
+21:
 ret
+20:
+sub sp, sp, #1120
+add x4, sp, #0
+str x19, [x4, #448]
+str x20, [x4, #456]
+str x21, [x4, #464]
+str x22, [x4, #472]
+str x24, [x4, #480]
+str x30, [x4, #488]
+str x23, [x4, #496]
+add x23, x4, #0
+add x19, x2, #0
+add x20, x3, #0
+add x21, x0, #0
+add x22, x1, #0
+lsr x9, x20, #6
+cbz x9, 25f
+sub x9, x20, #64
+cbz x9, 27f
+add x0, x23, #780
+bl {vg_sha1_init}
+add x0, x23, #780
+movz x1, #0, lsl #0
+add x2, x19, #0
+add x3, x20, #0
+add x4, x23, #0
+bl {vg_sha1_update_scratch_sha2}
+add x0, x23, #780
+add x1, x20, #0
+add x2, x23, #904
+add x3, x23, #0
+bl {vg_sha1_finalize_scratch_sha2}
+add x2, x23, #904
+movz x3, #20, lsl #0
+b 28f
+27:
+add x2, x19, #0
+add x3, x20, #0
+28:
+b 26f
+25:
+add x2, x19, #0
+add x3, x20, #0
+26:
+add x0, x21, #0
+add x1, x22, #0
+add x4, x23, #0
+bl {vg_hmac_sha1_init_scratch_sha2}
+ldr x19, [x23, #448]
+ldr x20, [x23, #456]
+ldr x21, [x23, #464]
+ldr x22, [x23, #472]
+ldr x24, [x23, #480]
+ldr x30, [x23, #488]
+ldr x23, [x23, #496]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+str x17, [x16, #1024]
+str x17, [x16, #1032]
+str x17, [x16, #1040]
+str x17, [x16, #1048]
+str x17, [x16, #1056]
+str x17, [x16, #1064]
+str x17, [x16, #1072]
+str x17, [x16, #1080]
+str x17, [x16, #1088]
+str x17, [x16, #1096]
+str x17, [x16, #1104]
+str x17, [x16, #1112]
+add sp, sp, #1120
+b 21b
 .arch_extension nosha2
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
+        vg_hmac_sha1_init_scratch_sha2 = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_sha2,
     )
 }
 
