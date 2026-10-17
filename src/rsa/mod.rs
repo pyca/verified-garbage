@@ -360,8 +360,6 @@ pub(crate) mod tests {
     }
 
     /// `composite(32, false)` loaded, with `d = 1`, and its public key.
-    // Only the padding schemes' tests use it: ARMv7 has no padding schemes yet.
-    #[cfg(not(target_arch = "arm"))]
     pub(crate) fn composite_key() -> (PrivateKey, PublicKey) {
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         (

@@ -19,6 +19,7 @@ use verified_garbage::hashes::{
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa_pkcs1_sig;
 use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify};
 
 use super::harness::{self, Count, Expectation, Hex};
@@ -160,7 +161,9 @@ fn rsa_pss_test() {
 /// the hash value's length: the signature verifies with its salt length and
 /// with any, and not with another; and two signatures with random salts
 /// differ. Every size of key, even where the other RSA tests leave out
-/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`).
+/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`). Then PSS and
+/// PKCS #1 v1.5 verification and OAEP encryption, which lease the public
+/// key's buffer, alternated on threads sharing the key.
 #[test]
 fn rsa_pss_sign_test() {
     require_vectors!();
@@ -204,6 +207,73 @@ fn rsa_pss_sign_test() {
                 let b = sign(&private, &d, *h, *h, 16).unwrap();
                 assert_ne!(a, b, "{name} tcId {id}");
             }
+            // Signature verification and OAEP encryption lease the same key's
+            // buffer, with different workspace lengths. Alternate them, including
+            // rejected inputs, and share the key across concurrent callers.
+            let d = digest(Hash::Sha256, &group.tests[0].case.msg.0);
+            let sig = rsa_pkcs1_sig::sign(&private, &d, rsa_pkcs1_sig::Hash::Sha256).unwrap();
+            let pss = sign(&private, &d, Hash::Sha256, Hash::Sha256, 0).unwrap();
+            std::thread::scope(|scope| {
+                for _ in 0..4 {
+                    let (public, d, sig, pss) = (&public, &d, &sig, &pss);
+                    let private = &private;
+                    scope.spawn(move || {
+                        for _ in 0..4 {
+                            assert!(rsa_pkcs1_sig::verify(
+                                public,
+                                sig,
+                                d,
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                            assert!(!rsa_pkcs1_sig::verify(
+                                public,
+                                &sig[..sig.len() - 1],
+                                d,
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                            assert!(verify(
+                                public,
+                                pss,
+                                d,
+                                Hash::Sha256,
+                                Hash::Sha256,
+                                SaltLength::Len(0),
+                            ));
+                            assert!(!rsa_pkcs1_sig::verify(
+                                public,
+                                sig,
+                                &d[..d.len() - 1],
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                            let ciphertext = verified_garbage::rsa_oaep::encrypt(
+                                public,
+                                d,
+                                verified_garbage::rsa_oaep::Hash::Sha256,
+                                verified_garbage::rsa_oaep::Hash::Sha256,
+                                b"",
+                            )
+                            .unwrap();
+                            assert_eq!(
+                                verified_garbage::rsa_oaep::decrypt(
+                                    private,
+                                    &ciphertext,
+                                    verified_garbage::rsa_oaep::Hash::Sha256,
+                                    verified_garbage::rsa_oaep::Hash::Sha256,
+                                    b"",
+                                )
+                                .unwrap(),
+                                *d,
+                            );
+                            assert!(rsa_pkcs1_sig::verify(
+                                public,
+                                sig,
+                                d,
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                        }
+                    });
+                }
+            });
         });
     }
 }

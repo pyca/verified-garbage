@@ -10,7 +10,7 @@
 //! root of its encoding.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -262,60 +262,6 @@ fn rsa_pkcs1_sign_test() {
                 assert!(check(&name, id, &public, *h, &d, &sig, Expectation::Valid));
                 assert_eq!(sign(&private, &d, *h), Ok(sig), "{name} tcId {id}");
             }
-            // Signature verification and OAEP encryption lease the same key's
-            // buffer, with different workspace lengths. Alternate them, including
-            // rejected inputs, and share the key across concurrent callers.
-            let d = digest(Hash::Sha256, &group.tests[0].case.msg.0);
-            let sig = sign(&private, &d, Hash::Sha256).unwrap();
-            let pss = verified_garbage::rsa_pss::sign(
-                &private,
-                &d,
-                verified_garbage::rsa_pss::Hash::Sha256,
-                verified_garbage::rsa_pss::Hash::Sha256,
-                0,
-            )
-            .unwrap();
-            std::thread::scope(|scope| {
-                for _ in 0..4 {
-                    let (public, d, sig, pss) = (&public, &d, &sig, &pss);
-                    let private = &private;
-                    scope.spawn(move || {
-                        for _ in 0..4 {
-                            assert!(verify(public, sig, d, Hash::Sha256));
-                            assert!(!verify(public, &sig[..sig.len() - 1], d, Hash::Sha256));
-                            assert!(verified_garbage::rsa_pss::verify(
-                                public,
-                                pss,
-                                d,
-                                verified_garbage::rsa_pss::Hash::Sha256,
-                                verified_garbage::rsa_pss::Hash::Sha256,
-                                verified_garbage::rsa_pss::SaltLength::Len(0),
-                            ));
-                            assert!(!verify(public, sig, &d[..d.len() - 1], Hash::Sha256));
-                            let ciphertext = verified_garbage::rsa_oaep::encrypt(
-                                public,
-                                d,
-                                verified_garbage::rsa_oaep::Hash::Sha256,
-                                verified_garbage::rsa_oaep::Hash::Sha256,
-                                b"",
-                            )
-                            .unwrap();
-                            assert_eq!(
-                                verified_garbage::rsa_oaep::decrypt(
-                                    private,
-                                    &ciphertext,
-                                    verified_garbage::rsa_oaep::Hash::Sha256,
-                                    verified_garbage::rsa_oaep::Hash::Sha256,
-                                    b"",
-                                )
-                                .unwrap(),
-                                *d,
-                            );
-                            assert!(verify(public, sig, d, Hash::Sha256));
-                        }
-                    });
-                }
-            });
             for h in HASHES {
                 let d = digest(h, b"");
                 let sig = sign(&private, &d, h).unwrap();

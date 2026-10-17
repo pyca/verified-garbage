@@ -14,7 +14,7 @@ pub const USES: &[&str] = &["rsa_pkcs1_sig", "rsa"];
 /// through `KeyPair::sign_digest` and `ParsedPublicKey::verify_digest_sig`,
 /// which set up an `EVP_PKEY_CTX` in every operation, from a key loaded from
 /// its components). aws-lc-rs has no recovery of the hash value.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -197,5 +197,5 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
 pub fn bench(_: &mut Criterion) {}
