@@ -65,6 +65,8 @@ abbrev rE (P : RP) : Region := ⟨State.addr P.eP, P.el⟩
 abbrev rD (P : RP) : Region := ⟨State.addr P.dP, P.dl⟩
 /-- The frame and the stack arguments. -/
 abbrev rF (P : RP) : Region := ⟨State.addr P.sp, 88⟩
+/-- The frame alone. -/
+abbrev rFr (P : RP) : Region := ⟨State.addr P.sp, 56⟩
 /-- Frame word 0. -/
 abbrev r0F (P : RP) : Region := ⟨State.addr P.sp, 4⟩
 
@@ -116,9 +118,9 @@ structure In (P : RP) (σ : State) : Prop where
   qE : P.rQ.Disjoint P.rE
   qD : P.rQ.Disjoint P.rD
   qF : P.rQ.Disjoint P.rF
-  nF : P.rN.Disjoint P.rF
-  eF : P.rE.Disjoint P.rF
-  dF : P.rD.Disjoint P.rF
+  nF : P.rN.Disjoint P.rFr
+  eF : P.rE.Disjoint P.rFr
+  dF : P.rD.Disjoint P.rFr
   wP : fw σ.mem P oP = P.pP
   wQ : fw σ.mem P oQ = P.qP
   aN : fw σ.mem P aoN = P.nP
