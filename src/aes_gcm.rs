@@ -1402,31 +1402,47 @@ impl AesGcm {
                     ctx,
                 )
             },
-            Got::Store => {
-                let mut pw = new_powers();
-                let seal_store = fns.seal_store;
-                // SAFETY: as above, with `pw` (a new allocation) valid for
-                // writes of 128 bytes and overlapping nothing else, and the
-                // nonce and additional data as `seal_store` needs them
-                // (`store_ok`, which `Powers::get` gave `Got::Store` for).
-                unsafe {
-                    seal_store(
-                        &self.ctx,
-                        self.rounds,
-                        nonce.as_ptr(),
-                        nonce.len(),
-                        aad.as_ptr(),
-                        aad.len(),
-                        data.as_mut_ptr(),
-                        data.len(),
-                        &mut tag,
-                        &mut *pw,
-                    )
-                };
-                self.powers.publish(pw);
-            }
+            Got::Store => self.seal_store(fns, nonce, aad, data, &mut tag),
         }
         tag
+    }
+
+    /// `seal_with`'s call that computes the powers: `seal`'s
+    /// `_store_powers` instance, into a new box that it publishes. Out of
+    /// line, so that the calls that find the powers ready keep no more
+    /// registers than they need.
+    #[cfg(target_arch = "aarch64")]
+    #[cold]
+    #[inline(never)]
+    fn seal_store(
+        &self,
+        fns: &Prepared,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+        tag: &mut Block,
+    ) {
+        let mut pw = new_powers();
+        let seal_store = fns.seal_store;
+        // SAFETY: as in `seal_with`, with `pw` (a new allocation) valid for
+        // writes of 128 bytes and overlapping nothing else, and the nonce
+        // and additional data as `seal_store` needs them (`store_ok`, which
+        // `Powers::get` gave `Got::Store` for).
+        unsafe {
+            seal_store(
+                &self.ctx,
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag,
+                &mut *pw,
+            )
+        };
+        self.powers.publish(pw);
     }
 
     /// `open` with the key context with the powers, if `Powers::get` gives
@@ -1478,31 +1494,7 @@ impl AesGcm {
                     ctx,
                 )
             },
-            Got::Store => {
-                let mut pw = new_powers();
-                let open_store = fns.open_store;
-                // SAFETY: as in `seal_with`, and the tag's length is one
-                // §5.2.1.2 allows, as `open_store` needs (`open`'s callers
-                // check it at compile time). It writes the powers whether or
-                // not the tag matches.
-                let ok = unsafe {
-                    open_store(
-                        &self.ctx,
-                        self.rounds,
-                        nonce.as_ptr(),
-                        nonce.len(),
-                        aad.as_ptr(),
-                        aad.len(),
-                        data.as_mut_ptr(),
-                        data.len(),
-                        tag.as_ptr(),
-                        tag.len(),
-                        &mut *pw,
-                    )
-                };
-                self.powers.publish(pw);
-                ok
-            }
+            Got::Store => self.open_store(fns, nonce, aad, data, tag),
         };
         // As in `open`.
         Some(if ok == 1 {
@@ -1510,6 +1502,44 @@ impl AesGcm {
         } else {
             Err(Error::TagMismatch)
         })
+    }
+
+    /// `open_prepared`'s call that computes the powers, as `seal_store`
+    /// does for `seal_with`: `open`'s `_store_powers` instance, which
+    /// writes them whether or not the tag matches; its result.
+    #[cfg(target_arch = "aarch64")]
+    #[cold]
+    #[inline(never)]
+    fn open_store(
+        &self,
+        fns: &Prepared,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+        tag: &[u8],
+    ) -> u32 {
+        let mut pw = new_powers();
+        let open_store = fns.open_store;
+        // SAFETY: as in `seal_store`, with the received tag `tag` valid for
+        // reads of its length, one §5.2.1.2 allows, as `open_store` needs
+        // (`open`'s callers check it at compile time).
+        let ok = unsafe {
+            open_store(
+                &self.ctx,
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &mut *pw,
+            )
+        };
+        self.powers.publish(pw);
+        ok
     }
 
     /// `encrypt` with the powers, if `Powers::get` gives them: copies the
