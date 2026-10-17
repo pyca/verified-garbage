@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
 import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import all Init.Data.Array.Basic
@@ -65,7 +64,7 @@ theorem kvN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {a b : BitVec 32} (
       (by rw [hwr]; exact hc.inFrW (by omega_arith) (by omega_arith)) fun u₂ v₂ => ?_
     refine wp_str (a := L.B + BitVec.ofNat 64 (24 + 4 * k)) o₂ (by rw [v₂.gpr, r8₁]; exact e₂)
       (by rw [v₂.wr, hwr]; exact hc.inFrW (by omega_arith) (by omega_arith)) fun u₃ v₃ => WP.block_nil ?_
-    have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 240 → y + 4 ≤ 240 →
+    have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 456 → y + 4 ≤ 456 →
         Mem.Sep (L.B + BitVec.ofNat 64 x) (32 / 8) (L.B + BitVec.ofNat 64 y) (32 / 8) :=
       fun x y h h₁ h₂ => Offset.sep _ h (by omega_arith) (by omega_arith)
     have hm₃ : u₃.mem = (u₁.mem.writeW (L.B + BitVec.ofNat 64 (88 + 4 * k)) a).writeW
@@ -134,8 +133,8 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 
 theorem initCnt_ok {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
-      t'.gpr .r9 = BitVec.ofNat 32 P.I.tries :=
-  movw_ok hc (d := .r9) (v := P.I.tries) (by decide) P.tries_lt fun t' c' m' v' _ => WP.block_nil ⟨c', m', v'⟩
+      t'.gpr .r9 = BitVec.ofNat 32 P.R.I.tries :=
+  movw_ok hc (d := .r9) (v := P.R.I.tries) (by decide) P.R.tries_lt fun t' c' m' v' _ => WP.block_nil ⟨c', m', v'⟩
 
 /-! ## Whether to go on -/
 
@@ -225,14 +224,14 @@ theorem stop_ok {t : State} (hc : Ctx L g m₀ t) :
 
 /-! ## The wiping -/
 
-/-- `k` zero words stored at the frame's start, through `r12`: only `K`, `V` and `h` change. -/
+/-- `k` zero words stored at the frame's start, through `r12`: only `K`, `V`, `h`, `T` and `core`'s digest change. -/
 theorem zeroN_ok (hL : L.Ok) {u : State} (hwr : u.wr = [L.FR, L.OUT, L.SCR]) (h12 : u.gpr .r12 = L.fp) :
-    ∀ k ≤ 44, WP isa (.block ((List.range k).map fun j => .str .r1 .r12 (4 * j))) u fun u' =>
+    ∀ k ≤ 99, WP isa (.block ((List.range k).map fun j => .str .r1 .r12 (4 * j))) u fun u' =>
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.gpr = u.gpr ∧
-      Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩] u.mem u'.mem
+      Frame [⟨L.B + BitVec.ofNat 64 24, 396⟩] u.mem u'.mem
   | 0, _ => WP.block_nil ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | k + 1, hk => by
-    have := L.he
+    have := hL.B_fit
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
     refine WP.mono (zeroN_ok hL hwr h12 k (by omega_arith)) fun u₁ ⟨hrd, hwr₁, hsp, hg, hf⟩ => ?_
     have e : State.addr (L.fp + BitVec.ofNat 32 (4 * k)) = L.B + BitVec.ofNat 64 (24 + 4 * k) := hL.fpA (by omega_arith)
@@ -244,80 +243,39 @@ theorem zeroN_ok (hL : L.Ok) {u : State} (hwr : u.wr = [L.FR, L.OUT, L.SCR]) (h1
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
 
 theorem zeros_map : Cfg.zeros.map (fun p => Instr.str p.1 .r12 p.2) =
-    (List.range 44).map fun j => .str .r1 .r12 (4 * j) := by
+    (List.range 99).map fun j => .str .r1 .r12 (4 * j) := by
   simp only [Cfg.zeros, List.map_map]; rfl
-
-/-- `k` zero words stored at the frame's top, through `r12`. -/
-theorem zeroH_ok (hL : L.Ok) {u : State} (hwr : u.wr = [L.FR, L.OUT, L.SCR]) (h12 : u.gpr .r12 = L.fp) :
-    ∀ k ≤ L.e, WP isa (.block ((List.range k).map fun j => .str .r1 .r12 (fX + 4 * j))) u fun u' =>
-      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.gpr = u.gpr ∧
-      Frame [⟨L.B + BitVec.ofNat 64 240, 4 * L.e⟩] u.mem u'.mem
-  | 0, _ => WP.block_nil ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩
-  | k + 1, hk => by
-    have he := L.he
-    have hb := hL.B_fit
-    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zeroH_ok hL hwr h12 k (by omega_arith)) fun u₁ ⟨hrd, hwr₁, hsp, hg, hf⟩ => ?_
-    have e : State.addr (L.fp + BitVec.ofNat 32 (fX + 4 * k)) = L.B + BitVec.ofNat 64 (240 + 4 * k) := by
-      rw [hL.fpA (by simp only [fX]; omega_arith)]; simp only [fX]; rw [show 24 + (216 + 4 * k) = 240 + 4 * k by omega_arith]
-    refine wp_str (a := L.B + BitVec.ofNat 64 (240 + 4 * k)) (by simp only [fX]; omega_arith) (by rw [hg, h12]; exact e)
-      (by rw [hwr₁, hwr]; exact ⟨L.FR, by simp, Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)⟩)
-      fun u₂ v₂ => WP.block_nil ⟨by rw [v₂.rd, hrd], by rw [v₂.wr, hwr₁], by rw [v₂.sp, hsp],
-        by rw [v₂.gpr, hg], hf.trans ?_⟩
-    rw [v₂.mem]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
-
-theorem zerosHigh_map (wide hHigh : Bool) : (Cfg.zerosHigh wide hHigh).map (fun p => Instr.str p.1 .r12 p.2) =
-    (List.range (extra wide hHigh)).map fun j => .str .r1 .r12 (fX + 4 * j) := by
-  simp only [Cfg.zerosHigh, List.map_map]; rfl
 
 theorem saved_nodup : (Impl.Ecdsa.Rfc6979.Arm.saved.map Prod.fst).Nodup := by decide
 
-/-- The frame cleared, its top words too, and our caller's registers back:
-the result and `out` kept. -/
+/-- The frame cleared, and our caller's registers back: the result and `out` kept. -/
 theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.wipe L.wide L.hHigh)) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
+    WP isa (.block Cfg.wipe) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
       (∀ p ∈ Impl.Ecdsa.Rfc6979.Arm.saved, t'.gpr p.1 = g p.1) ∧ t'.gpr .r0 = t.gpr .r0 ∧
-      Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 4 * L.e⟩] t.mem t'.mem := by
-  simp only [Cfg.wipe, zeros_map, zerosHigh_map, ← L.ew, List.cons_append, List.nil_append, List.append_assoc]
+      Frame [⟨L.B + BitVec.ofNat 64 24, 396⟩] t.mem t'.mem := by
+  simp only [Cfg.wipe, zeros_map, List.cons_append, List.nil_append]
   refine wp_mov (op2_reg _ _) fun u₁ v₁ => wp_mov (op2_imm (by decide)) fun u₂ v₂ => ?_
   have h12 : u₂.gpr .r12 = L.fp := by rw [v₂.other _ (by decide), v₁.gpr, hc.r8]
   have hwr₂ : u₂.wr = [L.FR, L.OUT, L.SCR] := by rw [v₂.wr, v₁.wr, hc.wr]
   rw [WP.block_append_iff]
-  refine WP.mono (zeroN_ok hL hwr₂ h12 44 (Nat.le_refl _)) fun u₃' ⟨hrd₃', hwr₃', hsp₃', hg₃', hf₃'⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (zeroH_ok hL (by rw [hwr₃', hwr₂]) (by rw [hg₃', h12]) L.e (Nat.le_refl _))
-    fun u₃ ⟨hrd₃'', hwr₃'', hsp₃'', hg₃'', hfh⟩ => ?_
-  have hrd₃ : u₃.rd = u₂.rd := hrd₃''.trans hrd₃'
-  have hwr₃ : u₃.wr = u₂.wr := hwr₃''.trans hwr₃'
-  have hsp₃ : u₃.sp = u₂.sp := hsp₃''.trans hsp₃'
-  have hg₃ : u₃.gpr = u₂.gpr := hg₃''.trans hg₃'
-  have he := L.he
+  refine WP.mono (zeroN_ok hL hwr₂ h12 99 (Nat.le_refl _)) fun u₃ ⟨hrd₃, hwr₃, hsp₃, hg₃, hf₃⟩ => ?_
   have hb := hL.B_fit
-  have hf₃ : Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 4 * L.e⟩] u₂.mem u₃.mem :=
-    (hf₃'.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self,
-      sub_refl _⟩).trans
-      (hfh.sub fun r hr => ⟨r, by
-        simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_of_mem _ (List.mem_singleton_self _),
-        sub_refl _⟩)
-  have hs : VG.Proof.Mont.Arm.Scr u₃ (L.B + BitVec.ofNat 64 24) 216 :=
-    ⟨by rw [hg₃, h12]; exact hL.fpA0, ⟨216 + 4 * L.e, by omega_arith, by omega_arith, by rw [hwr₃, hwr₂]; simp⟩,
+  have hs : VG.Proof.Mont.Arm.Scr u₃ (L.B + BitVec.ofNat 64 24) 432 :=
+    ⟨by rw [hg₃, h12]; exact hL.fpA0, ⟨432, by omega_arith, by omega_arith, by rw [hwr₃, hwr₂]; simp⟩,
       by rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith, by omega_arith⟩
   refine WP.mono (Proof.Weierstrass.Arm.ldrs_ok hs _ (fun p hp => (saved_off p hp).2) saved_nodup (by decide))
     fun u₄ ⟨hm₄, K₄, hv₄⟩ => ⟨?_, ?_, ?_, fun p hp => ?_, ?_, ?_⟩
   · rw [K₄.rd, hrd₃, v₂.rd, v₁.rd]
   · rw [K₄.wr, hwr₃, v₂.wr, v₁.wr]
   · rw [K₄.sp, hsp₃, v₂.sp, v₁.sp]
-  · have hfr : Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 4 * L.e⟩] t.mem u₃.mem := by
+  · have hfr : Frame [⟨L.B + BitVec.ofNat 64 24, 396⟩] t.mem u₃.mem := by
       rw [← v₁.mem, ← v₂.mem]; exact hf₃
     rw [hv₄ p hp, VG.Proof.Mont.off, Offset.add_add,
-      hfr.readW (r := ⟨L.B + BitVec.ofNat 64 204, 36⟩) (Offset.contains _ (by have := saved_off p hp; omega_arith)
+      hfr.readW (r := ⟨L.B + BitVec.ofNat 64 420, 36⟩) (Offset.contains _ (by have := saved_off p hp; omega_arith)
         (by have := saved_off p hp; omega_arith) (by omega_arith))
         (fun r hr => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl
-          · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-          · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+          simp only [List.mem_singleton] at hr; subst hr
+          exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
     exact hc.saved p hp
   · rw [K₄.gpr _ (by decide), hg₃, v₂.other _ (by decide), v₁.other _ (by decide)]
   · rw [hm₄, ← v₁.mem, ← v₂.mem]; exact hf₃
