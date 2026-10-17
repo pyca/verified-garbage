@@ -66,6 +66,15 @@ section
 variable {P : RP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {AW : Nat → Nat} {liveW : List Nat}
   {V : Nat → Nat} {ls : List Nat}
 
+/-- Fewer arrays and header words, with values as other functions give them. -/
+theorem KS.mono (h : KS P σ A live AW liveW V ls s) {A' : Nat → Nat} {live' : List Nat} {AW' : Nat → Nat}
+    {liveW' : List Nat} {V' : Nat → Nat} {ls' : List Nat}
+    (hl : ∀ j ∈ live', j ∈ live ∧ A j = A' j) (hlW : ∀ j ∈ liveW', j ∈ liveW ∧ AW j = AW' j)
+    (hls : ∀ d ∈ ls', d ∈ ls ∧ V d = V' d) : KS P σ A' live' AW' liveW' V' ls' s :=
+  ⟨h.bs, h.r8, h.cnt, fun j hj => (h.arrs j (hl j hj).1).trans (hl j hj).2,
+    fun j hj => (h.arrsW j (hlW j hj).1).trans (hlW j hj).2, fun d hd => (h.sl d (hls d hd).1).trans (hls d hd).2,
+    fun j hj => h.live_lt j (hl j hj).1, fun j hj => h.liveW_lt j (hlW j hj).1, fun d hd => h.ls_ok d (hls d hd).1⟩
+
 /-- A step with `w` words that writes the arrays `js` and the header words `ds`. -/
 theorem KS.core {js ds : List Nat} {v : Nat} (h : KS P σ A live AW liveW V ls s)
     (k : Keep P.B v js ds s.mem t.mem) (hjs : ∀ j ∈ js, arr v j + S v ≤ P.Z) (hds : ∀ d ∈ ds, SlotOk d)

@@ -70,4 +70,33 @@ theorem loadE_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r6, .r7
 theorem loadD_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
     (VG.Impl.Rsa.Arm.CrtValues.load (2 * wD)) hc).isSome = true := ⟨_, by taint_decide⟩
 
+theorem setTop_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (.block (setTop wMod)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem shl3_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) (.block [.mov .r6 (.shifted .r6 .lsl 3)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem mulMod_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r6, .r7, .r8, .r9])
+    (mulMod wZ wE wD wM wMod wT) hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem skip_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (.seq (.block skipBits) (.seq (sub3 wT wZ wM) (.block skipTest))) hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem copyRM_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (copy wR wM) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem tZero_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8])
+    (.block [.mov .r1 (.imm 0), .str .r1 .r8 sTc]) hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem cntStore_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8])
+    (.block [.dp .add .r1 .r1 (.reg .r2), .mov .r1 (.shifted .r1 .lsl 3), .str .r1 .r8 sCnt]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem halfBody_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) halfBody hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
 end VG.Proof.Rsa.Arm.Recover
