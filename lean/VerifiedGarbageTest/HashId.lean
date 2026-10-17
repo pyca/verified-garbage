@@ -3,6 +3,11 @@ import VerifiedGarbage.Spec.RsaPkcs1Sig
 import VerifiedGarbage.Spec.RsaOaep.AnyHash
 import VerifiedGarbage.Spec.RsaPss.AnyHash
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.AnyHash
+import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
+import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # The numbers of the hash functions
@@ -12,7 +17,10 @@ The numbers that the functions taking a hash function as an argument use
 and digest length) wherever both name a hash function; `HashId.hmac` names
 the same hash functions as `HashId.mgf1`; and `RsaOaep.hashIds`,
 `RsaPss.hashIds` and `Ecdsa.Rfc6979.hashIds` name the hash functions their
-documentation says.
+documentation says. Every target's calling convention models their
+arguments (otherwise their contracts' precondition would be `False`): on
+AArch64, Apple's packs narrow arguments on the stack, which `AArch64.abi`
+accepts only as the first one.
 -/
 
 namespace VG.Test.HashId
@@ -46,5 +54,19 @@ def sha12 : List (Option String) :=
 #guard RsaOaep.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == sha12
 #guard Ecdsa.Rfc6979.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == sha12
 #guard RsaPss.hashIds.map (fun i => (HashId.mgf1 i).map (·.rust)) == some "md5" :: sha12
+
+/-- Whether `A` models the arguments of `sig`. -/
+def modeled {M : ISA} (A : Abi M) (sig : Sig) : Bool :=
+  (A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits))).isSome
+
+/-- The signatures taking hash functions as arguments. -/
+def sigs : List Sig :=
+  [RsaOaep.encryptAnySig, RsaOaep.decryptAnySig, RsaPss.signAnySig, RsaPss.verifyAnySig,
+    Ecdsa.Rfc6979.Instance.signAnySig Ecdsa.Rfc6979.P521Sha512.inst]
+
+#guard sigs.all (modeled AArch64.abi)
+#guard sigs.all (modeled Arm.abi)
+#guard sigs.all (modeled X86.abi)
+#guard sigs.all (modeled X86_64.abi)
 
 end VG.Test.HashId

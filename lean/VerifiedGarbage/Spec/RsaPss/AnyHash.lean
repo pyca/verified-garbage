@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.HashId
 **Trusted** (as every file in `Spec/`). The functions of
 `Spec/RsaPss/Contract.lean` and `Spec/RsaPss/Precomputed.lean`, but with
 the hash function `H` (the digest's) and MGF1's hash function `G` passed as
-public `u32` arguments, `hash` and `mgf1_hash`, rather than fixed by the
+public `usize` arguments, `hash` and `mgf1_hash`, rather than fixed by the
 function's name: each is the number `HashId.mgf1` gives the hash function,
 one of `hashIds` (MD5, SHA-1 and the SHA-2 functions), in the module
 `rsa_pss`:
@@ -17,7 +17,9 @@ one of `hashIds` (MD5, SHA-1 and the SHA-2 functions), in the module
 * `vg_rsa_pss_sign`: `signContract H G`;
 * `vg_rsa_pss_verify_precomputed`: `verifyPrecomputedContract H G`;
 
-each with the digest a slice of `hLen` octets rather than an array. That
+each with the digest a slice of `hLen` octets rather than an array (and,
+in `vg_rsa_pss_verify_precomputed`, `any_salt_len` before `salt_len`, so
+that on AArch64 the one narrow argument on the stack is its first). That
 `hash` and `mgf1_hash` are in `hashIds`, and that the digest is `H`'s `hLen`
 octets, are preconditions. The hash functions are public (they are
 arguments marked so, `Sig.contract`), and may affect timing; nothing else
@@ -54,15 +56,15 @@ n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize,
 q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8,
 dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8,
 digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64,
-scratch_len: usize, hash: u32, mgf1_hash: u32) -> u32`. -/
+scratch_len: usize, hash: usize, mgf1_hash: usize) -> u32`. -/
 def signAnySig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
     ("q", .slice false .u8 "q_len"), ("dp", .slice false .u8 "dp_len"),
     ("dq", .slice false .u8 "dq_len"), ("qinv", .slice false .u8 "qinv_len"),
     ("digest", .slice false .u8 "digest_len"), ("salt", .slice false .u8 "salt_len"),
-    ("scratch", .slice true .u64 "scratch_len"), ("hash", .int .u32 true),
-    ("mgf1_hash", .int .u32 true)]
+    ("scratch", .slice true .u64 "scratch_len"), ("hash", .int .usize true),
+    ("mgf1_hash", .int .usize true)]
   ret := some .u32
 
 /-- `signContract H G`, for the hash functions `H` and `G` that `hash` and
@@ -125,15 +127,15 @@ def signAnyApi : Api where
 
 /-- `vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8,
 e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8,
-sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64,
-scratch_len: usize, pre: *const u64, pre_len: usize, hash: u32,
-mgf1_hash: u32) -> u32`. -/
+sig_len: usize, any_salt_len: u32, salt_len: usize, scratch: *mut u64,
+scratch_len: usize, pre: *const u64, pre_len: usize, hash: usize,
+mgf1_hash: usize) -> u32`. -/
 def verifyAnySig : Sig where
   params := [("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
     ("digest", .slice false .u8 "digest_len"), ("sig", .slice false .u8 "sig_len"),
-    ("salt_len", .int .usize true), ("any_salt_len", .int .u32 true),
+    ("any_salt_len", .int .u32 true), ("salt_len", .int .usize true),
     ("scratch", .slice true .u64 "scratch_len"), ("pre", .slice false .u64 "pre_len"),
-    ("hash", .int .u32 true), ("mgf1_hash", .int .u32 true)]
+    ("hash", .int .usize true), ("mgf1_hash", .int .usize true)]
   ret := some .u32
 
 /-- `verifyPrecomputedContract H G`, for the hash functions `H` and `G` that
@@ -141,14 +143,14 @@ def verifyAnySig : Sig where
 octets. -/
 def verifyAnyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   verifyAnySig.contract A
-    (pre := fun _n nLen _e eLen _digest digestLen _sig sigLen _saltLen _anySaltLen _scratch
+    (pre := fun _n nLen _e eLen _digest digestLen _sig sigLen _anySaltLen _saltLen _scratch
         scratchLen _pre preLen hash mgf1Hash _ =>
       hash.toNat ∈ hashIds ∧ mgf1Hash.toNat ∈ hashIds ∧
         (∀ H, HashId.mgf1 hash.toNat = some H → digestLen.toNat = H.len) ∧
         lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         sigLen.toNat = nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
-    (post := fun n nLen e eLen digest digestLen sig _sigLen saltLen anySaltLen _scratch
+    (post := fun n nLen e eLen digest digestLen sig _sigLen anySaltLen saltLen _scratch
         _scratchLen pre preLen hash mgf1Hash m _m' r =>
       ∀ H G, HashId.mgf1 hash.toNat = some H → HashId.mgf1 mgf1Hash.toNat = some G →
         Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
@@ -156,7 +158,7 @@ def verifyAnyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
               (bytesAt m digest digestLen.toNat) (bytesAt m sig nLen.toNat)
               (expectedSaltLen saltLen anySaltLen) then 1 else 0)
     (writeArgs := true) (stack := stack)
-    (leak := some fun n nLen e eLen _digest _digestLen _sig _sigLen _saltLen _anySaltLen _scratch
+    (leak := some fun n nLen e eLen _digest _digestLen _sig _sigLen _anySaltLen _saltLen _scratch
         _scratchLen pre preLen _hash _mgf1Hash m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
         (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))

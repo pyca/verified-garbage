@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.Hmac
 # The numbers of the hash functions
 
 **Trusted** (as every file in `Spec/`). The number that names a hash
-function to the Rust functions that take it as an argument (a public `u32`)
+function to the Rust functions that take it as an argument (a public `usize`)
 rather than in their name: its index in `Mgf1.hashes`, from 0 for MD5 to 13
 for BLAKE2s-256, which is `RsaPkcs1Sig.Hash.ofId`'s numbering where both
 name one. `mgf1` gives the hash function as RSA's padding takes it

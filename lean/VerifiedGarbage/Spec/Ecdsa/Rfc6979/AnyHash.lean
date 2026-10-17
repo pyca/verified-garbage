@@ -11,7 +11,7 @@ public import VerifiedGarbage.Spec.HashId
 its working space; its hash function is not used),
 `vg_ecdsa_<curve>_rfc6979_sign`, in the module `ecdsa_<curve>_rfc6979`,
 signs as `vg_ecdsa_<curve>_<hash>_sign` does (`Rfc6979.sign`), with the hash
-function passed as a public `u32` argument, `hash`, rather than fixed by the
+function passed as a public `usize` argument, `hash`, rather than fixed by the
 function's name: the number `HashId.hmac` gives the hash function, one of
 `hashIds` (SHA-1 and the SHA-2 functions). The digest is a slice of `hLen`
 octets rather than an array.
@@ -36,11 +36,11 @@ namespace Instance
 variable (I : Instance)
 
 /-- `(out: *mut [u8; 2 len], d: *const [u8; len], digest: *const u8,
-digest_len: usize, scratch: *mut [u64; I.scratchWords], hash: u32) -> u32`. -/
+digest_len: usize, scratch: *mut [u64; I.scratchWords], hash: usize) -> u32`. -/
 def signAnySig : Sig where
   params := [("out", .array true .u8 (2 * I.ecdsa.curve.len)),
     ("d", .array false .u8 I.ecdsa.curve.len), ("digest", .slice false .u8 "digest_len"),
-    ("scratch", .array true .u64 I.scratchWords), ("hash", .int .u32 true)]
+    ("scratch", .array true .u64 I.scratchWords), ("hash", .int .usize true)]
   ret := some .u32
 
 /-- RFC 6979's signature of the `digestLen` octets at `digest` with the

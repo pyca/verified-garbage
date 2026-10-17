@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.HashId
 **Trusted** (as every file in `Spec/`). The functions of
 `Spec/RsaOaep/Contract.lean` and `Spec/RsaOaep/Precomputed.lean`, but with
 the hash function `H` (the label's) and MGF1's hash function `G` passed as
-public `u32` arguments, `hash` and `mgf1_hash`, rather than fixed by the
+public `usize` arguments, `hash` and `mgf1_hash`, rather than fixed by the
 function's name: each is the number `HashId.mgf1` gives the hash function, one
 of `hashIds` (SHA-1 and the SHA-2 functions), in the module `rsa_oaep`:
 
@@ -46,13 +46,13 @@ def hashIdsDoc : String :=
 n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8,
 label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8,
 seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64,
-pre_len: usize, hash: u32, mgf1_hash: u32) -> u32`. -/
+pre_len: usize, hash: usize, mgf1_hash: usize) -> u32`. -/
 def encryptAnySig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("label", .slice false .u8 "label_len"),
     ("msg", .slice false .u8 "msg_len"), ("seed", .slice false .u8 "seed_len"),
     ("scratch", .slice true .u64 "scratch_len"), ("pre", .slice false .u64 "pre_len"),
-    ("hash", .int .u32 true), ("mgf1_hash", .int .u32 true)]
+    ("hash", .int .usize true), ("mgf1_hash", .int .usize true)]
   ret := some .u32
 
 /-- `encryptPrecomputedContract H G`, for the hash functions `H` and `G`
@@ -121,7 +121,7 @@ e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize,
 dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize,
 qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize,
 ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize,
-hash: u32, mgf1_hash: u32) -> u32`. -/
+hash: usize, mgf1_hash: usize) -> u32`. -/
 def decryptAnySig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("msg_len", .array true .u64 1),
     ("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
@@ -129,7 +129,7 @@ def decryptAnySig : Sig where
     ("dp", .slice false .u8 "dp_len"), ("dq", .slice false .u8 "dq_len"),
     ("qinv", .slice false .u8 "qinv_len"), ("label", .slice false .u8 "label_len"),
     ("ct", .slice false .u8 "ct_len"), ("scratch", .slice true .u64 "scratch_len"),
-    ("hash", .int .u32 true), ("mgf1_hash", .int .u32 true)]
+    ("hash", .int .usize true), ("mgf1_hash", .int .usize true)]
   ret := some .u32
 
 /-- `decryptContract H G`, for the hash functions `H` and `G` that `hash`
