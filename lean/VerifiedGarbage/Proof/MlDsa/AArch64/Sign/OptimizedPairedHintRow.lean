@@ -75,7 +75,7 @@ theorem pairedHintPoly_field {m : Mem} {c secret low high : Addr} {gamma j : Nat
   have hg' := VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg
   apply Vector.ext
   intro i hi
-  simp only [pairedHintPoly,Vector.getElem_ofFn,Vector.getElem_zipWith,pairedProduct,hc.value,hs.value]
+  rw [pairedHintPoly,Vector.getElem_ofFn,Vector.getElem_zipWith,pairedProduct,hc.value,hs.value]
   rw [Response.responseHintBase_parts hg' (Response.hintLow_exact hg' hl i hi) (Response.hintHigh_exact hh i hi)]
   simp only [getElem!_pos f i hi,getElem!_pos (nttInv (multiplyNTT ch sk)) i hi]
 

@@ -534,11 +534,6 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   have hz : isa.eval .e s₃ = some (decide (N.toNat = 0)) := by
     simp only [eval, z₃, BitVec.sub_zero]
     congr 1
-    by_cases h0 : N.toNat = 0
-    · rw [decide_eq_true h0, show N = 0 from BitVec.eq_of_toNat_eq h0]; rfl
-    · rw [decide_eq_false h0]
-      simp only [beq_eq_false_iff_ne, ne_eq]
-      exact fun e => h0 (by rw [e]; rfl)
   refine WP.ite (decide (N.toNat = 0)) hz (fun hN0 => ?_) (fun hN0 => ?_)
   · have e : N.toNat = 0 := of_decide_eq_true hN0
     refine WP.block_nil ?_

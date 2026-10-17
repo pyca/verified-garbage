@@ -137,7 +137,6 @@ theorem flag_eq (a b : BitVec 64) :
   rw [h1, h2, mask_or']
   unfold mask
   congr 3
-  exact (Bool.decide_or _ _).symm
 
 theorem sxFFFF : BitVec.signExtend 64 (0xFFFF : BitVec 32) = 0xFFFF := by decide
 

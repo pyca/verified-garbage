@@ -60,8 +60,7 @@ theorem val_pow (a : Zq) (k : Nat) : (a ^ k).val = a.val ^ k % q := by
   induction k with
   | zero => rfl
   | succ k ih =>
-    change (a ^ k * a).val = _
-    rw [val_mul, ih, Nat.mod_mul_mod, Nat.pow_succ]
+    rw [Fin.pow_succ, val_mul, ih, Nat.mod_mul_mod, Nat.pow_succ]
 
 theorem ofNat_add (x y : Nat) : ofNat (x + y) = ofNat x + ofNat y :=
   Fin.ext (by rw [val_add', val_ofNat, val_ofNat, val_ofNat, Nat.add_mod])

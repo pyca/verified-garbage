@@ -136,8 +136,7 @@ theorem Lay.whintAt {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (v : BitVec 6
   subst this
   apply Vector.ext
   intro j hj
-  simp only [Vector.getElem_ofFn, Nat.mul_zero, Nat.zero_add]
-  rw [L.wcoeffAt h v hj]
+  rw [Vector.getElem_ofFn, Vector.getElem_ofFn, Nat.mul_zero, Nat.zero_add, L.wcoeffAt h v hj]
 
 theorem Lay.wreduced {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (v : BitVec 64) (hr : Reduced s.mem (pa s p)) :
     Reduced (s.mem.writeW (s.gpr .rsp - 8) v) (pa s p) :=

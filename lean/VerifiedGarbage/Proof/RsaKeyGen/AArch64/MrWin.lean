@@ -329,7 +329,6 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Boo
   have hz : (!decide (V >>> 60 = 0)) = !decide (d = 0) := by
     rw [← hd']
     congr 1
-    exact decide_eq_decide.mpr ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [h]; rfl)⟩
   have hw1 : (wWin c b d (y, P)).1 = s4.1 * Spec.Rsa.powMod b d c % c := by simp only [wWin, hs4]
   have hw2 : (wWin c b d (y, P)).2 = (if !decide (d = 0) then
       decide (s4.1 * Spec.Rsa.powMod b d c % c = 1) || decide (s4.1 * Spec.Rsa.powMod b d c % c = c - 1)

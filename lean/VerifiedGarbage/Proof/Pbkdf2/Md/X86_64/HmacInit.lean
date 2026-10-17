@@ -457,10 +457,6 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
   have hz : s₄.zf = some (decide (kl s₀ = 0)) := by
     rw [z₄, u₃.other _ (by decide), g₂, u₁.other _ (by decide), hk.r13, BitVec.and_self]
     congr 1
-    by_cases h : kl s₀ = 0
-    · simp [h, BitVec.eq_of_toNat_eq (show (s₀.gpr .rcx).toNat = (0 : BitVec 64).toNat from h)]
-    · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
-      intro h'; exact h (by show (s₀.gpr .rcx).toNat = 0; rw [h']; rfl)
   have hm : s₄.mem = writeBytes s.mem (bufOf H (inn s₀)) (ipadBlk s₀.mem (kp s₀) H.P.B 0) := by
     rw [m₄, u₃.mem, m₂, u₁.mem, ipadBlk_zero, eB]
   refine WP.seq (WP.mono (key_ok hr h14 hz hm) fun t ht => ?_)

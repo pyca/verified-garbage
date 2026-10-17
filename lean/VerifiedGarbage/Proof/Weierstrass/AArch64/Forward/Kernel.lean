@@ -344,7 +344,7 @@ theorem valid_of_validK {nodes : Certificate} (h : validK nodes=true) : CertVali
     congr
     funext i n
     cases n with
-    | app => exact Bool.eq_iff_iff.mpr (by simp [Node.before,Nat.blt_eq,and_assoc]; exact decide_eq_true_iff)
+    | app => exact Bool.eq_iff_iff.mpr (by simp [Node.before,Nat.blt_eq,and_assoc])
     | _ => rfl
 
 /-- Word `i` of the certificate's extent is input `i+1`. -/

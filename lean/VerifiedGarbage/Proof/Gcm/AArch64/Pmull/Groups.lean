@@ -266,6 +266,8 @@ theorem rd_write (s : State) (sz : Size) (r : Reg) (w : BitVec sz.bits) :
     (s.write sz r w).rd = s.rd := rfl
 theorem wr_write (s : State) (sz : Size) (r : Reg) (w : BitVec sz.bits) :
     (s.write sz r w).wr = s.wr := rfl
+theorem sp_write (s : State) (sz : Size) (r : Reg) (w : BitVec sz.bits) :
+    (s.write sz r w).sp = s.sp := rfl
 
 theorem exec_movz_x {d : Reg} {imm : BitVec 16} {hw : Nat} (h : 16 * hw < 64) (s : State) :
     exec (.movz .x d imm hw) s = some (s.write .x d (imm.setWidth 64 <<< (16 * hw))) := by

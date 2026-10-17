@@ -227,8 +227,6 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
   have hz₃ : s₃.zf = some (decide (n = 0)) := by
     rw [z₃, r8₂]
     congr 1
-    rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-    exact ⟨fun h => by simp [n, h], fun h => BitVec.eq_of_toNat_eq (by simpa [n] using h)⟩
   refine WP.seq (WP.mono (M := isa) (Q := GDone s₀ b D n g E)
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₃]) (fun h0 => ?_) (fun h0 => ?_)) fun s₄ d₄ => ?_)
   · have hn0 : n = 0 := by simpa using h0
