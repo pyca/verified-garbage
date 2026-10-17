@@ -85,4 +85,53 @@ theorem eq_bit {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31) :
     simp only [e, ite_false]
     omega
 
+/-- A Montgomery product of two numbers in Montgomery form. -/
+theorem mont_sq_eq (a b R n : Nat) : a * b % n * R % n * R % n = (a * R % n) * (b * R % n) % n := by
+  rw [Nat.mod_mul_mod (a * b) R n, Nat.mod_mul_mod (a * b * R) R n, ← Nat.mul_mod (a * R) (b * R) n,
+    Nat.mul_mul_mul_comm a R b R, Nat.mul_assoc (a * b) R R]
+
+/-- The squarings' `y` stays below `n`. -/
+theorem sqIter_lt {n t : Nat} (hn : 0 < n) : ∀ k (st : Nat × Bool × Bool), st.1 < n → (sqIter n t k st).1 < n
+  | 0, _, h => h
+  | k + 1, st, h => by
+    have := sqIter_lt (t := t) hn k st h
+    simp only [sqIter, sqStep]
+    split
+    · exact Nat.mod_lt _ hn
+    · exact this
+
+/-- A Boolean as a word. -/
+def b2n (b : Bool) : Nat := if b then 1 else 0
+
+theorem b2n_le (b : Bool) : b2n b ≤ 1 := by cases b <;> decide
+
+/-- The top bit of `a - b`, as a word. -/
+theorem lt_bv {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31) :
+    (BitVec.ofNat 32 a - BitVec.ofNat 32 b) >>> 31 = BitVec.ofNat 32 (b2n (decide (a < b))) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [lt_bit ha hb, BitVec.toNat_ofNat]
+  by_cases h : a < b <;> simp [h, b2n]
+
+/-- The top bit of `(a + 1 xor b) - 1`, as a word. -/
+theorem eq1_bv {a b : Nat} (ha : a + 1 < 2 ^ 31) (hb : b < 2 ^ 31) :
+    ((BitVec.ofNat 32 a + 1 ^^^ BitVec.ofNat 32 b) - 1) >>> 31 = BitVec.ofNat 32 (b2n (decide (a + 1 = b))) := by
+  apply BitVec.eq_of_toNat_eq
+  have e : BitVec.ofNat 32 a + 1 = BitVec.ofNat 32 (a + 1) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
+    omega
+  rw [e, eq_bit ha hb, BitVec.toNat_ofNat]
+  by_cases h : a + 1 = b <;> simp [h, b2n]
+
+/-- The masks of a squaring: `ok`, `done` and whether `y := x`. -/
+theorem masks_bv (k t : Bool) (done ok e1 e2 : Bool) :
+    let r3 := BitVec.ofNat 32 (b2n k) &&& (BitVec.ofNat 32 (b2n done) ^^^ 1)
+    let r1 := BitVec.ofNat 32 (b2n t) ||| BitVec.ofNat 32 (b2n e2)
+    let r10 := (BitVec.ofNat 32 (b2n e1) ||| r1) &&& r3
+    (BitVec.ofNat 32 (b2n ok) ||| (r3 &&& BitVec.ofNat 32 (b2n e1))) =
+        BitVec.ofNat 32 (b2n (ok || (!done && k && e1))) ∧
+      (BitVec.ofNat 32 (b2n done) ||| r10) = BitVec.ofNat 32 (b2n (done || (!done && k && (e1 || (e2 || t))))) ∧
+      ((r10 ^^^ 1) &&& r3) = BitVec.ofNat 32 (b2n (!done && k && !e1 && !(e2 || t))) := by
+  cases k <;> cases t <;> cases done <;> cases ok <;> cases e1 <;> cases e2 <;> decide
+
 end VG.Proof.Rsa
