@@ -2,6 +2,310 @@
 //! Verified `dsa` functions for `x86`.
 #![allow(dead_code)]
 
+/// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
+///
+/// Rejection sampling and signing retries are verified against the bounded random-tape specification; each signing attempt calls `vg_dsa_sign`. Every failure zeros the entire output. Callee-saved registers and the loop's state reside in a stack frame.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
+/// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest` or `rand` (distinct Rust objects never do).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea esp, [esp-120]
+mov DWORD PTR [esp+44], ebx
+mov DWORD PTR [esp+48], esi
+mov DWORD PTR [esp+52], edi
+mov DWORD PTR [esp+56], ebp
+mov eax, 0
+mov DWORD PTR [esp+60], eax
+mov eax, 8
+mov DWORD PTR [esp+64], eax
+mov eax, 0
+mov DWORD PTR [esp+88], eax
+mov DWORD PTR [esp+92], eax
+mov DWORD PTR [esp+96], eax
+mov DWORD PTR [esp+100], eax
+mov DWORD PTR [esp+104], eax
+mov DWORD PTR [esp+108], eax
+mov DWORD PTR [esp+112], eax
+mov DWORD PTR [esp+116], eax
+mov esi, DWORD PTR [esp+136]
+add esi, DWORD PTR [esp+144]
+mov ecx, DWORD PTR [esp+148]
+mov ebx, 0
+mov edx, 0
+20:
+movzx eax, BYTE PTR [esi]
+test ebx, ebx
+je 21f
+jmp 22f
+21:
+test eax, eax
+jne 23f
+jmp 24f
+23:
+mov ebx, ecx
+mov edx, eax
+24:
+22:
+add esi, 1
+sub ecx, 1
+jne 20b
+mov esi, DWORD PTR [esp+136]
+add esi, DWORD PTR [esp+144]
+add esi, DWORD PTR [esp+148]
+sub esi, ebx
+mov DWORD PTR [esp+72], esi
+mov DWORD PTR [esp+76], ebx
+mov ebp, 255
+cmp edx, 128
+jb 25f
+jmp 26f
+25:
+mov ebp, 127
+26:
+cmp edx, 64
+jb 27f
+jmp 28f
+27:
+mov ebp, 63
+28:
+cmp edx, 32
+jb 29f
+jmp 210f
+29:
+mov ebp, 31
+210:
+cmp edx, 16
+jb 211f
+jmp 212f
+211:
+mov ebp, 15
+212:
+cmp edx, 8
+jb 213f
+jmp 214f
+213:
+mov ebp, 7
+214:
+cmp edx, 4
+jb 215f
+jmp 216f
+215:
+mov ebp, 3
+216:
+cmp edx, 2
+jb 217f
+jmp 218f
+217:
+mov ebp, 1
+218:
+mov DWORD PTR [esp+80], ebp
+mov eax, 0
+cmp ebx, 2
+jae 219f
+jmp 220f
+219:
+mov eax, 1
+220:
+cmp edx, 2
+jae 221f
+jmp 222f
+221:
+mov eax, 1
+222:
+cmp eax, 0
+je 223f
+225:
+mov eax, 128
+mov DWORD PTR [esp+68], eax
+mov eax, 4
+mov DWORD PTR [esp+84], eax
+226:
+mov eax, DWORD PTR [esp+164]
+sub eax, DWORD PTR [esp+60]
+cmp eax, DWORD PTR [esp+76]
+jb 227f
+mov esi, DWORD PTR [esp+160]
+add esi, DWORD PTR [esp+60]
+mov ecx, DWORD PTR [esp+76]
+mov edx, esp
+add edx, 88
+add edx, DWORD PTR [esp+148]
+sub edx, ecx
+movzx eax, BYTE PTR [esi]
+and eax, DWORD PTR [esp+80]
+mov BYTE PTR [edx], al
+add esi, 1
+add edx, 1
+sub ecx, 1
+jne 229f
+jmp 230f
+229:
+231:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edx], al
+add esi, 1
+add edx, 1
+sub ecx, 1
+jne 231b
+230:
+mov eax, DWORD PTR [esp+60]
+add eax, DWORD PTR [esp+76]
+mov DWORD PTR [esp+60], eax
+mov edx, esp
+add edx, 88
+add edx, DWORD PTR [esp+148]
+mov esi, DWORD PTR [esp+72]
+mov ecx, DWORD PTR [esp+76]
+add esi, ecx
+mov ebx, 0
+mov edi, 0
+232:
+sub edx, 1
+sub esi, 1
+movzx eax, BYTE PTR [edx]
+or edi, eax
+movzx ebp, BYTE PTR [esi]
+add ebp, ebx
+sub eax, ebp
+shr eax, 31
+mov ebx, eax
+sub ecx, 1
+jne 232b
+mov eax, 0
+sub eax, edi
+sbb eax, eax
+and ebx, eax
+test ebx, ebx
+jne 233f
+mov eax, DWORD PTR [esp+68]
+sub eax, 1
+mov DWORD PTR [esp+68], eax
+je 235f
+jmp 236f
+235:
+mov DWORD PTR [esp+84], eax
+236:
+jmp 234f
+233:
+mov eax, 1
+mov DWORD PTR [esp+84], eax
+234:
+jmp 228f
+227:
+mov eax, 2
+mov DWORD PTR [esp+84], eax
+228:
+mov eax, DWORD PTR [esp+84]
+cmp eax, 4
+je 226b
+mov eax, DWORD PTR [esp+84]
+cmp eax, 1
+je 237f
+jmp 238f
+237:
+mov eax, DWORD PTR [esp+124]
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esp+128]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+136]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+140]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+144]
+mov DWORD PTR [esp+16], eax
+mov eax, esp
+add eax, 88
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esp+148]
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esp+152]
+mov DWORD PTR [esp+28], eax
+mov eax, DWORD PTR [esp+156]
+mov DWORD PTR [esp+32], eax
+mov eax, DWORD PTR [esp+168]
+mov DWORD PTR [esp+36], eax
+mov eax, DWORD PTR [esp+172]
+mov DWORD PTR [esp+40], eax
+call {vg_dsa_sign}
+mov DWORD PTR [esp+84], eax
+cmp eax, 0
+je 239f
+jmp 240f
+239:
+mov eax, DWORD PTR [esp+64]
+sub eax, 1
+mov DWORD PTR [esp+64], eax
+jne 241f
+jmp 242f
+241:
+mov eax, 4
+mov DWORD PTR [esp+84], eax
+242:
+240:
+238:
+mov eax, DWORD PTR [esp+84]
+cmp eax, 4
+je 225b
+jmp 224f
+223:
+mov DWORD PTR [esp+84], eax
+224:
+mov eax, DWORD PTR [esp+84]
+cmp eax, 1
+jne 243f
+jmp 244f
+243:
+mov esi, DWORD PTR [esp+124]
+mov ecx, DWORD PTR [esp+128]
+mov eax, 0
+245:
+mov BYTE PTR [esi], al
+add esi, 1
+sub ecx, 1
+jne 245b
+244:
+mov eax, 0
+mov DWORD PTR [esp+88], eax
+mov DWORD PTR [esp+92], eax
+mov DWORD PTR [esp+96], eax
+mov DWORD PTR [esp+100], eax
+mov DWORD PTR [esp+104], eax
+mov DWORD PTR [esp+108], eax
+mov DWORD PTR [esp+112], eax
+mov DWORD PTR [esp+116], eax
+mov edx, DWORD PTR [esp+132]
+mov eax, DWORD PTR [esp+60]
+mov DWORD PTR [edx], eax
+mov eax, 0
+mov DWORD PTR [edx+4], eax
+mov ebx, DWORD PTR [esp+44]
+mov esi, DWORD PTR [esp+48]
+mov edi, DWORD PTR [esp+52]
+mov ebp, DWORD PTR [esp+56]
+mov eax, DWORD PTR [esp+84]
+lea esp, [esp+120]
+ret
+.p2align 6",
+        vg_dsa_sign = sym super::dsa::vg_dsa_sign,
+    )
+}
+
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
 ///
 /// Each supported (p, q) width has its own code, chosen by the public lengths. Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`; exponentiation uses fixed-iteration square-and-multiply with a masked selection. The digest's prefix, clamped to q's actual byte width, is reduced byte by byte. Validation accumulates a mask; every failure zeros the entire output. Callee-saved registers reside in `scratch`.
