@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Proof.MdStream.OneShot
 public import VerifiedGarbage.Impl.MdStream.X86_64.OneShot
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -1178,5 +1179,24 @@ theorem correct {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {D
   refine WP.seq (WP.mono (whole_ok hF hd hf hp m₂ h13₂ hiv₂) fun t₃ ⟨m₃, h13₃, hw₃⟩ => ?_)
   refine WP.seq (WP.mono (tail_ok hF hd hs hf hp m₃ h13₃ hw₃) fun t₄ ⟨m₄, hh₄⟩ => ?_)
   exact WP.mono (finish_ok hF hd hs hp m₄ hh₄) fun t₅ ⟨g₅, h₅⟩ => ⟨g₅, h₅⟩
+
+/-! ## Facts about every instruction
+
+`body`'s instructions are those of `init` and of the body without it, so a
+fact checked by evaluating the code is checked once without `init`. -/
+
+theorem body_allInstrs (P : Params) (init : Prog isa) (name : String) (code : Prog isa) (p : Instr → Bool) :
+    (body P init name code).allInstrs p = ((body P (.block []) name code).allInstrs p && init.allInstrs p) := by
+  simp only [body, Code.allInstrs]
+  cases init.allInstrs p <;> simp
+
+theorem body_all (P : Params) (init : Prog isa) (name : String) (code : Prog isa) (p : Instr → Bool) :
+    (body P init name code).all p = ((body P (.block []) name code).all p && init.all p) := by
+  simp only [body, Code.all]
+  cases init.all p <;> simp
+
+theorem body_depth (P : Params) {init : Prog isa} (h : init.x86_64Depth = 0) (name : String) (code : Prog isa) :
+    (body P init name code).x86_64Depth = (body P (.block []) name code).x86_64Depth := by
+  simp only [body, Code.x86_64Depth, h]
 
 end VG.Proof.MdStream.X86_64.OneShot
