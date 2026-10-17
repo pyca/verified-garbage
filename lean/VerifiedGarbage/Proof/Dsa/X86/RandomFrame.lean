@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `esp` holds the frame's base `B` (`RF`), whose `frameBytes` bytes are
 writable; above them lie the return address and the caller's thirteen
-arguments, readable, all below `2³²`. Slots and arguments are 32-bit words
+arguments, writable (the contract's `writeArgs`), all below `2³²`. Slots and arguments are 32-bit words
 at offsets from `B` (`w32`).
 -/
 
@@ -30,7 +30,7 @@ def argOff (j : Nat) : Nat := frameBytes + 4 + 4 * j
 structure RF (s : State) (B : Addr) : Prop where
   esp : (s.gpr .esp).setWidth 64 = B
   wr : (⟨B, frameBytes⟩ : Region) ∈ s.wr
-  args : (⟨off B (argOff 0), 52⟩ : Region) ∈ s.rd
+  args : (⟨off B (argOff 0), 52⟩ : Region) ∈ s.wr
   nowrap : B.toNat + argOff 13 ≤ 2 ^ 32
 
 theorem RF.esp_toNat {s : State} {B : Addr} (h : RF s B) : (s.gpr .esp).toNat = B.toNat := by
@@ -53,7 +53,7 @@ theorem RF.write {s : State} {B : Addr} (h : RF s B) {d n : Nat} (hd : d + n ≤
 
 theorem RF.readArg {s : State} {B : Addr} (h : RF s B) {j : Nat} (hj : j < 13) :
     InRegions (s.rd ++ s.wr) (off B (argOff j)) 4 := by
-  refine ⟨_, List.mem_append_left _ h.args, ?_⟩
+  refine ⟨_, List.mem_append_right _ h.args, ?_⟩
   have e : off B (argOff j) = off (off B (argOff 0)) (4 * j) := by
     rw [off, off, off, BitVec.add_assoc, ← BitVec.ofNat_add, show argOff 0 + 4 * j = argOff j by
       unfold argOff; omega]
@@ -74,7 +74,7 @@ theorem RF.readArgSrc {s : State} {B : Addr} (h : RF s B) {j : Nat} (hj : j < 13
 
 theorem RF.of_keeps {rs : List Reg} {s s' : State} {B : Addr} (h : RF s B) (hk : Keeps rs s s')
     (hsp : .esp ∉ rs := by decide) : RF s' B :=
-  ⟨by rw [hk.1 _ hsp]; exact h.esp, hk.2.2 ▸ h.wr, hk.2.1 ▸ h.args, h.nowrap⟩
+  ⟨by rw [hk.1 _ hsp]; exact h.esp, hk.2.2 ▸ h.wr, hk.2.2 ▸ h.args, h.nowrap⟩
 
 /-- A store to a slot leaves the arguments, which lie above the frame. -/
 theorem RF.arg_store {s : State} {B : Addr} (h : RF s B) {d j : Nat} (hd : d + 4 ≤ frameBytes)
@@ -84,5 +84,28 @@ theorem RF.arg_store {s : State} {B : Addr} (h : RF s B) {d j : Nat} (hd : d + 4
   have := (writeW32_outside s.mem B (d := d) v (by have := h.nowrap; unfold argOff at this; omega)).w32
     (d := argOff j) (.inr (by unfold argOff; omega)) (by have := h.nowrap; unfold argOff at this ⊢; omega)
   simpa only [w32] using this
+
+theorem RF.of_mupd {s t : State} {B : Addr} {m : Mem} (h : RF s B) (hu : Mupd s t m) : RF t B :=
+  h.of_keeps (hu.keeps []) (by decide)
+
+/-- The 32-bit word at offset `d` of `B`. -/
+abbrev slot (m : Mem) (B : Addr) (d : Nat) : BitVec 32 := m.readW (off B d) 32
+
+theorem slot_write_self (m : Mem) (B : Addr) (d : Nat) (v : BitVec 32) :
+    slot (m.writeW (off B d) v) B d = v := Mem.readW_writeW_self32 _ _ _
+
+theorem slot_write_ne (m : Mem) (B : Addr) {o d : Nat} {w : Nat} (v : BitVec w)
+    (hsep : d + 4 ≤ o ∨ o + w / 8 ≤ d) (hd : d + 4 ≤ 2 ^ 64) (ho : o + w / 8 ≤ 2 ^ 64) :
+    slot (m.writeW (off B o) v) B d = slot m B d :=
+  Mem.readW_writeW_sep (Offset.sep B hsep hd ho) (by decide)
+
+/-- `mov [esp + d], r`, a slot of the frame. -/
+theorem wp_slot {s : State} {B : Addr} (hf : RF s B) {d : Nat} (hd : d + 4 ≤ frameBytes) {r : Reg}
+    {v : BitVec 32} (hv : s.gpr r = v) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, RF t B → t.mem = s.mem.writeW (off B d) v → t.gpr = s.gpr → t.rd = s.rd → t.wr = s.wr →
+      t.zf = s.zf → t.cf = s.cf → WP isa (.block is) t Q) :
+    WP isa (.block (.store (sp d) r :: is)) s Q :=
+  wp_storeS (hf.ea (by unfold argOff frameBytes at *; omega)) (hf.write hd) fun t u =>
+    k t (hf.of_mupd u) (by rw [u.mem, hv]) u.gpr u.rd u.wr u.zf u.cf
 
 end VG.Proof.Dsa.X86
