@@ -37,7 +37,11 @@ mod x86_64 {
     trait Signs: Curve<Signature: PartialEq + core::fmt::Debug> + Sized {
         /// The signature of `message` with the hash function named `hash`,
         /// of the message and of its hash, which must agree.
-        fn sign(key: &SigningKey<Self>, hash: &str, message: &[u8]) -> Result<Self::Signature, Error>;
+        fn sign(
+            key: &SigningKey<Self>,
+            hash: &str,
+            message: &[u8],
+        ) -> Result<Self::Signature, Error>;
 
         /// Whether `rs` verifies for `message` with the hash function named
         /// `hash`, of the message and of its hash, which must agree.
@@ -136,7 +140,11 @@ mod x86_64 {
             let rs = C::sign(key, hash, b"sample").unwrap();
             assert_eq!(C::verify(public, hash, b"sample", &rs), Ok(()), "{hash}");
             assert_eq!(C::verify(public, hash, b"test", &rs), bad, "{hash}");
-            let other = if *hash == "SHA-256" { "SHA-384" } else { "SHA-256" };
+            let other = if *hash == "SHA-256" {
+                "SHA-384"
+            } else {
+                "SHA-256"
+            };
             assert_eq!(C::verify(public, other, b"sample", &rs), bad, "{hash}");
         }
     }
@@ -179,11 +187,46 @@ mod x86_64 {
         };
     }
 
-    rfc_curve!(p192, P192, "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n", 24, 49, 48);
-    rfc_curve!(p224, P224, "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n", 28, 57, 56);
-    rfc_curve!(p256, P256, "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n", 32, 65, 64);
-    rfc_curve!(p384, P384, "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n", 48, 97, 96);
-    rfc_curve!(p521, P521, "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n", 66, 133, 132);
+    rfc_curve!(
+        p192,
+        P192,
+        "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n",
+        24,
+        49,
+        48
+    );
+    rfc_curve!(
+        p224,
+        P224,
+        "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n",
+        28,
+        57,
+        56
+    );
+    rfc_curve!(
+        p256,
+        P256,
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        32,
+        65,
+        64
+    );
+    rfc_curve!(
+        p384,
+        P384,
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        48,
+        97,
+        96
+    );
+    rfc_curve!(
+        p521,
+        P521,
+        "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n",
+        66,
+        133,
+        132
+    );
 
     /// Signatures with each hash function over the curves the RFC has no
     /// signatures over, which verify.

@@ -18,23 +18,12 @@ use super::{BrainpoolP384r1, Error, SigningKey};
 use super::{SignatureHash, sealed};
 use crate::arch::ec_brainpoolp384r1::vg_ec_brainpoolp384r1_public_key;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_brainpoolp384r1_rfc6979::{
-    vg_ecdsa_brainpoolp384r1_rfc6979_sign, vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_avx2,
-    vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani,
-    vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani_avx2,
-    vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani_sha512,
-};
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_sha3;
-#[cfg(target_arch = "x86_64")]
-use crate::cpu::Features;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
-#[cfg(target_arch = "x86_64")]
-use crate::hashes::tier::Tier;
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP384r1> {
@@ -112,51 +101,10 @@ impl sealed::Functions<BrainpoolP384r1> for Sha384 {
 #[cfg(not(target_arch = "x86_64"))]
 impl SignatureHash<BrainpoolP384r1> for Sha384 {}
 
-/// The signing function for a CPU with the features `f`: of its tier of
-/// hash functions.
 #[cfg(target_arch = "x86_64")]
-fn sign_fn(f: Features) -> super::any::SignFn<48, 96> {
-    match Tier::select(f) {
-        Tier::Base => vg_ecdsa_brainpoolp384r1_rfc6979_sign,
-        Tier::Avx2 => vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_avx2,
-        Tier::ShaNi => vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani,
-        Tier::ShaNiAvx2 => vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani_avx2,
-        Tier::ShaNiSha512 => vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_shani_sha512,
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-super::any::any_hash!(BrainpoolP384r1, sign_fn, verify_with, 0);
-
-#[cfg(all(test, target_arch = "x86_64"))]
-mod tests {
-    use super::*;
-    use crate::arch::ecdsa_brainpoolp384r1_rfc6979::{
-        VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_AVX2_FEATURES,
-        VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
-        VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHANI_FEATURES,
-        VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES,
-    };
-    use crate::cpu::NAMES;
-
-    /// The CPU features of the signature with the tier `t`.
-    fn required(t: Tier) -> Features {
-        match t {
-            Tier::Base => Features(0),
-            Tier::Avx2 => VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_AVX2_FEATURES,
-            Tier::ShaNi => VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHANI_FEATURES,
-            Tier::ShaNiAvx2 => VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
-            Tier::ShaNiSha512 => VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES,
-        }
-    }
-
-    /// Each signature needs no CPU feature that the tier is not selected
-    /// for: on every set of features that selects it.
-    #[test]
-    fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let f = Features(bits);
-            assert!(f.contains(required(Tier::select(f))), "{bits:#b}");
-        }
-    }
-}
+super::rfc6979::any_hash!(
+    BrainpoolP384r1,
+    super::rfc6979_x86_64::brainpoolp384r1,
+    verify_with,
+    0
+);

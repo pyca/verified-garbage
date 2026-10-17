@@ -19,14 +19,6 @@ use super::{SignatureHash, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_adx;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p256_rfc6979::{
-    vg_ecdsa_p256_rfc6979_sign, vg_ecdsa_p256_rfc6979_sign_adx,
-    vg_ecdsa_p256_rfc6979_sign_hash_avx2, vg_ecdsa_p256_rfc6979_sign_hash_avx2_adx,
-    vg_ecdsa_p256_rfc6979_sign_hash_shani, vg_ecdsa_p256_rfc6979_sign_hash_shani_adx,
-    vg_ecdsa_p256_rfc6979_sign_hash_shani_avx2, vg_ecdsa_p256_rfc6979_sign_hash_shani_avx2_adx,
-    vg_ecdsa_p256_rfc6979_sign_hash_shani_sha512, vg_ecdsa_p256_rfc6979_sign_hash_shani_sha512_adx,
-};
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
 #[cfg(target_arch = "aarch64")]
@@ -37,12 +29,8 @@ use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
-#[cfg(target_arch = "x86_64")]
-use crate::cpu::Features;
 use crate::cpu::detected;
 use crate::ec::p256::{Mul, public_key};
-#[cfg(target_arch = "x86_64")]
-use crate::hashes::tier::Tier;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::{
     sha256::{Sha256, Sha256Backend},
@@ -171,72 +159,5 @@ impl sealed::Functions<P256> for Sha384 {
 #[cfg(not(target_arch = "x86_64"))]
 impl SignatureHash<P256> for Sha384 {}
 
-/// The signing function for a CPU with the features `f`: of its tier of
-/// hash functions and its multiplications.
 #[cfg(target_arch = "x86_64")]
-fn sign_fn(f: Features) -> super::any::SignFn<32, 64> {
-    match (Tier::select(f), Mul::select(f)) {
-        (Tier::Base, Mul::Baseline) => vg_ecdsa_p256_rfc6979_sign,
-        (Tier::Avx2, Mul::Baseline) => vg_ecdsa_p256_rfc6979_sign_hash_avx2,
-        (Tier::ShaNi, Mul::Baseline) => vg_ecdsa_p256_rfc6979_sign_hash_shani,
-        (Tier::ShaNiAvx2, Mul::Baseline) => vg_ecdsa_p256_rfc6979_sign_hash_shani_avx2,
-        (Tier::ShaNiSha512, Mul::Baseline) => vg_ecdsa_p256_rfc6979_sign_hash_shani_sha512,
-        (Tier::Base, Mul::Adx) => vg_ecdsa_p256_rfc6979_sign_adx,
-        (Tier::Avx2, Mul::Adx) => vg_ecdsa_p256_rfc6979_sign_hash_avx2_adx,
-        (Tier::ShaNi, Mul::Adx) => vg_ecdsa_p256_rfc6979_sign_hash_shani_adx,
-        (Tier::ShaNiAvx2, Mul::Adx) => vg_ecdsa_p256_rfc6979_sign_hash_shani_avx2_adx,
-        (Tier::ShaNiSha512, Mul::Adx) => vg_ecdsa_p256_rfc6979_sign_hash_shani_sha512_adx,
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-super::any::any_hash!(P256, sign_fn, verify_with, 0);
-
-#[cfg(all(test, target_arch = "x86_64"))]
-mod tests {
-    use super::*;
-    use crate::arch::ecdsa_p256_rfc6979::{
-        VG_ECDSA_P256_RFC6979_SIGN_ADX_FEATURES, VG_ECDSA_P256_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_AVX2_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES,
-        VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES,
-    };
-    use crate::cpu::NAMES;
-
-    /// The CPU features of the signature with the tier `t` and the
-    /// multiplications `m`.
-    fn required(t: Tier, m: Mul) -> Features {
-        match (t, m) {
-            (Tier::Base, Mul::Baseline) => Features(0),
-            (Tier::Avx2, Mul::Baseline) => VG_ECDSA_P256_RFC6979_SIGN_HASH_AVX2_FEATURES,
-            (Tier::ShaNi, Mul::Baseline) => VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_FEATURES,
-            (Tier::ShaNiAvx2, Mul::Baseline) => VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
-            (Tier::ShaNiSha512, Mul::Baseline) => {
-                VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES
-            }
-            (Tier::Base, Mul::Adx) => VG_ECDSA_P256_RFC6979_SIGN_ADX_FEATURES,
-            (Tier::Avx2, Mul::Adx) => VG_ECDSA_P256_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES,
-            (Tier::ShaNi, Mul::Adx) => VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES,
-            (Tier::ShaNiAvx2, Mul::Adx) => VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES,
-            (Tier::ShaNiSha512, Mul::Adx) => {
-                VG_ECDSA_P256_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES
-            }
-        }
-    }
-
-    /// Each signature needs no CPU feature that the tier and the
-    /// multiplications are not selected for: on every set of features that
-    /// selects them.
-    #[test]
-    fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let f = Features(bits);
-            let r = required(Tier::select(f), Mul::select(f));
-            assert!(f.contains(r), "{bits:#b}");
-        }
-    }
-}
+super::rfc6979::any_hash!(P256, super::rfc6979_x86_64::p256, verify_with, 0);

@@ -22,35 +22,35 @@ use crate::zeroize::zeroize;
 
 /// A hash function and its number, as the verified functions take it
 /// (`VG.Spec.HashId.hmac`).
-pub(super) trait Id: HashFunction {
+pub(super) trait HashId: HashFunction {
     const ID: usize;
 }
 
-impl Id for Sha1 {
+impl HashId for Sha1 {
     const ID: usize = 1;
 }
 
-impl Id for Sha224 {
+impl HashId for Sha224 {
     const ID: usize = 2;
 }
 
-impl Id for Sha256 {
+impl HashId for Sha256 {
     const ID: usize = 3;
 }
 
-impl Id for Sha384 {
+impl HashId for Sha384 {
     const ID: usize = 4;
 }
 
-impl Id for Sha512 {
+impl HashId for Sha512 {
     const ID: usize = 5;
 }
 
-impl Id for Sha512_224 {
+impl HashId for Sha512_224 {
     const ID: usize = 6;
 }
 
-impl Id for Sha512_256 {
+impl HashId for Sha512_256 {
     const ID: usize = 7;
 }
 
@@ -71,7 +71,7 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" 
 /// # Safety
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
-pub(super) unsafe fn sign<H: Id, const Q: usize, const S: usize>(
+pub(super) unsafe fn sign<H: HashId, const Q: usize, const S: usize>(
     sign: SignFn<Q, S>,
     d: &[u8; Q],
     digest: &H::Output,
@@ -126,21 +126,22 @@ pub(super) fn leftmost<const Q: usize>(digest: &[u8], sh: u32) -> [u8; Q] {
 
 /// Signing over the curve `$curve` with each of SHA-1 and the SHA-2
 /// functions, by the function `$sign` chooses for this CPU's features
-/// (`SignFn`), and verification by `$verify` of `e`, the hash's leftmost
+/// (`SignFn`, `super::rfc6979_x86_64`), and verification by `$verify` of `e`, the hash's leftmost
 /// bits (`leftmost`, for an order of `8 Q - $sh` bits).
 macro_rules! any_hash {
     ($curve:ty, $sign:path, $verify:path, $sh:expr) => {
-        $crate::ecdsa::any::any_hash!(@one $curve, $sign, $verify, $sh, $crate::hashes::sha1::Sha1);
-        $crate::ecdsa::any::any_hash!(@one $curve, $sign, $verify, $sh, $crate::hashes::sha224::Sha224);
-        $crate::ecdsa::any::any_hash!(@one $curve, $sign, $verify, $sh, $crate::hashes::sha256::Sha256);
-        $crate::ecdsa::any::any_hash!(@one $curve, $sign, $verify, $sh, $crate::hashes::sha384::Sha384);
-        $crate::ecdsa::any::any_hash!(@one $curve, $sign, $verify, $sh, $crate::hashes::sha512::Sha512);
-        $crate::ecdsa::any::any_hash!(
-            @one $curve, $sign, $verify, $sh, $crate::hashes::sha512_224::Sha512_224
+        $crate::ecdsa::rfc6979::any_hash!(
+            @each $curve, $sign, $verify, $sh,
+            sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
+            sha512_224::Sha512_224, sha512_256::Sha512_256
         );
-        $crate::ecdsa::any::any_hash!(
-            @one $curve, $sign, $verify, $sh, $crate::hashes::sha512_256::Sha512_256
-        );
+    };
+    (@each $curve:ty, $sign:path, $verify:path, $sh:expr, $($m:ident::$h:ident),*) => {
+        $(
+            $crate::ecdsa::rfc6979::any_hash!(
+                @one $curve, $sign, $verify, $sh, $crate::hashes::$m::$h
+            );
+        )*
     };
     (@one $curve:ty, $sign:path, $verify:path, $sh:expr, $h:ty) => {
         impl $crate::ecdsa::sealed::Functions<$curve> for $h {
@@ -148,11 +149,10 @@ macro_rules! any_hash {
                 d: &<$curve as $crate::ecdsa::Curve>::PrivateKey,
                 digest: &<$h as $crate::hashes::HashFunction>::Output,
             ) -> Result<<$curve as $crate::ecdsa::Curve>::Signature, $crate::ecdsa::Error> {
+                let sign = $sign($crate::cpu::detected());
                 // SAFETY: `$sign` chooses a function that needs no CPU
                 // feature that this CPU lacks.
-                unsafe {
-                    $crate::ecdsa::any::sign::<$h, _, _>($sign($crate::cpu::detected()), d, digest)
-                }
+                unsafe { $crate::ecdsa::rfc6979::sign::<$h, _, _>(sign, d, digest) }
             }
 
             fn verify(
@@ -160,7 +160,7 @@ macro_rules! any_hash {
                 digest: &<$h as $crate::hashes::HashFunction>::Output,
                 signature: &<$curve as $crate::ecdsa::Curve>::Signature,
             ) -> Result<(), $crate::ecdsa::Error> {
-                $verify(q, &$crate::ecdsa::any::leftmost(digest.as_ref(), $sh), signature)
+                $verify(q, &$crate::ecdsa::rfc6979::leftmost(digest.as_ref(), $sh), signature)
             }
         }
 

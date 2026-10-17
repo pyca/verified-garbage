@@ -16,24 +16,14 @@ use super::{Error, P224, SigningKey};
 use super::{SignatureHash, sealed};
 use crate::arch::ec_p224::vg_ec_p224_public_key;
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p224_rfc6979::{
-    vg_ecdsa_p224_rfc6979_sign, vg_ecdsa_p224_rfc6979_sign_hash_avx2,
-    vg_ecdsa_p224_rfc6979_sign_hash_shani, vg_ecdsa_p224_rfc6979_sign_hash_shani_avx2,
-    vg_ecdsa_p224_rfc6979_sign_hash_shani_sha512,
-};
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_sha2;
 #[cfg(target_arch = "x86")]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_shani;
-#[cfg(target_arch = "x86_64")]
-use crate::cpu::Features;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha224::{Sha224, Sha224Backend};
-#[cfg(target_arch = "x86_64")]
-use crate::hashes::tier::Tier;
 use crate::zeroize::zeroize;
 
 impl SigningKey<P224> {
@@ -113,51 +103,5 @@ impl sealed::Functions<P224> for Sha224 {
 #[cfg(not(target_arch = "x86_64"))]
 impl SignatureHash<P224> for Sha224 {}
 
-/// The signing function for a CPU with the features `f`: of its tier of
-/// hash functions.
 #[cfg(target_arch = "x86_64")]
-fn sign_fn(f: Features) -> super::any::SignFn<28, 56> {
-    match Tier::select(f) {
-        Tier::Base => vg_ecdsa_p224_rfc6979_sign,
-        Tier::Avx2 => vg_ecdsa_p224_rfc6979_sign_hash_avx2,
-        Tier::ShaNi => vg_ecdsa_p224_rfc6979_sign_hash_shani,
-        Tier::ShaNiAvx2 => vg_ecdsa_p224_rfc6979_sign_hash_shani_avx2,
-        Tier::ShaNiSha512 => vg_ecdsa_p224_rfc6979_sign_hash_shani_sha512,
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-super::any::any_hash!(P224, sign_fn, verify_with, 0);
-
-#[cfg(all(test, target_arch = "x86_64"))]
-mod tests {
-    use super::*;
-    use crate::arch::ecdsa_p224_rfc6979::{
-        VG_ECDSA_P224_RFC6979_SIGN_HASH_AVX2_FEATURES,
-        VG_ECDSA_P224_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
-        VG_ECDSA_P224_RFC6979_SIGN_HASH_SHANI_FEATURES,
-        VG_ECDSA_P224_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES,
-    };
-    use crate::cpu::NAMES;
-
-    /// The CPU features of the signature with the tier `t`.
-    fn required(t: Tier) -> Features {
-        match t {
-            Tier::Base => Features(0),
-            Tier::Avx2 => VG_ECDSA_P224_RFC6979_SIGN_HASH_AVX2_FEATURES,
-            Tier::ShaNi => VG_ECDSA_P224_RFC6979_SIGN_HASH_SHANI_FEATURES,
-            Tier::ShaNiAvx2 => VG_ECDSA_P224_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
-            Tier::ShaNiSha512 => VG_ECDSA_P224_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES,
-        }
-    }
-
-    /// Each signature needs no CPU feature that the tier is not selected
-    /// for: on every set of features that selects it.
-    #[test]
-    fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let f = Features(bits);
-            assert!(f.contains(required(Tier::select(f))), "{bits:#b}");
-        }
-    }
-}
+super::rfc6979::any_hash!(P224, super::rfc6979_x86_64::p224, verify_with, 0);
