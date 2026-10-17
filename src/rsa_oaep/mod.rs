@@ -2,18 +2,13 @@
 //!
 //! [`encrypt`] is the verified `vg_rsa_oaep_encrypt_precomputed` (contract
 //! `VG.Spec.RsaOaep.encryptAnyContract`), which takes the hash functions as
-//! arguments, by their numbers (`VG.Spec.HashId`); on AArch64, it is still
-//! one function for each pair of hash functions,
-//! `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` (contract
-//! `VG.Spec.RsaOaep.encryptPrecomputedContract`). It runs with a seed from
+//! arguments, by their numbers (`VG.Spec.HashId`). It runs with a seed from
 //! the operating system's generator; it encrypts the encoded message with
 //! `vg_rsa_public_precomputed_checked`, reusing the public key's precomputed
 //! modulus values (on x86-64, with ADX multiplication when available).
 //!
 //! [`decrypt`] is the verified `vg_rsa_oaep_decrypt` (contract
-//! `VG.Spec.RsaOaep.decryptAnyContract`; on AArch64,
-//! `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`, contract
-//! `VG.Spec.RsaOaep.decryptContract`), which computes the encoded message
+//! `VG.Spec.RsaOaep.decryptAnyContract`), which computes the encoded message
 //! with `vg_rsa_private_checked`, as [`PrivateKey::private_op`] does, then
 //! decodes it in constant time: whether the decoding succeeds, where the
 //! message starts and its length do not affect the timing of the verified
@@ -29,10 +24,8 @@
 //! AVX512_IFMA), and on an AArch64 CPU with the SHA-2 or SHA-3
 //! instructions, it uses the faster compression functions and private-key
 //! operations, as [`hashes`](crate::hashes) and [`rsa`](crate::rsa) do.
-//! On x86-64, `any.rs` names the verified functions for each choice of
-//! those implementations (a tier of the hash functions', `Tier`); on
-//! AArch64, each pair has a file, `<H>_mgf1_<G>.rs`, naming its verified
-//! functions for each choice (`oaep_pair!`).
+//! `any.rs` names the verified functions for each choice of those
+//! implementations (a tier of the hash functions', `Tier`).
 //!
 //! This module only checks the lengths, draws the seed and allocates the
 //! memory the functions work in.
@@ -43,19 +36,6 @@
 ))]
 
 mod any;
-mod sha1_mgf1_sha1;
-mod sha224_mgf1_sha1;
-mod sha224_mgf1_sha224;
-mod sha256_mgf1_sha1;
-mod sha256_mgf1_sha256;
-mod sha384_mgf1_sha1;
-mod sha384_mgf1_sha384;
-mod sha512_224_mgf1_sha1;
-mod sha512_224_mgf1_sha512_224;
-mod sha512_256_mgf1_sha1;
-mod sha512_256_mgf1_sha512_256;
-mod sha512_mgf1_sha1;
-mod sha512_mgf1_sha512;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -128,7 +108,6 @@ macro_rules! verified_fn_types {
 
 verified_fn_types! {
     /// The type of the implementations of `vg_rsa_oaep_encrypt_precomputed`.
-    #[cfg(target_arch = "x86_64")]
     type EncryptAnyFn = fn(
         *mut u8,
         usize,
@@ -151,7 +130,6 @@ verified_fn_types! {
     ) -> u32;
 
     /// The type of the implementations of `vg_rsa_oaep_decrypt`.
-    #[cfg(target_arch = "x86_64")]
     type DecryptAnyFn = fn(
         *mut u8,
         usize,
@@ -180,89 +158,6 @@ verified_fn_types! {
         usize,
     ) -> u32;
 
-    /// The type of the implementations of
-    /// `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for `H` of `L` bytes.
-    #[cfg(target_arch = "aarch64")]
-    type EncryptFn<const L: usize> = fn(
-        *mut u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const [u8; L],
-        *mut u64,
-        usize,
-        *const u64,
-        usize,
-    ) -> u32;
-
-    /// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`.
-    #[cfg(target_arch = "aarch64")]
-    type DecryptFn = fn(
-        *mut u8,
-        usize,
-        *mut [u64; 1],
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *mut u64,
-        usize,
-    ) -> u32;
-}
-
-/// `Some($body)`, with `$fns` the verified functions (`(encrypt, decrypt)`)
-/// of the hash function `$hash` with MGF1 over `$mgf1` for the
-/// implementations this CPU runs best, or `None` if this module does not
-/// support the pair.
-#[cfg(target_arch = "aarch64")]
-macro_rules! with_functions {
-    (@pairs $pair:expr, |$fns:ident| $body:expr, {$(($h:ident, $g:ident) => $module:ident),* $(,)?}) => {{
-        let f = detected();
-        match $pair {
-            $((Hash::$h, Hash::$g) => {
-                let $fns = $module::functions(f);
-                Some($body)
-            })*
-            _ => None,
-        }
-    }};
-    ($hash:expr, $mgf1:expr, |$fns:ident| $body:expr) => {
-        with_functions!(@pairs ($hash, $mgf1), |$fns| $body, {
-            (Sha1, Sha1) => sha1_mgf1_sha1,
-            (Sha224, Sha1) => sha224_mgf1_sha1,
-            (Sha224, Sha224) => sha224_mgf1_sha224,
-            (Sha256, Sha1) => sha256_mgf1_sha1,
-            (Sha256, Sha256) => sha256_mgf1_sha256,
-            (Sha384, Sha1) => sha384_mgf1_sha1,
-            (Sha384, Sha384) => sha384_mgf1_sha384,
-            (Sha512, Sha1) => sha512_mgf1_sha1,
-            (Sha512, Sha512) => sha512_mgf1_sha512,
-            (Sha512_224, Sha1) => sha512_224_mgf1_sha1,
-            (Sha512_224, Sha512_224) => sha512_224_mgf1_sha512_224,
-            (Sha512_256, Sha1) => sha512_256_mgf1_sha1,
-            (Sha512_256, Sha512_256) => sha512_256_mgf1_sha512_256,
-        })
-    };
 }
 
 /// RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1) with the hash function `hash` and
@@ -286,20 +181,14 @@ pub fn encrypt(
     if !supported(hash, mgf1_hash) {
         return Err(Error::UnsupportedHash);
     }
-    #[cfg(target_arch = "x86_64")]
-    return encrypt_with(
+    encrypt_with(
         key,
         plaintext,
         hash,
         mgf1_hash,
         label,
         any::functions(detected()).0,
-    );
-    #[cfg(target_arch = "aarch64")]
-    return with_functions!(hash, mgf1_hash, |fns| encrypt_pair(
-        key, plaintext, label, fns.0
-    ))
-    .unwrap_or(Err(Error::UnsupportedHash));
+    )
 }
 
 /// Whether this module supports the hash function `hash` with MGF1 over
@@ -320,7 +209,6 @@ fn supported(hash: Hash, mgf1_hash: Hash) -> bool {
 /// `f`, a `vg_rsa_oaep_encrypt_precomputed` that this CPU can run, with the
 /// hash functions `hash` and `mgf1_hash`, which `supported` accepts, and a
 /// random seed.
-#[cfg(target_arch = "x86_64")]
 fn encrypt_with(
     key: &PublicKey,
     plaintext: &[u8],
@@ -380,60 +268,6 @@ fn encrypt_with(
     Ok(out)
 }
 
-/// `f`, a `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` that this CPU can
-/// run, with a random seed.
-#[cfg(target_arch = "aarch64")]
-fn encrypt_pair<const L: usize>(
-    key: &PublicKey,
-    plaintext: &[u8],
-    label: &[u8],
-    f: EncryptFn<L>,
-) -> Result<Vec<u8>, Error> {
-    let k = key.modulus_len();
-    if plaintext.len() + 2 * L + 2 > k {
-        return Err(Error::MessageTooLong);
-    }
-    let mut seed = [0u8; L];
-    os_random(&mut seed)?;
-    let mut out = vec![0u8; k];
-    let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
-    let pre = key.pre(&mut scratch);
-    // SAFETY: each pointer is valid for its length (`out` and `scratch` for
-    // writes, `seed` for `L` bytes, the hash function's length), and none
-    // overlaps another or wraps around, as they are distinct Rust
-    // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
-    // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
-    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
-    // CPU has the features of `f`, which `functions` chose for the features
-    // detected (its `backend_features` test checks that they need no others).
-    let r = unsafe {
-        f(
-            out.as_mut_ptr(),
-            k,
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
-            label.as_ptr(),
-            label.len(),
-            plaintext.as_ptr(),
-            plaintext.len(),
-            &seed,
-            scratch.as_mut_ptr(),
-            scratch.len(),
-            pre.as_ptr(),
-            pre.len(),
-        )
-    };
-    // ScratchLease wipes the encoded message and its powers before reuse.
-    zeroize(&mut seed);
-    // `PublicKey::new` checked `n`, and the message's length is checked
-    // above.
-    assert_eq!(r, 1, "OAEP encryption refused a valid key and message");
-    Ok(out)
-}
-
 /// RSAES-OAEP-DECRYPT (RFC 8017 §7.1.2) with the hash function `hash` and
 /// MGF1 over `mgf1_hash`: decrypts `ciphertext`
 /// ([`modulus_len`](PrivateKey::modulus_len) bytes, big-endian) with `key`
@@ -453,25 +287,18 @@ pub fn decrypt(
     if !supported(hash, mgf1_hash) {
         return Err(Error::UnsupportedHash);
     }
-    #[cfg(target_arch = "x86_64")]
-    return decrypt_with(
+    decrypt_with(
         key,
         ciphertext,
         hash,
         mgf1_hash,
         label,
         any::functions(detected()).1,
-    );
-    #[cfg(target_arch = "aarch64")]
-    return with_functions!(hash, mgf1_hash, |fns| decrypt_pair(
-        key, ciphertext, label, fns.1
-    ))
-    .unwrap_or(Err(Error::UnsupportedHash));
+    )
 }
 
 /// `f`, a `vg_rsa_oaep_decrypt` that this CPU can run, with the hash
 /// functions `hash` and `mgf1_hash`, which `supported` accepts.
-#[cfg(target_arch = "x86_64")]
 fn decrypt_with(
     key: &PrivateKey,
     ciphertext: &[u8],
@@ -542,169 +369,6 @@ fn decrypted(mut out: Vec<u8>, len: [u64; 1], r: u32) -> Result<Vec<u8>, Error> 
     }
 }
 
-/// `f`, a `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` that this CPU can run.
-#[cfg(target_arch = "aarch64")]
-fn decrypt_pair(
-    key: &PrivateKey,
-    ciphertext: &[u8],
-    label: &[u8],
-    f: DecryptFn,
-) -> Result<Vec<u8>, Error> {
-    let k = key.modulus_len();
-    if ciphertext.len() != k {
-        return Err(Error::InvalidLength);
-    }
-    let mut out = vec![0u8; k];
-    let mut len = [0u64; 1];
-    let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
-    // SAFETY: each pointer is valid for its length (`out`, `len` and
-    // `scratch` for writes), and none overlaps another or wraps around, as
-    // they are distinct Rust allocations; `PrivateKey::from_crt` and the
-    // check above give `64 ≤ n_len ≤ 1024`, `out_len = ct_len = n_len`,
-    // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
-    // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
-    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of `f`,
-    // which `functions` chose for the features detected (its
-    // `backend_features` test checks that they need no others).
-    let r = unsafe {
-        f(
-            out.as_mut_ptr(),
-            k,
-            &mut len,
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
-            key.p.as_ptr(),
-            key.p.len(),
-            key.q.as_ptr(),
-            key.q.len(),
-            key.dp.as_ptr(),
-            key.dp.len(),
-            key.dq.as_ptr(),
-            key.dq.len(),
-            key.qinv.as_ptr(),
-            key.qinv.len(),
-            label.as_ptr(),
-            label.len(),
-            ciphertext.as_ptr(),
-            k,
-            scratch.as_mut_ptr(),
-            scratch.len(),
-        )
-    };
-    decrypted(out, len, r)
-}
-
-/// The verified functions of one pair of hash functions, `H`, of `$n`-byte
-/// values, and `G`, MGF1's: `functions`, which chooses, for a CPU with the
-/// features `f`, the implementations of their compression functions it runs
-/// best (the variants of their streaming backends: `$h`'s, and `$g`'s for
-/// MGF1 over another hash function) and of the RSA operations
-/// (`crate::rsa::Backend`), and returns encryption and decryption calling
-/// them; and a test that each needs no CPU feature that was not required to
-/// choose it.
-///
-/// Each arm names, for one choice of the hash functions' implementations,
-/// encryption and decryption calling RSA's baseline code, each with the
-/// generated constants of the CPU features it needs (none for the baseline
-/// ISA's), RSA's only code on AArch64. With MGF1 over another hash function, the arms after `never` are the
-/// pairs of implementations no CPU chooses: they are there for the match to
-/// be exhaustive, and the test checks that no set of features chooses them.
-#[cfg(target_arch = "aarch64")]
-macro_rules! oaep_pair {
-    (@impl $f:ident, $n:literal, $select:expr,
-        [$([$(#[$attr:meta])*] $pat:pat => $fns:tt)*],
-        [$([$(#[$nattr:meta])*] $npat:pat => $nfns:tt)*]
-    ) => {
-        /// The length of the hash function's values.
-        const N: usize = $n;
-
-        /// The functions, `(encrypt, decrypt)`, for the implementations
-        /// that a CPU with the features `f` runs best.
-        pub(super) fn functions(
-            $f: $crate::cpu::Features,
-        ) -> (super::EncryptFn<N>, super::DecryptFn) {
-            let rsa = $crate::rsa::Backend::select($f);
-            match $select {
-                $($(#[$attr])* $pat => $crate::rsa_oaep::oaep_pair!(@fns rsa, $fns),)*
-                // NO-COVERAGE-START
-                $($(#[$nattr])* $npat => $crate::rsa_oaep::oaep_pair!(@fns rsa, $nfns),)*
-                // NO-COVERAGE-END
-            }
-        }
-
-        #[cfg(test)]
-        mod tests {
-            use super::*;
-
-            /// Each function needs no CPU feature that the implementations
-            /// it calls were not chosen for, and no set of features chooses
-            /// the arms after `never`: on every set of features.
-            #[test]
-            fn backend_features() {
-                for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                    let $f = $crate::cpu::Features(bits);
-                    let rsa = $crate::rsa::Backend::select($f);
-                    let (encrypt, decrypt) = match $select {
-                        $($(#[$attr])* $pat => $crate::rsa_oaep::oaep_pair!(@features rsa, $fns),)*
-                        // NO-COVERAGE-START
-                        $($(#[$nattr])* $npat => panic!("{} chosen for {bits:#b}", stringify!($npat)),)*
-                        // NO-COVERAGE-END
-                    };
-                    assert!($f.contains(encrypt) && $f.contains(decrypt), "{bits:#b}");
-                }
-            }
-        }
-    };
-    (@fns $rsa:ident, {
-        encrypt: $enc:path [$($ereq:path),*],
-        decrypt: $dec:path [$($dreq:path),*] $(,)?
-    }) => {
-        (
-            match $rsa {
-                $crate::rsa::Backend::Baseline => $enc,
-            },
-            match $rsa {
-                $crate::rsa::Backend::Baseline => $dec,
-            },
-        )
-    };
-    (@features $rsa:ident, {
-        encrypt: $enc:path [$($ereq:path),*],
-        decrypt: $dec:path [$($dreq:path),*] $(,)?
-    }) => {
-        (
-            match $rsa {
-                $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($ereq),*]),
-            },
-            match $rsa {
-                $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($dreq),*]),
-            },
-        )
-    };
-    // MGF1 over the hash function itself: its backend chooses both.
-    ($n:literal, $h:ident {
-        $($(#[$attr:meta])* $hv:ident => $fns:tt),* $(,)?
-    }) => {
-        $crate::rsa_oaep::oaep_pair!(@impl f, $n, $h::select(f),
-            [$([$(#[$attr])*] $h::$hv => $fns)*], []);
-    };
-    // MGF1 over another hash function: the two backends choose.
-    ($n:literal, $h:ident, $g:ident {
-        $($(#[$attr:meta])* ($hv:ident, $gv:ident) => $fns:tt),* $(,)?
-    } never {
-        $($(#[$nattr:meta])* ($nhv:ident, $ngv:ident) => $nfns:tt),* $(,)?
-    }) => {
-        $crate::rsa_oaep::oaep_pair!(@impl f, $n, ($h::select(f), $g::select(f)),
-            [$([$(#[$attr])*] ($h::$hv, $g::$gv) => $fns)*],
-            [$([$(#[$nattr])*] ($h::$nhv, $g::$ngv) => $nfns)*]);
-    };
-}
-
-#[cfg(target_arch = "aarch64")]
-use oaep_pair;
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -737,8 +401,6 @@ mod tests {
                     )
                     && (g == h || g == Hash::Sha1);
                 assert_eq!(supported(h, g), ok);
-                #[cfg(target_arch = "aarch64")]
-                assert_eq!(with_functions!(h, g, |_fns| ()).is_some(), ok);
                 n += usize::from(ok);
             }
         }

@@ -7,7 +7,10 @@
 //! ([`Tier`]) and each implementation of the RSA operation
 //! (`crate::rsa::Backend`).
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use crate::arch::rsa_oaep::*;
 use crate::cpu::Features;
@@ -16,17 +19,21 @@ use crate::rsa::Backend;
 
 /// The implementations of one tier, each with the generated constant of the
 /// CPU features it needs (none for the baseline ISA's): encryption calling
-/// RSA's baseline and ADX code, and decryption calling RSA's baseline, ADX
-/// and AVX512_IFMA code.
+/// RSA's baseline code (and on x86-64 its ADX code), and decryption calling
+/// RSA's baseline code (and on x86-64 its ADX and AVX512_IFMA code).
 struct TierFns {
     encrypt: (super::EncryptAnyFn, Features),
+    #[cfg(target_arch = "x86_64")]
     encrypt_adx: (super::EncryptAnyFn, Features),
     decrypt: (super::DecryptAnyFn, Features),
+    #[cfg(target_arch = "x86_64")]
     decrypt_adx: (super::DecryptAnyFn, Features),
+    #[cfg(target_arch = "x86_64")]
     decrypt_ifma: (super::DecryptAnyFn, Features),
 }
 
 /// The functions of the tier `t`.
+#[cfg(target_arch = "x86_64")]
 fn tier(t: Tier) -> TierFns {
     match t {
         Tier::Base => TierFns {
@@ -136,6 +143,37 @@ fn tier(t: Tier) -> TierFns {
     }
 }
 
+/// The functions of the tier `t`.
+#[cfg(target_arch = "aarch64")]
+fn tier(t: Tier) -> TierFns {
+    match t {
+        Tier::Base => TierFns {
+            encrypt: (vg_rsa_oaep_encrypt_precomputed, Features::all(&[])),
+            decrypt: (vg_rsa_oaep_decrypt, Features::all(&[])),
+        },
+        Tier::Sha2 => TierFns {
+            encrypt: (
+                vg_rsa_oaep_encrypt_precomputed_hash_sha2,
+                VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_HASH_SHA2_FEATURES,
+            ),
+            decrypt: (
+                vg_rsa_oaep_decrypt_hash_sha2,
+                VG_RSA_OAEP_DECRYPT_HASH_SHA2_FEATURES,
+            ),
+        },
+        Tier::Sha2Sha3 => TierFns {
+            encrypt: (
+                vg_rsa_oaep_encrypt_precomputed_hash_sha2_sha3,
+                VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_HASH_SHA2_SHA3_FEATURES,
+            ),
+            decrypt: (
+                vg_rsa_oaep_decrypt_hash_sha2_sha3,
+                VG_RSA_OAEP_DECRYPT_HASH_SHA2_SHA3_FEATURES,
+            ),
+        },
+    }
+}
+
 /// Encryption and decryption, each with the CPU features it needs, for the
 /// implementations a CPU with the features `f` runs best: its tier's, with
 /// its RSA backend (encryption's public-key operation is the ADX code's for
@@ -149,7 +187,9 @@ fn chosen(
     let t = tier(Tier::select(f));
     match Backend::select(f) {
         Backend::Baseline => (t.encrypt, t.decrypt),
+        #[cfg(target_arch = "x86_64")]
         Backend::Adx => (t.encrypt_adx, t.decrypt_adx),
+        #[cfg(target_arch = "x86_64")]
         Backend::Ifma => (t.encrypt_adx, t.decrypt_ifma),
     }
 }
