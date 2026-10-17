@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Wipe
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
@@ -136,9 +137,13 @@ def blkToP (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.p
 /-- The instance of `vg_aes_gcm_stream_encrypt` calling the implementations `v`. -/
 def encFn (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBase ⟨Spec.Gcm.streamEncryptApi.name ++ v.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)⟩
-    (streamEncrypt_framed v) (X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v))
-    (StreamTo.framed_xdepth (streamEncrypt_xdepth v)) (StreamTo.framed_mx (streamEncrypt_mx v))
+      Impl.StackScratch.X86_64.withStackArgScratchSlots 2584 1 v.zero v.streamEncSlots
+        (Impl.AesGcm.X86_64.streamEncrypt v.callees)⟩
+    (streamEncryptW_framed v v.zero v.streamEncSlots v.streamEncSlots_ok)
+    (X86_64.withStackArgScratchSlots_spSafe (bytes := 2584) (m := 1) (z := v.zero) (ss := v.streamEncSlots)
+      (streamEncrypt_spSafe v))
+    (framedSlots_xdepth (bytes := 2584) (m := 1) (z := v.zero) (ss := v.streamEncSlots) (streamEncrypt_xdepth v))
+    (framedSlots_mx (bytes := 2584) (m := 1) (z := v.zero) (ss := v.streamEncSlots) (streamEncrypt_mx v))
 
 /-- The instance of `vg_aes_gcm_stream_encrypt_precomputed` calling the
 implementations `v`. -/
@@ -229,9 +234,13 @@ theorem sealCodeP_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : Bl
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
 def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBase ⟨Spec.Gcm.sealApi.name ++ v.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)⟩
-    (sealSel_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB))
-    (StreamTo.framed_xdepth (sealCode_xdepth v v.blkB)) (StreamTo.framed_mx (sealCode_mx v v.blkB))
+      Impl.StackScratch.X86_64.withStackArgScratchSlots 2600 3 v.zero v.sealSlots (v.sealCode v.callees)⟩
+    (sealSelW_framed v Short.shortFacts v.zero v.sealSlots v.sealSlots_ok)
+    (X86_64.withStackArgScratchSlots_spSafe (bytes := 2600) (m := 3) (z := v.zero) (ss := v.sealSlots)
+      (sealCode_spSafe v v.blkB))
+    (framedSlots_xdepth (bytes := 2600) (m := 3) (z := v.zero) (ss := v.sealSlots)
+      (sealCode_xdepth v v.blkB)) (framedSlots_mx (bytes := 2600) (m := 3) (z := v.zero) (ss := v.sealSlots)
+      (sealCode_mx v v.blkB))
 
 /-- The instance of `vg_aes_gcm_seal_precomputed` calling the implementations `v`. -/
 def sealFnP (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
@@ -284,12 +293,16 @@ def toFnP (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers 
 /-- The instance of `vg_aes_gcm_seal_split` of a variant. -/
 def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBase ⟨Spec.Gcm.sealSplitApi.name ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+      Impl.StackScratch.X86_64.withStackArgScratchSlots 2616 5 v.impl.zero v.impl.splitSlots
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))⟩
-    (Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v))
-    (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v)))
-    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v)))
-    (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkB (blkTo v)))
+    (Split.sealSplitW_framed v.impl Short.shortFacts v.impl.blkB (blkTo v) v.impl.zero v.impl.splitSlots
+      v.impl.splitSlots_ok)
+    (X86_64.withStackArgScratchSlots_spSafe (bytes := 2616) (m := 5) (z := v.impl.zero) (ss := v.impl.splitSlots)
+      (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v)))
+    (framedSlots_xdepth (bytes := 2616) (m := 5) (z := v.impl.zero) (ss := v.impl.splitSlots)
+      (Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v)))
+    (framedSlots_mx (bytes := 2616) (m := 5) (z := v.impl.zero) (ss := v.impl.splitSlots)
+      (Split.sealSplit_mx v.impl v.impl.blkB (blkTo v)))
 
 /-- The instance of `vg_aes_gcm_seal_split_precomputed` of a variant. -/
 def splitFnP (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
@@ -321,10 +334,15 @@ def blkToR (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.p
 
 def encFnR (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      Impl.StackScratch.X86_64.withStackArgScratchSlots 2584 1 v.impl.zero v.impl.streamEncSlots
         (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))⟩
-    (streamEncryptPrepared_framed v.impl (blkR v)) (X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR v)))
-    (StreamTo.framed_xdepth (streamEncryptM_xdepth v.impl (blkR v))) (StreamTo.framed_mx (streamEncryptM_mx v.impl (blkR v)))
+    (streamEncryptPreparedW_framed v.impl (blkR v) v.impl.zero v.impl.streamEncSlots v.impl.streamEncSlots_ok)
+    (X86_64.withStackArgScratchSlots_spSafe (bytes := 2584) (m := 1) (z := v.impl.zero)
+      (ss := v.impl.streamEncSlots) (streamEncryptM_spSafe v.impl (blkR v)))
+    (framedSlots_xdepth (bytes := 2584) (m := 1) (z := v.impl.zero) (ss := v.impl.streamEncSlots)
+      (streamEncryptM_xdepth v.impl (blkR v)))
+    (framedSlots_mx (bytes := 2584) (m := 1) (z := v.impl.zero) (ss := v.impl.streamEncSlots)
+      (streamEncryptM_mx v.impl (blkR v)))
 
 def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.streamEncryptToPreparedApi.name ++ v.impl.suffix,
@@ -338,20 +356,28 @@ def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepare
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant. -/
 def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))⟩
-    (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts)
-    (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v)))
-    (StreamTo.framed_xdepth (sealCodeP_xdepth v.impl (blkR v))) (StreamTo.framed_mx (sealCodeP_mx v.impl (blkR v)))
+      Impl.StackScratch.X86_64.withStackArgScratchSlots 2600 3 v.impl.zero v.impl.sealSlots
+        (v.impl.sealCodeP (v.impl.withBlk (blkR v)))⟩
+    (sealSelPreparedW_framed v.impl (blkR v) Short.shortFacts v.impl.zero v.impl.sealSlots v.impl.sealSlots_ok)
+    (X86_64.withStackArgScratchSlots_spSafe (bytes := 2600) (m := 3) (z := v.impl.zero) (ss := v.impl.sealSlots)
+      (sealCodeP_spSafe v.impl (blkR v)))
+    (framedSlots_xdepth (bytes := 2600) (m := 3) (z := v.impl.zero) (ss := v.impl.sealSlots)
+      (sealCodeP_xdepth v.impl (blkR v))) (framedSlots_mx (bytes := 2600) (m := 3) (z := v.impl.zero) (ss := v.impl.sealSlots)
+      (sealCodeP_mx v.impl (blkR v)))
 
 /-- The instance of `vg_aes_gcm_seal_split_prepared` of a variant. -/
 def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+      Impl.StackScratch.X86_64.withStackArgScratchSlots 2616 5 v.impl.zero v.impl.splitSlots
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
-    (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
-    (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
-    (StreamTo.framed_xdepth (Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v)))
-    (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
+    (Split.sealSplitPreparedW_framed v.impl Short.shortFacts (blkR v) (blkToR v) v.impl.zero v.impl.splitSlots
+      v.impl.splitSlots_ok)
+    (X86_64.withStackArgScratchSlots_spSafe (bytes := 2616) (m := 5) (z := v.impl.zero) (ss := v.impl.splitSlots)
+      (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
+    (framedSlots_xdepth (bytes := 2616) (m := 5) (z := v.impl.zero) (ss := v.impl.splitSlots)
+      (Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v)))
+    (framedSlots_mx (bytes := 2616) (m := 5) (z := v.impl.zero) (ss := v.impl.splitSlots)
+      (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
 
 /-- The short path of `vg_aes_gcm_seal_gather_prepared` of a variant. -/
 def shortFnR (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=

@@ -164,18 +164,18 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.sealApi.artifact X86_64.target {
     suffix := v.suffix
     notes := note v :: shortNote v ++ finNote v
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2600 3 v.zero v.sealSlots (v.sealCode v.callees)
     stack := 2624
-    verified := sealSel_framed v Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB)
+    verified := sealSelW_framed v Short.shortFacts v.zero v.sealSlots v.sealSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (sealCode_spSafe v v.blkB)
     features := v.features },
   Spec.Gcm.openApi.artifact X86_64.target {
     suffix := v.suffix
     notes := note v :: shortNote v
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2608 4 v.zero v.openSlots (v.openCode v.callees)
     stack := 2632
-    verified := openSel_framed v Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
+    verified := openSelW_framed v Short.shortFacts v.zero v.openSlots v.openSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
   Spec.Gcm.streamInitApi.artifact X86_64.target {
     suffix := v.suffix
@@ -198,18 +198,18 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := v.suffix
     notes := [note v]
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2584 1 v.zero v.streamEncSlots (Impl.AesGcm.X86_64.streamEncrypt v.callees)
     stack := 2608
-    verified := streamEncrypt_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v)
+    verified := streamEncryptW_framed v v.zero v.streamEncSlots v.streamEncSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (streamEncrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamDecryptApi.artifact X86_64.target {
     suffix := v.suffix
     notes := [note v]
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.callees)
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2584 1 v.zero v.streamDecSlots (Impl.AesGcm.X86_64.streamDecrypt v.callees)
     stack := 2608
-    verified := streamDecrypt_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
+    verified := streamDecryptW_framed v v.zero v.streamDecSlots v.streamDecSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (streamDecrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamFinishApi.artifact X86_64.target {
     suffix := v.suffix
@@ -381,14 +381,14 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealGatherApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := [gatherNote (copyBelow v) (splitFrom v) (sealFn v.impl).fn.name (splitFn v).fn.name (toFn v).fn.name]
-    code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 240 5 v.impl.zero v.impl.gatherSlots
       (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
         (shortFn v).code (initFn v.impl).fn
         (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
     stack := 5128
-    verified := Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
-      (finFn v.impl)
-    spSafe := X86_64.withStackArgScratch_spSafe
+    verified := Gather.sealGatherW_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
+      (finFn v.impl) v.impl.zero v.impl.gatherSlots v.impl.gatherSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe
       (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
         (finFn v.impl))
     features := v.impl.features }] ++
@@ -437,36 +437,40 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2600 3 v.impl.zero v.impl.sealSlots (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
     stack := 2624
-    verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v))
+    verified := sealSelPreparedW_framed v.impl (blkR v) Short.shortFacts v.impl.zero v.impl.sealSlots
+      v.impl.sealSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (sealCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2608 4 v.impl.zero v.impl.openSlots (v.impl.openCodeP (v.impl.withBlk (blkR v)))
     stack := 2632
-    verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
+    verified := openSelPreparedW_framed v.impl (blkR v) Short.shortFacts v.impl.zero v.impl.openSlots
+      v.impl.openSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := [note v.impl]
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2584 1 v.impl.zero v.impl.streamEncSlots
       (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))
     stack := 2608
-    verified := streamEncryptPrepared_framed v.impl (blkR v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR v))
+    verified := streamEncryptPreparedW_framed v.impl (blkR v) v.impl.zero v.impl.streamEncSlots
+      v.impl.streamEncSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (streamEncryptM_spSafe v.impl (blkR v))
     features := v.impl.features },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := [note v.impl]
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2584 1 v.impl.zero v.impl.streamDecSlots
       (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v)))
     stack := 2608
-    verified := streamDecryptPrepared_framed v.impl (blkR v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v))
+    verified := streamDecryptPreparedW_framed v.impl (blkR v) v.impl.zero v.impl.streamDecSlots
+      v.impl.streamDecSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (streamDecryptM_spSafe v.impl (blkR v))
     features := v.impl.features }]
 
 def artifactsToR (v : GcmVariant) : List Artifact :=
@@ -492,14 +496,14 @@ def artifactsGatherR (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
       notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name]
-      code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
+      code := Impl.StackScratch.X86_64.withStackArgScratchSlots 240 5 v.impl.zero v.impl.gatherSlots
         (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
         (shortFnR v).code (initFn v.impl).fn
           (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn)
       stack := 5128
-      verified := Gather.sealGatherPrepared_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
-        (toFnR v) (finFn v.impl)
-      spSafe := X86_64.withStackArgScratch_spSafe
+      verified := Gather.sealGatherPreparedW_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
+        (toFnR v) (finFn v.impl) v.impl.zero v.impl.gatherSlots v.impl.gatherSlots_ok
+      spSafe := X86_64.withStackArgScratchSlots_spSafe
         (Gather.sealGather_spAll (shortFnR v) (initFn v.impl) (aadFn v.impl) (toFnR v)
           (finFn v.impl))
       features := v.impl.features }]
@@ -524,11 +528,12 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealSplitApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := [note v.impl, splitNote (blkTo v).fn.name]
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+    code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2616 5 v.impl.zero v.impl.splitSlots
       (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))
     stack := 2672
-    verified := Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v)
-    spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v))
+    verified := Split.sealSplitW_framed v.impl Short.shortFacts v.impl.blkB (blkTo v) v.impl.zero
+      v.impl.splitSlots v.impl.splitSlots_ok
+    spSafe := X86_64.withStackArgScratchSlots_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v))
     features := v.impl.features }] ++
   (if v.impl.stitchP.isSome && v.stitchR.isNone then
     [Spec.Gcm.sealSplitPrecomputedApi.artifact X86_64.target {
@@ -545,11 +550,12 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
     [Spec.Gcm.sealSplitPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
       notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl
-      code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+      code := Impl.StackScratch.X86_64.withStackArgScratchSlots 2616 5 v.impl.zero v.impl.splitSlots
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
       stack := 2672
-      verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts
-      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))
+      verified := Split.sealSplitPreparedW_framed v.impl Short.shortFacts (blkR v) (blkToR v) v.impl.zero
+        v.impl.splitSlots v.impl.splitSlots_ok
+      spSafe := X86_64.withStackArgScratchSlots_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))
       features := v.impl.features }]
   else [])
 
