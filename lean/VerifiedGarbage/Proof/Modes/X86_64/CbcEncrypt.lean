@@ -160,7 +160,7 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₅]) (fun h0 => ?_) (fun h0 => ?_)) fun s₆ d₆ => ?_)
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨b₅, rfl, fun _ _ => rfl, fun i hi' => by rw [hn0, Nat.mul_zero] at hi'; omega,
-      Frame.refl _ _, rfl, rfl⟩
+      Frame.refl _ _, rfl, rfl, fun h => absurd hn0 h⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine cbcEncLoop_wp cs hiv hp ⟨b₅, rfl, cs.ready_frame ready₄ (by rw [mem₅]; exact Frame.refl [] _)
         (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rd₅, wr₅, runBlock_syms e₅⟩ (fun r _ => by rw [g₅]), fun _ _ => rfl, ?_, ?_, by omega, fun q hq r hr => ?_,
