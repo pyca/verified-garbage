@@ -290,11 +290,8 @@ mod tests {
             ),
         ];
         for &(features, expected) in cases {
-            assert_eq!(
-                Backend::ffdh(Features::of(features)),
-                expected,
-                "{features:?}"
-            );
+            let selected = Backend::ffdh(Features::of(features));
+            assert_eq!(selected, expected, "{features:?}");
         }
     }
 }
