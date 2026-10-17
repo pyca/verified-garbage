@@ -745,13 +745,17 @@ if __name__ == '__main__':
 
 
 class FreshCopies(unittest.TestCase):
-    def test_only_the_p521_comb_chacha20poly1305_and_aes_gcm_groups_run_from_copies(self):
+    def test_only_the_p521_comb_chacha20poly1305_aes_gcm_and_sha512_family_groups_run_from_copies(self):
         # P-521's comb table (747 KB) moved its times by up to 7% between
         # identical copies of one binary; P-384's and P-256's did not move.
         # ChaCha20-Poly1305's moved by up to 29% on AMD's Zen 3, and
         # AES-GCM's by up to 35%; ChaCha20's, Poly1305's and AES-GCM-SIV's
-        # own groups are not known to.
-        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
+        # own groups are not known to. The SHA-512 family's digests and
+        # PBKDF2's moved by up to 11% and 9% on AMD's Zen 4; HMAC's are not
+        # known to.
+        for group in ['sha384', 'sha512', 'sha512-224', 'sha512-256', 'pbkdf2-hmac-sha384',
+                      'pbkdf2-hmac-sha512', 'pbkdf2-hmac-sha512-224', 'pbkdf2-hmac-sha512-256',
+                      'ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
                       'chacha20poly1305', 'chacha20poly1305-decrypt',
                       'chacha20poly1305-encrypt-out-of-place', 'chacha20poly1305-copy-encrypt-in-place',
                       'aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-128-gcm-stream',
@@ -759,7 +763,8 @@ class FreshCopies(unittest.TestCase):
             self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
         for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key',
                       'chacha20', 'poly1305', 'xchacha20poly1305',
-                      'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash']:
+                      'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash',
+                      'sha256', 'sha512-256-hash', 'hmac-sha512', 'pbkdf2-hmac-sha256']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
     def test_the_copies_select_only_the_modules_with_those_groups(self):
@@ -770,13 +775,27 @@ class FreshCopies(unittest.TestCase):
         modules = bench_compare.FRESH_COPIES_MODULES.split()
         selected = [name for name, uses in catalog.items()
                     if any(m in uses for m in modules)]
-        self.assertEqual(sorted(selected), ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521'])
+        # The copies' runs set up the benchmarks holding those groups, and
+        # beyond the four that used to run from copies, only benchmarks of
+        # code built on SHA-512 (which the `sha512` module selects).
+        held = ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521', 'pbkdf2_sha384', 'pbkdf2_sha512',
+                'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'sha384', 'sha512', 'sha512_224', 'sha512_256']
+        self.assertLessEqual(set(held), set(selected))
+        for name in set(selected) - set(held):
+            self.assertIn('sha512', catalog[name], name)
         source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
         for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
             self.assertIn(f'"{group}"', source)
         source = (root / 'bench/benches/primitives/chacha20poly1305.rs').read_text()
         for group in ['chacha20poly1305', 'chacha20poly1305-decrypt', 'chacha20poly1305-encrypt-out-of-place',
                       'chacha20poly1305-copy-encrypt-in-place']:
+            self.assertIn(f'"{group}"', source)
+        for bench, group in [('sha384', 'sha384'), ('sha512', 'sha512'), ('sha512_224', 'sha512-224'),
+                             ('sha512_256', 'sha512-256'), ('pbkdf2_sha384', 'pbkdf2-hmac-sha384'),
+                             ('pbkdf2_sha512', 'pbkdf2-hmac-sha512'),
+                             ('pbkdf2_sha512_224', 'pbkdf2-hmac-sha512-224'),
+                             ('pbkdf2_sha512_256', 'pbkdf2-hmac-sha512-256')]:
+            source = (root / f'bench/benches/primitives/{bench}.rs').read_text()
             self.assertIn(f'"{group}"', source)
         source = (root / 'bench/benches/primitives/aes_gcm.rs').read_text()
         for group in ['aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-{bits}-gcm-tls-seal',
