@@ -137,7 +137,7 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   have z : ∀ p : Addr, p + BitVec.ofNat 64 0 = p := BitVec.add_zero
   have tsub : Region.Sub ⟨T (H := H.stream) s₀, H.D⟩ (scR sc s₀) := Offset.sub_base _ (by omega_using [hbuf, hDN])
   simp only [Hash.finMid, List.append_assoc]
-  refine copyW_ok (src := .r12) (dst := .rbx) (by decide) (by decide) 0 0 H.P.N hN4 _ s _
+  refine copyW_ok (src := .r12) (dst := .rbx) (by decide) (by decide) _ 0 0 H.P.N hN4 _ s _
     (fun a w _ h => by
       rw [hk.r12, add_ofNat]
       exact ⟨_, oR, Offset.contains_base _ (by omega_using [h, hS]) (by omega_using [h, hB, hNL])⟩)
@@ -152,7 +152,7 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   rw [hk.r12, hk.rbx, z, z] at m₁
   have r15 : s₁.gpr .r15 = scr s₀ := by rw [g₁ _ (by decide), hk.r15]
   have rbx : s₁.gpr .rbx = inn s₀ := by rw [g₁ _ (by decide), hk.rbx]
-  refine copyW_ok (src := .r15) (dst := .rbx) (by decide) (by decide) H.stream.buf H.P.N H.D hD4 _ s₁ _
+  refine copyW_ok (src := .r15) (dst := .rbx) (by decide) (by decide) _ H.stream.buf H.P.N H.D hD4 _ s₁ _
     (fun a w hw h => by
       rw [r15, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]
       exact ⟨_, List.mem_append_right _ sR, Offset.contains_base _ (by omega_using [h, hbuf, hDN]) (by omega_using [hw, h, hbuf, h8, hDN])⟩)
@@ -320,7 +320,7 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (hbp : s.gpr .rbp = blk H s₀) :
     have b₁ : bytesAt s₁.mem (blk H s₀) H.D = (hH.md.digest (hH.md.stateAt s.mem (inn s₀))).take H.D := by
       rw [bytesAt_take _ _ (Nat.le_of_lt hDN'), m₁, bytesAt_writeBytes_self' hdl (by omega_using [hSB])]
     have rbp₁ : s₁.gpr .rbp = blk H s₀ := by rw [g₁ _ (by decide), hbp]
-    refine copyW_ok (src := .rbp) (dst := .r13) (by decide) (by decide) 0 0 H.D hD4 _ s₁ _
+    refine copyW_ok (src := .rbp) (dst := .r13) (by decide) (by decide) _ 0 0 H.D hD4 _ s₁ _
       (fun a w hw h => by
         rw [rbp₁, add_ofNat, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]
         exact ⟨_, List.mem_append_right _ iR, Offset.contains_base _ (by omega_using [h, hS, hDL]) (by omega_using [hw, h, hB, hNL, hDL])⟩)

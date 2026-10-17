@@ -80,7 +80,7 @@ theorem copy128_ok {src dst : Reg} (o₁ o₂ : Nat) (c : Nat) :
     exact copy_mem s.mem _ _ c 16 (by rwa [← Nat.mul_succ]) (by omega)
 
 /-- `copyW src so dst d n` writes the `n` bytes (a multiple of 4) at `src + so` to `dst + d`. -/
-theorem copyW_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o₁ o₂ n : Nat) (hn : n % 4 = 0)
+theorem copyWide_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o₁ o₂ n : Nat) (hn : n % 4 = 0)
     (rest : List Instr) (s : State) (Q : State → Prop)
     (hin : ∀ a w, 0 < w → a + w ≤ n → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 a) w)
     (hout : ∀ a w, 0 < w → a + w ≤ n → InRegions s.wr (s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 a) w)
@@ -89,8 +89,8 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o₁ o
     (k : ∀ s', (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
       s'.mem = writeBytes s.mem (s.gpr dst + BitVec.ofNat 64 o₂)
         (bytesAt s.mem (s.gpr src + BitVec.ofNat 64 o₁) n) → WP isa (.block rest) s' Q) :
-    WP isa (.block (Hash.copyW src o₁ dst o₂ n ++ rest)) s Q := by
-  unfold Hash.copyW
+    WP isa (.block (Hash.copyWide src o₁ dst o₂ n ++ rest)) s Q := by
+  unfold Hash.copyWide
   simp only [List.append_assoc]
   refine copy128_ok o₁ o₂ (n / 16) _ s Q (fun j hj => hin _ _ (by omega) (by omega)) (fun j hj => hout _ _ (by omega) (by omega))
     (fun x hx hy => hsep x (by omega) (by omega)) (by omega) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
@@ -138,6 +138,24 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o₁ o
   · rename_i h4
     simp only [List.nil_append]
     exact k s₂ g₂ rd₂ wr₂ (by rw [m₂, show n / 8 * 8 = n by omega])
+
+/-- `copyW wide src so dst d n` writes the `n` bytes (a multiple of 4) at `src + so` to `dst + d`. -/
+theorem copyW_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (wide : Bool) (o₁ o₂ n : Nat) (hn : n % 4 = 0)
+    (rest : List Instr) (s : State) (Q : State → Prop)
+    (hin : ∀ a w, 0 < w → a + w ≤ n → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 a) w)
+    (hout : ∀ a w, 0 < w → a + w ≤ n → InRegions s.wr (s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 a) w)
+    (hsep : Mem.Sep (s.gpr src + BitVec.ofNat 64 o₁) n (s.gpr dst + BitVec.ofNat 64 o₂) n)
+    (hlt : n < 2 ^ 64)
+    (k : ∀ s', (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
+      s'.mem = writeBytes s.mem (s.gpr dst + BitVec.ofNat 64 o₂)
+        (bytesAt s.mem (s.gpr src + BitVec.ofNat 64 o₁) n) → WP isa (.block rest) s' Q) :
+    WP isa (.block (Hash.copyW wide src o₁ dst o₂ n ++ rest)) s Q := by
+  unfold Hash.copyW
+  split
+  · exact copyWide_ok hs hd o₁ o₂ n hn rest s Q hin hout hsep hlt k
+  · refine Pbkdf2.X86_64.copy32_ok hs hd o₁ o₂ (n / 4) rest s Q (fun j hj => hin _ _ (by omega) (by omega))
+      (fun j hj => hout _ _ (by omega) (by omega)) (fun x hx hy => hsep x (by omega) (by omega)) (by omega)
+      fun s' g rd wr m => k s' g rd wr (by rw [m, show 4 * (n / 4) = n by omega])
 
 /-! ## Registers and regions -/
 

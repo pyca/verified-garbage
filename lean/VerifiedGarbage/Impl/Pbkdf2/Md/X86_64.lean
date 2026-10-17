@@ -179,11 +179,16 @@ def cp128 (src dst : Reg) (o₁ o₂ k : Nat) : List Instr :=
 time, then 8 and 4. Each of the compression function's loads of what it
 writes then reads a single store of it (when the store and the load start
 at the same multiple of 16), which a core forwards. -/
-def copyW (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
+def copyWide (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
   (List.range (n / 16)).flatMap (cp128 src dst so d) ++
     ((if n % 16 ≥ 8 then [.mov .rax (.mem (at_ src (so + 16 * (n / 16)))),
       .store (at_ dst (d + 16 * (n / 16))) .rax] else []) ++
     (if n % 8 = 4 then Impl.Pbkdf2.X86_64.cp32 src dst (so + (n - 4)) (d + (n - 4)) 0 else []) : List Instr)
+
+/-- `n` bytes from `[src + so]` to `[dst + d]`: 16 at a time (`copyWide`)
+if `wide`, otherwise 32-bit words. -/
+def copyW (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
+  if wide then copyWide src so dst d n else copy32 src so dst d (n / 4)
 
 /-! ## HMAC's `init`
 
@@ -270,11 +275,15 @@ def padW : List Instr :=
     .mov32 .r12 (.imm (BitVec.ofNat 32 (H.P.B + H.D))) :: H.P.lenV ++
     ([.movdquStore (at_ .rbp (H.P.B - 16)) .xmm7] : List Instr)
 
+/-- EXPERIMENT: which copies of `finMid` are 16 bytes at a time. -/
+def wideState : Bool := true
+def wideDigest : Bool := true
+
 /-- The outer hash value over the inner state's, the inner digest into its
 buffer, then the padding after it (`padW`), and the block's address for
 the compression function. -/
 def finMid : List Instr :=
-  copyW .r12 0 .rbx 0 H.P.N ++ copyW .r15 H.stream.buf .rbx H.P.N H.D ++
+  copyW wideState .r12 0 .rbx 0 H.P.N ++ copyW wideDigest .r15 H.stream.buf .rbx H.P.N H.D ++
     ([.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] : List Instr) ++
     H.padW ++ ([.mov .rsi (.reg .rbp)] : List Instr)
 
@@ -282,7 +291,7 @@ def finMid : List Instr :=
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into
 the block and its first `D` bytes copied; and our caller's registers back. -/
 def finOut : List Instr :=
-  (if H.D < H.P.N then H.P.out ++ copyW .rbp 0 .r13 0 H.D else .mov .rbp (.reg .r13) :: H.P.out) ++
+  (if H.D < H.P.N then H.P.out ++ copyW true .rbp 0 .r13 0 H.D else .mov .rbp (.reg .r13) :: H.P.out) ++
     H.stream.restore
 
 def hmacFin : Prog isa :=
