@@ -40,7 +40,7 @@ impl Drop for Tape {
 /// tape is kept and extended with fresh bytes to the request, as the
 /// controllers' contracts say.
 #[cfg(target_arch = "x86_64")]
-fn serve<E>(
+pub(super) fn serve<E>(
     requested: usize,
     mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     mut step: impl FnMut(&[u8]) -> (u32, usize, usize),
