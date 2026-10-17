@@ -36,6 +36,20 @@ def initWith (iv : Spec.Sha256.HashValue) : Prog isa :=
      .movk .w .x9 (iv[k]!.extractLsb' 16 16) 1,
      .str .w .x9 .x0 (4 * k)])
 
+/-- `mov d, #v` for a 64-bit constant: a `movz` and three `movk`s. -/
+def movImm64 (d : Reg) (v : BitVec 64) : List Instr :=
+  [.movz .x d (v.extractLsb' 0 16) 0, .movk .x d (v.extractLsb' 16 16) 1,
+   .movk .x d (v.extractLsb' 32 16) 2, .movk .x d (v.extractLsb' 48 16) 3]
+
+/-- `initWith`, storing the hash value sixteen bytes at a time (`stp` of two
+words packed in each register), as the SHA-2 compression function loads it
+(`ldr q`): for the one-shot digests, whose first compression reads it right
+away. -/
+def initPairs (iv : Spec.Sha256.HashValue) : Prog isa :=
+  .block ((List.range 2).flatMap fun k =>
+    movImm64 .x9 (iv[4 * k + 1]! ++ iv[4 * k]!) ++ movImm64 .x10 (iv[4 * k + 3]! ++ iv[4 * k + 2]!) ++
+      ([.stp .x9 .x10 .x0 (16 * k)] : List Instr))
+
 /-- `vg_sha256_init`. -/
 def init : Prog isa := initWith Spec.Sha256.H0
 
