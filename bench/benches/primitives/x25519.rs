@@ -22,6 +22,8 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::x25519::{PrivateKey, x25519};
 
     use crate::{AWS_LC, OPENSSL, VG};
+    #[cfg(target_arch = "aarch64")]
+    tmp_inv::bench(c);
     let private = [0x42; 32];
     let peer = PrivateKey::from_bytes(&[0x24; 32]).public_key();
     // Each side's private key is loaded once, outside the measurements, as a
@@ -151,3 +153,96 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "aarch64"
 )))]
 pub fn bench(_: &mut Criterion) {}
+
+// THROWAWAY: our divstep inversion (the span of vg_x25519 after lastSwap)
+// against s2n-bignum's bignum_inv_p25519, in isolation.
+#[cfg(target_arch = "aarch64")]
+mod tmp_inv {
+    #[cfg(not(target_vendor = "apple"))]
+    core::arch::global_asm!(
+        ".p2align 2",
+        ".globl vg_tmp_s2n_inv",
+        "vg_tmp_s2n_inv:",
+        include_str!("tmp_s2n_inv.s")
+    );
+    #[cfg(target_vendor = "apple")]
+    core::arch::global_asm!(
+        ".p2align 2",
+        ".globl _vg_tmp_s2n_inv",
+        "_vg_tmp_s2n_inv:",
+        include_str!("tmp_s2n_inv.s")
+    );
+    unsafe extern "C" {
+        pub fn vg_tmp_s2n_inv(z: *mut u64, x: *const u64);
+    }
+    /// ws[16..20] in, ws[68..72] out.
+    #[unsafe(naked)]
+    pub unsafe extern "C" fn vg_tmp_our_inv(ws: *mut u64) {
+        core::arch::naked_asm!(
+            "stp x19, x20, [sp, #-48]!",
+            "stp x21, x22, [sp, #16]",
+            "stp x23, x24, [sp, #32]",
+            include_str!("tmp_our_inv.s"),
+            "ldp x21, x22, [sp, #16]",
+            "ldp x23, x24, [sp, #32]",
+            "ldp x19, x20, [sp], #48",
+            "ret"
+        )
+    }
+    const P: [u64; 4] = [
+        0xffff_ffff_ffff_ffed,
+        u64::MAX,
+        u64::MAX,
+        0x7fff_ffff_ffff_ffff,
+    ];
+    pub fn reduce(mut x: [u64; 4]) -> [u64; 4] {
+        loop {
+            let ge = (0..4)
+                .rev()
+                .find(|&i| x[i] != P[i])
+                .is_none_or(|i| x[i] > P[i]);
+            if !ge {
+                return x;
+            }
+            let mut b = false;
+            for i in 0..4 {
+                let (d, b1) = x[i].overflowing_sub(P[i]);
+                let (d, b2) = d.overflowing_sub(b as u64);
+                x[i] = d;
+                b = b1 || b2;
+            }
+        }
+    }
+    pub fn bench(c: &mut criterion::Criterion) {
+        use criterion::BenchmarkId;
+        use std::hint::black_box;
+        let x: [u64; 4] = [
+            0x0123_4567_89ab_cdef,
+            0xfedc_ba98_7654_3210,
+            0x1111_2222_3333_4444,
+            0x5555_6666_7777_0888,
+        ];
+        let mut ws = vec![0u64; 512];
+        ws[16..20].copy_from_slice(&x);
+        unsafe { vg_tmp_our_inv(ws.as_mut_ptr()) };
+        let ours: [u64; 4] = ws[68..72].try_into().unwrap();
+        let mut z = [0u64; 4];
+        unsafe { vg_tmp_s2n_inv(z.as_mut_ptr(), x.as_ptr()) };
+        assert_eq!(reduce(ours), reduce(z));
+        let mut g = c.benchmark_group("x25519_inv");
+        g.bench_function(BenchmarkId::new(crate::VG, 32), |b| {
+            b.iter(|| {
+                ws[16..20].copy_from_slice(black_box(&x));
+                unsafe { vg_tmp_our_inv(ws.as_mut_ptr()) };
+                black_box(ws[68])
+            })
+        });
+        g.bench_function(BenchmarkId::new(crate::AWS_LC, 32), |b| {
+            b.iter(|| {
+                unsafe { vg_tmp_s2n_inv(z.as_mut_ptr(), black_box(&x).as_ptr()) };
+                black_box(z[0])
+            })
+        });
+        g.finish();
+    }
+}
