@@ -32,19 +32,19 @@ theorem encodedValue_rep {p q : Spec.Ed25519.Point} {a : Edwards.EPoint dZ} (hp 
     (hq : Rep q a) : encodedValue p = encodedValue q := by
   rw [encodedValue, encodedValue, hp.affine_x, hp.affine_y, hq.affine_x, hq.affine_y]
 
-theorem powersKeep_outside {base : Addr} {s t : State} (h : PowersKeep base 56 7368 s t) :
-    Outside base 56 7368 s.mem t.mem := fun p hp => h.mem p (by omega) hp
+theorem powersKeep_outside {base : Addr} {s t : State} (h : PowersKeep base 56 968 s t) :
+    Outside base 56 968 s.mem t.mem := fun p hp => h.mem p (by omega) hp
 
 theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) :
-    WP isa scalarBasePrepare s fun t => PowersKeep base 56 7368 s t ∧
+    WP isa scalarBasePrepare s fun t => PowersKeep base 56 968 s t ∧
       (∀ i < 16 * 16, t.mem (off base (768 + i)) =
         BitVec.ofNat 8 ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) / 2 ^ i) % 2)) ∧
       Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) < 2 ^ (16 * 16) := by
   rw [scalarBasePrepare]
   refine WP.mono (expandScalarBits_ok hs hp 32 (by decide) (by decide) hr hd) fun a ⟨ka, abits⟩ => ?_
-  have kap : PowersKeep base 56 7368 s a := by
+  have kap : PowersKeep base 56 968 s a := by
     refine ⟨fun r hb _ hr => ka.gpr r (fun hm => ?_), ka.rd, ka.wr, ka.sp,
       (TableFrame.table ka.mem).mono (by decide) (by decide)⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
@@ -64,7 +64,7 @@ theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scr s base) (hp :
 theorem scalarBaseEngine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
-    WP isa scalarBaseEngine s fun t => PowersKeep base 56 7368 s t ∧
+    WP isa scalarBaseEngine s fun t => PowersKeep base 56 968 s t ∧
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
         encodedValue (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32))
           Spec.Ed25519.basePoint) := by

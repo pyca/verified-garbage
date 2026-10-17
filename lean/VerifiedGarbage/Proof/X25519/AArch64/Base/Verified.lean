@@ -158,7 +158,8 @@ theorem x25519Base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] : ConstantTime is
 
 theorem x25519Base_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : baseLocal.pre s) :
     ∃ t s', Exec isa x25519Base s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
-  x25519Base_correct hs
+  let ⟨t, s', he, ha, hp, _⟩ := x25519Base_correct hs
+  ⟨t, s', he, ha, hp⟩
 
 /-- The shared contract's precondition, from its facts. -/
 theorem x25519Base_spec_pre {s : State}
@@ -210,6 +211,24 @@ theorem x25519Base_implies : baseLocal.Implies
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, x25519Base_sat⟩
+
+/-- The function writes only the first 1024 bytes of `scratch`. -/
+theorem x25519Base_written [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (t : List Leak)
+    (s' : State) (hs : (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)).pre s)
+    (he : Exec isa x25519Base s t s') :
+    Sig.writtenWithin (AArch64.abi.withConsts combConsts) Spec.X25519.x25519BaseSig
+      [("scratch", 1024)] s s' := by
+  have hl := x25519Base_implies.pre s hs
+  have hd : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x2, 8192⟩ := by
+    sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
+      stackBelow] at hs
+    exact hs.2.2.2.2.2.2.2.1
+  obtain ⟨t', s'', he', -, -, htail⟩ := x25519Base_correct hl
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, combConsts_eq,
+    Spec.X25519.x25519BaseSig, Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  all_goals exact fun i h1 h2 => htail hd i h1 (by simpa [Elem.size] using h2)
 
 theorem x25519Base_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target x25519Base (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)) :=

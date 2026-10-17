@@ -55,7 +55,7 @@ theorem write1_outside (m : Mem) (base : Addr) {d : Nat} (hd : d < 2 ^ 64) {x : 
 
 /-- Clamping the expanded bits: five byte stores at `768 + q`. -/
 theorem clampBits_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block clampBits) s fun t => PowersKeep base 56 7368 s t ∧
+    WP isa (.block clampBits) s fun t => PowersKeep base 56 968 s t ∧
       ∀ q < 256, t.mem (off base (768 + q)) =
         if q < 3 ∨ q = 255 then 0 else if q = 254 then 1 else s.mem (off base (768 + q)) := by
   have _hcap : workSize true = 8192 := rfl
@@ -115,7 +115,7 @@ theorem uEncode_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base : 
 theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
-    WP isa engine s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,
+    WP isa engine s fun t => PowersKeep base 56 968 s t ∧ ∃ w : Fe,
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = w.val ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
         Spec.X25519.encodeUCoordinate w := by
