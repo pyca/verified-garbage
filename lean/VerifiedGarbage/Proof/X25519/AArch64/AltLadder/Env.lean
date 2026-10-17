@@ -32,9 +32,11 @@ abbrev P2 : Nat := 2 ^ 256 - 38
 def Bel (m : Mem) (base : Addr) (S : Slot → Bool) : Prop :=
   ∀ i, S i = true → fe m base (offset i) < P2
 
-theorem altRange (i : Slot) (h : i.val ≤ 13) : AltRange (offset i) false :=
+variable {large : Bool}
+
+theorem altRange (i : Slot) (h : i.val ≤ 13) : AltRange (offset i) large :=
   ⟨by simp only [offset]; omega, by simp only [offset]; omega,
-    by simp only [offset, workSize, Bool.false_eq_true, ite_false]; omega⟩
+    by have := workSize_ge large; simp only [offset]; omega⟩
 
 theorem apart (i j : Slot) (h : i ≠ j) : offset i + 32 ≤ offset j ∨ offset j + 32 ≤ offset i := by
   have : i.val ≠ j.val := fun e => h (Fin.ext e)
@@ -68,7 +70,7 @@ theorem bel_upd {base : Addr} {o : Slot} {s t : State} {S : Slot → Bool} (h : 
 theorem mod_of_add_mul {c a q : Nat} (h : c + P * q = a) : c % P = a % P := by
   rw [← h, Nat.add_mul_mod_self_left]
 
-theorem mulE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+theorem mulE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0) :
     WP isa (.block (Impl.X25519.AArch64.Alt.mul4 (offset o) (offset a) (offset b))) s fun t =>
       AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
@@ -77,7 +79,7 @@ theorem mulE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (h
     ⟨h, hl, (env_upd h).trans (congrArg _ (toFe_mul (mod_of_add_mul (q := q) (by
       simp only [P]; exact e))))⟩
 
-theorem sqrE {base : Addr} {s : State} (hs : Scr s base false) (o a : Slot) (ho : o.val ≤ 13)
+theorem sqrE {base : Addr} {s : State} (hs : Scr s base large) (o a : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hz : s.gpr .x17 = 0) :
     WP isa (.block (Impl.X25519.AArch64.Alt.sqr4 (offset o) (offset a))) s fun t =>
       AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
@@ -86,7 +88,7 @@ theorem sqrE {base : Addr} {s : State} (hs : Scr s base false) (o a : Slot) (ho 
     ⟨h, hl, (env_upd h).trans (congrArg _ (toFe_mul (mod_of_add_mul (q := q) (by
       simp only [P]; exact e))))⟩
 
-theorem addE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+theorem addE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0)
     (hla : fe s.mem base (offset a) < P2) (hlb : fe s.mem base (offset b) < P2) :
     WP isa (.block (Impl.X25519.AArch64.Alt.addTwice4 (offset o) (offset a) (offset b))) s fun t =>
@@ -96,7 +98,19 @@ theorem addE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (h
     fun t ⟨h, k, _, e⟩ => ⟨h, (env_upd h).trans (congrArg _ (toFe_add (mod_of_add_mul (q := 2 * k)
       (by simp only [P]; omega))))⟩
 
-theorem subE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+/-- `addE`, with only `b` below `2·p`: the sum is below `2²⁵⁷ − 38` still. -/
+theorem addE1 {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
+    (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0)
+    (hlb : fe s.mem base (offset b) < P2) :
+    WP isa (.block (Impl.X25519.AArch64.Alt.addTwice4 (offset o) (offset a) (offset b))) s fun t =>
+      AltOp base (offset o) s t ∧
+      env t.mem base = Function.update (env s.mem base) o (env s.mem base a + env s.mem base b) :=
+  have hla : fe s.mem base (offset a) < 2 ^ 256 := VG.Proof.Ed25519.Word64.val4_lt _ _ _ _
+  WP.mono (addTwice4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by simp only [P2] at hlb; omega))
+    fun t ⟨h, k, _, e⟩ => ⟨h, (env_upd h).trans (congrArg _ (toFe_add (mod_of_add_mul (q := 2 * k)
+      (by simp only [P]; omega))))⟩
+
+theorem subE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0)
     (hlb : fe s.mem base (offset b) < P2) :
     WP isa (.block (Impl.X25519.AArch64.Alt.subTwice4 (offset o) (offset a) (offset b))) s fun t =>
@@ -110,7 +124,7 @@ theorem subE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (h
 theorem fe_lt (m : Mem) (base : Addr) (d : Nat) : fe m base d < 2 ^ 256 :=
   VG.Proof.Ed25519.Word64.val4_lt _ _ _ _
 
-theorem cmaddE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+theorem cmaddE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0) (h1 : (s.gpr .x1).toNat = 121666) :
     WP isa (.block (Impl.X25519.AArch64.Alt.cmadd4 (offset o) (offset a) (offset b))) s fun t =>
       AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
@@ -125,7 +139,7 @@ theorem cmaddE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) 
   rw [← toFe_mul (a := 121666) (b := fe s.mem base (offset a)) rfl]
   exact toFe_add (mod_of_add_mul (q := q) (by simp only [P]; exact e))
 
-theorem cmadd4E {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+theorem cmadd4E {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0) (h1 : (s.gpr .x1).toNat = 4) :
     WP isa (.block (Impl.X25519.AArch64.Alt.cmadd4 (offset o) (offset a) (offset b))) s fun t =>
       AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
@@ -140,7 +154,7 @@ theorem cmadd4E {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot)
   rw [← toFe_mul (a := 4) (b := fe s.mem base (offset a)) rfl]
   exact toFe_add (mod_of_add_mul (q := q) (by simp only [P]; exact e))
 
-theorem muxE {base : Addr} {s : State} (hs : Scr s base false) (o a b : Slot) (ho : o.val ≤ 13)
+theorem muxE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) :
     WP isa (.block (Impl.X25519.AArch64.Alt.mux4 (offset o) (offset a) (offset b))) s fun t =>
       AltOp base (offset o) s t ∧ t.zf = s.zf ∧

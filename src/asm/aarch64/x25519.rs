@@ -5727,9 +5727,777 @@ str x4, [x0, #256]
 str x5, [x0, #264]
 str x6, [x0, #272]
 str x7, [x0, #280]
-mov v31.d[0], x30
-bl {vg_ed25519_r64_add_affine_ext}
-umov x30, v31.d[0]
+movz x17, #0, lsl #0
+ldp x3, x4, [x0, #128]
+ldp x7, x8, [x0, #128]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #144]
+ldp x7, x8, [x0, #144]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #288]
+stp x5, x6, [x0, #304]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #64]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #80]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #320]
+stp x7, x8, [x0, #336]
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #64]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #112]
+ldp x7, x8, [x0, #80]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #352]
+stp x5, x6, [x0, #368]
+ldp x3, x4, [x0, #160]
+ldp x7, x8, [x0, #256]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #272]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #176]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #384]
+stp x14, x15, [x0, #400]
+ldp x3, x4, [x0, #320]
+ldp x7, x8, [x0, #192]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #208]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #336]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #320]
+stp x14, x15, [x0, #336]
+ldp x3, x4, [x0, #352]
+ldp x7, x8, [x0, #224]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #240]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #368]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #352]
+stp x14, x15, [x0, #368]
+ldp x5, x6, [x0, #288]
+ldp x4, x3, [x0, #384]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #304]
+ldp x4, x3, [x0, #400]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #416]
+stp x7, x8, [x0, #432]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #384]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #304]
+ldp x7, x8, [x0, #400]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #288]
+stp x5, x6, [x0, #304]
+ldp x5, x6, [x0, #352]
+ldp x4, x3, [x0, #320]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #368]
+ldp x4, x3, [x0, #336]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #448]
+stp x7, x8, [x0, #464]
+ldp x3, x4, [x0, #352]
+ldp x7, x8, [x0, #320]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #368]
+ldp x7, x8, [x0, #336]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #320]
+stp x5, x6, [x0, #336]
+ldp x3, x4, [x0, #416]
+ldp x7, x8, [x0, #288]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #304]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #432]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #128]
+stp x14, x15, [x0, #144]
+ldp x3, x4, [x0, #448]
+ldp x7, x8, [x0, #416]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #432]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #464]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #64]
+stp x14, x15, [x0, #80]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #304]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #96]
+stp x14, x15, [x0, #112]
+ldp x3, x4, [x0, #448]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #464]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #160]
+stp x14, x15, [x0, #176]
 add x19, x19, #1
 sub x8, x19, #64
 cbnz x8, 21b
@@ -7440,7 +8208,6 @@ str x6, [x0, #16]
 str x7, [x0, #24]
 ret
 .p2align 6",
-        vg_ed25519_r64_add_affine_ext = sym super::ed25519_r64::vg_ed25519_r64_add_affine_ext,
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
     )
 }

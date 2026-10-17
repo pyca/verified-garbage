@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ed25519.CombTable16
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
 import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+public import VerifiedGarbage.Impl.X25519.AArch64.AltOps
 
 /-!
 # Ed25519: base-point multiplication with a comb, one table per digit
@@ -15,8 +16,8 @@ holds `[k]([16^i]B)` for `k ≤ 8` (`combCached64`), affine; the 64 tables are
 the static `combSym` (`combWords`, 768 bytes a table, 48 KiB). The
 accumulator, in slots 0–3, starts at `[17 G]B` (`combStart`), and step `i`
 adds digit `i`'s entry of table `i`: 64 additions of affine cached points,
-each a call of `vg_ed25519_r64_add_affine_ext` (seven multiplications), and
-no doublings.
+each inline on the `_alt` field operations (`combAdd`, seven
+multiplications), and no doublings.
 
 The digits are secret: their entries are selected in constant time. The
 masks of the eight magnitudes `k = 1 … 8` (all ones exactly for `|d|`) and
@@ -156,12 +157,27 @@ def combNeg (c : Slot) : List Instr :=
   [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords (offset 21) (offset c) ++ borrow38 ++
     [.sub .x .x4 .x4 .x8] ++ loads (offset c) .x12 .x13 .x14 .x15 ++ negSel ++ store4 (offset c)
 
+open VG.Impl.X25519.AArch64.Alt in
+/-- The entry in slots 4–6 (`[Y - X, Y + X, 2dT]` of an affine point) added to the accumulator
+in slots 0–3, in place, as s2n-bignum's `edwards25519_scalarmulbase_alt` does, operation for
+operation: `addAffineOps`' formula on the `_alt` operations (`AltOps`), with slots 7–12
+temporary and every coordinate of the accumulator below `2·p` between the additions. -/
+def combAdd : List Instr :=
+  [.movz .x .x17 0 0] ++
+    addTwice4 (offset 7) (offset 2) (offset 2) ++ subTwice4 (offset 8) (offset 1) (offset 0) ++
+    addTwice4 (offset 9) (offset 1) (offset 0) ++ mul4 (offset 10) (offset 3) (offset 6) ++
+    mul4 (offset 8) (offset 8) (offset 4) ++ mul4 (offset 9) (offset 9) (offset 5) ++
+    subTwice4 (offset 11) (offset 7) (offset 10) ++ addTwice4 (offset 7) (offset 7) (offset 10) ++
+    subTwice4 (offset 12) (offset 9) (offset 8) ++ addTwice4 (offset 8) (offset 9) (offset 8) ++
+    mul4 (offset 2) (offset 11) (offset 7) ++ mul4 (offset 0) (offset 12) (offset 11) ++
+    mul4 (offset 1) (offset 7) (offset 8) ++ mul4 (offset 3) (offset 12) (offset 8)
+
 /-- Step `x19 = i`: digit `i`'s entry of table `i`, negated for a negative digit, added to the
 accumulator. `x8` is nonzero while another step follows. -/
 def combStep : Prog isa :=
   .seq (.block combDigit) <|
   .seq (.block (combSelect ++ combNeg 6)) <|
-  .seq Point64.affCall (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64])
+  .seq (.block combAdd) (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64])
 
 /-- The steps from digit `j < 64` on. -/
 def combLoopFrom (j : Nat) : Prog isa :=
