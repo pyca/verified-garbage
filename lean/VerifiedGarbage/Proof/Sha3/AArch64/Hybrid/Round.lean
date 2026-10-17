@@ -113,4 +113,32 @@ theorem round_ok {off r : Nat} (hr : r < 24) {s : State} {A B C : Spec.Sha3.Stat
     rw [hkw.mem, ← hk.mem, ← hk.sp]
     exact hf
 
+/-- Rounds `rs` on the three states. -/
+theorem rounds_list_ok {off : Nat} (rs : List Nat) (hrs : ∀ r ∈ rs, r < 24) {s : State}
+    {A B C : Spec.Sha3.State} (hp : Pairs s A B) (hl : ∀ i (hi : i < 25), s.gpr (laneReg i) = C[i])
+    (ho : Scalar.SlotsOk off s) :
+    WP isa (.block (rs.flatMap (Impl.Sha3.AArch64.Hybrid.round off))) s fun t =>
+      Pairs t (rs.foldl Spec.Sha3.rnd A) (rs.foldl Spec.Sha3.rnd B) ∧
+      (∀ i (hi : i < 25), t.gpr (laneReg i) = (rs.foldl Spec.Sha3.rnd C)[i]) ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨s.sp, off + 16⟩] s.mem t.mem := by
+  induction rs generalizing A B C s with
+  | nil => exact wp_nil ⟨hp, hl, rfl, rfl, rfl, Frame.refl _ _⟩
+  | cons r rs ih =>
+    rw [List.flatMap_cons, List.foldl_cons, List.foldl_cons, List.foldl_cons, WP.block_append_iff]
+    refine (round_ok (hrs r (by simp)) hp hl ho).mono fun t ⟨hpt, hlt, hsp, hrd, hwr, hf⟩ => ?_
+    have ho' : Scalar.SlotsOk off t := ⟨ho.align, ho.small, fun k hk => by
+      rw [hwr, hsp]; exact ho.wr k hk⟩
+    refine (ih (fun q hq => hrs q (by simp only [List.mem_cons]; exact Or.inr hq)) hpt hlt ho').mono
+      fun u ⟨hpu, hlu, hsp', hrd', hwr', hf'⟩ => ⟨hpu, hlu, hsp'.trans hsp, hrd'.trans hrd,
+        hwr'.trans hwr, hf.trans (by rw [← hsp]; exact hf')⟩
+
+/-- The 24 rounds: Keccak-f[1600] on each of the three states. -/
+theorem rounds_ok {off : Nat} {s : State} {A B C : Spec.Sha3.State} (hp : Pairs s A B)
+    (hl : ∀ i (hi : i < 25), s.gpr (laneReg i) = C[i]) (ho : Scalar.SlotsOk off s) :
+    WP isa (.block (Impl.Sha3.AArch64.Hybrid.rounds off)) s fun t =>
+      Pairs t ((List.range 24).foldl Spec.Sha3.rnd A) ((List.range 24).foldl Spec.Sha3.rnd B) ∧
+      (∀ i (hi : i < 25), t.gpr (laneReg i) = ((List.range 24).foldl Spec.Sha3.rnd C)[i]) ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [⟨s.sp, off + 16⟩] s.mem t.mem :=
+  rounds_list_ok (List.range 24) (fun _ h => List.mem_range.mp h) hp hl ho
+
 end VG.Proof.Sha3.AArch64.Hybrid
