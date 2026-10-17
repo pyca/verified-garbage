@@ -12674,6 +12674,529 @@ ret
     )
 }
 
+/// The CPU features `vg_mlkem1024_compress_encode_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM1024_COMPRESS_ENCODE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// `ByteEncode_d(Compress_d(f))` (FIPS 203 (4.7) and Algorithm 5) for the widths of ML-KEM-1024: writes the 256 coefficients of `*f` (each less than `q` = 3329), compressed to `d` bits, to `out` as `d`-bit little-endian fields.
+///
+/// Contract: `VG.Spec.MlKem1024.compressEncodeContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
+///
+/// The function compresses eight coefficients at a time in AVX2 registers, multiplying by sums of shifts, and packs them with `vpsllvd`, `vpsllvq`, `vpshufb` and `vpor`. It writes only the `len` bytes of `*out`.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of `len` bytes.
+/// * `d` must be 5 or 11, and `len` must be `32 * d`.
+/// * Each of the 256 `u32`s of `f` must be less than 3329.
+/// * `out` must not overlap `f` (distinct Rust objects never do).
+/// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_compress_encode_avx2(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"mov esi, esi
+mov r8, rdx
+cmp esi, 5
+je 20f
+movabs rax, 47244640256
+vmovq xmm8, rax
+movabs rax, 47244640256
+vmovq xmm0, rax
+vpunpcklqdq xmm8, xmm8, xmm0
+movabs rax, 47244640256
+vmovq xmm0, rax
+movabs rax, 47244640256
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm8, ymm8, xmm0, 1
+movabs rax, 4194303
+vmovq xmm9, rax
+movabs rax, 4194303
+vmovq xmm0, rax
+vpunpcklqdq xmm9, xmm9, xmm0
+movabs rax, 4194303
+vmovq xmm0, rax
+movabs rax, 4194303
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm9, ymm9, xmm0, 1
+movabs rax, 0
+vmovq xmm10, rax
+movabs rax, 22
+vmovq xmm0, rax
+vpunpcklqdq xmm10, xmm10, xmm0
+movabs rax, 4
+vmovq xmm0, rax
+movabs rax, 26
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm10, ymm10, xmm0, 1
+movabs rax, -9187337725047340800
+vmovq xmm11, rax
+movabs rax, -9187201950435737472
+vmovq xmm0, rax
+vpunpcklqdq xmm11, xmm11, xmm0
+movabs rax, 144397214964285568
+vmovq xmm0, rax
+movabs rax, -9187201950443830269
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm11, ymm11, xmm0, 1
+mov eax, 261888
+vmovq xmm12, rax
+vpbroadcastd ymm12, xmm12
+mov eax, 2047
+vmovq xmm13, rax
+vpbroadcastd ymm13, xmm13
+mov ecx, 31
+22:
+vmovdqu ymm0, YMMWORD PTR [rdi]
+vpslld ymm1, ymm0, 18
+vpslld ymm2, ymm0, 16
+vpaddd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 12
+vpslld ymm3, ymm0, 10
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 4
+vpslld ymm3, ymm0, 1
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm12
+vpsrld ymm1, ymm1, 19
+vpand ymm1, ymm1, ymm13
+vpsllvd ymm1, ymm1, ymm8
+vpsrlq ymm2, ymm1, 32
+vpaddd ymm1, ymm1, ymm2
+vpand ymm1, ymm1, ymm9
+vpsllvq ymm1, ymm1, ymm10
+vpsrldq ymm2, ymm1, 8
+vpaddq ymm1, ymm1, ymm2
+vpshufb ymm1, ymm1, ymm11
+vextracti128 xmm2, ymm1, 1
+vpor xmm1, xmm1, xmm2
+vmovdqu XMMWORD PTR [r8], xmm1
+add rdi, 32
+add r8, 11
+sub rcx, 1
+jne 22b
+vpsrldq xmm4, xmm1, 6
+vmovdqu ymm0, YMMWORD PTR [rdi]
+vpslld ymm1, ymm0, 18
+vpslld ymm2, ymm0, 16
+vpaddd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 12
+vpslld ymm3, ymm0, 10
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 4
+vpslld ymm3, ymm0, 1
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm12
+vpsrld ymm1, ymm1, 19
+vpand ymm1, ymm1, ymm13
+vpsllvd ymm1, ymm1, ymm8
+vpsrlq ymm2, ymm1, 32
+vpaddd ymm1, ymm1, ymm2
+vpand ymm1, ymm1, ymm9
+vpsllvq ymm1, ymm1, ymm10
+vpsrldq ymm2, ymm1, 8
+vpaddq ymm1, ymm1, ymm2
+vpshufb ymm1, ymm1, ymm11
+vextracti128 xmm2, ymm1, 1
+vpor xmm1, xmm1, xmm2
+vpslldq xmm1, xmm1, 5
+vpor xmm1, xmm1, xmm4
+sub r8, 5
+vmovdqu XMMWORD PTR [r8], xmm1
+vzeroupper
+jmp 21f
+20:
+movabs rax, 21474836480
+vmovq xmm8, rax
+movabs rax, 21474836480
+vmovq xmm0, rax
+vpunpcklqdq xmm8, xmm8, xmm0
+movabs rax, 21474836480
+vmovq xmm0, rax
+movabs rax, 21474836480
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm8, ymm8, xmm0, 1
+movabs rax, 1023
+vmovq xmm9, rax
+movabs rax, 1023
+vmovq xmm0, rax
+vpunpcklqdq xmm9, xmm9, xmm0
+movabs rax, 1023
+vmovq xmm0, rax
+movabs rax, 1023
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm9, ymm9, xmm0, 1
+movabs rax, 0
+vmovq xmm10, rax
+movabs rax, 10
+vmovq xmm0, rax
+vpunpcklqdq xmm10, xmm10, xmm0
+movabs rax, 4
+vmovq xmm0, rax
+movabs rax, 14
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm10, ymm10, xmm0, 1
+movabs rax, -9187201950444027648
+vmovq xmm11, rax
+movabs rax, -9187201950435737472
+vmovq xmm0, rax
+vpunpcklqdq xmm11, xmm11, xmm0
+movabs rax, -9187202493740711808
+vmovq xmm0, rax
+movabs rax, -9187201950435737472
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm11, ymm11, xmm0, 1
+mov eax, 261888
+vmovq xmm12, rax
+vpbroadcastd ymm12, xmm12
+mov eax, 31
+vmovq xmm13, rax
+vpbroadcastd ymm13, xmm13
+mov ecx, 15
+23:
+vmovdqu ymm0, YMMWORD PTR [rdi]
+vpslld ymm1, ymm0, 12
+vpslld ymm2, ymm0, 10
+vpaddd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 6
+vpslld ymm3, ymm0, 4
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm12
+vpsrld ymm1, ymm1, 19
+vpand ymm1, ymm1, ymm13
+vpsllvd ymm1, ymm1, ymm8
+vpsrlq ymm2, ymm1, 32
+vpaddd ymm1, ymm1, ymm2
+vpand ymm1, ymm1, ymm9
+vpsllvq ymm1, ymm1, ymm10
+vpsrldq ymm2, ymm1, 8
+vpaddq ymm1, ymm1, ymm2
+vpshufb ymm1, ymm1, ymm11
+vextracti128 xmm2, ymm1, 1
+vpor xmm1, xmm1, xmm2
+vmovdqa xmm4, xmm1
+vmovdqu ymm0, YMMWORD PTR [rdi+32]
+vpslld ymm1, ymm0, 12
+vpslld ymm2, ymm0, 10
+vpaddd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 6
+vpslld ymm3, ymm0, 4
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm12
+vpsrld ymm1, ymm1, 19
+vpand ymm1, ymm1, ymm13
+vpsllvd ymm1, ymm1, ymm8
+vpsrlq ymm2, ymm1, 32
+vpaddd ymm1, ymm1, ymm2
+vpand ymm1, ymm1, ymm9
+vpsllvq ymm1, ymm1, ymm10
+vpsrldq ymm2, ymm1, 8
+vpaddq ymm1, ymm1, ymm2
+vpshufb ymm1, ymm1, ymm11
+vextracti128 xmm2, ymm1, 1
+vpor xmm1, xmm1, xmm2
+vpslldq xmm1, xmm1, 5
+vpor xmm1, xmm1, xmm4
+vmovdqu XMMWORD PTR [r8], xmm1
+add rdi, 64
+add r8, 10
+sub rcx, 1
+jne 23b
+vpsrldq xmm5, xmm1, 4
+vmovdqu ymm0, YMMWORD PTR [rdi]
+vpslld ymm1, ymm0, 12
+vpslld ymm2, ymm0, 10
+vpaddd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 6
+vpslld ymm3, ymm0, 4
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm12
+vpsrld ymm1, ymm1, 19
+vpand ymm1, ymm1, ymm13
+vpsllvd ymm1, ymm1, ymm8
+vpsrlq ymm2, ymm1, 32
+vpaddd ymm1, ymm1, ymm2
+vpand ymm1, ymm1, ymm9
+vpsllvq ymm1, ymm1, ymm10
+vpsrldq ymm2, ymm1, 8
+vpaddq ymm1, ymm1, ymm2
+vpshufb ymm1, ymm1, ymm11
+vextracti128 xmm2, ymm1, 1
+vpor xmm1, xmm1, xmm2
+vmovdqa xmm4, xmm1
+vmovdqu ymm0, YMMWORD PTR [rdi+32]
+vpslld ymm1, ymm0, 12
+vpslld ymm2, ymm0, 10
+vpaddd ymm1, ymm1, ymm2
+vpslld ymm2, ymm0, 6
+vpslld ymm3, ymm0, 4
+vpaddd ymm2, ymm2, ymm3
+vpsubd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm12
+vpsrld ymm1, ymm1, 19
+vpand ymm1, ymm1, ymm13
+vpsllvd ymm1, ymm1, ymm8
+vpsrlq ymm2, ymm1, 32
+vpaddd ymm1, ymm1, ymm2
+vpand ymm1, ymm1, ymm9
+vpsllvq ymm1, ymm1, ymm10
+vpsrldq ymm2, ymm1, 8
+vpaddq ymm1, ymm1, ymm2
+vpshufb ymm1, ymm1, ymm11
+vextracti128 xmm2, ymm1, 1
+vpor xmm1, xmm1, xmm2
+vpslldq xmm1, xmm1, 5
+vpor xmm1, xmm1, xmm4
+vpslldq xmm1, xmm1, 6
+vpor xmm1, xmm1, xmm5
+sub r8, 6
+vmovdqu XMMWORD PTR [r8], xmm1
+vzeroupper
+21:
+ret
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_mlkem1024_decode_decompress_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM1024_DECODE_DECOMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// `Decompress_d(ByteDecode_d(b))` (FIPS 203 Algorithm 6 and (4.8)) for the widths of ML-KEM-1024: writes the 256 `d`-bit little-endian fields of the `len` bytes at `b`, decompressed, to `*f` (each less than `q` = 3329).
+///
+/// Contract: `VG.Spec.MlKem1024.decodeDecompressContract`. Constant time: only the pointers, `d` and `len` may affect timing, not the data.
+///
+/// The function decompresses eight values at a time in AVX2 registers, extracted with `vpshufb` and `vpsrlvd` from 16 bytes loaded into both lanes, multiplying by sums of shifts. It reads only the `len` bytes of `*b`.
+///
+/// # Safety
+///
+/// * `b` must be valid for reads of `len` bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `d` must be 5 or 11, and `len` must be `32 * d`.
+/// * `f` must not overlap `b` (distinct Rust objects never do).
+/// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decode_decompress_avx2(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        r"mov edx, edx
+mov rsi, rcx
+cmp edx, 5
+je 20f
+movabs rax, -9187341034361716480
+vmovq xmm8, rax
+movabs rax, -9187337722950057214
+vmovq xmm0, rax
+vpunpcklqdq xmm8, xmm8, xmm0
+movabs rax, -9221112512534018555
+vmovq xmm0, rax
+movabs rax, -9187332203908953848
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm8, ymm8, xmm0, 1
+movabs rax, -9187335515328739835
+vmovq xmm12, rax
+movabs rax, -9187332203916752889
+vmovq xmm0, rax
+vpunpcklqdq xmm12, xmm12, xmm0
+movabs rax, -9219699618617488630
+vmovq xmm0, rax
+movabs rax, -9187326684875977203
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm12, ymm12, xmm0, 1
+movabs rax, 12884901888
+vmovq xmm9, rax
+movabs rax, 4294967302
+vmovq xmm0, rax
+vpunpcklqdq xmm9, xmm9, xmm0
+movabs rax, 30064771076
+vmovq xmm0, rax
+movabs rax, 21474836482
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm9, ymm9, xmm0, 1
+mov eax, 2047
+vmovq xmm10, rax
+vpbroadcastd ymm10, xmm10
+mov eax, 1024
+vmovq xmm11, rax
+vpbroadcastd ymm11, xmm11
+mov ecx, 31
+22:
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vpshufb ymm0, ymm0, ymm8
+vpsrlvd ymm0, ymm0, ymm9
+vpand ymm0, ymm0, ymm10
+vpslld ymm1, ymm0, 8
+vpaddd ymm1, ymm1, ymm0
+vpslld ymm2, ymm0, 12
+vpslld ymm3, ymm0, 10
+vpsubd ymm2, ymm2, ymm3
+vpaddd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm11
+vpsrld ymm1, ymm1, 11
+vmovdqu YMMWORD PTR [rsi], ymm1
+add rdi, 11
+add rsi, 32
+sub rcx, 1
+jne 22b
+sub rdi, 5
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vpshufb ymm0, ymm0, ymm12
+vpsrlvd ymm0, ymm0, ymm9
+vpand ymm0, ymm0, ymm10
+vpslld ymm1, ymm0, 8
+vpaddd ymm1, ymm1, ymm0
+vpslld ymm2, ymm0, 12
+vpslld ymm3, ymm0, 10
+vpsubd ymm2, ymm2, ymm3
+vpaddd ymm1, ymm1, ymm2
+vpaddd ymm1, ymm1, ymm11
+vpsrld ymm1, ymm1, 11
+vmovdqu YMMWORD PTR [rsi], ymm1
+vzeroupper
+jmp 21f
+20:
+movabs rax, -9187342138168279040
+vmovq xmm8, rax
+movabs rax, -9187341034361683967
+vmovq xmm0, rax
+vpunpcklqdq xmm8, xmm8, xmm0
+movabs rax, -9187202487306681598
+vmovq xmm0, rax
+movabs rax, -9187202483011714045
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm8, ymm8, xmm0, 1
+movabs rax, -9187336619135303675
+vmovq xmm9, rax
+movabs rax, -9187335515328708602
+vmovq xmm0, rax
+vpunpcklqdq xmm9, xmm9, xmm0
+movabs rax, -9187202465831843833
+vmovq xmm0, rax
+movabs rax, -9187202461536876280
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm9, ymm9, xmm0, 1
+movabs rax, -9187335515328708602
+vmovq xmm10, rax
+movabs rax, -9187334411522113529
+vmovq xmm0, rax
+vpunpcklqdq xmm10, xmm10, xmm0
+movabs rax, -9187202461536876280
+vmovq xmm0, rax
+movabs rax, -9187202457241908727
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm10, ymm10, xmm0, 1
+movabs rax, -9187329996295733237
+vmovq xmm11, rax
+movabs rax, -9187328892489138164
+vmovq xmm0, rax
+vpunpcklqdq xmm11, xmm11, xmm0
+movabs rax, -9187202440062038515
+vmovq xmm0, rax
+movabs rax, -9187202435767070962
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm11, ymm11, xmm0, 1
+movabs rax, 21474836480
+vmovq xmm12, rax
+movabs rax, 30064771074
+vmovq xmm0, rax
+vpunpcklqdq xmm12, xmm12, xmm0
+movabs rax, 4294967300
+vmovq xmm0, rax
+movabs rax, 12884901894
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm12, ymm12, xmm0, 1
+mov eax, 31
+vmovq xmm13, rax
+vpbroadcastd ymm13, xmm13
+mov eax, 16
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov ecx, 15
+23:
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vpshufb ymm1, ymm0, ymm8
+vpsrlvd ymm1, ymm1, ymm12
+vpand ymm1, ymm1, ymm13
+vpslld ymm2, ymm1, 8
+vpaddd ymm2, ymm2, ymm1
+vpslld ymm3, ymm1, 12
+vpslld ymm4, ymm1, 10
+vpsubd ymm3, ymm3, ymm4
+vpaddd ymm2, ymm2, ymm3
+vpaddd ymm2, ymm2, ymm14
+vpsrld ymm2, ymm2, 5
+vmovdqu YMMWORD PTR [rsi], ymm2
+vpshufb ymm1, ymm0, ymm9
+vpsrlvd ymm1, ymm1, ymm12
+vpand ymm1, ymm1, ymm13
+vpslld ymm2, ymm1, 8
+vpaddd ymm2, ymm2, ymm1
+vpslld ymm3, ymm1, 12
+vpslld ymm4, ymm1, 10
+vpsubd ymm3, ymm3, ymm4
+vpaddd ymm2, ymm2, ymm3
+vpaddd ymm2, ymm2, ymm14
+vpsrld ymm2, ymm2, 5
+vmovdqu YMMWORD PTR [rsi+32], ymm2
+add rdi, 10
+add rsi, 64
+sub rcx, 1
+jne 23b
+sub rdi, 6
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vpshufb ymm1, ymm0, ymm10
+vpsrlvd ymm1, ymm1, ymm12
+vpand ymm1, ymm1, ymm13
+vpslld ymm2, ymm1, 8
+vpaddd ymm2, ymm2, ymm1
+vpslld ymm3, ymm1, 12
+vpslld ymm4, ymm1, 10
+vpsubd ymm3, ymm3, ymm4
+vpaddd ymm2, ymm2, ymm3
+vpaddd ymm2, ymm2, ymm14
+vpsrld ymm2, ymm2, 5
+vmovdqu YMMWORD PTR [rsi], ymm2
+vpshufb ymm1, ymm0, ymm11
+vpsrlvd ymm1, ymm1, ymm12
+vpand ymm1, ymm1, ymm13
+vpslld ymm2, ymm1, 8
+vpaddd ymm2, ymm2, ymm1
+vpslld ymm3, ymm1, 12
+vpslld ymm4, ymm1, 10
+vpsubd ymm3, ymm3, ymm4
+vpaddd ymm2, ymm2, ymm3
+vpaddd ymm2, ymm2, ymm14
+vpsrld ymm2, ymm2, 5
+vmovdqu YMMWORD PTR [rsi+32], ymm2
+vzeroupper
+21:
+ret
+.p2align 6",
+    )
+}
+
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
@@ -15576,7 +16099,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 37888
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43648
 mov rsi, rbx
@@ -15593,7 +16116,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38240
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43776
 mov rsi, rbx
@@ -15610,7 +16133,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38592
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43904
 mov rsi, rbx
@@ -15627,7 +16150,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38944
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 44032
 mov rsi, rbx
@@ -15656,7 +16179,7 @@ mov esi, 5
 mov rdx, rbx
 add rdx, 39296
 mov ecx, 160
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 220:
 mov rdi, r12
 add rdi, 0
@@ -15699,7 +16222,7 @@ ret
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem1024_compress_encode_avx2 = sym super::mlkem1024::vg_mlkem1024_compress_encode_avx2,
         vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
@@ -15744,28 +16267,28 @@ mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 4096
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, r14
 add rdi, 352
 mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 5120
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, r14
 add rdi, 704
 mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 6144
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, r14
 add rdi, 1056
 mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 7168
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, rbp
 add rdi, 0
 mov rsi, rbx
@@ -15801,7 +16324,7 @@ mov esi, 160
 mov edx, 5
 mov rcx, rbx
 add rcx, 20480
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, rbx
 add rdi, 20480
 mov rsi, rbx
@@ -17226,7 +17749,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 37888
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43648
 mov rsi, rbx
@@ -17243,7 +17766,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38240
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43776
 mov rsi, rbx
@@ -17260,7 +17783,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38592
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43904
 mov rsi, rbx
@@ -17277,7 +17800,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38944
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 44032
 mov rsi, rbx
@@ -17306,7 +17829,7 @@ mov esi, 5
 mov rdx, rbx
 add rdx, 39296
 mov ecx, 160
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 218:
 mov rsi, r14
 mov rdi, rbx
@@ -17351,7 +17874,7 @@ mov rbp, QWORD PTR [rbx+848]
 mov rbx, QWORD PTR [rbx+840]
 ret
 .p2align 6",
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
+        vg_mlkem1024_decode_decompress_avx2 = sym super::mlkem1024::vg_mlkem1024_decode_decompress_avx2,
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_decrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_decrypt_mul_avx2,
         vg_mlkem_sub_avx2 = sym super::mlkem::vg_mlkem_sub_avx2,
@@ -17363,7 +17886,7 @@ ret
         vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem1024_compress_encode_avx2 = sym super::mlkem1024::vg_mlkem1024_compress_encode_avx2,
         vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
@@ -19473,7 +19996,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 37888
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43648
 mov rsi, rbx
@@ -19490,7 +20013,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38240
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43776
 mov rsi, rbx
@@ -19507,7 +20030,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38592
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43904
 mov rsi, rbx
@@ -19524,7 +20047,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38944
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 44032
 mov rsi, rbx
@@ -19553,7 +20076,7 @@ mov esi, 5
 mov rdx, rbx
 add rdx, 39296
 mov ecx, 160
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 220:
 mov rdi, r12
 add rdi, 0
@@ -19596,7 +20119,7 @@ ret
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem1024_compress_encode_avx2 = sym super::mlkem1024::vg_mlkem1024_compress_encode_avx2,
         vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
@@ -19641,28 +20164,28 @@ mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 4096
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, r14
 add rdi, 352
 mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 5120
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, r14
 add rdi, 704
 mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 6144
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, r14
 add rdi, 1056
 mov esi, 352
 mov edx, 11
 mov rcx, rbx
 add rcx, 7168
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, rbp
 add rdi, 0
 mov rsi, rbx
@@ -19698,7 +20221,7 @@ mov esi, 160
 mov edx, 5
 mov rcx, rbx
 add rcx, 20480
-call {vg_mlkem1024_decode_decompress}
+call {vg_mlkem1024_decode_decompress_avx2}
 mov rdi, rbx
 add rdi, 20480
 mov rsi, rbx
@@ -20744,7 +21267,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 37888
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43648
 mov rsi, rbx
@@ -20761,7 +21284,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38240
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43776
 mov rsi, rbx
@@ -20778,7 +21301,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38592
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43904
 mov rsi, rbx
@@ -20795,7 +21318,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38944
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 44032
 mov rsi, rbx
@@ -20824,7 +21347,7 @@ mov esi, 5
 mov rdx, rbx
 add rdx, 39296
 mov ecx, 160
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 218:
 mov rsi, r14
 mov rdi, rbx
@@ -20869,7 +21392,7 @@ mov rbp, QWORD PTR [rbx+848]
 mov rbx, QWORD PTR [rbx+840]
 ret
 .p2align 6",
-        vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
+        vg_mlkem1024_decode_decompress_avx2 = sym super::mlkem1024::vg_mlkem1024_decode_decompress_avx2,
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_decrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_decrypt_mul_avx2,
         vg_mlkem_sub_avx2 = sym super::mlkem::vg_mlkem_sub_avx2,
@@ -20881,7 +21404,7 @@ ret
         vg_mlkem_cbd2 = sym super::mlkem::vg_mlkem_cbd2,
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem1024_compress_encode_avx2 = sym super::mlkem1024::vg_mlkem1024_compress_encode_avx2,
         vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }

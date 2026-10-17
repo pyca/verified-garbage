@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives -/
@@ -74,6 +76,22 @@ def artifacts : List Artifact := [
   Spec.MlKem1024.decodeDecompressApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.decodeDecompress1024
     verified := Proof.MlKem1024.X86_64.decodeDecompress1024_verified },
+  Spec.MlKem1024.compressEncodeApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function compresses eight coefficients at a time in AVX2 registers, multiplying by sums of \
+        shifts, and packs them with `vpsllvd`, `vpsllvq`, `vpshufb` and `vpor`. It writes only the `len` bytes \
+        of `*out`."]
+    code := Impl.MlKem1024.X86_64.compressEncode1024Avx2
+    verified := Proof.MlKem1024.X86_64.compressEncode1024Y_verified
+    features := ["avx", "avx2"] },
+  Spec.MlKem1024.decodeDecompressApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function decompresses eight values at a time in AVX2 registers, extracted with `vpshufb` and \
+        `vpsrlvd` from 16 bytes loaded into both lanes, multiplying by sums of shifts. It reads only the `len` \
+        bytes of `*b`."]
+    code := Impl.MlKem1024.X86_64.decodeDecompress1024Avx2
+    verified := Proof.MlKem1024.X86_64.decodeDecompress1024Y_verified
+    features := ["avx", "avx2"] },
   Spec.MlKem1024.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.checkEk1024
     verified := Proof.MlKem1024.X86_64.checkEk1024_verified }]
