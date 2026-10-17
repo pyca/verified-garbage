@@ -254,7 +254,9 @@ avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 # RSAES-OAEP: `sha2` takes SHA-1's and SHA-256's `_sha2`
 # instances with SHA-512's scalar ones, `none` the scalar ones,
 # `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
-# `sha2,sha3` both extensions together.
+# `sha2,sha3` both extensions together; and so do deterministic ECDSA's
+# `vg_ecdsa_<curve>_rfc6979_sign` (`ecdsa`), of the tiers `_hash_sha2`,
+# the baseline and `_hash_sha2_sha3`.
 [[cpu]]
 chip = "native"
 arch = "aarch64"
@@ -263,8 +265,8 @@ runs = """
 - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 neon | chacha20
 sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
-sha2 | rsa_oaep
-sha2,sha3 | rsa_oaep
+sha2 | rsa_oaep ecdsa
+sha2,sha3 | rsa_oaep ecdsa
 none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep
 """
 

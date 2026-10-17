@@ -12,14 +12,15 @@
 use super::{BrainpoolP384r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp384r1::vg_ec_brainpoolp384r1_public_key;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
+#[cfg(not(target_arch = "aarch64"))]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_sha3;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::{
     vg_ecdsa_brainpoolp384r1_sha384_sign_avx2, vg_ecdsa_brainpoolp384r1_sha384_sign_shani,
 };
-use crate::hashes::sha384::{Sha384, Sha384Backend};
+use crate::hashes::sha384::Sha384;
+#[cfg(not(target_arch = "aarch64"))]
+use crate::hashes::sha384::Sha384Backend;
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP384r1> {
@@ -48,11 +49,19 @@ impl SigningKey<BrainpoolP384r1> {
 }
 
 impl sealed::Functions<BrainpoolP384r1> for Sha384 {
+    #[cfg(target_arch = "aarch64")]
+    fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
+        super::rfc6979::sign::<Sha384, 48, 96>(
+            super::rfc6979_aarch64::brainpoolp384r1(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let sign = match Sha384Backend::select(crate::cpu::detected()) {
             Sha384Backend::Scalar => vg_ecdsa_brainpoolp384r1_sha384_sign,
-            #[cfg(target_arch = "aarch64")]
-            Sha384Backend::Sha3 => vg_ecdsa_brainpoolp384r1_sha384_sign_sha3,
             #[cfg(target_arch = "x86_64")]
             Sha384Backend::ShaNi => vg_ecdsa_brainpoolp384r1_sha384_sign_shani,
             #[cfg(target_arch = "x86_64")]

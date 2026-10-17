@@ -14,9 +14,8 @@ use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
+#[cfg(not(target_arch = "aarch64"))]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_sha3;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384_sha384::{
     vg_ecdsa_p384_sha384_sign_adx, vg_ecdsa_p384_sha384_sign_avx2,
@@ -25,7 +24,10 @@ use crate::arch::ecdsa_p384_sha384::{
 };
 use crate::cpu::detected;
 use crate::ec::p384::{Mul, public_key};
-use crate::hashes::sha384::{Sha384, Sha384Backend};
+use crate::hashes::sha384::Sha384;
+#[cfg(not(target_arch = "aarch64"))]
+use crate::hashes::sha384::Sha384Backend;
+#[cfg(not(target_arch = "aarch64"))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P384> {
@@ -41,12 +43,20 @@ impl SigningKey<P384> {
 }
 
 impl sealed::Functions<P384> for Sha384 {
+    #[cfg(target_arch = "aarch64")]
+    fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
+        super::rfc6979::sign::<Sha384, 48, 96>(
+            super::rfc6979_aarch64::p384(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let f = detected();
         let sign = match (Sha384Backend::select(f), Mul::select(f)) {
             (Sha384Backend::Scalar, Mul::Baseline) => vg_ecdsa_p384_sha384_sign,
-            #[cfg(target_arch = "aarch64")]
-            (Sha384Backend::Sha3, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_sha3,
             #[cfg(target_arch = "x86_64")]
             (Sha384Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_shani,
             #[cfg(target_arch = "x86_64")]

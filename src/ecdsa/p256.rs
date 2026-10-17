@@ -15,9 +15,8 @@ use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_adx;
+#[cfg(not(target_arch = "aarch64"))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 #[cfg(target_arch = "x86_64")]
@@ -25,9 +24,8 @@ use crate::arch::ecdsa_p256_sha256::{
     vg_ecdsa_p256_sha256_sign_adx, vg_ecdsa_p256_sha256_sign_avx2,
     vg_ecdsa_p256_sha256_sign_avx2_adx, vg_ecdsa_p256_sha256_sign_shani_adx,
 };
+#[cfg(not(target_arch = "aarch64"))]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha384::{
     vg_ecdsa_p256_sha384_sign_adx, vg_ecdsa_p256_sha384_sign_avx2,
@@ -36,8 +34,12 @@ use crate::arch::ecdsa_p256_sha384::{
 };
 use crate::cpu::detected;
 use crate::ec::p256::{Mul, public_key};
-use crate::hashes::sha256::{Sha256, Sha256Backend};
-use crate::hashes::sha384::{Sha384, Sha384Backend};
+use crate::hashes::sha256::Sha256;
+#[cfg(not(target_arch = "aarch64"))]
+use crate::hashes::sha256::Sha256Backend;
+use crate::hashes::sha384::Sha384;
+#[cfg(not(target_arch = "aarch64"))]
+use crate::hashes::sha384::Sha384Backend;
 use crate::zeroize::zeroize;
 
 impl SigningKey<P256> {
@@ -119,12 +121,20 @@ fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), E
 }
 
 impl sealed::Functions<P256> for Sha256 {
+    #[cfg(target_arch = "aarch64")]
+    fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha256, 32, 64>(
+            super::rfc6979_aarch64::p256(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign = match (Sha256Backend::select(f), Mul::select(f)) {
             (Sha256Backend::Scalar, Mul::Baseline) => vg_ecdsa_p256_sha256_sign,
-            #[cfg(target_arch = "aarch64")]
-            (Sha256Backend::Sha2, Mul::Baseline) => vg_ecdsa_p256_sha256_sign_sha2,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             (Sha256Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p256_sha256_sign_shani,
             #[cfg(target_arch = "x86_64")]
@@ -149,12 +159,20 @@ impl sealed::Functions<P256> for Sha256 {
 impl SignatureHash<P256> for Sha256 {}
 
 impl sealed::Functions<P256> for Sha384 {
+    #[cfg(target_arch = "aarch64")]
+    fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
+        super::rfc6979::sign::<Sha384, 32, 64>(
+            super::rfc6979_aarch64::p256(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign = match (Sha384Backend::select(f), Mul::select(f)) {
             (Sha384Backend::Scalar, Mul::Baseline) => vg_ecdsa_p256_sha384_sign,
-            #[cfg(target_arch = "aarch64")]
-            (Sha384Backend::Sha3, Mul::Baseline) => vg_ecdsa_p256_sha384_sign_sha3,
             #[cfg(target_arch = "x86_64")]
             (Sha384Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p256_sha384_sign_shani,
             #[cfg(target_arch = "x86_64")]

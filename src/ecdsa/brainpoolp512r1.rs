@@ -12,14 +12,15 @@
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
+#[cfg(not(target_arch = "aarch64"))]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_sha3;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::{
     vg_ecdsa_brainpoolp512r1_sha512_sign_avx2, vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
 };
-use crate::hashes::sha512::{Sha512, Sha512Backend};
+use crate::hashes::sha512::Sha512;
+#[cfg(not(target_arch = "aarch64"))]
+use crate::hashes::sha512::Sha512Backend;
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP512r1> {
@@ -48,11 +49,19 @@ impl SigningKey<BrainpoolP512r1> {
 }
 
 impl sealed::Functions<BrainpoolP512r1> for Sha512 {
+    #[cfg(target_arch = "aarch64")]
+    fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
+        super::rfc6979::sign::<Sha512, 64, 128>(
+            super::rfc6979_aarch64::brainpoolp512r1(crate::cpu::detected()),
+            d,
+            digest,
+        )
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
     fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
         let sign = match Sha512Backend::select(crate::cpu::detected()) {
             Sha512Backend::Scalar => vg_ecdsa_brainpoolp512r1_sha512_sign,
-            #[cfg(target_arch = "aarch64")]
-            Sha512Backend::Sha3 => vg_ecdsa_brainpoolp512r1_sha512_sign_sha3,
             #[cfg(target_arch = "x86_64")]
             Sha512Backend::ShaNi => vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
             #[cfg(target_arch = "x86_64")]
