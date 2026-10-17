@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Round
+public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
@@ -51,14 +52,15 @@ abbrev rF (P : MP) : Region := ⟨State.addr P.sp, 56⟩
 end MP
 
 /-- The arrays of the key view. -/
-abbrev nArr : Nat := 15
+abbrev nArr : Nat := 28
 
-/-- The arrays and header words the round writes. -/
-abbrev wJs : List Nat := [2, 3, aX, aY, aB, aE, aOne, aM1, aT]
-abbrev wDs : List Nat := [sE1, sE2, sT, sBit, sF, sK]
+/-- The arrays and header words the round writes: Montgomery
+multiplication's own, `x`, `y`, `−1` and the table. -/
+abbrev wJs : List Nat := [2, 3, aX, aY, aM1, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+abbrev wDs : List Nat := [sE1, sE2, sT, sV, sF, sK, sQ, sR]
 
 theorem wJs_lt : ∀ j ∈ wJs, 2 ≤ j ∧ j < nArr := by decide
-theorem wDs_ok : ∀ d ∈ wDs, 88 ≤ d ∧ d + 4 ≤ 144 := by decide
+theorem wDs_ok : ∀ d ∈ wDs, 88 ≤ d ∧ d + 4 ≤ 152 := by decide
 
 /-- The candidate, the witness and the constants, from memory. -/
 abbrev cOf (P : MP) (m : Mem) : Nat := numAt m (State.addr P.ws) P.w 0
@@ -81,6 +83,9 @@ structure In (P : MP) (σ : State) : Prop where
   x5 : numAt σ.mem (State.addr P.ws) P.w 5 < cOf P σ.mem
   one : numAt σ.mem (State.addr P.ws) P.w 9 = P.R % cOf P σ.mem
   m1 : numAt σ.mem (State.addr P.ws) P.w 10 = cOf P σ.mem - P.R % cOf P σ.mem
+  exp : numAt σ.mem (State.addr P.ws) P.w aE = Spec.MillerRabin.exponent (cOf P σ.mem)
+  low : σ.mem.readW (State.addr P.ws + BitVec.ofNat 64 (arrAt P.w aE + 8 * P.w)) 64 =
+    BitVec.twoPow 64 ((Spec.Rsa.splitTwos (cOf P σ.mem - 1)).1 % 64)
   saved : σ.mem.readW (State.addr P.sp) 32 = P.ws
 
 /-! ## Sizes -/
@@ -90,7 +95,7 @@ variable {P : MP} {σ : State}
 
 theorem In.S_eq (_ : In P σ) : S P.W = 8 * (P.w + 2) := by simp only [S, MP.W]; omega
 
-theorem In.len (h : In P σ) : 256 + 15 * (8 * (P.w + 2)) ≤ 8 * P.len := by
+theorem In.len (h : In P σ) : 256 + 28 * (8 * (P.w + 2)) ≤ 8 * P.len := by
   have := h.fits; simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at this; omega
 
 theorem In.Z_le (h : In P σ) : P.Z ≤ 2 ^ 32 := by have := h.fit; have := h.len; simp only [MP.Z, kOff]; omega

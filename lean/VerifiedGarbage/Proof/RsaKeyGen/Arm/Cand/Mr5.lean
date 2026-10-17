@@ -28,7 +28,8 @@ open VG.Proof.MillerRabin.Arm (KeepsLite LayoutLite PreparedLite roundPre roundP
 
 /-- The key arrays the round may write: those of Montgomery multiplication's
 header, and its arrays `wJs`. -/
-abbrev rJs : List Nat := [15, 16, 17, 18, 19, 20, 23, 24, 26, 27, 29, 32, 33, 34, 35]
+abbrev rJs : List Nat := [15, 16, 17, 18, 19, 20, 23, 24, 26, 27, 29, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+  43, 44, 45, 46, 47]
 
 theorem rJs_wJs : ∀ j ∈ VG.Proof.MillerRabin.Arm.wJs, mBase + j ∈ rJs := by decide
 
@@ -129,7 +130,7 @@ theorem outJ_of_round (pre : In P σ) {m m' : Mem}
     rw [ex]
     refine keeps i (by omega) (fun k hk => ?_) (fun j hj => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
-      rcases hk with rfl | rfl | rfl <;> omega
+      rcases hk with rfl | rfl | rfl | rfl <;> omega
     · have := pre.inArr (rJs_wJs j hj) hx'
       omega
   · refine fr x fun r hr hc => ?_
@@ -157,7 +158,7 @@ theorem MS.of_round (pre : In P σ) (h : MS P σ s) (spw : s.sp = P.sp)
     refine keeps i hi (fun k hk => ?_) (fun j hj => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
       simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at hr
-      rcases hk with rfl | rfl | rfl <;> omega
+      rcases hk with rfl | rfl | rfl | rfl <;> omega
     · obtain ⟨j2, -⟩ := VG.Proof.MillerRabin.Arm.wJs_lt j hj
       have j4 := wJs_ne4 j hj
       simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at hr ⊢
@@ -206,11 +207,62 @@ theorem round_after (h : KS P σ A live V ls s) (m : MS P σ s) (hl : ∀ j ∈ 
   · exact ⟨P.rS, by simp, pre.subR⟩
   · exact ⟨P.rC, by simp, fun _ h => h⟩
 
+/-- The round's exponent and the word `2^(t mod 64)` after it, from the key array `mBase + 27`. -/
+theorem exp_facts (pre : In P σ) {m : Mem} (e27 : num m P.B P.W (mBase + 27) = EX P σ) :
+    numAt m (State.addr P.M0) P.w 27 = Spec.MillerRabin.exponent (cv P σ) ∧
+      m.readW (State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 27 + 8 * P.w)) 64 =
+        BitVec.twoPow 64 ((Spec.Rsa.splitTwos (cv P σ - 1)).1 % 64) := by
+  have hW := pre.W_eq
+  have eL : 32 * (P.W - 2) = 64 * P.w := by omega
+  have eLt : Spec.MillerRabin.exponent (cv P σ) < 2 ^ (32 * (P.W - 2)) := by
+    rw [eL]; exact Nat.lt_of_le_of_lt (exponent_le _) (cv_lt pre)
+  have k64 : (Spec.Rsa.splitTwos (cv P σ - 1)).1 % 64 < 64 := Nat.mod_lt _ (by decide)
+  have kLt : 2 ^ ((Spec.Rsa.splitTwos (cv P σ - 1)).1 % 64) < 2 ^ 64 := Nat.pow_lt_pow_right (by decide) k64
+  have g1 : numAt m (State.addr P.M0) P.w 27 = val32 m (State.addr P.B) (arr P.W (mBase + 27)) (P.W - 2) :=
+    pre.numAt_val32 m 27
+  have g2 : (m.readW (State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 27 + 8 * P.w)) 64).toNat =
+      val32 m (State.addr P.B) (arr P.W (mBase + 27) + 4 * (P.W - 2)) 2 := by
+    have e := word_eq_w32 m (State.addr P.M0) (arrAt P.w 27 + 8 * P.w)
+    have d : P.oM + (arrAt P.w 27 + 8 * P.w) = arr P.W (mBase + 27) + 4 * (P.W - 2) := by
+      rw [← Nat.add_assoc, pre.oM_arrAt]; omega
+    simp only [VG.Proof.Mont.word, w32, pre.M0_off, d] at e
+    rw [show P.oM + (arrAt P.w 27 + 8 * P.w + 4) = arr P.W (mBase + 27) + 4 * (P.W - 2) + 4 by omega] at e
+    have e' : m.readW (State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 27 + 8 * P.w)) 64 =
+        m.readW (off (State.addr P.B) (arr P.W (mBase + 27) + 4 * (P.W - 2))) 64 := by
+      rw [← d, ← pre.M0_off]
+    rw [e', e]
+    simp only [val32, w32]
+    omega
+  have split := val32_append m (State.addr P.B) (arr P.W (mBase + 27)) (P.W - 2) 2
+  rw [show P.W - 2 + 2 = P.W by omega] at split
+  have e2 : num m P.B P.W (mBase + 27) = val32 m (State.addr P.B) (arr P.W (mBase + 27)) (P.W - 2) +
+      2 ^ (32 * (P.W - 2)) * val32 m (State.addr P.B) (arr P.W (mBase + 27) + 4 * (P.W - 2)) 2 := split
+  rw [e27] at e2
+  unfold EX at e2
+  rw [← g1] at e2
+  rw [← g2] at e2
+  have lo : numAt m (State.addr P.M0) P.w 27 < 2 ^ (32 * (P.W - 2)) := by
+    rw [g1]; exact val32_lt _ _ _ _
+  generalize numAt m (State.addr P.M0) P.w 27 = x at e2 lo ⊢
+  generalize (m.readW (State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 27 + 8 * P.w)) 64) = y at e2 ⊢
+  generalize 2 ^ (32 * (P.W - 2)) = R at e2 eLt lo
+  have hR : 0 < R := by omega
+  have ex : x = Spec.MillerRabin.exponent (cv P σ) := by
+    have := congrArg (· % R) e2
+    simp only [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt lo, Nat.mod_eq_of_lt eLt] at this
+    exact this.symm
+  refine ⟨ex, ?_⟩
+  rw [ex] at e2
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_twoPow, Nat.mod_eq_of_lt kLt]
+  exact (Nat.eq_of_mul_eq_mul_left hR (Nat.add_left_cancel e2)).symm
+
 /-- The round's precondition. -/
 theorem round_pre (h : KS P σ A live V ls s) (m : MS P σ s) (r0 : s.gpr .r0 = P.M0)
     (r1 : s.gpr .r1 = BitVec.ofNat 32 P.lenR) (x5 : numAt s.mem (State.addr P.M0) P.w 5 < cv P σ)
     (one : numAt s.mem (State.addr P.M0) P.w 9 = Rm P σ)
-    (m1 : numAt s.mem (State.addr P.M0) P.w 10 = cv P σ - Rm P σ) :
+    (m1 : numAt s.mem (State.addr P.M0) P.w 10 = cv P σ - Rm P σ)
+    (e27 : num s.mem P.B P.W (mBase + 27) = EX P σ) :
     roundPre (s.callEntry.withRegions [] [⟨State.addr P.M0, 8 * P.lenR⟩]) := by
   have pre := h.pre
   have sp : s.sp = P.sp := h.sp.trans pre.sp
@@ -242,7 +294,8 @@ theorem round_pre (h : KS P σ A live V ls s) (m : MS P σ s) (r0 : s.gpr .r0 = 
     have hg := cv_gt pre
     dsimp only [PreparedLite]
     rw [m.width, m.n0]
-    exact ⟨by omega, hodd, m.inverse, x5, one, m1⟩
+    obtain ⟨ex, lo⟩ := exp_facts pre e27
+    exact ⟨by omega, hodd, m.inverse, x5, one, m1, ex, lo⟩
 
 end
 
