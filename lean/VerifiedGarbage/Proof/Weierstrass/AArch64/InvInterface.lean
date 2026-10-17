@@ -19,6 +19,11 @@ namespace VG.Proof.Weierstrass.AArch64
 structure HasLawInvToM (C : Spec.Weierstrass.Curve) extends HasLawInv C where
   invToM : InvToM C.n
 
+/-- Curves whose windows in Jacobian coordinates use the prime-order
+separation theorem (`windowJ_ok`). -/
+structure HasLawInvOrd (C : Spec.Weierstrass.Curve) extends HasLawInv C where
+  prime : PrimeOrder C
+
 /-- Curves whose secret window additions use the prime-order separation theorem. -/
 structure HasLawInvToMOrd (C : Spec.Weierstrass.Curve) extends HasLawInvToM C where
   prime : PrimeOrder C

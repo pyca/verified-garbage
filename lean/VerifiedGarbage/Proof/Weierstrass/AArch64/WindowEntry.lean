@@ -40,8 +40,9 @@ theorem winSelect_eq (K : WinCfg) : WinCfg.select K =
   simp only [WinCfg.select, List.append_assoc]
 
 /-- After the selection and the negation: `E` represents the point of digit
-`i`, and only `E`, `-y` and the temporary area changed. -/
-structure EntryPostW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (k i : Nat)
+`i` (by `Rp`), and only `E`, `-y` and the temporary area changed. -/
+structure EntryPostR (K : WinCfg) (C : Curve) (base : Addr) (size : Nat)
+    (Rp : Fe C → Fe C → Fe C → Point C → Prop) (P : Point C) (k i : Nat)
     (s s' : State) : Prop where
   scr : Scr s' base size
   x19 : s'.gpr .x19 = s.gpr .x19
@@ -49,8 +50,12 @@ structure EntryPostW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Po
   unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n),
     (K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem
   lt : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s'.mem base x K.M.n < C.p
-  rep : Rep C (tmv C K.M.n base s' K.E.x) (tmv C K.M.n base s' K.E.y) (tmv C K.M.n base s' K.E.z)
+  rep : Rp (tmv C K.M.n base s' K.E.x) (tmv C K.M.n base s' K.E.y) (tmv C K.M.n base s' K.E.z)
     (winPt C P k i)
+
+/-- `EntryPostR` in projective coordinates. -/
+abbrev EntryPostW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (k i : Nat)
+    (s s' : State) : Prop := EntryPostR K C base size (Rep C) P k i s s'
 
 theorem winE_mem {K : WinCfg} : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], x ∈ winOther K := by
   intro x hx
@@ -62,14 +67,16 @@ theorem mul_zero_pt' {C : Curve} (P : Point C) : mul 0 P = .infinity := by
 
 /-- The digit's masks, its entry from the table, and its `y` negated for a
 negative digit. -/
-theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
-    (hA : WinA K) (hC : Law C) {P : Point C} (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
+theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
+    (hA : WinA K) {Rp : Fe C → Fe C → Fe C → Point C → Prop} (hRp0 : Rp 0 1 0 .infinity)
+    (hRpNeg : ∀ {X Y Z : Fe C} {Q : Point C}, Rp X Y Z Q → Rp X (-Y) Z (negPt Q))
+    {P : Point C} (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
     (hbits : ∀ t < 4 * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
-    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOk K C base P 8 s) :
+    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOkR K C base Rp P 8 s) :
     WP isa (.block (digit K.bits ++ WinCfg.select K ++ negY K.M K.neg K.zero K.E.y K.bits)) s
-      (EntryPostW K C base size P k i s) := by
+      (EntryPostR K C base size Rp P k i s) := by
   have hn := hs.nowrap
   have hJ := hL.J
   have h0 := hL.n0
@@ -281,13 +288,13 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       · exact hp0
       · rename_i h; rw [hpt.2.2]; exact (Ta h).1 _ (by simp)
   · -- The point: `[|d|]P` (`O` for `0`), reflected for a negative digit.
-    have hR : Rep C (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.x K.M.n))
+    have hR : Rp (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.x K.M.n))
         (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.y K.M.n))
         (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.z K.M.n)) (mul (mag (nib k i)) P) := by
       rw [vx, vy, vz]
       by_cases h : mag (nib k i) = 0
       · simp only [h, ↓reduceIte, toM_zero, hone, mul_zero_pt']
-        exact rep_infinity' hC
+        exact hRp0
       · simp only [h, ↓reduceIte]
         rw [hpt.1, hpt.2.1, hpt.2.2]
         exact (Ta h).2
@@ -316,6 +323,17 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       simp only [h8, ↓reduceIte]
       have : mag (nib k i) = 8 - nib k i := by simp [mag, h8]
       rw [this] at hR
-      exact Rep.negY hR
+      exact hRpNeg hR
+
+/-- `winEntryR_ok` in projective coordinates. -/
+theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
+    (hA : WinA K) (hC : Law C) {P : Point C} (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
+    (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
+    (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
+    (hbits : ∀ t < 4 * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
+    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOk K C base P 8 s) :
+    WP isa (.block (digit K.bits ++ WinCfg.select K ++ negY K.M K.neg K.zero K.E.y K.bits)) s
+      (EntryPostW K C base size P k i s) :=
+  winEntryR_ok hL hA (rep_infinity' hC) Rep.negY hpn hone_lt hone hs hM hi hx hbits hz hT
 
 end VG.Proof.Weierstrass.AArch64

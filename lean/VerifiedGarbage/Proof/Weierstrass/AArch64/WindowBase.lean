@@ -121,6 +121,14 @@ def TblOk (K : WinCfg) (C : Curve) (base : Addr) (P : Point C) (m : Nat) (s : St
     Rep C (tmv C K.M.n base s (K.tblPt j).x) (tmv C K.M.n base s (K.tblPt j).y)
       (tmv C K.M.n base s (K.tblPt j).z) (mul j P)
 
+/-- Entries `[1 … m]P` of the table, each a representative by `Rp`. -/
+def TblOkR (K : WinCfg) (C : Curve) (base : Addr) (Rp : Fe C → Fe C → Fe C → Point C → Prop)
+    (P : Point C) (m : Nat) (s : State) : Prop :=
+  ∀ j, 1 ≤ j → j ≤ m →
+    (∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z], wordsVal s.mem base x K.M.n < C.p) ∧
+    Rp (tmv C K.M.n base s (K.tblPt j).x) (tmv C K.M.n base s (K.tblPt j).y)
+      (tmv C K.M.n base s (K.tblPt j).z) (mul j P)
+
 /-! ## The loop -/
 
 /-- What the loop writes: the slots but the table's, and the temporary area. -/

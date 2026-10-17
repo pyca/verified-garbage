@@ -7,6 +7,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on AArch64
@@ -32,7 +33,7 @@ namespace VG.Generic.MdHash.P384.AArch64.EcdsaP384Sha384
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) :
     List Artifact :=
   match v.sha384 with
   | none => []

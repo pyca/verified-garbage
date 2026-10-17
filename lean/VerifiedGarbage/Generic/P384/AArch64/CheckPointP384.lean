@@ -5,6 +5,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-!
 # P-384's check of a public point on AArch64
@@ -22,7 +23,7 @@ namespace VG.Generic.P384.AArch64.CheckPointP384
 
 open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64.P384.Check
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   C.checkApi.artifact AArch64.target {
     notes := ["The function compares `x` and `y` with `p` by chains of \
       subtractions with borrow (`subs`, `sbcs`), multiplies them by `R² mod p` by calls of the curve's Montgomery multiplication function (`Spec/Weierstrass/Mont.lean`), computes \
