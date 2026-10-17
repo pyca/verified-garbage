@@ -56,20 +56,20 @@ fn probe(c: &mut Criterion) {
     eprintln!("probe: buf mod 4096 = {}", buf.as_ptr() as usize % 4096);
     for off in (0..4096).step_by(256) {
         let d = &buf[start + off..start + off + 64];
-        g.bench_function(BenchmarkId::new("verified-garbage", format!("data{off}")), |b| {
+        g.bench_function(BenchmarkId::new("verified-garbage", off), |b| {
             b.iter(|| Sha512::digest(black_box(d)))
         });
     }
     let d = &buf[start..start + 64];
     for n in 0..8 {
         eprintln!("probe: depth {n} local mod 4096 = {}", stack_addr(n) % 4096);
-        g.bench_function(BenchmarkId::new("verified-garbage", format!("depth{n}")), |b| {
+        g.bench_function(BenchmarkId::new("verified-garbage", 10000 + n), |b| {
             b.iter(|| deep(n, &|| Sha512::digest(black_box(d))))
         });
     }
-    g.bench_function(BenchmarkId::new("verified-garbage", "h384"), |b| b.iter(|| Sha384::digest(black_box(d))));
-    g.bench_function(BenchmarkId::new("verified-garbage", "h512"), |b| b.iter(|| Sha512::digest(black_box(d))));
-    g.bench_function(BenchmarkId::new("verified-garbage", "h512_224"), |b| b.iter(|| Sha512_224::digest(black_box(d))));
-    g.bench_function(BenchmarkId::new("verified-garbage", "h512_256"), |b| b.iter(|| Sha512_256::digest(black_box(d))));
+    g.bench_function(BenchmarkId::new("verified-garbage", 20384), |b| b.iter(|| Sha384::digest(black_box(d))));
+    g.bench_function(BenchmarkId::new("verified-garbage", 20512), |b| b.iter(|| Sha512::digest(black_box(d))));
+    g.bench_function(BenchmarkId::new("verified-garbage", 20224), |b| b.iter(|| Sha512_224::digest(black_box(d))));
+    g.bench_function(BenchmarkId::new("verified-garbage", 20256), |b| b.iter(|| Sha512_256::digest(black_box(d))));
     g.finish();
 }
