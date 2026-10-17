@@ -627,16 +627,42 @@ theorem entered_ct : RelCT isa (Calls P) (.seq (.block Cfg.entry)
     cases he
     exact noMem_ct (sizes_blk _ _)
 
+theorem initFrame_blk : TaintOk [.rsp] Cfg.initFrame := ⟨_, by taint_decide⟩
+
+/-- Two runs after the entry and the dispatch, from calls whose public data agree. -/
+abbrev EnteredTwo (P : RfcHash) (a b : State) : Prop :=
+  True ∧ ∃ σ₁ σ₂, Calls P σ₁ σ₂ ∧ Entered σ₁ P.k P.H.D P.H.P.B a ∧ Entered σ₂ P.k P.H.D P.H.P.B b
+
+/-- `hash`, `D`, `B` and the pointers into the frame: both runs satisfy `Ctx`,
+each with the layout of its call. -/
+theorem init_ct : RelCT isa (fun a b => ∃ s₁ s₂, EnteredTwo P s₁ s₂ ∧ a = allocd 520 s₁ ∧ b = allocd 520 s₂)
+    (.block Cfg.initFrame) fun t₁ t₂ => ∃ σ₁ σ₂, Calls P σ₁ σ₂ ∧
+      Ctx (lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts σ₁) σ₁.gpr σ₁.mem t₁ ∧
+      Ctx (lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts σ₂) σ₂.gpr σ₂.mem t₂ := by
+  have hb : RelCT isa (fun a b => ∃ s₁ s₂, EnteredTwo P s₁ s₂ ∧ a = allocd 520 s₁ ∧ b = allocd 520 s₂)
+      (.block Cfg.initFrame) fun _ _ => True :=
+    let ⟨_, h⟩ := initFrame_blk
+    RelCT.taint (A := taint) (Taint.ofRegs [.rsp]) (fun _ _ ⟨_, _, ⟨_, _, _, hc, e₁, e₂⟩, ea, eb⟩ =>
+      Taint.agree_ofRegs fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [ea, eb, allocd_rsp, allocd_rsp, e₁.rsp, e₂.rsp, hc.2.2.1]) h
+  intro a b t₁ t₂ a' b' hp x₁ x₂
+  obtain ⟨ht, -⟩ := hb _ _ _ _ _ _ hp x₁ x₂
+  obtain ⟨s₁, s₂, ⟨_, σ₁, σ₂, hc, e₁, e₂⟩, rfl, rfl⟩ := hp
+  obtain ⟨_, u₁, y₁, c₁⟩ := init_ctx hc.1 e₁
+  obtain ⟨_, u₂, y₂, c₂⟩ := init_ctx hc.2.1 e₂
+  obtain ⟨-, rfl⟩ := Exec.det x₁ y₁
+  obtain ⟨-, rfl⟩ := Exec.det x₂ y₂
+  exact ⟨ht, σ₁, σ₂, hc, c₁, c₂⟩
+
 theorem sign_ct : ConstantTime isa (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre
     (rfcX86_64 P.R.E.combConsts P.I P.k 552).pub (cfgOf P).sign := by
   refine VG.RelCT.constantTime (Q := fun _ _ => True) ?_
   rw [Cfg.sign]
   refine RelCT.assoc ((RelCT.wpDep entered_ct fun s₁ s₂ h => ⟨entered_ok h.1, entered_ok h.2.1⟩).seq ?_)
-  refine RelCT.frame (R := fun _ _ => True) (fun _ _ ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, e₁, e₂⟩ =>
-    e₁.rsp.trans (hp.1.trans e₂.rsp.symm)) ?_
-  refine body_ct.mono (fun a b ⟨s₁, s₂, ⟨_, σ₁, σ₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, h8, hres, hsy⟩, e₁, e₂⟩, ea, eb⟩ => ?_)
+  refine RelCT.frameAlloc (R := fun _ _ => True) (init_ct.seq ?_)
+  refine body_ct.mono (fun a b ⟨σ₁, σ₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, h8, hres, hsy⟩, c₁, c₂⟩ => ?_)
     fun _ _ _ => trivial
-  subst ea eb
   have hsy' : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then σ₁.syms n else 0) =
       fun n => if n ∈ P.R.E.combConsts.map Prod.fst then σ₂.syms n else 0 := funext fun n => by
     split
@@ -650,7 +676,6 @@ theorem sign_ct : ConstantTime isa (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre
     rw [hres, hsi, hdx]
   refine ⟨⟨lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts σ₁, σ₁.gpr, σ₂.gpr, σ₁.mem,
     σ₂.mem⟩, lay_ok P.k P.H.D P.H.P.B p₁, coreOk_lay P σ₁,
-    congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, push_ctx p₁ e₁,
-    by rw [hl]; exact push_ctx p₂ e₂, trivial, trivial⟩
+    congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, c₁, by rw [hl]; exact c₂, trivial, trivial⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

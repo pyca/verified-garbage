@@ -168,8 +168,9 @@ structure GenOk (p : Instr → Bool) : Prop where
   test : ∀ k, (Code.block (Impl.Dispatch.X86_64.test k) : Prog isa).allInstrs p = true
   entry : (Code.block Cfg.entry : Prog isa).allInstrs p = true
   sizes : ∀ D B, (Code.block (Cfg.sizes D B) : Prog isa).allInstrs p = true
-  push : p (.push Cfg.pushRs) = true
-  pop : p (.pop .rcx 65) = true
+  push : p (.alloc Cfg.frameBytes) = true
+  pop : p (.free Cfg.frameBytes) = true
+  init : (Code.block Cfg.initFrame : Prog isa).allInstrs p = true
   a₁ : (Code.block Cfg.hmacArgs₁ : Prog isa).allInstrs p = true
   a₂V : ∀ e, (Code.block (Cfg.hmacArgs₂ (Cfg.fr .rdx fV) e) : Prog isa).allInstrs p = true
   a₂M : ∀ e, (Code.block (Cfg.hmacArgs₂ (Cfg.scr .rdx sMsg) e) : Prog isa).allInstrs p = true
@@ -223,9 +224,9 @@ theorem sign_allInstrs (R : RfcCurve) (T : Tier) (tries : Nat) {p : Instr → Bo
   have tryOne : (cfgRT R T tries).tryOne.allInstrs p = true :=
     ai_seq cand (ai_seq hG.args (ai_seq hI.core (ai_seq hG.go (ai_ite (ai_seq rekey hG.again) hG.stop))))
   exact ai_seq hG.entry (ai_seq (Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
-    (f := fun H => Cfg.sizes H.D H.P.B) fun _ _ _ _ => hG.sizes _ _)) (ai_frame hG.push (ai_seq hG.dg (ai_seq prep (ai_seq hG.kv
+    (f := fun H => Cfg.sizes H.D H.P.B) fun _ _ _ _ => hG.sizes _ _)) (ai_frame hG.push (ai_seq hG.init (ai_seq hG.dg (ai_seq prep (ai_seq hG.kv
       (ai_seq (rekeyF 0 hcv.2.2.2.1) (ai_seq (rekeyF 1 hcv.2.2.2.2.1) (ai_seq (hG.cnt _)
-        (ai_seq tryOne hG.wipe))))))) hG.pop))
+        (ai_seq tryOne hG.wipe)))))))) hG.pop))
 
 theorem genMx : GenOk fun i => !loadsMxcsr i where
   test _ := rfl
@@ -233,6 +234,7 @@ theorem genMx : GenOk fun i => !loadsMxcsr i where
   sizes _ _ := rfl
   push := rfl
   pop := rfl
+  init := rfl
   a₁ := rfl
   a₂V _ := rfl
   a₂M _ := rfl
@@ -258,6 +260,7 @@ theorem genSp : GenOk fun i => !isa.writesSp i where
   sizes _ _ := rfl
   push := rfl
   pop := rfl
+  init := rfl
   a₁ := rfl
   a₂V _ := rfl
   a₂M _ := rfl
@@ -568,7 +571,7 @@ def anyNotes (q : Nat) (core : String) (wide : Bool := false) (nb : Nat := 8 * q
   "Each candidate is tried with `" ++ core ++ "`, which uses all of `scratch`; whether to try another is \
   computed without branches from its result and the count of candidates left, so the code branches only on \
   that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are \
-  kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes \
+  kept in a 520-byte stack frame, whose secrets are cleared before it is freed; the calls use the 32 bytes \
   below it."
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

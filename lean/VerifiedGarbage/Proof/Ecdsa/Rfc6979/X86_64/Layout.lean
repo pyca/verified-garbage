@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -383,12 +384,62 @@ theorem coversW (hc : Ctx L g m₀ t) {rs : List Region}
 
 end Ctx
 
-/-! ## The frame's push -/
+/-! ## The frame -/
 
-/-- The registers the frame's push stores. -/
-abbrev pushRs : List Reg := Impl.Ecdsa.Rfc6979.X86_64.Cfg.pushRs
+/-- The state after the frame's allocation of `n` bytes. -/
+def allocd (n : Nat) (s : State) : State :=
+  { s.setReg .rsp (s.gpr .rsp - BitVec.ofNat 64 n) with wr := ⟨s.gpr .rsp - BitVec.ofNat 64 n, n⟩ :: s.wr }
 
-theorem pushRs_length : pushRs.length = 65 := rfl
+/-- The state after the frame's release of `n` bytes, from the state `s` its body ends in. -/
+def freed (n : Nat) (s : State) : State :=
+  { s.setReg .rsp (s.gpr .rsp + BitVec.ofNat 64 n) with wr := s.wr.tail }
+
+theorem allocd_rsp (n : Nat) (s : State) : (allocd n s).gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 n :=
+  show (s.setReg .rsp (s.gpr .rsp - BitVec.ofNat 64 n)).gpr .rsp = _ from RegUpd.gpr_setReg_self _ _ _
+theorem allocd_gpr (n : Nat) (s : State) {r : Reg} (h : r ≠ .rsp) : (allocd n s).gpr r = s.gpr r :=
+  RegUpd.gpr_setReg_of_ne _ _ h
+theorem freed_gpr (n : Nat) (s : State) {r : Reg} (h : r ≠ .rsp) : (freed n s).gpr r = s.gpr r :=
+  RegUpd.gpr_setReg_of_ne _ _ h
+theorem freed_rsp (n : Nat) (s : State) : (freed n s).gpr .rsp = s.gpr .rsp + BitVec.ofNat 64 n :=
+  show (s.setReg .rsp (s.gpr .rsp + BitVec.ofNat 64 n)).gpr .rsp = _ from RegUpd.gpr_setReg_self _ _ _
+@[simp] theorem freed_mem (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
+
+theorem alloc_some {n : Nat} {s s₁ : State} (h : isa.push (.alloc n) s = some s₁) : s₁ = allocd n s := by
+  simp only [isa, push] at h
+  split at h
+  · cases h; rfl
+  · cases h
+
+/-- A frame of `n` bytes: its body runs from `allocd n s`, ends with `rsp` and
+the writable regions as the allocation left them, and the release leads to
+`freed n s₂`. -/
+theorem WP.frameAlloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop} (h₁ : 0 < n) (h₂ : n < 4096)
+    (h₃ : n % 8 = 0) (hn : n ≤ (s.gpr .rsp).toNat)
+    (hb : WP isa body (allocd n s) fun s₂ => s₂.gpr .rsp = (allocd n s).gpr .rsp ∧
+      s₂.wr = (allocd n s).wr ∧ Q (freed n s₂)) :
+    WP isa (.frame (.alloc n) body (.free n)) s Q := by
+  obtain ⟨t, s₂, he, hsp, hw, hq⟩ := hb
+  have hpush : isa.push (.alloc n) s = some (allocd n s) := by
+    simp only [isa, push, h₁, h₂, h₃, hn, and_self, ite_true]; rfl
+  have hpop : isa.pop (.free n) (allocd n s) s₂ = some (freed n s₂) := by
+    simp only [isa, pop]
+    refine ite_eq_left ⟨h₁, h₂, h₃, hsp, hw, ?_⟩
+    rw [allocd_rsp]; rfl
+  exact ⟨_, _, Exec.frame hpush he hpop, hq⟩
+
+/-- Two runs of a frame of `n` bytes leak what its body does. -/
+theorem RelCT.frameAlloc {n : Nat} {body : Prog isa} {P R : State → State → Prop}
+    (hb : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = allocd n s₁ ∧ b = allocd n s₂) body R) :
+    RelCT isa P (.frame (.alloc n) body (.free n)) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | frame p₁ b₁ q₁ =>
+    cases e₂ with
+    | frame p₂ b₂ q₂ =>
+      obtain rfl := alloc_some p₁
+      obtain rfl := alloc_some p₂
+      obtain ⟨rfl, -⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, rfl⟩ b₁ b₂
+      exact ⟨rfl, trivial⟩
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
 `q`, the hash function `sel` of output length `hl` and block size `bs`, and
@@ -431,14 +482,15 @@ theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.
     exact ⟨hn, hd _ (List.mem_cons_self ..), hd _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),
       eK ▸ hd _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))))⟩
 
-theorem push_base (sp : Addr) :
-    sp - BitVec.ofNat 64 (8 * 65) = sp - BitVec.ofNat 64 544 + BitVec.ofNat 64 24 := by
-  rw [show 8 * 65 = 544 - 24 by omega, ← Offset.ofNat_sub_ofNat (by omega), Offset.sub_sub_eq]
+theorem frame_base (sp : Addr) :
+    sp - BitVec.ofNat 64 520 = sp - BitVec.ofNat 64 544 + BitVec.ofNat 64 24 := by
+  rw [show 520 = 544 - 24 by omega, ← Offset.ofNat_sub_ofNat (by omega), Offset.sub_sub_eq]
 
-theorem push_slot (sp : Addr) (j : Nat) (hj : j < 65) :
-    sp - BitVec.ofNat 64 (8 * (j + 1)) = sp - BitVec.ofNat 64 544 + BitVec.ofNat 64 (536 - 8 * j) := by
-  rw [show 8 * (j + 1) = 544 - (536 - 8 * j) by omega, ← Offset.ofNat_sub_ofNat (by omega),
-    Offset.sub_sub_eq]
+/-- A word of the frame, after a store to another. -/
+theorem rd_other {m : Mem} {B : Addr} {x y : Nat} (v : BitVec 64) (h : x + 8 ≤ y ∨ y + 8 ≤ x) (hx : x + 8 ≤ 1024)
+    (hy : y + 8 ≤ 1024) :
+    (m.writeW (B + BitVec.ofNat 64 y) v).readW (B + BitVec.ofNat 64 x) 64 = m.readW (B + BitVec.ofNat 64 x) 64 :=
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
 
 /-- The state before the frame's push, from the call's `s`: `scratch` in
 `rcx`, and the hash function's number, output length and block size in `rax`,
@@ -457,33 +509,5 @@ structure Entered (s : State) (sel hl bs : Nat) (s' : State) : Prop where
   rax : s'.gpr .rax = BitVec.ofNat 64 sel
   r10 : s'.gpr .r10 = BitVec.ofNat 64 hl
   r11 : s'.gpr .r11 = BitVec.ofNat 64 bs
-
-theorem push_ctx {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {k : Nat}
-    {sel hl bs : Nat} {s s' : State} (h : (rfcX86_64 cs I k 552).pre s) (he : Entered s sel hl bs s') :
-    Ctx (lay I.hashLen I.ecdsa.curve.len sel hl bs cs s) s.gpr s.mem (pushed pushRs s') := by
-  have hn : 8 * pushRs.length ≤ (s'.gpr .rsp).toNat := by rw [pushRs_length, he.rsp]; have := h.2.1; omega
-  obtain ⟨hf, hw⟩ := pushRegs_mem s' pushRs (by decide) hn
-  have hw' : ∀ j (hj : j < 65), (pushed pushRs s').mem.readW
-      ((lay I.hashLen I.ecdsa.curve.len sel hl bs cs s).B + BitVec.ofNat 64 (536 - 8 * j)) 64 =
-        s'.gpr (pushRs[j]'hj) := fun j hj => by
-    rw [← hw j hj]; simp only [lay]; rw [he.rsp, push_slot _ j hj]; rfl
-  have ht := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  refine ⟨by rw [pushed_rd, he.rd, h.2.2.1, lay_tbls]; rfl, ?_, ?_, fun r hr hr' => (pushed_gpr _ _ hr').trans (he.cs r hr),
-    (hw' 41 (by omega)).trans he.rcx, (hw' 40 (by omega)).trans he.rdx, (hw' 39 (by omega)).trans he.rsi,
-    (hw' 38 (by omega)).trans he.rdi, (hw' 2 (by omega)).trans he.r11, (hw' 1 (by omega)).trans he.r10,
-    (hw' 0 (by omega)).trans he.rax, ?_,
-    fun c hc => by
-      rw [lay_sy I.hashLen I.ecdsa.curve.len sel hl bs (cs := cs) s c hc, ← he.syms]
-      exact congrFun (pushRegs_syms s' pushRs) c.1, fun c hc i hi => ?_⟩
-  · rw [pushed_wr, he.wr, h.2.2.2.1, pushRs_length, he.rsp, push_base]; rfl
-  · rw [pushed_rsp, pushRs_length, he.rsp, push_base]; rfl
-  · rw [← he.mem]
-    refine Frame.sub hf fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr
-    refine ⟨(lay I.hashLen I.ecdsa.curve.len sel hl bs cs s).STK, by simp, ?_⟩
-    rw [pushRs_length, he.rsp, push_base]
-    exact (lay I.hashLen I.ecdsa.curve.len sel hl bs cs s).sub_stk (d := 24) (n := 8 * 65) (by show _ ≤ 240 + 8 * 38; omega)
-  · rw [lay_sy I.hashLen I.ecdsa.curve.len sel hl bs (cs := cs) s c hc]
-    exact ht c hc i hi
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

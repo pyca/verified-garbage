@@ -235,4 +235,61 @@ theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 64
   refine WP.mono h₁ fun u' h => WP.mono (h₂ u' h.ctx) fun u'' h' => hQ u'' h'.ctx (h'.mem.trans h.mem) h'.val
     (fun r hre hrd => (h'.keep r hre).trans (h.keep r hrd)) fun hne => (h'.keep d hne.symm).trans h.val
 
+/-- After the frame's allocation, `hash`, `D`, `B` and the pointers stored into
+it establish `Ctx`. -/
+theorem init_ctx {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {k : Nat}
+    {sel hl bs : Nat} {s s' : State} (h : (rfcX86_64 cs I k 552).pre s) (he : Entered s sel hl bs s') :
+    WP isa (.block Impl.Ecdsa.Rfc6979.X86_64.Cfg.initFrame) (allocd 520 s')
+      (Ctx (lay I.hashLen I.ecdsa.curve.len sel hl bs cs s) s.gpr s.mem) := by
+  have ht := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have hsp : 544 ≤ (s.gpr .rsp).toNat := by have := h.2.1; omega
+  generalize hL : lay I.hashLen I.ecdsa.curve.len sel hl bs cs s = L
+  have hB : L.B = s.gpr .rsp - BitVec.ofNat 64 544 := by rw [← hL]; rfl
+  have hr : (allocd 520 s').gpr .rsp = L.B + BitVec.ofNat 64 24 := by rw [allocd_rsp, he.rsp, hB, frame_base]
+  have hw : (allocd 520 s').wr = ⟨L.B + BitVec.ofNat 64 24, 520⟩ :: s.wr := by
+    show (⟨s'.gpr .rsp - _, 520⟩ :: s'.wr : List Region) = _; rw [he.rsp, he.wr, hB, frame_base]
+  have hn : (L.B + BitVec.ofNat 64 24).toNat + 520 < 2 ^ 64 := by
+    rw [hB, ← frame_base, toNat_sub_ofNat (by omega)]; have := (s.gpr .rsp).isLt; omega
+  have hin : ∀ o, o + 8 ≤ 520 → InRegions (allocd 520 s').wr (L.B + BitVec.ofNat 64 (24 + o)) 8 := fun o ho =>
+    ⟨_, by rw [hw]; exact List.mem_cons_self .., by
+      rw [← Offset.add_add]; exact Offset.contains_base _ ho (by omega)⟩
+  apply WP.of_runBlock
+  simp only [Impl.Ecdsa.Rfc6979.X86_64.Cfg.initFrame, runBlock_cons, runStep_some, runBlock_nil, exec,
+    State.store64, ea_stk, hr, Offset.add_add, Impl.Ecdsa.Rfc6979.X86_64.fSel, Impl.Ecdsa.Rfc6979.X86_64.fHL,
+    Impl.Ecdsa.Rfc6979.X86_64.fBS, Impl.Ecdsa.Rfc6979.X86_64.fOut, Impl.Ecdsa.Rfc6979.X86_64.fD,
+    Impl.Ecdsa.Rfc6979.X86_64.fDigest, Impl.Ecdsa.Rfc6979.X86_64.fScratch, hin 512 (by omega),
+    hin 504 (by omega), hin 496 (by omega), hin 208 (by omega), hin 200 (by omega), hin 192 (by omega),
+    hin 184 (by omega), ite_true, Option.some.injEq, exists_eq_left']
+  have g : ∀ r, r ≠ .rsp → (allocd 520 s').gpr r = s'.gpr r := fun r hr' => allocd_gpr _ _ hr'
+  have hf : Frame [⟨L.B + BitVec.ofNat 64 24, 520⟩] s.mem
+      ((((((((allocd 520 s').mem.writeW (L.B + BitVec.ofNat 64 (24 + 512)) ((allocd 520 s').gpr .rax)).writeW (L.B + BitVec.ofNat 64 (24 + 504)) ((allocd 520 s').gpr .r10)).writeW (L.B + BitVec.ofNat 64 (24 + 496)) ((allocd 520 s').gpr .r11)).writeW (L.B + BitVec.ofNat 64 (24 + 208)) ((allocd 520 s').gpr .rdi)).writeW (L.B + BitVec.ofNat 64 (24 + 200)) ((allocd 520 s').gpr .rsi)).writeW (L.B + BitVec.ofNat 64 (24 + 192)) ((allocd 520 s').gpr .rdx)).writeW (L.B + BitVec.ofNat 64 (24 + 184)) ((allocd 520 s').gpr .rcx)) := by
+    have c : ∀ o, o + 8 ≤ 520 → (⟨L.B + BitVec.ofNat 64 24, 520⟩ : Region).Contains (L.B + BitVec.ofNat 64 (24 + o)) 8 :=
+      fun o ho => by rw [← Offset.add_add]; exact Offset.contains_base _ ho (by omega)
+    have m : (allocd 520 s').mem = s.mem := he.mem
+    rw [m]
+    exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 512 (by omega))).writeW (List.mem_singleton_self _) _ (c 504 (by omega))).writeW (List.mem_singleton_self _) _ (c 496 (by omega))).writeW (List.mem_singleton_self _) _ (c 208 (by omega))).writeW (List.mem_singleton_self _) _ (c 200 (by omega))).writeW (List.mem_singleton_self _) _ (c 192 (by omega))).writeW (List.mem_singleton_self _) _ (c 184 (by omega)))
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · show s'.rd = _; rw [he.rd, h.2.2.1, ← hL, lay_tbls]; rfl
+  · show (allocd 520 s').wr = _; rw [hw, h.2.2.2.1, ← hL]; rfl
+  · exact hr
+  · intro r hr' hr''; rw [g r hr'', he.cs r hr']
+  all_goals try simp (disch := decide) only [rd_other, Mem.readW_writeW_self64]
+  · rw [g _ (by decide), he.rcx, ← hL]; rfl
+  · rw [g _ (by decide), he.rdx, ← hL]; rfl
+  · rw [g _ (by decide), he.rsi, ← hL]; rfl
+  · rw [g _ (by decide), he.rdi, ← hL]; rfl
+  · rw [g _ (by decide), he.r11, ← hL]; rfl
+  · rw [g _ (by decide), he.r10, ← hL]; rfl
+  · rw [g _ (by decide), he.rax, ← hL]; rfl
+  · refine hf.sub fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨L.STK, by simp, L.sub_stk (d := 24) (n := 520) (by rw [← hL]; show _ ≤ 240 + 8 * 38; omega)⟩
+  · intro c hc
+    have hc : c ∈ cs := by rw [← hL] at hc; exact hc
+    show s'.syms c.1 = _
+    rw [he.syms, ← hL, lay_sy I.hashLen I.ecdsa.curve.len sel hl bs (cs := cs) s c hc]
+  · intro c hc i hi
+    have hc : c ∈ cs := by rw [← hL] at hc; exact hc
+    rw [← hL, lay_sy I.hashLen I.ecdsa.curve.len sel hl bs (cs := cs) s c hc]
+    exact ht c hc i hi
 end VG.Proof.Ecdsa.Rfc6979.X86_64

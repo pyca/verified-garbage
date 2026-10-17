@@ -43,9 +43,9 @@ whose copies depend on `D`, which is a dispatch of its own.
   overwrites what follows its first `D`), at the offset `off`, until
   `off ≥ Q`.
 
-Everything runs in one stack frame of 65 words, pushed from `rax` (`hash`),
-`r10` (`D`), `r11` (`B`), 35 copies of `rax`, `rdi`, `rsi`, `rdx`, `rcx`
-(`scratch`) and 23 copies of `rax`: from `rsp`, `K` and `V` (64 bytes each,
+Everything runs in one stack frame of 520 bytes (`lea rsp, [rsp - 520]`),
+into which `hash` (`rax`), `D` (`r10`), `B` (`r11`), `out`, `d`, `digest`
+and `scratch` (`rcx`) are stored (`initFrame`): from `rsp`, `K` and `V` (64 bytes each,
 of which the first `D` are used), the candidate's offset, the number of
 candidates left, then `scratch`, `digest`, `d` and `out`, `core`'s digest
 (`Y`, 72 bytes), `h` (72), the candidate (`C`, 136), and `B`, `D` and
@@ -388,9 +388,13 @@ def body : Prog isa :=
   (.seq (.loop c.tryOne .ne)
     (.block wipe)))))))
 
-/-- The registers the frame is pushed from. -/
-def pushRs : List Reg :=
-  [.rax, .r10, .r11] ++ List.replicate extra .rax ++ [.rdi, .rsi, .rdx, .rcx] ++ List.replicate 23 .rax
+/-- The frame's bytes. -/
+def frameBytes : Nat := 520
+
+/-- `hash`, `D`, `B` and the pointers, into the frame. -/
+def initFrame : List Instr :=
+  [.store (stk fSel) .rax, .store (stk fHL) .r10, .store (stk fBS) .r11, .store (stk fOut) .rdi,
+    .store (stk fD) .rsi, .store (stk fDigest) .rdx, .store (stk fScratch) .rcx]
 
 /-- `scratch` in `rcx`, `hash` in `rax`. -/
 def entry : List Instr := [.mov .rcx (.reg .r8), .mov .rax (.reg .r9)]
@@ -404,7 +408,7 @@ def sizes (D B : Nat) : List Instr :=
 def sign : Prog isa :=
   .seq (.block entry)
   (.seq (Dispatch.X86_64.chain (c.hs.map fun p => (p.1, .block (sizes p.2.D p.2.P.B))))
-    (.frame (.push pushRs) c.body (.pop .rcx 65)))
+    (.frame (.alloc frameBytes) (.seq (.block initFrame) c.body) (.free frameBytes)))
 
 end Cfg
 

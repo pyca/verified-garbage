@@ -445,18 +445,18 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s)
   have hL := lay_ok (I := P.I) P.k P.H.D P.H.P.B h
   rw [Cfg.sign]
   refine entry_ok h fun s' he => ?_
-  have hc := push_ctx h he
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
-    (by rw [pushRs_length, he.rsp]; have := h.2.1; omega_using [this])
-    (WP.mono (body_ok hL (coreOk_lay P s) hc) fun u ⟨hu, i, hx⟩ =>
-      ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
-  · have hrsp : (popped .rcx pushRs.length u).gpr .rsp = s.gpr .rsp := by
-      rw [popped_rsp, hu.rsp, pushRs_length, pop_rsp, lay_ret]
+  refine WP.frameAlloc (n := 520) (by decide) (by decide) (by decide)
+    (by rw [he.rsp]; have := h.2.1; omega_using [this])
+    (WP.seq (WP.mono (init_ctx h he) fun _ hc => WP.mono (body_ok hL (coreOk_lay P s) hc) fun u ⟨hu, i, hx⟩ =>
+      ⟨by rw [hu.rsp, allocd_rsp, he.rsp, frame_base]; rfl,
+        by rw [hu.wr]; show _ = ⟨_, _⟩ :: s'.wr; rw [he.wr, h.2.2.2.1, he.rsp, frame_base]; rfl, ?_, ?_⟩))
+  · have hrsp : (freed 520 u).gpr .rsp = s.gpr .rsp := by
+      rw [freed_rsp, hu.rsp, show (520 : Nat) = 8 * 65 from rfl, pop_rsp, lay_ret]
     refine ⟨fun r hr => ?_, ?_⟩
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
-      · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+      · rw [freed_gpr _ _ hr', hu.cs r hr hr']
+    · rw [freed_mem]
       refine hu.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.k P.H.D P.H.P.B P.R.E.combConsts s).RET)
         ?_ ?_ (by decide)
       · show (⟨_ + BitVec.ofNat 64 (240 + 8 * 38), 8⟩ : Region).Contains (s.gpr .rsp) 8
@@ -475,6 +475,6 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I P.k 552).pre s)
     have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
     have e₂ : P.I.ecdsa.curve = P.R.E.C := by show P.I0.ecdsa.curve = _; rw [P.ecdsa, P.R.curve]
     rw [e₁, e₂]
-    exact hx.res.keep (popped_gpr _ _ _ (by decide) (by decide)) (by rw [popped_mem])
+    exact hx.res.keep (freed_gpr _ _ (by decide)) (by rw [freed_mem])
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
