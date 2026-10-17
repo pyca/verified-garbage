@@ -16,8 +16,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86.TaintErase
+public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+public meta import VerifiedGarbage.Proof.Framework.X86.TaintErase
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.X25519.X86.Column
 
@@ -166,18 +166,18 @@ theorem espOnly {Φ : Pred P} : ∀ (L : Lay P.I.hashLen) (t₁ t₂ : State) g�
 def FlagStable (Φ : Pred P) : Prop :=
   ∀ L g m₀ t t', Proof.Dispatch.X86.FlagsOnly t t' → Φ L g m₀ t → Φ L g m₀ t'
 
-/-- The dispatch on `hash` in `ebx`: both runs take the run's hash function's case. -/
-theorem calls_ct {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {Φ : Pred P} {Q : State → State → Prop}
-    (hbx : ∀ L g m₀ t, Φ L g m₀ t → t.gpr .ebx = L.hs) (hst : FlagStable Φ)
-    (h : RelCT isa (Two P Φ) (mk P.F) Q) : RelCT isa (Two P Φ) ((cfgOf P).calls mk) Q := by
-  show RelCT isa (Two P Φ) (Impl.Dispatch.X86.chain .ebx (P.fns.map fun p => (p.1, mk p.2))) Q
+/-- The dispatch on `hash` in `ebx`, from runs related by `R`, which flags
+alone do not change: both runs take the run's hash function's case. -/
+theorem calls_gen {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {R Q : State → State → Prop}
+    (hsel : ∀ s₁ s₂, R s₁ s₂ → Proof.Dispatch.X86.sel .ebx s₁ = P.k ∧ Proof.Dispatch.X86.sel .ebx s₂ = P.k)
+    (hfl : ∀ a₁ a₂ s₁ s₂, R a₁ a₂ → Proof.Dispatch.X86.FlagsOnly a₁ s₁ → Proof.Dispatch.X86.FlagsOnly a₂ s₂ →
+      R s₁ s₂)
+    (h : RelCT isa R (mk P.F) Q) : RelCT isa R ((cfgOf P).calls mk) Q := by
+  show RelCT isa R (Impl.Dispatch.X86.chain .ebx (P.fns.map fun p => (p.1, mk p.2))) Q
   have hkeys : Proof.Dispatch.keys (P.fns.map fun p => (p.1, mk p.2)) = P.fns.map (·.1) := by
     simp only [Proof.Dispatch.keys, List.map_map]; rfl
   have hm : (P.k, mk P.F) ∈ P.fns.map fun p => (p.1, mk p.2) := List.mem_map.mpr ⟨_, P.mem, rfl⟩
   have hnd : (Proof.Dispatch.keys (P.fns.map fun p => (p.1, mk p.2))).Nodup := by rw [hkeys]; exact P.nodup
-  have hsel : ∀ s₁ s₂, Two P Φ s₁ s₂ → Proof.Dispatch.X86.sel .ebx s₁ = P.k ∧ Proof.Dispatch.X86.sel .ebx s₂ = P.k :=
-    fun _ _ ⟨_, _, hk, _, _, _, f₁, f₂⟩ => ⟨by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₁, hk.hs],
-      by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₂, hk.hs]⟩
   refine Proof.Dispatch.chain_relCT (Proof.Dispatch.X86.tests .ebx) (fun k hk' => ?_) hnd
     (fun s₁ s₂ hp => ⟨(hsel _ _ hp).1.trans (hsel _ _ hp).2.symm, by
       rw [(hsel _ _ hp).1, hkeys]; exact List.mem_map.mpr ⟨_, P.mem, rfl⟩⟩) fun k c hc => ?_
@@ -189,8 +189,16 @@ theorem calls_ct {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {Φ : Pred P} {Q 
     rw [(hsel _ _ hp).1] at hk₁
     subst hk₁
     rw [Proof.Dispatch.case_unique hnd hc hm] at e₁ e₂
-    obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := hp
-    exact h _ _ _ _ _ _ ⟨e, hL, hq, hx, c₁.flags hL r₁, c₂.flags hL r₂, hst _ _ _ _ _ r₁ f₁, hst _ _ _ _ _ r₂ f₂⟩ e₁ e₂
+    exact h _ _ _ _ _ _ (hfl _ _ _ _ hp r₁ r₂) e₁ e₂
+
+/-- The dispatch on `hash` in `ebx`: both runs take the run's hash function's case. -/
+theorem calls_ct {mk : Impl.Pbkdf2.Whole.X86.Fns → Prog isa} {Φ : Pred P} {Q : State → State → Prop}
+    (hbx : ∀ L g m₀ t, Φ L g m₀ t → t.gpr .ebx = L.hs) (hst : FlagStable Φ)
+    (h : RelCT isa (Two P Φ) (mk P.F) Q) : RelCT isa (Two P Φ) ((cfgOf P).calls mk) Q :=
+  calls_gen (fun _ _ ⟨_, _, hk, _, _, _, f₁, f₂⟩ => ⟨by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₁, hk.hs],
+      by simp only [Proof.Dispatch.X86.sel]; rw [hbx _ _ _ _ f₂, hk.hs]⟩)
+    (fun _ _ _ _ ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ r₁ r₂ =>
+      ⟨e, hL, hq, hx, c₁.flags hL r₁, c₂.flags hL r₂, hst _ _ _ _ _ r₁ f₁, hst _ _ _ _ _ r₂ f₂⟩) h
 
 /-! ## The blocks that set the calls' arguments -/
 
@@ -648,5 +656,153 @@ theorem rest_ct :
   refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (two_blk [.esp] espOnly (initCnt_blk _))
     fun _ _ _ _ hL _ hc h => stageE_ok (P := P) hL hc h).seq ?_
   exact loop_ct.seq (two_blk [.esp] espOnly wipe_blk)
+
+/-! ## The hash function's sizes and `X` -/
+
+/-- The sizes' stores, without their values. -/
+def storesRef : List Instr :=
+  (List.range 8).flatMap fun i => [.mov .eax (.imm 0), .store (stk (128 + 4 * i)) .eax]
+
+/-- The analysis does not read the sizes' values. -/
+theorem storeSizes_erase (c : Cfg) (F : Impl.Pbkdf2.Whole.X86.Fns) (X : List Instr) :
+    X86.Code.erase (.block (c.storeSizes F ++ X)) = X86.Code.erase (.block (storesRef ++ X)) := by
+  simp only [X86.Code.erase, KList.map_eq, List.map_append]
+  rfl
+
+/-- A block the analysis checks as one it does not tell apart. -/
+theorem taintOk_erase {rs : List Reg} {is is' : List Instr} (he : X86.Code.erase (.block is) = X86.Code.erase (.block is'))
+    (hn : X86.Taint.noBases (τr rs) = true)
+    (h : ∃ hc, X86.Taint.hintNoBases hc = true ∧ (VG.Taint.check taint (τr rs) (.block is') hc).isSome = true) :
+    TaintOk rs is := by
+  obtain ⟨hc, hh, h⟩ := h
+  refine ⟨hc, ?_⟩
+  rw [← X86.Taint.check_erase _ _ _ hn hh, he, X86.Taint.check_erase _ _ _ hn hh]
+  exact h
+
+/-- A configuration with the scalars' length and shift alone, which is all `digestX` reads. -/
+def cfgLS (len sh : Nat) : Cfg :=
+  { fns := [], w := 0, len, sh, n := 0, tries := 0, coreN := "", coreC := .block [] }
+
+theorem digestX_ls (c : Cfg) (D : Nat) : c.digestX D = (cfgLS c.len c.sh).digestX D := rfl
+
+/-- The lengths of the scalars and shifts, and the hash functions' lengths. -/
+def setupCombos : List (Nat × Nat × Nat) :=
+  ([24, 28, 32, 48, 64].flatMap fun q => [20, 28, 32, 48, 64].map fun d => (q, 0, d)) ++
+    [20, 28, 32, 48, 64].map fun d => (66, 7, d)
+
+theorem setup_ref : ∀ x ∈ setupCombos, ∃ hc, X86.Taint.hintNoBases hc = true ∧
+    (VG.Taint.check taint (τr [.esp, .esi]) (.block (storesRef ++ (cfgLS x.1 x.2.1).digestX x.2.2)) hc).isSome = true := by
+  simp only [setupCombos, List.flatMap_cons, List.flatMap_nil, List.map_cons, List.map_nil, List.cons_append,
+    List.nil_append, List.append_nil, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_⟩
+  all_goals
+    refine ⟨?h, ?nb, ?ck⟩
+    case ck => native_taint_decide
+    case nb => decide +kernel
+
+theorem setup_mem (P : RfcHash) : ((cfgOf P).len, (cfgOf P).sh, P.F.H.D) ∈ setupCombos := by
+  have hl : (cfgOf P).len = P.Q := rfl
+  have hs : (cfgOf P).sh = P.R.sh := rfl
+  rw [hl, hs]
+  cases hW : P.R.wide
+  · rw [P.sh0 hW]
+    rcases P.lengthsA hW with h | h | h | h | h <;>
+      rcases P.db with ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ <;>
+      rw [h, h'] <;> decide
+  · obtain ⟨-, h, h7⟩ := P.sizesW hW
+    rw [h, h7]
+    rcases P.db with ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ <;> rw [h'] <;> decide
+
+/-- The case of the run's hash function: its addresses are `esp` and `digest`, in `esi`. -/
+theorem setupCase_blk (P : RfcHash) :
+    TaintOk [.esp, .esi] ((cfgOf P).storeSizes P.F ++ (cfgOf P).digestX P.F.H.D) :=
+  taintOk_erase (storeSizes_erase _ _ _) (by decide +kernel)
+    (by rw [digestX_ls]; exact setup_ref _ (setup_mem P))
+
+/-- `digest` in `esi`, `hash` in `ebx`. -/
+def SI (P : RfcHash) : Pred P := fun L _ _ u => u.gpr .esi = L.a2 ∧ u.gpr .ebx = L.hs
+
+theorem setupT_ct : RelCT isa (Two0 P (SI P)) (cfgOf P).setup fun _ _ => True := by
+  refine calls_gen (mk := fun F => .block ((cfgOf P).storeSizes F ++ (cfgOf P).digestX F.H.D))
+    (fun _ _ ⟨_, _, hk, _, _, _, f₁, f₂⟩ => ⟨by simp only [Proof.Dispatch.X86.sel]; rw [f₁.2, hk.hs],
+      by simp only [Proof.Dispatch.X86.sel]; rw [f₂.2, hk.hs]⟩)
+    (fun _ _ _ _ ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ r₁ r₂ =>
+      ⟨e, hL, hq, hx, c₁.regs hL r₁.rd r₁.wr r₁.mem (r₁.gpr _) r₁.syms,
+        c₂.regs hL r₂.rd r₂.wr r₂.mem (r₂.gpr _) r₂.syms, ⟨by rw [r₁.gpr]; exact f₁.1, by rw [r₁.gpr]; exact f₁.2⟩,
+        ⟨by rw [r₂.gpr]; exact f₂.1, by rw [r₂.gpr]; exact f₂.2⟩⟩) ?_
+  obtain ⟨_, h⟩ := setupCase_blk P
+  exact VG.RelCT.taint (A := taint) (τr [.esp, .esi]) (fun _ _ ⟨_, _, _, _, c₁, c₂, f₁, f₂⟩ => agree_regs fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact esp_two c₁ c₂
+    · exact f₁.1.trans f₂.1.symm) h
+
+/-- The hash function's sizes and `X`: from `Ctx0` to `Ctx`. -/
+theorem setup_ct :
+    RelCT isa (Two0 P (SI P)) (cfgOf P).setup (Two P fun L _ m₀ t => XOk P L m₀ t.mem) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨ht, -⟩ := setupT_ct _ _ _ _ _ _ hp e₁ e₂
+  obtain ⟨⟨L, g₁, g₂, m₁, m₂⟩, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := hp
+  obtain ⟨_, u₁, x₁, y₁⟩ := setup_ok hL hq c₁ f₁.1 f₁.2
+  obtain ⟨_, u₂, x₂, y₂⟩ := setup_ok hL hq c₂ f₂.1 f₂.2
+  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
+  exact ⟨ht, ⟨L, g₁, g₂, m₁, m₂⟩, hL, hq, hx, y₁.1, y₂.1, y₁.2.2, y₂.2.2⟩
+
+/-! ## The whole function -/
+
+/-- Two runs from states that satisfy the precondition and agree on public
+data, after the frame's allocation. -/
+def Entered (P : RfcHash) (a b : State) : Prop :=
+  ∃ s₁ s₂, ((rfcX86 P.I P.k 536 P.R.E.combConsts).pre s₁ ∧ (rfcX86 P.I P.k 536 P.R.E.combConsts).pre s₂ ∧
+    (rfcX86 P.I P.k 536 P.R.E.combConsts).pub s₁ s₂) ∧ a = entered s₁ ∧ b = entered s₂
+
+theorem start_blk : RelCT isa (Entered P) (.block (save ++ selArg ++ digestPtr)) fun _ _ => True := by
+  have h : TaintOk [.esp] (save ++ selArg ++ digestPtr) := ⟨_, by native_taint_decide⟩
+  obtain ⟨_, h⟩ := h
+  exact VG.RelCT.taint (A := taint) (τr [.esp]) (fun _ _ ⟨s₁, s₂, ⟨_, _, hsp, _⟩, ea, eb⟩ => agree_regs fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr ea eb
+    rw [allocState_esp, allocState_esp, hsp]) h
+
+/-- Our caller's registers saved, `hash` in `ebx` and `digest` in `esi`:
+the runs are related by `Two0`, with the layout of the arguments, which
+agree, and the same number of candidates. -/
+theorem start_ct : RelCT isa (Entered P) (.block (save ++ selArg ++ digestPtr)) (Two0 P (SI P)) := by
+  intro a b t₁ t₂ a' b' hp e₁ e₂
+  obtain ⟨ht, -⟩ := start_blk _ _ _ _ _ _ hp e₁ e₂
+  obtain ⟨s₁, s₂, ⟨p₁, p₂, hsp, h0, h1, h2, h3, h4, h5, hres, hsy⟩, rfl, rfl⟩ := hp
+  have hw : ∀ s, (rfcX86 P.I P.k 536 P.R.E.combConsts).pre s → WP isa (.block (save ++ selArg ++ digestPtr))
+      (entered s) fun u => Ctx0 (layP P s) s.gpr s.mem u ∧ SI P (layP P s) s.gpr s.mem u := fun s h => by
+    rw [List.append_assoc]
+    exact save_ok h fun _ hc _ => WP.mono (start_ok (lay_ok h) hc) fun _ ⟨c, a, d⟩ => ⟨c, a, d⟩
+  obtain ⟨_, u₁, x₁, y₁⟩ := hw s₁ p₁
+  obtain ⟨_, u₂, x₂, y₂⟩ := hw s₂ p₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
+  have hl : layP P s₂ = layP P s₁ := by
+    have hs : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₂.syms n else 0) =
+        (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₁.syms n else 0) := by
+      funext n
+      split
+      · rename_i hn
+        obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hn
+        exact (hsy c hc).symm
+      · rfl
+    simp only [layP, layOf, lay, hsp, h0, h1, h2, h3, h4, h5, hs]
+  have hr : (result P.I s₁.mem (layP P s₁).d (layP P s₁).dg).2 = (result P.I s₂.mem (layP P s₁).d (layP P s₁).dg).2 := by
+    show (result P.I s₁.mem ((arg s₁ 1).setWidth 64) ((arg s₁ 2).setWidth 64)).2 =
+      (result P.I s₂.mem ((arg s₁ 1).setWidth 64) ((arg s₁ 2).setWidth 64)).2
+    rw [hres, h1, h2]
+  rw [hl] at y₂
+  exact ⟨ht, ⟨layP P s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁, fits_lay P p₁,
+    congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, y₁.1, y₂.1, y₁.2, y₂.2⟩
+
+/-- Runs whose public data agree have the same layout, run the same hash
+function, and stop at the same candidate. -/
+theorem sign_ct : ConstantTime isa (rfcX86 P.I P.k 536 P.R.E.combConsts).pre (rfcX86 P.I P.k 536 P.R.E.combConsts).pub
+    (cfgOf P).sign :=
+  VG.RelCT.constantTime (Q := fun _ _ => True) (alloc_ct (start_ct.seq (setup_ct.seq rest_ct) |>.mono
+    (fun _ _ ⟨s₁, s₂, h, ea, eb⟩ => ⟨s₁, s₂, h, ea, eb⟩) fun _ _ h => h))
 
 end VG.Proof.Ecdsa.Rfc6979.X86

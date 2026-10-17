@@ -116,4 +116,62 @@ def Tier.of (suffix : String) (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Pro
   len_ok := rfl
   features := (v1.features ++ v256.features).eraseDups
 
+namespace Tier
+
+variable (t : Tier)
+
+theorem length : t.hashes.length = 7 := by
+  have := congrArg List.length t.hmac_ok
+  simpa only [List.length_map, List.length_cons, List.length_nil] using this
+
+/-- The hash function `i + 1` names, for `i < 7`. -/
+def get (i : Nat) (hi : i < 7) : TierHash := t.hashes[i]'(by rw [t.length]; exact hi)
+
+theorem hmac_get (i : Nat) (hi : i < 7) : Spec.HashId.hmac (i + 1) = some (t.get i hi).ok.hH.SH.H := by
+  have h := congrArg (·[i]?) t.hmac_ok
+  simp only [List.getElem?_map] at h
+  rw [List.getElem?_eq_getElem (by rw [t.length]; exact hi)] at h
+  have e : ([1, 2, 3, 4, 5, 6, 7] : List Nat)[i]? = some (i + 1) := by
+    match i, hi with
+    | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ => rfl
+  rw [e] at h
+  exact (Option.some.inj h).symm
+
+theorem len_get (i : Nat) (hi : i < 7) : (Spec.HashId.mgf1 (i + 1)).map (·.len) = some (t.get i hi).F.H.D := by
+  have h := congrArg (·[i]?) t.len_ok
+  simp only [List.getElem?_map] at h
+  rw [List.getElem?_eq_getElem (by rw [t.length]; exact hi)] at h
+  have e : ([1, 2, 3, 4, 5, 6, 7] : List Nat)[i]? = some (i + 1) := by
+    match i, hi with
+    | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ => rfl
+  rw [e] at h
+  exact (Option.some.inj h).symm
+
+theorem fns_eq : t.fns = (List.range 7).zipWith (fun i h => (i + 1, h.F)) t.hashes := by
+  rw [Tier.fns, t.length]
+
+theorem seven : ∃ a b c d e f g, t.hashes = [a, b, c, d, e, f, g] := by
+  have hl := t.length
+  generalize t.hashes = l at hl ⊢
+  rcases l with _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, l⟩⟩⟩⟩⟩⟩⟩⟩ <;>
+    first | exact ⟨_, _, _, _, _, _, _, rfl⟩ | (simp only [List.length_cons, List.length_nil] at hl; omega)
+
+theorem keys : t.fns.map (·.1) = [1, 2, 3, 4, 5, 6, 7] := by
+  obtain ⟨a, b, c, d, e, f, g, h⟩ := t.seven
+  rw [fns_eq, h]
+  rfl
+
+theorem mem_fns (i : Nat) (hi : i < 7) : (i + 1, (t.get i hi).F) ∈ t.fns := by
+  rw [fns_eq, List.mem_iff_getElem]
+  refine ⟨i, by simp [t.length]; exact hi, ?_⟩
+  simp [get]
+
+theorem fns_mem {p : Nat × Fns} (hp : p ∈ t.fns) : ∃ h ∈ t.hashes, p.2 = h.F := by
+  rw [Tier.fns, List.mem_iff_getElem] at hp
+  obtain ⟨j, hj, rfl⟩ := hp
+  simp only [List.length_zipWith, List.length_range, Nat.min_self] at hj
+  exact ⟨_, List.getElem_mem (by simpa using hj), by simp⟩
+
+end Tier
+
 end VG.Proof.Pbkdf2.Whole.X86
