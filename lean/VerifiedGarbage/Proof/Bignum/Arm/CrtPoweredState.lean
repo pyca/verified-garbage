@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePower
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

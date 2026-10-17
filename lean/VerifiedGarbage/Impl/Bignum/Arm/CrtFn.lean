@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
 public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
-public import VerifiedGarbage.Impl.Bignum.Arm.CrtPrimePower
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
@@ -18,6 +18,7 @@ The 56-byte frame retains the public lengths and argument pointers. After
 importing n, slot 8 holds the main workspace; slot 0 follows the active
 workspace. The only conditional branch validates the public modulus.
 All secret validation bits accumulate at slot 48 and mask the final output.
+Each factor's power runs in the narrow workspace at the factor's own width.
 -/
 
 @[expose] public section
@@ -38,16 +39,16 @@ def loadQ : Prog isa := .seq (selectChild 228) (.seq (savedOperand 0 72 76) sele
 def validate : Prog isa :=
   .seq acceptInput (.seq loadP (.seq loadQ (.seq validateProduct (.block mergeAcceptance))))
 
-def power (slot exponentSlot : Nat) : Prog isa :=
-  .seq (selectChild slot) (.seq (primePower exponentSlot) selectMain)
+def power (slot primeSlot exponentSlot : Nat) : Prog isa :=
+  .seq (selectChild slot) (.seq (narrowPower slot primeSlot exponentSlot) selectMain)
 def qSource : List Instr := [.ldrSp .r1 8, .ldr .r1 .r1 228]
 def coefficientPhase : Prog isa := .seq (selectChild 224)
   (.seq (.block qSource) (.seq (transferArray 1 6) (.seq coefficient selectMain)))
 def outputArgs : List Instr := [.ldr .r1 .r0 232, .ldrSp .r4 4, .ldrSp .r6 12]
 def finish : Prog isa := .seq (.block qSource) (.seq (transferArray 1 6)
   (.seq recombine (.seq (.block outputArgs) exportBufferMasked)))
-def compute : Prog isa := .seq (power 224 80)
-  (.seq (power 228 88) (.seq coefficientPhase finish))
+def compute : Prog isa := .seq (power 224 64 80)
+  (.seq (power 228 72 88) (.seq coefficientPhase finish))
 
 def prepare : Prog isa := .seq (.block PcFn.head) (.seq setupAll
   (.seq (savedOperand 0 8 12) (.block saveMain)))

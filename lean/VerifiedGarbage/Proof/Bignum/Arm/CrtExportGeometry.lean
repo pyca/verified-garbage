@@ -21,7 +21,7 @@ theorem CrtShared.product_address {s : State} {g : CrtGeometry} {bs : Fin 7 → 
   have size := h.buffers.storageFits
   have nowrap := h.buffers.workspace.nowrap
   have fit : g.base.toNat + productOffset g.words < 2 ^ 32 := by
-    simp only [totalBytes, modulusOffset, compareOffset, productBytes, productWords] at size
+    simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productBytes, productWords] at size
     omega
   refine ⟨addr_add (by omega), ?_⟩
   simp only [crtProduct, BitVec.toNat_add, BitVec.toNat_ofNat,
@@ -44,7 +44,7 @@ theorem CrtShared.export_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Lis
   have size := h.buffers.storageFits
   have nowrap := h.buffers.workspace.nowrap
   have productFit : productOffset g.words + g.length ≤ g.size := by
-    simp only [totalBytes, modulusOffset, compareOffset, productBytes, productWords] at size
+    simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productBytes, productWords] at size
     change g.length ≤ 8 * g.words at width
     omega
   have sub : Region.Sub ⟨State.addr (crtProduct g.base g.words), g.length⟩ ⟨State.addr g.base, g.size⟩ := by

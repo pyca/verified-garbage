@@ -41,7 +41,7 @@ theorem CrtPoweredPair.coefficientSelection {s : State} {g : CrtGeometry} {bs : 
 
 theorem crt_bothPowers_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtCheckedState g bs s) :
-    WP isa (.seq (CrtFn.power 224 80) (CrtFn.power 228 88)) s (CrtPoweredPair g bs) :=
+    WP isa (.seq (CrtFn.power 224 64 80) (CrtFn.power 228 72 88)) s (CrtPoweredPair g bs) :=
   (crt_bothPowers_ok s h.selected.1 h.selected.2 h.p h.q h.flag).mono
     (fun _ j => ⟨⟨j.1, j.2.1⟩, j.2.2.1, j.2.2.2.1, j.2.2.2.2.1⟩)
 
