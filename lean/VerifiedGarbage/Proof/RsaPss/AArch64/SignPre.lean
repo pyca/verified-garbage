@@ -145,6 +145,22 @@ theorem preS_of {Hs : Spec.Mgf1.Hash} {K : Nat} {s : State}
     by simp only [Spec.RsaPss.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hh; omega,
     by simp only [Spec.RsaPss.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hg; omega⟩
 
+/-- The hash functions' numbers, from `signAnyContract.pre`. -/
+theorem sel_of {K : Nat} {s : State} (h : (Spec.RsaPss.signAnyContract abi (stk K)).pre s) :
+    (stackArg s 14).toNat < 8 ∧ (stackArg s 15).toNat < 8 := by
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  rw [e] at h
+  sig_pre [Spec.RsaPss.signAnyContract, Spec.RsaPss.signAnySig, abi, argRegs, stackArgs_sixteen,
+    List.append_eq] at h
+  sig_pre [Spec.RsaPss.signAnyContract, Spec.RsaPss.signAnySig, abi, argRegs, stackArgs_sixteen,
+    List.append_eq] at h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr on oe op oq odp odq oqi odg osl os oa ns es ps qs dps dqs qis dgs sls sa
+    ko kn ke kp kq kdp kdq kqi kdg ksl ks ka wo wn we wp wq wdp wdq wqi wdg wsl ws hh hg hdl _ob1 ol e1 e2 p1
+    p2 q1 q2 hdp hqi hdq
+  simp only [Spec.RsaPss.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hh hg
+  omega
+
 /-! ## The frame -/
 
 /-- The frame's base. -/
