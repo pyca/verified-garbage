@@ -19,18 +19,9 @@ def artifacts : List Artifact := [
   Spec.MlDsa.power2RoundApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Optimized.KeygenRound.power2Round
     verified := Proof.MlDsa.AArch64.Optimized.KeygenRound.power2Round_verified },
-  Spec.MlDsa.highBitsApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Round.highBits
-    verified := highBits_verified },
-  Spec.MlDsa.lowBitsApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Round.lowBits
-    verified := lowBits_verified },
   Spec.MlDsa.normLtApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Round.normLt
     verified := normLt_verified },
-  Spec.MlDsa.makeHintApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Round.makeHint
-    verified := makeHint_verified },
   Spec.MlDsa.useHintApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Round.useHint
     verified := useHint_verified }]

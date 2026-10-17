@@ -34,7 +34,8 @@ theorem cfgOf_len : (cfgOf P).len = P.Q := rfl
 theorem cfgOf_w : (cfgOf P).w = P.w := rfl
 theorem cfgOf_sh : (cfgOf P).sh = P.R.sh := rfl
 theorem cfgOf_wide : (cfgOf P).wide = P.R.wide := rfl
-theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
+theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E P.R.hHigh).reduce := rfl
+theorem cfgOf_hHigh : (cfgOf P).hHigh = P.R.hHigh := rfl
 /-- A property of every instruction holds of the count's initial store if it
 holds of its two instructions, whatever the count. -/
 theorem initCnt_all (p : Instr → Bool) (h₁ : ∀ x, p (.mov32 .rax (.imm x)) = true)
@@ -59,17 +60,19 @@ theorem sign_mx : (cfgOf P).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
+      cfgOf_hHigh, fHo_q P hw, hHigh_q P hw,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; rw [hq, h] at hQD; omega)
-      | (simp only [hq, h, h']; decide +kernel)
+      | (simp only [hq, h, h', Nat.reduceEqDiff, decide_true, decide_false, ite_true, ite_false,
+          Bool.false_eq_true]; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
-      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx, hQ66, hw9, sh7 hw]
+      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx, hQ66, hw9, sh7 hw, fHo_wide P hw]
     simp only [hD64, hB]
     decide +kernel
 
@@ -87,17 +90,19 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
+      cfgOf_hHigh, fHo_q P hw, hHigh_q P hw,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; rw [hq, h] at hQD; omega)
-      | (simp only [hq, h, h']; decide +kernel)
+      | (simp only [hq, h, h', Nat.reduceEqDiff, decide_true, decide_false, ite_true, ite_false,
+          Bool.false_eq_true]; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
-      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp, hQ66, hw9, sh7 hw]
+      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp, hQ66, hw9, sh7 hw, fHo_wide P hw]
     simp only [hD64, hB]
     decide +kernel
 

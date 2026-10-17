@@ -61,6 +61,7 @@ mod ecdh_p521;
 mod ecdh_secp256k1;
 mod ecdsa_brainpoolp256r1;
 mod ecdsa_brainpoolp384r1;
+mod ecdsa_brainpoolp512r1;
 mod ecdsa_p192;
 mod ecdsa_p224;
 mod ecdsa_p256;
@@ -510,6 +511,7 @@ benches! {
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
     (ecdsa_brainpoolp256r1::USES, ecdsa_brainpoolp256r1::bench),
     (ecdsa_brainpoolp384r1::USES, ecdsa_brainpoolp384r1::bench),
+    (ecdsa_brainpoolp512r1::USES, ecdsa_brainpoolp512r1::bench),
     (dsa::USES, dsa::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),

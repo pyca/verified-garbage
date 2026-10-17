@@ -97,7 +97,7 @@ theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn 
   exact List.map_congr_left fun i hi => hc.dg_byte hL (by have := List.mem_range.mp hi; omega)
 
 theorem hok_of (hk : CoreOk P L) : HOk P L :=
-  ⟨by rw [hk.1], fun _ => by rw [P.len]⟩
+  ⟨by rw [hk.1], fun _ => by rw [P.len], hk.2.2.1⟩
 
 /-- The count, kept by memory that changed elsewhere. -/
 theorem cnt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m')

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.InitPairs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -24,6 +27,20 @@ namespace VG.Proof.Sha256.AArch64
 
 open VG.AArch64 VG.Proof.MdStream.AArch64
 open VG.Impl.MdStream.AArch64
+
+/-- The one-shot digest with the digest code `o`, from the initial hash value
+`iv`, calling the compression function `code` named `name`. -/
+def oneShotWith (o : List Instr) (iv : Spec.Sha256.HashValue) (name : String) (code : Prog isa) :
+    Prog isa :=
+  Impl.MdStream.AArch64.OneShot.digest { Stream.params with out := o }
+    (Impl.Sha256.AArch64.Stream.initPairs iv) name code
+
+/-- The one-shot digest is constant time. -/
+abbrev OneShotCT (o : List Instr) (D : Nat) (iv : Spec.Sha256.HashValue) (name : String) (code : Prog isa) :
+    Prop :=
+  ConstantTime isa (MdStream.AArch64.OneShot.oneK (P := { Stream.params with out := o }) md iv D).pre
+    (MdStream.AArch64.OneShot.oneK (P := { Stream.params with out := o }) md iv D).pub
+    (oneShotWith o iv name code)
 
 structure Compress where
   name : String
@@ -52,6 +69,74 @@ structure Compress where
   finalize224Keeps : ((instrs (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code)).all fun i =>
     untouched.all fun r => !clobbers i r) = true
   finalize224Depth : (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code).aarch64Depth = 0
+  /-- The one-shot digests of SHA-256 and SHA-224. -/
+  oneShot256 : OneShotCT (out32 8 true) 32 Spec.Sha256.H0 name code
+  oneShot224 : OneShotCT (out32 7 true) 28 Spec.Sha256.H0_224 name code
+
+/-! ## The one-shot digests' common facts -/
+
+namespace OneShot
+
+open MdStream.AArch64.OneShot (oneK initK Fits)
+
+theorem frameBytes_out (o : List Instr) :
+    Impl.MdStream.AArch64.OneShot.frameBytes { Stream.params with out := o } =
+      Impl.MdStream.AArch64.OneShot.frameBytes Stream.params := rfl
+
+theorem fits (o : List Instr) : Fits { Stream.params with out := o } := ⟨by rw [frameBytes_out]; decide⟩
+
+theorem init_ok (iv : Spec.Sha256.HashValue) :
+    ∀ s, (initK (P := Stream.params) md iv).pre s → ∃ t s',
+      Exec isa (Impl.Sha256.AArch64.Stream.initPairs iv) s t s' ∧ abiPreserved s s' ∧
+        (initK (P := Stream.params) md iv).post s s' :=
+  Stream.initPairs_ok iv
+
+theorem init_writes (iv : Spec.Sha256.HashValue) :
+    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (Impl.Sha256.AArch64.Stream.initPairs iv), clobbers i r = false :=
+  Stream.initPairs_writes iv
+
+theorem init_keepsV (iv : Spec.Sha256.HashValue) :
+    (Impl.Sha256.AArch64.Stream.initPairs iv).allInstrs VG.AArch64.keepsV = true :=
+  Stream.initPairs_keepsV iv
+
+/-- A state satisfying the precondition: an empty message at `0x1000`, the
+digest at `0x2000` and the stack pointer at `0x10000`. -/
+def sat (D : Nat) : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x2 => 0x2000 | _ => 0
+  sp := 0x10000
+  mem _ := 0
+  rd := [⟨0x1000, 0⟩]
+  wr := [⟨0x2000, D⟩]
+
+theorem sat_pre₀ {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stream.params D (sat D) where
+  rd := rfl
+  wr := rfl
+  d_o := show Region.Disjoint ⟨0x1000, 0⟩ ⟨0x2000, D⟩ from
+    Offset.disjoint_of_le (show 4096 + 0 ≤ 8192 by decide) (show 8192 + D ≤ 2 ^ 64 by omega)
+  sp := show Impl.MdStream.AArch64.OneShot.frameBytes Stream.params ≤ (0x10000 : BitVec 64).toNat by decide
+  f_d := show Region.Disjoint ⟨0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params),
+      Impl.MdStream.AArch64.OneShot.frameBytes Stream.params⟩ ⟨0x1000, 0⟩ from
+    (Offset.disjoint_of_le (by decide) (by decide)).symm
+  f_o := show Region.Disjoint ⟨0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params),
+      Impl.MdStream.AArch64.OneShot.frameBytes Stream.params⟩ ⟨0x2000, D⟩ from
+    (Offset.disjoint_of_le (show 8192 + D ≤ _ by
+      have : 8256 ≤ (0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params) :
+        BitVec 64).toNat := by decide
+      dsimp only; omega) (by decide)).symm
+
+/-- The precondition does not depend on the digest code. -/
+theorem pre_out {o : List Instr} {D : Nat} {s : State} (h : MdStream.AArch64.OneShot.Pre Stream.params D s) :
+    MdStream.AArch64.OneShot.Pre { Stream.params with out := o } D s := by
+  have e := frameBytes_out o
+  exact ⟨h.rd, h.wr, h.d_o, by rw [e]; exact h.sp,
+    by simpa only [MdStream.AArch64.OneShot.fR, MdStream.AArch64.OneShot.fb, e] using h.f_d,
+    by simpa only [MdStream.AArch64.OneShot.fR, MdStream.AArch64.OneShot.fb, e] using h.f_o⟩
+
+theorem sat_pre {o : List Instr} {D : Nat} (hD : D ≤ 64) :
+    MdStream.AArch64.OneShot.Pre { Stream.params with out := o } D (sat D) := pre_out (sat_pre₀ hD)
+
+end OneShot
 
 namespace Compress
 
@@ -80,6 +165,17 @@ theorem finalize224_verified :
   MdStream.AArch64.Finalize.verifiedD (P := Impl.Sha256.AArch64.Stream.params224)
     ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ Stream.shape224
     (v.callee.withOut _) v.finalize224CT v.finalize224Keeps (by rw [v.finalize224Depth]; decide)
+
+/-- The one-shot digest with the digest code `o` (writing `D` bytes), from `iv`. -/
+theorem oneShot_verified {o : List Instr} {D : Nat} {iv : Spec.Sha256.HashValue} (hD : D ≤ 64)
+    (hs : ShapeD (P := { Stream.params with out := o }) md D)
+    (hct : OneShotCT o D iv v.name v.code) :
+    Verified AArch64.target (oneShotWith o iv v.name v.code)
+      (MdStream.AArch64.OneShot.oneK (P := { Stream.params with out := o }) md iv D) :=
+  MdStream.AArch64.OneShot.verified (P := { Stream.params with out := o }) (OneShot.fits o)
+    ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ hs
+    (v.callee.withOut o) (OneShot.init_ok iv) (OneShot.init_writes iv) rfl (OneShot.init_keepsV iv) hct
+    ⟨_, OneShot.sat_pre hD⟩
 
 end Compress
 end VG.Proof.Sha256.AArch64

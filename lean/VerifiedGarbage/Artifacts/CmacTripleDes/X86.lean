@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Frame
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -18,8 +18,9 @@ against the contract.
 
 The functions call nothing. They keep their working space in a frame of
 their own on the stack, with a copy of their stack arguments
-(`Proof/CmacTripleDes/X86/Frame.lean`): they save our caller's registers in
-the working space, and reload their stack arguments.
+(`Proof/CmacTripleDes/Stream/X86/Frame.lean`): they save our caller's
+registers in the working space (or, `stream_init`'s `ebx`, in the state),
+and reload their stack arguments.
 -/
 
 @[expose] public section
@@ -34,21 +35,27 @@ def desNote : String :=
   and its eight S-boxes at once, bitsliced across 32-bit words, as a tree of multiplexers \
   over constants."
 
+/-- How the streaming functions are built. -/
+def streamNote : String :=
+  "This implementation's streaming functions are built from three pieces of code, run inline on \
+  the streaming state: one expands the key and derives the subkeys, one chains whole blocks, and \
+  one masks, pads and encrypts the last block."
+
 def artifacts : List Artifact := [
-  Spec.Cmac.tdesInitApi.artifact X86.target {
-    notes := [desNote]
-    code := Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.X86.init
-    stack := 660
-    verified := init_framed },
-  Spec.Cmac.tdesUpdateApi.artifact X86.target {
-    notes := [desNote]
-    code := Impl.StackScratch.X86.withStackScratch 664 4 Impl.CmacTripleDes.X86.update
-    stack := 664
-    verified := update_framed },
-  Spec.Cmac.tdesFinalizeApi.artifact X86.target {
-    notes := [desNote]
-    code := Impl.StackScratch.X86.withStackScratch 664 4 Impl.CmacTripleDes.X86.finalize
-    stack := 664
-    verified := finalize_framed }]
+  Spec.Cmac.tdesStreamInitApi.artifact X86.target {
+    notes := [desNote, streamNote]
+    code := Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.Stream.X86.streamInit
+    stack := 680
+    verified := Proof.CmacTripleDes.Stream.X86.init_framed },
+  Spec.Cmac.tdesAbsorbApi.artifact X86.target {
+    notes := [desNote, streamNote]
+    code := Impl.StackScratch.X86.withStackScratch 716 5 Impl.CmacTripleDes.Stream.X86.absorb
+    stack := 740
+    verified := Proof.CmacTripleDes.Stream.X86.absorb_framed },
+  Spec.Cmac.tdesFinishApi.artifact X86.target {
+    notes := [desNote, streamNote]
+    code := Impl.StackScratch.X86.withStackScratch 712 4 Impl.CmacTripleDes.Stream.X86.finish
+    stack := 736
+    verified := Proof.CmacTripleDes.Stream.X86.finish_framed }]
 
 end VG.Artifacts.CmacTripleDes.X86

@@ -32,6 +32,7 @@ mod ecdh_p521;
 mod ecdh_secp256k1;
 mod ecdsa_brainpoolp256r1;
 mod ecdsa_brainpoolp384r1;
+mod ecdsa_brainpoolp512r1;
 mod ecdsa_p192;
 mod ecdsa_p224;
 mod ecdsa_p256;
