@@ -59,6 +59,9 @@ structure Permutation where
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
   noFrames : callee.code.noFrames = true
+  /-- The summaries of the sponge's and the permutation's calls (`Callers.sums`), with
+  which callers' constant-time checks are decided once for every backend. -/
+  callerSums : Taint.AllOk VectorTaint.taint (Callers.sums callee)
   /-- An absorb override must prove the same functional and SIMD ABI contract
   as the general loop; it need not obey that loop's syntactic register shape. -/
   absorbOverrideOk : ∀ code, callee.absorbOverride = some code →
@@ -217,6 +220,7 @@ def Permutation.scalar : Permutation where
   features := []
   ok := permute_correct
   noFrames := permute_noFrames
+  callerSums := scalarSums
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl

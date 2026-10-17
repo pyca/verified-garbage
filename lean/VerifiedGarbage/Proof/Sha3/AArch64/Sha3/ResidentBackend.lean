@@ -177,6 +177,7 @@ def backend : Permutation where
   features := ["sha3"]
   ok := Vector.permute_correct
   noFrames := Vector.permute_noFrames
+  callerSums := callerSums
   absorbOverrideOk := by
     intro code h
     cases h
