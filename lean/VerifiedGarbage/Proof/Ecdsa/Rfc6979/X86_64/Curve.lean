@@ -100,18 +100,16 @@ abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
 
 /-- A property of every instruction of the blocks `c` makes for its curve. -/
 def CurveInstrs (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) (p : Instr → Bool) : Prop :=
-  (∀ D ∈ [20, 28, 32, 48, 64], (c.prepCase D).all p = true) ∧ c.prepPost.all p = true ∧
+  c.prepPost.all p = true ∧
     (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 false).all p = true ∧
     (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 true).all p = true ∧
     (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 1 true).all p = true ∧
     c.appendV.all p = true ∧ (c.conv Impl.Ecdsa.Rfc6979.X86_64.fC c.sh).all p = true
 
-/-- What the kernel checks of the blocks that depend on the curve (the
-digest's copies for each output length, `h`'s reduction or the digest's
-shift, the messages, the candidate's appending and shift): which registers
+/-- What the kernel checks of the blocks that depend on the curve (`h`'s
+reduction or the digest's shift, the messages, the candidate's appending and shift): which registers
 their addresses depend on, and that they write neither `rsp` nor MXCSR. -/
 structure CurveBlks (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
-  prepCase : ∀ D ∈ [20, 28, 32, 48, 64], TaintOk [.rsp, .rsi] (c.prepCase D)
   post : TaintOk [.rsp, .rdi] c.prepPost
   msg₀ : TaintOk [.rsp, .rdi, .rsi, .rdx] (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 false)
   msg₀f : TaintOk [.rsp, .rdi, .rsi, .rdx] (Impl.Ecdsa.Rfc6979.X86_64.Cfg.msg c.len 0 true)

@@ -23,9 +23,8 @@ The hash function is public. Each call of one of HMAC's functions passes
 `hash` (`r9`) to the tier's, which chooses the hash function's; its output
 length `D` and block size `B` are chosen once, by a dispatch on `hash`
 (`Dispatch.X86_64.chain`) before the frame is pushed, and kept in the frame,
-from which every length that depends on them is computed. The only other code
-that depends on the hash function is the digest's conversion (`prepCase`),
-whose copies depend on `D`, which is a dispatch of its own.
+from which every length that depends on them is computed, such as the bytes of
+the digest to copy (`prepCopy`, a loop).
 
 * `h = bits2octets(digest)` (RFC 6979 §2.3.4): with `X` the digest's `Q`
   leftmost bytes, or the digest after `Q - D` zero bytes if it is shorter,
@@ -256,17 +255,38 @@ def conv (o s : Nat) : List Instr :=
     Impl.Weierstrass.X86_64.shrWords c.w sSlot s ++ ([.movImm64 .rcx (BitVec.allOnes 64)] : List Instr) ++
     Impl.Weierstrass.X86_64.storeBytes c.len c.w .rsp o sSlot
 
-/-- `core`'s digest (and, if `wide`, `h`) cleared, and `hash` in `rax`. -/
+/-- `core`'s digest (and, if `wide`, `h`) cleared. -/
 def prepZero : List Instr :=
   ([.alu32 .xor .rcx (.reg .rcx)] : List Instr) ++
-    (List.range (if c.wide then 18 else 9)).map (fun j => .store (stk (fY + 8 * j)) .rcx) ++ selLd
+    (List.range (if c.wide then 18 else 9)).map (fun j => .store (stk (fY + 8 * j)) .rcx)
 
-/-- The digest (at `rsi`) to `core`'s digest (and `h`), for a hash function
-of `D`-byte output: if `wide`, after `Q - D - 1` zero bytes (and `Q - D` in
-`h`); otherwise its `min D Q` leftmost bytes, after `Q - min D Q`. -/
-def prepCase (D : Nat) : List Instr :=
-  if c.wide then copyBytes D .rsi 0 .rsp (fY + (c.len - D - 1)) ++ copyBytes D .rsi 0 .rsp (fH + (c.len - D))
-  else copyBytes (min D c.len) .rsi 0 .rsp (fY + (c.len - min D c.len))
+/-- The bytes of the digest to copy, in `rcx`: `D` if `wide`, otherwise
+`min D Q` (by a conditional move, `cmovae`). -/
+def copyLen : List Instr :=
+  if c.wide then [.mov .rcx (.mem (stk fHL))]
+  else [.mov .rcx (.mem (stk fHL)), .mov32 .rax (.imm (BitVec.ofNat 32 c.len)), .alu .cmp .rcx (.reg .rax),
+    .cmov .ae .rcx (.reg .rax)]
+
+/-- `rdx ← rsp + e - rcx`: where the copy of `rcx` bytes ending at `rsp + e` starts. -/
+def copyDst (e : Nat) : List Instr :=
+  [.mov .rdx (.reg .rsp), .alu .add .rdx (.imm (BitVec.ofNat 32 e)), .alu .sub .rdx (.reg .rcx)]
+
+/-- `[rdx + rcx - 4] ← [rsi + rcx - 4]`, four bytes, and `rcx` four fewer;
+`ZF` set iff none are left. -/
+def copyStep : List Instr :=
+  [.alu .sub .rcx (.imm 4), .mov32 .rax (.mem { base := .rsi, index := some .rcx }),
+    .store32 { base := .rdx, index := some .rcx } .rax]
+
+/-- The digest's `rcx` leftmost bytes (`copyLen`, a multiple of 4) to the
+frame, ending at `rsp + e`, four bytes at a time, from the last. -/
+def copyDg (e : Nat) : Prog isa :=
+  .seq (.block (c.copyLen ++ copyDst e)) (.loop (.block copyStep) .ne)
+
+/-- The digest (at `rsi`) to `core`'s digest (and `h`): if `wide`, after
+`Q - D - 1` zero bytes (and `Q - D` in `h`); otherwise its `min D Q`
+leftmost bytes, after `Q - min D Q`. -/
+def prepCopy : Prog isa :=
+  if c.wide then .seq (c.copyDg (fY + c.len - 1)) (c.copyDg (fH + c.len)) else c.copyDg (fY + c.len)
 
 /-- Word `j` of the `Q`-byte number at `rsi`, least significant first, in
 `rax`: the byte reversal of the word at `rsi + Q - 8 (j + 1)`, or, for a top
@@ -308,9 +328,7 @@ def prepPost : List Instr :=
 
 /-- `h` and `core`'s digest, from the digest (at `rsi`, with `scratch` in `rdi`). -/
 def prep : Prog isa :=
-  .seq (.block c.prepZero)
-  (.seq (Dispatch.X86_64.chain (c.hs.map fun p => (p.1, .block (c.prepCase p.2.D))))
-    (.block c.prepPost))
+  .seq (.block c.prepZero) (.seq c.prepCopy (.block c.prepPost))
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=

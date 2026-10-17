@@ -140,24 +140,19 @@ theorem prep_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
   have hfY : fY = 216 := rfl
   have hdg : Spec.Sha256.bytesAt t.mem L.dg P.H.D = hBOf P L m₀ := hc.dgBytes hL hdn
   have hlen : (hBOf P L m₀).length = P.H.D := length_bytesAt _ _ _
-  refine WP.seq (WP.mono (prepZero_ok hL hq hc) fun u₁ ⟨hc₁, hg₁, hax, hf₁, hz₁⟩ => ?_)
-  have hsi₁ : u₁.gpr .rsi = L.dg := (hg₁ _ (by decide) (by decide)).trans hsi
-  have hdi₁ : u₁.gpr .rdi = L.scr := (hg₁ _ (by decide) (by decide)).trans hdi
-  have hdg₁ : Spec.Sha256.bytesAt u₁.mem L.dg P.H.D = hBOf P L m₀ := (hc₁.dgBytes hL hdn)
-  refine WP.seq (dispatch_ok P (f := fun H => .block ((cfgOf P).prepCase H.D)) hax fun u₂ hfl => ?_)
-  have hc₂ := hc₁.flags hL hfl
-  have hm₂ : u₂.mem = u₁.mem := hfl.mem
-  have hsi₂ : u₂.gpr .rsi = L.dg := (hfl.gpr _).trans hsi₁
-  have hdi₂ : u₂.gpr .rdi = L.scr := (hfl.gpr _).trans hdi₁
+  refine WP.seq (WP.mono (prepZero_ok hL hc) fun u₂ ⟨hc₂, hg₁, hf₁, hz₁⟩ => ?_)
+  have hsi₂ : u₂.gpr .rsi = L.dg := (hg₁ _ (by decide)).trans hsi
+  have hdi₂ : u₂.gpr .rdi = L.scr := (hg₁ _ (by decide)).trans hdi
   have hdg₂ : Spec.Sha256.bytesAt u₂.mem L.dg P.H.D = hBOf P L m₀ := (hc₂.dgBytes hL hdn)
+  refine WP.seq ?_
   cases hw : P.R.wide
   · -- `X` in `Y`, `h` its residue.
     have hz : Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 240) 72 = List.replicate 72 0 := by
-      rw [hm₂]; simpa [nz, hw] using hz₁
+      simpa [nz, hw] using hz₁
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := (P.R.sizesA hw).2.2.1
     have hw8 := (P.sizesA hw).2.1
     obtain ⟨e₁, e₂⟩ := xOfDg_spec hB P.R.n_ne (dg := hBOf P L m₀)
-    refine WP.mono (prepCaseA_ok hL hw hc₂ hdn hsi₂ hz) fun u₃ ⟨hc₃, hf₃, _, hb₃⟩ => ?_
+    refine WP.mono (prepCopyA_ok hL hq hw hc₂ hdn hsi₂ hz) fun u₃ ⟨hc₃, hf₃, _, hb₃⟩ => ?_
     rw [hdg₂] at hb₃
     have e : (cfgOf P).prepPost = Cfg.fr .rsi fY ++ (cfgOf P).reduce := by
       simp only [Cfg.prepPost, cfgOf, hw, Bool.false_eq_true, ite_false]
@@ -182,13 +177,13 @@ theorem prep_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     have hl := P.R.nBits_len
     have hN := (P.R.sizesW hw).2.2
     have hz : Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 240) 144 = List.replicate 144 0 := by
-      rw [hm₂]; simpa [nz, hw] using hz₁
-    refine WP.mono (prepCaseW_ok hL hw hc₂ hdn hsi₂ hz) fun u₃ ⟨hc₃, hf₃, hg₃, hY₃, hh₃⟩ => ?_
+      simpa [nz, hw] using hz₁
+    refine WP.mono (prepCopyW_ok hL hq hw hc₂ hdn hsi₂ hz) fun u₃ ⟨hc₃, hf₃, hg₃, hY₃, hh₃⟩ => ?_
     rw [hdg₂] at hY₃ hh₃
     have e : (cfgOf P).prepPost = (cfgOf P).conv fY 1 := by
       simp only [Cfg.prepPost, cfgOf, hw, ite_true, hsh]
     rw [e]
-    refine WP.mono (conv_ok hL hw hc₃ ((hg₃ _ (by decide)).trans hdi₂) (o := fY) (s := 1) (by decide) (by decide)
+    refine WP.mono (conv_ok hL hw hc₃ ((hg₃ _ (by decide) (by decide) (by decide)).trans hdi₂) (o := fY) (s := 1) (by decide) (by decide)
       (by decide) (by decide)) fun u ⟨hcu, _, hfu, hbu⟩ => ⟨hcu, ?_, ?_⟩
     · show hPart P.Q L u.mem = _
       have hk : hPart P.Q L u.mem = hPart P.Q L u₃.mem := bytesAt_frame hfu (fun r hr => by

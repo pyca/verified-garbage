@@ -43,9 +43,6 @@ open VG VG.X86_64
 
 /-- The blocks that depend on the curve, checked once. -/
 theorem p224_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.p224 false 0) where
-  prepCase := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
   post := by exact ⟨_, by taint_decide⟩
   msg₀ := by exact ⟨_, by taint_decide⟩
   msg₀f := by exact ⟨_, by taint_decide⟩

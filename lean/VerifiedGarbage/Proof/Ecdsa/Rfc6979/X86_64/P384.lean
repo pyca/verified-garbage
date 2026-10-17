@@ -54,9 +54,6 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
 
 /-- The blocks that depend on the curve, checked once. -/
 theorem p384_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.p384 false 0) where
-  prepCase := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
   post := by exact ⟨_, by taint_decide⟩
   msg₀ := by exact ⟨_, by taint_decide⟩
   msg₀f := by exact ⟨_, by taint_decide⟩

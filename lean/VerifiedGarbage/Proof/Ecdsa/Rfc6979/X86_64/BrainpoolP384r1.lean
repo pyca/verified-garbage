@@ -47,9 +47,6 @@ theorem coreK_brainpoolp384r1 : coreK Impl.Ecdsa.X86_64.brainpoolp384r1 = Proof.
 
 /-- The blocks that depend on the curve, checked once. -/
 theorem brainpoolp384r1_blks : CurveBlks (cfgC Impl.Ecdsa.X86_64.brainpoolp384r1 false 0) where
-  prepCase := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro D (rfl | rfl | rfl | rfl | rfl) <;> exact ⟨_, by taint_decide⟩
   post := by exact ⟨_, by taint_decide⟩
   msg₀ := by exact ⟨_, by taint_decide⟩
   msg₀f := by exact ⟨_, by taint_decide⟩
