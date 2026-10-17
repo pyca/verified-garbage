@@ -40,6 +40,7 @@ use crate::hashes::sha256::Sha256Backend;
 use crate::hashes::sha384::Sha384;
 #[cfg(not(target_arch = "aarch64"))]
 use crate::hashes::sha384::Sha384Backend;
+#[cfg(not(target_arch = "aarch64"))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P256> {
@@ -63,7 +64,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u64; 1024],
 ) -> u32;
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 
@@ -72,6 +73,7 @@ type SignFn<const N: usize> =
 /// # Safety
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
+#[cfg(not(target_arch = "aarch64"))]
 unsafe fn sign_with<const N: usize>(
     sign: SignFn<N>,
     d: &[u8; 32],

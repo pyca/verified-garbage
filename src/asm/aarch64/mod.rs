@@ -191,58 +191,55 @@ pub(crate) mod ecdh_secp256k1;
 pub(crate) mod ecdsa_brainpoolp256r1;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_brainpoolp256r1_sha256;
+pub(crate) mod ecdsa_brainpoolp256r1_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_brainpoolp384r1;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_brainpoolp384r1_sha384;
+pub(crate) mod ecdsa_brainpoolp384r1_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_brainpoolp512r1;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_brainpoolp512r1_sha512;
+pub(crate) mod ecdsa_brainpoolp512r1_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_p192_sha256;
+pub(crate) mod ecdsa_p192_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p224;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_p224_sha224;
+pub(crate) mod ecdsa_p224_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_p256_sha256;
-
-#[rustfmt::skip]
-pub(crate) mod ecdsa_p256_sha384;
+pub(crate) mod ecdsa_p256_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p384;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_p384_sha384;
+pub(crate) mod ecdsa_p384_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p521;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_p521_sha512;
+pub(crate) mod ecdsa_p521_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_secp256k1;
 
 #[rustfmt::skip]
-pub(crate) mod ecdsa_secp256k1_sha256;
+pub(crate) mod ecdsa_secp256k1_rfc6979;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519;

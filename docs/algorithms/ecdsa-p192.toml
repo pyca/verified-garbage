@@ -1,5 +1,5 @@
 name = "ECDSA P-192"
 family = "Signatures"
-specs = ["Weierstrass", "P192", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Verify"]
+specs = ["Weierstrass", "P192", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Rfc6979/AnyHash", "Ecdsa/Verify"]
 modules = ["src/ecdsa/p192.rs"]
-asm = ["ec_p192", "ecdsa_p192", "ecdsa_p192_sha256", "p192_mont"]
+asm = ["ec_p192", "ecdsa_p192", "ecdsa_p192_rfc6979", "ecdsa_p192_sha256", "p192_mont"]

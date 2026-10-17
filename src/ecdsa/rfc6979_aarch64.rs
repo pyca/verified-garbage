@@ -6,40 +6,52 @@
 
 use super::rfc6979::SignFn;
 use crate::arch::ecdsa_brainpoolp256r1_rfc6979::{
-    VG_ECDSA_BRAINPOOLP256R1_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_BRAINPOOLP256R1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_brainpoolp256r1_rfc6979_sign, vg_ecdsa_brainpoolp256r1_rfc6979_sign_hash_sha2, vg_ecdsa_brainpoolp256r1_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_BRAINPOOLP256R1_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_BRAINPOOLP256R1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
+    vg_ecdsa_brainpoolp256r1_rfc6979_sign, vg_ecdsa_brainpoolp256r1_rfc6979_sign_hash_sha2,
+    vg_ecdsa_brainpoolp256r1_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_brainpoolp384r1_rfc6979::{
-    VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_brainpoolp384r1_rfc6979_sign, vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_sha2, vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_BRAINPOOLP384R1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
+    vg_ecdsa_brainpoolp384r1_rfc6979_sign, vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_sha2,
+    vg_ecdsa_brainpoolp384r1_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_brainpoolp512r1_rfc6979::{
-    VG_ECDSA_BRAINPOOLP512R1_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_BRAINPOOLP512R1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_brainpoolp512r1_rfc6979_sign, vg_ecdsa_brainpoolp512r1_rfc6979_sign_hash_sha2, vg_ecdsa_brainpoolp512r1_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_BRAINPOOLP512R1_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_BRAINPOOLP512R1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
+    vg_ecdsa_brainpoolp512r1_rfc6979_sign, vg_ecdsa_brainpoolp512r1_rfc6979_sign_hash_sha2,
+    vg_ecdsa_brainpoolp512r1_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_p192_rfc6979::{
-    VG_ECDSA_P192_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_P192_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_p192_rfc6979_sign, vg_ecdsa_p192_rfc6979_sign_hash_sha2, vg_ecdsa_p192_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_P192_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_P192_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES, vg_ecdsa_p192_rfc6979_sign,
+    vg_ecdsa_p192_rfc6979_sign_hash_sha2, vg_ecdsa_p192_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_p224_rfc6979::{
-    VG_ECDSA_P224_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_P224_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_p224_rfc6979_sign, vg_ecdsa_p224_rfc6979_sign_hash_sha2, vg_ecdsa_p224_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_P224_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_P224_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES, vg_ecdsa_p224_rfc6979_sign,
+    vg_ecdsa_p224_rfc6979_sign_hash_sha2, vg_ecdsa_p224_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_p256_rfc6979::{
-    VG_ECDSA_P256_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_P256_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_p256_rfc6979_sign, vg_ecdsa_p256_rfc6979_sign_hash_sha2, vg_ecdsa_p256_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_P256_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_P256_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES, vg_ecdsa_p256_rfc6979_sign,
+    vg_ecdsa_p256_rfc6979_sign_hash_sha2, vg_ecdsa_p256_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_p384_rfc6979::{
-    VG_ECDSA_P384_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_P384_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_p384_rfc6979_sign, vg_ecdsa_p384_rfc6979_sign_hash_sha2, vg_ecdsa_p384_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_P384_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_P384_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES, vg_ecdsa_p384_rfc6979_sign,
+    vg_ecdsa_p384_rfc6979_sign_hash_sha2, vg_ecdsa_p384_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_p521_rfc6979::{
-    VG_ECDSA_P521_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_P521_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_p521_rfc6979_sign, vg_ecdsa_p521_rfc6979_sign_hash_sha2, vg_ecdsa_p521_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_P521_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_P521_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES, vg_ecdsa_p521_rfc6979_sign,
+    vg_ecdsa_p521_rfc6979_sign_hash_sha2, vg_ecdsa_p521_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::arch::ecdsa_secp256k1_rfc6979::{
-    VG_ECDSA_SECP256K1_RFC6979_SIGN_HASH_SHA2_FEATURES, VG_ECDSA_SECP256K1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES,
-    vg_ecdsa_secp256k1_rfc6979_sign, vg_ecdsa_secp256k1_rfc6979_sign_hash_sha2, vg_ecdsa_secp256k1_rfc6979_sign_hash_sha2_sha3,
+    VG_ECDSA_SECP256K1_RFC6979_SIGN_HASH_SHA2_FEATURES,
+    VG_ECDSA_SECP256K1_RFC6979_SIGN_HASH_SHA2_SHA3_FEATURES, vg_ecdsa_secp256k1_rfc6979_sign,
+    vg_ecdsa_secp256k1_rfc6979_sign_hash_sha2, vg_ecdsa_secp256k1_rfc6979_sign_hash_sha2_sha3,
 };
 use crate::cpu::Features;
 use crate::hashes::tier::Tier;
