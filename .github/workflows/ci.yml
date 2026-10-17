@@ -858,7 +858,7 @@ jobs:
           .venv/bin/python -u ci/merge_rust_coverage.py coverage-data/ | tee COV_REPORT
           COV_EXIT_CODE=${PIPESTATUS[0]}
           if [ $COV_EXIT_CODE -ne 0 ]; then
-            echo "🚨 Coverage failed. Under 100" | tee -a $GITHUB_STEP_SUMMARY
+            echo "🚨 Coverage failed: under 100%, overall or for an architecture alone (see above)." | tee -a $GITHUB_STEP_SUMMARY
           fi
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat COV_REPORT >> $GITHUB_STEP_SUMMARY
