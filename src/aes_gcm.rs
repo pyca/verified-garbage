@@ -549,7 +549,7 @@ const POWERS_MIN_LEN: usize = 128;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-const POWERS_AFTER: u32 = 8;
+const POWERS_AFTER: u32 = 32;
 
 /// `Powers::calls` once the powers are published, for a backend whose
 /// short path reads them.
