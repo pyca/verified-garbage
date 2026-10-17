@@ -22,7 +22,8 @@ of the inner final hash value), its padding and length.
 
 `init` takes a key of any length (`initAnyKeyApi`): a key of at most a block
 goes straight to `init_scratch`, in a frame of its own holding its working
-space (`Proof/Pbkdf2/Md/X86/Frame.lean`); a longer key (`initCode`) is first
+space, of which it zeroes the part where the compression function leaves the
+schedule of the padded keys (`initFramedW`, `Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); a longer key (`initCode`) is first
 hashed with the backend's verified streaming functions into its
 working space, as PBKDF2's `pbkdf2` hashes a long password
 (`Impl/Pbkdf2/Md/AnyKey/X86.lean`), and `init_scratch`, the code above with
@@ -41,7 +42,7 @@ namespace VG.Generic.Sha256.X86.HmacSha224
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
   Spec.Hmac.sha224I.initAnyKeyApi.artifact X86.target {
     suffix := v.suffix
-    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224
+    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha224I v.wipe v.M224.hmacInit v.F224
     stack := 76 + Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Whole.X86.Any.sha224_initF v
     spSafe := Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v

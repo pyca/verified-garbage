@@ -22,7 +22,8 @@ the inner digest, its padding and length.
 
 `init` takes a key of any length (`initAnyKeyApi`): a key of at most a block
 goes straight to `init_scratch`, in a frame of its own holding its working
-space (`Proof/Pbkdf2/Md/X86/Frame.lean`); a longer key (`initCode`) is first
+space, of which it zeroes the part where the compression function leaves the
+schedule of the padded keys (`initFramedW`, `Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); a longer key (`initCode`) is first
 hashed with MD5's verified streaming functions into its working
 space, as PBKDF2's `pbkdf2` hashes a long password
 (`Impl/Pbkdf2/Md/AnyKey/X86.lean`), and `init_scratch`, the code above with
@@ -40,7 +41,7 @@ namespace VG.Artifacts.HmacMd5.X86
 
 def artifacts : List Artifact := [
   Spec.Hmac.md5I.initAnyKeyApi.artifact X86.target {
-    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.md5I Proof.Pbkdf2.Md.X86.md5M.hmacInit Proof.Pbkdf2.Whole.X86.md5F
+    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.md5I Proof.Pbkdf2.Whole.X86.Any.md5Wipe Proof.Pbkdf2.Md.X86.md5M.hmacInit Proof.Pbkdf2.Whole.X86.md5F
     stack := 76 + Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.md5I
     verified := Proof.Pbkdf2.Whole.X86.Any.md5_initF
     spSafe := Proof.Pbkdf2.Whole.X86.Any.md5_initSp },

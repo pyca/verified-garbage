@@ -57,6 +57,8 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     cmpStack := ?_,
     stream := stream,
     features := [],
+    -- The 16-word window of the schedule, `scratch[0..64)` (`Impl.Sha1.X86`).
+    wipe := 16,
     functions := [
       { api := Spec.Sha1.compressApi
         code := Impl.Sha1.X86.compress

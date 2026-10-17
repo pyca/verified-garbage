@@ -79,11 +79,12 @@ theorem sha1_anySp (v : Backend) :
 /-- `vg_hmac_sha1_init` with the backend `v`: `init` for a key of at most a
 block, or (cold) for any key, wiped. -/
 theorem sha1_initF (v : Backend) :
-    Verified X86.target (initCode Spec.Hmac.sha1I v.M.hmacInit v.F) (Spec.Hmac.sha1I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha1I)) :=
-  initCode_verified (Md.X86.initFramed v.hmacInit Md.X86.sha1_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
+    Verified X86.target (initCode Spec.Hmac.sha1I v.wipe v.M.hmacInit v.F) (Spec.Hmac.sha1I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha1I)) :=
+  initCode_verified (shortFramed v.hmacInit (Nat.le_trans v.wipe_le (by decide)) Proof.Hmac.sha1_local (by decide)
+    Md.X86.sha1_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
     (sha1_anyFramed v) (by decide) sha1_anyFrameSat
 
-theorem sha1_initSp (v : Backend) : (initCode Spec.Hmac.sha1I v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe v.initSp (by decide +kernel) (sha1_anySp v)
+theorem sha1_initSp (v : Backend) : (initCode Spec.Hmac.sha1I v.wipe v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=
+  initCode_spSafe v.initSp (wipe_all_spSafe _ _) (by decide +kernel) (sha1_anySp v)
 
 end VG.Proof.Pbkdf2.Whole.X86.Any

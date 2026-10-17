@@ -137,6 +137,11 @@ mov r12, QWORD PTR [r15+176]
 mov r13, QWORD PTR [r15+184]
 mov r14, QWORD PTR [r15+192]
 mov r15, QWORD PTR [r15+200]
+pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+8], xmm0
+movdqu XMMWORD PTR [rsp+24], xmm0
+movdqu XMMWORD PTR [rsp+40], xmm0
+movdqu XMMWORD PTR [rsp+56], xmm0
 lea rsp, [rsp+456]
 21:
 ret

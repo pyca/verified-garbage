@@ -22,7 +22,8 @@ outer key's hash value, the inner digest, its padding and length.
 
 `init` takes a key of any length (`initAnyKeyApi`): a key of at most a block
 goes straight to `init_scratch`, in a frame of its own holding its working
-space (`Proof/Pbkdf2/Md/X86/Frame.lean`); a longer key (`initCode`) is first
+space, of which it zeroes the part where the compression function leaves the
+schedule of the padded keys (`initFramedW`, `Proof/Pbkdf2/Whole/X86/AnyKeyCT.lean`); a longer key (`initCode`) is first
 hashed with SHA-512/256's verified streaming functions into its working
 space, as PBKDF2's `pbkdf2` hashes a long password
 (`Impl/Pbkdf2/Md/AnyKey/X86.lean`), and `init_scratch`, the code above with
@@ -40,7 +41,7 @@ namespace VG.Artifacts.HmacSha512_256.X86
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_256I.initAnyKeyApi.artifact X86.target {
-    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha512_256I Proof.Pbkdf2.Md.X86.sha512_256M.hmacInit Proof.Pbkdf2.Whole.X86.sha512_256F
+    code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha512_256I Proof.Pbkdf2.Whole.X86.Any.sha512Wipe Proof.Pbkdf2.Md.X86.sha512_256M.hmacInit Proof.Pbkdf2.Whole.X86.sha512_256F
     stack := 76 + Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha512_256I
     verified := Proof.Pbkdf2.Whole.X86.Any.sha512_256_initF
     spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_256_initSp },

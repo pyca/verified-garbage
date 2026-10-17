@@ -113,6 +113,9 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     cmpStack := Proof.Sha256.X86.ShaNi.compress_stack,
     stream := stream,
     features := ["sha", "ssse3"],
+    -- The endian mask and the hash value at the start of a block,
+    -- `scratch[16..64)` (`Impl.Sha256.X86.ShaNi`).
+    wipe := 16,
     functions := [
       { api := Spec.Sha256.compressApi
         code := cmpC

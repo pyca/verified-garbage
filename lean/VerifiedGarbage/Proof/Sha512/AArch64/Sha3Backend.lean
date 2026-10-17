@@ -25,6 +25,9 @@ def backend : Compress where
   keepsV := by lit_decide
   suffix := "_sha3"
   features := ["sha3"]
+  -- It keeps the schedule in vector registers and stores nothing in
+  -- `scratch` (`Impl.Sha512.AArch64.Sha3`).
+  wipe := 0
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
   finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

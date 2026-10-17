@@ -23,6 +23,8 @@ def compress : Proof.Sha256.X86_64.Compress where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_shani"
   features := ["sha", "ssse3"]
+  -- `scratch` holds only the round constants (`Impl.Sha256.X86_64.ShaNi`).
+  wipe := 0
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha256.variant compress
 

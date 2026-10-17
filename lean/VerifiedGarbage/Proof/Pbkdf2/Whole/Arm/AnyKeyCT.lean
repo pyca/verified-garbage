@@ -367,4 +367,61 @@ theorem anyFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
 
+/-- `init` for a key of at most a block (`init_scratch`, `c`) in a frame
+holding its working space, whose first `words` words, where the compression
+function leaves the schedule of the padded keys, it zeroes before returning:
+verified against `initContract`, as `anyFramed`. -/
+theorem initFramedW {I : Spec.Hmac.Instance} {c : Prog isa} {bytes words : Nat}
+    (h : Verified Arm.target c (I.initScratchContract Arm.abi 16))
+    (hw : 4 * words ≤ 8 * I.scratch) (hR : Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (hsat : ∃ s, (I.initContract Arm.abi (16 + bytes)).pre s)
+    (hb : Fits 0 bytes .u64 I.scratch := by decide) :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped bytes 0 words c)
+      (I.initContract Arm.abi (16 + bytes)) :=
+  Arm.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+    (n := I.scratch) (pre := Spec.Hmac.initPre I.S Arm.abi.ptrBits)
+    (post := Spec.Hmac.initPost I.S Arm.abi.ptrBits) (wa := true) (stack := 16)
+    (m := 0) (words := words) h rfl rfl rfl hb
+    (by change 4 * words ≤ I.scratch * 8; omega)
+    (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
+
+/-- `init_scratch` (`c`) in a frame holding its working space, whose first
+`words` words it zeroes (none, and no wipe, for `words = 0`). -/
+def shortCode (I : Spec.Hmac.Instance) (words : Nat) (c : Prog isa) : Prog isa :=
+  if words = 0 then Impl.StackScratch.Arm.withStackScratch (Md.Arm.frame I) 0 c
+  else Impl.StackScratch.Arm.withStackScratchWiped (Md.Arm.frame I) 0 words c
+
+/-- `shortCode`, verified: `Md.Arm.initFramed` or `initFramedW`. -/
+theorem shortFramed {I : Spec.Hmac.Instance} {c : Prog isa} {words : Nat}
+    (h : Verified Arm.target c (I.initScratchContract Arm.abi 16))
+    (hw : 4 * words ≤ 8 * I.scratch) (hR : Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (hsat : ∃ s, (I.initContract Arm.abi (16 + Md.Arm.frame I)).pre s)
+    (hb : Fits 0 (Md.Arm.frame I) .u64 I.scratch := by decide) :
+    Verified Arm.target (shortCode I words c) (I.initContract Arm.abi (16 + Md.Arm.frame I)) := by
+  unfold shortCode
+  split
+  · exact Md.Arm.initFramed h hsat hb
+  · exact initFramedW h hw hR hS hsat hb
+
+/-! ## What HMAC's `init` zeroes for a key of at most a block
+
+The words at the start of `init_scratch`'s working space where the
+compression function leaves the schedule of the padded keys (its working
+space is the start of `init_scratch`'s). -/
+
+/-- None for MD5: `vg_md5_compress` keeps the block in registers and saves
+only our registers, in `scratch[0..24)` (`Impl.Md5.Arm`). -/
+def md5Wipe : Nat := 0
+
+/-- SHA-1's 16-word window of the schedule, `scratch[0..64)` (`Impl.Sha1.Arm`). -/
+def sha1Wipe : Nat := 16
+
+/-- SHA-256's 16-word window of the schedule and an intermediate sum of it,
+`scratch[0..68)` (`Impl.Sha256.Arm`). -/
+def sha256Wipe : Nat := 17
+
+/-- SHA-512's working variables and 16-word window of the schedule,
+`scratch[0..192)` (`Impl.Sha512.Arm`). -/
+def sha512Wipe : Nat := 48
+
 end VG.Proof.Pbkdf2.Whole.Arm.Any

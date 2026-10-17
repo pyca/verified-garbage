@@ -19,7 +19,8 @@ suffix (e.g. `vg_hmac_sha256_init_shani`). `init_scratch` and
 PBKDF2's and ECDSA's code calls; `finalize` keeps its working space in a frame
 of its own. `init` takes a key of any length (`Impl/Pbkdf2/Md/AnyKey/X86_64.lean`):
 it runs `init_scratch` in a frame of its own for a key of at most a block,
-and for a longer key hashes it with the streaming functions, as `pbkdf2`
+zeroing the part of it where the compression function leaves the schedule of
+the padded keys (`MdHash.wipe`, `Compress.wipe`: none for SHA-NI and MD5), and for a longer key hashes it with the streaming functions, as `pbkdf2`
 hashes a long password, and calls `init_scratch` with its digest, in a larger
 frame of its own that it zeroes before returning (`initCode`). `stack` is
 that of the larger.
@@ -32,7 +33,7 @@ namespace VG.Generic.MdHash.X86_64.Hmac
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
   v.I.initAnyKeyApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Proof.Pbkdf2.Md.X86_64.initCode v.H v.I
+    code := Proof.Pbkdf2.Md.X86_64.initCode v.H v.I v.wipe
     stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame v.I
     verified := v.hmacInitF
     spSafe := v.hmacInitFSp

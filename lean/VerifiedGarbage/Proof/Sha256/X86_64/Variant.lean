@@ -45,5 +45,13 @@ structure Compress where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The 16-byte words at the start of its working space in which it may
+  leave the message schedule, which is secret when the block is (HMAC's
+  padded keys): callers that keep the working space in a frame of their own
+  zero them (`withStackScratchWipedX`, HMAC's `init`). What it saves there
+  of its caller's registers (pointers and lengths) is not counted. -/
+  wipe : Nat
+  /-- They are within its working space. -/
+  wipe_le : 16 * wipe ≤ 560 := by decide
 
 end VG.Proof.Sha256.X86_64

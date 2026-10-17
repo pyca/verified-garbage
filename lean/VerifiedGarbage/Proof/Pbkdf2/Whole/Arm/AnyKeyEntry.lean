@@ -113,15 +113,18 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
 
 /-- HMAC's `init` for a key of any length, `vg_hmac_<hash>_init`, of instance
 `I`: for a key of at most a block, `init_scratch` (`hmacInit`) in a frame
-holding its working space; for a longer key (cold), `F.hmacInitAny`, in a
-frame holding its larger working space, which it wipes. -/
-def initCode (I : Spec.Hmac.Instance) (hmacInit : Prog isa) (F : Impl.Pbkdf2.Whole.Arm.Fns) : Prog isa :=
+holding its working space, whose first `w` words, where the compression
+function leaves the schedule of the padded keys, it zeroes; for a longer key
+(cold), `F.hmacInitAny`, in a frame holding its larger working space, which
+it wipes. -/
+def initCode (I : Spec.Hmac.Instance) (w : Nat) (hmacInit : Prog isa) (F : Impl.Pbkdf2.Whole.Arm.Fns) :
+    Prog isa :=
   Impl.Pbkdf2.Whole.Arm.initEntry I.S.H.blockSize
-    (Impl.StackScratch.Arm.withStackScratch (Md.Arm.frame I) 0 hmacInit)
+    (Any.shortCode I w hmacInit)
     (Impl.StackScratch.Arm.withStackScratchWiped (Any.anyFrame I) 0 (2 * I.initAnyKeyScratch) F.hmacInitAny)
 
-theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkdf2.Whole.Arm.Fns}
-    (hS : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch (Md.Arm.frame I) 0 c)
+theorem initCode_verified {I : Spec.Hmac.Instance} {w : Nat} {c : Prog isa} {F : Impl.Pbkdf2.Whole.Arm.Fns}
+    (hS : Verified Arm.target (Any.shortCode I w c)
       (I.initContract Arm.abi (16 + Md.Arm.frame I)))
     (hL : Verified Arm.target
       (Impl.StackScratch.Arm.withStackScratchWiped (Any.anyFrame I) 0 (2 * I.initAnyKeyScratch) F.hmacInitAny)
@@ -129,7 +132,7 @@ theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkd
     (hn : 16 + Md.Arm.frame I ≤ 24 + Any.anyFrame I) (hB : I.S.H.blockSize + 1 < 2 ^ 32)
     (hk : encodable (BitVec.ofNat 32 (I.S.H.blockSize + 1)) = true)
     (hsat : ∃ s, (I.initAnyKeyContract Arm.abi (24 + Any.anyFrame I)).pre s) :
-    Verified Arm.target (initCode I c F) (I.initAnyKeyContract Arm.abi (24 + Any.anyFrame I)) :=
+    Verified Arm.target (initCode I w c F) (I.initAnyKeyContract Arm.abi (24 + Any.anyFrame I)) :=
   initEntry_verified hS hL (by omega) hn hB hk hsat
 
 end VG.Proof.Pbkdf2.Whole.Arm

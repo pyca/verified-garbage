@@ -23,8 +23,9 @@ offsets in `scratch`. It pushes 8 bytes of stack (the stack arguments of
 `init` takes a key of any length (`initAnyKeyApi`), and chooses on entry by
 its public length (`Proof/Pbkdf2/Whole/Arm/AnyKeyEntry.lean`): a key of at
 most a block goes straight to `init_scratch`, the code above with its working
-space as an argument, in a frame of its own holding its working space
-(`Proof/Pbkdf2/Md/Arm/Frame.lean`); a longer key is first hashed with
+space as an argument, in a frame of its own holding its working space, of which it zeroes the
+part where the compression function leaves the schedule of the padded keys
+(`initFramedW`, `Proof/Pbkdf2/Whole/Arm/AnyKeyCT.lean`); a longer key is first hashed with
 SHA-512's verified streaming functions into its working space, as
 PBKDF2's `pbkdf2` hashes a long password (`Impl/Pbkdf2/Md/AnyKey/Arm.lean`),
 and `init_scratch` is called with its digest, in a larger frame of its own,
@@ -40,7 +41,7 @@ namespace VG.Artifacts.HmacSha512.Arm
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha512I.initAnyKeyApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Proof.Pbkdf2.Md.Arm.sha512Md'.hmacInit Proof.Pbkdf2.Whole.Arm.sha512F
+    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Proof.Pbkdf2.Whole.Arm.Any.sha512Wipe Proof.Pbkdf2.Md.Arm.sha512Md'.hmacInit Proof.Pbkdf2.Whole.Arm.sha512F
     stack := 24 + Proof.Pbkdf2.Whole.Arm.Any.anyFrame Spec.Hmac.sha512I
     verified := Proof.Pbkdf2.Whole.Arm.Any.sha512_initF },
   Spec.Hmac.sha512I.finalizeApi.artifact Arm.target {

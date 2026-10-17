@@ -159,6 +159,23 @@ mov ebx, DWORD PTR [eax+160]
 mov esi, DWORD PTR [eax+164]
 mov edi, DWORD PTR [eax+168]
 mov ebp, DWORD PTR [eax+172]
+mov ecx, 0
+mov DWORD PTR [esp+24], ecx
+mov DWORD PTR [esp+28], ecx
+mov DWORD PTR [esp+32], ecx
+mov DWORD PTR [esp+36], ecx
+mov DWORD PTR [esp+40], ecx
+mov DWORD PTR [esp+44], ecx
+mov DWORD PTR [esp+48], ecx
+mov DWORD PTR [esp+52], ecx
+mov DWORD PTR [esp+56], ecx
+mov DWORD PTR [esp+60], ecx
+mov DWORD PTR [esp+64], ecx
+mov DWORD PTR [esp+68], ecx
+mov DWORD PTR [esp+72], ecx
+mov DWORD PTR [esp+76], ecx
+mov DWORD PTR [esp+80], ecx
+mov DWORD PTR [esp+84], ecx
 lea esp, [esp+472]
 21:
 ret
@@ -1114,6 +1131,15 @@ mov ebx, DWORD PTR [eax+160]
 mov esi, DWORD PTR [eax+164]
 mov edi, DWORD PTR [eax+168]
 mov ebp, DWORD PTR [eax+172]
+mov ecx, 0
+mov DWORD PTR [esp+24], ecx
+mov DWORD PTR [esp+28], ecx
+mov DWORD PTR [esp+32], ecx
+mov DWORD PTR [esp+36], ecx
+mov DWORD PTR [esp+40], ecx
+mov DWORD PTR [esp+44], ecx
+mov DWORD PTR [esp+48], ecx
+mov DWORD PTR [esp+52], ecx
 lea esp, [esp+472]
 21:
 ret

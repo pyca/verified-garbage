@@ -48,6 +48,14 @@ structure Compress where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The 16-byte words at the start of its working space in which it may
+  leave the message schedule, which is secret when the block is (HMAC's
+  padded keys): callers that keep the working space in a frame of their own
+  zero them (`withStackScratchWipedX`, HMAC's `init`). What it saves there
+  of its caller's registers (pointers and lengths) is not counted. -/
+  wipe : Nat
+  /-- They are within its working space. -/
+  wipe_le : 16 * wipe ≤ 1328 := by decide
 
 namespace Compress
 
@@ -59,6 +67,8 @@ def scalar : Compress where
   spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := ""
   features := []
+  -- The 16-word window of the schedule, `scratch[0..128)` (`Impl.Sha512.X86_64`).
+  wipe := 8
 
 /-- `vg_sha512_compress_avx2`, which needs AVX, AVX2, BMI1 and BMI2. -/
 def avx2 : Compress where
@@ -68,6 +78,9 @@ def avx2 : Compress where
   spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2", "bmi1", "bmi2"]
+  -- `Wₜ + Kₜ` of both blocks for all 80 rounds, `scratch[0..1280)`
+  -- (`Impl.Sha512.X86_64.Avx2`).
+  wipe := 80
 
 /-- `vg_sha512_compress_shani`, which needs the SHA512 extension, AVX and AVX2. -/
 def shani : Compress where
@@ -77,6 +90,8 @@ def shani : Compress where
   spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide)
   suffix := "_shani"
   features := ["avx", "avx2", "sha512"]
+  -- `scratch` is not used (`Impl.Sha512.X86_64.ShaNi`).
+  wipe := 0
 
 end Compress
 

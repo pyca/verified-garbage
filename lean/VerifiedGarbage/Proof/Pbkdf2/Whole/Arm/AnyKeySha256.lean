@@ -59,11 +59,12 @@ theorem sha224_anyFramed :
     sha224_anyFrameSat
 
 /-- `init`, choosing on entry between `init` for a key of at most a block
-(`Md.Arm.initFramed`) and for a key of any length (`sha224_anyFramed`), verified. -/
+(`initFramedW`) and for a key of any length (`sha224_anyFramed`), verified. -/
 theorem sha224_initF :
-    Verified Arm.target (initCode Spec.Hmac.sha224I Md.Arm.sha224Md.hmacInit Whole.Arm.sha224F)
+    Verified Arm.target (initCode Spec.Hmac.sha224I sha256Wipe Md.Arm.sha224Md.hmacInit Whole.Arm.sha224F)
       (Spec.Hmac.sha224I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha224I)) :=
-  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha224_init Md.Arm.sha224_initFrameSat) sha224_anyFramed
+  initCode_verified (shortFramed Md.Arm.Instances.sha224_init (by decide) Proof.Hmac.sha224_local (by decide)
+    Md.Arm.sha224_initFrameSat) sha224_anyFramed
     (by decide) (by decide) (by decide) sha224_anyFrameSat
 
 /-! ## sha256 -/
@@ -94,11 +95,12 @@ theorem sha256_anyFramed :
     sha256_anyFrameSat
 
 /-- `init`, choosing on entry between `init` for a key of at most a block
-(`Md.Arm.initFramed`) and for a key of any length (`sha256_anyFramed`), verified. -/
+(`initFramedW`) and for a key of any length (`sha256_anyFramed`), verified. -/
 theorem sha256_initF :
-    Verified Arm.target (initCode Spec.Hmac.sha256I Md.Arm.sha256Md.hmacInit Whole.Arm.sha256F)
+    Verified Arm.target (initCode Spec.Hmac.sha256I sha256Wipe Md.Arm.sha256Md.hmacInit Whole.Arm.sha256F)
       (Spec.Hmac.sha256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha256I)) :=
-  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha256_init Md.Arm.sha256_initFrameSat) sha256_anyFramed
+  initCode_verified (shortFramed Md.Arm.Instances.sha256_init (by decide) Proof.Hmac.sha256_local (by decide)
+    Md.Arm.sha256_initFrameSat) sha256_anyFramed
     (by decide) (by decide) (by decide) sha256_anyFrameSat
 
 end VG.Proof.Pbkdf2.Whole.Arm.Any

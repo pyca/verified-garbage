@@ -467,6 +467,56 @@ theorem anyFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
 
+/-- `init` for a key of at most a block (`init_scratch`, `c`) in a frame
+holding its working space, whose first `words` doublewords, where the
+compression function leaves the schedule of the padded keys, it zeroes before
+returning: verified against `initContract`, as `anyFramed`. -/
+theorem initFramedW {I : Spec.Hmac.Instance} {c : Prog isa} {words : Nat}
+    (h : Verified X86.target c (I.initScratchContract X86.abi 48))
+    (hw : 4 * words ≤ 8 * I.scratch)
+    (hR : Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (hsat : ∃ s, (I.initContract X86.abi (48 + Md.X86.initFrame I)).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true)
+    (hd : stackUse c ≤ 48) (hs : 8 * I.scratch < 4072 := by decide) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped (Md.X86.initFrame I) 4 words c)
+      (I.initContract X86.abi (48 + Md.X86.initFrame I)) :=
+  X86.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+    (n := I.scratch) (pre := Spec.Hmac.initPre I.S X86.abi.ptrBits)
+    (post := Spec.Hmac.initPost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
+    (bytes := Md.X86.initFrame I) (words := words) h
+    (by
+      refine ⟨?_, by simp only [Md.X86.initFrame]; omega, by simp only [Md.X86.initFrame]; omega⟩
+      change 8 + 4 * 4 + I.scratch * 8 ≤ Md.X86.initFrame I
+      simp only [Md.X86.initFrame]; omega)
+    hsp hd (by change 4 * words ≤ I.scratch * 8; omega)
+    (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
+
+/-- `init_scratch` (`c`) in a frame holding its working space, whose first
+`words` doublewords it zeroes (none, and no wipe, for `words = 0`). -/
+def shortCode (I : Spec.Hmac.Instance) (words : Nat) (c : Prog isa) : Prog isa :=
+  if words = 0 then Impl.StackScratch.X86.withStackScratch (Md.X86.initFrame I) 4 c
+  else Impl.StackScratch.X86.withStackScratchWiped (Md.X86.initFrame I) 4 words c
+
+/-- `shortCode`, verified: `Md.X86.initFramed` or `initFramedW`. -/
+theorem shortFramed {I : Spec.Hmac.Instance} {c : Prog isa} {words : Nat}
+    (h : Verified X86.target c (I.initScratchContract X86.abi 48))
+    (hw : 4 * words ≤ 8 * I.scratch)
+    (hR : Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (hsat : ∃ s, (I.initContract X86.abi (48 + Md.X86.initFrame I)).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true)
+    (hd : stackUse c ≤ 48) (hs : 8 * I.scratch < 4072 := by decide) :
+    Verified X86.target (shortCode I words c) (I.initContract X86.abi (48 + Md.X86.initFrame I)) := by
+  unfold shortCode
+  split
+  · exact Md.X86.initFramed h hsat hsp hd hs
+  · exact initFramedW h hw hR hS hsat hsp hd hs
+
+/-- A wipe never writes the stack pointer, whatever its size. -/
+theorem wipe_all_spSafe (off words : Nat) :
+    (Code.block (Impl.StackScratch.X86.wipe off words) : Prog isa).all (fun i => !isa.writesSp i) = true := by
+  simp only [Code.all, Impl.StackScratch.X86.wipe, Impl.StackScratch.X86.wipeStores, List.all_cons, List.all_map]
+  exact Bool.and_eq_true_iff.mpr ⟨rfl, List.all_eq_true.mpr fun _ _ => rfl⟩
+
 /-- The frame of `withStackScratchWiped` keeps the stack pointer for any `c`
 that does, if it does for an empty body and its wipe (decided for literal
 sizes). -/

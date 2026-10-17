@@ -71,6 +71,9 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     cmpStack := ?_,
     stream := stream,
     features := [],
+    -- The 16-word window of the schedule and the working variables,
+    -- `scratch[0..96)` (`Impl.Sha256.X86`).
+    wipe := 24,
     functions := [
       { api := Spec.Sha256.compressApi
         code := Impl.Sha256.X86.compress

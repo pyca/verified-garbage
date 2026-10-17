@@ -21,8 +21,9 @@ makes it: `rbx` = `key`, `rbp` = `key_len`, `r12` = `inner`, `r13` =
 The digest stays in `scratch`, which the function that allocates it wipes
 (`withStackScratchWiped`). `vg_hmac_<hash>_init` runs that only for a key
 longer than a block (`initEntry`, which compares `key_len` on entry): a key
-of at most a block goes to `init` in a frame of its own as before, smaller
-and not wiped.
+of at most a block goes to `init` in a frame of its own, smaller, of which
+only the part where the compression function leaves the schedule of the
+padded keys is wiped (`withStackScratchWipedX`).
 -/
 
 @[expose] public section

@@ -148,6 +148,25 @@ ldr r9, [r11, #180]
 ldr r10, [r11, #184]
 ldr lr, [r11, #188]
 ldr r11, [r11, #192]
+add r12, sp, #8
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
 add sp, sp, #864
 21:
 bx lr

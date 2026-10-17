@@ -90,6 +90,13 @@ structure Backend where
   /-- The CPU features its compression function requires, which the
   functions built on it require too. -/
   features : List String
+  /-- The doublewords at the start of the compression function's working
+  space in which it may leave the message schedule, the working variables or
+  the hash value, which are secret when the block is (HMAC's padded keys):
+  HMAC's `init` zeroes them before returning (`withStackScratchWiped`). -/
+  wipe : Nat
+  /-- They are within its working space. -/
+  wipe_le : 4 * wipe ≤ 560 := by decide
   /-- Its own functions: the compression function, and the streaming
   functions made with it (SHA-224's `finalize` among them). -/
   functions : List StreamFn

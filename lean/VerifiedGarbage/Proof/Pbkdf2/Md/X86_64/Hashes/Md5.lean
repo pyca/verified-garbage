@@ -207,6 +207,6 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    "" [] []
+    0 (by decide) "" [] []
 
 end VG.Proof.Pbkdf2.Md.X86_64.Md5

@@ -24,6 +24,8 @@ def backend : Compress where
   keepsV := by lit_decide
   suffix := ""
   features := []
+  -- The 16-word window of the schedule, `scratch[0..64)` (`Impl.Sha1.AArch64`).
+  wipe := 8
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
   finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

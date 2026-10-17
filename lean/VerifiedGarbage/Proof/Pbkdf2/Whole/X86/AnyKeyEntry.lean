@@ -153,33 +153,42 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
 
 /-- HMAC's `init` for a key of any length, `vg_hmac_<hash>_init`, of instance
 `I`: for a key of at most a block, `init_scratch` (`hmacInit`) in a frame
-holding its working space; for a longer key (cold), `F.hmacInitAny`, in a
-frame holding its larger working space, which it wipes. -/
-def initCode (I : Spec.Hmac.Instance) (hmacInit : Prog isa) (F : Impl.Pbkdf2.Whole.X86.Fns) : Prog isa :=
+holding its working space, whose first `w` doublewords, where the compression
+function leaves the schedule of the padded keys, it zeroes; for a longer key
+(cold), `F.hmacInitAny`, in a frame holding its larger working space, which
+it wipes. -/
+def initCode (I : Spec.Hmac.Instance) (w : Nat) (hmacInit : Prog isa) (F : Impl.Pbkdf2.Whole.X86.Fns) :
+    Prog isa :=
   Impl.Pbkdf2.Whole.X86.initEntry I.S.H.blockSize
-    (Impl.StackScratch.X86.withStackScratch (Md.X86.initFrame I) 4 hmacInit)
+    (Any.shortCode I w hmacInit)
     (Impl.StackScratch.X86.withStackScratchWiped (Any.anyFrame I) 4 (2 * I.initAnyKeyScratch) F.hmacInitAny)
 
-theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkdf2.Whole.X86.Fns}
-    (hS : Verified X86.target (Impl.StackScratch.X86.withStackScratch (Md.X86.initFrame I) 4 c)
+theorem initCode_verified {I : Spec.Hmac.Instance} {w : Nat} {c : Prog isa} {F : Impl.Pbkdf2.Whole.X86.Fns}
+    (hS : Verified X86.target (Any.shortCode I w c)
       (I.initContract X86.abi (48 + Md.X86.initFrame I)))
     (hL : Verified X86.target
       (Impl.StackScratch.X86.withStackScratchWiped (Any.anyFrame I) 4 (2 * I.initAnyKeyScratch) F.hmacInitAny)
       (I.initAnyKeyContract X86.abi (76 + Any.anyFrame I)))
     (hB : I.S.H.blockSize + 1 < 2 ^ 32)
     (hsat : ∃ s, (I.initAnyKeyContract X86.abi (76 + Any.anyFrame I)).pre s) :
-    Verified X86.target (initCode I c F) (I.initAnyKeyContract X86.abi (76 + Any.anyFrame I)) :=
+    Verified X86.target (initCode I w c F) (I.initAnyKeyContract X86.abi (76 + Any.anyFrame I)) :=
   initEntry_verified hS hL (by omega)
     (by simp only [Md.X86.initFrame, Any.anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega) hB hsat
 
-theorem initCode_spSafe {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkdf2.Whole.X86.Fns}
+theorem initCode_spSafe {I : Spec.Hmac.Instance} {w : Nat} {c : Prog isa} {F : Impl.Pbkdf2.Whole.X86.Fns}
     (hs : c.all (fun i => !isa.writesSp i) = true)
+    (hw : (Code.block (Impl.StackScratch.X86.wipe (8 + 4 * 4) w) : Prog isa).all
+      (fun i => !isa.writesSp i) = true)
     (hf : (Impl.StackScratch.X86.withStackScratch (Md.X86.initFrame I) 4 (.block [])).all
       (fun i => !isa.writesSp i) = true)
     (hl : (Impl.StackScratch.X86.withStackScratchWiped (Any.anyFrame I) 4 (2 * I.initAnyKeyScratch)
       F.hmacInitAny).all (fun i => !isa.writesSp i) = true) :
-    (initCode I c F).all (fun i => !isa.writesSp i) = true := by
-  have hs' := Md.X86.withStackScratch_spSafe (bytes := Md.X86.initFrame I) (n := 4) hs hf
+    (initCode I w c F).all (fun i => !isa.writesSp i) = true := by
+  have hs' : (Any.shortCode I w c).all (fun i => !isa.writesSp i) = true := by
+    unfold Any.shortCode
+    split
+    · exact Md.X86.withStackScratch_spSafe hs hf
+    · exact Any.withStackScratchWiped_spSafe hs hw hf
   simp only [initCode, Impl.Pbkdf2.Whole.X86.initEntry, Code.iteCold, Code.all, hs', hl, Bool.and_true]
   rfl
 

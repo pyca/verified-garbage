@@ -51,6 +51,13 @@ structure Compress where
   keepsV : code.allInstrs keepsV = true
   suffix : String
   features : List String
+  /-- The doublewords at the start of its working space in which it may
+  leave the message schedule, which is secret when the block is (HMAC's
+  padded keys): callers that keep the working space in a frame of their own
+  zero them (`withStackScratchWiped`, HMAC's `init`). -/
+  wipe : Nat
+  /-- They are within its working space. -/
+  wipe_le : 8 * wipe ≤ 560 := by decide
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
     (updK (P := Stream.params) md).pub (update Stream.params name code)
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre

@@ -26,6 +26,8 @@ def backend : Compress where
   keepsV := by lit_decide
   suffix := "_sha2"
   features := ["sha2"]
+  -- `scratch` is not used (`Impl.Sha256.AArch64.Sha2`).
+  wipe := 0
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
   finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

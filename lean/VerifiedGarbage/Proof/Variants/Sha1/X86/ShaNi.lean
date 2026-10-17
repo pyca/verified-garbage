@@ -92,6 +92,8 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     cmpStack := Proof.Sha1.X86.ShaNi.compress_stack,
     stream := stream,
     features := ["sha", "ssse3"],
+    -- The hash value at the start of a block, `scratch[0..32)` (`Impl.Sha1.X86.ShaNi`).
+    wipe := 8,
     functions := [
       { api := Spec.Sha1.compressApi
         code := cmpC

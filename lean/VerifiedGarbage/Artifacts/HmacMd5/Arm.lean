@@ -23,8 +23,9 @@ function (`vg_md5_compress`), on a block laid out at fixed offsets in
 `init` takes a key of any length (`initAnyKeyApi`), and chooses on entry by
 its public length (`Proof/Pbkdf2/Whole/Arm/AnyKeyEntry.lean`): a key of at
 most a block goes straight to `init_scratch`, the code above with its working
-space as an argument, in a frame of its own holding its working space
-(`Proof/Pbkdf2/Md/Arm/Frame.lean`); a longer key is first hashed with
+space as an argument, in a frame of its own holding its working space, of which it zeroes the
+part where the compression function leaves the schedule of the padded keys
+(`initFramedW`, `Proof/Pbkdf2/Whole/Arm/AnyKeyCT.lean`); a longer key is first hashed with
 MD5's verified streaming functions into its working space, as
 PBKDF2's `pbkdf2` hashes a long password (`Impl/Pbkdf2/Md/AnyKey/Arm.lean`),
 and `init_scratch` is called with its digest, in a larger frame of its own,
@@ -40,7 +41,7 @@ namespace VG.Artifacts.HmacMd5.Arm
 
 def artifacts : List Artifact := [
   Spec.Hmac.md5I.initAnyKeyApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Proof.Pbkdf2.Md.Arm.md5Md.hmacInit Proof.Pbkdf2.Whole.Arm.md5F
+    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Proof.Pbkdf2.Whole.Arm.Any.md5Wipe Proof.Pbkdf2.Md.Arm.md5Md.hmacInit Proof.Pbkdf2.Whole.Arm.md5F
     stack := 24 + Proof.Pbkdf2.Whole.Arm.Any.anyFrame Spec.Hmac.md5I
     verified := Proof.Pbkdf2.Whole.Arm.Any.md5_initF },
   Spec.Hmac.md5I.finalizeApi.artifact Arm.target {

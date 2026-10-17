@@ -24,6 +24,8 @@ def compress : Proof.Sha256.X86_64.Compress where
   spSafe := Code.all_of_allInstrs (by change Impl.Sha256.X86_64.compress.allInstrs _ = true; lit_decide)
   suffix := ""
   features := []
+  -- The 16-word window of the schedule, `scratch[0..64)` (`Impl.Sha256.X86_64`).
+  wipe := 4
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha256.variant compress
 
