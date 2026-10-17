@@ -157,6 +157,64 @@ def combNeg (c : Slot) : List Instr :=
   [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords (offset 21) (offset c) ++ borrow38 ++
     [.sub .x .x4 .x4 .x8] ++ loads (offset c) .x12 .x13 .x14 .x15 ++ negSel ++ store4 (offset c)
 
+/-! ## The selection in registers
+
+As s2n-bignum's `edwards25519_scalarmulbase_alt` selects: every candidate's words are loaded in
+pairs (`ldp`) and kept where the digit's magnitude `|d|` (in `x2`) is the candidate's (`csel`),
+starting from the identity's; then `2dT` is negated, `Y - X` and `Y + X` exchanged, for a
+negative digit (the sign's mask in `x1`), and the entry stored to slots 4–6 once. -/
+
+/-- Digit `x19`, whose bits are at `x0 + 768 + 4 x19`: its sign's mask to `x1` and its magnitude
+to `x2`. -/
+def combDigitS : List Instr :=
+  [.lsl .x .x8 .x19 2, .add .x .x8 .x0 .x8] ++ combNibble 768 ++ combSign
+
+/-- `x9` = the address of table `x19`, through `x16`. -/
+def tblAddrS : List Instr :=
+  [.adrSym .x9 combSym, .lsl .x .x16 .x19 8, .add .x .x9 .x9 .x16, .add .x .x9 .x9 .x16,
+    .add .x .x9 .x9 .x16]
+
+/-- The accumulators of the selection, in pairs, and their pairs' offsets in a table: `Y - X`
+and `Y + X` (`scanAccs₁`, from `x9`), then `2dT` (`scanAccs₂`, from `x9 + 512`). -/
+def scanAccs₁ : List (Reg × Reg × Nat) := [(.x3, .x4, 0), (.x5, .x6, 16), (.x7, .x8, 256), (.x10, .x11, 272)]
+def scanAccs₂ : List (Reg × Reg × Nat) := [(.x12, .x13, 0), (.x14, .x15, 16)]
+
+/-- The identity's cached form `[1, 1, 0]` in the accumulators. -/
+def scanInit : List Instr :=
+  [.movz .x .x3 1 0, .movz .x .x4 0 0, .movz .x .x5 0 0, .movz .x .x6 0 0,
+    .movz .x .x7 1 0, .movz .x .x8 0 0, .movz .x .x10 0 0, .movz .x .x11 0 0,
+    .movz .x .x12 0 0, .movz .x .x13 0 0, .movz .x .x14 0 0, .movz .x .x15 0 0]
+
+/-- Candidate `m + 1`'s pairs at `x9 + o + 32 m`, kept in `accs` where `|d| = m + 1`. -/
+def scanCand (accs : List (Reg × Reg × Nat)) (m : Nat) : List Instr :=
+  [.movz .x .x16 (BitVec.ofNat 16 (m + 1)) 0, .subs .x .x16 .x2 .x16] ++
+    accs.flatMap fun a => [.ldp .x16 .x17 .x9 (a.2.2 + 32 * m), .cselc .x a.1 .x16 a.1 .eq,
+      .cselc .x a.2.1 .x17 a.2.1 .eq]
+
+/-- `p - [x12–x15]` into `x20`–`x23`, from the constants `2⁶⁴ - 19`, `2⁶⁴ - 1`, `2⁶³ - 1`. -/
+def scanNeg : List Instr :=
+  [.movz .x .x17 0 0, .subImm .x .x17 .x17 1, .lsr .x .x24 .x17 1, .subImm .x .x16 .x17 18,
+    .subs .x .x20 .x16 .x12, .sbcs .x .x21 .x17 .x13, .sbcs .x .x22 .x17 .x14, .sbc .x .x23 .x24 .x15]
+
+/-- Under the sign's mask (`x1`): `2dT` negated, and `Y - X`, `Y + X` exchanged, stored to slots
+4–6. -/
+def scanSign : List Instr :=
+  [.tst .x .x1 .x1,
+    .cselc .x .x12 .x20 .x12 .ne, .cselc .x .x13 .x21 .x13 .ne,
+    .cselc .x .x14 .x22 .x14 .ne, .cselc .x .x15 .x23 .x15 .ne,
+    .cselc .x .x20 .x7 .x3 .ne, .cselc .x .x21 .x8 .x4 .ne,
+    .cselc .x .x22 .x10 .x5 .ne, .cselc .x .x23 .x11 .x6 .ne,
+    .cselc .x .x16 .x3 .x7 .ne, .cselc .x .x17 .x4 .x8 .ne,
+    .cselc .x .x24 .x5 .x10 .ne, .cselc .x .x2 .x6 .x11 .ne,
+    .stp .x20 .x21 .x0 (offset 4), .stp .x22 .x23 .x0 (offset 4 + 16),
+    .stp .x16 .x17 .x0 (offset 5), .stp .x24 .x2 .x0 (offset 5 + 16),
+    .stp .x12 .x13 .x0 (offset 6), .stp .x14 .x15 .x0 (offset 6 + 16)]
+
+/-- The digit's entry from table `x19`, negated for a negative digit, to slots 4–6. -/
+def combEntry : List Instr :=
+  tblAddrS ++ scanInit ++ (List.range 8).flatMap (scanCand scanAccs₁) ++
+    [.addImm .x .x9 .x9 512] ++ (List.range 8).flatMap (scanCand scanAccs₂) ++ scanNeg ++ scanSign
+
 open VG.Impl.X25519.AArch64.Alt in
 /-- The entry in slots 4–6 (`[Y - X, Y + X, 2dT]` of an affine point) added to the accumulator
 in slots 0–3, in place, as s2n-bignum's `edwards25519_scalarmulbase_alt` does, operation for
@@ -175,8 +233,8 @@ def combAdd : List Instr :=
 /-- Step `x19 = i`: digit `i`'s entry of table `i`, negated for a negative digit, added to the
 accumulator. `x8` is nonzero while another step follows. -/
 def combStep : Prog isa :=
-  .seq (.block combDigit) <|
-  .seq (.block (combSelect ++ combNeg 6)) <|
+  .seq (.block combDigitS) <|
+  .seq (.block combEntry) <|
   .seq (.block combAdd) (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64])
 
 /-- The steps from digit `j < 64` on. -/
