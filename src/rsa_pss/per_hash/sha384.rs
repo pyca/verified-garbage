@@ -18,7 +18,7 @@ use crate::arch::rsa_pss_sha384_mgf1_sha384::{
 };
 use crate::hashes::sha384::Sha384Backend;
 
-super::pss_hash!(48, Sha384Backend {
+super::super::pss_hash!(48, Sha384Backend {
     Scalar => {
         verify: vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed [],
         sign: vg_rsa_pss_sha384_mgf1_sha384_sign [],

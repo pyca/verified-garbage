@@ -14,7 +14,7 @@ use crate::arch::rsa_pss_md5_mgf1_md5::{
 };
 use crate::hashes::md5::Md5Backend;
 
-super::pss_hash!(16, Md5Backend {
+super::super::pss_hash!(16, Md5Backend {
     Scalar => {
         verify: vg_rsa_pss_md5_mgf1_md5_verify_precomputed [],
         sign: vg_rsa_pss_md5_mgf1_md5_sign [],

@@ -19,7 +19,7 @@ use crate::arch::rsa_pss_sha512_224_mgf1_sha512_224::{
 };
 use crate::hashes::sha512_224::Sha512_224Backend;
 
-super::pss_hash!(28, Sha512_224Backend {
+super::super::pss_hash!(28, Sha512_224Backend {
     Scalar => {
         verify: vg_rsa_pss_sha512_224_mgf1_sha512_224_verify_precomputed [],
         sign: vg_rsa_pss_sha512_224_mgf1_sha512_224_sign [],

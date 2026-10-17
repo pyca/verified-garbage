@@ -39,14 +39,7 @@
 ))]
 
 mod any_hash;
-mod md5;
-mod sha1;
-mod sha224;
-mod sha256;
-mod sha384;
-mod sha512;
-mod sha512_224;
-mod sha512_256;
+mod per_hash;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -204,35 +197,35 @@ macro_rules! with_functions {
         let f = detected();
         match $hash {
             Hash::Md5 => {
-                let $fns = md5::functions(f);
+                let $fns = per_hash::md5::functions(f);
                 $body
             }
             Hash::Sha1 => {
-                let $fns = sha1::functions(f);
+                let $fns = per_hash::sha1::functions(f);
                 $body
             }
             Hash::Sha224 => {
-                let $fns = sha224::functions(f);
+                let $fns = per_hash::sha224::functions(f);
                 $body
             }
             Hash::Sha256 => {
-                let $fns = sha256::functions(f);
+                let $fns = per_hash::sha256::functions(f);
                 $body
             }
             Hash::Sha384 => {
-                let $fns = sha384::functions(f);
+                let $fns = per_hash::sha384::functions(f);
                 $body
             }
             Hash::Sha512 => {
-                let $fns = sha512::functions(f);
+                let $fns = per_hash::sha512::functions(f);
                 $body
             }
             Hash::Sha512_224 => {
-                let $fns = sha512_224::functions(f);
+                let $fns = per_hash::sha512_224::functions(f);
                 $body
             }
             Hash::Sha512_256 => {
-                let $fns = sha512_256::functions(f);
+                let $fns = per_hash::sha512_256::functions(f);
                 $body
             }
         }
@@ -481,7 +474,7 @@ macro_rules! pss_hash {
 
         /// The functions for the implementations that a CPU with the
         /// features `f` runs best.
-        pub(super) fn functions(f: $crate::cpu::Features) -> (super::SignFn<N>, super::VerifyFn<N>) {
+        pub(in super::super) fn functions(f: $crate::cpu::Features) -> (super::super::SignFn<N>, super::super::VerifyFn<N>) {
             match $backend::select(f) {
                 $(
                     $(#[$attr])*
