@@ -33,6 +33,8 @@ structure AttPub where
   used : Nat
   fuel : Nat
   tr : List Nat
+  /-- The overall status. -/
+  status : Nat
 
 /-- Whether the attempt's sampling finds a nonce. -/
 def AttPub.ok (a : AttPub) : Bool := (randomSamplingTrace a.tr).getLast? == some 1
