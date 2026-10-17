@@ -162,9 +162,11 @@ def artifacts : List Artifact := [
     notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
         each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; \
         it then samples from the output of each in turn, eight candidates at a time in AVX2 registers \
-        (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), \
-        and finishes any that needs more than the 504 bytes it squeezed with `vg_mlkem_sample_ntt`, \
-        with 24 bytes of stack below its return address."]
+        (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask). \
+        Only if one needs more than the 504 bytes it squeezed of each does it squeeze two more blocks \
+        of all four from the states it kept, and continues each from where it stopped. It calls \
+        nothing, but is declared with the 24 bytes of stack below its return address of \
+        `vg_mlkem_sample_ntt4`, whose contract it shares."]
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
@@ -174,9 +176,11 @@ def artifacts : List Artifact := [
     notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
         each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; \
         it then samples from the output of each in turn, eight candidates at a time in AVX2 registers \
-        (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), \
-        and finishes any that needs more than the 504 bytes it squeezed with `vg_mlkem_sample_ntt`, \
-        using AVX-512VL quadword rotates in Keccak, with 24 bytes of stack below its return address."]
+        (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask). \
+        Only if one needs more than the 504 bytes it squeezed of each does it squeeze two more blocks \
+        of all four from the states it kept, and continues each from where it stopped. It uses \
+        AVX-512VL quadword rotates in Keccak. It calls nothing, but is declared with the 24 bytes of \
+        stack below its return address of `vg_mlkem_sample_ntt4`, whose contract it shares."]
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified

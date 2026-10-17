@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -14,9 +14,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, correctness
 
 The pieces, in order: the prologue, the round constants and the padded seeds
-(`S4Absorb.lean`), three squeezes (`S4Squeeze.lean`), the table (`S4Tab.lean`),
-the four polynomials (`S4Loop.lean`), and the epilogue, which returns whether
-every seed sampled its polynomial.
+(`S4Absorb.lean`), three squeezes (`S4Squeeze.lean`, `S4SqT.lean`), the table
+(`S4Tab.lean`), the first 168 iterations on each seed, and if one needs them,
+two more squeezes and 112 more iterations on each (`S4Run.lean`, `S4Loop.lean`),
+and the epilogue, which returns whether every seed sampled its polynomial.
 -/
 
 @[expose] public section
@@ -86,23 +87,26 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PC X σ 4 s) :
       simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
       (by decide)
 
-/-- The three squeezes, the table and the four polynomials. -/
-theorem squeezes_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
+/-- Everything after the prologue, the round constants and the padded seeds. -/
+theorem body_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
     WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
-      (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi))))))) s fun s' =>
+      (.seq (run1 0) (.seq (run1 1) (.seq (run1 2) (.seq (run1 3) (tail4 fast))))))) s fun s' =>
       sample4K.post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (sqs_ok (fast := fast) hp (by decide) (by decide) h) fun s₃' h₃' =>
-    WP.seq (WP.mono (pinv0_ok hp h₃') fun s₃ p₀ => ?_))
-  refine WP.seq (WP.mono (parse_ok hp (by decide) p₀) fun s₄ p₁ => WP.seq (WP.mono (parse_ok hp (by decide) p₁)
-    fun s₅ p₂ => WP.seq (WP.mono (parse_ok hp (by decide) p₂) fun s₆ p₃ =>
-      WP.seq (WP.mono (parse_ok hp (by decide) p₃) fun s₇ p₄ => end_ok hp p₄))))
+  refine WP.seq (WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) (sqT_of h)) fun _ ⟨q₃, _⟩ =>
+    WP.seq (WP.mono (p1_zero_ok hp q₃) fun _ p₀ => ?_))
+  refine WP.seq (WP.mono (run1_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1_ok hp (by decide) p₁)
+    fun _ p₂ => WP.seq (WP.mono (run1_ok hp (by decide) p₂) fun _ p₃ =>
+      WP.seq (WP.mono (run1_ok hp (by decide) p₃) fun _ p₄ => ?_))))
+  unfold tail4
+  refine WP.seq (WP.mono (check_ok hp p₄) fun _ c => WP.seq (WP.mono (branch_ok hp c) fun s₅ d => ?_))
+  exact WP.block_append (WP.mono (vz_ok s₅) fun _ ⟨hm, hk⟩ => end_ok hp (d.pc.keep hm hk (by decide)))
 
 end
 
 theorem correct {fast : Bool} (σ : State) (hs : sample4K.pre σ) :
     ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ sample4K.post σ s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => squeezes_ok (fast := fast) hp h)
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok (fast := fast) hp h)
   exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlKem.X86_64.S4
