@@ -39,6 +39,13 @@ def GhashWithImpl.aes : GhashWithImpl where
   ct := Proof.Gcm.AArch64.Pmull.ghashW_ct
   keepsV := by decide +kernel
 
+def GhashStoreImpl.aes : GhashStoreImpl where
+  fn := ⟨"vg_ghash_store_powers_aes", Impl.Gcm.AArch64.Pmull.ghashS⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.Pmull.ghashS_correct
+  ct := Proof.Gcm.AArch64.Pmull.ghashS_ct
+  keepsV := by decide +kernel
+
 namespace GhashImpl
 
 /-- `vg_ghash_aes`, with PMULL (which Rust's `aes` feature stands for, with
@@ -54,6 +61,7 @@ def aes : GhashImpl where
   pmull := true
   prepared := some .aes
   withPowers := some .aes
+  storePowers := some .aes
 
 end GhashImpl
 
