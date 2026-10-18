@@ -30,7 +30,7 @@
 //! memory the functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -102,7 +102,7 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
 
 /// Declares the types of verified functions, in the calling convention the
 /// emitter generates on each target: `sysv64` on x86-64 (on Windows too),
-/// and C's on AArch64.
+/// and C's on AArch64 and ARMv7.
 macro_rules! verified_fn_types {
     ($(
         $(#[$doc:meta])*
@@ -112,7 +112,7 @@ macro_rules! verified_fn_types {
         #[cfg(target_arch = "x86_64")]
         type $name $(<const $l: usize>)? = unsafe extern "sysv64" fn($($arg),*) -> $ret;
         $(#[$doc])*
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
         type $name $(<const $l: usize>)? = unsafe extern "C" fn($($arg),*) -> $ret;
     )*};
 }

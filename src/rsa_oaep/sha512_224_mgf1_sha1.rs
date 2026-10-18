@@ -7,7 +7,7 @@
 //! (`Sha512_224Backend`, `Sha1Backend`) and of the RSA operation (`crate::rsa::Backend`).
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
