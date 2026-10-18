@@ -28,6 +28,8 @@ public import VerifiedGarbage.TCB.Artifact
 * `vg_rsa_private_precompute`: the values of a private key that
   `vg_rsa_private_checked` computes from it on every call
   (`Rsa.privatePrecompute`), to be kept with the key;
+* `vg_rsa_private_crt_precomputed`: `vg_rsa_private_crt` from the values
+  `vg_rsa_private_precompute` computed, without computing them again;
 * `vg_rsa_private_checked_precomputed`: `vg_rsa_private_checked` from the
   values `vg_rsa_private_precompute` computed, without computing them
   again;
@@ -587,6 +589,61 @@ def privatePrecomputeApi : Api where
     "`pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.",
     "The contents of `pre` on return may contain secrets; the caller must destroy them \
       after use."] ++ scratchSafety
+
+/-! ### `vg_rsa_private_crt_precomputed` -/
+
+/-- `vg_rsa_private_crt_precomputed`: `privateCrtSig` with a final
+read-only slice of precomputed `u64` words. -/
+def privateCrtPrecomputedSig : Sig where
+  params := privateCrtSig.params ++ [("pre", .slice false .u64 "pre_len")]
+  ret := some .u32
+
+/-- `privateCrtContract` with the precomputed values of the key
+(`privatePrecompute`): its result when `pre` holds them; otherwise the
+result is unspecified (but memory safety and constant time are not).
+Constant time but for `n` and the public part of `pre`. -/
+def privateCrtPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  privateCrtPrecomputedSig.contract A
+    (pre := fun _out outLen _n nLen _input inputLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv
+        qinvLen _scratch scratchLen _pre preLen _ =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+    (post := fun out _outLen n nLen input _inputLen p pLen q qLen dp _dpLen dq _dqLen qinv
+        _qinvLen _scratch _scratchLen pre preLen m m' r =>
+      privatePreOk m n nLen.toNat p pLen.toNat q qLen.toNat pre preLen.toNat →
+        written m' out nLen.toNat r
+          (privateCrt (bytesAt m n nLen.toNat) (bytesAt m input nLen.toNat)
+            (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
+            (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen n nLen _input _inputLen _p _pLen _q _qLen _dp _dpLen _dq
+        _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
+      (bytesAt m n nLen.toNat).map (·.toNat) ++ privatePreLeak m pre nLen.toNat)
+
+def privateCrtPrecomputedApi : Api where
+  module := "rsa"
+  name := "vg_rsa_private_crt_precomputed"
+  sig := privateCrtPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => privateCrtPrecomputedContract A stack
+  summary := "`vg_rsa_private_crt` (RSADP and RSASP1, RFC 8017 §5.1.2 and §5.2.1, with the \
+    private key `(p, q, dP, dQ, qInv)`) given also `pre`, the `pre_len` words \
+    `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), so that it does \
+    not compute them again. With those values, writes to `out` and returns exactly what \
+    `vg_rsa_private_crt` writes and returns for the other arguments. If `pre` does not hold \
+    those values, the result is unspecified; memory safety and the timing guarantee still \
+    apply.\n\n\
+    Contract: `VG.Spec.Rsa.privateCrtPrecomputedContract`. Constant time but for the \
+    modulus: timing may depend on the pointers, the lengths, the contents of `n` and the \
+    first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the input, the \
+    private key or the rest of `pre`."
+  safety := privateCrtApi.safety ++
+    ["`pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.",
+      "For the result to be the private-key operation's, `pre` must hold what \
+        `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1)."]
 
 /-! ### `vg_rsa_private_checked_precomputed` -/
 
