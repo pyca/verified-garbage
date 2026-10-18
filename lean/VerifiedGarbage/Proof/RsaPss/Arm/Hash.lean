@@ -4,10 +4,7 @@ public import VerifiedGarbage.Impl.RsaPss.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
 public import VerifiedGarbage.Spec.Mgf1
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: what the proofs need of the hash function

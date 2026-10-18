@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.CtLen
 public meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLen
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: hashing, the padding of a message of secret length

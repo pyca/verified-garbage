@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 public meta import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: hashing, the selection of the hash value

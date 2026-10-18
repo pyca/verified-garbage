@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: hashing, the hash value and the length field

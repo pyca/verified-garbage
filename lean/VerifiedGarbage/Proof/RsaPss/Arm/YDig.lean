@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: `Y` cleared, and the digest after 8 zeros

@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
 public import VerifiedGarbage.Proof.Mgf1.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: XOR of bytes, and arithmetic of the masks

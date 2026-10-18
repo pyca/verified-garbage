@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
 meta import VerifiedGarbage.Proof.RsaPss.Arm.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSASSA-PSS on ARMv7: SHA-224 -/
 

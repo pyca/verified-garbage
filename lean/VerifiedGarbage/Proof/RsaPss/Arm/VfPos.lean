@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfScan
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the scan's result

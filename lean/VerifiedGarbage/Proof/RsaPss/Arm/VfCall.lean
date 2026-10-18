@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfChk
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the call

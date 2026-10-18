@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 public import VerifiedGarbage.Proof.RsaPss.SignCases
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on ARMv7: the checks

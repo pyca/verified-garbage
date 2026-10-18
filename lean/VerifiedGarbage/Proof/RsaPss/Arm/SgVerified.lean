@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Wrap
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on ARMv7: verified

@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on ARMv7: `DB ⊕= MGF1(H, dbLen)`, the loop
