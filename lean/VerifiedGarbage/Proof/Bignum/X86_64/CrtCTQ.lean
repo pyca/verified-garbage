@@ -228,15 +228,18 @@ def Q1 (p : PhasePub) (t : State) : Prop :=
     word t.mem p.B (8 * sQlen) = BitVec.ofNat 64 eb.length ∧ eb.length = p.len ∧ 1 ≤ eb.length ∧
     eb.length ≤ 1024 ∧ Src t p.B p.Z p.ep eb
 
-theorem unit_q1 (M : Mont) {p : PhasePub} {s : State} (h : QPre p s) :
-    WP isa (seqs (unitSteps M.mm sWsQ)) s (Q1 p) := by
+/-- From `qPhase_ok`'s hypotheses, a start `U` of the phase whose result is
+`unitPhase_ok`'s (for some `okY`) leads to `Q1`. -/
+theorem unitWith_q1 {U : List (Prog isa)} {p : PhasePub} {s : State} (h : QPre p s)
+    (hunit : ∀ mx X, WsAt s.mem p.B p.o p.wx mx → XVals s p.B p.o p.wx mx X → 1 < X → X % 2 = 1 →
+      WP isa (seqs U) s fun t => ∃ okY : Prop, UnitPost s p.B p.Z p.w p.minv mx p.N X p.o p.wx False okY t) :
+    WP isa (seqs U) s (Q1 p) := by
   obtain ⟨mx, X, _, eb, hg, hw, hw28, hlo, hhi, hwx2, hwx, hslv, hws, hN, hodd, hN1, -, hX, hX1, hXodd, hep,
     hel, hlen, hL1, hL2, he⟩ := h
   have hn := hg.scr.nowrap
   have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have hz : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega
-  refine WP.mono (unitPhase_ok M hg hw hw28 hlo hhi hwx2 hwx (by decide) (by decide) (by decide) hslv hws hN
-    hodd hN1 hX hX1 hXodd) fun t ⟨hg₁, hws₁, hX₁, hlt₁, _, hlq₁, _, _, f₁, k₁⟩ => ?_
+  refine WP.mono (hunit mx X hws hX hX1 hXodd) fun t ⟨_, hg₁, hws₁, hX₁, hlt₁, _, hlq₁, _, _, f₁, k₁⟩ => ?_
   have hX8 : 8 * 17 ≤ slot p.wx 8 := by unfold slot hdrBytes; omega
   exact ⟨mx, X, eb, hg₁, hw, hw28, hlo, hhi, hwx2, hwx,
     by rw [Frm.gx_hdr f₁ hlo (by decide) (by decide) (by decide)]; exact hslv, hws₁,
@@ -244,6 +247,13 @@ theorem unit_q1 (M : Mont) {p : PhasePub} {s : State} (h : QPre p s) :
     by rw [Frm.gx_hdr f₁ hlo (by decide) (by decide) (by decide)]; exact hep,
     by rw [Frm.gx_hdr f₁ hlo (by decide) (by decide) (by decide)]; exact hel, hlen, hL1, hL2,
     he.congrK (InScr.of_frm f₁ fun r hr => (gxRanges_le hlo r hr).trans hhi) k₁⟩
+
+theorem unit_q1 (M : Mont) {p : PhasePub} {s : State} (h : QPre p s) :
+    WP isa (seqs (unitSteps M.mm sWsQ)) s (Q1 p) := by
+  refine unitWith_q1 h fun mx' X' hws' hX' hX1' hXodd' => ?_
+  obtain ⟨mx, X, _, eb, hg, hw, hw28, hlo, hhi, hwx2, hwx, hslv, hws, hN, hodd, hN1, -⟩ := h
+  exact WP.mono (unitPhase_ok M hg hw hw28 hlo hhi hwx2 hwx (by decide) (by decide) (by decide) hslv hws' hN
+    hodd hN1 hX' hX1' hXodd') fun _ h => ⟨False, h⟩
 
 theorem mm_pwPre (M : Mont) {p : PhasePub} {s : State} (h : Q1 p s) :
     WP isa (M.mm Public.aY Public.aXm Public.aY) s (PwPre sWsQ sDq sQlen (sp p)) := by
@@ -300,12 +310,11 @@ theorem mmLeave_ct (M : Mont) :
 end CrtCTQ
 
 open CrtCTQ in
-/-- `q`'s phase is constant time. -/
-theorem qPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsQ) (hP : PowCT M E sWsQ sDq sQlen) : QPhaseCT M E := by
-  unfold QPhaseCT
-  rw [qPhase_eq]
-  refine RelCT.seqs_append (by simp [unitSteps, Crt.gPow]) (by simp) (RelCT.seq (two_post (Ψ := Q1)
-    (two_map up (fun _ _ h => uPre h) hU) fun _ _ h => unit_q1 M h) ?_)
+/-- `q`'s phase after its start is constant time. -/
+theorem qRest_ct (M : Mont) (E : CrtExpL M) (hP : PowCT M E sWsQ sDq sQlen) :
+    RelCT isa (Two Q1) (seqs ([M.mm Public.aY Public.aXm Public.aY] ++
+      (powSteps M.mm E.code sWsQ sDq sQlen ++ [M.mm Public.aY Public.aY Public.aOne, .block [leave]])))
+      fun _ _ => True := by
   refine RelCT.seqs_append (by simp) (by simp [powSteps]) (RelCT.seq (two_post
     (Ψ := fun p => PwPre sWsQ sDq sQlen (sp p))
     (two_map (fun p : PhasePub => (⟨p.B, p.Z, p.w⟩ : Ws))
@@ -314,5 +323,13 @@ theorem qPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsQ) (hP : PowCT M 
       (M.ct (by unfold MmUse; decide))) fun _ _ h => mm_pwPre M h) ?_)
   exact RelCT.seqs_append (by simp [powSteps]) (by simp) (RelCT.seq (two_post (Ψ := Q3)
     (two_map sp (fun _ _ h => h) hP) fun _ _ h => pow_q3 M E h) (mmLeave_ct M))
+
+open CrtCTQ in
+/-- `q`'s phase is constant time. -/
+theorem qPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsQ) (hP : PowCT M E sWsQ sDq sQlen) : QPhaseCT M E := by
+  unfold QPhaseCT
+  rw [qPhase_eq]
+  exact RelCT.seqs_append (by simp [unitSteps, Crt.gPow]) (by simp) (RelCT.seq (two_post (Ψ := Q1)
+    (two_map up (fun _ _ h => uPre h) hU) fun _ _ h => unit_q1 M h) (qRest_ct M E hP))
 
 end VG.Proof.Bignum.X86_64

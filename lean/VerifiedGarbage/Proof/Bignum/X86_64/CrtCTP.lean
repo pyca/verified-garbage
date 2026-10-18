@@ -108,10 +108,16 @@ theorem o3_of (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {min
   rw [hql] at this
   exact this
 
-/-- `pPhase_ok`'s hypotheses give `PO0`. -/
-theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M E p s := by
+/-- From `pPhase_ok`'s hypotheses, a start `U` of the phase whose result is
+`unitPhase_ok`'s (for some `okY`) leads to `PO1`. -/
+theorem o0With_of (M : Mont) (E : CrtExpL M) {U : List (Prog isa)} {p : PPhasePub} {s : State} (h : PPre p s)
+    (hunit : ∀ mx X, WsAt s.mem p.ph.B p.ph.o p.ph.wx mx → XVals s p.ph.B p.ph.o p.ph.wx mx X → 1 < X →
+      X % 2 = 1 → WP isa (seqs U) s fun t => ∃ okY : Prop, UnitPost s p.ph.B p.ph.Z p.ph.w p.ph.minv mx p.ph.N X p.ph.o p.ph.wx
+        False okY t) :
+    WP isa (seqs U) s (PO1 M E p) := by
   obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
   dsimp only [PPre] at h
+  dsimp only at hunit
   obtain ⟨mx, mq, X, C, eb, qib, c, h⟩ := h
   sig_split h
   rename_i hg hw hw28 hlo hhi hqhi hwx2 hwx hwq hwq' hslv hws hslq hwsq hN hodd hN1 hXm hX hX1 hXodd
@@ -137,10 +143,7 @@ theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p
       word m' (off B oq) (8 * i) = word m (off B oq) (8 * i) := fun f i hi => by
     rw [word_off, word_off]; exact f.px_above hlo (by omega) (by omega)
   -- `R_p mod p`.
-  refine ⟨⟨mx, X, hg, hw, hw28, hlo, hhi', hwx2, hwx, by decide, by decide, by decide, hslv, hws, hN, hodd, hN1,
-      hX, hX1, hXodd⟩,
-    WP.mono (unitPhase_ok M hg hw hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide) (by decide) (by decide) hslv
-      hws hN hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, _, hM₁, f₁, k₁⟩ => ?_⟩
+  refine WP.mono (hunit mx X hws hX hX1 hXodd) fun s₁ ⟨_, hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, _, hM₁, f₁, k₁⟩ => ?_
   have f₁' := hsub sgx f₁
   have hN₁ := hN.of_frm f₁ hlo hz (by omega)
   have hslq₁ : word s₁.mem B (8 * sWsQ) = off B oq := by
@@ -192,14 +195,25 @@ theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i03 k03) hM₃
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp) hql (hqs.congrK i03 k03) hqw hqi
 
-/-- `p`'s phase is constant time, given its pieces' claims. -/
-theorem pPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsP) (hP : PowCT M E sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
-    (hL : LoadCT aChunk sQinv sPlen) : PPhaseCT M E := by
-  unfold PPhaseCT
-  refine two_map id (fun _ _ h => o0_of M E h) ?_
-  rw [pPhase_eq]
-  refine ct_steps (by simp [unitSteps]) (by simp [mqSteps]) PPhasePub.u (fun _ _ h => h.1) (fun _ _ h => h.2)
-    hU ?_
+/-- `pPhase_ok`'s hypotheses give `PO0`. -/
+theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M E p s := by
+  have h' := h
+  obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
+  dsimp only [PPre] at h
+  obtain ⟨mx, mq, X, C, eb, qib, c, hg, hw, hw28, hlo, hhi, hqhi, hwx2, hwx, -, -, hslv, hws, -, -, hN, hodd, hN1,
+    -, hX, hX1, hXodd, -⟩ := h
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hhi' : o + slot wx 8 + wsTab wx ≤ Z := by omega
+  exact ⟨⟨mx, X, hg, hw, hw28, hlo, hhi', hwx2, hwx, by decide, by decide, by decide, hslv, hws, hN, hodd, hN1,
+      hX, hX1, hXodd⟩, o0With_of M E h' fun _ _ hws' hX' hX1' hXodd' => WP.mono (unitPhase_ok M hg hw hw28 hlo hhi' hwx2 hwx
+        (sl := sWsP) (by decide) (by decide) (by decide) hslv hws' hN hodd hN1 hX' hX1' hXodd') fun _ h => ⟨False, h⟩⟩
+
+/-- `p`'s phase after its start is constant time, given its pieces' claims. -/
+theorem pRest_ct (M : Mont) (E : CrtExpL M) (hP : PowCT M E sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
+    (hL : LoadCT aChunk sQinv sPlen) :
+    RelCT isa (Two (PO1 M E)) (seqs (mqSteps M.mm ++ ([M.mm Public.aY Public.aXm Public.aY] ++
+      (powSteps M.mm E.code sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps M.mm)))))
+      fun _ _ => True := by
   refine ct_steps (by simp [mqSteps]) (by simp) PPhasePub.mq (fun _ _ h => h.1) (fun _ _ h => h.2) (mq_ct M) ?_
   refine ct_steps (by simp) (by simp [powSteps]) PPhasePub.nw (fun _ _ h => h.1) (fun _ _ h => h.2)
     (M.ct (by unfold MmUse; decide)) ?_
@@ -207,5 +221,14 @@ theorem pPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsP) (hP : PowCT M 
   refine RelCT.seqs_app (by simp) (by simp [hSteps]) (ct_taint [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1, h₂.1]) (by taint_decide) (fun _ _ h => h.2) ?_)
   exact two_map PPhasePub.h (fun _ _ h => h) (h_ct M hRX hL)
+
+/-- `p`'s phase is constant time, given its pieces' claims. -/
+theorem pPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsP) (hP : PowCT M E sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
+    (hL : LoadCT aChunk sQinv sPlen) : PPhaseCT M E := by
+  unfold PPhaseCT
+  refine two_map id (fun _ _ h => o0_of M E h) ?_
+  rw [pPhase_eq]
+  exact ct_steps (by simp [unitSteps]) (by simp [mqSteps]) PPhasePub.u (fun _ _ h => h.1) (fun _ _ h => h.2)
+    hU (pRest_ct M E hP hRX hL)
 
 end VG.Proof.Bignum.X86_64
