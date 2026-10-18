@@ -4,8 +4,8 @@
 # * linux/arm64 (armv7-cross), on an ARM64 runner: ARMv7's and Thumb's tests,
 #   cross-compiled for armhf and run by ci/arm32-run, natively when the CPU
 #   has AArch32 and under QEMU when it doesn't (as some runners' cores have
-#   none, and can start no 32-bit container at all);
-# * linux/arm/v7 (armv7l), on an ARM64 runner: ARMv7's benchmarks, natively.
+#   none, and can start no 32-bit container at all), and ARMv7's
+#   benchmarks, cross-compiled and run natively.
 ARG TARGETARCH
 ARG TARGETVARIANT
 
@@ -42,7 +42,7 @@ RUN printf '%s\n' \
     > /etc/dpkg/dpkg.cfg.d/excludes-unused-dev-files
 
 # Only what the jobs use:
-# * in the 32-bit images, the runner's (64-bit) libc and libstdc++, so that
+# * in the 32-bit image, the runner's (64-bit) libc and libstdc++, so that
 #   the Node binary GitHub Actions injects into the container for JS actions
 #   can run;
 # * in armv7-cross, the armhf cross-compiler, libc and OpenSSL, and qemu-arm
@@ -55,7 +55,6 @@ RUN printf '%s\n' \
 #   OpenSSL (rust-openssl) and record its version.
 RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
-        armhf) foreign=arm64; packages="libc6:arm64 libstdc++6:arm64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
     esac && \
@@ -88,7 +87,6 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH
 RUN case "$(dpkg --print-architecture)" in \
         i386) host=i686-unknown-linux-gnu; targets= ;; \
-        armhf) host=armv7-unknown-linux-gnueabihf; targets=thumbv7neon-unknown-linux-gnueabihf ;; \
         arm64) host=aarch64-unknown-linux-gnu; targets=armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf ;; \
     esac && \
     url="https://static.rust-lang.org/rustup/dist/$host/rustup-init" && \
@@ -122,7 +120,6 @@ RUN case "$(dpkg --print-architecture)" in \
 # cross-compiler, and runs the 32-bit programs through ci/arm32-run;
 # pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks).
 FROM base AS image-386
-FROM base AS image-armv7
 FROM base AS image-arm64
 COPY arm32-run /usr/local/bin/arm32-run
 ENV CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf \
