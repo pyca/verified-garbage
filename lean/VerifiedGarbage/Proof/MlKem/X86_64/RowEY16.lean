@@ -166,4 +166,10 @@ theorem rowEY16_ok {o k : Nat} {fB gB aP C : Addr} {fs gs : List Poly} {s : Stat
       Frame [sR aP] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   RowEY.rowEg_ok (FRep.u16 o) hx hrsi hrdx hrdi hrcx
 
+/-- What `rowEY16` may write: `rax` (the constants), `rcx` (the count) and the
+pointers. -/
+theorem rowEY16_wo {k : Nat} (hk : k = 3 ∨ k = 4) :
+    writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowEY16 (512 * k) k) = true := by
+  rcases hk with rfl | rfl <;> decide +kernel
+
 end VG.Proof.MlKem.X86_64

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
+public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_encrypt_mul_avx2`, row by row
@@ -37,15 +38,14 @@ structure NInv (k : Nat) (s₀ : State) (j : Nat) (s : State) : Prop extends Bas
   tab : TabY s.mem (cP s₀)
   acc : ∀ i < j, Acc16 s.mem (yA (cP s₀) i) (yv k s₀)[i]!
 
-/-- After the first `i` rows. -/
-structure RInv (k : Nat) (s₀ : State) (i : Nat) (s : State) : Prop extends Base k s₀ s where
+/-- After the first `i` rows, of the columns `aCol` of `Â`. -/
+structure RInv (k : Nat) (s₀ : State) (aCol : Nat → List Poly) (sa i : Nat) (s : State) : Prop extends Base k s₀ s where
   rbp : s.gpr .rbp = uP s₀ + BitVec.ofNat 64 (1024 * i)
-  r12 : s.gpr .r12 = aP s₀ + BitVec.ofNat 64 (1024 * i)
+  r12 : s.gpr .r12 = aP s₀ + BitVec.ofNat 64 (sa * i)
   r15 : s.gpr .r15 = tP s₀
   tab : TabY s.mem (cP s₀)
   acc : ∀ j < k, Acc16 s.mem (yA (cP s₀) j) (yv k s₀)[j]!
-  done : ∀ i' < i, PolyIs s.mem (uP s₀ + BitVec.ofNat 64 (1024 * i'))
-    (nttInv (dot (colE s₀.mem (aP s₀) k i') (yv k s₀)))
+  done : ∀ i' < i, PolyIs s.mem (uP s₀ + BitVec.ofNat 64 (1024 * i')) (nttInv (dot (aCol i') (yv k s₀)))
 
 theorem hi_dis_yA {C : Addr} {j : Nat} (hj : j < 4) : (hiR C).Disjoint (sR (yA C j)) := by
   rw [yA_eq]; exact Offset.disjoint C (.inr (by omega)) (by omega) (by omega)
@@ -59,7 +59,8 @@ theorem a_addr (p : Addr) (k i j : Nat) :
   exact congrArg (p + BitVec.ofNat 64 ·) (by rw [Nat.mul_assoc]; omega)
 
 section
-variable {k : Nat} {s₀ : State} (hp : (encMulK k).pre s₀) (hk : k ≤ 4)
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} (hp : (encMulKA k aR aRed aMat).pre s₀) (hk : k ≤ 4)
 include hp hk
 
 set_option linter.unusedSimpArgs false in
@@ -68,7 +69,7 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ j s) :
     WP isa KpkeMul.nttTermY s fun s' => NInv k s₀ (j + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
       s'.zf = some (s.gpr .r14 - 1 == 0) := by
   have hj4 : j < 4 := by omega
-  have hsr : s.rd = [vR (aP s₀) (k * k), vR (tP s₀) k, vR (yP s₀) k] := by rw [hI.rd, hp.1]
+  have hsr : s.rd = [aR (aP s₀), vR (tP s₀) k, vR (yP s₀) k] := by rw [hI.rd, hp.1]
   have hsw : s.wr = [vR (uP s₀) (k + 1), cR (cP s₀)] := by rw [hI.wr, hp.2.1]
   have hY := y_frame hp hI.frame hj
   unfold KpkeMul.nttTermY
@@ -144,22 +145,22 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ j s) :
 
 /-- A row: `u[i]` (at `rbp`) from the `k` polynomials of `fs` at `fB`, `o`
 bytes apart (through `R`), and `ŷ`. -/
-theorem row_ok {R : Reg} (hRr : R ≠ .rdi) {fs : List Poly} {fB : Addr} {o i : Nat} (hk1 : 1 ≤ k) (hi : i < k + 1)
-    (hfl : fs.length = k)
+theorem row_ok {o : Nat} (FR : FRep o) {R : Reg} (hRr : R ≠ .rdi) {fs : List Poly} {fB : Addr} {i : Nat}
+    (hk1 : 1 ≤ k) (hi : i < k + 1) (hfl : fs.length = k)
     (hF : ∀ {m : Mem}, Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m → ∀ j < k,
-      PolyIs m (fB + BitVec.ofNat 64 (o * j)) fs[j]!)
-    (hdF : ∀ j < k, (vR (uP s₀) (k + 1)).Disjoint (pR (fB + BitVec.ofNat 64 (o * j))))
-    (hinF : ∀ j < k, InRegions (s₀.rd ++ s₀.wr) (fB + BitVec.ofNat 64 (o * j)) 1024)
-    (hrw : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowEY o k) = true)
+      FR.Is m (fB + BitVec.ofNat 64 (o * j)) fs[j]!)
+    (hdF : ∀ j < k, (vR (uP s₀) (k + 1)).Disjoint ⟨fB + BitVec.ofNat 64 (o * j), FR.sz⟩)
+    (hinF : ∀ j < k, InRegions (s₀.rd ++ s₀.wr) (fB + BitVec.ofNat 64 (o * j)) FR.sz)
+    (hrw : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowEg FR.ld FR.stv k) = true)
     {s : State} (hb : Base k s₀ s) (hbp : s.gpr .rbp = uP s₀ + BitVec.ofNat 64 (1024 * i)) (hR : s.gpr R = fB)
     (htab : TabY s.mem (cP s₀)) (hacc : ∀ j < k, Acc16 s.mem (yA (cP s₀) j) (yv k s₀)[j]!) :
-    WP isa (KpkeMul.rowInvY [.mov .rsi (.reg R)] o k) s fun s' => Base k s₀ s' ∧
+    WP isa (KpkeMul.rowInvYg [.mov .rsi (.reg R)] (rowEg FR.ld FR.stv k)) s fun s' => Base k s₀ s' ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       Frame [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)] s.mem s'.mem ∧
       PolyIs s'.mem (uP s₀ + BitVec.ofNat 64 (1024 * i)) (nttInv (dot fs (yv k s₀))) := by
   have hsw : s.wr = [vR (uP s₀) (k + 1), cR (cP s₀)] := by rw [hb.wr, hp.2.1]
   have hU : Region.Sub (pR (uP s₀ + BitVec.ofNat 64 (1024 * i))) (vR (uP s₀) (k + 1)) := sub_v _ hi
-  unfold KpkeMul.rowInvY
+  unfold KpkeMul.rowInvYg
   refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .rdi = uP s₀ + BitVec.ofNat 64 (1024 * i) ∧
       s1.gpr .rsi = fB ∧ s1.gpr .rdx = cP s₀ + BitVec.ofNat 64 1024 ∧ s1.gpr .rcx = cP s₀ ∧ s1.mem = s.mem ∧
       Keep [.rdi, .rsi, .rdx, .rcx] s s1) (by
@@ -170,7 +171,7 @@ theorem row_ok {R : Reg} (hRr : R ≠ .rdi) {fs : List Poly} {fB : Addr} {o i : 
   have hr1 : s1.rd ++ s1.wr = s₀.rd ++ s₀.wr := by rw [k1.2.1, k1.2.2, hb.rd, hb.wr]
   have dA : (sR (uP s₀ + BitVec.ofNat 64 (1024 * i))).Disjoint (cR (cP s₀)) :=
     ((dUC hp).sub_left hU).sub_left (sR_sub_pR _)
-  have hx : RowEY.Ctx o k fB (cP s₀ + BitVec.ofNat 64 1024) (uP s₀ + BitVec.ofNat 64 (1024 * i)) (cP s₀) fs
+  have hx : RowEY.CtxG FR k fB (cP s₀ + BitVec.ofNat 64 1024) (uP s₀ + BitVec.ofNat 64 (1024 * i)) (cP s₀) fs
       (yv k s₀) s1.mem s1.rd s1.wr :=
     { k1 := hk1
       k4 := hk
@@ -191,7 +192,7 @@ theorem row_ok {R : Reg} (hRr : R ≠ .rdi) {fs : List Poly} {fB : Addr} {o i : 
         refine ⟨vR (uP s₀) (k + 1), by simp, Offset.contains_base _ ?_ (by omega)⟩
         have := Nat.mul_le_mul_left 1024 (show i + 1 ≤ k + 1 by omega); rw [Nat.mul_succ] at this; omega
       tab := by rw [hm1]; exact htab }
-  refine WP.seq (WP.mono (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (RowEY.rowEY_ok hx h1si h1dx h1di h1cx) hrw)
+  refine WP.seq (WP.mono (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (RowEY.rowEg_ok FR hx h1si h1dx h1di h1cx) hrw)
     fun s2 ⟨⟨hA2, hf2, hrd2, hwr2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
   rw [hm1] at hf2
@@ -236,70 +237,38 @@ theorem row_ok {R : Reg} (hRr : R ≠ .rdi) {fs : List Poly} {fB : Addr} {o i : 
   rw [← dotP_full hfl (by rw [List.length_map, vecAt_length])]
   exact hpost4 _ hA3
 
-set_option linter.unusedSimpArgs false in
-/-- Row `i < k`: `u[i]` from column `i` of `Â`. -/
-theorem rowA_ok (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {s : State} (hR : RInv k s₀ i s) :
-    WP isa (KpkeMul.rowAY k) s fun s' => RInv k s₀ (i + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
-      s'.zf = some (s.gpr .r14 - 1 == 0) := by
-  have hkk : k * k ≤ 64 := Nat.le_trans (Nat.mul_le_mul hk hk) (by decide)
-  have hrow : ∀ j < k, k * j + i < k * k := fun j hj => by
-    have := Nat.mul_le_mul_left k (show j + 1 ≤ k by omega); rw [Nat.mul_succ] at this; omega
-  unfold KpkeMul.rowAY
-  refine WP.seq (WP.mono (row_ok hp hk (R := .r12) (by decide) (fs := colE s₀.mem (aP s₀) k i)
-    (fB := aP s₀ + BitVec.ofNat 64 (1024 * i)) (o := 1024 * k) (i := i) (by omega) (by omega) (colE_length _ _ _ _)
-    (fun hf j hj => by rw [colE_get _ _ hi hj, a_addr]; exact a_frame hp hf (hrow j hj))
-    (fun j hj => by rw [a_addr]; exact hp.2.2.1.sub_right (sub_v _ (hrow j hj)))
-    (fun j hj => by rw [a_addr, hp.1]; exact ⟨_, by simp, in_vec _ hkk (hrow j hj)⟩)
-    (rowEY_wo hk3 (.inr rfl)) hR.toBase hR.rbp hR.r12 hR.tab hR.acc) fun s1 ⟨hb1, cs1, hf1, hP1⟩ => ?_)
-  have fo : ∀ {p : Addr}, (∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)], (sR p).Disjoint r) →
-      ∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)], (sR p).Disjoint r := fun h => h
-  vrunm [cs1 .rbp (by decide), cs1 .r12 (by decide), cs1 .r14 (by decide), cs1 .r15 (by decide), hR.rbp, hR.r12,
-    sx1024]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, fun j hj => ?_, fun i' hi' => ?_⟩
-  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]; exact hb1.rbx
-  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]; exact hb1.rsp
-  · simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags]; exact hb1.rd
-  · simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]; exact hb1.wr
-  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]; exact hb1.frame
-  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]; exact hb1.saved
-  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
-  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
-  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]
-    rw [cs1 .r15 (by decide)]; exact hR.r15
-  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    refine tabY.frame hf1 (fun r hr => ?_) hR.tab
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    exacts [(((dUC hp).sub_left (sub_v _ (by omega))).sub_right (sub_c (by decide))).symm,
-      (DecMul.prod_dis (cP s₀)).2.2.2.1.symm]
-  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    refine acc16_frame hf1 (fun r hr => ?_) (hR.acc j hj)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    exacts [(((dUC hp).sub_left (sub_v _ (by omega))).sub_right (yA_sub (C := cP s₀) (j := j) (by omega))).symm,
-      yA_dis_c0 _ _ (by omega)]
-  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    by_cases h : i' = i
-    · subst h; exact hP1
-    · refine polyIs_frame hf1 (fun r hr => ?_) (hR.done i' (by omega))
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      exacts [dUU hk (by omega) (by omega) h, ((dUC hp).sub_left (sub_v _ (by omega))).sub_right (sub_c0 _)]
+/-- Sum `i` of `encrypt_mul`: of column `i` of `Â` for `i < k`, of `t̂` for `k`. -/
+abbrev accF (aCol : Nat → List Poly) (k : Nat) (s₀ : State) (i : Nat) : Poly :=
+  if i < k then dot (aCol i) (yv k s₀) else dot (tv k s₀) (yv k s₀)
 
-/-- The code inside the MXCSR region. -/
-abbrev innerY (k : Nat) : Prog isa :=
+omit hp hk in
+theorem mmtv_length (k : Nat) (M : List (List Poly)) (v : List Poly) :
+    ((mulMatTVec k M v).map nttInv).length = k := by
+  simp [mulMatTVec]
+
+omit hp hk in
+theorem mmtv_getD (M : List (List Poly)) (v : List Poly) {k i : Nat} (hi : i < k) :
+    ((mulMatTVec k M v).map nttInv).getD i zero = nttInv (dot (M.map fun row => row.getD i zero) v) := by
+  simp [mulMatTVec, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]
+
+/-- The code inside the MXCSR region, with the rows of `Â` computed by `rowA`. -/
+abbrev innerYg (rowA : Prog isa) (k : Nat) : Prog isa :=
   .seq (.block KpkeMul.startY) (.seq (.loop KpkeMul.nttTermY .ne)
-    (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop (KpkeMul.rowAY k) .ne)
+    (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop rowA .ne)
       (KpkeMul.rowInvY [.mov .rsi (.reg .r15)] 1024 k))))
 
-theorem wp_all (hk3 : k = 3 ∨ k = 4)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (innerY k) = true) :
-    WP isa (encryptMulY k) s₀ fun s' => gprPreserved s₀ s' ∧ (encMulK k).post s₀ s' := by
+/-- `encryptMulYg rowA k`, given that `rowA` computes the rows of `Â` (its
+columns `aCol`, `sa` bytes apart). -/
+theorem wp_allg (hk3 : k = 3 ∨ k = 4) {rowA : Prog isa} {aCol : Nat → List Poly} {sa : Nat}
+    (hcol : ∀ i < k, aCol i = (aMat s₀.mem (aP s₀)).map fun row => row.getD i zero)
+    (hrowA : ∀ i < k, ∀ s, RInv k s₀ aCol sa i s → WP isa rowA s fun s' => RInv k s₀ aCol sa (i + 1) s' ∧
+      s'.gpr .r14 = s.gpr .r14 - 1 ∧ s'.zf = some (s.gpr .r14 - 1 == 0))
+    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
+      (innerYg rowA k) = true) :
+    WP isa (encryptMulYg rowA k) s₀ fun s' => gprPreserved s₀ s' ∧ (encMulKA k aR aRed aMat).post s₀ s' := by
   have hk0 : 0 < k := by omega
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
-  unfold encryptMulY
+  unfold encryptMulYg
   refine WP.seq ?_
   rw [saveE_eq]
   refine Spill.save_then .r8 KpkeMul.slots (fun p hp' => ⟨_, hcw, in_c (by
@@ -326,7 +295,7 @@ theorem wp_all (hk3 : k = 3 ∨ k = 4)
     exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
   refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
     (Q := fun s' => Base k s₀ s' ∧ ∀ i < k + 1, PolyIs s'.mem (uP s₀ + BitVec.ofNat 64 (1024 * i))
-      (nttInv (EncMul.accE k s₀ k i)))
+      (nttInv (accF aCol k s₀ i)))
     (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, ⟨hb4, hacc4⟩, hf5, k5⟩ => ?_)
   · -- the table, the `NTT`s, the rows
     have hb2 : Base k s₀ s2 := ⟨by rw [k2.gpr (by decide), h1bx], by rw [k2.gpr (by decide), h1sp],
@@ -379,8 +348,8 @@ theorem wp_all (hk3 : k = 3 ∨ k = 4)
             rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
           · simp only [List.mem_singleton] at hr
             simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s7 ⟨h714, hm7, k7⟩ => ?_)
-    refine WP.seq (wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (RInv k s₀)
-      (fun i hi v hR _ => rowA_ok hp hk hk3 hi hR) (fun v hR => ?_)
+    refine WP.seq (wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (RInv k s₀ aCol sa)
+      (fun i hi v hR _ => hrowA i hi v hR) (fun v hR => ?_)
       ⟨⟨by rw [k7.gpr (by decide)]; exact hI.rbx, by rw [k7.gpr (by decide)]; exact hI.rsp,
         by rw [k7.2.1]; exact hI.rd, by rw [k7.2.2]; exact hI.wr, by rw [hm7]; exact hI.frame,
         by rw [hm7]; exact hI.saved⟩, by rw [k7.gpr (by decide), hI.rbp, Nat.mul_zero, add_ofNat_zero],
@@ -388,18 +357,18 @@ theorem wp_all (hk3 : k = 3 ∨ k = 4)
         by rw [hm7]; exact hI.tab, fun j hj => by rw [hm7]; exact hI.acc j hj, fun _ h => absurd h (Nat.not_lt_zero _)⟩
       h714)
     -- `v`, from `t̂`
-    refine WP.mono (row_ok hp hk (R := .r15) (by decide) (fs := tv k s₀) (fB := tP s₀) (o := 1024) (i := k)
+    refine WP.mono (row_ok hp hk (FRep.u32 1024) (R := .r15) (by decide) (fs := tv k s₀) (fB := tP s₀) (i := k)
       (by omega) (by omega) (vecAt_length _ _ _) (fun hf j hj => by rw [vecAt_get _ _ hj]; exact t_frame hp hf hj)
       (fun j hj => hp.2.2.2.1.sub_right (sub_v _ hj)) (fun j hj => by rw [hp.1]; exact ⟨_, by simp, in_vec _ (by omega) hj⟩)
       (rowEY_wo hk3 (.inl rfl)) hR.toBase hR.rbp hR.r15 hR.tab hR.acc) fun s' ⟨hb', _, hf', hP'⟩ => ⟨hb', fun i hi => ?_⟩
     by_cases h : i < k
-    · rw [EncMul.accE_full h]
+    · simp only [accF, h, ↓reduceIte]
       refine polyIs_frame hf' (fun r hr => ?_) (hR.done i h)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       exacts [dUU hk (by omega) (by omega) (by omega), ((dUC hp).sub_left (sub_v _ hi)).sub_right (sub_c0 _)]
     · obtain rfl : i = k := by omega
-      rw [EncMul.accE_full_t]; exact hP'
+      simp only [accF, Nat.lt_irrefl, ↓reduceIte]; exact hP'
   · -- the epilogue
     have h5bx : s5.gpr .rbx = cP s₀ := by rw [k5.gpr (by decide), hb4.rbx]
     have hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem s5.mem :=
@@ -419,20 +388,193 @@ theorem wp_all (hk3 : k = 3 ∨ k = 4)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       exacts [rU hp, rC hp]
-    · refine ⟨by rw [List.length_append, mulMatTVec_length]; rfl, fun i hi => ?_⟩
+    · refine ⟨by rw [List.length_append, mmtv_length]; rfl, fun i hi => ?_⟩
       rw [hm']
       have := polyIs_frame hf5 (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ((dUC hp).sub_left (sub_v _ hi)).sub_right (sub_c (by decide))) (hacc4 i hi)
       by_cases h : i < k
-      · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [mulMatTVec_length]; exact h),
-          ← List.getD_eq_getElem?_getD, mulMatTVec_getD _ _ _ _ h, ← EncMul.accE_full h]
-        exact this
+      · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [mmtv_length]; exact h),
+          ← List.getD_eq_getElem?_getD, mmtv_getD _ _ h, ← hcol i h]
+        simpa only [accF, h, ite_true] using this
       · have hik : i = k := by omega
         subst hik
-        rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [mulMatTVec_length]),
-          mulMatTVec_length, Nat.sub_self, List.getElem?_cons_zero, Option.getD_some, ← EncMul.accE_full_t]
-        exact this
+        rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [mmtv_length]),
+          mmtv_length, Nat.sub_self, List.getElem?_cons_zero, Option.getD_some]
+        simpa only [accF, Nat.lt_irrefl, ite_false] using this
+
+end
+
+section
+variable {k : Nat} {s₀ : State} (hp : (encMulK k).pre s₀) (hk : k ≤ 4)
+include hp hk
+
+set_option linter.unusedSimpArgs false in
+/-- Row `i < k`: `u[i]` from column `i` of `Â`. -/
+theorem rowA_ok (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {s : State} (hR : RInv k s₀ (colE s₀.mem (aP s₀) k) 1024 i s) :
+    WP isa (KpkeMul.rowAY k) s fun s' => RInv k s₀ (colE s₀.mem (aP s₀) k) 1024 (i + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
+      s'.zf = some (s.gpr .r14 - 1 == 0) := by
+  have hkk : k * k ≤ 64 := Nat.le_trans (Nat.mul_le_mul hk hk) (by decide)
+  have hrow : ∀ j < k, k * j + i < k * k := fun j hj => by
+    have := Nat.mul_le_mul_left k (show j + 1 ≤ k by omega); rw [Nat.mul_succ] at this; omega
+  unfold KpkeMul.rowAY KpkeMul.rowAYg
+  refine WP.seq (WP.mono (row_ok hp hk (FRep.u32 (1024 * k)) (R := .r12) (by decide)
+    (fs := colE s₀.mem (aP s₀) k i) (fB := aP s₀ + BitVec.ofNat 64 (1024 * i)) (i := i) (by omega) (by omega) (colE_length _ _ _ _)
+    (fun hf j hj => by rw [colE_get _ _ hi hj, a_addr]; exact a_frame hp hf (hrow j hj))
+    (fun j hj => by rw [a_addr]; exact hp.2.2.1.sub_right (sub_v _ (hrow j hj)))
+    (fun j hj => by rw [a_addr, hp.1]; exact ⟨_, by simp, in_vec _ hkk (hrow j hj)⟩)
+    (rowEY_wo hk3 (.inr rfl)) hR.toBase hR.rbp hR.r12 hR.tab hR.acc) fun s1 ⟨hb1, cs1, hf1, hP1⟩ => ?_)
+  have fo : ∀ {p : Addr}, (∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)], (sR p).Disjoint r) →
+      ∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)], (sR p).Disjoint r := fun h => h
+  vrunm [cs1 .rbp (by decide), cs1 .r12 (by decide), cs1 .r14 (by decide), cs1 .r15 (by decide), hR.rbp, hR.r12,
+    sx1024]
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, fun j hj => ?_, fun i' hi' => ?_⟩
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]; exact hb1.rbx
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]; exact hb1.rsp
+  · simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags]; exact hb1.rd
+  · simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]; exact hb1.wr
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]; exact hb1.frame
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]; exact hb1.saved
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]
+    rw [cs1 .r15 (by decide)]; exact hR.r15
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
+    refine tabY.frame hf1 (fun r hr => ?_) hR.tab
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [(((dUC hp).sub_left (sub_v _ (by omega))).sub_right (sub_c (by decide))).symm,
+      (DecMul.prod_dis (cP s₀)).2.2.2.1.symm]
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
+    refine acc16_frame hf1 (fun r hr => ?_) (hR.acc j hj)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [(((dUC hp).sub_left (sub_v _ (by omega))).sub_right (yA_sub (C := cP s₀) (j := j) (by omega))).symm,
+      yA_dis_c0 _ _ (by omega)]
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
+    by_cases h : i' = i
+    · subst h; exact hP1
+    · refine polyIs_frame hf1 (fun r hr => ?_) (hR.done i' (by omega))
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [dUU hk (by omega) (by omega) h, ((dUC hp).sub_left (sub_v _ (by omega))).sub_right (sub_c0 _)]
+
+/-- The code inside the MXCSR region. -/
+abbrev innerY (k : Nat) : Prog isa := innerYg (KpkeMul.rowAY k) k
+
+theorem wp_all (hk3 : k = 3 ∨ k = 4)
+    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (innerY k) = true) :
+    WP isa (encryptMulY k) s₀ fun s' => gprPreserved s₀ s' ∧ (encMulK k).post s₀ s' :=
+  wp_allg hp hk hk3 (aCol := colE s₀.mem (aP s₀) k) (sa := 1024) (fun _ _ => rfl)
+    (fun _ hi _ hR => rowA_ok hp hk hk3 hi hR) hwo
+
+end
+
+section
+variable {k : Nat} {s₀ : State} (hp : (encMulK16 k).pre s₀) (hk : k ≤ 4)
+include hp
+
+/-- Column `i` of the matrix of `u16`s at `p`. -/
+abbrev colW (m : Mem) (p : Addr) (k i : Nat) : List Poly := (matAtW 16 m p k).map fun row => row.getD i zero
+
+omit hp in
+theorem colW_length (m : Mem) (p : Addr) (k i : Nat) : (colW m p k i).length = k := by
+  simp [colW, matAtW]
+
+omit hp in
+theorem colW_get (m : Mem) (p : Addr) {k i j : Nat} (hi : i < k) (hj : j < k) :
+    (colW m p k i)[j]! = polyAtW 16 m (p + BitVec.ofNat 64 (512 * (k * j + i))) := by
+  rw [getElem!_pos _ j (by rw [colW_length]; exact hj)]
+  simp only [colW, matAtW, List.getElem_map, List.getElem_range, vecAtW, List.getD_eq_getElem?_getD,
+    List.getElem?_map, List.getElem?_range hi, Option.map_some, Option.getD_some]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact congrArg (fun x => polyAtW 16 m (p + BitVec.ofNat 64 x)) (by omega)
+
+omit hp in
+theorem a16_addr (p : Addr) (k i j : Nat) :
+    p + BitVec.ofNat 64 (512 * i) + BitVec.ofNat 64 (512 * k * j) = p + BitVec.ofNat 64 (512 * (k * j + i)) := by
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact congrArg (p + BitVec.ofNat 64 ·) (by rw [Nat.mul_assoc]; omega)
+
+theorem a16_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k * k) :
+    PolyIsW 16 m (aP s₀ + BitVec.ofNat 64 (512 * e)) (polyAtW 16 s₀.mem (aP s₀ + BitVec.ofNat 64 (512 * e))) := by
+  have hs : Region.Sub ⟨aP s₀ + BitVec.ofNat 64 (512 * e), 512⟩ ⟨aP s₀, 512 * (k * k)⟩ :=
+    Offset.sub_base _ (by omega)
+  refine polyIsW16_frame hf (fun r hr' => ?_) ⟨?_, rfl⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl
+    · exact (hp.2.2.1.sub_right hs).symm
+    · exact (dAC hp).sub_left hs
+  · have := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 e he
+    rwa [show 32 * 16 * e = 512 * e by omega] at this
+
+include hk
+
+set_option linter.unusedSimpArgs false in
+/-- Row `i < k`: `u[i]` from column `i` of `Â` of `u16`s. -/
+theorem rowA16_ok (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {s : State} (hR : RInv k s₀ (colW s₀.mem (aP s₀) k) 512 i s) :
+    WP isa (KpkeMul.rowAY16 k) s fun s' => RInv k s₀ (colW s₀.mem (aP s₀) k) 512 (i + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
+      s'.zf = some (s.gpr .r14 - 1 == 0) := by
+  have hkk : k * k ≤ 64 := Nat.le_trans (Nat.mul_le_mul hk hk) (by decide)
+  have hrow : ∀ j < k, k * j + i < k * k := fun j hj => by
+    have := Nat.mul_le_mul_left k (show j + 1 ≤ k by omega); rw [Nat.mul_succ] at this; omega
+  unfold KpkeMul.rowAY16 KpkeMul.rowAYg
+  have hb : ∀ j < k, 512 * (k * j + i) + 512 ≤ 512 * (k * k) := fun j hj => by have := hrow j hj; omega
+  refine WP.seq (WP.mono (row_ok hp hk (FRep.u16 (512 * k)) (R := .r12) (by decide)
+    (fs := colW s₀.mem (aP s₀) k i) (fB := aP s₀ + BitVec.ofNat 64 (512 * i)) (i := i) (by omega) (by omega)
+    (colW_length _ _ _ _)
+    (fun hf j hj => by rw [colW_get _ _ hi hj, a16_addr]; exact a16_frame hp hf (hrow j hj))
+    (fun j hj => by rw [a16_addr]; exact hp.2.2.1.sub_right (Offset.sub_base _ (hb j hj)))
+    (fun j hj => by
+      rw [a16_addr, hp.1]; exact ⟨_, by simp, Offset.contains_base _ (hb j hj) (by have := hb j hj; omega)⟩)
+    (rowEY16_wo hk3) hR.toBase hR.rbp hR.r12 hR.tab hR.acc) fun s1 ⟨hb1, cs1, hf1, hP1⟩ => ?_)
+  have fo : ∀ {p : Addr}, (∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)], (sR p).Disjoint r) →
+      ∀ r ∈ [pR (uP s₀ + BitVec.ofNat 64 (1024 * i)), pR (cP s₀)], (sR p).Disjoint r := fun h => h
+  vrunm [cs1 .rbp (by decide), cs1 .r12 (by decide), cs1 .r14 (by decide), cs1 .r15 (by decide), hR.rbp, hR.r12,
+    sx1024, sx512]
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, fun j hj => ?_, fun i' hi' => ?_⟩
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]; exact hb1.rbx
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]; exact hb1.rsp
+  · simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags]; exact hb1.rd
+  · simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]; exact hb1.wr
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]; exact hb1.frame
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]; exact hb1.saved
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
+  · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]
+    rw [cs1 .r15 (by decide)]; exact hR.r15
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
+    refine tabY.frame hf1 (fun r hr => ?_) hR.tab
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [(((dUC hp).sub_left (sub_v _ (by omega))).sub_right (sub_c (by decide))).symm,
+      (DecMul.prod_dis (cP s₀)).2.2.2.1.symm]
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
+    refine acc16_frame hf1 (fun r hr => ?_) (hR.acc j hj)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [(((dUC hp).sub_left (sub_v _ (by omega))).sub_right (yA_sub (C := cP s₀) (j := j) (by omega))).symm,
+      yA_dis_c0 _ _ (by omega)]
+  · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
+    by_cases h : i' = i
+    · subst h; exact hP1
+    · refine polyIs_frame hf1 (fun r hr => ?_) (hR.done i' (by omega))
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [dUU hk (by omega) (by omega) h, ((dUC hp).sub_left (sub_v _ (by omega))).sub_right (sub_c0 _)]
+
+/-- The code inside the MXCSR region, with `Â` of `u16`s. -/
+abbrev innerY16 (k : Nat) : Prog isa := innerYg (KpkeMul.rowAY16 k) k
+
+theorem wp_all16 (hk3 : k = 3 ∨ k = 4)
+    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (innerY16 k) = true) :
+    WP isa (encryptMulYg (KpkeMul.rowAY16 k) k) s₀ fun s' => gprPreserved s₀ s' ∧ (encMulK16 k).post s₀ s' :=
+  wp_allg hp hk hk3 (aCol := colW s₀.mem (aP s₀) k) (sa := 512) (fun _ _ => rfl)
+    (fun _ hi _ hR => rowA16_ok hp hk hk3 hi hR) hwo
 
 end
 
