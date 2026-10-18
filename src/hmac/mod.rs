@@ -353,4 +353,13 @@ mod tests {
         longer[..32].copy_from_slice(&mac);
         assert_eq!(check(&longer), Err(InvalidMac));
     }
+
+    /// The error's message (which `crate::error`'s test checks too, on the
+    /// architectures it is built for).
+    #[test]
+    fn invalid_mac_display() {
+        extern crate std;
+        use std::string::ToString;
+        assert_eq!(InvalidMac.to_string(), "MAC does not match");
+    }
 }
