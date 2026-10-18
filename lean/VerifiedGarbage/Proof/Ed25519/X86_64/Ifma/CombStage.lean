@@ -41,7 +41,7 @@ theorem eloadS_regs (E : Env) : ∀ j < 5, ∀ l < 4, (eloadS.reg (5 + j)).nat E
 
 def eloadB : Bnds :=
   ⟨fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem eloadS_ok : ∀ j < 5, ∀ l < 4, (eloadS.reg (5 + j)).ok eloadB l = true ∧
     (eloadS.reg (5 + j)).bnd eloadB l < 2 ^ 52 := by
@@ -82,7 +82,7 @@ theorem vaddAS_nat (E : Env) : ∀ j < 5, ∀ l < 4, (vaddAS.reg j).nat E l = aN
 def addB : Bnds :=
   ⟨fun i => if i < 5 then 2 ^ 61 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 2 ^ 64 - 1,
-    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0⟩
+    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem vaddAS_ok : ∀ j < 5, ∀ l < 4, (vaddAS.reg j).ok addB l = true ∧
     (vaddAS.reg j).bnd addB l < 2 ^ 63 := by

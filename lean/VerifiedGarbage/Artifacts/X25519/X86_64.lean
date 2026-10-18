@@ -52,13 +52,14 @@ def artifacts : List Artifact := [
       registers in `scratch`. The ladder runs the four field multiplications of each of its \
       three stages at once, one to each 64-bit lane of `ymm` registers, with AVX512_IFMA's \
       `vpmadd52luq` and `vpmadd52huq`: field elements are five 51-bit limbs, reduced with \
-      `2^255 = 19` (mod p). It sets MXCSR to `0x1FBF` for the ladder (Intel's mitigation of \
+      `2^255 = 19` (mod p), each product's first operand in `ymm16`–`ymm20` (EVEX-encoded, \
+      with AVX512F and AVX512VL). It sets MXCSR to `0x1FBF` for the ladder (Intel's mitigation of \
       MXCSR-configuration-dependent timing) and restores the caller's. The inversion is a \
       call of `vg_gf25519_r64_invert`."]
     code := Impl.X25519.X86_64.x25519Ifma
     stack := 8
     verified := Proof.X25519.X86_64.x25519Ifma_verified
-    features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"] },
+    features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"] },
   Spec.X25519.x25519BaseApi.artifact X86_64.target {
     notes := ["Ed25519's fixed-base comb, from its \
       tables in the static `VG_ED25519_COMB`, with the scalar clamped as RFC 7748 specifies and \

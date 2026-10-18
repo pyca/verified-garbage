@@ -38,7 +38,7 @@ theorem esplitS_regs (E : VG.Proof.X25519.X86_64.Ifma.Env) : ∀ j < 5, ∀ l < 
 
 def esplitB : Bnds :=
   ⟨fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem esplitS_ok : ∀ j < 5, ∀ l < 4, (esplitS.reg (5 + j)).ok esplitB l = true ∧
     (esplitS.reg (5 + j)).bnd esplitB l < 2 ^ 52 := by

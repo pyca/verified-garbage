@@ -33,16 +33,20 @@ structure Bnds where
   g : Reg → Nat
   m : Nat → Nat
   ml : Nat → Nat
+  /-- The quadwords of `ymm (16 + r)`. -/
+  h : Nat → Nat
 
 /-- The values a block starts from, as numbers. -/
 structure Env where
   v : Nat → Nat → Nat
   g : Reg → Nat
   m : Nat → Nat → Nat
+  h : Nat → Nat → Nat
 
 def envOf (s₀ : State) : Env :=
   ⟨fun r k => (qw s₀ (xr r) k).toNat, fun g => (s₀.gpr g).toNat,
-    fun d k => (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (d + 8 * k)) 64).toNat⟩
+    fun d k => (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (d + 8 * k)) 64).toNat,
+    fun r k => (qwH s₀ (hr r) k).toNat⟩
 
 /-- Whether `vpblendd`'s selector takes quadword `k` from its second source
 (`some true`), its first (`some false`), or doublewords of both (`none`). -/
@@ -82,6 +86,7 @@ def T.bnd (B : Bnds) : T → Nat → Nat
   | .mad true c a b, k => capW (c.bnd B k + hiB (a.bnd B k) (b.bnd B k))
   | .p2 a b hi, k => if k < 2 then a.bnd B (if hi then k + 2 else k) else b.bnd B (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.bnd B k else 0
+  | .hreg r, _ => min (B.h r) (2 ^ 64 - 1)
 
 /-- A lower bound. -/
 def T.lb (B : Bnds) : T → Nat → Nat
@@ -123,11 +128,12 @@ def T.nat (E : Env) : T → Nat → Nat
   | .mad true c a b, k => c.nat E k + a.nat E k % 2 ^ 52 * (b.nat E k % 2 ^ 52) / 2 ^ 52
   | .p2 a b hi, k => if k < 2 then a.nat E (if hi then k + 2 else k) else b.nat E (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.nat E k else 0
+  | .hreg r, k => E.h r k
 
 /-- Nothing in `t` wraps, by the bounds `B`, and every blend picks whole
 quadwords. -/
 def T.ok (B : Bnds) : T → Nat → Bool
-  | .reg _, _ | .gpr _, _ | .ld _, _ | .zero, _ => true
+  | .reg _, _ | .gpr _, _ | .ld _, _ | .zero, _ | .hreg _, _ => true
   | .lane0 a, k => if k = 0 then a.ok B 0 else true
   | .bc a, _ => a.ok B 0
   | .add a b, k => a.bnd B k + b.bnd B k < 2 ^ 64 && a.ok B k && b.ok B k
@@ -150,6 +156,7 @@ structure EnvOK (s₀ : State) (B : Bnds) : Prop where
   g : ∀ g, (s₀.gpr g).toNat ≤ B.g g
   m : ∀ d k, k < 4 → (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (d + 8 * k)) 64).toNat ≤ B.m d
   ml : ∀ d k, k < 4 → B.ml d ≤ (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (d + 8 * k)) 64).toNat
+  h : ∀ r k, k < 4 → (qwH s₀ (hr r) k).toNat ≤ B.h r
 
 theorem pick2_tt (a b : BitVec 64) : pick2 a b true true = b := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -208,6 +215,9 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
   | gpr g =>
     intro k _ _
     exact ⟨rfl, Nat.le_min.2 ⟨hE.g g, Nat.le_sub_one_of_lt (BitVec.isLt _)⟩, Nat.zero_le _⟩
+  | hreg r =>
+    intro k hk _
+    exact ⟨rfl, Nat.le_min.2 ⟨hE.h r k hk, Nat.le_sub_one_of_lt (BitVec.isLt _)⟩, Nat.zero_le _⟩
   | zero => intro k _ _; exact ⟨rfl, by simp [T.eval, T.bnd], Nat.zero_le _⟩
   | lane0 a ih =>
     intro k _ ho

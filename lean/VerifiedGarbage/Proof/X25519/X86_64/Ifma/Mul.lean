@@ -33,7 +33,8 @@ def mulS (a : Nat) (h : (Sym.init.run (mul4 a)).isSome := by decide +kernel) : S
 
 def mulB (a : Nat) : Bnds :=
   ⟨fun r => if 5 ≤ r ∧ r < 10 then 2 ^ 52 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
-    fun d => if a ≤ d ∧ d < a + 160 ∧ d % 32 = 0 then 2 ^ 52 - 1 else 2 ^ 64 - 1, fun _ => 0⟩
+    fun d => if a ≤ d ∧ d < a + 160 ∧ d % 32 = 0 then 2 ^ 52 - 1 else 2 ^ 64 - 1, fun _ => 0,
+    fun _ => 2 ^ 64 - 1⟩
 
 theorem mulS_eq (a : Nat) (h : (Sym.init.run (mul4 a)).isSome) :
     Sym.init.run (mul4 a) = some (mulS a h) := (Option.some_get _).symm
@@ -85,5 +86,31 @@ theorem mulG_ok : ∀ k < 5, ∀ l < 4, (mulG.reg k).ok (mulB OPG) l = true ∧
 
 theorem mulG_keep : ∀ r < 16, 5 ≤ r → r < 10 ∨ r = 15 → mulG.reg r = .reg r := by decide +kernel
 theorem mulG_st : mulG.st = [] := by decide +kernel
+
+/-! ## The ladder's products (`mul4H`) -/
+
+def mulHS : Sym := (Sym.init.run mul4H).get (by decide +kernel)
+
+/-- The bounds a product starts from: limbs below `2⁵²` in `ymm5–ymm9` and
+`ymm16–ymm20`. -/
+def mulHB : Bnds :=
+  ⟨fun r => if 5 ≤ r ∧ r < 10 then 2 ^ 52 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
+    fun _ => 2 ^ 64 - 1, fun _ => 0, fun r => if r < 5 then 2 ^ 52 - 1 else 2 ^ 64 - 1⟩
+
+theorem mulHS_eq : Sym.init.run mul4H = some mulHS := (Option.some_get _).symm
+
+theorem mulHS_nat (E : Env) (l : Nat) : ∀ k < 5, (mulHS.reg k).nat E l =
+    mulNat (fun i => E.h i l) (fun j => E.v (5 + j) l) k
+  | 0, _ => rfl
+  | 1, _ => rfl
+  | 2, _ => rfl
+  | 3, _ => rfl
+  | 4, _ => rfl
+
+theorem mulHS_ok : ∀ k < 5, ∀ l < 4, (mulHS.reg k).ok mulHB l = true ∧
+    (mulHS.reg k).bnd mulHB l < 2 ^ 61 := by decide +kernel
+
+theorem mulHS_keep : ∀ r < 16, 5 ≤ r → r < 10 ∨ r = 15 → mulHS.reg r = .reg r := by decide +kernel
+theorem mulHS_st : mulHS.st = [] := by decide +kernel
 
 end VG.Proof.X25519.X86_64.Ifma

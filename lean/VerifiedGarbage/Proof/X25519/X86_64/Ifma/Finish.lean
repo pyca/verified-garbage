@@ -53,7 +53,7 @@ theorem packT_nat (E : Env) : ∀ m < 4, ∀ j < 4, (packT m).nat E j =
 def packB : Bnds :=
   ⟨fun r => if r < 5 then 2 ^ 51 + 18 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KM then 2 ^ 51 - 1 else if d = K13 then 2 ^ 13 - 1 else if d = K26 then 2 ^ 26 - 1
-      else if d = K39 then 2 ^ 39 - 1 else 2 ^ 64 - 1, fun _ => 0⟩
+      else if d = K39 then 2 ^ 39 - 1 else 2 ^ 64 - 1, fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem packT_ok : ∀ m < 4, ∀ j < 4, (packT m).ok packB j = true := by decide +kernel
 

@@ -76,8 +76,8 @@ structure VInv (base : Addr) (k : Nat) (u : Fe) (x1 : Nat → Nat) (s₀ s : Sta
   x3 : fe5 (lanes s 0 2) = (ladderAfter k u n).x3
   z3 : fe5 (lanes s 0 3) = (ladderAfter k u n).z3
 
-theorem vstep_eq : vstep = stepPre ++ (vsw ++ ((stage1 ++ mul4 OPL) ++ ((stage2 ++ mul4 OPV) ++
-    ((stage3 ++ mul4 OPG) ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))))) := by
+theorem vstep_eq : vstep = stepPre ++ (vsw ++ ((stage1 ++ mul4H) ++ ((stage2 ++ mul4H) ++
+    ((stage3 ++ mul4H) ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))))) := by
   simp only [vstep, stepPre, vsw, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem lanes_of_vec {s s' : State} (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi) (r l i : Nat) :
