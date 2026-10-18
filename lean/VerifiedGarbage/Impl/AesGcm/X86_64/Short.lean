@@ -451,12 +451,15 @@ def finKsA : Prog isa :=
 
 variable (c : Callees)
 
+/-- The other instances' body of `seal`, after the entry: the tag at `W`. -/
+def sealLong : Prog isa := .seq (oneAad c) (.seq (oneBlocks c.enc) finish)
+
 /-- `seal` with the short path (`cond`), with the table of powers from `pw`
-and GHASH by `gh`, or else the other instances' body. -/
-def «seal» (pw : Prog isa := powers) (gh : Prog isa := ghash) : Prog isa :=
+and GHASH by `gh`, or else `lng` (the other instances' body, `sealLong`, by
+default). -/
+def «seal» (pw : Prog isa := powers) (gh : Prog isa := ghash) (lng : Prog isa := sealLong c) : Prog isa :=
   .seq (.block (oneEntry 32))
-    (.seq (.seq cond (.ite .e
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) (sealShort pw gh)))
+    (.seq (.seq cond (.ite .e lng (sealShort pw gh)))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
 /-- The other instances' body of `open`, after the entry and `tagLenOk`. -/

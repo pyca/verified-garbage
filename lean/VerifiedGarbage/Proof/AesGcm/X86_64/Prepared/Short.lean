@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
 `vg_aes_gcm_seal_prepared` and `vg_aes_gcm_open_prepared` take the short
 path with its table of powers copied from the prepared key context
 (`GcmImpl.sealCodeP`, `GcmImpl.openCodeP`), and otherwise the code of the
-other instances, which `open` replaces for TLS records with `FastOpen.sel`. -/
+other instances, which `seal` and `open` replace for TLS records with
+`FastSeal.sel` and `FastOpen.sel`. -/
 
 @[expose] public section
 
@@ -25,7 +26,10 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
       (Spec.Gcm.sealPreparedContract X86_64.abi 2624) := by
   unfold GcmImpl.sealCodeP GcmImpl.sealCode; split
   · exact sealPreparedCode_framed (sealPreparedCode_verified (Short.sealMP_correct v B hF)
-      (Short.sealMW_ct hF v B Short.powOk_powersP Short.powersP_ct)) (Short.sealMP_spSafe v B) (Short.sealMP_xdepth v B)
+      (Short.sealMW_ct hF v B Short.powOk_powersP Short.powersP_ct
+        (FastSeal.sealSel_ok hF v B (Short.sealLongOk_sealLong hF v B))
+        (FastSeal.sealSel_rel hF v B (Short.sealLongRel_sealLong hF v B)))) (Short.sealMP_spSafe v B)
+      (Short.sealMP_xdepth v B)
   · split
     · exact sealPreparedCode_framed (sealPreparedCode_verified (SealFin.sealFM_correct v B hF)
         (SealFin.sealFM_ct v B hF)) (SealFin.sealFM_spSafe v B) (SealFin.sealFM_xdepth v B)
