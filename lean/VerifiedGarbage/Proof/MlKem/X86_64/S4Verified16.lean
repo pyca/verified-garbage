@@ -10,10 +10,9 @@ import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 /-!
 # ML-KEM on x86-64: `vg_mlkem16_sample_ntt4`, verified
 
-The code of `vg_mlkem_sample_ntt4` and its variants with 16-bit stores
+The code of `vg_mlkem_sample_ntt4_avx2` and `_avx512` with 16-bit stores
 (`w16 := true`), whose proofs are theirs for either width (`S4.correct`,
-`S4.ct`, `S4.correct_scalar`, `S4.ct_scalar`); `sample4KW true` implies the
-shared contract of `Spec/`.
+`S4.ct`); `sample4KW true` implies the shared contract of `Spec/`.
 -/
 
 @[expose] public section
@@ -88,11 +87,6 @@ theorem sample4_16_of_correct {c : Prog isa}
       sat := by
         sig_implies_sat [Spec.MlKem.sampleNTT4_16Contract, Spec.MlKem.sampleNTT4_16Sig, sample4KW,
           pBytes_true, X86_64.abi, X86_64.argRegs] [sample4_16Sat] using sample4_16Sat }
-
-/-- `vg_mlkem16_sample_ntt4`, which calls `vg_mlkem16_sample_ntt`. -/
-theorem sample4_16_scalar_verified : Verified X86_64.target (Impl.MlKem.X86_64.Sample4.sampleNTT4 true)
-    (Spec.MlKem.sampleNTT4_16Contract X86_64.abi 24) :=
-  sample4_16_of_correct (S4.correct_scalar (w16 := true)) (S4.ct_scalar (w16 := true))
 
 /-- `vg_mlkem16_sample_ntt4_avx2` and `vg_mlkem16_sample_ntt4_avx512`. -/
 theorem sample4_16_verified {fast : Bool} : Verified X86_64.target

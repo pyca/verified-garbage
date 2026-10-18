@@ -37,9 +37,9 @@ and each caller (the top-level functions of ML-KEM-768 and ML-KEM-1024, in
 address: the baseline's calls of `vg_mlkem_sample_ntt`, three deep (the
 others call nothing).
 
-Each comes with the same code with 16-bit coefficients (`Callee4.code16`,
-`vg_mlkem16_sample_ntt4…`), proven against `sample4KW true` by the same
-proofs (`S4Verified16.lean`).
+Those with AVX2 come with the same code with 16-bit coefficients
+(`Callee4.s16`, `vg_mlkem16_sample_ntt4_avx2` and `_avx512`), proven against
+`sample4KW true` by the same proofs (`S16Ok`).
 
 Each also comes with the computation of several outputs of `PRF₂` that its
 callers inline (`Callee4.prfs`): one at a time for the baseline, and four
@@ -98,6 +98,18 @@ theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampl
   exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1, h.1.2,
     Code.all_of_allInstrs h.2⟩
 
+/-- What a caller needs of an implementation's code with 16-bit
+coefficients (`Callee4.s16`): it meets `sample4KW true`, in constant time,
+never writes the stack pointer, calls at most three deep and keeps MXCSR's
+control bits. -/
+structure S16Ok (c : Prog isa) : Prop where
+  ok : ∀ s, (sample4KW true).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (sample4KW true).post s s'
+  ct : ConstantTime isa (sample4KW true).pre (sample4KW true).pub c
+  nosp : NoSp c
+  depth_le : c.depth ≤ 3
+  mxcsr : ctlOk c = true
+  spSafe : c.all (fun i => !isa.writesSp i) = true
+
 /-- An implementation of `vg_mlkem_sample_ntt4` on x86-64. -/
 structure Sample4Impl where
   /-- Its symbol and code. -/
@@ -113,14 +125,8 @@ structure Sample4Impl where
   /-- It keeps MXCSR's control bits. -/
   mxcsr : ctlOk callee.code = true
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
-  /-- The same for its code with 16-bit coefficients (`callee.code16`). -/
-  ok16 : ∀ s, (sample4KW true).pre s → ∃ t s', Exec isa callee.code16 s t s' ∧ abiPreserved s s' ∧
-    (sample4KW true).post s s'
-  ct16 : ConstantTime isa (sample4KW true).pre (sample4KW true).pub callee.code16
-  nosp16 : NoSp callee.code16
-  depth_le16 : callee.code16.depth ≤ 3
-  mxcsr16 : ctlOk callee.code16 = true
-  spSafe16 : callee.code16.all (fun i => !isa.writesSp i) = true
+  /-- Its code with 16-bit coefficients, if any, is verified. -/
+  s16 : ∀ n c, callee.s16 = some (n, c) → S16Ok c
   /-- Its outputs of `PRF₂` are correct. -/
   prfs_ok : ∀ {rbs wbs : List (Reg × Nat)} {s : State}, Lay rbs wbs s → (∀ b ∈ rbs ++ wbs, b.1 ∈ bases) →
     ∀ {N₀ n o wl : Nat}, N₀ + n + 4 ≤ 256 → prfsChk (rbs ++ wbs) wbs n o wl = true →
@@ -161,8 +167,6 @@ theorem codeChecks_spec {c : Prog isa} (h : codeChecks c = true) :
 
 theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = true := by decide +kernel
 
-theorem scalar_checks16 : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code16 = true := by decide +kernel
-
 /-- The baseline implementation, `vg_mlkem_sample_ntt4`, which calls `vg_mlkem_sample_ntt`. -/
 def scalar : Sample4Impl where
   callee := .scalar
@@ -172,12 +176,7 @@ def scalar : Sample4Impl where
   depth_le := (codeChecks_spec scalar_checks).2.1
   mxcsr := (codeChecks_spec scalar_checks).2.2.1
   spSafe := (codeChecks_spec scalar_checks).2.2.2
-  ok16 := S4.correct_scalar (w16 := true)
-  ct16 := S4.ct_scalar (w16 := true)
-  nosp16 := (codeChecks_spec scalar_checks16).1
-  depth_le16 := (codeChecks_spec scalar_checks16).2.1
-  mxcsr16 := (codeChecks_spec scalar_checks16).2.2.1
-  spSafe16 := (codeChecks_spec scalar_checks16).2.2.2
+  s16 := fun _ _ h => nomatch h
   prfs_ok := fun L hcs => prfsScalar_ok L hcs
   prfs_tr := fun hcs => prfsScalar_tr hcs
   prfs_ctl := prfsScalar_ctl
@@ -191,7 +190,11 @@ def scalar : Sample4Impl where
 
 theorem avx2_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx2).code = true := by decide +kernel
 
-theorem avx2_checks16 : codeChecks (Impl.MlKem.X86_64.Callee4.avx2).code16 = true := by decide +kernel
+theorem avx2_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) = true := by decide +kernel
+
+theorem avx2_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) :=
+  ⟨S4.correct (w16 := true) (fast := false), S4.ct (w16 := true) (fast := false), (codeChecks_spec avx2_checks16).1,
+    (codeChecks_spec avx2_checks16).2.1, (codeChecks_spec avx2_checks16).2.2.1, (codeChecks_spec avx2_checks16).2.2.2⟩
 
 /-- The AVX2 implementation, `vg_mlkem_sample_ntt4_avx2`. -/
 def avx2 : Sample4Impl where
@@ -202,12 +205,7 @@ def avx2 : Sample4Impl where
   depth_le := (codeChecks_spec avx2_checks).2.1
   mxcsr := (codeChecks_spec avx2_checks).2.2.1
   spSafe := (codeChecks_spec avx2_checks).2.2.2
-  ok16 := S4.correct (w16 := true) (fast := false)
-  ct16 := S4.ct (w16 := true) (fast := false)
-  nosp16 := (codeChecks_spec avx2_checks16).1
-  depth_le16 := (codeChecks_spec avx2_checks16).2.1
-  mxcsr16 := (codeChecks_spec avx2_checks16).2.2.1
-  spSafe16 := (codeChecks_spec avx2_checks16).2.2.2
+  s16 := fun _ _ h => by injection h with h; cases h; exact avx2_s16
   prfs_ok := fun L hcs => prfsAvx2_ok L hcs
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
@@ -221,7 +219,11 @@ def avx2 : Sample4Impl where
 
 theorem avx512_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx512).code = true := by decide +kernel
 
-theorem avx512_checks16 : codeChecks (Impl.MlKem.X86_64.Callee4.avx512).code16 = true := by decide +kernel
+theorem avx512_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) = true := by decide +kernel
+
+theorem avx512_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) :=
+  ⟨S4.correct (w16 := true) (fast := true), S4.ct (w16 := true) (fast := true), (codeChecks_spec avx512_checks16).1,
+    (codeChecks_spec avx512_checks16).2.1, (codeChecks_spec avx512_checks16).2.2.1, (codeChecks_spec avx512_checks16).2.2.2⟩
 
 /-- The AVX-512VL implementation, `vg_mlkem_sample_ntt4_avx512`. -/
 def avx512 : Sample4Impl where
@@ -232,12 +234,7 @@ def avx512 : Sample4Impl where
   depth_le := (codeChecks_spec avx512_checks).2.1
   mxcsr := (codeChecks_spec avx512_checks).2.2.1
   spSafe := (codeChecks_spec avx512_checks).2.2.2
-  ok16 := S4.correct (w16 := true) (fast := true)
-  ct16 := S4.ct (w16 := true) (fast := true)
-  nosp16 := (codeChecks_spec avx512_checks16).1
-  depth_le16 := (codeChecks_spec avx512_checks16).2.1
-  mxcsr16 := (codeChecks_spec avx512_checks16).2.2.1
-  spSafe16 := (codeChecks_spec avx512_checks16).2.2.2
+  s16 := fun _ _ h => by injection h with h; cases h; exact avx512_s16
   prfs_ok := fun L hcs => prfsAvx2_ok L hcs
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
@@ -268,7 +265,7 @@ tactic_template "s4_ctl " v:ident : tactic =>
     | with_reducible exact ($v).arith.em_ctl | with_reducible exact ($v).arith.km_ctl | apply ctlOk_seq | apply ctlOk_ite
     | (apply ctlOk_call; exact ($v).mxcsr) | exact ($v).prfs_ctl _ _ _ _
     | exact ($v).arith.nttInv.ctl | exact ($v).arith.add.ctl | exact ($v).arith.sub.ctl
-    | exact ($v).arith.cbd.ctl | exact ($v).arith.dec12.ctl | exact ($v).arith.enc12.ctl | exact Codecs.ce_ctl _ | exact Codecs.dd_ctl _
+    | exact ($v).arith.cbd.ctl | exact ($v).arith.cbd16.ctl | exact ($v).arith.dec12.ctl | exact ($v).arith.enc12.ctl | exact Codecs.ce_ctl _ | exact Codecs.dd_ctl _
     | rfl))
 
 /-- Code that does not call the implementation `v` never writes the stack pointer: by evaluation. -/
@@ -282,7 +279,7 @@ tactic_template "s4_sp " v:ident : tactic =>
     | apply all_seq | apply all_ite
     | (apply all_call; exact ($v).spSafe) | exact ($v).prfs_sp _ _ _ _
     | exact ($v).arith.nttInv.sp | exact ($v).arith.add.sp | exact ($v).arith.sub.sp
-    | exact ($v).arith.cbd.sp | exact ($v).arith.dec12.sp | exact ($v).arith.enc12.sp | exact Codecs.ce_sp _ | exact Codecs.dd_sp _
+    | exact ($v).arith.cbd.sp | exact ($v).arith.cbd16.sp | exact ($v).arith.dec12.sp | exact ($v).arith.enc12.sp | exact Codecs.ce_sp _ | exact Codecs.dd_sp _
     | rfl))
 
 end VG.Proof.MlKem.X86_64
