@@ -141,6 +141,11 @@ theorem reducedW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame 
     (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (hr : ReducedW (cw w16) m p) : ReducedW (cw w16) m' p :=
   fun i hi => by rw [coeffAtW_frame hf hd hi]; exact hr i hi
 
+theorem polyIsW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    {f : Poly} (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (h : PolyIsW (cw w16) m p f) :
+    PolyIsW (cw w16) m' p f :=
+  ⟨reducedW_frame hf hd h.1, by rw [polyAtW_frame hf hd]; exact h.2⟩
+
 /-- The coefficients at `p`: the first `t` of them are `G`'s, the others `old`'s. -/
 def CoeffsUpToW (w16 : Bool) (m : Mem) (p : Addr) (t : Nat) (G old : Nat → BitVec (cw w16)) : Prop :=
   ∀ i < 256, coeffAtW (cw w16) m p i = if i < t then G i else old i
