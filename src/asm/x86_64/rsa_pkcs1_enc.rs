@@ -2,14 +2,18 @@
 //! Verified `rsa_pkcs1_enc` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_crt_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -25,6 +29,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = c
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -32,65 +37,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = c
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked_adx}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed_adx}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -98,10 +109,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -110,59 +121,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -182,49 +193,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -249,44 +260,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -294,7 +305,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -320,8 +331,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -360,7 +371,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -368,8 +379,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -391,11 +402,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
@@ -408,7 +419,11 @@ ret
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -424,6 +439,7 @@ ret
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -431,64 +447,70 @@ ret
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -496,10 +518,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -508,59 +530,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -580,49 +602,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -647,44 +669,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -692,7 +714,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -718,8 +740,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -758,7 +780,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -766,8 +788,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -789,11 +811,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
@@ -802,14 +824,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_crt_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -825,6 +851,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = 
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -832,65 +859,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = 
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked_ifma}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed_ifma}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -898,10 +931,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -910,59 +943,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -982,49 +1015,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -1049,44 +1082,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -1094,7 +1127,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -1120,8 +1153,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -1160,7 +1193,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -1168,8 +1201,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -1191,11 +1224,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
@@ -1204,14 +1237,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -1227,6 +1264,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -1234,65 +1272,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked_adx}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed_adx}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -1300,10 +1344,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -1312,59 +1356,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -1384,49 +1428,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -1451,44 +1495,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -1496,7 +1540,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -1522,8 +1566,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -1562,7 +1606,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -1570,8 +1614,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -1593,11 +1637,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
@@ -1606,14 +1650,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -1629,6 +1677,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES: crate::cpu::Features
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -1636,65 +1685,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES: crate::cpu::Features
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -1702,10 +1757,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -1714,59 +1769,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -1786,49 +1841,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -1853,44 +1908,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -1898,7 +1953,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -1924,8 +1979,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -1964,7 +2019,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -1972,8 +2027,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -1995,11 +2050,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
@@ -2008,14 +2063,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512ifma", "avx512vl", "adx"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512ifma", "avx512vl", "adx"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -2031,6 +2090,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu:
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -2038,65 +2098,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu:
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked_ifma}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed_ifma}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -2104,10 +2170,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -2116,59 +2182,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -2188,49 +2254,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -2255,44 +2321,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_avx2}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -2300,7 +2366,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -2326,8 +2392,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -2366,7 +2432,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -2374,8 +2440,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -2397,11 +2463,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2,
@@ -2410,14 +2476,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx2", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx2", "bmi2", "adx"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -2433,6 +2503,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu:
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -2440,65 +2511,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu:
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked_adx}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed_adx}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -2506,10 +2583,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -2518,59 +2595,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -2590,49 +2667,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -2657,44 +2734,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -2702,7 +2779,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -2728,8 +2805,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -2768,7 +2845,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -2776,8 +2853,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -2799,11 +2876,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
@@ -2812,14 +2889,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -2835,6 +2916,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES: crate::cpu::Feature
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -2842,65 +2924,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES: crate::cpu::Feature
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -2908,10 +2996,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -2920,59 +3008,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -2992,49 +3080,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -3059,44 +3147,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -3104,7 +3192,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -3130,8 +3218,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -3170,7 +3258,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -3178,8 +3266,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -3201,11 +3289,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
@@ -3214,14 +3302,18 @@ ret
     )
 }
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`.
+///
+/// This implementation calls `vg_rsa_private_checked_precomputed_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -3237,6 +3329,7 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -3244,65 +3337,71 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3480 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the return address on the stack or the 1448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-216]
-mov QWORD PTR [rsp+112], rdi
-mov QWORD PTR [rsp+120], rdx
-mov QWORD PTR [rsp+128], rcx
-mov QWORD PTR [rsp+136], r8
-mov QWORD PTR [rsp+144], r9
-mov rax, QWORD PTR [rsp+224]
-mov QWORD PTR [rsp+152], rax
-mov rax, QWORD PTR [rsp+232]
-mov QWORD PTR [rsp+160], rax
+        r"lea rsp, [rsp-232]
+mov QWORD PTR [rsp+128], rdi
+mov QWORD PTR [rsp+136], rdx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], r8
+mov QWORD PTR [rsp+160], r9
 mov rax, QWORD PTR [rsp+240]
 mov QWORD PTR [rsp+168], rax
 mov rax, QWORD PTR [rsp+248]
 mov QWORD PTR [rsp+176], rax
-mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+184], rax
-mov rax, QWORD PTR [rsp+248]
-mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+256]
-mov QWORD PTR [rsp+8], rax
+mov QWORD PTR [rsp+184], rax
 mov rax, QWORD PTR [rsp+264]
-mov QWORD PTR [rsp+16], rax
+mov QWORD PTR [rsp+192], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+200], rax
+mov rax, QWORD PTR [rsp+264]
+mov QWORD PTR [rsp], rax
 mov rax, QWORD PTR [rsp+272]
-mov QWORD PTR [rsp+24], rax
+mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+280]
-mov QWORD PTR [rsp+32], rax
+mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+288]
-mov QWORD PTR [rsp+40], rax
+mov QWORD PTR [rsp+24], rax
 mov rax, QWORD PTR [rsp+296]
-mov QWORD PTR [rsp+48], rax
+mov QWORD PTR [rsp+32], rax
 mov rax, QWORD PTR [rsp+304]
-mov QWORD PTR [rsp+56], rax
+mov QWORD PTR [rsp+40], rax
 mov rax, QWORD PTR [rsp+312]
-mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp+48], rax
 mov rax, QWORD PTR [rsp+320]
-mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+56], rax
 mov rax, QWORD PTR [rsp+328]
-mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+64], rax
 mov rax, QWORD PTR [rsp+336]
-mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+72], rax
 mov rax, QWORD PTR [rsp+344]
-mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+80], rax
 mov rax, QWORD PTR [rsp+352]
+mov QWORD PTR [rsp+88], rax
+mov rax, QWORD PTR [rsp+360]
+mov QWORD PTR [rsp+96], rax
+mov rax, QWORD PTR [rsp+368]
 mov QWORD PTR [rsp+104], rax
+mov rax, QWORD PTR [rsp+376]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+384]
+mov QWORD PTR [rsp+120], rax
 mov rsi, r8
 mov rdx, rcx
 mov rcx, r8
 mov r8, r9
-mov r9, QWORD PTR [rsp+152]
-call {vg_rsa_private_checked_ifma}
-mov QWORD PTR [rsp+192], rax
-mov rdi, QWORD PTR [rsp+184]
-mov rcx, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+168]
+call {vg_rsa_private_checked_precomputed_ifma}
+mov QWORD PTR [rsp+208], rax
+mov rdi, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+152]
 mov r10d, 0
 mov eax, 0
 20:
@@ -3310,10 +3409,10 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 20b
-mov rsi, QWORD PTR [rsp+160]
-mov rcx, QWORD PTR [rsp+168]
-mov rdi, QWORD PTR [rsp+184]
-add rdi, QWORD PTR [rsp+136]
+mov rsi, QWORD PTR [rsp+176]
+mov rcx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+add rdi, QWORD PTR [rsp+152]
 sub rdi, rcx
 mov r10d, 0
 21:
@@ -3322,59 +3421,59 @@ mov BYTE PTR [rdi+r10*1+2416], al
 add r10, 1
 cmp r10, rcx
 jne 21b
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 call {vg_sha256_init}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 0
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 2416
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+136]
-mov rdx, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+152]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 192
 call {vg_sha256_finalize_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1040
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+176]
-mov rcx, QWORD PTR [rsp+136]
-mov r8, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, QWORD PTR [rsp+152]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+136]
+mov rdx, QWORD PTR [rsp+152]
 add rdx, 64
-mov rcx, QWORD PTR [rsp+184]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1104
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
-mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rsp+216], rax
+mov rax, QWORD PTR [rsp+152]
 add rax, 31
 shr rax, 5
-mov QWORD PTR [rsp+208], rax
+mov QWORD PTR [rsp+224], rax
 22:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -3394,49 +3493,49 @@ mov edx, 8
 mov BYTE PTR [rdi+1032], dl
 mov edx, 0
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 10
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 74
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1136
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 cmp rax, 8
 jne 22b
 mov eax, 0
-mov QWORD PTR [rsp+200], rax
+mov QWORD PTR [rsp+216], rax
 23:
-mov rdi, QWORD PTR [rsp+184]
-mov rax, QWORD PTR [rsp+200]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
+mov r9, QWORD PTR [rsp+152]
 mov edx, 0
 mov BYTE PTR [rdi+1024], dl
 mov BYTE PTR [rdi+1025], al
@@ -3461,44 +3560,44 @@ add rdx, rdx
 mov BYTE PTR [rdi+1034], dl
 shr rdx, 8
 mov BYTE PTR [rdi+1033], dl
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1104
 mov ecx, 32
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_init_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
 mov esi, 64
-mov rdx, QWORD PTR [rsp+184]
+mov rdx, QWORD PTR [rsp+200]
 add rdx, 1024
 mov ecx, 11
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_sha256_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+184]
-mov rsi, QWORD PTR [rsp+184]
+mov rdi, QWORD PTR [rsp+200]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 96
 mov edx, 75
-mov rcx, QWORD PTR [rsp+200]
+mov rcx, QWORD PTR [rsp+216]
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
 add rcx, rcx
-add rcx, QWORD PTR [rsp+184]
+add rcx, QWORD PTR [rsp+200]
 add rcx, 1392
-mov r8, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+200]
 add r8, 192
 call {vg_hmac_sha256_finalize_scratch_shani}
-mov rax, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+216]
 add rax, 1
-mov QWORD PTR [rsp+200], rax
-cmp rax, QWORD PTR [rsp+208]
+mov QWORD PTR [rsp+216], rax
+cmp rax, QWORD PTR [rsp+224]
 jne 23b
-mov r9, QWORD PTR [rsp+136]
+mov r9, QWORD PTR [rsp+152]
 sub r9, 11
 mov r8d, 0
 24:
@@ -3506,7 +3605,7 @@ add r8, r8
 add r8, 1
 cmp r8, r9
 jb 24b
-mov rsi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
 add rsi, 1136
 mov ecx, 0
 mov r11d, 0
@@ -3532,8 +3631,8 @@ xor r11, rax
 add rcx, 2
 cmp rcx, 256
 jne 25b
-mov rdi, QWORD PTR [rsp+112]
-mov r9, QWORD PTR [rsp+136]
+mov rdi, QWORD PTR [rsp+128]
+mov r9, QWORD PTR [rsp+152]
 mov ecx, 2
 mov edx, 0
 mov r10d, 0
@@ -3572,7 +3671,7 @@ xor rdx, rsi
 and rdx, rax
 xor rdx, r11
 mov r10, rax
-mov r11, QWORD PTR [rsp+192]
+mov r11, QWORD PTR [rsp+208]
 mov r11d, r11d
 xor r11, 1
 cmp r11, 1
@@ -3580,8 +3679,8 @@ sbb r11, r11
 mov rsi, r9
 sub rsi, rdx
 and rdx, r11
-mov r8, QWORD PTR [rsp+120]
-mov rcx, QWORD PTR [rsp+184]
+mov r8, QWORD PTR [rsp+136]
+mov rcx, QWORD PTR [rsp+200]
 add rcx, 1392
 mov QWORD PTR [r8], rdx
 mov rdx, rsi
@@ -3603,11 +3702,11 @@ mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, r9
 jne 27b
-mov rax, QWORD PTR [rsp+192]
-lea rsp, [rsp+216]
+mov rax, QWORD PTR [rsp+208]
+lea rsp, [rsp+232]
 ret
 .p2align 6",
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,

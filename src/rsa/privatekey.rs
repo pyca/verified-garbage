@@ -117,22 +117,47 @@ impl PrivateKey {
         else {
             return Err(Error::InvalidPrivateKey);
         };
-        let key = PrivateKey {
-            n: n.to_vec(),
-            e: e.to_vec(),
-            d: d.to_vec(),
-            p: p.to_vec(),
-            q: q.to_vec(),
+        let key = PrivateKey::from_parts(
+            n.to_vec(),
+            e.to_vec(),
+            d.to_vec(),
+            p.to_vec(),
+            q.to_vec(),
+            dp,
+            dq,
+            qinv,
+        );
+        if key.crt_valid() {
+            Ok(key)
+        } else {
+            Err(Error::InvalidPrivateKey)
+        }
+    }
+
+    /// The key of these values, whose precomputed values are not yet
+    /// computed: the caller has checked them as `from_crt` does.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_parts(
+        n: Vec<u8>,
+        e: Vec<u8>,
+        d: Vec<u8>,
+        p: Vec<u8>,
+        q: Vec<u8>,
+        dp: Vec<u8>,
+        dq: Vec<u8>,
+        qinv: Vec<u8>,
+    ) -> Self {
+        PrivateKey {
+            n,
+            e,
+            d,
+            p,
+            q,
             dp,
             dq,
             qinv,
             #[cfg(target_arch = "x86_64")]
             pre: PrivatePrecomputed::new(),
-        };
-        if key.crt_valid() {
-            Ok(key)
-        } else {
-            Err(Error::InvalidPrivateKey)
         }
     }
 

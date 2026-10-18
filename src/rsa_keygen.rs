@@ -325,16 +325,16 @@ pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<Pri
     // `q` as long as they are (`VG.Spec.RsaKeyGen.keyValid`), and `e` valid
     // (`VG.Spec.Rsa.exponentValid`), so that this is the key `PrivateKey`
     // holds.
-    let key = PrivateKey {
+    let key = PrivateKey::from_parts(
         n,
-        e: crate::rsa::trim(public_exponent).to_vec(),
+        crate::rsa::trim(public_exponent).to_vec(),
         d,
-        p: kp,
-        q: kq,
+        kp,
+        kq,
         dp,
         dq,
         qinv,
-    };
+    );
     match status {
         1 => Ok(key),
         2 => Err(Error::SmallPrivateExponent),

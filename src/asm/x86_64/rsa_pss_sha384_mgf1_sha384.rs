@@ -2,14 +2,18 @@
 //! Verified `rsa_pss_sha384_mgf1_sha384` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_crt_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_adx`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed_adx`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -24,6 +28,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_ADX_FEATURES: crate::cpu
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -31,11 +36,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_ADX_FEATURES: crate::cpu
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -527,7 +534,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked_adx}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed_adx}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -572,7 +583,7 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx,
     )
 }
 
@@ -580,7 +591,11 @@ ret
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -595,6 +610,7 @@ ret
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -602,10 +618,12 @@ ret
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -1097,7 +1115,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -1142,18 +1164,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_crt_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_ifma`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed_ifma`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -1168,6 +1194,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_IFMA_FEATURES: crate::cp
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -1175,11 +1202,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_IFMA_FEATURES: crate::cp
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -1671,7 +1700,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked_ifma}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed_ifma}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -1716,18 +1749,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_avx2_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_avx2_crt_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_SHA384_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_adx`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed_adx`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -1742,6 +1779,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_CRT_ADX_FEATURES
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -1749,11 +1787,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_CRT_ADX_FEATURES
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_avx2_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_avx2_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -2245,7 +2285,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked_adx}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed_adx}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -2290,18 +2334,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_avx2` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_SHA384_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -2316,6 +2364,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_FEATURES: crate:
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -2323,11 +2372,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_FEATURES: crate:
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -2819,7 +2870,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -2864,18 +2919,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_avx2_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512ifma", "avx512vl", "adx"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_avx2_crt_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_SHA384_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512ifma", "avx512vl", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_ifma`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed_ifma`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -2890,6 +2949,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_CRT_IFMA_FEATURE
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -2897,11 +2957,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_AVX2_CRT_IFMA_FEATURE
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_avx2_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_avx2_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -3393,7 +3455,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked_ifma}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed_ifma}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -3438,18 +3504,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_shani_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_shani_crt_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_SHA384_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_adx`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed_adx`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -3464,6 +3534,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_CRT_ADX_FEATURE
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -3471,11 +3542,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_CRT_ADX_FEATURE
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_shani_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_shani_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -3967,7 +4040,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked_adx}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed_adx}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -4012,18 +4089,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_shani` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_SHA384_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -4038,6 +4119,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_FEATURES: crate
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -4045,11 +4127,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_FEATURES: crate
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -4541,7 +4625,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -4586,18 +4674,22 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed,
     )
 }
 
-/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_shani_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+/// The CPU features `vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_shani_crt_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_PRECOMPUTED_SHA384_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-384 and MGF1 with SHA-384, of a SHA-384 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 48-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 50`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha384` and `VG.Spec.Mgf1.sha384`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_ifma`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` in place of `vg_rsa_private_checked`. With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedContract`.
+///
+/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked_precomputed_ifma`, which checks the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in `pre` decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -4612,6 +4704,7 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_CRT_IFMA_FEATUR
 /// * `digest` must be valid for reads of 48 bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -4619,11 +4712,13 @@ pub(crate) const VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_SHA384_SHANI_CRT_IFMA_FEATUR
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * For the result to be the one specified above, `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch` and `pre` may overlap the return address on the stack or the 1608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_shani_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha384_mgf1_sha384_sign_precomputed_sha384_shani_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 48], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5115,7 +5210,11 @@ mov rdx, QWORD PTR [rsp+144]
 mov rcx, QWORD PTR [rsp+136]
 mov r8, QWORD PTR [rsp+152]
 mov r9, QWORD PTR [rsp+160]
-call {vg_rsa_private_checked_ifma}
+mov rax, QWORD PTR [rsp+520]
+mov QWORD PTR [rsp+112], rax
+mov rax, QWORD PTR [rsp+528]
+mov QWORD PTR [rsp+120], rax
+call {vg_rsa_private_checked_precomputed_ifma}
 jmp 27f
 26:
 mov rdi, QWORD PTR [rsp+128]
@@ -5160,7 +5259,7 @@ ret
 .p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_compress_shani = sym super::sha512::vg_sha512_compress_shani,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma,
     )
 }
 
