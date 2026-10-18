@@ -57,20 +57,27 @@ theorem XVals.of_outside {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} 
     by rw [ho.wv (by omega) (by omega)]; exact h.one⟩
 
 /-- The start of a prime's phase: `G = 2^(64 w_X (K + 1)) mod N` into the
-modulus' `Y`, reduced into the prime's `Y`: `R_X mod X` if `X` divides `N`. -/
-theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat} {ok : Prop}
-    {sl o wx : Nat} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
+modulus' `Y`, and `step` setting the prime's `Y` (to `R_X mod X` if `okY`
+and `X` divides `N`). -/
+theorem unitWith_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat} {ok okY : Prop}
+    {sl o wx : Nat} {step : List (Prog isa)} (hne : step ≠ []) (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
     (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
     (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
-    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
-    (hXodd : X % 2 = 1) :
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X)
+    (hstep : ∀ s₂, SubCtx s₂ B Z o w wx mx → XVals s₂ B o wx mx X → Keep (mmRegs ++ [.rdi]) s s₂ → Frm B (gRanges w) s.mem s₂.mem →
+      (ok → X ∣ N → wv s₂.mem B (slot w Public.aY) w % X = (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X) →
+      WP isa (seqs step) s₂ fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
+        wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+        (okY → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+        Frm B [xRange o wx] s₂.mem t.mem ∧
+        word t.mem (off B o) (8 * sMaskX) = word s₂.mem (off B o) (8 * sMaskX) ∧ Keep mmRegs s₂ t) :
     WP isa (seqs (Crt.gPow M.mm sl ++ ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
-        redc M.mm Public.aY ++ copyArr Public.aY aXc ++ ([.block [leave]] : List (Prog isa)))) s fun t =>
+        step ++ ([.block [leave]] : List (Prog isa)))) s fun t =>
       Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem B (slot w Public.aY) w < N ∧
       (ok → wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N) ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      (okY → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
       word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
       Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
   have hs := hg.scr
@@ -111,7 +118,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
     rw [word_off, word_off]
     exact f₁.word_eq (fun r hr => Or.inr (by have := hgr r hr; omega)) (by omega)
   -- Into the prime's workspace.
-  refine wp_seqs_append (by simp) (by simp [redc]) ?_
+  refine wp_seqs_append (by simp) (by simp) ?_
   refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off B o ∧ t.mem = s₁.mem)
     (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hg₁.scr.ld (d := 8 * sl) (by omega),
       hb₁ sl hsl hsl1 hsl2, hslv]) rfl) fun s₂ ⟨⟨hdi₂, hm₂⟩, k₂⟩ => ?_
@@ -120,38 +127,24 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   have hc₂ : SubCtx s₂ B Z o w wx mx :=
     SubCtx.mk' (hs.congr k02.2.2) (by rw [hm₂]; exact hg₁.hdr) hws₂ hdi₂ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₂ : XVals s₂ B o wx mx X := hX.of_below (by rw [hm₂]; exact f₁) (fun r hr => (hgr r hr).trans hlo) hoL
-  -- `A R^K ≡ G (mod X)`.
-  refine wp_seqs_append (by simp [redc]) (by simp [copyArr]) ?_
-  refine WP.mono (redc_ok M hc₂ hX₂ hwx2 hwx (by omega) hX1 (j := Public.aY) (by decide))
-    fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, f₃, k₃⟩ => ?_
-  refine wp_seqs_append (by simp [copyArr]) (by simp) ?_
-  refine WP.mono (copyArr_ok hc₃.good (Nat.le_refl _) (by omega) (by omega) (o := Public.aY) (a := aXc)
-    (by decide) (by decide) (by decide)) fun s₄ ⟨hv₄, ho₄, k₄⟩ => ?_
-  have hc₄ := hc₃.of_frm (rs := [(slot wx Public.aY, 8 * wx)]) (Frm.of_outside ho₄ (by simp)) (fun r hr => by
-    rw [List.mem_singleton.mp hr]
-    have := slot_le (w := wx) (show Public.aY < 8 by decide)
-    have := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
-    simp only; omega) k₄.2.2 (k₄.gpr (by decide))
+  have hG₂ : ok → X ∣ N → wv s₂.mem B (slot w Public.aY) w % X = (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X :=
+    fun hok hdvd => by rw [hm₂, ← Nat.mod_mod_of_dvd _ hdvd, hG₁ hok, Nat.mod_mod_of_dvd _ hdvd, ← Nat.pow_mul]
+  -- The prime's `Y`.
+  refine wp_seqs_append hne (by simp) ?_
+  refine WP.mono (hstep s₂ hc₂ hX₂ (k02.mono (by decide)) (by rw [hm₂]; exact f₁) hG₂)
+    fun s₄ ⟨hc₄, hX₄, hlt₄, hv₄, f₄, hmk₄, k₄⟩ => ?_
   -- Back to the modulus'.
   have hl₄ : InRegions (s₄.rd ++ s₄.wr) (off (off B o) (8 * sLink)) 8 :=
     hc₄.good.scr.ld (by unfold sLink sFn; omega)
   refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = B ∧ t.mem = s₄.mem)
     (by xrun [leave, State.ea, hdr, hc₄.rdi, hdrOff, hl₄, hc₄.link]) rfl) fun t ⟨⟨hdi, hm⟩, k'⟩ => ?_
-  have f34 : Frm B [xRange o wx] s₂.mem t.mem := by
-    rw [hm]
-    exact (f₃.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)).trans
-      (ho₄.mono (o' := slot wx Public.aY) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega) |>.to_x
-        (by decide) hoL (List.mem_singleton_self _))
+  have f34 : Frm B [xRange o wx] s₂.mem t.mem := by rw [hm]; exact f₄
   have hb : ∀ d, d + 8 ≤ o → word t.mem B d = word s₂.mem B d := fun d hd => f34.x_below hd ho64
   have hbw : ∀ d k, d + 8 * k ≤ o → wv t.mem B d k = wv s₂.mem B d k := fun d k hd =>
     wv_congr fun i hi => hb _ (by omega)
-  have kall := ((k02.trans k₃).trans k₄).trans k'
-  have hY : wv t.mem (off B o) (slot wx Public.aY) wx = wv s₃.mem (off B o) (slot wx aXc) wx := by rw [hm, hv₄]
-  have hXc : wv s₃.mem (off B o) (slot wx aXc) wx * (2 ^ (64 * wx)) ^ nChunks w wx % X =
-      wv s₂.mem B (slot w Public.aY) w % X := by
-    rw [← Nat.pow_mul]; exact hv₃
+  have kall := (k02.trans k₄).trans k'
   have hYn : wv s₂.mem B (slot w Public.aY) w = wv s₁.mem B (slot w Public.aY) w := by rw [hm₂]
-  refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, ?_, ?_, ?_, ?_, by rw [hY]; exact hlt₃, fun hok hdvd => ?_, ?_, ?_,
+  refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, ?_, ?_, ?_, ?_, by rw [hm]; exact hlt₄, fun hok hdvd => by rw [hm]; exact hv₄ hok hdvd, ?_, ?_,
     ⟨fun r hr => ?_, kall.2⟩⟩
   · have hH := hg₁.hdr
     exact ⟨(hb _ (by unfold sW; omega)).trans (by rw [hm₂]; exact hH.hw),
@@ -159,24 +152,65 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
       fun j hj => (hb _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega); omega)).trans
         (by rw [hm₂]; exact hH.harr j hj)⟩
   · rw [hm]; exact hc₄.ws
-  · exact hX₃.of_outside (by rw [hm]; exact ho₄) (by decide) (by decide) (by decide) (by omega)
-      (by have := hc₃.good.scr.nowrap; omega)
+  · rw [show t = { t with mem := s₄.mem } by rw [← hm]]; exact ⟨hX₄.n, hX₄.inv, hX₄.one⟩
   · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hlt₁
   · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hG₁
-  · rw [hY]
-    have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
-    have e : wv s₂.mem B (slot w Public.aY) w % X = 1 * (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X := by
-      rw [hYn, ← Nat.mod_mod_of_dvd _ hdvd, hG₁ hok, Nat.mod_mod_of_dvd _ hdvd, Nat.one_mul, ← Nat.pow_mul]
-    have := VG.Proof.Bignum.redc_cancel hR (hXc.trans e)
-    rwa [Nat.one_mul] at this
-  · have := hdr_lt_slot wx Public.aY (show sMaskX < 32 by decide)
-    rw [hm, ho₄.word (Or.inl (by omega)) (by unfold sMaskX sFn; omega),
-      f₃.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₂]
-    exact hxw₁ _ (by decide)
+  · rw [hm, hmk₄, hm₂]; exact hxw₁ _ (by decide)
   · have f₁' : Frm B (gRanges w) s.mem s₂.mem := by rw [hm₂]; exact f₁
     exact f₁'.append f34
   · by_cases h : r = .rdi
     · subst h; rw [hdi, hg.rdi]
     · exact kall.1 r (by revert hr h; cases r <;> decide)
+
+
+/-- The start of a prime's phase: `G = 2^(64 w_X (K + 1)) mod N` into the
+modulus' `Y`, reduced into the prime's `Y`: `R_X mod X` if `X` divides `N`. -/
+theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat} {ok : Prop}
+    {sl o wx : Nat} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
+    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
+    (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
+    (hXodd : X % 2 = 1) :
+    WP isa (seqs (Crt.gPow M.mm sl ++ ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
+        redc M.mm Public.aY ++ copyArr Public.aY aXc ++ ([.block [leave]] : List (Prog isa)))) s fun t =>
+      Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+      wv t.mem B (slot w Public.aY) w < N ∧
+      (ok → wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N) ∧
+      wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+      (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
+      Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+  rw [List.append_assoc _ (redc M.mm Public.aY)]
+  refine unitWith_ok M (step := redc M.mm Public.aY ++ copyArr Public.aY aXc) (by simp [redc]) hg hw hw28 hlo hhi
+    hwx2 hwx hsl hsl1 hsl2 hslv hws hN hodd hN1 hX fun s₂ hc₂ hX₂ _ _ hG₂ => ?_
+  -- `A R^K ≡ G (mod X)`.
+  refine wp_seqs_append (by simp [redc]) (by simp [copyArr]) ?_
+  refine WP.mono (redc_ok M hc₂ hX₂ hwx2 hwx (by omega) hX1 (j := Public.aY) (by decide))
+    fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, f₃, k₃⟩ => ?_
+  refine WP.mono (copyArr_ok hc₃.good (Nat.le_refl _) (by omega) (by omega) (o := Public.aY) (a := aXc)
+    (by decide) (by decide) (by decide)) fun s₄ ⟨hv₄, ho₄, k₄⟩ => ?_
+  have hc₄ := hc₃.of_frm (rs := [(slot wx Public.aY, 8 * wx)]) (Frm.of_outside ho₄ (by simp)) (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    have := slot_le (w := wx) (show Public.aY < 8 by decide)
+    have := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
+    simp only; omega) k₄.2.2 (k₄.gpr (by decide))
+  refine ⟨hc₄, hX₃.of_outside ho₄ (by decide) (by decide) (by decide) (by omega)
+      (by have := hc₃.good.scr.nowrap; omega), by rw [hv₄]; exact hlt₃, fun hok hdvd => ?_,
+    (f₃.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)).trans
+      (ho₄.mono (o' := slot wx Public.aY) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega) |>.to_x
+        (by decide) hoL (List.mem_singleton_self _)), ?_, (k₃.trans k₄).mono (by decide)⟩
+  · rw [hv₄]
+    have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
+    have hXc : wv s₃.mem (off B o) (slot wx aXc) wx * (2 ^ (64 * wx)) ^ nChunks w wx % X =
+        wv s₂.mem B (slot w Public.aY) w % X := by
+      rw [← Nat.pow_mul]; exact hv₃
+    have e : wv s₂.mem B (slot w Public.aY) w % X = 1 * (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X := by
+      rw [hG₂ hok hdvd, Nat.one_mul]
+    have := VG.Proof.Bignum.redc_cancel hR (hXc.trans e)
+    rwa [Nat.one_mul] at this
+  · have := hdr_lt_slot wx Public.aY (show sMaskX < 32 by decide)
+    rw [ho₄.word (Or.inl (by omega)) (by unfold sMaskX sFn; omega),
+      f₃.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega)]
 
 end VG.Proof.Bignum.X86_64
