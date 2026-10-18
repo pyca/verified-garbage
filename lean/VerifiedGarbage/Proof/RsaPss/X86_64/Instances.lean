@@ -21,8 +21,6 @@ namespace VG.Proof.RsaPss.X86_64.Pc
 theorem code_spSafe (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.PublicImpl) :
     (Impl.RsaPss.X86_64.Precomputed.code v.H c.name c.code).all
       (fun i => !X86_64.isa.writesSp i) = true := by
-  have h := code_safe v.ok v.K c
-  rw [safeI_eq, allInstrs_and, Bool.and_eq_true] at h
-  exact Code.all_of_allInstrs h.1
+  exact Code.all_of_allInstrs (code_sp v.ok v.K c)
 
 end VG.Proof.RsaPss.X86_64.Pc

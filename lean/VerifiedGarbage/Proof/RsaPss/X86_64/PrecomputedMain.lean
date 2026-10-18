@@ -20,6 +20,17 @@ def Done (G : Spec.Mgf1.Hash) (s t : State) : Prop :=
 variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
 
 include hH K in
+/-- What follows the call never loads MXCSR. -/
+theorem rest_mx : (seqs [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H, saltBack H]).allInstrs
+    (fun i => !loadsMxcsr i) = true := by
+  have h : (seqs [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H, saltBack H]).allInstrs safeI = true := by
+    simp only [seqs, Code.allInstrs, mgfXor_safe hH K, saltBack_safe hH K, rec_all, List.all_append, posScan, posCheck,
+      byteLoop, step, Bool.and_true, Bool.true_and]
+    rfl
+  rw [safeI_eq, allInstrs_and, Bool.and_eq_true] at h
+  exact h.2
+
+include hH K in
 theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
     {s u : State} (hp : Pre lk.G s) {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay u (fb s) (stackArg s 3)) (R : Rep u.mem (fb s) (stackArg s 3) V W) (hw : u.wr = frR s :: s.wr)
@@ -37,7 +48,8 @@ theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
         (Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32)))
     (hsl : Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32) =
       if fixed then some (stackArg s 1).toNat else none) :
-    WP isa (Impl.RsaPss.X86_64.Precomputed.main H v.name v.code) u (Done lk.G s) := by
+    WP isa (Impl.RsaPss.X86_64.Precomputed.main H v.name v.code) u fun t =>
+      Done lk.G s t ∧ t.mxcsr.extractLsb' 6 10 = u.mxcsr.extractLsb' 6 10 := by
   classical
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD : H.D = lk.G.len := lk.len.symm
@@ -50,7 +62,7 @@ theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
       posCheck H, saltBack H] from rfl]
   -- The public-key operation.
   refine WP.seqs_append (by simp) (by simp) (WP.mono (front_ok v hp L R hw hrd hM h17 h18 h19 h20 h22
-    h26 h38 hax) fun u3 ⟨L3, wr3, rd3, cs3, hM3, V1, W1, x, R1, hW1, h23, h24, hxl, hcache, hV1, hO1⟩ => ?_)
+    h26 h38 hax) fun u3 ⟨L3, wr3, rd3, cs3, hM3, hmx3, V1, W1, x, R1, hW1, h23, h24, hxl, hcache, hV1, hO1⟩ => ?_)
   let b := decide ((lo = 1 → x.getD 0 0 = 0) ∧
     EncOk lk.G (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (x.drop lo) ((s.gpr .rsi).toNat - lo) z
       (Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32)))
@@ -58,7 +70,7 @@ theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
       EncOk lk.G (Spec.Rsa.bytesAt s.mem (s.gpr .r8) lk.G.len) (x.drop lo) ((s.gpr .rsi).toNat - lo) z
         (Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32)) := decide_eq_true_iff
   have g1 : ∀ j, j < nW → 4 ≤ j → j ≠ 23 → j ≠ 24 → W1 j = W j := fun j a b c d => hW1 j a b c d
-  refine WP.mono (vpadding_done hH K lk hp.toVPre L3 R1 (wr3.trans hw) (rd3.trans hrd)
+  refine WP.mono_mx (rest_mx hH K) (vpadding_done hH K lk hp.toVPre L3 R1 (wr3.trans hw) (rd3.trans hrd)
     (fun r hr => (cs3 r hr).trans (hcs r hr)) hM3 x hxl hV1
     (by rw [g1 17 (by decide) (by decide) (by decide) (by decide), h17]) h23
     (by rw [h24]; congr 1; omega)
@@ -70,8 +82,8 @@ theorem main_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
     (by rw [g1 41 (by decide) (by decide) (by decide) (by decide), h41])
     (by rw [g1 42 (by decide) (by decide) (by decide) (by decide), h42])
     (by rw [g1 43 (by decide) (by decide) (by decide) (by decide), h43]) hlo hfit hb hsl)
-    fun _ h => ⟨b, h, fun hc => by
+    fun _ h hmx => ⟨⟨b, h, fun hc => by
       rw [hcache hc] at hb
-      exact Bool.eq_iff_iff.mpr (hb.trans hspec.symm)⟩
+      exact Bool.eq_iff_iff.mpr (hb.trans hspec.symm)⟩, by rw [hmx]; exact hmx3⟩
 
 end VG.Proof.RsaPss.X86_64.Pc
