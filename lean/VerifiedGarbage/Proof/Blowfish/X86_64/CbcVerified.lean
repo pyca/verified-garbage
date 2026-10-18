@@ -81,7 +81,8 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
       rcases hr with rfl | rfl
       · exact dKS
       · exact dKV⟩) fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
-  · refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  · rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+    refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact dRS
@@ -138,7 +139,8 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
       · exact dKS
       · exact dKD⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), crypt_keepsIv true⟩)
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
-  · refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  · rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+    refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact dRS

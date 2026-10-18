@@ -236,6 +236,7 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre s₀) :
       by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq], hp.rounds, hp.tabAt, fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.dTS⟩ keepsIv_core)
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, by rw [dirCore_bw] at hdata hiv; exact ⟨hdata, hiv⟩⟩
+  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl

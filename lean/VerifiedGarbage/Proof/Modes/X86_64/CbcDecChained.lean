@@ -138,13 +138,14 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     (hwD : (⟨D, 8 * c.bw * n⟩ : Region) ∈ s₀.wr) (sPS : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sDS : Region.Disjoint ⟨D, 8 * c.bw * n⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sPD : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨D, 8 * c.bw * n⟩)
-    (fitD : D.toNat + 8 * c.bw * n ≤ 2 ^ 64) (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩, ⟨P, 8 * c.bw⟩] k) :
+    (fitD : D.toNat + 8 * c.bw * n ≤ 2 ^ 64) (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩, ⟨P, 8 * c.bw⟩] k)
+    (hstk : StkOk c s₀ := by exact Or.inl rfl) :
     WP isa (c.cbcDecryptChained r) s₀ fun s' => (∀ x ∈ calleeSaved, s'.gpr x = s₀.gpr x) ∧
       blocksOf (8 * c.bw) s'.mem D n =
         Spec.Cbc.decrypt (cs.cipher k) (bytesAt s₀.mem P (8 * c.bw)) (blocksOf (8 * c.bw) s₀.mem D n) ∧
       bytesAt s'.mem P (8 * c.bw) = Spec.Cbc.next (bytesAt s₀.mem P (8 * c.bw)) (blocksOf (8 * c.bw) s₀.mem D n) ∧
-      Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s'.mem ∧ s'.rd = s₀.rd ∧
-      s'.wr = s₀.wr := by
+      Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩, ⟨P, 8 * c.bw⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s'.mem ∧
+      s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
   have hL := cs.layout
   have hsm := hL.small
   have hroom := hL.room
@@ -239,11 +240,11 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₁ ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
     fun s₂ ⟨ready₂, b₂, rsp₂, dr₂, lr₂, f₂, rd₂, wr₂⟩ => ?_)
+  rw [show s₁.gpr .rsp = s₀.gpr .rsp from g₁ _ (by decide) (by decide) (by decide) (Ne.symm dsp) (Ne.symm lsp)] at f₂
   have keep₂ : ∀ j, c.slots ≤ j → j < c.ctrSlots →
       s₂.mem.readW (wordAddr B j) 64 = s₁.mem.readW (wordAddr B j) 64 := fun j h1 h2 =>
-    f₂.readW (Region.contains_self _ _) (fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx
-      exact VG.Offset.disjoint_base B (by omega) (by omega)) (by decide)
+    f₂.readW (Region.contains_self _ _) (hstk.coreFrame_disj (VG.Offset.disjoint_base B (by omega) (by omega))
+      ⟨_, hs.wr, VG.Offset.sub_base B (by omega)⟩) (by decide)
   have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, wr₁]
   have rd₂' : s₂.rd = s₀.rd := by rw [rd₂, rd₁]
   -- Any blocks?
@@ -263,7 +264,8 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, wr₂']
   let iv := bytesAt s₀.mem P (8 * c.bw)
   have hiv : iv.length = 8 * c.bw := by simp [iv, bytesAt]
-  have hp : GPre c s₃ B D n (8 * c.bw) := ⟨⟨by rw [wr₃']; exact hs.wr, hs.fit⟩, by rw [wr₃']; exact hwD, sDS, fitD⟩
+  have hp : GPre c s₃ B D n (8 * c.bw) :=
+    ⟨⟨by rw [wr₃']; exact hs.wr, hs.fit⟩, by rw [wr₃']; exact hwD, sDS, fitD, hstk.congr rsp₃ wr₃'⟩
   -- The groups.
   refine WP.seq (WP.mono (M := isa) (Q := CDone cs s₃ B D n k iv)
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₃]) (fun h0 => ?_) (fun h0 => ?_)) fun s₄ d₄ => ?_)
@@ -278,8 +280,8 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     · have dH : Region.Disjoint ⟨chainAddr c B, 8 * c.bw⟩ (coreRegion c B) :=
         VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega) (by simp only [Core.hiSlot]; omega)
       rw [Nat.mul_zero, cbcPrev, ite_eq_left rfl, mem₃,
-        f₂.bytes (R := ⟨chainAddr c B, 8 * c.bw⟩) (fun x hx => by
-          simp only [List.mem_singleton] at hx; subst hx; exact dH) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu,
+        f₂.bytes (R := ⟨chainAddr c B, 8 * c.bw⟩) (hstk.coreFrame_disj dH ⟨_, hs.wr, VG.Offset.sub_base B
+          (by simp only [Core.hiSlot, Core.ctrSlots]; omega)⟩) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu,
         ch₁ u hu, bytesAt_getD _ _ hu]
   -- The exit.
   have hsv : ∀ i < 6, Core.savedRegs.getD i .rbx ≠ sb := by decide
@@ -288,21 +290,28 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     d₄.base hsv hinj (fun i hi' => by
       rw [d₄.rd, d₄.wr, rd₃', wr₃']
       exact inRd (slot_wr hs.wr hN (by simp only [Core.ctrSlots]; omega)))
-  have subCore : ∀ x ∈ [coreRegion c B], Region.Sub x ⟨B, 8 * c.ctrSlots⟩ := fun x hx => by
-    simp only [List.mem_singleton] at hx; subst hx; exact Region.sub_prefix (by simp only [Core.ctrSlots]; omega)
-  have f₄ : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s₄.mem := by
-    refine ((f₁'.trans (f₂.sub fun x hx => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, subCore x hx⟩)).mono
+  have subCore : Region.Sub (coreRegion c B) ⟨B, 8 * c.ctrSlots⟩ :=
+    Region.sub_prefix (by simp only [Core.ctrSlots]; omega)
+  have f₄ : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩, ⟨P, 8 * c.bw⟩] ++ stkList c (s₀.gpr .rsp))
+      s₀.mem s₄.mem := by
+    refine (((f₁'.mono fun x hx => List.mem_append_left _ hx).trans
+      (f₂.sub (coreFrame_sub (rs := [⟨B, 8 * c.ctrSlots⟩, ⟨P, 8 * c.bw⟩]) ⟨_, List.mem_cons_self, subCore⟩))).mono
       fun x hx => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl
-        · exact List.mem_cons_self
-        · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)).trans ?_
+        rcases List.mem_append.mp hx with hx | hx
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+          rcases hx with rfl | rfl
+          · exact List.mem_cons_self
+          · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
+        · exact List.mem_append_right _ hx).trans ?_
     rw [← mem₃]
     exact d₄.frame.mono fun x hx => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl
-      · exact List.mem_cons_self
-      · exact List.mem_cons_of_mem _ List.mem_cons_self
+      rw [rsp₃] at hx
+      rcases List.mem_append.mp hx with hx | hx
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl
+        · exact List.mem_cons_self
+        · exact List.mem_cons_of_mem _ List.mem_cons_self
+      · exact List.mem_append_right _ hx
   refine WP.of_runBlock ⟨s₅, e₅, fun x hx => ?_, ?_, ?_, by rw [m₅]; exact f₄, by rw [rd₅, d₄.rd, rd₃'],
     by rw [wr₅, d₄.wr, wr₃']⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -318,7 +327,7 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
     · exact hsaved 4 (by decide)
     · exact hsaved 5 (by decide)
   · rw [m₅, cbc_of_dinv (cs.cipher_len k) hiv d₄.data, mem₃,
-      blocksOf_frame f₂ (by omega) (fun x hx => sDS.sub_right (subCore x hx)),
+      blocksOf_frame f₂ (by omega) (hstk.coreFrame_disj (sDS.sub_right subCore) ⟨_, hwD, fun _ h => h⟩),
       blocksOf_frame f₁' (by omega) (fun x hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl
@@ -327,14 +336,17 @@ theorem cbcDecryptChained_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (h
   · -- The IV: written before the blocks, and not since.
     rw [m₅]
     have fIv : ∀ u < 8 * c.bw, s₄.mem (P + BitVec.ofNat 64 u) = s₁.mem (P + BitVec.ofNat 64 u) := fun u hu => by
+      have pStk := hstk.disj (R := ⟨P, 8 * c.bw⟩) ⟨_, hwP, fun _ h => h⟩
       rw [d₄.frame.bytes (R := ⟨P, 8 * c.bw⟩) (fun x hx => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-          rcases hx with rfl | rfl
-          · exact sPS
-          · exact sPD) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu, mem₃]
-      exact f₂.bytes (R := ⟨P, 8 * c.bw⟩) (fun x hx => by
-        simp only [List.mem_singleton] at hx; subst hx
-        exact sPS.sub_right (Region.sub_prefix (by simp only [Core.ctrSlots]; omega))) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu
+          rw [rsp₃] at hx
+          rcases List.mem_append.mp hx with hx | hx
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+            rcases hx with rfl | rfl
+            · exact sPS
+            · exact sPD
+          · exact pStk x hx) (show 8 * c.bw ≤ 2 ^ 64 by omega) hu, mem₃]
+      exact f₂.bytes (R := ⟨P, 8 * c.bw⟩) (coreFrame_disj (sPS.sub_right subCore) pStk)
+        (show 8 * c.bw ≤ 2 ^ 64 by omega) hu
     have e : bytesAt s₄.mem P (8 * c.bw) = bytesAt sL.mem P (8 * c.bw) :=
       bytesAt_of_getD (by simp [bytesAt]) fun u hu => by rw [fIv u hu, mem₁]; exact (bytesAt_getD _ _ hu).symm
     rw [e]
