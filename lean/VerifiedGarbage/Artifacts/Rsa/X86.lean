@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -10,6 +11,10 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
+  Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
+    code := Impl.Bignum.X86.PrecomputedFn.code
+    verified := Proof.Bignum.X86.precomputed_verified
+    stack := 20 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
