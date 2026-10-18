@@ -539,7 +539,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | evMadd52Load _ _ _ m =>
     exact h.memSomeX hs
   | ldmxcsr m => exact h.memSome hs
-  | kLoad k _ m =>
+  | kLoad k _ m | kLoad8 k _ m =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
@@ -547,7 +547,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     rw [ite_t (show (memPub σ m && pub σ k) = true by
       simp only [Bool.and_eq_true]; exact ⟨hw.memPubM hm.1, hw.pubM hm.2⟩)]
     exact ⟨_, rfl, h.clearX⟩
-  | kStore m k _ =>
+  | kStore m k _ | kStore8 m k _ =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hk; cases hs]
     rw [ite_t (hw.pubM hk)]
@@ -863,7 +863,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
   cases i
   case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore =>
     rw [storeStep_regs hs]; exact hr
-  case kStore =>
+  case kStore | kStore8 =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rw [storeStep_regs hs]; exact hr

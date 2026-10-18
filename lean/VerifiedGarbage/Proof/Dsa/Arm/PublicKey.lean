@@ -20,6 +20,27 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 
+/-- Validation leaves the shared helper's register-save words untouched. -/
+structure ValidationRun (base : Addr) (s t : State) : Prop extends Run base s t where
+  saved : ∀ d, 168 ≤ d → d + 4 ≤ 204 →
+    t.mem.readW (off base d) 32 = s.mem.readW (off base d) 32
+
+instance {base s t} : Coe (ValidationRun base s t) (Run base s t) := ⟨ValidationRun.toRun⟩
+
+theorem ValidationRun.trans {base : Addr} {s t u : State}
+    (A : ValidationRun base s t) (B : ValidationRun base t u) : ValidationRun base s u :=
+  ⟨A.toRun.trans B.toRun, fun d lo hi => (B.saved d lo hi).trans (A.saved d lo hi)⟩
+
+theorem Stage.validationRun {base : Addr} {s t : State} {o l : Nat}
+    (St : Stage base s t o l) (H : o = 116 ∧ l = 4 ∨ 4960 ≤ o ∧ o + l ≤ 15712) :
+    ValidationRun base s t := by
+  refine ⟨St.run H, fun d lo hi => Mem.readW_congr fun i hᵢ => ?_⟩
+  apply St.mem
+  intro r hr
+  simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rw [ofs_off base (by omega)]
+  rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+
 /-- The working space and the widths of a call. -/
 structure Sched (s : State) (base : Addr) (size pLen qLen nP nQ : Nat) : Prop where
   ws : Ws s base size
@@ -62,7 +83,7 @@ theorem domain_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
     WP isa (Validate.domain pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (((1 < G ∧ G < P) ∧ (1 < Y ∧ Y < P)) ∧ (P - 1) % Q = 0) ∧
-      localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ Run base s t := by
+      localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ ValidationRun base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have fits := S.fits
@@ -112,9 +133,9 @@ theorem domain_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
   · rw [St₆.maskW (by decide), F₅, St₄.maskW (by decide), St₃.maskW (by decide), F₂, F₁,
       BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and]
     exact congrArg _ (mask32_iff (by simp only [↓reduceIte, Bool.false_eq_true]; omega))
-  · exact ((((St₁.run (.inl ⟨rfl, rfl⟩)).trans (St₂.run (.inl ⟨rfl, rfl⟩))).trans (St₃.run (.inr ho₃))).trans
-      ((St₄.run (.inr ho₄)).trans (St₅.run (.inl ⟨rfl, rfl⟩)))).trans
-      (St₆.run (.inr (by simp only [Impl.Dsa.Layout.qMinusTwo]; omega)))
+  · exact ((((St₁.validationRun (.inl ⟨rfl, rfl⟩)).trans (St₂.validationRun (.inl ⟨rfl, rfl⟩))).trans (St₃.validationRun (.inr ho₃))).trans
+      ((St₄.validationRun (.inr ho₄)).trans (St₅.validationRun (.inl ⟨rfl, rfl⟩)))).trans
+      (St₆.validationRun (.inr (by simp only [Impl.Dsa.Layout.qMinusTwo]; omega)))
 
 /-- The window of the scalars below `t`. -/
 abbrev scalars : Nat × Nat := (4960, Impl.Dsa.Layout.t)
@@ -126,7 +147,7 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
     (hP : 1 < P) (hPo : P % 2 = 1) :
     WP isa (Validate.subgroup pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (G ^ Q % P = 1 ∧ Y ^ Q % P = 1) ∧
-      KeepsLocals base s t scalars.1 scalars.2 ∧ Run base s t := by
+      KeepsLocals base s t scalars.1 scalars.2 ∧ ValidationRun base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have fits := S.fits
@@ -160,8 +181,8 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
     have ht' : Impl.Dsa.Layout.t = 14944 := rfl
     exact (((k St₁ (by omega) (by omega)).trans (k St₂ (by decide) (by decide))).trans
       (k St₃ (by omega) (by omega))).trans (k St₄ (by decide) (by decide))
-  · exact (((St₁.run (.inr ho)).trans (St₂.run (.inl ⟨rfl, rfl⟩))).trans (St₃.run (.inr ho))).trans
-      (St₄.run (.inl ⟨rfl, rfl⟩))
+  · exact (((St₁.validationRun (.inr ho)).trans (St₂.validationRun (.inl ⟨rfl, rfl⟩))).trans (St₃.validationRun (.inr ho))).trans
+      (St₄.validationRun (.inl ⟨rfl, rfl⟩))
 
 theorem Stage.keepsScalars {base : Addr} {a b : State} {o l : Nat} (St : Stage base a b o l) (h₁ : o + l ≤ 15712)
     (h₂ : 14944 ≤ o ∨ o + l ≤ 4960) : KeepsLocals base a b scalars.1 scalars.2 :=
@@ -174,7 +195,7 @@ theorem publicKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : N
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
     WP isa (Validate.publicKey pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (publicChecks P Q G Y) ∧
-      localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ Run base s t := by
+      localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ ValidationRun base s t := by
   have big := S.big
   have fits := S.fits
   unfold Validate.publicKey

@@ -195,17 +195,6 @@ def doubleExtApi : Api where
     only the pointer may affect timing."
   safety := safety
 
-/-- `vg_ed25519_r64_double_proj` on every target. -/
-def doubleProjApi : Api where
-  module := module
-  name := "vg_ed25519_r64_double_proj"
-  sig := sig
-  contracts := some fun A stack => doubleContract A false stack
-  summary := doubleSummary ++ elemDoc ++ projDoc ++ "\n\n\
-    Contract: `doubleContract` (`ext := false`) of `VG.Spec.Ed25519.Point64`. Constant time: \
-    only the pointer may affect timing."
-  safety := safety
-
 /-- `vg_ed25519_r64_add_cached_ext` on every target. -/
 def addCachedExtApi : Api where
   module := module

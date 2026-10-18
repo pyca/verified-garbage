@@ -211,19 +211,6 @@ def publicKeyApi : Api where
     timing."
   safety := ["`seed` must originate from a cryptographically secure random generator.", scratchSafety]
 
-def signApi : Api where
-  module := "ed25519"
-  name := "vg_ed25519_sign"
-  sig := signSig
-  writeArgs := true
-  contracts := some fun A stack => signContract A stack
-  summary := "Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature \
-    to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`. \
-    Uses pure Ed25519, with no context or prehash. Derives the public key from the seed. \
-    Contract: `VG.Spec.Ed25519.signContract`. Constant time: only pointers and the message \
-    length may affect timing, not the seed or message contents."
-  safety := ["`seed` must originate from a cryptographically secure random generator.", scratchSafety]
-
 def verifyApi : Api where
   module := "ed25519"
   name := "vg_ed25519_verify"

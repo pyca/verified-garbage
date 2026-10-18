@@ -325,38 +325,4 @@ def sealSplitPreparedApi : Api where
   summary := preparedSummary "vg_aes_gcm_seal_split" "sealSplitPreparedContract"
   safety := sealSplitApi.safety ++ [preparedSafety]
 
-/-- `vg_ghash_prepared(h: *const [u8; 784], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32])`:
-`vg_ghash`'s signature, with `h` the last 784 bytes of a prepared key
-context (its hash subkey and prepared powers). `scratch` is working space. -/
-def ghashPreparedSig : Sig where
-  params := [("h", .array false .u8 784), ("y", .array true .u8 16),
-    ("data", .slice false (.array .u8 16) "n"), ("scratch", .array true .u64 32)]
-
-/-- `ghashContract`'s postcondition, for `h` at byte 240 of a context with
-the prepared powers (`PreparedPowersRepr` of `h - 240`, whose hash subkey
-`ctxH` is the block at `h`). -/
-def ghashPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ghashPreparedSig.contract A
-    (pre := fun h _y _data _n _scratch m => PreparedPowersRepr m (h - 240))
-    (post := fun h y data n _scratch m m' _ =>
-      blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
-    (stack := stack)
-
-/-- `vg_ghash_prepared` on every target. -/
-def ghashPreparedApi : Api where
-  module := "gcm"
-  name := "vg_ghash_prepared"
-  sig := ghashPreparedSig
-  contracts := some fun A stack => ghashPreparedContract A stack
-  summary := "`vg_ghash` with `h` at byte 240 of a 1024-byte context from \
-    `vg_aes_gcm_prepare`: the hash subkey `H` is the block at `h`, followed by the 48 \
-    prepared powers, which it may read. Replaces the block `Y` at `*y` with `Yₙ`, where \
-    `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at \
-    `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.\n\n\
-    Contract: `VG.Spec.Gcm.ghashPreparedContract`. Constant time: only the pointers and `n` \
-    may affect timing."
-  safety := ["`h` must point at byte 240 of a key context with the prepared format written by \
-      `vg_aes_gcm_prepare`.",
-    "The contents of `scratch` on return are unspecified."]
-
 end VG.Spec.Gcm

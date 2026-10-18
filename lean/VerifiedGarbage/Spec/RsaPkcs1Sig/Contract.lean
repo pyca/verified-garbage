@@ -165,13 +165,9 @@ def signApi : Api where
     "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
     "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
 
-def verifyApi : Api where
-  module := "rsa_pkcs1_sig"
-  name := "vg_rsa_pkcs1_verify"
-  sig := verifySig
-  writeArgs := true
-  contracts := some fun A stack => verifyContract A stack
-  summary := s!"RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, \
+/-- The summary of `verify` in the documentation of the functions built on it. -/
+def verifySummary : String :=
+  s!"RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, \
     as BoringSSL's `RSA_verify` does it. With the modulus `n` (`n_len` bytes, most \
     significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
     {Rsa.exponentDoc}, returns 1 if `sig` is `n_len` \
@@ -184,7 +180,10 @@ def verifyApi : Api where
     parsed. {hashIdsDoc}.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.verifyContract`. Not constant time: timing may depend \
     on the pointers, the lengths, `hash` and the contents of `n`, `e`, `digest` and `sig`."
-  safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`."] ++
+
+/-- The `# Safety` items of `verify` but for what the signature gives. -/
+def verifySafety : List String :=
+  ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`."] ++
     publicScratchSafety
 
 /-! ## `vg_rsa_pkcs1_recover` -/
@@ -216,13 +215,9 @@ def recoverContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat ++ bytesAt m sig sigLen.toNat).map
         (·.toNat))
 
-def recoverApi : Api where
-  module := "rsa_pkcs1_sig"
-  name := "vg_rsa_pkcs1_recover"
-  sig := recoverSig
-  writeArgs := true
-  contracts := some fun A stack => recoverContract A stack
-  summary := s!"The hash value an RSASSA-PKCS1-v1_5 signature signs, as BoringSSL's \
+/-- The summary of `recover` in the documentation of the functions built on it. -/
+def recoverSummary : String :=
+  s!"The hash value an RSASSA-PKCS1-v1_5 signature signs, as BoringSSL's \
     `EVP_PKEY_verify_recover` returns it for an RSA key with PKCS #1 v1.5 padding and a \
     hash function set. With the modulus `n` (`n_len` bytes, most significant first, odd, \
     from 512 to 8192 bits, its first byte not zero) and {Rsa.exponentDoc}, if `sig` is \
@@ -235,7 +230,10 @@ def recoverApi : Api where
     `vg_rsa_pkcs1_verify` accepts the signature for it. {hashIdsDoc}.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.recoverContract`. Not constant time: timing may depend \
     on the pointers, the lengths, `hash` and the contents of `n`, `e` and `sig`."
-  safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`.",
+
+/-- The `# Safety` items of `recover` but for what the signature gives. -/
+def recoverSafety : List String :=
+  ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`.",
     "`hash` must be in 0..=11, and `out_len` the length of its hash function's values."] ++
     publicScratchSafety
 

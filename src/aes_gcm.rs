@@ -1216,11 +1216,18 @@ impl AesGcm {
             }
             // On 128- and 256-bit ones at any length, whose path for TLS
             // records is faster than the others' at every length. The
-            // 256-bit one seals a last block that `src` starts and the
-            // second piece fills more slowly than the gathering does (a
-            // 1024-byte TLS record, of a 1023-byte payload: 22% slower), and
-            // every other shape faster.
-            Backend::VaesVpclmul if src.len() % 16 == 0 || src.len() % 16 + rest.len() < 16 => {
+            // 256-bit one is slower than the gathering only for a record of
+            // a multiple of 16 blocks, of at most 4096 bytes, whose last
+            // block `src` starts and the second piece fills: the gathering
+            // seals its blocks in whole groups of 16, and `src`'s blocks end
+            // one block short of a group (a 1024-byte TLS record, of a
+            // 1023-byte payload: 31–36% slower; 16- to 64-byte records 3–41%
+            // faster, and those of 8192 bytes and more 1–7%).
+            Backend::VaesVpclmul
+                if src.len() % 16 == 0
+                    || (src.len() + rest.len()) % 256 != 0
+                    || src.len() + rest.len() > 4096 =>
+            {
                 vg_aes_gcm_seal_split_prepared_vaes_vpclmul
             }
             Backend::AesNiPclmulAvx => vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,

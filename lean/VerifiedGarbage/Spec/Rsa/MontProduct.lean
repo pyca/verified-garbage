@@ -60,28 +60,4 @@ def productContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
     (stack := stack)
     (leak := some fun ws _ _ _ _ m => [wOf m ws])
 
-/-- A shared RSA product, with the same contract on every target. -/
-def productApi : Api where
-  module := "rsa"
-  name := "vg_rsa_product_shared"
-  sig := sig
-  contracts := some fun A stack => productContract A stack
-  summary := "Montgomery multiplication of two arrays in the RSA working space. \
-    The public `usize` arguments give the addresses of the result and operands, each \
-    the start of an operand array in `VG.Spec.Rsa.Mont.Layout`. Writes the result below \
-    the modulus `m` (array 0), with its product by `2^(64 w)` congruent to the product \
-    of the input arrays modulo `m`. The result may alias either operand, and the \
-    operands may be the same array. The result cannot be array 0. Only the result \
-    array and arrays 2 and 3 may change.\n\n\
-    Contract: `VG.Spec.Rsa.MontProduct.productContract`. Constant time except for \
-    the public workspace address, its length, the three array addresses and the \
-    limb count `w`. The modulus, inverse and operand values remain secret."
-  safety := ["Header word 6, `w`, must be in 2..2^31, and `ws_len` at least `32 + 8 * (w + 2)`.",
-    "Header word `8 + j` must point to word `32 + j * (w + 2)` of `ws`, for every `j < 8`.",
-    "Each address must designate the start of an array with index below 8 and different from 2 and 3.",
-    "The output address must not designate array 0 (the modulus).",
-    "Header word 7 must be `-m⁻¹ mod 2^64` for the odd modulus in array 0.",
-    "The second operand must be below the modulus; the first may be any `w`-word value.",
-    "Arrays 2 and 3 may contain secret intermediates on return; the caller must destroy them."]
-
 end VG.Spec.Rsa.MontProduct

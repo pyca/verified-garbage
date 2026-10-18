@@ -4,7 +4,7 @@
 
 /// The complete sum `O = P + Q` of points on P-224 in projective coordinates (Renes, Costello and Batina's Algorithm 4, for `a = -3`), into `O` at bytes 608 to 703, with the curve's `b`, in Montgomery's form, read at byte 1344. Coordinates are numbers of 4 64-bit words (`32` bytes), little-endian, in Montgomery's form modulo P-224's prime `p`, and a point is three at consecutive offsets of `ws`: `P` at bytes 512 to 607, `Q` at bytes 704 to 799. The function reads `p` at byte 64. The function's own working space is bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`; every other byte of `ws` but the result's keeps its value.
 ///
-/// Contract: `doubleContract`, `addCachedContract`, `addAffineContract`, `projAddAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`. Constant time: only the pointer may affect timing.
+/// Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`. Constant time: only the pointer may affect timing.
 ///
 /// The function runs the twelve products, two products by `b` and the additions and subtractions of Algorithm 4 in their order, on four 64-bit words modulo `p` read at byte 64, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`; each reduction step multiplies the accumulator's low word by `-p⁻¹ mod 2⁶⁴` and adds that multiple of `p`) with a final conditional subtraction, its temporaries `t0`–`t5` at bytes 800 to 991 and the products' temporary area at bytes 128 to 159. It writes no vector register.
 ///

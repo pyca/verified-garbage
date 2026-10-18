@@ -5,9 +5,11 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
 /-!
 # RSA private-key validation with bounded CRT remainders
 
-Keep the checks of `d`; use the CRT loader's factor-width, bounded-quotient
-reductions for `e dP`, `e dQ` and `q qInv`. Failed range checks still only
-clear the result mask, and do not change the arithmetic or its timing.
+Use factor-width, bounded-quotient reductions for all five remainders.
+For `e d mod (X - 1)`, `d < n = X Y` bounds the quotient by `2 e Y`,
+so only the other factor's word length plus one word needs division.
+Failed prerequisite checks clear the mask without changing the arithmetic
+or its timing.
 -/
 
 @[expose] public section
@@ -19,10 +21,10 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 /-- The checks modulo `X - 1` for the prime `X` (pointer and length in
 slots `sX` and `sXlen`) and its exponent `dX` (pointer in `sDX`):
 `dX < X - 1`, `d e ≡ 1` and `e dX ≡ 1`. -/
-def modChecks (sX sXlen sDX : Nat) : List (Prog isa) :=
+def modChecks (sX sXlen sDX sYlen : Nat) : List (Prog isa) :=
   loadNum aM sX sXlen ++ decM ++
   loadNum aX sDX sXlen ++ ltMask aX aM ++
-  loadNum aX sD sDlen ++ mulE ++ reduce cntE ++ eqOne ++
+  loadNum aX sD sDlen ++ mulEWide ++ CheckCrtKey.reduceTop sXlen (topD sYlen) ++ eqOne ++
   loadNum aX sDX sXlen ++ mulE ++ CheckCrtKey.reduceTop sXlen CheckCrtKey.topE ++ eqOne
 
 /-- The computation, once `n` and `e` are known valid. -/
@@ -35,7 +37,7 @@ def main : Prog isa := seqs (
   -- `p q = n`
   loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulXR ++ Crt.eqCheck ++
   -- modulo `p - 1` and `q - 1`
-  modChecks sP sPlen sDP ++ modChecks sQ sQlen sDQ ++
+  modChecks sP sPlen sDP sQlen ++ modChecks sQ sQlen sDQ sPlen ++
   -- `qInv < p` and `q qInv ≡ 1 (mod p)`
   loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
   loadNum aR sQ sQlen ++ mulXR ++ CheckCrtKey.reduceTop sPlen CheckCrtKey.topQ ++ eqOne ++

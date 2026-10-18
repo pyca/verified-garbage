@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyWide
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -8,10 +8,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 /-!
 # `vg_rsa_check_key` on x86-64: the checks modulo `X - 1`
 
-`modChecks sX sXlen sDX` for the prime `X` and its exponent `dX`: `sMask`
+`modChecks sX sXlen sDX sYlen` for the prime `X` and its exponent `dX`: `sMask`
 and'ed with the masks of `dX < M`, `R₁ = 1` and `R₂ = 1`, for `M = X - 1`
-(when `X > 0`) and the remainders `R₁ = e d mod M` and `R₂ = e dX mod M`
-(when `M > 0`) (`modChecks_ok`).
+(when `X > 0`). The first remainder is `e d mod M` when `X ≥ 2` and the
+preceding checks establish `d < N = X Y`; the second is `e dX mod M`
+when `X > 0` and `dX < M` (`modChecks_ok`).
 -/
 
 @[expose] public section
@@ -33,10 +34,13 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
     (srcX : Src s B Z px xb) (srcDX : Src s B Z pdx dxb) (srcD : Src s B Z pd db)
     (hdxl : dxb.length = xb.length) (hx1 : 1 ≤ xb.length) (hxk : xb.length ≤ 8 * w)
     (hd1 : 1 ≤ db.length) (hdk : db.length ≤ 8 * w)
-    (hev : (word s.mem B (8 * sEv)).toNat < 2 ^ 33) :
-    WP isa (seqs (modChecks sX sXlen sDX)) t fun t' => KCtx s t' B Z w minv N ∧
+    (hev : (word s.mem B (8 * sEv)).toNat < 2 ^ 33)
+    {sYlen Y L : Nat} (hsYl : sYlen < 32) (nYl : sYlen ≠ sMask)
+    (hyl : word s.mem B (8 * sYlen) = BitVec.ofNat 64 L) (hyL : L ≤ 8 * w)
+    (hy : Y < 2 ^ (64 * ((L + 7) / 8))) :
+    WP isa (seqs (modChecks sX sXlen sDX sYlen)) t fun t' => KCtx s t' B Z w minv N ∧
       ∃ M R1 R2 : Nat, (0 < Spec.Rsa.os2ip xb → M = Spec.Rsa.os2ip xb - 1) ∧
-        (0 < M → R1 = (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip db % M) ∧
+        (2 ≤ Spec.Rsa.os2ip xb → Spec.Rsa.os2ip db < N → Spec.Rsa.os2ip xb * Y = N → R1 = (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip db % M) ∧
         (0 < Spec.Rsa.os2ip xb → Spec.Rsa.os2ip dxb < M → R2 = (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb % M) ∧
         word t'.mem B (8 * sMask) =
           mask (b && decide (Spec.Rsa.os2ip dxb < M) && decide (R1 = 1) && decide (R2 = 1)) := by
@@ -58,15 +62,20 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
   rw [v₃, M₃, Arrays.mask_eq a₃ hn hZ, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₄
   have M₄ : wv t₄.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
     rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega), M₃]
-  refine wsa (by simp [loadNum]) (by simp [mulE]) (WP.mono (loadK h₄ (j := aX) (by decide) (by decide)
+  refine wsa (by simp [loadNum]) (by simp [mulEWide]) (WP.mono (loadK h₄ (j := aX) (by decide) (by decide)
     (by decide) (show sD < 32 by decide) (show sDlen < 32 by decide) (by decide) (by decide) hpd hdl srcD hd1 hdk)
     fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
   have M₅ : wv t₅.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
     rw [Arrays.wv_other a₅ (by decide) (by decide) hZ hn, M₄]
-  refine wsa (by simp [mulE]) (by simp [reduce]) (WP.mono (mulEK h₅) fun t₆ ⟨h₆, v₆, a₆⟩ => ?_)
+  refine wsa (by simp [mulEWide]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (WP.mono (mulEWideK h₅) fun t₆ ⟨h₆, v₆, a₆⟩ => ?_)
   have M₆ : wv t₆.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
     rw [Arrays.wv_other a₆ (by decide) (by decide) hZ hn, M₅]
-  refine wsa (by simp [reduce]) (by simp [eqOne]) (WP.mono (reduceEK h₆) fun t₇ ⟨h₇, v₇, a₇⟩ => ?_)
+  refine wsa (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne])
+    (WP.mono (reduceTopK h₆ (sl := sXlen) (top := topD sYlen) (L := xb.length)
+      (c := (L + 7) / 8 + 1) (Nx := 2 * w + 4) hsXl nXl hxl hx1 hxk
+      (fun t' hg hh => topD_ok hg hZ hsYl
+        (by rw [hh _ hsYl, h₆.hdr _ hsYl nYl]; exact hyl) (by omega))
+      (by omega) (by omega) (by omega)) fun t₇ ⟨h₇, v₇, a₇⟩ => ?_)
   rw [M₆, v₆, v₅] at v₇
   have M₇ : wv t₇.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
     rw [Arrays.wv_other a₇ (by decide) (by decide) hZ hn, M₆]
@@ -88,7 +97,17 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
       (fun t' _ _ => topE_ok t') (Nat.le_refl _) (by omega) (by omega)) fun t₁₁ ⟨h₁₁, v₁₁, a₁₁⟩ => ?_)
   rw [M₁₀, v₁₀, v₉] at v₁₁
   refine WP.mono (eqOneK h₁₁) fun t₁₂ ⟨h₁₂, m₁₂, _⟩ => ⟨h₁₂, wv t₂.mem B (slot w aM) w, wv t₇.mem B (slot w aR) w,
-    wv t₁₁.mem B (slot w aR) w, fun hx => by have := v₂ hx; omega, v₇, ?_, ?_⟩
+    wv t₁₁.mem B (slot w aR) w, fun hx => by have := v₂ hx; omega, ?_, ?_, ?_⟩
+  · intro hx hd hpq
+    have eM := v₂ (by omega)
+    have hM : wv t₂.mem B (slot w aM) w < 2 ^ (64 * ((xb.length + 7) / 8)) := by
+      have := Proof.Rsa.lt_of_os2ip xb
+      have := pow_len_le xb.length
+      omega
+    refine v₇ hM (by omega) (top_lt' ?_)
+    rw [show (L + 7) / 8 + 1 + (2 * w + 4 - ((L + 7) / 8 + 1)) = 2 * w + 4 by omega, v₆, v₅]
+    rw [show wv t₂.mem B (slot w aM) w = Spec.Rsa.os2ip xb - 1 by omega]
+    exact fullExp_bound hev hx (by rw [hpq]; exact hd) hy
   · intro hx hlt
     have eM := v₂ hx
     have hM : wv t₂.mem B (slot w aM) w < 2 ^ (64 * ((xb.length + 7) / 8)) := by
