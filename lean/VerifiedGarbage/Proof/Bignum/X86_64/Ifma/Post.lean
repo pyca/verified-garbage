@@ -33,22 +33,22 @@ theorem post_eq (mul : Nat → Nat → Nat → Prog isa) :
 /-- `post`: with `q`'s result in its `aY`, `p`'s `aY := h` as `pPhase` leaves
 it. Only `p`'s workspace changes. -/
 theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
-    {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hw2 : w = 2 * wx)
+    {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool} {ok : Prop}
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N ok) (hw2 : w = 2 * wx)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wx mq)
     (hhiq : oq + slot wx 8 + wsTab wx ≤ Z)
     (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + wsTab wx ≤ oq) (hwx2 : 2 ≤ wx)
     (hsp : word s.mem B (8 * sWsP) = off B op) (hws : WsAt s.mem B op wx mx) (hX : XVals s B op wx mx X)
     (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hyl : wv s.mem (off B op) (slot wx Public.aY) wx < X)
-    (hyc : X ∣ N → wv s.mem (off B op) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
+    (hyc : ok → X ∣ N → wv s.mem (off B op) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
     (hmask : word s.mem (off B op) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
     (hqs : Src s B Z qp qib) (hq1 : 1 ≤ qib.length) (hq2 : qib.length < 2 ^ 31) (hqw : (qib.length + 7) / 8 ≤ wx)
     (hqi : c = true → Spec.Rsa.os2ip qib < X) :
     WP isa (seqs (CrtIfma.post M.mm)) s fun t => Good t B Z w minv ∧ WsAt t.mem B op wx mx ∧
       XVals t B op wx mx X ∧ wv t.mem (off B op) (slot wx Public.aY) wx < X ∧
-      (c = true → ∃ a b, a % X = m1 * 2 ^ (64 * wx) % X ∧
+      (ok → c = true → ∃ a b, a % X = m1 * 2 ^ (64 * wx) % X ∧
         b % X = wv s.mem (off B oq) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X ∧ b < X ∧
         wv t.mem (off B op) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X = (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
       Frm B (gRanges w ++ [(slot w Public.aX, 8 * (w + 2)), xRange op wx]) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -171,16 +171,16 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
     fun s₅ ⟨hc₅, hX₅, hlt₅, hh₅, fx₅, k₅, _⟩ => ?_)
   refine WP.mono (leaveBack_ok hg hc₅ (f04.trans fx₅) hlo) fun t ⟨hg', hm', k'⟩ => ?_
   have kall := ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k'
-  refine ⟨hg', by rw [hm']; exact hc₅.ws, ?_, by rw [hm']; exact hlt₅, fun hct => ?_,
+  refine ⟨hg', by rw [hm']; exact hc₅.ws, ?_, by rw [hm']; exact hlt₅, fun hok hct => ?_,
     by rw [hm']; exact (f04.trans fx₅).mono fun r hr => by rw [List.mem_singleton.mp hr]; simp,
     ⟨fun r hr => ?_, kall.2⟩⟩
   · rw [show t = { t with mem := s₅.mem } by rw [← hm']]; exact ⟨hX₅.n, hX₅.inv, hX₅.one⟩
   · refine ⟨wv s.mem (off B op) (slot wx Public.aY) wx, wv s₄.mem (off B op) (slot wx aXc) wx,
-      hyc (hc hct), ?_, hlt₄', by rw [hm', hh₅ hct, hY₄]⟩
+      hyc hok (hc hct), ?_, hlt₄', by rw [hm', hh₅ hct, hY₄]⟩
     -- `aXc₁ = R_p²`, so `aXc₄ R_p ≡ m_q R_p²`.
     have h1 : wv s₁.mem (off B op) (slot wx aXc) wx % X = 2 ^ (64 * wx * 2) % X :=
       VG.Proof.Bignum.mont_cancel hRR (by
-        rw [hv₁, ← Nat.mod_mod_of_dvd _ (hc hct), hN.r2, Nat.mod_mod_of_dvd _ (hc hct), e2, ← Nat.pow_add])
+        rw [hv₁, ← Nat.mod_mod_of_dvd _ (hc hct), hN.r2 hok, Nat.mod_mod_of_dvd _ (hc hct), e2, ← Nat.pow_add])
     apply VG.Proof.Bignum.mont_cancel hRx
     rw [hv₄c, hm₄, hC₃, hxc₃, Nat.mul_mod, h1, ← Nat.mul_mod, Nat.mul_assoc _ (2 ^ (64 * wx)), ← Nat.pow_add]
     congr 3; omega_arith

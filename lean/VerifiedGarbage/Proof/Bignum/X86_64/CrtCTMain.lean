@@ -75,28 +75,28 @@ theorem stage_step {R R' : StageRel} {c : Prog isa} (hct : RelCT isa (Two (Stage
 
 def R0 : StageRel := fun _ σ _ _ _ _ _ _ t => t = σ
 
-def R1 : StageRel := fun p σ xb _ _ _ _ _ t => ∃ minv, NReady σ t p.B p.Z p.w minv p.N (Spec.Rsa.os2ip xb)
+def R1 : StageRel := fun p σ xb _ _ _ _ _ t => ∃ minv, NReady σ t p.B p.Z p.w minv p.N (Spec.Rsa.os2ip xb) True
 
 def R2 : StageRel := fun p σ xb pb qb _ _ qib t => ∃ minv mp mq, PReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) True
 
 /-- The mask of a run: whether the input and the key are valid. -/
 abbrev CrtPub.mask (p : CrtPub) (xb pb qb qib : List Byte) : Bool :=
   keyMask (decide (Spec.Rsa.os2ip xb < p.N)) p.N (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)
 
 def R3 : StageRel := fun p σ xb pb qb _ _ qib t => ∃ minv mp mq, CrtReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (p.mask xb pb qb qib)
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (p.mask xb pb qb qib) True
 
 def R4 : StageRel := fun p σ xb pb qb _ dqb qib t => ∃ minv mp mq, QReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb (p.mask xb pb qb qib)
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb (p.mask xb pb qb qib) True
 
 def R5 : StageRel := fun p σ xb pb qb dpb dqb qib t => ∃ minv mp mq, PDone σ t p.B p.Z p.w p.pl p.ql minv mp mq
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb (p.mask xb pb qb qib)
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb (p.mask xb pb qb qib) True
 
 /-- `-n⁻¹` is the same in runs that agree on `n`. -/
-theorem nv_minv {t t' : State} {B : Addr} {w : Nat} {mi mi' : BitVec 64} {N : Nat} (h : NVals t B w mi N)
-    (h' : NVals t' B w mi' N) (hodd : N % 2 = 1) (hw : 1 ≤ w) : mi = mi' := by
-  have e : ∀ {t : State} {mi : BitVec 64}, NVals t B w mi N →
+theorem nv_minv {t t' : State} {B : Addr} {w : Nat} {mi mi' : BitVec 64} {N : Nat} {ok ok' : Prop}
+    (h : NVals t B w mi N ok) (h' : NVals t' B w mi' N ok') (hodd : N % 2 = 1) (hw : 1 ≤ w) : mi = mi' := by
+  have e : ∀ {t : State} {mi : BitVec 64} {ok : Prop}, NVals t B w mi N ok →
       (word t.mem B (slot w Public.aN)).toNat = N % 2 ^ 64 := fun h => by
     rw [← wv_mod64 _ _ _ hw, h.n]
   have i := h.inv
@@ -175,7 +175,7 @@ theorem two_stage {R : StageRel} {α : Type} {Φ : α → State → Prop} (f : C
     (m : ∀ p σ xb pb qb dpb dqb qib t,
       CrtPre σ p.B p.Z p.k p.op p.np p.ip p.pp p.qp p.dpp p.dqp p.qip p.pl p.ql p.nb xb pb qb dpb dqb qib →
       Spec.Rsa.modulusValid p.N p.k = true → R p σ xb pb qb dpb dqb qib t →
-      ∃ minv, NVals t p.B p.w minv p.N ∧ Φ (f p minv) t)
+      ∃ minv, NVals t p.B p.w minv p.N True ∧ Φ (f p minv) t)
     {s₁ s₂ : State} (h : Two (Stage R) s₁ s₂) : Two Φ s₁ s₂ := by
   obtain ⟨p, ⟨σ₁, xb₁, pb₁, qb₁, dpb₁, dqb₁, qib₁, h₁, hv, r₁⟩, ⟨σ₂, xb₂, pb₂, qb₂, dpb₂, dqb₂, qib₂, h₂, hv₂, r₂⟩⟩ := h
   obtain ⟨m₁, n₁, φ₁⟩ := m p _ _ _ _ _ _ _ _ h₁ hv r₁
@@ -246,8 +246,8 @@ theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (S
   unfold QPre
   dsimp only [CrtPub.w]
   exact ⟨mq, _, _, dqb, hr.good, by omega, by omega,
-    by unfold offQ; omega, hZq, hwq2, wsWords_le (by omega) (by omega), hr.wsQ, hr.qws, hr.nv,
-    hodd, hN1, hr.xm, hr.qxv, hQ'.1, hQ'.2, by rw [hh _ (by decide) (by decide)]; exact h.hDq,
+    by unfold offQ; omega, hZq, hwq2, wsWords_le (by omega) (by omega), hr.wsQ, hr.qws, hr.nv.weak False.elim,
+    hodd, hN1, hr.xm trivial, hr.qxv, hQ'.1, hQ'.2, by rw [hh _ (by decide) (by decide)]; exact h.hDq,
     by rw [hh _ (by decide) (by decide), h.dql]; exact h.hQl, h.dql, by rw [h.dql]; omega,
     by rw [h.dql]; omega, h.dq.congrK hr.iscr hr.keep⟩
 
@@ -277,7 +277,7 @@ theorem pS_ct (M : Mont) (E : CrtExpL M) (hP : PPhaseCT M E) : RelCT isa (Two (S
   refine ⟨mp, mq, _, _, dpb, qib, p.mask xb pb qb qib, hr.good, by omega,
     by omega, show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega, hZq, hwp2,
     wsWords_le (by omega) (by omega), by unfold wsWords; omega,
-    wsWords_le (by omega) (by omega), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv, hodd, hN1, hr.xm,
+    wsWords_le (by omega) (by omega), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv.weak False.elim, hodd, hN1, hr.xm trivial,
     hr.pxv, hP'.1, hP'.2, hr.pmask, fun hm => ?_, by rw [hh _ (by decide) (by decide)]; exact h.hDp,
     by rw [hh _ (by decide) (by decide), h.dpl]; exact h.hPl, h.dpl, by rw [h.dpl]; omega, by rw [h.dpl]; omega,
     h.dp.congrK hr.iscr hr.keep, by rw [hh _ (by decide) (by decide)]; exact h.hQi, by rw [h.qil, h.dpl],

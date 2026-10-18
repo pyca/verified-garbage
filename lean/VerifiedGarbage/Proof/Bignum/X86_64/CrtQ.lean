@@ -34,9 +34,9 @@ theorem qPhase_eq (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat →
 
 /-- A Montgomery multiplication in the modulus' workspace that changes only
 `Y`, the accumulator and the temporary. -/
-theorem mmY_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
+theorem mmY_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} {ok : Prop}
     (hg : Good t B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) {a : Nat} (ha : a < 8)
-    (d3 : a ≠ Public.aAcc) (d6 : a ≠ Public.aTmp) (hN : NVals t B w minv N)
+    (d3 : a ≠ Public.aAcc) (d6 : a ≠ Public.aTmp) (hN : NVals t B w minv N ok)
     (hB : wv t.mem B (slot w Public.aY) w < N) :
     WP isa (M.mm Public.aY a Public.aY) t fun t' => Good t' B Z w minv ∧
       wv t'.mem B (slot w Public.aY) w < N ∧
@@ -49,9 +49,9 @@ theorem mmY_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl <;> simp [gRanges]
 
-theorem NVals.of_frm {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N o wx : Nat}
-    (h : NVals s B w minv N) (hf : Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem) (hlo : slot w 8 ≤ o)
-    (hz : B.toNat + slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) : NVals t B w minv N := by
+theorem NVals.of_frm {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N o wx : Nat} {ok : Prop}
+    (h : NVals s B w minv N ok) (hf : Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem) (hlo : slot w 8 ≤ o)
+    (hz : B.toNat + slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) : NVals t B w minv N ok := by
   have hr : ∀ j < 8, j ≠ Public.aAcc → j ≠ Public.aTmp → j ≠ Public.aY →
       ∀ r ∈ gRanges w ++ [xRange o wx], slot w j + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
     intro j hj h1 h2 h3 r hr
@@ -78,17 +78,18 @@ theorem NVals.of_frm {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N o 
 /-- `q`'s phase: `m_q = c^dQ mod q` into `q`'s `Y`, if `q` divides `N` and
 `X_m ≡ c R (mod N)`. -/
 theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C o wx : Nat}
+    {ok : Prop}
     {ep : Addr} {eb : List Byte}
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsQ) = off B o) (hws : WsAt s.mem B o wx mx)
-    (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
-    (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N)
+    (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hep : word s.mem B (8 * sDq) = ep) (hel : word s.mem B (8 * sQlen) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
     WP isa (seqs (qPhase M.mm E.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb % X) ∧
+      (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb % X) ∧
       Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
   have hs := hg.scr
   have hn := hs.nowrap
@@ -138,9 +139,10 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     Frm.mono f₂ fun r hr => List.mem_append_left _ hr
   have hN₂ := hN₁.of_frm f₂' hlo hz (by omega_using [hwx2, hwx])
   have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hcg : wv s₂.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
+  have hcg : ok → wv s₂.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
+    intro hok
     apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm₂, Nat.mul_mod, hXm₁, hXm, hG₁, ← Nat.mul_mod]
+    rw [hm₂, Nat.mul_mod, hXm₁, hXm hok, hG₁ hok, ← Nat.mul_mod]
     congr 1
     ac_rfl
   have hxo : ∀ i < 32, word s₂.mem (off B o) (8 * i) = word s₁.mem (off B o) (8 * i) := fun i hi => by
@@ -165,7 +167,7 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   refine WP.mono (powPhase_ok M E hg₂ hw28 hlo hhi hwx2 hwx (sl := sWsQ) (by decide)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hslv) (hws₁.of_words fun i hi => hxo i (by omega_using [hi]))
     (hX₁.of_below f₂ (fun r hr => (gRanges_le w r hr).trans hlo) hoL)
-    hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hd => by rw [hYq₂]; exact hyq₁ hd) (sd := sDq) (slen := sQlen)
+    hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hok hd => by rw [hYq₂]; exact hyq₁ hok hd) (sd := sDq) (slen := sQlen)
     (by decide) (by decide) (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hep)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i02 (k₁.trans k₂)))
     fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, _, fx₃, k₃⟩ => ?_
@@ -219,7 +221,7 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   have kall := (((k₁.trans k₂).trans k₃).trans k₄).trans k'
   have hb : ∀ d, d + 8 ≤ o → word t.mem B d = word s₂.mem B d := fun d hd => fx₄.x_below hd ho64
   refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, by rw [hm]; exact hc₄.ws, ⟨by rw [hm]; exact hX₄.n,
-    by rw [hm]; exact hX₄.inv, by rw [hm]; exact hX₄.one⟩, by rw [hm]; exact hlt₄, fun hd => ?_,
+    by rw [hm]; exact hX₄.inv, by rw [hm]; exact hX₄.one⟩, by rw [hm]; exact hlt₄, fun hok hd => ?_,
     f02.trans (fx₄.mono fun r hr => List.mem_append_right _ hr), ⟨fun r hr => ?_, kall.2⟩⟩
   · have hH := hg₂.hdr
     exact ⟨(hb _ (by unfold sW; omega_arith)).trans hH.hw, (hb _ (by unfold sMinv; omega_arith)).trans hH.hminv,
@@ -227,7 +229,7 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
         (hH.harr j hj)⟩
   · rw [hm]
     have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
-    exact VG.Proof.Bignum.mont_cancel hR (by rw [hm₄, hv₃ hd])
+    exact VG.Proof.Bignum.mont_cancel hR (by rw [hm₄, hv₃ hok hd])
   · by_cases h : r = .rdi
     · subst h; rw [hdi, hg.rdi]
     · exact kall.1 r (by revert hr h; cases r <;> decide)

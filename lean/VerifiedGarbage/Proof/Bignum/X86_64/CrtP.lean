@@ -41,13 +41,14 @@ theorem pPhase_eq (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat →
 /-- `m_q`, `q`'s `Y`, times `G` (the modulus' `Y`) modulo `N` into the
 modulus' `X`. -/
 theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVec 64} {N G oq wq : Nat}
-    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hodd : N % 2 = 1)
-    (hYl : wv s.mem B (slot w Public.aY) w < N) (hY : wv s.mem B (slot w Public.aY) w % N = G % N)
+    {ok : Prop}
+    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N ok) (hodd : N % 2 = 1)
+    (hYl : wv s.mem B (slot w Public.aY) w < N) (hY : ok → wv s.mem B (slot w Public.aY) w % N = G % N)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hws : WsAt s.mem B oq wq mq) (hlo : slot w 8 ≤ oq)
     (hhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs (mqSteps M.mm)) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w Public.aX) w < N ∧
-      wv t.mem B (slot w Public.aX) w % N = wv s.mem (off B oq) (slot wq Public.aY) wq * G % N ∧
+      (ok → wv t.mem B (slot w Public.aX) w % N = wv s.mem (off B oq) (slot wq Public.aY) wq * G % N) ∧
       wv t.mem B (slot w Public.aY) w = wv s.mem B (slot w Public.aY) w ∧
       Frm B (gRanges w ++ [(slot w Public.aX, 8 * (w + 2))]) s.mem t.mem ∧ Keep mmRegs s t := by
   have hs := hg.scr
@@ -105,13 +106,14 @@ theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVe
         rw [ho₃.word (Or.inl (by have := hdr_lt_slot w Public.aX hi; omega_arith)) (by omega_arith), hm₂, hb₁ i hi]
       exact ⟨(this _ (by decide)).trans hg.hdr.hw, (this _ (by decide)).trans hg.hdr.hminv,
         fun j hj => (this _ (by unfold sArr; omega_arith)).trans (hg.hdr.harr j hj)⟩⟩
-  have hN₃ : NVals s₃ B w minv N := by
+  have hN₃ : NVals s₃ B w minv N ok := by
     have hw0 : word s₃.mem B (slot w Public.aN) = word s.mem B (slot w Public.aN) := by
       have := slot_sep (w := w) (show Public.aN ≠ Public.aX by decide)
       have := slot_le (w := w) (show Public.aN < 8 by decide)
       rw [ho₃.word (by omega_arith) (by omega_arith), hm₂, ho₁.word (by omega_arith) (by omega_arith)]
     exact ⟨(hn₃ _ (by decide) (by decide)).trans hN.n, by rw [hw0]; exact hN.inv,
-      by rw [hn₃ _ (by decide) (by decide)]; exact hN.r2, by rw [hn₃ _ (by decide) (by decide)]; exact hN.r2lt,
+      fun h => by rw [hn₃ _ (by decide) (by decide)]; exact hN.r2 h,
+      by rw [hn₃ _ (by decide) (by decide)]; exact hN.r2lt,
       (hn₃ _ (by decide) (by decide)).trans hN.one⟩
   -- `X := m_q R`, then `m_q G`.
   have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
@@ -123,14 +125,14 @@ theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVe
   refine WP.mono (mmN_ok M hg₄ (by omega_arith) (by omega_arith) (by omega_arith) (o := Public.aX) (a := Public.aX)
     (b := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     hn₄ hi₄ (by rw [hY₄]; exact hYl)) fun t ⟨hg', _, _, hlt', hm', ha', k'⟩ => ?_
-  refine ⟨hg', hlt', ?_, by rw [ha'.wv_of_not_mem (by decide) (by decide) hz]; exact hY₄, ?_,
+  refine ⟨hg', hlt', fun hok => ?_, by rw [ha'.wv_of_not_mem (by decide) (by decide) hz]; exact hY₄, ?_,
     ((((k₁.trans k₂).trans k₃).trans k₄).trans k').mono (by decide)⟩
   · -- `X' R ≡ X G ≡ m_q R G`.
     have e₄ : wv s₄.mem B (slot w Public.aX) w % N = wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * w) % N := by
       apply VG.Proof.Bignum.mont_cancel hR
-      rw [hm₄, hX₃, Nat.mul_mod, hN₃.r2, ← Nat.mul_mod, Nat.mul_assoc]
+      rw [hm₄, hX₃, Nat.mul_mod, hN₃.r2 hok, ← Nat.mul_mod, Nat.mul_assoc]
     apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm', Nat.mul_mod, e₄, hY₄, hY, ← Nat.mul_mod]
+    rw [hm', Nat.mul_mod, e₄, hY₄, hY hok, ← Nat.mul_mod]
     congr 1; ac_rfl
   · have hx : (slot w Public.aX, 8 * (w + 2)) ∈ gRanges w ++ [(slot w Public.aX, 8 * (w + 2))] := by simp
     have ha : ∀ j ∈ [Public.aAcc, Public.aTmp, Public.aX], (slot w j, 8 * (w + 2)) ∈
@@ -233,20 +235,20 @@ theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
 /-- `h`: from `m_q G mod N` in the modulus' `X` and `m_p R_p` in `p`'s `Y`,
 `h = (m_p - m_q) qInv R_p⁻¹ R_p` into `p`'s `Y`, `qInv` masked by `c`. -/
 theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X mqv m1 o wx : Nat}
-    {qp : Addr} {qib : List Byte} {c : Bool}
+    {qp : Addr} {qib : List Byte} {c : Bool} {ok : Prop}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hXn : wv s.mem B (slot w Public.aX) w % N = mqv * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
+    (hXn : ok → wv s.mem B (slot w Public.aX) w % N = mqv * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
     (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
-    (hyc : X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
+    (hyc : ok → X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
     (hqs : Src s B Z qp qib) (hq1 : 1 ≤ qib.length) (hq2 : qib.length < 2 ^ 31) (hqw : (qib.length + 7) / 8 ≤ wx)
     (hqi : c = true → Spec.Rsa.os2ip qib < X) :
     WP isa (seqs (hSteps M.mm)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (c = true → ∃ a b, a % X = m1 * 2 ^ (64 * wx) % X ∧ b % X = mqv * 2 ^ (64 * wx) % X ∧ b < X ∧
+      (ok → c = true → ∃ a b, a % X = m1 * 2 ^ (64 * wx) % X ∧ b % X = mqv * 2 ^ (64 * wx) % X ∧ b < X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X =
           (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
       Frm B [xRange o wx] s.mem t.mem ∧ Keep mmRegs s t := by
@@ -289,10 +291,10 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
     exact hmask
   have hb₂ : ∀ d, d + 8 ≤ o → word s₂.mem B d = word s.mem B d := fun d hd => by
     rw [fx₂.x_below hd ho64, hm₁]
-  have hxc : X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = mqv * 2 ^ (64 * wx) % X := fun hd => by
+  have hxc : ok → X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = mqv * 2 ^ (64 * wx) % X := fun hok hd => by
     apply VG.Proof.Bignum.redc_cancel hR
     rw [Nat.pow_mul] at hv₂
-    rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hXn, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
+    rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hXn hok, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
   rw [show subModArr aT Public.aY aXc ++ (loadArr aChunk sQinv sPlen ++ (maskArr aChunk ++
       [M.mm Public.aY aT aChunk, .block [leave]])) = (subModArr aT Public.aY aXc ++ loadArr aChunk sQinv sPlen ++
       maskArr aChunk ++ [M.mm Public.aY aT aChunk]) ++ [.block [leave]] by simp]
@@ -317,10 +319,10 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
       (hb _ (by unfold sMinv; omega_arith)).trans hg.hdr.hminv,
       fun j hj => (hb _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega_arith); omega_arith)).trans
         (hg.hdr.harr j hj)⟩⟩, by rw [hm]; exact hc₆.ws, ⟨by rw [hm]; exact hX₆.n, by rw [hm]; exact hX₆.inv,
-      by rw [hm]; exact hX₆.one⟩, by rw [hm]; exact hlt₆, fun hct => ?_, fall,
+      by rw [hm]; exact hX₆.one⟩, by rw [hm]; exact hlt₆, fun hok hct => ?_, fall,
     ⟨fun r hr => ?_, kall.2⟩⟩
   · refine ⟨wv s.mem (off B o) (slot wx Public.aY) wx, wv s₂.mem (off B o) (slot wx aXc) wx,
-      hyc (hc hct), hxc (hc hct), hlt₂, ?_⟩
+      hyc hok (hc hct), hxc hok (hc hct), hlt₂, ?_⟩
     rw [hm, hh₆ hct, hY₂]
   · by_cases h : r = .rdi
     · subst h; rw [hdi, hg.rdi]
@@ -329,13 +331,13 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
 /-- `p`'s phase: `h = (m_p - m_q) qInv mod p` into `p`'s `Y` if `p` divides
 `N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
 theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
-    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
+    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool} {ok : Prop}
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ oq)
     (hqhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
     (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hslq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wq mq)
-    (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
-    (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N)
+    (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
     (hep : word s.mem B (8 * sDp) = ep) (hel : word s.mem B (8 * sPlen) = BitVec.ofNat 64 eb.length)
@@ -344,7 +346,7 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
     WP isa (seqs (pPhase M.mm E.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
+      (ok → c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
         b % X = wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * wx) % X ∧ b < X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X =
           (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
@@ -387,11 +389,11 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     fun s₂ ⟨hg₂, hlt₂, hmq₂, hY₂, f₂, k₂⟩ => ?_
   have f₂' := hsub sp f₂
   have f₀₂ := f₁'.trans f₂'
-  have hN₂ : NVals s₂ B w minv N := by
+  have hN₂ : NVals s₂ B w minv N ok := by
     have := hN.of_frm f₁ hlo hz (by omega_arith)
     exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.n,
       by rw [f₂'.px_word hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.inv,
-      by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.r2,
+      fun h => by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.r2 h,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.r2lt,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.one⟩
   -- `c G mod N`.
@@ -403,9 +405,10 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
   have hXm₂ : wv s₂.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
     f₀₂.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)
-  have hcg : wv s₃.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
+  have hcg : ok → wv s₃.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
+    intro hok
     apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm₃, Nat.mul_mod, hXm₂, hXm, hY₂, hG₁, ← Nat.mul_mod]
+    rw [hm₃, Nat.mul_mod, hXm₂, hXm hok, hY₂, hG₁ hok, ← Nat.mul_mod]
     congr 1; ac_rfl
   have hpo : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r ∈ pRanges w) → ∀ d,
       o ≤ d → d + 8 ≤ 2 ^ 64 → word m' B d = word m B d := fun f hrs d hd hd' =>
@@ -430,7 +433,7 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_
   refine WP.mono (powPhase_ok M E hg₃ hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv) hws₃ hX₃ hX1 hXodd hcg
-    (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd) (sd := sDp) (slen := sPlen) (by decide)
+    (by rw [hpY₃]; exact hpl₁) (fun hok hd => by rw [hpY₃]; exact hpy₁ hok hd) (sd := sDp) (slen := sPlen) (by decide)
     (by decide) (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2
     (he.congrK i03 ((k₁.trans k₂).trans k₃))) fun s₄ ⟨hc₄, hX₄, hlt₄, hv₄, hM₄, fx₄, k₄⟩ => ?_
@@ -449,10 +452,11 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     fun j hj => (hb₅ _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega_arith); omega_arith)).trans
       (hg₃.hdr.harr j hj)⟩⟩
   have hX₅ : XVals s₅ B o wx mx X := ⟨by rw [hm₅]; exact hX₄.n, by rw [hm₅]; exact hX₄.inv, by rw [hm₅]; exact hX₄.one⟩
-  have hXn₅ : wv s₅.mem B (slot w Public.aX) w % N =
+  have hXn₅ : ok → wv s₅.mem B (slot w Public.aX) w % N =
       wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
+    intro hok
     rw [wv_congr fun i hi => hb₅ _ (by have := slot_le (w := w) (show Public.aX < 8 by decide); omega_arith),
-      f₃.g_wv hz (by decide) (by decide) (by decide) (by decide), hmq₂,
+      f₃.g_wv hz (by decide) (by decide) (by decide) (by decide), hmq₂ hok,
       hq f₁' _ _ (by have := slot_le (w := wq) (show Public.aY < 8 by decide); omega_arith)]
   have i05 : InScr B Z s.mem s₅.mem := InScr.of_frm f₀₅ fun r hr => by have := pxR_bound hlo r hr; omega_arith
   -- `h`.
@@ -460,8 +464,8 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     rw [f₀₅.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv
   have a2 : WsAt s₅.mem B o wx mx := by rw [hm₅]; exact hc₄.ws
   have a3 : wv s₅.mem (off B o) (slot wx Public.aY) wx < X := by rw [hm₅]; exact hlt₄
-  have a4 : X ∣ N → wv s₅.mem (off B o) (slot wx Public.aY) wx % X =
-      C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X := fun hd => by rw [hm₅]; exact hv₄ hd
+  have a4 : ok → X ∣ N → wv s₅.mem (off B o) (slot wx Public.aY) wx % X =
+      C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X := fun hok hd => by rw [hm₅]; exact hv₄ hok hd
   have a5 : word s₅.mem (off B o) (8 * sMaskX) = mask c := by
     rw [hm₅, hM₄, hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
   have a6 : word s₅.mem B (8 * sQinv) = qp := by

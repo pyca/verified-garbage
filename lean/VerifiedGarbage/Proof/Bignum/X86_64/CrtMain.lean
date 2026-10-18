@@ -35,7 +35,7 @@ theorem crtMain_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z k : Nat}
         Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) := by
   rw [crtMain_eq]
   refine wp_seqs_append (by simp [nSetup]) (by simp [qPhase]) (WP.mono (front_ok M h hv)
-    fun t₀ ⟨minv, mp, mq, hr⟩ => WP.mono (back_ok M E h hv hr rfl) fun t ht => ⟨_, ht, ?_⟩)
+    fun t₀ ⟨minv, mp, mq, hr⟩ => WP.mono (back_ok M E h hv hr rfl) fun t ht => ⟨_, ht.main, ?_⟩)
   simp only [keyMask, Bool.and_eq_true, decide_eq_true_eq, and_assoc]
 
 end VG.Proof.Bignum.X86_64

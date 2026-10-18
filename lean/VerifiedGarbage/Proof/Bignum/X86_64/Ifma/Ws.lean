@@ -65,14 +65,14 @@ theorem nsafe_word {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (h
   · subst h; have := hdr_lt_slot w Public.aX hi; exact .inl (by simp only; omega)
   · exact .inl (by omega)
 
-theorem NVals.of_nsafe {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N : Nat} (h : NVals s B w minv N)
+theorem NVals.of_nsafe {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N : Nat} {ok : Prop} (h : NVals s B w minv N ok)
     {rs : List (Nat × Nat)} (hf : Frm B rs s.mem t.mem) (hr : NSafe w rs) (hz : slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) :
-    NVals t B w minv N := by
+    NVals t B w minv N ok := by
   have lN := slot_le (w := w) (show Public.aN < 8 by decide)
   have hN0 := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
   have e := fun {j} (hj : j < 8) h1 h2 h3 h4 => nsafe_wv (j := j) hf hr hj h1 h2 h3 h4 hz
   refine ⟨by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.n, ?_,
-    by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.r2,
+    by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact fun hok => h.r2 hok,
     by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.r2lt,
     by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.one⟩
   have := (wv_mod64 t.mem B (slot w Public.aN) (n := w) hw).symm
@@ -92,8 +92,8 @@ theorem above_nsafe {w L : Nat} {rs : List (Nat × Nat)} (hL : slot w 8 ≤ L) (
     NSafe w rs := fun r h => .inr (.inr (by have := hr r h; omega))
 
 /-- What `pre` leaves (`pre_ok`), from `s`. -/
-def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) : Prop :=
-  Good t B Z w minv ∧ NVals t B w minv N ∧ PrimeRdy t B op wp mp N P C ∧ PrimeRdy t B oq wp mq N Q C ∧
+def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) (ok : Prop) : Prop :=
+  Good t B Z w minv ∧ NVals t B w minv N ok ∧ PrimeRdy t B op wp mp N P C ok ∧ PrimeRdy t B oq wp mq N Q C ok ∧
     Frm B (preRanges w op wp oq wp) s.mem t.mem ∧ Keep mmRegs s t ∧
     word t.mem (off B op) (8 * sMaskX) = word s.mem (off B op) (8 * sMaskX)
 
@@ -129,14 +129,14 @@ theorem mx_ffff (x : BitVec 32) : (x &&& 0xFFFF).extractLsb' 6 10 = x.extractLsb
 
 /-- The checks' state, across a change of `rax` and `rdx` only. -/
 theorem CrtReady.of_regs {s t t' : State} {B : Addr} {Z w pl ql : Nat} {minv mp mq : BitVec 64} {N C P Q : Nat}
-    {M : Bool} (h : CrtReady s t B Z w pl ql minv mp mq N C P Q M) (hm : t'.mem = t.mem)
-    (k : Keep [.rax, .rdx] t t') : CrtReady s t' B Z w pl ql minv mp mq N C P Q M := by
+    {M : Bool} {ok : Prop} (h : CrtReady s t B Z w pl ql minv mp mq N C P Q M ok) (hm : t'.mem = t.mem)
+    (k : Keep [.rax, .rdx] t t') : CrtReady s t' B Z w pl ql minv mp mq N C P Q M ok := by
   have hx : ∀ {X : Nat} {o wx : Nat} {mx : BitVec 64}, XVals t B o wx mx X → XVals t' B o wx mx X :=
     fun hx => by rw [show t' = { t' with mem := t.mem } by rw [← hm]]; exact ⟨hx.n, hx.inv, hx.one⟩
-  have hN : NVals t' B w minv N := by
+  have hN : NVals t' B w minv N ok := by
     rw [show t' = { t' with mem := t.mem } by rw [← hm]]
     exact ⟨h.nv.n, h.nv.inv, h.nv.r2, h.nv.r2lt, h.nv.one⟩
-  exact ⟨⟨h.good.scr.congr k.2.2, (k.gpr (by decide)).trans h.good.rdi, hm ▸ h.good.hdr⟩, hN, hm ▸ h.xm,
+  exact ⟨⟨h.good.scr.congr k.2.2, (k.gpr (by decide)).trans h.good.rdi, hm ▸ h.good.hdr⟩, hN, fun hok => hm ▸ h.xm hok,
     hm ▸ h.msk, hm ▸ h.wsP, hm ▸ h.wsQ, hm ▸ h.pws, hx h.pxv, hm ▸ h.pmask, hm ▸ h.qws, hx h.qxv,
     hm ▸ h.hfix, hm ▸ h.iscr, (h.keep.trans k).mono (by decide)⟩
 

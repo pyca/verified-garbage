@@ -36,20 +36,21 @@ the prime's: the prime's `Y := c^d R_X mod X` if `X` divides `N`, `d` the
 bytes whose pointer and length are in the modulus' header slots `sd` and
 `slen`. Ends in the prime's workspace. -/
 theorem powPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
+    {ok : Prop}
     {sl o wx sd slen : Nat} {ep : Addr} {eb : List Byte}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : word s.mem B (8 * sl) = off B o)
     (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hnY : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
+    (hnY : ok → wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
     (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
-    (hyc : X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
+    (hyc : ok → X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
     (hsd : sd < 32) (hsln : slen < 32) (hep : word s.mem B (8 * sd) = ep)
     (hel : word s.mem B (8 * slen) = BitVec.ofNat 64 eb.length) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024)
     (he : Src s B Z ep eb) :
     WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aY ++ E.code sd slen)) s
       fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-        (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+        (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
         word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
         Frm B [xRange o wx] s.mem t.mem ∧ Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
   have hs := hg.scr
@@ -84,16 +85,16 @@ theorem powPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat
     exact InScr.of_frm fx₂ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega)
     ((k₁.trans k₂).mono (by decide))
   -- The exponent's base and the start, in Montgomery form if `X` divides `N`.
-  have hxc : X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun hd => by
+  have hxc : ok ∧ X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun ⟨hok, hd⟩ => by
     apply VG.Proof.Bignum.redc_cancel hR
     rw [Nat.pow_mul] at hv₂
-    rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
-  refine WP.mono (E.ok (Q := X ∣ N) hc₂ hhi hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
-    (by rw [hY₂]; exact hyl) (fun hd => by rw [hY₂]; exact hyc hd) hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
+    rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY hok, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
+  refine WP.mono (E.ok (Q := ok ∧ X ∣ N) hc₂ hhi hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
+    (by rw [hY₂]; exact hyl) (fun ⟨hok, hd⟩ => by rw [hY₂]; exact hyc hok hd) hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
     (by rw [hb₂ _ (by omega)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
-  refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hd => ?_, ?_, ?_,
+  refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hok hd => ?_, ?_, ?_,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  · exact hv hd
+  · exact hv ⟨hok, hd⟩
   · rw [f₃.word_eq (crtExpRanges5_hdr wx (k := sMaskX) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
       (by unfold sMaskX sFn; omega), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₁]

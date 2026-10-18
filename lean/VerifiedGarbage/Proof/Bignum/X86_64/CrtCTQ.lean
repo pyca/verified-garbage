@@ -142,7 +142,7 @@ def P1 (sd slen : Nat) (p : BPub) (t : State) : Prop :=
 
 theorem blk_p1 {sl sd slen : Nat} {p : BPub} {s : State} (h : PwPre sl sd slen p s) :
     WP isa (.block [.mov .rdi (.mem (hdr sl))]) s (P1 sd slen p) := by
-  obtain ⟨_, mx, _, X, _, eb, hg, hw28, hlo, hhi, hwx2, hwx, hsl, hslv, hws, hX, hX1, hXodd, -, hyl, -, hsd, hsln,
+  obtain ⟨_, mx, X, eb, hg, hw28, hlo, hhi, hwx2, hwx, hsl, hslv, hws, hX, hX1, hXodd, hyl, hsd, hsln,
     hep, hel, hlen, hL1, hL2, he⟩ := h
   have hs := hg.scr
   have hn := hs.nowrap
@@ -198,7 +198,7 @@ theorem pow_ct (M : Mont) (E : CrtExpL M) {sl sd slen : Nat} (hR : RedcCT M Publ
   unfold PowCT
   simp only [List.append_assoc]
   refine RelCT.seqs_append (by simp) (by simp [redc]) (RelCT.seq (two_piece (Ψ := P1 sd slen) [.rdi]
-    (pinsRdi (fun p : BPub => p.x.B) fun _ _ ⟨_, _, _, _, _, _, hg, _⟩ => hg.rdi) hT
+    (pinsRdi (fun p : BPub => p.x.B) fun _ _ ⟨_, _, _, _, hg, _⟩ => hg.rdi) hT
     fun _ _ h => blk_p1 h) ?_)
   exact RelCT.seqs_append (by simp [redc]) (E.ne _ _) (RelCT.seq (two_post (Ψ := EPre5 sd slen)
     (two_map BPub.x (fun _ _ ⟨mx, X, _, hc, _, hX, hwx2, hwx, hw28, hX1, _⟩ =>
@@ -222,7 +222,7 @@ theorem uPre {p : PhasePub} {s : State} (h : QPre p s) : UPre sWsQ (up p) s := b
 def Q1 (p : PhasePub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat) (eb : List Byte), Good t p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
     slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
-    word t.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt t.mem p.B p.o p.wx mx ∧ NVals t p.B p.w p.minv p.N ∧
+    word t.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt t.mem p.B p.o p.wx mx ∧ NVals t p.B p.w p.minv p.N False ∧
     wv t.mem p.B (slot p.w Public.aY) p.w < p.N ∧ XVals t p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧
     wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧ word t.mem p.B (8 * sDq) = p.ep ∧
     word t.mem p.B (8 * sQlen) = BitVec.ofNat 64 eb.length ∧ eb.length = p.len ∧ 1 ≤ eb.length ∧
@@ -262,12 +262,11 @@ theorem mm_pwPre (M : Mont) {p : PhasePub} {s : State} (h : Q1 p s) :
     have := slot_le (w := p.wx) (show Public.aY < 8 by decide)
     rw [wv_off, wv_off]
     exact f₂.wv_eq (fun r hr => Or.inr (by have := gRanges_le p.w r hr; omega)) (by omega)
-  -- `N := 1` makes the facts about the modulus trivial: the power's time does not depend on them.
   dsimp only [PwPre, sp]
-  refine ⟨p.minv, mx, 1, X, 0, eb, hg₂, hw28, hlo, hhi, hwx2, hwx, by decide,
+  refine ⟨p.minv, mx, X, eb, hg₂, hw28, hlo, hhi, hwx2, hwx, by decide,
     by rw [Frm.gx_hdr f₂' hlo (by decide) (by decide) (by decide)]; exact hslv, WsAt.of_g hws f₂ hlo (by omega),
-    hX.of_below f₂ (fun r hr => (gRanges_le _ r hr).trans hlo) hoL, hX1, hXodd, by simp only [Nat.mod_one],
-    by rw [hY₂]; exact hyl, fun hd => absurd (Nat.le_of_dvd Nat.one_pos hd) (by omega), by decide, by decide,
+    hX.of_below f₂ (fun r hr => (gRanges_le _ r hr).trans hlo) hoL, hX1, hXodd,
+    by rw [hY₂]; exact hyl, by decide, by decide,
     by rw [Frm.gx_hdr f₂' hlo (by decide) (by decide) (by decide)]; exact hep,
     by rw [Frm.gx_hdr f₂' hlo (by decide) (by decide) (by decide)]; exact hel, hlen, hL1, hL2,
     he.congrK (InScr.of_frm f₂' fun r hr => (gxRanges_le hlo r hr).trans hhi) k₂⟩
@@ -279,10 +278,11 @@ def Q3 (p : PhasePub) (t : State) : Prop :=
 
 theorem pow_q3 (M : Mont) (E : CrtExpL M) {p : PhasePub} {s : State} (h : PwPre sWsQ sDq sQlen (sp p) s) :
     WP isa (seqs (powSteps M.mm E.code sWsQ sDq sQlen)) s (Q3 p) := by
-  obtain ⟨_, mx, _, X, _, eb, hg, hw28, hlo, hhi, hwx2, hwx, hsl, hslv, hws, hX, hX1, hXodd, hnY, hyl, hyc, hsd,
-    hsln, hep, hel, _, hL1, hL2, he⟩ := h
-  exact WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1 hXodd hnY hyl hyc hsd hsln hep hel
-    hL1 hL2 he) fun _ ⟨hc, hX', _⟩ => ⟨mx, X, hc, hX', hX1, hwx2, (by omega : (sp p).x.wx < 2 ^ 28)⟩
+  obtain ⟨_, mx, X, eb, hg, hw28, hlo, hhi, hwx2, hwx, hsl, hslv, hws, hX, hX1, hXodd, hyl, hsd, hsln, hep, hel,
+    _, hL1, hL2, he⟩ := h
+  -- The power's time does not depend on the modulus' values.
+  exact WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1 hXodd (N := 0) (C := 0)
+    (ok := False) False.elim hyl False.elim hsd hsln hep hel hL1 hL2 he) fun _ ⟨hc, hX', _⟩ => ⟨mx, X, hc, hX', hX1, hwx2, (by omega : (sp p).x.wx < 2 ^ 28)⟩
 
 /-- Back to `Y`'s value, and to the modulus' workspace. -/
 theorem mmLeave_ct (M : Mont) :

@@ -20,13 +20,20 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- The modulus `N` in its workspace, `-N⁻¹`, `R² mod N` and the number 1. -/
-structure NVals (t : State) (B : Addr) (w : Nat) (minv : BitVec 64) (N : Nat) : Prop where
+/-- The modulus `N` in its workspace, `-N⁻¹`, `R² mod N` (if `ok`: it may be
+loaded from precomputed values, which hold it only if they are the key's)
+and the number 1. -/
+structure NVals (t : State) (B : Addr) (w : Nat) (minv : BitVec 64) (N : Nat) (ok : Prop) : Prop where
   n : wv t.mem B (slot w Public.aN) w = N
   inv : ((word t.mem B (slot w Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0
-  r2 : wv t.mem B (slot w Public.aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N
+  r2 : ok → wv t.mem B (slot w Public.aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N
   r2lt : wv t.mem B (slot w Public.aR2) w < N
   one : wv t.mem B (slot w Public.aOne) w = 1
+
+/-- `NVals` for a stronger `ok`. -/
+theorem NVals.weak {t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N : Nat} {ok ok' : Prop}
+    (h : NVals t B w minv N ok) (f : ok' → ok) : NVals t B w minv N ok' :=
+  ⟨h.n, h.inv, fun h' => h.r2 (f h'), h.r2lt, h.one⟩
 
 theorem XVals.of_below {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X : Nat}
     {rs : List (Nat × Nat)} (h : XVals s B o wx mx X) (hf : Frm B rs s.mem t.mem) (hr : ∀ r ∈ rs, r.1 + r.2 ≤ o)
@@ -51,19 +58,19 @@ theorem XVals.of_outside {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} 
 
 /-- The start of a prime's phase: `G = 2^(64 w_X (K + 1)) mod N` into the
 modulus' `Y`, reduced into the prime's `Y`: `R_X mod X` if `X` divides `N`. -/
-theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat}
+theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat} {ok : Prop}
     {sl o wx : Nat} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
     (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
     (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
-    (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
     (hXodd : X % 2 = 1) :
     WP isa (seqs (Crt.gPow M.mm sl ++ ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
         redc M.mm Public.aY ++ copyArr Public.aY aXc ++ ([.block [leave]] : List (Prog isa)))) s fun t =>
       Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem B (slot w Public.aY) w < N ∧
-      wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N ∧
+      (ok → wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N) ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
       word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
       Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
   have hs := hg.scr
@@ -81,7 +88,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   simp only [List.append_assoc]
   -- `G`.
   refine wp_seqs_append (by simp [Crt.gPow]) (by simp) ?_
-  refine WP.mono (gPow_ok M (ok := True) hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 (fun _ => hN.r2) hN.r2lt
+  refine WP.mono (gPow_ok M (ok := ok) hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 hN.r2 hN.r2lt
     hN.one hsl hslv
     hws.hdr.hw (by
       have := (hs.sub (o := o) (n := slot wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega)
@@ -144,7 +151,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
       wv s₂.mem B (slot w Public.aY) w % X := by
     rw [← Nat.pow_mul]; exact hv₃
   have hYn : wv s₂.mem B (slot w Public.aY) w = wv s₁.mem B (slot w Public.aY) w := by rw [hm₂]
-  refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, ?_, ?_, ?_, ?_, by rw [hY]; exact hlt₃, fun hdvd => ?_, ?_, ?_,
+  refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, ?_, ?_, ?_, ?_, by rw [hY]; exact hlt₃, fun hok hdvd => ?_, ?_, ?_,
     ⟨fun r hr => ?_, kall.2⟩⟩
   · have hH := hg₁.hdr
     exact ⟨(hb _ (by unfold sW; omega)).trans (by rw [hm₂]; exact hH.hw),
@@ -155,11 +162,11 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   · exact hX₃.of_outside (by rw [hm]; exact ho₄) (by decide) (by decide) (by decide) (by omega)
       (by have := hc₃.good.scr.nowrap; omega)
   · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hlt₁
-  · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hG₁ trivial
+  · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hG₁
   · rw [hY]
     have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
     have e : wv s₂.mem B (slot w Public.aY) w % X = 1 * (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X := by
-      rw [hYn, ← Nat.mod_mod_of_dvd _ hdvd, hG₁ trivial, Nat.mod_mod_of_dvd _ hdvd, Nat.one_mul, ← Nat.pow_mul]
+      rw [hYn, ← Nat.mod_mod_of_dvd _ hdvd, hG₁ hok, Nat.mod_mod_of_dvd _ hdvd, Nat.one_mul, ← Nat.pow_mul]
     have := VG.Proof.Bignum.redc_cancel hR (hXc.trans e)
     rwa [Nat.one_mul] at this
   · have := hdr_lt_slot wx Public.aY (show sMaskX < 32 by decide)

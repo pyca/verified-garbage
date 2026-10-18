@@ -67,10 +67,10 @@ structure CrtPre (s : State) (B : Addr) (Z k : Nat) (op np ip pp qp dpp dqp qip 
 /-- After the checks: the three workspaces, the modulus' values, the mask
 `M` and the primes `M ? p : 3`, `M ? q : 3`. -/
 structure CrtReady (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec 64) (N C P Q : Nat)
-    (M : Bool) : Prop where
+    (M : Bool) (ok : Prop) : Prop where
   good : Good t B Z w minv
-  nv : NVals t B w minv N
-  xm : wv t.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N
+  nv : NVals t B w minv N ok
+  xm : ok → wv t.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N
   msk : word t.mem B (8 * Public.sMask) = mask M
   wsP : word t.mem B (8 * sWsP) = off B (offP w)
   wsQ : word t.mem B (8 * sWsQ) = off B (offQ w pl)
@@ -87,10 +87,10 @@ theorem nSetup_eq (M : Mont) : nSetup M.mm =
     (loadSteps ++ restSteps) ++ ([R2Words.choice M.mm] ++ [M.mm Public.aXm Public.aX Public.aR2]) := rfl
 
 /-- After `n`'s setup: its values, `c R mod n` and the mask of `c < n`. -/
-structure NReady (s t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N C : Nat) : Prop where
+structure NReady (s t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N C : Nat) (ok : Prop) : Prop where
   good : Good t B Z w minv
-  nv : NVals t B w minv N
-  xm : wv t.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N
+  nv : NVals t B w minv N ok
+  xm : ok → wv t.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N
   msk : word t.mem B (8 * Public.sMask) = mask (decide (C < N))
   hfix : HFix B s.mem t.mem
   iscr : InScr B Z s.mem t.mem
@@ -102,7 +102,7 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
     WP isa (seqs (nSetup M.mm)) s fun t => ∃ minv,
-      NReady s t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) := by
+      NReady s t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) True := by
   obtain ⟨hodd, hN1, hlo⟩ := valid_facts hv h.k1
   have hk1 := h.k1
   have hk2 := h.k2
@@ -159,9 +159,9 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have e2 : word t₂.mem B (8 * Public.sMask) = word t₁.mem B (8 * Public.sMask) :=
     f₂.word_eq (r2Ranges_hdr _ (by decide) (by decide)) (by unfold Public.sMask sFn; omega_arith)
   exact ⟨minv, hg₃,
-    ⟨hN₃, hI₃, by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hr₂,
+    ⟨hN₃, hI₃, fun _ => by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hr₂,
       by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hlt₂,
-      by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hO₂⟩, hxm₃,
+      by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hO₂⟩, fun _ => hxm₃,
     by rw [ha₃.hslot (by decide), e2]; exact so.mask,
     ((HFix.of_frm f₁ (keepsHdr_setupRanges _)).trans (HFix.of_frm f₂ (keepsHdr_r2Ranges _))).trans
       (HFix.of_frm g₃ fun r hr => (kg₃ r hr).1),
@@ -171,9 +171,9 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
 
 /-- After the primes' workspaces: `n`'s values as before, the workspaces,
 `p`, `q` and `qInv`. -/
-structure PReady (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec 64) (N C P Q QI : Nat) : Prop
-    where
-  n : NReady s t B Z w minv N C
+structure PReady (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec 64) (N C P Q QI : Nat)
+    (ok : Prop) : Prop where
+  n : NReady s t B Z w minv N C ok
   wsP : word t.mem B (8 * sWsP) = off B (offP w)
   wsQ : word t.mem B (8 * sWsQ) = off B (offQ w pl)
   pws : WsAt t.mem B (offP w) (wsWords pl) mp
@@ -184,11 +184,11 @@ structure PReady (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec
 
 /-- The primes' workspaces, from `n`'s setup. -/
 theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
-    {nb xb pb qb dpb dqb qib : List Byte} {minv : BitVec 64}
+    {nb xb pb qb dpb dqb qib : List Byte} {minv : BitVec 64} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hr : NReady s t₃ B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)) :
+    (hr : NReady s t₃ B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) ok) :
     WP isa (seqs primesSetup) t₃ fun t => ∃ mp mq, PReady s t B Z ((k + 7) / 8) pl ql minv mp mq
-      (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) := by
+      (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) ok := by
   have hk1 := h.k1
   have hk2 := h.k2
   have hZq := h.z
@@ -237,10 +237,10 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
   refine ⟨mp, mq, ⟨hg₄, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩, hsP₄, hsQ₄, hwp₄, hwq₄, hp₄, hc₄, hq₄⟩
   · rw [hnv₄ _ (by decide)]; exact hr.nv.n
   · rw [hnw₄]; exact hr.nv.inv
-  · rw [hnv₄ _ (by decide)]; exact hr.nv.r2
+  · intro h; rw [hnv₄ _ (by decide)]; exact hr.nv.r2 h
   · rw [hnv₄ _ (by decide)]; exact hr.nv.r2lt
   · rw [hnv₄ _ (by decide)]; exact hr.nv.one
-  · rw [hnv₄ _ (by decide)]; exact hr.xm
+  · intro h; rw [hnv₄ _ (by decide)]; exact hr.xm h
   · rw [hM₄]; exact hr.msk
   · exact hr.hfix.trans (HFix.of_frm f₄ fun r hr => (kf₄ r hr).1)
   · exact hr.iscr.trans (InScr.of_frm f₄ fun r hr => (kf₄ r hr).2.1)
@@ -248,16 +248,16 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
 
 /-- The checks, from the primes' workspaces. -/
 theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
-    {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64}
+    {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : PReady s t₄ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) ok) :
     WP isa (seqs checks) t₄ fun t => ∃ mp' mq',
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp' mq' (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) := by
+          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) ok := by
   obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
   have hk1 := h.k1
   have hk2 := h.k2
@@ -322,10 +322,10 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
       · exact Or.inl (by simp only; omega_arith)
       · exact Or.inl (by simp only [offQ]; omega_arith)) (by omega_arith)]
     exact hr.n.nv.inv
-  · rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.nv.r2
+  · intro h; rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.nv.r2 h
   · rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.nv.r2lt
   · rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.nv.one
-  · rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.xm
+  · intro h; rw [hnv₅ _ (by decide) (by decide) (by decide)]; exact hr.n.xm h
   · exact hr.n.hfix.trans (HFix.of_frm f₅ fun r hr => (kf₅ r hr).1)
   · exact hr.n.iscr.trans (InScr.of_frm f₅ fun r hr => (kf₅ r hr).2)
 
@@ -338,7 +338,7 @@ theorem front_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
       CrtReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
+          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) True :=
   wp_seqs_append (by simp [nSetup]) (by simp [checks]) (wp_seqs_append (by simp [nSetup])
     (by simp [primesSetup]) (WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ =>
       WP.mono (setupPart_ok h hr) fun _ ⟨_, _, hr'⟩ =>

@@ -193,11 +193,10 @@ abbrev PrePub.up (p : PrePub) : UPub := ⟨p.B, p.Z, p.w, p.minv, p.N, p.op, p.w
 
 /-- `pre_ok`'s hypotheses. -/
 def PrePre (p : PrePub) (s : State) : Prop :=
-  ∃ (mp mq : BitVec 64) (P Q C : Nat), Good s p.B p.Z p.w p.minv ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.op ∧
+  ∃ (mp mq : BitVec 64) (P Q : Nat), Good s p.B p.Z p.w p.minv ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.op ∧
     p.op + slot p.wp 8 + wsTab p.wp ≤ p.oq ∧ p.oq + slot p.wp 8 + wsTab p.wp ≤ p.Z ∧ 2 ≤ p.wp ∧
     p.w = 2 * p.wp ∧ word s.mem p.B (8 * sWsP) = off p.B p.op ∧ word s.mem p.B (8 * sWsQ) = off p.B p.oq ∧
-    WsAt s.mem p.B p.op p.wp mp ∧ WsAt s.mem p.B p.oq p.wp mq ∧ NVals s p.B p.w p.minv p.N ∧
-    wv s.mem p.B (slot p.w Public.aXm) p.w % p.N = C * 2 ^ (64 * p.w) % p.N ∧
+    WsAt s.mem p.B p.op p.wp mp ∧ WsAt s.mem p.B p.oq p.wp mq ∧ NVals s p.B p.w p.minv p.N False ∧
     XVals s p.B p.op p.wp mp P ∧ 1 < P ∧ P % 2 = 1 ∧ XVals s p.B p.oq p.wp mq Q ∧ 1 < Q ∧ Q % 2 = 1
 
 /-- Before `pre`. -/
@@ -208,7 +207,7 @@ def PR0 (M : Mont) (p : PrePub) (s : State) : Prop :=
 theorem pre_chain (M : Mont) {p : PrePub} {s : State} (h : PrePre p s) : PR0 M p s := by
   obtain ⟨B, Z, w, minv, N, op, oq, wp⟩ := p
   dsimp only [PrePre] at h
-  obtain ⟨mp, mq, P, Q, C, hg, hw28, hlo, hpq, hoq, hwp2, hw2, hsp, hsq, hwsp, hwsq, hN, hXm, hP,
+  obtain ⟨mp, mq, P, Q, hg, hw28, hlo, hpq, hoq, hwp2, hw2, hsp, hsq, hwsp, hwsq, hN, hP,
     hP1, hPodd, hQ, hQ1, hQodd⟩ := h
   have hs := hg.scr
   have hn := hs.nowrap
@@ -219,7 +218,7 @@ theorem pre_chain (M : Mont) {p : PrePub} {s : State} (h : PrePre p s) : PR0 M p
     rw [List.mem_singleton.mp hr]; exact .inr (by simp only [xRange]; omega)
   refine ⟨by dsimp only [PrepPre, PrePub.uq]; exact ⟨mq, Q, hg, hw28, by omega, hoq, hwp2, by omega, by decide, hsq,
     hwsq, hQ, hQ1⟩,
-    WP.mono (prep_ok (C := C) M hg hw28 (by omega) hoq hwp2 hw2 (by decide) hsq hwsq hN hXm hQ hQ1 hQodd)
+    WP.mono (prep_ok (C := 0) M hg hw28 (by omega) hoq hwp2 hw2 (by decide) hsq hwsq hN False.elim hQ hQ1 hQodd)
     fun s₁ ⟨hg₁, _, _, _, _, _, _, fQ, _, _⟩ => ?_⟩
   have hb : ∀ d, d + 8 ≤ oq → word s₁.mem B d = word s.mem B d := fun d hd => fQ.x_below hd ho64
   dsimp only [PrepPre, PrePub.up]

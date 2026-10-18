@@ -25,15 +25,15 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- After `pre` and `ifma`: `q`'s result `C^dq mod q` and `p`'s `C^dp R_p`. -/
 structure IDone (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s t : State) (B : Addr) (Z w op oq a : Nat) (minv mp mq : BitVec 64) (N C P Q : Nat)
-    (dpp dqp qip : Addr) (pl ql : Nat) (dpb dqb : List Byte) (Mk : Bool) : Prop where
+    (dpp dqp qip : Addr) (pl ql : Nat) (dpb dqb : List Byte) (Mk : Bool) (ok : Prop) : Prop where
   good : VG.Proof.Bignum.X86_64.Good t B Z w minv
-  nv : NVals t B w minv N
+  nv : NVals t B w minv N ok
   msk : word t.mem B (8 * Public.sMask) = mask Mk
   im : IMem l t.mem B w op oq a minv mp mq (mask Mk) (if Mk then P else 3) (if Mk then Q else 3) dpp dqp pl ql
   qlt : wv t.mem (off B oq) (slot l.W Public.aY) l.W < if Mk then Q else 3
-  qval : Mk = true → wv t.mem (off B oq) (slot l.W Public.aY) l.W = C ^ Spec.Rsa.os2ip dqb % Q
+  qval : ok → Mk = true → wv t.mem (off B oq) (slot l.W Public.aY) l.W = C ^ Spec.Rsa.os2ip dqb % Q
   plt : wv t.mem (off B op) (slot l.W Public.aY) l.W < if Mk then P else 3
-  pval : Mk = true → wv t.mem (off B op) (slot l.W Public.aY) l.W % P = C ^ Spec.Rsa.os2ip dpb * 2 ^ (64 * l.W) % P
+  pval : ok → Mk = true → wv t.mem (off B op) (slot l.W Public.aY) l.W % P = C ^ Spec.Rsa.os2ip dpb * 2 ^ (64 * l.W) % P
   qi : word t.mem B (8 * sQinv) = qip
   hfix : HFix B s.mem t.mem
   iscr : InScr B Z s.mem t.mem
@@ -47,22 +47,22 @@ theorem ifmaR_ge {op oq a : Nat} (hpq : op ≤ oq) (hqa : oq ≤ a) : ∀ r ∈ 
 
 /-- `ifma`, after `pre`. -/
 theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (_hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
     (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z)
     (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
       (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
-      (Spec.Rsa.os2ip xb)) :
+      (Spec.Rsa.os2ip xb) ok) :
     WP isa (seqs (ifma l)) s₁ fun t =>
       IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
         (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ok ∧
       t.mxcsr = s₁.mxcsr &&& 0xFFFF := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
@@ -124,9 +124,10 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
       by rw [hf₁ _ (by decide) (by decide), h.dpl]; exact h.hPl, by rw [hf₁ _ (by decide) (by decide)]; exact h.hDq,
       by rw [hf₁ _ (by decide) (by decide), h.dql]; exact h.hQl⟩
   -- `ifma`.
-  refine WP.mono (ifma_ok hl (K := (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := l.W) hg₁.scr hg₁.rdi
+  refine WP.mono (ifma_ok hl (K := ok ∧ (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := l.W) hg₁.scr hg₁.rdi
     ip (le_refl _) (by rw [hoq, hop]) rfl (by omega_using [hZa]) rfl hP'.2 hQ'.2 rp.ylt rq.ylt rp.clt rq.clt
-    (fun hK => rp.cv hK.1) (fun hK => rq.cv hK.2) (fun hK => rp.yv hK.1) (fun hK => rq.yv hK.2)
+    (fun hK => rp.cv hK.1 hK.2.1) (fun hK => rq.cv hK.1 hK.2.2) (fun hK => rp.yv hK.1 hK.2.1)
+    (fun hK => rq.yv hK.1 hK.2.2)
     (h.dp.congrK (hr.iscr.trans i₀₁) kk₁) (h.dq.congrK (hr.iscr.trans i₀₁) kk₁) (by rw [h.dpl]; exact hpl1)
     (by rw [h.dpl]; exact hpl') (by rw [h.dql]; exact hql1) (by rw [h.dql]; exact hql'))
     fun t ⟨m₂, qlt, qv, plt, pv, f₂, d₂, k₂, mx₂⟩ => ?_
@@ -159,22 +160,22 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
   rw [h.dpl, h.dql] at m₂
   refine ⟨⟨⟨hg₁.scr.congr k₂.2.2, d₂, m₂.nh⟩, hN₁.of_nsafe f₂ (above_nsafe (le_refl _) hge) hz (by omega_using [hk1]),
     by rw [hb₂ _ (by unfold Public.sMask sFn; omega_using [h8, hop]), hb₁ _ (by decide) (by decide) (by decide)]; exact hr.msk,
-    m₂, qlt, fun hm => ?_, plt, fun hm => ?_,
+    m₂, qlt, fun hok hm => ?_, plt, fun hok hm => ?_,
     by rw [hb₂ _ (by unfold sQinv sFn; omega_using [h8, hop]), hf₁ _ (by decide) (by decide)]; exact h.hQi,
     fun i hi hf => by rw [hb₂ _ (by have := hdr_lt_slot ((k + 7) / 8) 8 hi; omega_using [hop, this]), hf₁ i hi hf],
     (hr.iscr.trans i₀₁).trans (InScr.of_frm f₂ hlZ), (kk₁.trans k₂).mono (by decide)⟩,
     mx₂⟩
-  · have := qv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
-  · have := pv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
+  · have := qv ⟨hok, hMK hm⟩; simp only [hm, ↓reduceIte] at this; exact this
+  · have := pv ⟨hok, hMK hm⟩; simp only [hm, ↓reduceIte] at this; exact this
 
 
 /-- `pre`, from the checks, for the layout `l` of the key's sizes. -/
 theorem branchA1_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
@@ -182,7 +183,7 @@ theorem branchA1_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
     WP isa (seqs (CrtIfma.pre M.mm)) t₀ fun s₁ =>
       APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
         (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
-        (Spec.Rsa.os2ip xb) ∧ s₁.mxcsr = t₀.mxcsr := by
+        (Spec.Rsa.os2ip xb) ok ∧ s₁.mxcsr = t₀.mxcsr := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
   have hpl1 := h.pl1
@@ -222,18 +223,18 @@ theorem branchA1_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
 
 /-- `post`, after `pre` and `ifma`: what `pPart` leaves. -/
 theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hd : IDone l s t₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
         (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     WP isa (seqs (CrtIfma.post M.mm)) t₁ fun t => PDone s t B Z ((k + 7) / 8) pl ql minv mp mq
-      (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb Mk ∧
+      (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb Mk ok ∧
       t.mxcsr = t₁.mxcsr := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
@@ -265,7 +266,7 @@ theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : 
     (by rw [hpl]; omega_using [hw32]) hm.wsQ (by rw [hpl]; exact hm.qws) (by have := hZq; rw [hql] at this; rw [hpl]; exact this)
     (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; omega_arith) hm.wsP
     (by rw [hpl]; exact hm.pws) (by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩) hP'.1 hP'.2
-    (by rw [hpl]; exact hd.plt) (fun _ => ?_) hm.pmk
+    (by rw [hpl]; exact hd.plt) (fun hok _ => ?_) hm.pmk
     (fun hm' => by obtain ⟨_, hpq, _⟩ := hMk' hm'; simp only [hm', ↓reduceIte]; exact ⟨Q, hpq.symm⟩) hd.qi
     (by rw [hqil]; exact hm.pl) (h.qi.congrK hd.iscr hd.keep) (by rw [hqil]; exact hpl1) (by rw [hqil]; omega_using [hW2, hEW, hpl'])
     (by rw [hqil, hpl]; omega_using [hEW, hpl'])
@@ -274,7 +275,7 @@ theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : 
   · by_cases hmk : Mk
     · simp only [hmk, ↓reduceIte]
       rw [hpl]
-      exact hd.pval hmk
+      exact hd.pval hok hmk
     · simp only [hmk, Bool.false_eq_true, ↓reduceIte] at hx0 ⊢
       exact hx0
   have hz : slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZq, hn, hoq]
@@ -309,7 +310,7 @@ theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : 
     (show WsAt t₁.mem B (offQ ((k + 7) / 8) pl) (wsWords ql) mq by rw [hql]; exact hm.qws).of_words fun i hi => by
       rw [word_off, word_off]; exact hqk _ (by omega_using []) (by omega_using [hqZ, h16, hi]),
     by rw [hql, hqv _ _ (by omega_using [hN8])]; exact hm.qn, by rw [hql, hqv _ _ (by omega_using [hY8])]; exact hd.qlt,
-    fun hmk => by rw [hql, hqv _ _ (by omega_using [hY8])]; exact hd.qval hmk, hlt', fun hmk => ?_,
+    fun hok hmk => by rw [hql, hqv _ _ (by omega_using [hY8])]; exact hd.qval hok hmk, hlt', fun hok hmk => ?_,
     hd.hfix.trans fun i hi hf => by
       have h1 : i ≠ Crt.sD := by rintro rfl; revert hf; decide
       have h2 : i ≠ Public.sCnt := by rintro rfl; revert hf; decide
@@ -322,10 +323,10 @@ theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : 
         · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); simp only; omega_using [hZq, hoq, this]
         · simp only [xRange]; rw [hoq] at hZq; rw [hop]; omega_using [hZq, hW8]),
     (hd.keep.trans k').mono (by decide)⟩, mx'⟩
-  obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh' hmk
+  obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh' hok hmk
   simp only [hmk, ↓reduceIte] at ha hb hbP hh
   rw [show wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot (wsWords pl) Public.aY) (wsWords pl) =
-    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot l.W Public.aY) l.W by rw [hpl], hd.qval hmk] at hb
+    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot l.W Public.aY) l.W by rw [hpl], hd.qval hok hmk] at hb
   exact ⟨a, b, ha, hb, hbP, by rw [hh, hQIe]⟩
 
 end VG.Proof.Bignum.X86_64.Ifma

@@ -279,7 +279,7 @@ structure UPub where
 def UPre (sl : Nat) (p : UPub) (s : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat), Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.o ∧
     p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ sl ≠ Crt.sD ∧ sl ≠ Public.sCnt ∧
-    word s.mem p.B (8 * sl) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ NVals s p.B p.w p.minv p.N ∧
+    word s.mem p.B (8 * sl) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ NVals s p.B p.w p.minv p.N False ∧
     p.N % 2 = 1 ∧ 1 < p.N ∧ XVals s p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1
 
 /-- The phases' first part (`unitPhase_ok`) is constant time. -/
@@ -290,13 +290,11 @@ def UnitCT (M : Mont) (sl : Nat) : Prop :=
 /-- `powPhase_ok`'s hypotheses, for the exponent's pointer and length in
 slots `sd` and `slen`. -/
 def PwPre (sl sd slen : Nat) (p : BPub) (s : State) : Prop :=
-  ∃ (minv mx : BitVec 64) (N X C : Nat) (eb : List Byte), Good s p.x.B p.x.Z p.x.w minv ∧ p.x.w < 2 ^ 28 ∧
+  ∃ (minv mx : BitVec 64) (X : Nat) (eb : List Byte), Good s p.x.B p.x.Z p.x.w minv ∧ p.x.w < 2 ^ 28 ∧
     slot p.x.w 8 ≤ p.x.o ∧ p.x.o + slot p.x.wx 8 + wsTab p.x.wx ≤ p.x.Z ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ sl < 32 ∧
     word s.mem p.x.B (8 * sl) = off p.x.B p.x.o ∧ WsAt s.mem p.x.B p.x.o p.x.wx mx ∧
     XVals s p.x.B p.x.o p.x.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧
-    wv s.mem p.x.B (slot p.x.w Public.aY) p.x.w % N = C * 2 ^ (64 * p.x.wx * (nChunks p.x.w p.x.wx + 1)) % N ∧
     wv s.mem (off p.x.B p.x.o) (slot p.x.wx Public.aY) p.x.wx < X ∧
-    (X ∣ N → wv s.mem (off p.x.B p.x.o) (slot p.x.wx Public.aY) p.x.wx % X = 2 ^ (64 * p.x.wx) % X) ∧
     sd < 32 ∧ slen < 32 ∧ word s.mem p.x.B (8 * sd) = p.ptr ∧
     word s.mem p.x.B (8 * slen) = BitVec.ofNat 64 eb.length ∧ eb.length = p.len ∧ 1 ≤ eb.length ∧
     eb.length ≤ 1024 ∧ Src s p.x.B p.x.Z p.ptr eb
@@ -323,7 +321,7 @@ structure PhasePub where
 def QPre (p : PhasePub) (s : State) : Prop :=
   ∃ (mx : BitVec 64) (X C : Nat) (eb : List Byte), Good s p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
     slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
-    word s.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ NVals s p.B p.w p.minv p.N ∧
+    word s.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt s.mem p.B p.o p.wx mx ∧ NVals s p.B p.w p.minv p.N False ∧
     p.N % 2 = 1 ∧ 1 < p.N ∧ wv s.mem p.B (slot p.w Public.aXm) p.w % p.N = C * 2 ^ (64 * p.w) % p.N ∧
     XVals s p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧ word s.mem p.B (8 * sDq) = p.ep ∧
     word s.mem p.B (8 * sQlen) = BitVec.ofNat 64 eb.length ∧ eb.length = p.len ∧ 1 ≤ eb.length ∧
@@ -348,7 +346,7 @@ def PPre (p : PPhasePub) (s : State) : Prop :=
     2 ≤ p.ph.wx ∧ p.ph.wx ≤ p.ph.w ∧ 1 ≤ p.wq ∧ p.wq ≤ p.ph.w ∧
     word s.mem p.ph.B (8 * sWsP) = off p.ph.B p.ph.o ∧ WsAt s.mem p.ph.B p.ph.o p.ph.wx mx ∧
     word s.mem p.ph.B (8 * sWsQ) = off p.ph.B p.oq ∧ WsAt s.mem p.ph.B p.oq p.wq mq ∧
-    NVals s p.ph.B p.ph.w p.ph.minv p.ph.N ∧ p.ph.N % 2 = 1 ∧ 1 < p.ph.N ∧
+    NVals s p.ph.B p.ph.w p.ph.minv p.ph.N False ∧ p.ph.N % 2 = 1 ∧ 1 < p.ph.N ∧
     wv s.mem p.ph.B (slot p.ph.w Public.aXm) p.ph.w % p.ph.N = C * 2 ^ (64 * p.ph.w) % p.ph.N ∧
     XVals s p.ph.B p.ph.o p.ph.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧
     word s.mem (off p.ph.B p.ph.o) (8 * sMaskX) = mask c ∧ (c = true → X ∣ p.ph.N) ∧

@@ -58,13 +58,11 @@ def PO0 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
 
 /-- From before the exponentiation: `PO3`, as `pPhase_ok` runs the rest. -/
 theorem o3_of (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
-    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
+    {N X o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hcg : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
     (hpl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
-    (hpy : X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
     (hep : word s.mem B (8 * sDp) = ep) (hel : word s.mem B (8 * sPlen) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb)
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
@@ -77,10 +75,10 @@ theorem o3_of (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {min
   have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   have ho64 : o < 2 ^ 64 := by omega
   -- `c^dP R_p mod p`.
-  refine ⟨⟨minv, mx, N, X, C, eb, hg, hw28, hlo, hhi, hwx2, hwx, by decide, hslv, hws, hX, hX1, hXodd, hcg, hpl,
-      hpy, by decide, by decide, hep, hel, rfl, hL1, hL2, he⟩,
-    WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx (sl := sWsP) (by decide) hslv hws hX hX1 hXodd hcg hpl hpy
-      (sd := sDp) (slen := sPlen) (by decide) (by decide) hep hel hL1 hL2 he)
+  refine ⟨⟨minv, mx, X, eb, hg, hw28, hlo, hhi, hwx2, hwx, by decide, hslv, hws, hX, hX1, hXodd, hpl,
+      by decide, by decide, hep, hel, rfl, hL1, hL2, he⟩,
+    WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx (sl := sWsP) (by decide) hslv hws hX hX1 hXodd (N := N) (C := 0)
+      (ok := False) False.elim hpl False.elim (sd := sDp) (slen := sPlen) (by decide) (by decide) hep hel hL1 hL2 he)
       fun s₄ ⟨hc₄, hX₄, hlt₄, _, hM₄, fx₄, k₄⟩ => ?_⟩
   -- Back to the modulus'.
   have hl₄ : InRegions (s₄.rd ++ s₄.wr) (off (off B o) (8 * sLink)) 8 :=
@@ -142,7 +140,7 @@ theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p
   refine ⟨⟨mx, X, hg, hw, hw28, hlo, hhi', hwx2, hwx, by decide, by decide, by decide, hslv, hws, hN, hodd, hN1,
       hX, hX1, hXodd⟩,
     WP.mono (unitPhase_ok M hg hw hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide) (by decide) (by decide) hslv
-      hws hN hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, hpy₁, hM₁, f₁, k₁⟩ => ?_⟩
+      hws hN hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, _, hM₁, f₁, k₁⟩ => ?_⟩
   have f₁' := hsub sgx f₁
   have hN₁ := hN.of_frm f₁ hlo hz (by omega)
   have hslq₁ : word s₁.mem B (8 * sWsQ) = off B oq := by
@@ -154,25 +152,18 @@ theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p
     fun s₂ ⟨hg₂, _, hmq₂, hY₂, f₂, k₂⟩ => ?_⟩
   have f₂' := hsub sp f₂
   have f₀₂ := f₁'.trans f₂'
-  have hN₂ : NVals s₂ B w minv N := by
+  have hN₂ : NVals s₂ B w minv N False := by
     exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.n,
       by rw [f₂'.px_word hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.inv,
-      by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2,
+      False.elim,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2lt,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.one⟩
   -- `c G mod N`.
   refine ⟨⟨minv, hg₂, show slot w 8 ≤ Z by omega⟩,
     WP.mono (mmY_ok M hg₂ (by omega) (by omega) (by omega) (a := Public.aXm) (by decide) (by decide)
-      (by decide) hN₂ (by rw [hY₂]; exact hlt₁)) fun s₃ ⟨hg₃, _, hm₃, f₃, k₃⟩ => ?_⟩
+      (by decide) hN₂ (by rw [hY₂]; exact hlt₁)) fun s₃ ⟨hg₃, _, _, f₃, k₃⟩ => ?_⟩
   have f₃' := hsub sg f₃
   have f₀₃ := f₀₂.trans f₃'
-  have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hXm₂ : wv s₂.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
-    f₀₂.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)
-  have hcg : wv s₃.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
-    apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm₃, Nat.mul_mod, hXm₂, hXm, hY₂, hG₁, ← Nat.mul_mod]
-    congr 1; ac_rfl
   have hpo : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r ∈ pRanges w) → ∀ d,
       o ≤ d → d + 8 ≤ 2 ^ 64 → word m' B d = word m B d := fun f hrs d hd hd' =>
     f.word_eq (fun r hr => Or.inr (by have := pRanges_le w r (hrs r hr); omega)) hd'
@@ -196,7 +187,7 @@ theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
     rw [hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
   exact o3_of M E hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
-    hws₃ hX₃ hX1 hXodd hcg (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd)
+    hws₃ hX₃ hX1 hXodd (by rw [hpY₃]; exact hpl₁)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i03 k03) hM₃
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp) hql (hqs.congrK i03 k03) hqw hqi
