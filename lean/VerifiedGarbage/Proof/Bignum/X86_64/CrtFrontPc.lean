@@ -74,12 +74,9 @@ theorem nPartPc_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp
     so.good.scr.ld (by have := hdr_lt_slot ((k + 7) / 8) 8 hi; omega_arith)
   refine WP.mono (loadPre_ok so.good hZ (by omega_arith) (by omega_arith) (by decide) (by decide) hp₁.arg
     hp₁.val (d := (k + 7) / 8)
-    (fun t kt ot => by
+    (fun t hm kt => by
       have hlt : InRegions (t.rd ++ t.wr) (off B (8 * sW)) 8 := by rw [kt.2.1, kt.2.2]; exact hl sW (by decide)
-      have hwt : word t.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := by
-        rw [ot.word (.inl (by have := hdr_lt_slot ((k + 7) / 8) Public.aR2 (show sW < 32 by decide); omega_arith))
-          (by unfold sW; omega)]
-        exact so.good.hdr.hw
+      have hwt : word t.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := by rw [hm]; exact so.good.hdr.hw
       exact WP.keep [.rax] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 ((k + 7) / 8) ∧ t'.mem = t.mem)
         (by xrun [offN, State.ea, hdr, (kt.gpr (by decide)).trans so.good.rdi, hdrOff, hlt, hwt]) rfl |>.mono
           fun t' ⟨⟨a, b⟩, c⟩ => ⟨a, b, c.mono (by decide)⟩)

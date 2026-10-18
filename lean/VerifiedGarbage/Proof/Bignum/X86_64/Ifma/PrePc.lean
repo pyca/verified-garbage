@@ -62,10 +62,8 @@ theorem prepPc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
     · rw [e]; omega
     · omega
   refine WP.mono (loadPre_ok hg₅ (Nat.le_refl _) (by omega) (by omega) (by decide) (by decide) hp₅.arg hp₅.val
-    (d := d) (fun t kt ot => hpo t ((kt.gpr (by decide)).trans hc₅.rdi) (kt.2.1.trans k₅.2.1) (kt.2.2.trans k₅.2.2)
-      (by rw [ot.word (.inl (by have := hdr_lt_slot wx Public.aY (show sLink < 32 by decide); omega))
-        (by unfold sLink sFn; omega)]; exact hc₅.link)
-      (f₅.trans (ot.to_x (by decide) hoL (List.mem_singleton_self _))))
+    (d := d) (fun t hm kt => hpo t ((kt.gpr (by decide)).trans hc₅.rdi) (kt.2.1.trans k₅.2.1) (kt.2.2.trans k₅.2.2)
+      (by rw [hm]; exact hc₅.link) (by rw [hm]; exact f₅))
     (fun i hi => by rw [show 8 * d + 8 * i = 8 * (d + i) by omega]; exact hp₅.rd _ (by omega))
     (fun i hi b hb => .inr (hfar _ (by
       have := hp₅.out (d + i) (by omega) b hb; rwa [show 8 * (d + i) = 8 * d + 8 * i by omega] at this))))

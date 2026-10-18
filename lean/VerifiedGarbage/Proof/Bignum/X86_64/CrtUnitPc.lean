@@ -56,10 +56,8 @@ theorem unitPhasePc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : 
     · rw [e]; omega
     · omega
   refine WP.mono (loadPre_ok hg₂ (Nat.le_refl _) (by omega) (by omega) (by decide) (by decide) hp₂.arg hp₂.val
-    (d := d) (fun t kt ot => hpo t ((kt.gpr (by decide)).trans hc₂.rdi) (kt.2.1.trans k₂.2.1) (kt.2.2.trans k₂.2.2)
-      (by rw [ot.word (.inl (by have := hdr_lt_slot wx Public.aY (show sLink < 32 by decide); omega))
-        (by unfold sLink sFn; omega)]; exact hc₂.link)
-      (f₂.append (ot.to_x (by decide) hoL (List.mem_singleton_self _))))
+    (d := d) (fun t hm kt => hpo t ((kt.gpr (by decide)).trans hc₂.rdi) (kt.2.1.trans k₂.2.1) (kt.2.2.trans k₂.2.2)
+      (by rw [hm]; exact hc₂.link) (by rw [hm]; exact f₂.mono fun r hr => List.mem_append_left _ hr))
     (fun i hi => by rw [show 8 * d + 8 * i = 8 * (d + i) by omega]; exact hp₂.rd _ (by omega))
     (fun i hi b hb => .inr (hfar _ (by
       have := hp₂.out (d + i) (by omega) b hb; rwa [show 8 * (d + i) = 8 * d + 8 * i by omega] at this))))
