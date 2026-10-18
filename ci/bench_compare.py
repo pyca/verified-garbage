@@ -564,7 +564,7 @@ def main():
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
         + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference." if with_references
            else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
-           else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, as in the workflow's manual runs)."),
+           else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, the workflow's `openssl` input)."),
         *(
             [
                 f"Changed modules: {args.modules}. Only the benchmarks that use them ran"

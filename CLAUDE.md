@@ -59,12 +59,10 @@ Lake rebuilds your changes and anything not yet cached.
   from (`ci/check_vectors.py` checks it), and read them from there.
 * **Every public API has a benchmark** in `bench/benches/primitives/`,
   next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
-  Benchmarks check compares each pull request that changes an
-  architecture's code with its base, and fails on a slowdown; an
-  optimization's speedup is shown in its run summary. A pull request never
-  runs every benchmark of an architecture: a change that needs that (e.g.
-  to `Cargo.lock` or the benchmarks' shared code) is measured by a manual
-  run.
+  Benchmarks workflow runs only by hand, never on pull requests: a change
+  that could make code slower, or claims to make it faster, is measured by
+  a manual run scoped to what it changed (see "Measuring a change's
+  speed"), and its pull request links the run.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
@@ -727,14 +725,46 @@ compares the fastest of each; add a group there when its code reads such a
 table.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
-workflow by hand on a pushed branch (`workflow_dispatch` on `bench.yml`)
-with `base_commit` (empty to run the branch alone, next to OpenSSL and
-aws-lc-rs), `arches`, `cpu_features` (space-separated configurations, `-`
-for none; empty for those choosing among the modules' implementations) and
-`modules`; the results are in each job's summary. Leaving all three empty
-runs every benchmark in about thirty jobs: never do that for one change,
-except one that needs every benchmark (which pull requests skip, naming the
-architectures in the Benchmarks run's summary): then pass those `arches`.
+workflow by hand: it never runs on its own (not on pull requests, not on
+`main`). Its runners are the ones CI waits for, so scope every run as
+narrowly as the change allows. First ask which jobs the change needs:
+
+```sh
+git diff --name-only origin/main HEAD | python3 ci/bench_arches.py --base origin/main
+```
+
+prints a JSON list, one entry per job, each with its `arch`, `cpu-features`
+and `modules` (empty: every benchmark; such architectures it leaves out,
+naming them on stderr). Then run the workflow on the pushed branch with
+those values, one run per architecture when they differ between
+architectures:
+
+```sh
+gh workflow run bench.yml --ref my-branch -f base_commit=$(git rev-parse origin/main) \
+  -f arches=aarch64 -f cpu_features='- none sha3' -f modules=ecdsa_p256
+```
+
+`--ref` is the branch (or tag) measured, at its tip; `base_commit` is any
+commit to compare it with (empty to run the branch alone, next to OpenSSL
+and aws-lc-rs). `arches`, `cpu_features` (space-separated configurations,
+`-` for none; empty for those choosing among the modules' implementations)
+and `modules` narrow the run (`python3 ci/bench_arches.py --choices` lists
+their values); `openssl=true` adds OpenSSL's and aws-lc-rs's times to a
+comparison, which only costs time: leave it off. To measure a commit that
+is no branch's tip, push a branch at it
+(`git push origin <sha>:refs/heads/bench/<name>`) and delete it after. The
+results are in each job's summary.
+
+Never run every benchmark (`modules` empty: leaving `arches`,
+`cpu_features` and `modules` all empty runs every benchmark of every
+architecture in about thirty jobs, and `arches` alone every benchmark of
+that architecture) unless the change truly needs it and cannot be measured
+otherwise: a change to the benchmarks' shared code or `bench/Cargo.lock`,
+whose architectures `bench_arches.py` names on stderr. Even then, run only
+the architectures it names, and prefer a module or two that show the
+change's effect over all of them. Never rerun a benchmark to get a better
+number, and never run one for a change that cannot affect speed (Lean
+proofs that leave `src/asm/` as it was, tests, docs, CI).
 
 ## Checks to run before pushing
 
