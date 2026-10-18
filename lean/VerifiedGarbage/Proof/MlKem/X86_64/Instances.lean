@@ -51,9 +51,11 @@ theorem encaps1024_spSafe (v : Sample4Impl) :
   unfold Impl.MlKem1024.X86_64.encaps1024 Impl.MlKem.X86_64.kemEncaps
   split
   · s4_sp v
+    all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
   · rename_i b hb
     have hB := v.batchH b hb
     ek_sp v b hB
+    all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
 
 theorem decaps1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.decaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by

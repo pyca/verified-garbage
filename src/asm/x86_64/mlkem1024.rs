@@ -30145,7 +30145,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 37888
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43648
 mov rsi, rbx
@@ -30162,7 +30162,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38240
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43776
 mov rsi, rbx
@@ -30179,7 +30179,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38592
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43904
 mov rsi, rbx
@@ -30196,7 +30196,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38944
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 44032
 mov rsi, rbx
@@ -30225,7 +30225,7 @@ mov esi, 5
 mov rdx, rbx
 add rdx, 39296
 mov ecx, 160
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 2412:
 mov rdi, r12
 add rdi, 0
@@ -30268,7 +30268,7 @@ ret
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem1024_compress_encode_avx2 = sym super::mlkem1024::vg_mlkem1024_compress_encode_avx2,
         vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
@@ -44677,7 +44677,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 37888
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43648
 mov rsi, rbx
@@ -44694,7 +44694,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38240
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43776
 mov rsi, rbx
@@ -44711,7 +44711,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38592
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 43904
 mov rsi, rbx
@@ -44728,7 +44728,7 @@ mov esi, 11
 mov rdx, rbx
 add rdx, 38944
 mov ecx, 352
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 mov rdi, rbx
 add rdi, 44032
 mov rsi, rbx
@@ -44757,7 +44757,7 @@ mov esi, 5
 mov rdx, rbx
 add rdx, 39296
 mov ecx, 160
-call {vg_mlkem1024_compress_encode}
+call {vg_mlkem1024_compress_encode_avx2}
 2412:
 mov rdi, r12
 add rdi, 0
@@ -44800,7 +44800,7 @@ ret
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
-        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
+        vg_mlkem1024_compress_encode_avx2 = sym super::mlkem1024::vg_mlkem1024_compress_encode_avx2,
         vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }

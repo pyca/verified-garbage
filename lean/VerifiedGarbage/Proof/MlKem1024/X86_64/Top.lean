@@ -156,9 +156,11 @@ theorem encaps1024_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem1024 v.callee) = 
   unfold kemEncaps
   split
   · s4_ctl v
+    all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _
   · rename_i b hb
     have hB := v.batchH b hb
     ek_ctl v b hB
+    all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _
 
 theorem encaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (kemEncaps kem1024 v.callee) (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
