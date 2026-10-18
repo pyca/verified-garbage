@@ -35,8 +35,8 @@ theorem supported_scans (p q : List Byte) :
     show (224 : Nat) = 8 * 28 from rfl, show (256 : Nat) = 8 * 32 from rfl, hp1, hp2, hp3, hq1, hq2,
     hq3, e]
   constructor
-  · rintro (⟨⟨h1, h2⟩, h3, h4⟩ | ⟨⟨h1, h2⟩, (⟨h3, h4⟩ | ⟨h3, h4⟩)⟩ | ⟨⟨h1, h2⟩, h3, h4⟩) <;> simp_all
-  · rintro ⟨h1, h2, (⟨h3, h4⟩ | ⟨h3, (h4 | h4)⟩ | ⟨h3, h4⟩)⟩ <;> simp_all
+  · rintro (⟨⟨h1, h2⟩, h3, h4⟩ | ⟨⟨h1, h2⟩, (⟨h3, h4⟩ | ⟨h3, h4⟩ | ⟨h3, h4⟩)⟩ | ⟨⟨h1, h2⟩, h3, h4⟩) <;> simp_all
+  · rintro ⟨h1, h2, (⟨h3, h4⟩ | ⟨h3, (h4 | h4 | h4)⟩ | ⟨h3, h4⟩)⟩ <;> simp_all
 
 /-- Supported subgroup widths are byte-aligned, including padded inputs. -/
 theorem subgroup_scan_width {p q : List Byte}

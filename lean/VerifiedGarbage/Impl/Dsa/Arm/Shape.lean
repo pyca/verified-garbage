@@ -31,7 +31,8 @@ def saveParity (n : Nat) : List Instr :=
 /-- The masks of the supported (p, q) pairs, combined with the parities. -/
 def combine : List Instr :=
   [.ldr .r4 .r12 8, .ldr .r5 .r12 20, .dp .and .r4 .r4 (.reg .r5),
-    .ldr .r5 .r12 24, .ldr .r7 .r12 28, .dp .orr .r5 .r5 (.reg .r7), .ldr .r7 .r12 12,
+    .ldr .r5 .r12 24, .ldr .r7 .r12 28, .dp .orr .r5 .r5 (.reg .r7),
+    .ldr .r7 .r12 20, .dp .orr .r5 .r5 (.reg .r7), .ldr .r7 .r12 12,
     .dp .and .r5 .r5 (.reg .r7), .dp .orr .r4 .r4 (.reg .r5),
     .ldr .r5 .r12 16, .ldr .r7 .r12 28, .dp .and .r5 .r5 (.reg .r7), .dp .orr .r4 .r4 (.reg .r5),
     .ldr .r5 .r12 32, .dp .and .r4 .r4 (.reg .r5), .str .r4 .r12 (Layout.field .mask)]

@@ -14,7 +14,7 @@
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
 /// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
@@ -338,7 +338,7 @@ ret
 /// * `nonce` must be valid for reads of `q_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
 /// * `out` and `scratch` must not overlap each other, `key`, `nonce`, `digest` or the arguments on the stack (distinct Rust objects never do).
@@ -446,6 +446,14 @@ sub x4, x3, #1
 csel x3, x4, x3, eq
 add x11, x3, #0
 movz x3, #32, lsl #0
+eor x3, x8, x3
+tst x3, x3
+movz x3, #0, lsl #0
+sub x4, x3, #1
+csel x3, x4, x3, eq
+orr x3, x3, x11
+add x11, x3, #0
+movz x3, #20, lsl #0
 eor x3, x8, x3
 tst x3, x3
 movz x3, #0, lsl #0
@@ -6633,7 +6641,7 @@ ret
 /// * `signature` must be valid for reads of `signature_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
@@ -6740,6 +6748,14 @@ sub x4, x3, #1
 csel x3, x4, x3, eq
 add x11, x3, #0
 movz x3, #32, lsl #0
+eor x3, x8, x3
+tst x3, x3
+movz x3, #0, lsl #0
+sub x4, x3, #1
+csel x3, x4, x3, eq
+orr x3, x3, x11
+add x11, x3, #0
+movz x3, #20, lsl #0
 eor x3, x8, x3
 tst x3, x3
 movz x3, #0, lsl #0
@@ -13132,7 +13148,7 @@ ret
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
 /// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
 /// * Caller must assure domain validity and supply fresh independent random bytes.
@@ -13437,7 +13453,7 @@ ret
 ///
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
 /// * `scratch` must not overlap `params` (distinct Rust objects never do).
@@ -13546,6 +13562,14 @@ sub x4, x3, #1
 csel x3, x4, x3, eq
 add x11, x3, #0
 movz x3, #32, lsl #0
+eor x3, x8, x3
+tst x3, x3
+movz x3, #0, lsl #0
+sub x4, x3, #1
+csel x3, x4, x3, eq
+orr x3, x3, x11
+add x11, x3, #0
+movz x3, #20, lsl #0
 eor x3, x8, x3
 tst x3, x3
 movz x3, #0, lsl #0
@@ -15313,7 +15337,7 @@ ret
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `x` must be valid for reads of `q_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
@@ -15424,6 +15448,14 @@ sub x4, x3, #1
 csel x3, x4, x3, eq
 add x11, x3, #0
 movz x3, #32, lsl #0
+eor x3, x8, x3
+tst x3, x3
+movz x3, #0, lsl #0
+sub x4, x3, #1
+csel x3, x4, x3, eq
+orr x3, x3, x11
+add x11, x3, #0
+movz x3, #20, lsl #0
 eor x3, x8, x3
 tst x3, x3
 movz x3, #0, lsl #0

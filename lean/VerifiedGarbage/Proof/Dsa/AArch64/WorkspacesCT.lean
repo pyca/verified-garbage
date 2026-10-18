@@ -86,7 +86,7 @@ def WorkspacePublic.child (p : WorkspacePublic) (isP : Bool) : ChildPublic where
     have hl := p.lengths
     change (if isP then p.pBytes else p.qBytes).length < 2 ^ 31
     cases isP <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
-      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
+      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
   width := rfl
 
 def workspaceOperand (isP : Bool) : Operand :=

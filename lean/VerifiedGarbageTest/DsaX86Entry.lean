@@ -62,7 +62,7 @@ def check (signing : Bool) (pLen qLen : Nat) : Except String Unit := do
     unless getBE done.words output (2 * qLen) == 2 ^ (16 * qLen) - 1 do throw "verification changed the signature"
 
 def checks : Except String Unit := do
-  for (pLen, qLen) in [(128, 20), (256, 28), (256, 32), (384, 32)] do
+  for (pLen, qLen) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] do
     check true pLen qLen
     check false pLen qLen
 

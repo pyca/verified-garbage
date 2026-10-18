@@ -53,7 +53,7 @@ theorem signingOperation_agrees {s t : State} (A : SigningABI s) (B : SigningABI
     refine ⟨⟨signingInstalled_ready A H.1, ?_⟩, signingInstalled_output A H.1, ?_⟩
     · simpa only [L, LayoutEq, DL] using signingInstalled_ready B H.2
     · simpa only [L, LayoutEq, args 0 (by decide)] using signingInstalled_output B H.2
-  have Dispatch := widthDispatch_relCT true [(128, 20), (256, 28), (256, 32), (384, 32)]
+  have Dispatch := widthDispatch_relCT true [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
     L.pLen L.qLen L.base L.size R (VG.X86.Taint.Agree (workspaceTaint false)) Invariant L.saved
     (supportedWidths_member A.lengths) (by decide) hp hq Sized
   have Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))

@@ -1,0 +1,5 @@
+name = "OpenSSL legacy DSA 2048/160 parameters"
+directories = ["openssl-dsa-legacy"]
+url = "https://raw.githubusercontent.com/openssl/openssl/6d76833d61fad07a171219d9cb1444bc37f88b8f/test/recipes/15-test_dsaparam_data/valid/p2048_q160_t1862.pem"
+sha256 = "947a509eb944ca52442702d5b853f510c4dcaa3bef1c8516e6aab8f18544f8ee"
+retrieved = "2026-10-18"

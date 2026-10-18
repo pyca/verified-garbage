@@ -221,7 +221,7 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
     (h24 : s.mem.readW (off base 24) 32 = mask32 a24) (h28 : s.mem.readW (off base 28) 32 = mask32 a28)
     (h32 : s.mem.readW (off base 32) 32 = mask32 a32) :
     WP isa (.block Shape.combine) s fun t =>
-      maskW base t = mask32 ((((a8 ∧ a20) ∨ ((a24 ∨ a28) ∧ a12)) ∨ (a16 ∧ a28)) ∧ a32) ∧
+      maskW base t = mask32 ((((a8 ∧ a20) ∨ (((a24 ∨ a28) ∨ a20) ∧ a12)) ∨ (a16 ∧ a28)) ∧ a32) ∧
       Rest [.r4, .r5, .r7] s t ∧ Outside base 116 4 s.mem t.mem := by
   have nw := hs.nowrap
   have fm : Impl.Dsa.Arm.Layout.field .mask = 116 := rfl
@@ -238,8 +238,12 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   have w₅ := w₄.of_upd u₅ (by decide)
   refine wp_dp (op2_reg _ _) fun s₆ u₆ => ?_
   have w₆ := w₅.of_upd u₆ (by decide)
-  refine wp_ldr12 w₆ (by decide) (by omega) fun s₇ u₇ => ?_
-  have w₇ := w₆.of_upd u₇ (by decide)
+  refine wp_ldr12 w₆ (by decide) (by omega) fun s₆a u₆a => ?_
+  have w₆a := w₆.of_upd u₆a (by decide)
+  refine wp_dp (op2_reg _ _) fun s₆b u₆b => ?_
+  have w₆b := w₆a.of_upd u₆b (by decide)
+  refine wp_ldr12 w₆b (by decide) (by omega) fun s₇ u₇ => ?_
+  have w₇ := w₆b.of_upd u₇ (by decide)
   refine wp_dp (op2_reg _ _) fun s₈ u₈ => wp_dp (op2_reg _ _) fun s₉ u₉ => ?_
   have w₉ := (w₇.of_upd u₈ (by decide)).of_upd u₉ (by decide)
   refine wp_ldr12 w₉ (by decide) (by omega) fun s₁₀ u₁₀ => ?_
@@ -254,16 +258,16 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   have w₁₅ := w₁₄.of_upd u₁₅ (by decide)
   refine wp_str (by decide) (w₁₅.ea12 (by omega)) (w₁₅.write (d := 116) (by omega)) fun t m => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [maskW, flagW, m.mem, show Impl.Dsa.Arm.Layout.field .mask = 116 from rfl, Mem.readW_writeW_self32]
-    simp only [u₁₅.get, u₁₄.get, u₁₃.get, u₁₂.get, u₁₁.get, u₁₀.get, u₉.get, u₈.get, u₇.get, u₆.get, u₅.get,
+    simp only [u₁₅.get, u₁₄.get, u₁₃.get, u₁₂.get, u₁₁.get, u₁₀.get, u₉.get, u₈.get, u₇.get, u₆b.get, u₆a.get, u₆.get, u₅.get,
       u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal, hdr, u₁₃.mem, u₁₂.mem, u₁₁.mem,
-      u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, h8, h12, h16, h20, h24, h28,
+      u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆b.mem, u₆a.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, h8, h12, h16, h20, h24, h28,
       h32, mask32_and, mask32_or]
-  · exact (((((((((((((((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))).trans
-      (u₄.rest (by decide))).trans (u₅.rest (by decide))).trans (u₆.rest (by decide))).trans (u₇.rest (by decide))).trans
+  · exact (((((((((((((((((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))).trans
+      (u₄.rest (by decide))).trans (u₅.rest (by decide))).trans (u₆.rest (by decide))).trans (u₆a.rest (by decide))).trans (u₆b.rest (by decide))).trans (u₇.rest (by decide))).trans
       (u₈.rest (by decide))).trans (u₉.rest (by decide))).trans (u₁₀.rest (by decide))).trans (u₁₁.rest (by decide))).trans
       (u₁₂.rest (by decide))).trans (u₁₃.rest (by decide))).trans (u₁₄.rest (by decide))).trans (u₁₅.rest (by decide))).trans
       (m.rest _)
-  · rw [m.mem, u₁₅.mem, u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem,
+  · rw [m.mem, u₁₅.mem, u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆b.mem, u₆a.mem, u₆.mem, u₅.mem, u₄.mem,
       u₃.mem, u₂.mem, u₁.mem]
     exact writeW32_outside _ _ _ (by omega)
 
@@ -300,7 +304,7 @@ theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size)
 /-- The shape of a supported domain. -/
 theorem shape_iff (P Q : Nat) :
     ((((Spec.Dsa.bitLength P = 1024 ∧ Spec.Dsa.bitLength Q = 160) ∨
-      ((Spec.Dsa.bitLength Q = 224 ∨ Spec.Dsa.bitLength Q = 256) ∧ Spec.Dsa.bitLength P = 2048)) ∨
+      (((Spec.Dsa.bitLength Q = 224 ∨ Spec.Dsa.bitLength Q = 256) ∨ Spec.Dsa.bitLength Q = 160) ∧ Spec.Dsa.bitLength P = 2048)) ∨
       (Spec.Dsa.bitLength P = 3072 ∧ Spec.Dsa.bitLength Q = 256)) ∧ (Q % 2 = 1 ∧ P % 2 = 1)) ↔
       shapeValid P Q := by
   simp only [shapeValid, Spec.Dsa.supportedSizes]

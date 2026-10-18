@@ -303,3 +303,52 @@ fn import_lengths_errors_and_backends() {
         assert!(!format!("{error:?}").is_empty());
     }
 }
+
+#[path = "../../tests/dsa_legacy.rs"]
+pub(super) mod legacy_vectors;
+
+#[test]
+fn legacy_2048_160_signatures() {
+    let (p, q, g) = legacy_vectors::parameters();
+    // With x = 1 the public key is the published generator. This is an
+    // algebraic round-trip test, not a manufactured known-answer vector.
+    for (p_len, q_len) in [(256, 20), (256, 28), (256, 32), (384, 32)] {
+        let mut padded_p = vec![0; p_len - p.len()];
+        padded_p.extend_from_slice(&p);
+        let mut padded_g = vec![0; p_len - g.len()];
+        padded_g.extend_from_slice(&g);
+        let mut padded_q = vec![0; q_len - q.len()];
+        padded_q.extend_from_slice(&q);
+        let mut x = vec![0; q_len];
+        x[q_len - 1] = 1;
+        let key =
+            PrivateKey::from_components(&padded_p, &padded_q, &padded_g, &padded_g, &x).unwrap();
+        for digest in [vec![], vec![0x42; 16], vec![0x42; 20], vec![0x42; 32]] {
+            let signature = key
+                .sign_with_rng(&digest, |buf| {
+                    assert_eq!(buf.len(), q_len);
+                    buf.fill(0);
+                    buf[19] = 2;
+                    Ok(())
+                })
+                .unwrap();
+            assert_eq!(signature.len(), 2 * q_len);
+            assert!(key.public_key().verify(&digest, &signature));
+            let mut wrong = digest.clone();
+            wrong.insert(0, 1);
+            assert!(!key.public_key().verify(&wrong, &signature));
+            assert!(
+                !key.public_key()
+                    .verify(&digest, &signature[..signature.len() - 1])
+            );
+            let mut zero_r = signature.clone();
+            zero_r[..q_len].fill(0);
+            assert!(!key.public_key().verify(&digest, &zero_r));
+            if digest.len() == 32 {
+                let mut same_prefix = digest.clone();
+                same_prefix[20..].fill(0xff);
+                assert!(key.public_key().verify(&same_prefix, &signature));
+            }
+        }
+    }
+}

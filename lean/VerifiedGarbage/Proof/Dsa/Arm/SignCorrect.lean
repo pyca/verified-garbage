@@ -26,7 +26,7 @@ theorem qWidth_of_shape {P Q : Nat} (h : shapeValid P Q) : qWidth Q = Spec.Dsa.b
   have S := h.1
   unfold Spec.Dsa.supportedSizes at S
   unfold qWidth
-  rcases S with ⟨_, h₁⟩ | ⟨_, h₁ | h₁⟩ | ⟨_, h₁⟩ <;> simp [h₁]
+  rcases S with ⟨_, h₁⟩ | ⟨_, h₁ | h₁ | h₁⟩ | ⟨_, h₁⟩ <;> simp [h₁]
 
 theorem shape_bounds {P Q : Nat} (h : shapeValid P Q) : 1 < P ∧ P % 2 = 1 ∧ 255 < Q ∧ Q % 2 = 1 := by
   have B := VG.Proof.Dsa.supported_bounds h.1
@@ -40,9 +40,9 @@ theorem width_of {pLen qLen : Nat} (h : Spec.Dsa.lengthsValid pLen qLen) :
     by omega⟩
 
 theorem widths_mem {pLen qLen : Nat} (h : Spec.Dsa.lengthsValid pLen qLen) :
-    (pLen, qLen) ∈ [(128, 20), (256, 28), (256, 32), (384, 32)] := by
+    (pLen, qLen) ∈ [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)] := by
   unfold Spec.Dsa.lengthsValid at h
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl⟩ | ⟨rfl, rfl⟩ <;> decide
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl | rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
 theorem signFields_ok (s : State) : FieldsOk (signFields s) := by
   intro f hf

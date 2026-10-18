@@ -41,8 +41,8 @@ def check (pLen qLen p q digestLen : Nat) : Except String Unit := do
     throw "shape check changed its inputs"
 
 def checks : Except String Unit := do
-  for (pLen, qLen) in [(128, 20), (256, 28), (256, 32), (384, 32)] do
-    for (pBits, qBits) in [(1024, 160), (2048, 224), (2048, 256), (3072, 256), (1024, 224), (1023, 160)] do
+  for (pLen, qLen) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] do
+    for (pBits, qBits) in [(1024, 160), (2048, 160), (2048, 224), (2048, 256), (3072, 256), (1024, 224), (1023, 160)] do
       if pBits ≤ pLen * 8 && qBits ≤ qLen * 8 then
         for digestLen in [0, 7, 32, 64] do
           check pLen qLen (2 ^ (pBits - 1) + 1) (2 ^ (qBits - 1) + 1) digestLen

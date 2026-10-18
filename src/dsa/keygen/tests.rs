@@ -190,3 +190,34 @@ fn imported_private_components() {
         }
     }
 }
+
+#[test]
+fn legacy_2048_160_key_generation() {
+    let (p, q, g) = crate::dsa::tests::legacy_vectors::parameters();
+    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        assert_eq!(buf.len(), 20);
+        buf.fill(0);
+        buf[19] = 1;
+        Ok(())
+    })
+    .unwrap();
+    // x = 1 gives y = g, independently of the implementation's exponentiation.
+    assert_eq!(&key.public.packed[2 * p.len() + q.len()..], g);
+    let digest = [0x42; 32];
+    let signature = key.sign(&digest).unwrap();
+    assert!(key.public_key().verify(&digest, &signature));
+}
+
+#[test]
+fn legacy_2048_160_private_import() {
+    let (p, q, g) = crate::dsa::tests::legacy_vectors::parameters();
+    let mut x = vec![0; q.len()];
+    x[q.len() - 1] = 1;
+    let key = PrivateKey::from_private_components(&p, &q, &g, &x).unwrap();
+    assert_eq!(&key.public.packed[2 * p.len() + q.len()..], g);
+    let signature = key.sign(b"legacy private import").unwrap();
+    assert!(
+        key.public_key()
+            .verify(b"legacy private import", &signature)
+    );
+}

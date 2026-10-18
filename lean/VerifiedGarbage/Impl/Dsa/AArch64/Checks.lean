@@ -32,6 +32,12 @@ def zeroMask (r : Reg) (invert : Bool := false) : List Instr :=
 def widthMask (n : Nat) : List Instr :=
   ([movi .x3 n, .logic .eor .x .x3 .x8 .x3] : List Instr) ++ zeroMask .x3
 
+/-- All imported subgroup widths for a 2048-bit modulus, including legacy 160-bit q. -/
+def width2048 : List Instr :=
+  widthMask 28 ++ ([mov .x11 .x3] : List Instr) ++ widthMask 32 ++
+    ([.logic .orr .x .x3 .x3 .x11] : List Instr) ++ ([mov .x11 .x3] : List Instr) ++ widthMask 20 ++
+    ([.logic .orr .x .x3 .x3 .x11] : List Instr)
+
 def topMask : List Instr :=
   [.lsr .x .x3 .x10 7, movi .x4 0, .sub .x .x3 .x4 .x3]
 
@@ -45,8 +51,7 @@ def widthChoice : Prog isa :=
   .ite (.zero .x .x6) (.block (Checks.widthMask 20))
     (.seq (.block [.subImm .x .x6 .x2 256])
       (.ite (.zero .x .x6)
-        (.block (Checks.widthMask 28 ++ ([mov .x11 .x3] : List Instr) ++ Checks.widthMask 32 ++
-          ([.logic .orr .x .x3 .x3 .x11] : List Instr)))
+        (.block width2048)
         (.seq (.block [.subImm .x .x6 .x2 384])
           (.ite (.zero .x .x6) (.block (Checks.widthMask 32)) (.block [movi .x3 0])))))
 
