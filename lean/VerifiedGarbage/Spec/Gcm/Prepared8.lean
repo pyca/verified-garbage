@@ -70,7 +70,7 @@ def derivePrepared8Api : Api where
     (from `vg_aes_gcm_init`). Copies its 256 bytes, the key schedule and hash subkey `H`, to \
     the first 256 bytes of `*dst`. At byte `256 + 32*k`, for `k` from 0 to 3, stores \
     `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
-    128-bit words. This is the layout of the first 384 bytes of `vg_aes_gcm_init_prepared`'s \
+    128-bit words. This is the layout of the first 384 bytes of `vg_aes_gcm_prepare`'s \
     context. The encoding is `VG.Spec.Gcm.preparedPower`; `*dst` satisfies \
     `PreparedPowers8Repr`. Use only the `*_prepared8` APIs, or APIs that read the first 256 \
     bytes, with this format. Only the pointers are public. Contract: \
@@ -80,7 +80,7 @@ def derivePrepared8Api : Api where
 /-- Prepared8-context validity, in addition to each API's existing safety requirements. -/
 def prepared8Safety : String :=
   "`*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a \
-    1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`)."
+    1024-byte context of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`)."
 
 /-- Common documentation for the prepared8 APIs. -/
 def prepared8Summary (name contract : String) : String :=
