@@ -82,19 +82,20 @@ def stride (K : WinCfg) : Nat := 24 * K.M.n
 def store (K : WinCfg) : List Instr :=
   (List.range (3 * K.M.n)).flatMap fun i => [ld .x4 (K.R.x + 8 * i), .str .x .x4 .x20 (K.tbl + 8 * i)]
 
-/-- The co-Z programs' slots (`CoZ`): the addend in `E`, the temporaries,
-the sum in `R`, two unused slots and `P`, whose `z` is one. -/
+/-- ZADDU's slots (`CoZ`): the addend in `E`, the temporaries, the sum in
+`R`, two unused slots and `P`, whose `z` is one. -/
 def coZσ (K : WinCfg) (i : Nat) : Nat :=
   [K.E.x, K.E.y, K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5, K.R.x, K.R.y, K.R.z,
     K.D.x, K.D.y, K.P.x, K.P.y, K.P.z].getD i K.P.x
 
-def dbluOps (K : WinCfg) : List FOp := CoZ.dblu.map (CoZ.rename (coZσ K))
-def zadduOps (K : WinCfg) : List FOp := CoZ.zaddu.map (CoZ.rename (coZσ K))
+/-- DBLU's slots: `2P` into `E` (`x`, `y`), `P` at the same `Z` into `R`, as
+ZADDU takes them. -/
+def dbluσ (K : WinCfg) (i : Nat) : Nat :=
+  [K.S.t4, K.S.t5, K.S.t0, K.S.t1, K.R.y, K.R.x, K.S.t2, K.S.t3, K.E.x, K.E.y, K.R.z,
+    K.D.x, K.D.y, K.P.x, K.P.y, K.P.z].getD i K.P.x
 
-/-- After DBLU (`R = 2P`, `(t3, t2)` = `P` at its `Z`): the addend `E = 2P`, `R = P`. -/
-def swap (K : WinCfg) : List Instr :=
-  copy K.M.n K.E.x K.R.x ++ copy K.M.n K.E.y K.R.y ++ copy K.M.n K.R.x K.S.t3 ++
-    copy K.M.n K.R.y K.S.t2
+def dbluOps (K : WinCfg) : List FOp := CoZ.dblu.map (CoZ.rename (dbluσ K))
+def zadduOps (K : WinCfg) : List FOp := CoZ.zaddu.map (CoZ.rename (coZσ K))
 
 /-- `R = R + 2P` by ZADDU, `E = 2P` at the new `Z`, stored in the next entry. -/
 def tableStep (K : WinCfg) : Prog isa :=
@@ -107,7 +108,6 @@ def table (K : WinCfg) : Prog isa :=
   .seq (.block (copyPt K.M.n K.R K.P ++ [.addImm .x .x20 .x0 0] ++ store K ++
     [.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0])) <|
   .seq (fprogB K.M (dbluOps K)) <|
-  .seq (.block (swap K)) <|
   .loop (tableStep K) (.nonzero .x .x19)
 
 /-! ## The multiplication -/
