@@ -69,6 +69,8 @@ def bin (op : VBinOp) (len : VLen := .l256) : BitVec 256 := run (.vbin op len .x
 #guard bin .vpmullw == 0x2f1a5f247f1e8f08b45e4b0cfe5c1020765532118000000001244568f110d780#256
 #guard bin .vpmullw .l128 == 0x00000000000000000000000000000000765532118000000001244568f110d780#256
 #guard bin .vpmulhw == 0x00110c43dd2beb5f0fac16f30c75082200000000ff6e0000ff6e0000086910e8#256
+#guard bin .vpmaddwd == 0x0c548e3ec88b0e26269fff6a14980e7c0000a866ff6e8000ff6e468c1952c890#256
+#guard bin .vpmaddwd .l128 == 0x000000000000000000000000000000000000a866ff6e8000ff6e468c1952c890#256
 #guard bin .vpackssdw == 0x7fff8000800080007fff7fff80008000ffff80007fff7fff80007fff80007fff#256
 #guard bin .vpunpcklwd == 0xdead8796beefa5b4cafec3d2babee1f07ffffedcffffba981234765456783210#256
 #guard bin .vpunpckhwd == 0x01230f1e45672d3c89ab4b5acdef6978ffff89abffffcdef8000012300004567#256
@@ -356,6 +358,8 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard printer.instr (.vop (.vshift .psraw .l256 .xmm6 .xmm7 15)) == ["vpsraw ymm6, ymm7, 15"]
 #guard printer.instr (.vop (.vshift .psrad .l128 .xmm6 .xmm7 31)) == ["vpsrad xmm6, xmm7, 31"]
 #guard printer.instr (.vop (.vbin .vpmulhw .l256 .xmm1 .xmm2 .xmm3)) == ["vpmulhw ymm1, ymm2, ymm3"]
+#guard printer.instr (.vop (.vbin .vpmaddwd .l256 .xmm1 .xmm2 .xmm3)) == ["vpmaddwd ymm1, ymm2, ymm3"]
+#guard printer.instr (.vop (.vbin .vpmaddwd .l128 .xmm1 .xmm2 .xmm15)) == ["vpmaddwd xmm1, xmm2, xmm15"]
 #guard printer.instr (.vop (.vbin .vpsubq .l256 .xmm1 .xmm2 .xmm3)) == ["vpsubq ymm1, ymm2, ymm3"]
 #guard printer.instr (.vop (.vbin .vpcmpeqd .l256 .xmm1 .xmm2 .xmm3)) == ["vpcmpeqd ymm1, ymm2, ymm3"]
 #guard printer.instr (.vop (.vbin .vpcmpeqd .l128 .xmm4 .xmm5 .xmm15)) == ["vpcmpeqd xmm4, xmm5, xmm15"]
@@ -416,6 +420,8 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard isa.requires (.vop (.vshift .pslld .l128 .xmm0 .xmm1 1)) == ["avx"]
 #guard isa.requires (.vop (.vbin .vpmullw .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
 #guard isa.requires (.vop (.vbin .vpmullw .l128 .xmm0 .xmm1 .xmm2)) == ["avx"]
+#guard isa.requires (.vop (.vbin .vpmaddwd .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
+#guard isa.requires (.vop (.vbin .vpmaddwd .l128 .xmm0 .xmm1 .xmm2)) == ["avx"]
 #guard isa.requires (.vop (.vbin .vpcmpeqd .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
 #guard isa.requires (.vop (.vbin .vpcmpeqd .l128 .xmm0 .xmm1 .xmm2)) == ["avx"]
 #guard isa.requires (.vop (.vbin .vpsubq .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]

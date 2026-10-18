@@ -21,6 +21,7 @@ inductive XBinOp
   | pshufb | sha256msg1 | sha256msg2 | sha1msg1 | sha1msg2 | sha1nexte
   | pand | pandn | paddq | psubq | pmuludq
   | paddw | psubw | psubd | pmullw | pmulhw | packssdw | punpcklwd | punpckhwd
+  | pmaddwd
   | aesenc | aesenclast | aesdec | aesdeclast | aesimc
   | pcmpeqd
   deriving DecidableEq, Repr
@@ -294,6 +295,11 @@ bits above 127 unmodified; no flags are affected):
   `DEST[15:0] := TEMP0[15:0]`, … `DEST[127:112] := TEMP7[15:0]`.
 * PMULHW: the same products; `DEST[15:0] := TEMP0[31:16]`, …
   `DEST[127:112] := TEMP7[31:16]`.
+* PMADDWD: `DEST[31:0] := (DEST[15:0] * SRC[15:0]) + (DEST[31:16] *
+  SRC[31:16])`, … `DEST[127:96] := (DEST[111:96] * SRC[111:96]) +
+  (DEST[127:112] * SRC[127:112])` (signed products, see `mulWordsSigned`;
+  the sum wraps: the one sum that overflows, of four `8000H` words, is
+  `80000000H`).
 * PACKSSDW: `DEST[15:0] := SaturateSignedDwordToSignedWord (DEST[31:0])`,
   … `DEST[63:48] := SaturateSignedDwordToSignedWord (DEST[127:96])`;
   `DEST[79:64] := SaturateSignedDwordToSignedWord (SRC[31:0])`, …
@@ -357,6 +363,11 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
       (dword a 3 - dword b 3)
   | .pmullw, a, b => ofWords fun i => (mulWordsSigned (word a i) (word b i)).extractLsb' 0 16
   | .pmulhw, a, b => ofWords fun i => (mulWordsSigned (word a i) (word b i)).extractLsb' 16 16
+  | .pmaddwd, a, b =>
+    let m (i : Nat) : BitVec 32 :=
+      mulWordsSigned (word a (2 * i)) (word b (2 * i)) +
+        mulWordsSigned (word a (2 * i + 1)) (word b (2 * i + 1))
+    ofDwords (m 0) (m 1) (m 2) (m 3)
   | .packssdw, a, b =>
     ofWords fun i => if i < 4 then satSignedWord (dword a i) else satSignedWord (dword b (i - 4))
   | .punpcklwd, a, b => ofWords fun i => if i % 2 = 0 then word a (i / 2) else word b (i / 2)

@@ -23,6 +23,7 @@ inductive VBinOp
   | vpaddd | vpaddq | vpxor | vpor | vpand | vpandn | vpshufb | vpmuludq
   | vpunpckldq | vpunpckhdq | vpunpcklqdq | vpunpckhqdq
   | vpaddw | vpsubw | vpsubd | vpmullw | vpmulhw | vpackssdw | vpunpcklwd | vpunpckhwd
+  | vpmaddwd
   | vpsubq
   | vaesenc | vaesenclast | vaesdec | vaesdeclast
   | vpcmpeqd
@@ -119,9 +120,9 @@ into `DEST[127:0]`, then of `SRC1[255:128]` and `SRC2[255:128]` into
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 VPADDD, VPADDQ, VPXOR, VPOR, VPAND, VPANDN, VPSHUFB, VPMULUDQ,
 VPUNPCK{L,H}{DQ,QDQ}, VPADDW, VPSUBW, VPSUBD, VPMULLW, VPMULHW, VPACKSSDW,
-VPUNPCK{L,H}WD, VPSUBQ and VPCMPEQD are, lane by lane, PADDD, PADDQ, PXOR,
+VPUNPCK{L,H}WD, VPSUBQ, VPCMPEQD and VPMADDWD are, lane by lane, PADDD, PADDQ, PXOR,
 POR, PAND, PANDN, PSHUFB, PMULUDQ, PUNPCK{L,H}{DQ,QDQ}, PADDW, PSUBW, PSUBD,
-PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ and PCMPEQD (SDM Vol. 2, each
+PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ, PCMPEQD and PMADDWD (SDM Vol. 2, each
 instruction's "VEX.256 encoded version" pseudocode, with `SRC1` in place of
 the destination; VPACKSSDW and VPUNPCK{L,H}WD pack and interleave within
 each 128-bit lane). -/
@@ -134,7 +135,7 @@ def VBinOp.sse : VBinOp → XBinOp
   | .vpmulhw => .pmulhw | .vpackssdw => .packssdw | .vpunpcklwd => .punpcklwd
   | .vpunpckhwd => .punpckhwd | .vpsubq => .psubq
   | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vaesdec => .aesdec
-  | .vaesdeclast => .aesdeclast | .vpcmpeqd => .pcmpeqd
+  | .vaesdeclast => .aesdeclast | .vpcmpeqd => .pcmpeqd | .vpmaddwd => .pmaddwd
 
 /-! ### Vector AES and carry-less multiplication
 

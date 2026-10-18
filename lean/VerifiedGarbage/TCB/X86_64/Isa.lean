@@ -152,8 +152,8 @@ Modelling choices:
   on return. Nothing is known to set it.
 * MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
   the multiplies of the model but `mul` and `mulx` (`pmuludq`, `vpmuludq`,
-  `pmullw`, `vpmullw`, `pmulhw`, `vpmulhw`, `vpmadd52luq` and
-  `vpmadd52huq`), although on Intel's DOIT
+  `pmullw`, `vpmullw`, `pmulhw`, `vpmulhw`, `pmaddwd`, `vpmaddwd`,
+  `vpmadd52luq` and `vpmadd52huq`), although on Intel's DOIT
   list, may take up to a cycle longer to retire for specific data values
   unless MXCSR holds `0x1FBF` (Intel, "MXCSR Configuration Dependent Timing", and
   its list of the instructions affected, "MCDT Data Operand Independent
