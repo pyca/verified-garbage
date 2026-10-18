@@ -190,7 +190,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | xop op => cases op <;> (cases hs; exact h)
   | vop _ => cases hs; exact nx
   | vmovdquLoad _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | vmovdquTbl _ m _ _ => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | vmovdquTbl _ m _ _ | movdquTbl _ m _ _ => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbroadcasti128 _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbinLoad _ _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vmovdquStore l m _ => cases l <;> exact storeStepKD_nil h hs

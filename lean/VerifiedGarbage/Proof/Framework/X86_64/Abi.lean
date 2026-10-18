@@ -47,7 +47,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | vop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;> rfl
-  | vmovdquTbl d m n ws => simp only [exec] at h; split at h <;> cases h; rfl
+  | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [exec] at h; split at h <;> cases h; rfl
   | vmovdquStore len m r =>
     cases len
     · simp only [exec, State.store128] at h; split at h <;> cases h; rfl

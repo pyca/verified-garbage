@@ -517,7 +517,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       exact hw.pubM hm
     rw [ite_t hm']
     exact ⟨_, rfl, h.upd (set_mono hw d id) id (h.killM d) empty_subset'⟩
-  | vmovdquTbl _ m _ _ =>
+  | vmovdquTbl _ m _ _ | movdquTbl _ m _ _ =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
