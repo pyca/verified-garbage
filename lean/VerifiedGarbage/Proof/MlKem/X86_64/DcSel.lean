@@ -202,30 +202,30 @@ theorem sel_ok (s : State) {g kb key : Addr} (e : Bool) (hg : InRegions (s.rd ++
 
 /-! ## The choice -/
 
-abbrev setupB (L : Kem) : List Instr := [.mov .rsi (.reg .r14), .mov .rdi (.reg .rbx),
-  .alu .add .rdi (.imm (BitVec.ofNat 32 L.oCT)), .mov32 .rcx (.imm (BitVec.ofNat 32 (L.ctLen / 8))), .mov32 .rdx (.imm 0)]
+abbrev setupB (o n : Nat) : List Instr := [.mov .rsi (.reg .r14), .mov .rdi (.reg .rbx),
+  .alu .add .rdi (.imm (BitVec.ofNat 32 o)), .mov32 .rcx (.imm (BitVec.ofNat 32 (n / 8))), .mov32 .rdx (.imm 0)]
 
-theorem setup_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (s : State) :
-    WP isa (.block (setupB L)) s fun s' =>
-      (s'.mem = s.mem ∧ s'.gpr .rsi = pa s (.r14, 0) ∧ s'.gpr .rdi = pa s (sc L.oCT) ∧
-        s'.gpr .rcx = BitVec.ofNat 64 (L.ctLen / 8) ∧ s'.gpr .rdx = 0) ∧
+theorem setup_ok {o n : Nat} (ho : o < 2 ^ 31) (hn : n < 2 ^ 32) (s : State) :
+    WP isa (.block (setupB o n)) s fun s' =>
+      (s'.mem = s.mem ∧ s'.gpr .rsi = pa s (.r14, 0) ∧ s'.gpr .rdi = pa s (sc o) ∧
+        s'.gpr .rcx = BitVec.ofNat 64 (n / 8) ∧ s'.gpr .rdx = 0) ∧
       Keep [.rsi, .rdi, .rcx, .rdx] s s' := by
   refine WP.keep _ ?_ (by rfl)
-  xrun [sx_ofNat ho, sw_ofNat (show L.ctLen / 8 < 2 ^ 32 by omega)]
+  xrun [sx_ofNat ho, sw_ofNat (show n / 8 < 2 ^ 32 by omega)]
   rw [pa, add_ofNat_zero]
 
-theorem select_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (hn0 : 0 < L.ctLen) (h8 : L.ctLen % 8 = 0)
+theorem select_ok {o n : Nat} (ho : o < 2 ^ 31) (hn : n < 2 ^ 32) (hn0 : 0 < n) (h8 : n % 8 = 0)
     {s : State}
-    (hc : InRegions (s.rd ++ s.wr) (pa s (.r14, 0)) L.ctLen)
-    (hct : InRegions (s.rd ++ s.wr) (pa s (sc L.oCT)) L.ctLen) (hg : InRegions (s.rd ++ s.wr) (pa s (sc oG)) 32)
+    (hc : InRegions (s.rd ++ s.wr) (pa s (.r14, 0)) n)
+    (hct : InRegions (s.rd ++ s.wr) (pa s (sc o)) n) (hg : InRegions (s.rd ++ s.wr) (pa s (sc oG)) 32)
     (hkb : InRegions (s.rd ++ s.wr) (pa s (sc oKB)) 32) (hkey : InRegions s.wr (pa s (.r12, 0)) 32)
     (dg : Region.Disjoint ⟨pa s (sc oG), 32⟩ ⟨pa s (.r12, 0), 32⟩)
     (dkb : Region.Disjoint ⟨pa s (sc oKB), 32⟩ ⟨pa s (.r12, 0), 32⟩) :
-    WP isa (select L) s fun s' => PPost s s' [((.r12, 0), 32)] ∧
+    WP isa (selectAt o n) s fun s' => PPost s s' [((.r12, 0), 32)] ∧
       bytesAt s'.mem (pa s (.r12, 0)) 32 =
-        if bytesAt s.mem (pa s (.r14, 0)) L.ctLen = bytesAt s.mem (pa s (sc L.oCT)) L.ctLen then
+        if bytesAt s.mem (pa s (.r14, 0)) n = bytesAt s.mem (pa s (sc o)) n then
           bytesAt s.mem (pa s (sc oG)) 32 else bytesAt s.mem (pa s (sc oKB)) 32 := by
-  unfold select
+  unfold selectAt
   refine WP.seq (WP.mono (setup_ok ho hn s) fun s₁ ⟨⟨hm₁, hsi₁, hdi₁, hcx₁, hdx₁⟩, k₁⟩ => ?_)
   refine WP.seq (WP.mono (cmp_ok s₁ hn hn0 h8 (by rw [k₁.2.1, k₁.2.2]; exact hc) (by rw [k₁.2.1, k₁.2.2]; exact hct) hsi₁ hdi₁
     hdx₁ hcx₁) fun s₂ ⟨hm₂, hrd₂, hwr₂, hdx₂, k₂⟩ => ?_)
@@ -240,7 +240,7 @@ theorem select_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (hn0 :
   have hmem : s₃.mem = s.mem := by rw [hm₃, hm₂, hm₁]
   have hrd : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [k₃.2.1, k₃.2.2, hrd₂, hwr₂, k₁.2.1, k₁.2.2]
   have hwr : s₃.wr = s.wr := by rw [k₃.2.2, hwr₂, k₁.2.2]
-  have hax : s₃.gpr .rax = if decide (bytesAt s.mem (pa s (.r14, 0)) L.ctLen = bytesAt s.mem (pa s (sc L.oCT)) L.ctLen) then
+  have hax : s₃.gpr .rax = if decide (bytesAt s.mem (pa s (.r14, 0)) n = bytesAt s.mem (pa s (sc o)) n) then
       BitVec.allOnes 64 else 0 := by
     rw [hax₃]
     rw [hm₁] at hdx₂

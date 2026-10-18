@@ -81,7 +81,8 @@ theorem encode12_nosp : NoSp encode12 := nosp_of (by decide +kernel)
 theorem decode12_nosp : NoSp decode12 := nosp_of (by decide +kernel)
 theorem ce_nosp : NoSp compressEncode := nosp_of (by decide +kernel)
 theorem dd_nosp : NoSp decodeDecompress := nosp_of (by decide +kernel)
-theorem sample_nosp : NoSp sampleNTT := nosp_of (by decide +kernel)
+theorem sampleW_nosp (w16 : Bool) : NoSp (sampleNTTW w16) := by cases w16 <;> exact nosp_of (by decide +kernel)
+theorem sample_nosp : NoSp sampleNTT := sampleW_nosp false
 
 theorem nttInv_depth : Impl.MlKem.X86_64.nttInv.depth = 0 := by decide +kernel
 theorem add_depth : Impl.MlKem.X86_64.add.depth = 0 := by decide +kernel
@@ -91,7 +92,8 @@ theorem encode12_depth : encode12.depth = 0 := by decide +kernel
 theorem decode12_depth : decode12.depth = 0 := by decide +kernel
 theorem ce_depth : compressEncode.depth = 0 := by decide +kernel
 theorem dd_depth : decodeDecompress.depth = 0 := by decide +kernel
-theorem sample_depth : sampleNTT.depth = 2 := by decide +kernel
+theorem sampleW_depth (w16 : Bool) : (sampleNTTW w16).depth = 2 := by cases w16 <;> decide +kernel
+theorem sample_depth : sampleNTT.depth = 2 := sampleW_depth false
 
 /-! ## `NTT` and `NTT⁻¹` in place -/
 

@@ -25,6 +25,8 @@ stored back (`hsave_ok`).
 
 namespace VG.Proof.MlKem.X86_64.SH
 
+variable {w16 : Bool}
+
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Proof.MlKem.X86_64.S4
 open VG.Spec.Sha3 (keccakF RC stateAt bytesAt)
@@ -110,8 +112,8 @@ theorem xorAt_lane (Y : Spec.Sha3.State) (m : Mem) (p : Addr) {j : Nat} (hj : j 
 /-! ## The start, apart from the sponge -/
 
 /-- The prologue writes only the saved registers. -/
-theorem proF_ok {σ : State} (hp : Pre σ) :
-    WP isa (.block pro) σ fun s => I0 σ s ∧ Frame [⟨at' σ oSave, 40⟩] σ.mem s.mem := by
+theorem proF_ok {σ : State} (hp : PreW w16 σ) :
+    WP isa (.block pro) σ fun s => I0W w16 σ s ∧ Frame [⟨at' σ oSave, 40⟩] σ.mem s.mem := by
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .r12, .r13, .r14] (Q := fun s =>
       s.mem = ((((σ.mem.writeW (at' σ 4384) (σ.gpr .rbx)).writeW (at' σ 4392) (σ.gpr .rbp)).writeW (at' σ 4400)
@@ -141,12 +143,12 @@ theorem proF_ok {σ : State} (hp : Pre σ) :
       (List.mem_singleton_self _) _ (hin 4416 (by omega) (by omega)))
 
 /-- The prologue, the round constants and the padded seeds, apart from the sponge. -/
-theorem startF_ok {σ : State} (hp : Pre σ) :
+theorem startF_ok {σ : State} (hp : PreW w16 σ) :
     WP isa (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) ++ absorb4)) σ
-      fun s => SqInv σ 0 s ∧ HR σ s.mem := by
+      fun s => SqInvW w16 σ 0 s ∧ HR σ s.mem := by
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (proF_ok hp) fun s₁ ⟨h₁, f₁⟩ => WP.mono (rc_ok hp h₁.env) fun s₂ h₂ => ?_
-  have he₂ : Env σ s₂ := Env.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
+  have he₂ : EnvW w16 σ s₂ := EnvW.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega))
     h₂.frame h₂.keep.2.1 h₂.keep.2.2 fun r hr => h₂.keep.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -170,8 +172,8 @@ theorem startF_ok {σ : State} (hp : Pre σ) :
 /-! ## The sponge's state to the fourth state -/
 
 /-- After the first `i` lanes of the fourth state are the sponge's. -/
-structure HLI (σ : State) (i : Nat) (s : State) : Prop where
-  env : Env σ s
+structure HLI (w16 : Bool) (σ : State) (i : Nat) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
   w : ∀ j < 25, ∀ k < 4, s.mem.readW (la (scr σ) j k) 64 =
@@ -179,9 +181,9 @@ structure HLI (σ : State) (i : Nat) (s : State) : Prop where
   hr : HR σ s.mem
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
-theorem hload_step {σ : State} (hp : Pre σ) {i : Nat} (hi : i < 25) {s : State} (h : HLI σ i s) :
+theorem hload_step {σ : State} (hp : PreW w16 σ) {i : Nat} (hi : i < 25) {s : State} (h : HLI w16 σ i s) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx (oHS + 8 * i))), .store (at_ .rbx (32 * i + 24)) .rax]) s
-      (HLI σ (i + 1)) := by
+      (HLI w16 σ (i + 1)) := by
   refine wp_movm (a := at' σ (oHS + 8 * i)) (by rw [ea_at, h.env.rbx])
     (in_scr' hp h.env.rd h.env.wr (by simp only [oHS]; omega)) fun s₁ u₁ => wp_store (a := at' σ (32 * i + 24))
       (by rw [ea_at, u₁.other _ (by decide), h.env.rbx]) (by rw [u₁.wr]; exact in_scr hp h.env.wr (by omega))
@@ -193,7 +195,7 @@ theorem hload_step {σ : State} (hp : Pre σ) {i : Nat} (hi : i < 25) {s : State
   have hsub : Region.Sub ⟨at' σ (32 * i + 24), 8⟩ (lowR σ) := Offset.sub_base _ (by simp only [oSave]; omega)
   have hf : Frame [⟨at' σ (32 * i + 24), 8⟩] s.mem s₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨Env.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
+  refine ⟨EnvW.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
       (r₂.trans u₁.rd) (w₂.trans u₁.wr) fun r hr => by
         rw [g₂, u₁.other r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -220,10 +222,10 @@ theorem hload_eq : hload = (List.range 25).flatMap fun i =>
     [.mov .rax (.mem (at_ .rbx (oHS + 8 * i))), .store (at_ .rbx (32 * i + 24)) .rax] := rfl
 
 /-- The sponge's state to the fourth state. -/
-theorem hload_ok {σ : State} (hp : Pre σ) {s : State} (h : SqInv σ 0 s) (hr : HR σ s.mem) :
-    WP isa (.block hload) s fun s' => SqY σ (hst σ 0) 0 0 s' ∧ HR σ s'.mem := by
+theorem hload_ok {σ : State} (hp : PreW w16 σ) {s : State} (h : SqInvW w16 σ 0 s) (hr : HR σ s.mem) :
+    WP isa (.block hload) s fun s' => SqY w16 σ (hst σ 0) 0 0 s' ∧ HR σ s'.mem := by
   rw [hload_eq]
-  refine WP.mono (wp_range_flatMap (M := isa) (HLI σ) (fun i s hi h => hload_step hp hi h) 25 (Nat.le_refl _) s
+  refine WP.mono (wp_range_flatMap (M := isa) (HLI w16 σ) (fun i s hi h => hload_step hp hi h) 25 (Nat.le_refl _) s
     ⟨h.env, h.r14, h.rc, fun j hj k hk => ?_, hr⟩) fun s' h' =>
       ⟨⟨h'.env, h'.r14, h'.rc, fun j hj k hk => ?_, fun _ _ p hp' => absurd hp' (by omega)⟩, h'.hr⟩
   · rw [h.lanes j hj k hk, ite_eq_right (by omega)]; rfl
@@ -235,8 +237,8 @@ theorem hload_ok {σ : State} (hp : Pre σ) {s : State} (h : SqInv σ 0 s) (hr :
 /-! ## The squeezes, each absorbing a block -/
 
 /-- During the XOR of block `i` into the fourth state `Y`: its first `J` lanes. -/
-structure HXI (σ : State) (Y : Spec.Sha3.State) (i J : Nat) (s₀ s : State) : Prop where
-  env : Env σ s
+structure HXI (w16 : Bool) (σ : State) (Y : Spec.Sha3.State) (i J : Nat) (s₀ s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
   w : ∀ j < 25, ∀ k < 4, s.mem.readW (la (scr σ) j k) 64 =
@@ -248,10 +250,10 @@ structure HXI (σ : State) (Y : Spec.Sha3.State) (i J : Nat) (s₀ s : State) : 
   fr : Frame [lowR σ] s₀.mem s.mem
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_xorm wp_store wp_nil) in
-theorem hxor_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {i J : Nat} (hi : i < 3) (hJ : J < 17)
-    {s₀ s : State} (h : HXI σ Y i J s₀ s) :
+theorem hxor_step {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {i J : Nat} (hi : i < 3) (hJ : J < 17)
+    {s₀ s : State} (h : HXI w16 σ Y i J s₀ s) :
     WP isa (.block [.mov .rax (.mem (at_ .r8 (8 * J))), .alu .xor .rax (.mem (at_ .rbx (32 * J + 24))),
-      .store (at_ .rbx (32 * J + 24)) .rax]) s (HXI σ Y i (J + 1) s₀) := by
+      .store (at_ .rbx (32 * J + 24)) .rax]) s (HXI w16 σ Y i (J + 1) s₀) := by
   have hb : hbA σ i + BitVec.ofNat 64 (8 * J) = at' σ (oHS + (200 + 136 * i + 8 * J)) := by
     rw [hbA, at', at', Offset.add_add, show oHB + 136 * i + 8 * J = oHS + (200 + 136 * i + 8 * J) by
       simp only [oHB, oHS]; omega]
@@ -271,7 +273,7 @@ theorem hxor_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {i J : Nat} (
   have hf : Frame [⟨at' σ (32 * J + 24), 8⟩] s.mem s₃.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hg : ∀ r, r ≠ .rax → s₃.gpr r = s.gpr r := fun r hr => by rw [g₃, u₂.other r hr, u₁.other r hr]
-  refine ⟨Env.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
+  refine ⟨EnvW.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
       (r₃.trans (u₂.rd.trans u₁.rd)) (w₃.trans (u₂.wr.trans u₁.wr)) fun r hr => hg r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
@@ -304,13 +306,13 @@ theorem hxor_eq : hxor = (List.range 17).flatMap (fun i => [.mov .rax (.mem (at_
 
 open VG.Proof.Sha3.X86_64 (wp_addi wp_nil) in
 /-- Block `i` XORed into the fourth state, and `r8` to the next. -/
-theorem hxor_ok {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {i : Nat} (hi : i < 3) {s : State}
-    (h : SqY σ Y 0 i s) (hr : HR σ s.mem) (h8 : s.gpr .r8 = hbA σ i) :
-    WP isa (.block hxor) s fun s' => (SqY σ (xorAt Y 0 (hblk σ i)) 0 i s' ∧ HR σ s'.mem ∧
+theorem hxor_ok {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {i : Nat} (hi : i < 3) {s : State}
+    (h : SqY w16 σ Y 0 i s) (hr : HR σ s.mem) (h8 : s.gpr .r8 = hbA σ i) :
+    WP isa (.block hxor) s fun s' => (SqY w16 σ (xorAt Y 0 (hblk σ i)) 0 i s' ∧ HR σ s'.mem ∧
       s'.gpr .r8 = hbA σ (i + 1) ∧ Frame [lowR σ] s.mem s'.mem) ∧
       s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
   rw [hxor_eq, WP.block_append_iff]
-  refine WP.mono (wp_range_flatMap (M := isa) (fun J t => HXI σ Y i J s t) (fun J t hJ ht => hxor_step hp hi hJ ht)
+  refine WP.mono (wp_range_flatMap (M := isa) (fun J t => HXI w16 σ Y i J s t) (fun J t hJ ht => hxor_step hp hi hJ ht)
     17 (Nat.le_refl _) s ⟨h.env, h.r14, h.rc, fun j hj k hk => ?_, fun k hk p hp' => ?_, hr, h8, ⟨rfl, rfl⟩,
       Frame.refl _ _⟩) fun t ht => wp_addi fun t₁ u₁ => wp_nil ?_
   · rw [h.lanes j hj k hk, ite_eq_right (by omega), Nat.zero_add]
@@ -333,20 +335,20 @@ theorem hxor_ok {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {i : Nat} (hi :
 
 open VG.Proof.Sha3.X86_64 (wp_mov wp_addi wp_nil) in
 /-- The three squeezes, each after XORing the next block into the fourth state. -/
-theorem squeezesH_ok {fast : Bool} {σ : State} (hp : Pre σ) {s : State} (h : SqY σ (hst σ 0) 0 0 s)
-    (hr : HR σ s.mem) : WP isa (squeezesH fast) s fun s' => SqY σ (hst σ 3) 0 3 s' ∧ HR σ s'.mem := by
+theorem squeezesH_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {s : State} (h : SqY w16 σ (hst σ 0) 0 0 s)
+    (hr : HR σ s.mem) : WP isa (squeezesH fast) s fun s' => SqY w16 σ (hst σ 3) 0 3 s' ∧ HR σ s'.mem := by
   unfold squeezesH
   refine WP.seq (wp_mov fun s₁ u₁ => wp_addi fun s₂ u₂ => wp_nil ?_)
   have k : Keep [.r8] s s₂ := ⟨fun r hr => by
       rw [u₂.other r (by simpa using hr), u₁.other r (by simpa using hr)], u₂.rd.trans u₁.rd, u₂.wr.trans u₁.wr⟩
   have hm : s₂.mem = s.mem := u₂.mem.trans u₁.mem
-  have h₂ : SqY σ (hst σ 0) 0 0 s₂ := ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14],
+  have h₂ : SqY w16 σ (hst σ 0) 0 0 s₂ := ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14],
     by rw [hm]; exact h.rc, by rw [hm]; exact h.lanes, by rw [hm]; exact h.buf⟩
   have r₂ : HR σ s₂.mem := by rw [hm]; exact hr
   have ebx : s₂.gpr .rbx = scr σ := by rw [k.gpr (by decide), h.env.rbx]
   have e₈ : s₂.gpr .r8 = hbA σ 0 := by
     rw [u₂.gpr, u₁.gpr, h.env.rbx, hbA, at', sx_ofNat (by simp only [oHB]; omega), Nat.mul_zero, Nat.add_zero]
-  refine WP.mono (blocks_ok (b := 0) (P := fun i t => SqY σ (hst σ i) 0 i t ∧ HR σ t.mem ∧ t.gpr .r8 = hbA σ i)
+  refine WP.mono (blocks_ok (b := 0) (P := fun i t => SqY w16 σ (hst σ i) 0 i t ∧ HR σ t.mem ∧ t.gpr .r8 = hbA σ i)
     (by decide) (by decide) (by simp only [oBuf]; omega) (by decide)
     (fun _ _ _ ⟨h', r', e'⟩ hm hrd hwr hg => ⟨h'.frame hm hrd hwr hg, by rw [hm]; exact r',
       by rw [hg _ (by decide) (by decide)]; exact e'⟩)
@@ -360,15 +362,15 @@ theorem squeezesH_ok {fast : Bool} {σ : State} (hp : Pre σ) {s : State} (h : S
 /-! ## The fourth state back to the sponge's -/
 
 /-- During the copy of the fourth state: its first `i` lanes. -/
-structure HSI (σ : State) (Y : Spec.Sha3.State) (i : Nat) (s : State) : Prop where
-  sq : SqY σ Y 0 3 s
+structure HSI (w16 : Bool) (σ : State) (Y : Spec.Sha3.State) (i : Nat) (s : State) : Prop where
+  sq : SqY w16 σ Y 0 3 s
   w : ∀ j < i, s.mem.readW (at' σ (oHS + 8 * j)) 64 = Y[j]!
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
-theorem hsave_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {i : Nat} (hi : i < 25) {s : State}
-    (h : HSI σ Y i s) :
+theorem hsave_step {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {i : Nat} (hi : i < 25) {s : State}
+    (h : HSI w16 σ Y i s) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * i + 24))), .store (at_ .rbx (oHS + 8 * i)) .rax]) s
-      (HSI σ Y (i + 1)) := by
+      (HSI w16 σ Y (i + 1)) := by
   refine wp_movm (a := at' σ (32 * i + 24)) (by rw [ea_at, h.sq.env.rbx])
     (in_scr' hp h.sq.env.rd h.sq.env.wr (by omega)) fun s₁ u₁ => wp_store (a := at' σ (oHS + 8 * i))
       (by rw [ea_at, u₁.other _ (by decide), h.sq.env.rbx])
@@ -401,10 +403,10 @@ theorem hsave_eq : hsave = (List.range 25).flatMap fun i =>
     [.mov .rax (.mem (at_ .rbx (32 * i + 24))), .store (at_ .rbx (oHS + 8 * i)) .rax] := rfl
 
 /-- The fourth state to the sponge's. -/
-theorem hsave_ok {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {s : State} (h : SqY σ Y 0 3 s) :
-    WP isa (.block hsave) s fun s' => SqY σ Y 0 3 s' ∧ stateAt s'.mem (hsA σ) = Y := by
+theorem hsave_ok {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s) :
+    WP isa (.block hsave) s fun s' => SqY w16 σ Y 0 3 s' ∧ stateAt s'.mem (hsA σ) = Y := by
   rw [hsave_eq]
-  refine WP.mono (wp_range_flatMap (M := isa) (HSI σ Y) (fun i s hi h => hsave_step hp hi h) 25 (Nat.le_refl _) s
+  refine WP.mono (wp_range_flatMap (M := isa) (HSI w16 σ Y) (fun i s hi h => hsave_step hp hi h) 25 (Nat.le_refl _) s
     ⟨h, fun _ h => absurd h (by omega)⟩) fun s' h' => ⟨h'.sq, stateAt_of_lanes fun i hi => ?_⟩
   rw [hsA, at', Offset.add_add]
   exact h'.w i hi

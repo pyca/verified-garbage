@@ -35,7 +35,9 @@ namespace KeyGen
 
 open VG.Impl.MlKem.X86_64.KeyGen
 
-variable {L : Kem} (W : KgWf L)
+section
+
+variable {L : Kem} (W : KgWfB L)
 include W
 
 theorem kc_lrel {σ₁ σ₂ x y : State} (p₁ : (keyGenK L).pre σ₁) (p₂ : (keyGenK L).pre σ₂) (pub : (keyGenK L).pub σ₁ σ₂)
@@ -69,6 +71,39 @@ theorem gRho_tr : RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub fun σ s => KC
   rel2_of (gRho_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.1 h₂.1
 
 /-! ## The matrix -/
+
+theorem fin_trL : RelCT isa (LRel kgR (kgW L)) (fin L) fun _ _ => True := by
+  unfold fin
+  have tr : ∀ {c : Prog isa} {h : VG.Taint.Hint X86_64.Taint.T},
+      (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13]) c h).isSome = true →
+      RelCT isa (LRel kgR (kgW L)) c fun _ _ => True := fun ht => taintRel [.rbx, .rbp, .r12, .r13] (fun x y h =>
+    fa4 (h.eq (p := sc 0) (l := 1) W.inBs.1) (h.eq (p := (.rbp, 0)) (l := 1) rfl)
+      (h.eq (p := (.r12, 0)) (l := 1) W.inBs.2.1) (h.eq (p := (.r13, 0)) (l := 1) W.inBs.2.2)) ht
+  obtain ⟨_, t₁⟩ := W.finT₁
+  obtain ⟨_, t₂⟩ := W.finT₂
+  obtain ⟨_, t₄⟩ := W.finT₄
+  refine RelCT.seq (LRel.step (kgB_bases L) (tr t₁) fun x Lx =>
+      WP.mono (copy_okL Lx (dst := (.r12, 384 * L.k)) (src := sc oG) (n := 32) (by decide) W.f₁)
+        fun _ h => ⟨_, h.1⟩)
+    (RelCT.seq (LRel.step (kgB_bases L) (tr t₂) fun x Lx =>
+      WP.mono (copy_okL Lx (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
+        fun _ h => ⟨_, h.1⟩)
+    (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136)
+      (out := (.r13, 384 * L.k + L.ekLen)) (len := 32) W.f₃ (show 6 < 256 by decide)) fun x Lx =>
+      WP.mono (hash_ok (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136) (out := (.r13, 384 * L.k + L.ekLen))
+        (len := 32) W.f₃ (show 6 < 256 by decide) Lx) fun _ h => ⟨_, h.1⟩)
+    (tr t₄)))
+
+theorem fin_tr {I : State → State → Prop} (hI : ∀ {σ s}, I σ s → KC σ s) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub I) (fin L) fun _ _ => True :=
+  rel2_of (fin_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub (hI h₁) (hI h₂)
+
+end
+
+section
+
+variable {L : Kem} (W : KgWf L)
+include W
 
 theorem sample_tr {e : Nat} (he : e < L.k * L.k) (he' : 4 * (L.k * L.k / 4) ≤ e) :
     RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KB L e)) (sampleIJ (pS (L.pA + e)) (e / L.k) (e % L.k))
@@ -150,30 +185,7 @@ theorem encS_tr {A : Arith} (hA : ArithOk A) {j : Nat} (hj : j < L.k) :
 
 /-! ## The rest of the keys -/
 
-theorem fin_trL : RelCT isa (LRel kgR (kgW L)) (fin L) fun _ _ => True := by
-  unfold fin
-  have tr : ∀ {c : Prog isa} {h : VG.Taint.Hint X86_64.Taint.T},
-      (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13]) c h).isSome = true →
-      RelCT isa (LRel kgR (kgW L)) c fun _ _ => True := fun ht => taintRel [.rbx, .rbp, .r12, .r13] (fun x y h =>
-    fa4 (h.eq (p := sc 0) (l := 1) W.inBs.1) (h.eq (p := (.rbp, 0)) (l := 1) rfl)
-      (h.eq (p := (.r12, 0)) (l := 1) W.inBs.2.1) (h.eq (p := (.r13, 0)) (l := 1) W.inBs.2.2)) ht
-  obtain ⟨_, t₁⟩ := W.finT₁
-  obtain ⟨_, t₂⟩ := W.finT₂
-  obtain ⟨_, t₄⟩ := W.finT₄
-  refine RelCT.seq (LRel.step (kgB_bases L) (tr t₁) fun x Lx =>
-      WP.mono (copy_okL Lx (dst := (.r12, 384 * L.k)) (src := sc oG) (n := 32) (by decide) W.f₁)
-        fun _ h => ⟨_, h.1⟩)
-    (RelCT.seq (LRel.step (kgB_bases L) (tr t₂) fun x Lx =>
-      WP.mono (copy_okL Lx (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
-        fun _ h => ⟨_, h.1⟩)
-    (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136)
-      (out := (.r13, 384 * L.k + L.ekLen)) (len := 32) W.f₃ (show 6 < 256 by decide)) fun x Lx =>
-      WP.mono (hash_ok (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136) (out := (.r13, 384 * L.k + L.ekLen))
-        (len := 32) W.f₃ (show 6 < 256 by decide) Lx) fun _ h => ⟨_, h.1⟩)
-    (tr t₄)))
-
-theorem fin_tr : RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRestT L L.k L.k)) (fin L) fun _ _ => True :=
-  rel2_of (fin_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
+end
 
 end KeyGen
 

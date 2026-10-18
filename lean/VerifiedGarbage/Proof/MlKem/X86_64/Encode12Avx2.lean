@@ -546,7 +546,6 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
   · rw [u10.gpr, rcx9]; rfl
   · rw [hz, rcx9]; rfl
 
-
 theorem main : WP isa encode12Avx2 s₀ fun s => Frame [⟨oP s₀, 384⟩] s₀.mem s.mem ∧
     ∀ k < 384, s.mem (oP s₀ + BitVec.ofNat 64 k) = (Spec.MlKem.encode12 (FF s₀))[k]! := by
   unfold encode12Avx2
@@ -586,11 +585,5 @@ theorem encode12Y_ct : ConstantTime isa encode12K.pre encode12K.pub encode12Avx2
       rcases hr with rfl | rfl | rfl
       exacts [hp.1, hp.2.1, hp.2.2])
     (by taint_decide)
-
-theorem encode12Y_verified :
-    Verified X86_64.target encode12Avx2 (Spec.MlKem.encode12Contract X86_64.abi) :=
-  Verified.of_correct encode12Y_correct encode12Y_ct (by
-    mlkem_implies [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, encode12K, X86_64.abi,
-      X86_64.argRegs] [encode12Sat] using encode12Sat)
 
 end VG.Proof.MlKem.X86_64

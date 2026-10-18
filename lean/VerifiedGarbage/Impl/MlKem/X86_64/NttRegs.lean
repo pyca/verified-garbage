@@ -224,6 +224,13 @@ def passA : List Instr :=
     loadW .xmm4 .xmm3 (64 * i) ++ loadW .xmm5 .xmm3 (64 * (i + 8)) ++ bfly .xmm4 .xmm5 .xmm12 .xmm13 .xmm2 .xmm6 ++
     [.vmovdquStore .l256 (at_ .rsi (oS + 32 * i)) .xmm4, .vmovdquStore .l256 (at_ .rsi (oS + 32 * (i + 8))) .xmm6]
 
+/-- `passA` of `u16`s: each block of sixteen words one load. -/
+def passA16 : List Instr :=
+  zv .xmm12 .xmm13 1 ++ (List.range 8).flatMap fun i =>
+    [.vmovdquLoad .l256 .xmm4 (at_ .rdi (32 * i)), .vmovdquLoad .l256 .xmm5 (at_ .rdi (32 * (i + 8)))] ++
+      bfly .xmm4 .xmm5 .xmm12 .xmm13 .xmm2 .xmm6 ++
+    [.vmovdquStore .l256 (at_ .rsi (oS + 32 * i)) .xmm4, .vmovdquStore .l256 (at_ .rsi (oS + 32 * (i + 8))) .xmm6]
+
 /-- The first entry of the table of half `H`. -/
 def base (H : Nat) : Nat := 2 + 19 * H
 
@@ -419,6 +426,10 @@ end NttR
 open NttR in
 /-- `NTT` of the `u32`s at `rdi` to the `u32`s at `d` (`passBs`), with `S` at `rsi + oS`. -/
 def nttR (pb : List Instr) : Prog isa := .block (pro ++ passA ++ pb ++ [.vop .vzeroupper])
+
+open NttR in
+/-- `nttR` of the `u16`s at `rdi`. -/
+def nttR16 (pb : List Instr) : Prog isa := .block (pro ++ passA16 ++ pb ++ [.vop .vzeroupper])
 
 open NttR in
 /-- `NTT⁻¹` of the input at `rdi` (`pb`: an accumulator or `u32`s) to the

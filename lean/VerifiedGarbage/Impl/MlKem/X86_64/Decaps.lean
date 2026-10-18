@@ -72,15 +72,18 @@ def selBody : Prog isa :=
     .alu .xor .r9 (.reg .r10), .store8 (at_ .r8 0) .r9, .alu .add .rsi (.imm 1), .alu .add .rdi (.imm 1),
     .alu .add .r8 (.imm 1), .alu .sub .rcx (.imm 1)]
 
-/-- The key `K'` if `c = c'`, and `K̄` otherwise. -/
-def select : Prog isa :=
-  .seq (.block [.mov .rsi (.reg .r14), .mov .rdi (.reg .rbx), .alu .add .rdi (.imm (BitVec.ofNat 32 L.oCT)),
-      .mov32 .rcx (.imm (BitVec.ofNat 32 (L.ctLen / 8))), .mov32 .rdx (.imm 0)])
+/-- The key `K'` if `c = c'`, for the `n` bytes of `c'` at `scratch + o`, and `K̄` otherwise. -/
+def selectAt (o n : Nat) : Prog isa :=
+  .seq (.block [.mov .rsi (.reg .r14), .mov .rdi (.reg .rbx), .alu .add .rdi (.imm (BitVec.ofNat 32 o)),
+      .mov32 .rcx (.imm (BitVec.ofNat 32 (n / 8))), .mov32 .rdx (.imm 0)])
     (.seq (.loop cmpBody .ne)
       (.seq (.block [.alu .sub .rdx (.imm 1), .alu .sbb .rax (.reg .rax), .mov .rsi (.reg .rbx),
           .alu .add .rsi (.imm (BitVec.ofNat 32 oG)), .mov .rdi (.reg .rbx), .alu .add .rdi (.imm (BitVec.ofNat 32 oKB)),
           .mov .r8 (.reg .r12), .mov32 .rcx (.imm 32)])
         (.loop selBody .ne)))
+
+/-- `selectAt`, with `c'` where the re-encryption writes it (`oCT`). -/
+abbrev select : Prog isa := selectAt L.oCT L.ctLen
 
 end Decaps
 
@@ -90,7 +93,5 @@ def kemDecaps (L : Kem) (c : Callee4) : Prog isa :=
   .seq (.block pro) (.seq (decrypt L c.arith) (.seq (hashes L) (.seq (encrypt L c (.rbp, 384 * L.k))
     (.seq (select L) (.block topEpi)))))
 
-/-- `vg_mlkem768_decaps`. -/
-abbrev decaps (c : Callee4) : Prog isa := kemDecaps kem768 c
 
 end VG.Impl.MlKem.X86_64

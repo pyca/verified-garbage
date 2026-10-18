@@ -75,7 +75,7 @@ theorem kmPre {k : Nat} {t s a e z : Ptr} {st s1 : State} (H : KgMulH k t s a e 
     (kgMulK k).pre (s1.callEntry.withRegions [vR (pa st a) (k * k), vR (pa st e) k]
       [vR (pa st t) k, vR (pa st s) k, cR (pa st z)]) := by
   have hsp : s1.gpr .rsp = st.gpr .rsp := k1.gpr (by decide)
-  simp only [kgMulK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+  simp only [kgMulK, kgMulKA, kgMulKG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.r8 ≠ .rsp), hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2]
@@ -101,7 +101,7 @@ theorem kgMulAt_ok {t s a e z : Ptr} (hs : NA s) (ha : NA a) (he : NA e) (hz : N
   refine WP.mono (glueCall_ok hC.ok hC.nosp (by rw [hC.depth]; decide) (kmGlue_ok t s a e z H.off hs ha he hz st)
     (fun s1 hv hm k => kmPre H hv hm k) H.c H.wc) fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
   have hsp : s1.gpr .rsp = st.gpr .rsp := k.gpr (by decide)
-  simp only [kgMulK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
+  simp only [kgMulK, kgMulKA, kgMulKG, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hV.2.2.2.1, hm₂,
     ce_matAt s1 (by rw [hsp]; exact H.kA), ce_vecAt s1 (by rw [hsp]; exact H.kS),
@@ -123,7 +123,7 @@ theorem kgMulAt_tr {t s a e z : Ptr} (hs : NA s) (ha : NA a) (he : NA e) (hz : N
       refine ⟨_, _, _, _, kmPre hx hv1 hm1 k1, kmPre hy' hv2 hm2 k2, ?_, by rw [k1.2.1, k1.2.2]; exact hx.c,
         by rw [k1.2.2]; exact hx.wc, by rw [k2.2.1, k2.2.2]; exact hy'.c, by rw [k2.2.2]; exact hy'.wc,
         by rw [k1.gpr (by decide), k2.gpr (by decide), e6]⟩
-      simp only [kgMulK, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
+      simp only [kgMulK, kgMulKA, kgMulKG, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rsi ≠ .rsp), ce_gpr' _ (by decide : Reg.rdx ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rcx ≠ .rsp), ce_gpr' _ (by decide : Reg.r8 ≠ .rsp), hv1.1, hv1.2.1, hv1.2.2.1,
         hv1.2.2.2.1, hv1.2.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2.1, hv2.2.2.2.2, pa, e1, e2, e3, e4, e5,

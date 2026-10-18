@@ -55,10 +55,16 @@ theorem ctxA {s : State} {d : Reg} (hS : pR (s.gpr .rsi) ∈ s.wr) (hX : sR (s.g
     rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> simp [rlen, rsBA, oS]
 
 /-- Pass B to an accumulator starts from the registers and `S` pass A leaves. -/
-theorem reframeA {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16} {X d : Reg} {σ : St} {s₀ s : State}
-    (h : Rel [(.rsi, oS, 256, true), (X, 0, 512, false)] L O σ s₀ s) :
+theorem reframeA {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16} {X d : Reg} {n : Nat} {σ : St} {s₀ s : State}
+    (h : Rel [(.rsi, oS, 256, true), (X, 0, n, false)] L O σ s₀ s) :
     Rel (rsBA d) L O (toBA σ) s₀ s := by
-  refine ⟨fun r e he => h.reg r e he, fun k j hk hj => ?_, h.eq, ⟨rfl, h.len.2⟩, fun x hx => h.fr x ?_⟩
+  refine ⟨fun r e he => ?_, fun k j hk hj => ?_, h.eq, ⟨rfl, by simp [toBA, St.set, h.len.2]⟩,
+    fun x hx => h.fr x ?_⟩
+  · show Hd L O (((σ.set .xmm3 (List.replicate 16 .junk)).reg r).get e) _
+    rw [St.reg_set _ _ _ _ h.len.2]
+    split
+    · rw [get_replicate _ he]; exact Hd.junk _
+    · exact h.reg r e he
   · simp only [rsBA, List.length_cons, List.length_nil] at hk
     rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
     · exact h.mem 0 j (by simp) hj
