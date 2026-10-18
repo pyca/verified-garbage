@@ -70,4 +70,16 @@ def kemEncaps16 (K : Kem16) (c : Callee4) (p : String × Prog isa) (b : Prog isa
   .seq (.block Encaps.pro) (.seq (matH K p b) (.seq EncapsH.hashes
     (.seq (ifOk (Top16.encRest K c (.r14, 0) (.r13, 0))) (.seq (copy (.r12, 0) (sc oG) 32) (.block topEpi)))))
 
+/-- The encapsulation (hashing the key) of an implementation of
+`vg_mlkem_sample_ntt4`: with 16-bit polynomials if it has a 16-bit sampler
+and a fragment sampling them (`Callee4.s16`, `Callee4.batchH16`), with
+polynomials of `u32`s otherwise. -/
+def kemEncapsSel (K : Kem16) (c : Callee4) : Prog isa :=
+  match c.s16, c.batchH16 with
+  | some p, some b => kemEncaps16 K c p b
+  | _, _ => kemEncaps K.L c
+
+/-- `vg_mlkem768_encaps`. -/
+abbrev encaps (c : Callee4) : Prog isa := kemEncapsSel kem768w c
+
 end VG.Impl.MlKem.X86_64

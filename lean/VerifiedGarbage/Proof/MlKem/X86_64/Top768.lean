@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeOk
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
@@ -56,6 +58,20 @@ theorem ektWf768 : EkF.EkTWf kem768 where
   hT := by
     intro i hi
     have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768 = 3 by decide] at hi; omega
+    rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  hcT := ⟨_, by taint_decide⟩
+  ij := by decide +kernel
+
+theorem ek16FWf768 : EkF16.Ek16FWf kem768w := by kem_wf ec16Wf768.toEcWfB
+theorem ek16HWf768 : EkF16.Ek16HWf kem768w := by kem_wf ek16FWf768
+
+/-- The taint checks of the fused encapsulation's pieces, with 16-bit polynomials. -/
+theorem ekt16Wf768 : EkF16.EkT16Wf kem768w where
+  rT := ⟨_, by taint_decide⟩
+  zT := ⟨_, by taint_decide⟩
+  hT := by
+    intro i hi
+    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768w.L = 3 by decide] at hi; omega
     rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   hcT := ⟨_, by taint_decide⟩
   ij := by decide +kernel
@@ -135,10 +151,8 @@ theorem encaps_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem768 v.callee) = true 
     have hB := v.batchH b hb
     ek_ctl v b hB
 
-theorem encaps_verified (v : Sample4Impl) :
-    Verified X86_64.target (kemEncaps kem768 v.callee) (Spec.MlKem.encapsContract X86_64.abi 32) :=
-  Verified.of_correct (kemEncaps_correct v ekWf768 ekhWf768 calls768 (encaps_ctl v))
-    (kemEncaps_ct v ekWf768 ekhWf768 ektWf768 calls768)
+/-- The shared contract of `encaps`, from the contract its proofs are written against. -/
+theorem encapsImp768 : (encK kem768).Implies (Spec.MlKem.encapsContract X86_64.abi 32) :=
     { pre := by sig_implies_pre [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
       post := by sig_implies_post [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
       pub := by
@@ -148,6 +162,11 @@ theorem encaps_verified (v : Sample4Impl) :
         exact ⟨hdi, hsi, hdx, hcx, h8, hsp, map_toNat_inj hb⟩
       sat := by sig_implies_sat [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [encapsSat]
         using encapsSat 1184 1088 32768 }
+
+theorem encaps_verified (v : Sample4Impl) :
+    Verified X86_64.target (Impl.MlKem.X86_64.encaps v.callee) (Spec.MlKem.encapsContract X86_64.abi 32) :=
+  encapsSel_verified kpke768 v ek16HWf768 ekt16Wf768 ekWf768 ekhWf768 ektWf768 calls768 encapsImp768
+    (fun _ c b S B => by ek16_ctl v c b S B kpke768) (encaps_ctl v)
 
 /-- The shared contract of `decaps`, from the contract its proofs are written against. -/
 theorem decapsImp768 : (decapsK kem768).Implies (Spec.MlKem.decapsContract X86_64.abi 32) :=

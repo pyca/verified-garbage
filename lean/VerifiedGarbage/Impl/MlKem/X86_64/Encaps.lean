@@ -101,7 +101,4 @@ def kemEncaps (L : Kem) (c : Callee4) : Prog isa :=
   | some b => .seq (.block pro) (.seq (matH L c b) (.seq EncapsH.hashes
       (.seq (ifOk (Encrypt.rest L c (.r14, 0))) (.seq (EncapsH.out L) (.block topEpi)))))
 
-/-- `vg_mlkem768_encaps`. -/
-abbrev encaps (c : Callee4) : Prog isa := kemEncaps kem768 c
-
 end VG.Impl.MlKem.X86_64
