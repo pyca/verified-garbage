@@ -2156,10 +2156,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #704]
@@ -2292,9 +2288,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #576]
@@ -2425,9 +2418,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #736]
@@ -2717,10 +2707,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #832]
@@ -2853,9 +2839,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -3192,10 +3175,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #864]
@@ -3330,9 +3309,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #544]
@@ -3494,10 +3470,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #576]
@@ -3900,10 +3872,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -4137,13 +4105,9 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
-ldr x1, [x0, #800]
+orr x1, x8, x8
 mul x8, x1, x4
 mul x9, x1, x5
 mul x10, x1, x16
@@ -6082,10 +6046,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #2352]
@@ -6221,10 +6181,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -6360,10 +6316,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1152]
@@ -6530,10 +6482,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1056]
@@ -8618,10 +8566,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #2352]
@@ -8829,10 +8773,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1216]
@@ -9040,10 +8980,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1088]
@@ -9251,10 +9187,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1120]
@@ -9462,10 +9394,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1280]
@@ -9704,10 +9632,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #992]
@@ -9915,10 +9839,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1408]
@@ -10710,10 +10630,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1024]
@@ -12417,10 +12333,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #2352]
@@ -14080,10 +13992,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #2352]
@@ -14296,10 +14204,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1088]
@@ -14507,10 +14411,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1056]
@@ -14718,10 +14618,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1344]
@@ -14929,10 +14825,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1312]
@@ -15140,10 +15032,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1376]
@@ -15351,10 +15239,6 @@ movz x6, #48207, lsl #0
 movk x6, #60928, lsl #16
 movk x6, #51370, lsl #32
 movk x6, #52433, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1408]
@@ -20315,10 +20199,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -20508,10 +20388,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -20718,10 +20594,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #544]
@@ -21048,10 +20920,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -23175,10 +23043,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -23368,10 +23232,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -23578,10 +23438,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #544]
@@ -23908,10 +23764,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -27443,10 +27295,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -27636,10 +27484,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -27846,10 +27690,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #544]
@@ -28176,10 +28016,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -30303,10 +30139,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -30496,10 +30328,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -30706,10 +30534,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #544]
@@ -31036,10 +30860,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #896]
@@ -31378,10 +31198,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #512]
@@ -31619,10 +31435,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #800]
@@ -31924,10 +31736,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1056]
@@ -32063,10 +31871,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1152]
@@ -32263,10 +32067,6 @@ movz x6, #1, lsl #0
 movk x6, #0, lsl #16
 movk x6, #65535, lsl #32
 movk x6, #65535, lsl #48
-movz x8, #0, lsl #0
-movz x9, #0, lsl #0
-movz x10, #0, lsl #0
-movz x11, #0, lsl #0
 movz x12, #0, lsl #0
 movz x13, #0, lsl #0
 ldr x1, [x0, #1152]

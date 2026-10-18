@@ -49,6 +49,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     (Nat.le_refl _) hs₁ hs₁.ptr hs₁.ptr z₁
     (by rw [hmem₁]; exact hM.val) hBR₁ h6₁ (by rw [hmem₁]; exact hB) h0)
     fun s₂ ⟨⟨U, eU⟩, hT, k₂, _⟩ => ?_
+  rw [accV_of_pos M s₂ hM.n0] at eU hT
   have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by
     intro r hr h
     by_cases hr' : r ∈ acc M.n

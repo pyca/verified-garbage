@@ -51,9 +51,9 @@ theorem regsVal_eq_zero {s : State} : ∀ {rs : List Reg}, (∀ r ∈ rs, s.gpr 
       regsVal_eq_zero fun q hq => h q (List.mem_cons_of_mem _ hq), Nat.mul_zero, Nat.add_zero]
     rfl
 
-/-- `t_j = x b_j mod 2⁶⁴`, into the cleared `ts`. -/
+/-- `t_j = x b_j mod 2⁶⁴`, into `ts`, whose words past `bs` are cleared. -/
 theorem mulsLo_ok {x : Reg} : ∀ (ts bs : List Reg) {s : State}, bs.length ≤ ts.length → ts.Nodup →
-    (∀ t ∈ ts, t ≠ x ∧ t ∉ bs) → (∀ t ∈ ts, s.gpr t = 0) →
+    (∀ t ∈ ts, t ≠ x ∧ t ∉ bs) → (∀ t ∈ ts.drop bs.length, s.gpr t = 0) →
     WP isa (.block ((ts.zip bs).map fun (t, r) => .mul .x t x r)) s fun s' =>
       regsVal s' ts = loSum (s.gpr x).toNat (bs.map fun r => (s.gpr r).toNat) ∧ Keeps ts s s'
   | ts, [], s, _, _, _, h0 => by
@@ -78,7 +78,8 @@ theorem mulsLo_ok {x : Reg} : ∀ (ts bs : List Reg) {s : State}, bs.length ≤ 
       (fun q hq => by
         have := hx q (List.mem_cons_of_mem _ hq)
         exact ⟨this.1, fun h => this.2 (List.mem_cons_of_mem _ h)⟩)
-      (fun q hq => by rw [hts q hq]; exact h0 q (List.mem_cons_of_mem _ hq)))
+      (fun q hq => by
+        rw [hts q (List.mem_of_mem_drop hq)]; exact h0 q (by simpa only [List.length_cons, List.drop_succ_cons] using hq)))
       fun s₂ ⟨e₂, k₂⟩ => ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     have hx₁ : s₁.gpr x = s.gpr x := k₁.gpr x (by simpa using Ne.symm htx.1)
     have hbs : bs.map (fun q => (s₁.gpr q).toNat) = bs.map (fun q => (s.gpr q).toNat) :=
@@ -115,14 +116,15 @@ theorem mem_zip_map {tl bs : List Reg} {e : Reg × Option Piece}
   obtain ⟨⟨t, r⟩, hm, rfl⟩ := List.mem_map.mp h
   exact ⟨t, r, List.of_mem_zip hm |>.1, List.of_mem_zip hm |>.2, rfl⟩
 
-/-- The first row into the cleared `ts` (`n + 1` words), for the
-multiplicand's `n` words in the registers `bs`: `ts = x B`. -/
-theorem rowInit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (hz : s.gpr .x7 = 0)
+/-- The first row into `ts` (`n + 1` words), whose top word is cleared, for
+the multiplicand's `n` words in the registers `bs`: `ts = x B`. -/
+theorem rowInit_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm base size)
+    (hz : s.gpr .x7 = 0) (hr2 : rm ≠ .x2) (hr3 : rm ≠ .x3)
     {x : Reg} {ts bs : List Reg} (hlen : ts.length = bs.length + 1) (hnd : ts.Nodup)
-    (hts : ∀ t ∈ ts, t ≠ .x0 ∧ t ≠ .x2 ∧ t ≠ .x3 ∧ t ≠ .x7 ∧ t ≠ x ∧ t ∉ bs)
-    (hbs : ∀ r ∈ bs, r ≠ .x2 ∧ r ≠ .x3) (hx2 : x ≠ .x2) (hx3 : x ≠ .x3)
-    (h0 : ∀ t ∈ ts, s.gpr t = 0) :
-    WP isa (.block (rowInit x ts bs)) s fun s' =>
+    (hts : ∀ t ∈ ts, t ≠ rm ∧ t ≠ .x2 ∧ t ≠ .x3 ∧ t ≠ .x7 ∧ t ≠ x ∧ t ∉ bs)
+    (hbs : ∀ r ∈ bs, r ≠ .x2 ∧ r ≠ .x3) (hx2 : x ≠ .x2) (hx3 : x ≠ .x3) (htx0 : ∀ t ∈ ts, t ≠ .x0)
+    (h0 : ∀ t ∈ ts.drop bs.length, s.gpr t = 0) :
+    WP isa (.block (rowInit rm x ts bs)) s fun s' =>
       regsVal s' ts = (s.gpr x).toNat * regsVal s bs ∧ Keeps (.x2 :: .x3 :: ts) s s' := by
   obtain ⟨t0, tl, rfl⟩ : ∃ t0 tl, ts = t0 :: tl := by
     cases ts with
@@ -145,7 +147,7 @@ theorem rowInit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     regs := fun t ht => by
       rw [hLf] at ht
       have := hts t (List.mem_cons_of_mem _ ht)
-      exact ⟨this.1, this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2.1⟩
+      exact ⟨htx0 t (List.mem_cons_of_mem _ ht), this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2.1⟩
     ok := fun e he p hp => by
       obtain ⟨t, r, -, hr, rfl⟩ := mem_zip_map he
       simp only [Option.mem_def, Option.some.injEq] at hp
@@ -159,7 +161,7 @@ theorem rowInit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       subst hq
       rw [hLf]
       exact ⟨fun h => (hts _ (List.mem_cons_of_mem _ h)).2.2.2.2.2 hr, hbs _ hr⟩ }
-  refine WP.mono (chainSkip_ok hx2 hx3 (by decide) (by decide) _ hs₁.ptr hz₁ hc
+  refine WP.mono (chainSkip_ok hx2 hx3 hr2 hr3 _ hs₁ hz₁ hc
     (by rw [hLf]; exact fun h => (hts _ (List.mem_cons_of_mem _ h)).1 rfl)) fun s₂ ⟨⟨c, hc1, e₂⟩, k₂⟩ => ?_
   rw [hLf] at e₂ k₂
   rw [List.length_map, List.length_zip, hlen, Nat.min_self] at e₂
