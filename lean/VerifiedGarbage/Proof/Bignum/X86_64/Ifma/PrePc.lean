@@ -22,6 +22,63 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
+/-- The start of a prime's `prep`, up to `aXc := aT`: in the prime's
+workspace, which alone it changes. -/
+theorem prepHead_frame (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {X : Nat}
+    {sl o wx : Nat} (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
+    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32)
+    (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X)
+    (hX1 : 1 < X) :
+    WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2 ++
+      copyArr Public.aY aXc ++ redc M.mm Public.aXm ++ ([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT)) s fun s₅ =>
+      SubCtx s₅ B Z o w wx mx ∧ Keep (mmRegs ++ ([.rdi] : List Reg)) s s₅ ∧ Frm B [xRange o wx] s.mem s₅.mem := by
+  have hs := hg.scr
+  have hn := hs.nowrap
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhi, hn]
+  have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
+  have hY0 := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
+  rw [show ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2 ++
+      copyArr Public.aY aXc ++ redc M.mm Public.aXm ++ ([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT =
+      (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2) ++
+      (copyArr Public.aY aXc ++ (redc M.mm Public.aXm ++ (([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT))) by simp only [List.append_assoc]]
+  refine wp_seqs_append (by simp) (by simp [copyArr]) (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg
+    hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1) fun s₁ ⟨hc₁, hX₁, _, _, f₁, _, k₁⟩ => ?_)
+  refine wp_seqs_append (by simp [copyArr]) (by simp [redc]) (WP.mono (copyArr_ok hc₁.good (Nat.le_refl _)
+    (by omega_using [hwx2]) (by omega_using [hw28, hwx]) (o := Public.aY) (a := aXc) (by decide) (by decide) (by decide))
+    fun s₂ ⟨_, ho₂, k₂⟩ => ?_)
+  have hc₂ := hc₁.of_frm (rs := [(slot wx Public.aY, 8 * wx)]) (Frm.of_outside ho₂ (by simp)) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; simp only; omega_using [lY, hY0]) k₂.2.2 (k₂.gpr (by decide))
+  have hX₂ : XVals s₂ B o wx mx X := hX₁.of_outside ho₂ (by decide) (by decide) (by decide) (by omega_using [])
+    (by have := hc₁.good.scr.nowrap; omega_using [this])
+  have fx₂ : Frm B [xRange o wx] s₁.mem s₂.mem :=
+    (ho₂.mono (o' := slot wx Public.aY) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_using [])).to_x
+      (by decide) hoL (List.mem_singleton_self _)
+  refine wp_seqs_append (by simp [redc]) (by simp) (WP.mono (redc_ok M hc₂ hX₂ hwx2 hwx (by omega_using [hw28]) hX1
+    (j := Public.aXm) (by decide)) fun s₃ ⟨hc₃, hX₃, hlt₃, _, r₃, k₃⟩ => ?_)
+  have fx₃ : Frm B [xRange o wx] s₂.mem s₃.mem := r₃.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)
+  refine wp_seqs_append (by simp) (by simp [copyArr]) (WP.mono (M.mm_ok (o := aT) (a := Public.aY) (b := aXc)
+    hc₃.good (Nat.le_refl _) hwx2 (by omega_using [hw28, hwx]) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) hX₃.inv (by rw [hX₃.n]; exact hlt₃)) fun s₄ ⟨_, _, _, ha₄, k₄⟩ => ?_)
+  obtain ⟨hc₄, -, fx₄⟩ := hc₃.of_arrays hX₃ ha₄ (by
+    intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl <;> decide) k₄.2.2 (k₄.gpr (by decide)) (by omega_using [hwx2])
+  refine WP.mono (copyArr_ok hc₄.good (Nat.le_refl _)
+    (by omega_using [hwx2]) (by omega_using [hw28, hwx]) (o := aXc) (a := aT) (by decide) (by decide) (by decide))
+    fun s₅ ⟨_, ho₅, k₅⟩ => ?_
+  have lC := slot_le (w := wx) (show aXc < 8 by decide)
+  have hC0 := hdr_lt_slot wx aXc (show 31 < 32 by decide)
+  have hc₅ := hc₄.of_frm (rs := [(slot wx aXc, 8 * wx)]) (Frm.of_outside ho₅ (by simp)) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; simp only; omega_using [lC, hC0]) k₅.2.2 (k₅.gpr (by decide))
+  have fx₅ : Frm B [xRange o wx] s₄.mem s₅.mem :=
+    (ho₅.mono (o' := slot wx aXc) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_using [])).to_x
+      (by decide) hoL (List.mem_singleton_self _)
+  exact ⟨hc₅, (((k₁.trans k₂).trans k₃).trans k₄).trans k₅ |>.mono (by decide),
+    (((f₁.trans fx₂).trans fx₃).trans fx₄).trans fx₅⟩
+
 theorem prepPc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
     {sl o wx : Nat} {ok : Prop} {P : Addr} {W d : Nat} {po : List Instr} (hg : Good s B Z w minv)
     (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)

@@ -58,24 +58,25 @@ theorem RelCT.seqs_app {P Q : State → State → Prop} {a b : List (Prog isa)} 
 /-- A piece whose claim holds for public data `g a`, then the rest, from
 what correctness gives after the piece. -/
 theorem ct_step {α β : Type} {Φ Ψ : α → State → Prop} {P : β → State → Prop} {c rest : Prog isa}
+    {Q : State → State → Prop}
     (g : α → β) (hP : ∀ a s, Φ a s → P (g a) s) (hw : ∀ a s, Φ a s → WP isa c s (Ψ a))
-    (hc : RelCT isa (Two P) c fun _ _ => True) (hr : RelCT isa (Two Ψ) rest fun _ _ => True) :
-    RelCT isa (Two Φ) (.seq c rest) fun _ _ => True :=
+    (hc : RelCT isa (Two P) c fun _ _ => True) (hr : RelCT isa (Two Ψ) rest Q) :
+    RelCT isa (Two Φ) (.seq c rest) Q :=
   RelCT.seq (two_post (two_map g hP hc) hw) hr
 
 /-- A piece checked by the taint analysis from the registers `rs`, then the rest. -/
 theorem ct_taint {α : Type} {Φ Ψ : α → State → Prop} {c rest : Prog isa} (rs : List Reg) (hpin : Pins Φ rs)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
-    (hw : ∀ a s, Φ a s → WP isa c s (Ψ a)) (hr : RelCT isa (Two Ψ) rest fun _ _ => True) :
-    RelCT isa (Two Φ) (.seq c rest) fun _ _ => True :=
+    {Q : State → State → Prop} (hw : ∀ a s, Φ a s → WP isa c s (Ψ a)) (hr : RelCT isa (Two Ψ) rest Q) :
+    RelCT isa (Two Φ) (.seq c rest) Q :=
   RelCT.seq (two_piece rs hpin h hw) hr
 
 /-- A list of pieces whose claim holds for public data `g a`, then the rest. -/
 theorem ct_steps {α β : Type} {Φ Ψ : α → State → Prop} {P : β → State → Prop} {c rest : List (Prog isa)}
-    (hc0 : c ≠ []) (hr0 : rest ≠ []) (g : α → β) (hP : ∀ a s, Φ a s → P (g a) s)
+    {Q : State → State → Prop} (hc0 : c ≠ []) (hr0 : rest ≠ []) (g : α → β) (hP : ∀ a s, Φ a s → P (g a) s)
     (hw : ∀ a s, Φ a s → WP isa (seqs c) s (Ψ a))
-    (hc : RelCT isa (Two P) (seqs c) fun _ _ => True) (hr : RelCT isa (Two Ψ) (seqs rest) fun _ _ => True) :
-    RelCT isa (Two Φ) (seqs (c ++ rest)) fun _ _ => True :=
+    (hc : RelCT isa (Two P) (seqs c) fun _ _ => True) (hr : RelCT isa (Two Ψ) (seqs rest) Q) :
+    RelCT isa (Two Φ) (seqs (c ++ rest)) Q :=
   RelCT.seqs_app hc0 hr0 (ct_step g hP hw hc hr)
 
 /-- The last piece. -/
