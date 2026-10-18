@@ -269,4 +269,12 @@ theorem toR12_vp {F : State → State → Prop} (hF : ∀ σ s, F σ s → s.gpr
     simp only [toR12, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some]
     exact ⟨_, rfl, hX σ s _ hs, by rw [RegUpd.gpr_setReg]; simp [hF σ s hs]⟩
 
+/-- An OR of two words is zero when both are. -/
+theorem or_eq_zero32 (a b : BitVec 32) : a ||| b = 0 ↔ a = 0 ∧ b = 0 := by
+  constructor
+  · intro e
+    constructor <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
+      have := congrArg (fun x => x.getLsbD i) e <;> simp_all
+  · rintro ⟨rfl, rfl⟩; rfl
+
 end VG.Proof.RsaOaep.Arm

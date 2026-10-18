@@ -172,7 +172,7 @@ theorem acc_vp (P : EP) :
       prun [accPut, r0, a0, rd0, dpVal]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r2⟩ => ⟨hc.regs rd wr sp m, m ▸ hy, ?_, ?_⟩
     · rw [r2]; exact byte_or_lt hb _
-    · rw [r2, Enc.or_eq_zero32, he, setWidth_byte_eq_zero, hy.1.2.2]
+    · rw [r2, or_eq_zero32, he, setWidth_byte_eq_zero, hy.1.2.2]
       exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩
   -- `acc` to its slot.
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hy, hb, he⟩ => ?_

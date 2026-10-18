@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncMask
+public import VerifiedGarbage.Proof.RsaOaep.Arm.MgfSlots
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
 
@@ -23,7 +23,6 @@ open VG.Impl.RsaPss.Arm (sp0 ld st mw atS frameBytes sS oRsa arg sCtr sDone)
 open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Proof.RsaOaep (mixV srcB)
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Proof.RsaOaep.Arm.Enc (Sl mpOf mgfW_slot mgfW_byte)
 
 variable (h g : OHash)
 

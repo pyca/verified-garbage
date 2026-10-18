@@ -260,6 +260,6 @@ theorem tscan_vp (P : EP) :
     exact em_keep (n := 1) fr (dS _ _ (by oomega)) (by decide)
       (f := fun _ => s.mem (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega]) 0 (by decide)
   · rw [BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 8) hab hx.1
-  · rw [Enc.or_eq_zero32, hae, hx.2]
+  · rw [or_eq_zero32, hae, hx.2]
 
 end VG.Proof.RsaOaep.Arm.Dec

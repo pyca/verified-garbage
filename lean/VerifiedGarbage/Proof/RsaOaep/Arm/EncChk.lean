@@ -62,13 +62,6 @@ theorem slotAt {D : Nat} {P : EP} {σ : State} (hi : In D P σ) {d : Nat} (hd : 
     State.addr (P.B + BitVec.ofNat 32 d) = (P.lay D).fr d :=
   hi.ok.addrB (by show d < frameBytes + 56 + 44; unfold frameBytes at hd ⊢; omega)
 
-theorem or_eq_zero32 (a b : BitVec 32) : a ||| b = 0 ↔ a = 0 ∧ b = 0 := by
-  constructor
-  · intro e
-    constructor <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
-      have := congrArg (fun x => x.getLsbD i) e <;> simp_all
-  · rintro ⟨rfl, rfl⟩; rfl
-
 /-- The flags of the checks: zero exactly when `c + ml ≤ K`. -/
 theorem chk_z {K c ml : Nat} (hK : K ≤ 1024) (hc1 : 1 ≤ c) (hc : c ≤ 1024) (hml : ml < 2 ^ 32) :
     (((BitVec.ofNat 32 K - BitVec.ofNat 32 c) >>> 31 ||| BitVec.ofNat 32 ml >>> 10 |||
