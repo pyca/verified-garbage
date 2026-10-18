@@ -37,7 +37,7 @@ theorem frameCopies_ok (slots : List (Nat × Nat))
     (bounds : ∀ slot ∈ slots, slot.2 < nW ∧ frameBytes ≤ slot.1 ∧ slot.1 + 8 ≤ 2 ^ 64 ∧ slot.1 % 8 = 0 ∧ slot.1 < 32768)
     {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr)
     (hr : ∀ slot ∈ slots, InRegions (s.rd ++ s.wr) (VG.Proof.Bignum.off F slot.1) 8) :
     WP isa (.block (slots.flatMap fun slot => [.ldrSp .x3 slot.1, .strSp .x3 (8 * slot.2)])) s fun t =>
       Rep t.mem F S V (copiedWords slots (VG.Proof.Bignum.word s.mem F) W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by

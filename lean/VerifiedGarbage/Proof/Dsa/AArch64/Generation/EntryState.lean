@@ -13,7 +13,7 @@ open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Lay
 
 structure EntryState (p : GenerationContext) (s : State) : Prop where
   sp : s.sp = p.geo.F
-  frame : (⟨p.geo.F, frameBytes⟩ : Region) ∈ s.wr
+  frame : Covers [⟨p.geo.F, frameBytes⟩] s.wr
   frameTop : p.geo.F.toNat + frameBytes ≤ 2 ^ 64
   scratch : Scr s p.geo.B (usedBytes p.geo.pLen)
   registers : ∀ slot ∈ headerSlots, s.gpr slot.2 = p.saved slot.1

@@ -16,7 +16,7 @@ def registerWords (slots : List (Nat × Reg)) (regs : Reg → BitVec 64) (W : Na
 theorem frameStores_ok (slots : List (Nat × Reg)) (bounds : ∀ slot ∈ slots, slot.1 < nW)
     {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr) :
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) :
     WP isa (.block (slots.map fun slot => .strSp slot.2 (8 * slot.1))) s fun t =>
       Rep t.mem F S V (registerWords slots s.gpr W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [] s t := by
   induction slots generalizing s W with

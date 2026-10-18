@@ -17,7 +17,7 @@ theorem frameDerivations_ok (slots : List (Nat × Nat))
     (bounds : ∀ slot ∈ slots, slot.1 < nW ∧ slot.1 ≠ 5 ∧ slot.2 < 65536)
     {s : State} {F S B : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr) (hbase : W 5 = B) :
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) (hbase : W 5 = B) :
     WP isa (.block (slots.flatMap fun slot => [.ldrSp .x3 40, VG.Impl.Bignum.AArch64.movi .x4 slot.2,
       .add .x .x3 .x3 .x4, .strSp .x3 (8 * slot.1)])) s fun t =>
       Rep t.mem F S V (derivedWords slots B W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by

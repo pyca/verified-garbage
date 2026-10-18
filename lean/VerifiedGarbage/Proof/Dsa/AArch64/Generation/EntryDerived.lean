@@ -17,7 +17,7 @@ def workspaceWords (B : Addr) (W : Nat → BitVec 64) : Nat → BitVec 64 :=
 
 theorem entryDerived_ok {s : State} {F S B : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr) (hbase : W 5 = B) :
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) (hbase : W 5 = B) :
     WP isa (.block Impl.Dsa.AArch64.Generation.entryDerived) s fun t =>
       Rep t.mem F S V (workspaceWords B W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by
   unfold Impl.Dsa.AArch64.Generation.entryDerived

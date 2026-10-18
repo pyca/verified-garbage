@@ -18,7 +18,7 @@ def argumentSlots : List (Nat × Nat) := [(320, 14), (328, 15), (336, 5)]
 
 theorem entryHeader_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr) :
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) :
     WP isa (.block Impl.Dsa.AArch64.Generation.entryHeader) s fun t =>
       Rep t.mem F S V (registerWords headerSlots s.gpr W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [] s t := by
   exact frameStores_ok headerSlots (by
@@ -28,7 +28,7 @@ theorem entryHeader_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → 
 
 theorem entryIncoming_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr)
     (hr : ∀ slot ∈ argumentSlots, InRegions (s.rd ++ s.wr) (VG.Proof.Bignum.off F slot.1) 8) :
     WP isa (.block Impl.Dsa.AArch64.Generation.entryIncoming) s fun t =>
       Rep t.mem F S V (copiedWords argumentSlots (VG.Proof.Bignum.word s.mem F) W) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.x3, .x4] s t := by

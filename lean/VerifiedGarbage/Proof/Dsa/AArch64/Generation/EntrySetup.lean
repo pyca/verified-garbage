@@ -20,7 +20,7 @@ theorem argumentSlots_bounds {slot : Nat × Nat} (hs : slot ∈ argumentSlots) :
 
 theorem entrySetup_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr)
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr)
     (hr : ∀ slot ∈ argumentSlots, InRegions (s.rd ++ s.wr) (VG.Proof.Bignum.off F slot.1) 8) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.entryHeader ++ Impl.Dsa.AArch64.Generation.entryIncoming ++
       Impl.Dsa.AArch64.Generation.entryDerived)) s fun t =>

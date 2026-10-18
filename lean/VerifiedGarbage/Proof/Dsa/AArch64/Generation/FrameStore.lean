@@ -20,12 +20,12 @@ theorem frameWord_write {F : Addr} {k : Nat} (hk : k < nW) (m : Mem) (v : BitVec
 
 theorem frameStore_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)
-    (hfr : (⟨F, frameBytes⟩ : Region) ∈ s.wr) {k : Nat} (hk : k < nW) (r : Reg) :
+    (hfr : Covers [⟨F, frameBytes⟩] s.wr) {k : Nat} (hk : k < nW) (r : Reg) :
     WP isa (.block [.strSp r (8 * k)]) s fun t =>
       Rep t.mem F S V (upd W k (s.gpr r)) ∧
       Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [] s t := by
   have hw : InRegions s.wr (VG.Proof.Bignum.off F (8 * k)) 8 :=
-    ⟨_, hfr, Offset.contains_base _ (by unfold nW frameBytes at *; omega) (by unfold nW frameBytes at *; omega)⟩
+    hfr _ _ ⟨⟨F, frameBytes⟩, by simp, Offset.contains_base _ (by unfold nW frameBytes at *; omega) (by unfold nW frameBytes at *; omega)⟩
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (VG.Proof.Bignum.off F (8 * k)) (s.gpr r))
     (by brun [exec_storeSp (by unfold nW frameBytes at hk; omega : 8 * k % 8 = 0 ∧ 8 * k < 32768), hsp, hw, VG.Proof.Bignum.off]) rfl rfl rfl) fun t ⟨hm, kt⟩ => ?_
   exact ⟨hm ▸ R.wf G hk _, hm ▸ frameWord_write hk s.mem _, kt⟩

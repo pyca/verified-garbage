@@ -24,11 +24,7 @@ theorem entryReady_ok {p : GenerationContext} {s : State} (h : EntryState p s) :
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
   have Lt : Lay t p.geo.F p.geo.hash := {
     sp := kt.sp.trans h.sp
-    fr := by
-      intro a n hc
-      obtain ⟨r, hr, hrc⟩ := hc
-      rcases List.mem_singleton.mp hr with rfl
-      exact ⟨_, by rw [kt.wr]; exact h.frame, hrc⟩
+    fr := by rw [kt.wr]; exact h.frame
     sc := Covers.one ((h.scratch.congr kt.wr).region hh (by decide))
     slot := (Rt.fr 12 (by decide)).trans (h.hashWord W)
     geo := h.geometry }
