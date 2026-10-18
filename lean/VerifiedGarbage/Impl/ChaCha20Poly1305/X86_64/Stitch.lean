@@ -655,19 +655,116 @@ the lengths block before `decRest` decrypts the data from that keystream. -/
 def wholeO (vl : Bool) : Prog isa :=
   .seq (.block enter) (.seq (tailKMain vl true) (.block (leaveTO 28 ++ ([.vop .vzeroupper] : List Instr))))
 
-/-- After the whole chunks: with 65 to 256 bytes left, `tailO` (4 blocks
-absorbed up to 128 bytes, 8 below 192, 12 from 192); otherwise `leaveO` (the
-prologue computed the keystream of 1 to 64 bytes left, `twoKs`). -/
-def restO : Prog isa :=
-  .seq (.block (padIns .rdx 8 ++
-    ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 193), .alu .cmp .rdx (.imm 64)] : List Instr)))
-  (.ite .b (tailO true 12) (.block leaveO))
+/-! With 257 to 511 bytes left after the whole chunks, their keystream is
+stored at `buf + kOff` (`ctx + 736`), where `decRest` decrypts them from and
+then wipes it, as `wholeO`'s: up to 384 bytes, six blocks by `Avx2Tail`'s
+code for three sets (`tail3O`, as `tailO`), whose rounds absorb the first
+16 blocks; from 385, the kernel's eight (`tailKO`, as `wholeO`), whose
+rounds absorb the first 24. Their rounds are two loops (`roundsL`), not
+unrolled as a chunk's: one of the rounds that absorb four blocks each and
+one of the others, so that the two tails add 5 KB of code to `open` rather
+than 19 KB (Zen 3 ran `open`'s code for the other lengths up to 4% slower,
+and a seal benchmark whose code it did not change 3% slower, with the
+larger code). -/
+
+/-- `Avx2Tail`'s double round `n` on three sets, absorbing the `bl n` blocks
+from `fb n`, as `troundG`. -/
+def troundG3 (bl fb : Nat → Nat) (n : Nat) : List Instr :=
+  let h := ChaCha20.X86_64.Avx2Tail.half3
+  let r := ChaCha20.X86_64.Avx2Tail.rot3
+  let j := fb n + bl n - 4
+  if bl n = 0 then
+    h .xmm14 12 ++ h .xmm15 7 ++ r 0x39 0x4e 0x93 ++ h .xmm14 12 ++ h .xmm15 7 ++ r 0x93 0x4e 0x39
+  else
+    h .xmm14 12 ++ (if bl n = 4 then piece j else []) ++ h .xmm15 7 ++ piece (j + 1) ++
+      r 0x39 0x4e 0x93 ++ h .xmm14 12 ++ piece (j + 2) ++ h .xmm15 7 ++ piece (j + 3) ++ r 0x93 0x4e 0x39
+
+/-- `r` then `a`, `rdi` times (at least once): the counter is `rdi`, which
+no round reads, and which `roundsL` points at the state again after. -/
+def cntLoop (r : Prog isa) (a : List Instr) : Prog isa :=
+  .loop (.seq (.seq r (.block a)) (.block [.alu .sub .rdi (.imm 1)])) .ne
+
+/-- Ten double rounds absorbing the first `k` blocks at `rsi` (`k / 4` rounds
+`r4` of four blocks each, then `10 - k / 4` rounds `r0`), with `rsi` back at
+them and `rdi` at the state (`buf - 64`) after. -/
+def roundsL (r4 r0 : Prog isa) (k : Nat) : Prog isa :=
+  .seq (.block [.mov32 .rdi (.imm (BitVec.ofNat 32 (k / 4)))])
+  (.seq (cntLoop r4 [.alu .add .rsi (.imm 64)])
+  (.seq (.block [.alu .sub .rsi (.imm (BitVec.ofNat 32 (16 * k))),
+    .mov32 .rdi (.imm (BitVec.ofNat 32 (10 - k / 4)))])
+  (.seq (cntLoop r0 [])
+    (.block [.mov .rdi (.reg .rcx), .alu .sub .rdi (.imm 64)]))))
+
+/-- As `tailA`, with `Avx2Tail`'s setup of three sets. -/
+def tailA3 : List Instr :=
+  ChaCha20.X86_64.Avx2Tail.consts ++ ChaCha20.X86_64.Avx2.consts ++
+    ([.mov .r12 (.reg .r9), .mov .r9 (.reg .rcx)] : List Instr) ++ ChaCha20.X86_64.Avx2Tail.setup3 ++
+    ([.mov .r9 (.reg .r12)] : List Instr)
+
+/-- `Avx2Tail.storeSetT` to `rsi + off`. -/
+def storeSetS (a b c d : XReg) (off : Nat) : List Instr :=
+  [.vop (.vperm2i128 .xmm12 a b 0x20), .vmovdquStore .l256 (at_ .rsi off) .xmm12,
+   .vop (.vperm2i128 .xmm12 c d 0x20), .vmovdquStore .l256 (at_ .rsi (off + 32)) .xmm12,
+   .vop (.vperm2i128 .xmm12 a b 0x31), .vmovdquStore .l256 (at_ .rsi (off + 64)) .xmm12,
+   .vop (.vperm2i128 .xmm12 c d 0x31), .vmovdquStore .l256 (at_ .rsi (off + 96)) .xmm12]
+
+/-- After the rounds: `leaveTO`, and the six blocks' keystream at
+`ctx + 736` (`buf + kOff`), through `rsi`, which the rest of `cryptO` sets
+before it reads it. -/
+def tailBO3 (k : Nat) : List Instr :=
+  leaveTO k ++ ([.mov .r9 (.reg .rcx)] : List Instr) ++ ptr .rsi .r15 736 ++ ChaCha20.X86_64.Avx2Tail.addIn3 ++
+    storeSetS .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSetS .xmm4 .xmm5 .xmm6 .xmm7 128 ++
+    storeSetS .xmm8 .xmm9 .xmm10 .xmm11 256 ++ ([.vop .vzeroupper] : List Instr)
+
+/-- The keystream of the bytes left (at most 384) stored at `buf + kOff`
+while their first `k` blocks are absorbed, and the registers restored. -/
+def tail3O (k : Nat) : Prog isa :=
+  .seq (.block tailA3) (.seq (roundsL (.block (troundG3 (oblocks 4) (ofirst 4) 0))
+    (.block (troundG3 (oblocks 0) (ofirst 0) 0)) k) (.block (tailBO3 k)))
+
+/-- `roundsL` of the kernel's double rounds, with `vprold` if `vl` (in
+`ymm14` and `ymm15` meanwhile, as `sroundsVL`). -/
+def roundsLK (vl : Bool) (k : Nat) : Prog isa :=
+  if vl then
+    .seq (.block [.vmovdquLoad .l256 .xmm14 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)),
+      .vmovdquLoad .l256 .xmm15 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 11))])
+    (.seq (roundsL (sround4V 0) ChaCha20.X86_64.Avx2.doubleRoundV k)
+      (.block [.vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)) .xmm14,
+        .vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 11)) .xmm15,
+        .vmovdquLoad .l256 .xmm15 (at_ .rcx ChaCha20.X86_64.Avx2.rot16Off)]))
+  else roundsL (sround4 0) ChaCha20.X86_64.Avx2.doubleRound k
+
+/-- The kernel's eight blocks of keystream stored at `buf + kOff` while the
+first `k` blocks of the bytes left are absorbed, then `leaveTO`. -/
+def tailKO (vl : Bool) (k : Nat) : Prog isa :=
+  .seq (.seq (.block ChaCha20.X86_64.Avx2.setup)
+    (.seq (roundsLK vl k) (.block (ChaCha20.X86_64.Avx2.finishWith (storeRow kOff)))))
+  (.block (leaveTO k ++ ([.vop .vzeroupper] : List Instr)))
+
+/-- After the whole chunks, with `rdx` the bytes left less 193: with 193 to
+256 left, `tailO` (12 blocks absorbed); with 257 to 384, `tail3O` (16);
+with 385 to 511, `tailKO` (24); otherwise `leaveO` (the prologue computed the
+keystream of 1 to 192 bytes left, `twoKs` or `fourKs`). The tails are out of
+line and `leaveO` falls through at its offset before them: the first test
+(193 to 511 left) has the length of the one it replaced, and the padding of
+`tailKO` (longer with `vprold`, whose rounds are shorter) keeps the code
+after the tails at its offset modulo 64 (Zen 3 and Zen 4 ran the chunks'
+code up to 2% slower when it moved). -/
+def restO (vl : Bool) : Prog isa :=
+  .seq (.block (padIns .rdx 5 ++
+    ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 193), .alu .cmp .rdx (.imm 319)] : List Instr)))
+  (.ite .b
+    (.seq (.block [.alu .cmp .rdx (.imm 64)])
+      (.ite .b (tailO true 12)
+        (.seq (.block [.alu .cmp .rdx (.imm 192)])
+          (.ite .b (tail3O 16) (.seq (tailKO vl 24) (.block (padIns .rax (if vl then 35 else 19))))))))
+    (.block leaveO))
 
 /-- The whole chunks of at least 512 bytes of data, decrypted and absorbed,
-and of 64 to 256 bytes after them the first blocks absorbed and the
+and of 193 to 511 bytes after them the first blocks absorbed and the
 keystream computed. -/
 def bulkO (vl : Bool) : Prog isa :=
-  .seq (.block enter) (.seq (.loop (chunkO vl) .ae) restO)
+  .seq (.block enter) (.seq (.loop (chunkO vl) .ae) (restO vl))
 
 /-- The arguments of the call on the rest of the data (`rbx`, `rbp`), from
 the counter the chunks left. -/
@@ -689,17 +786,24 @@ def restTest (lo n : Nat) : List Instr :=
 /-- The rest decrypted: below 512 bytes all of the data, from the keystream
 `wholeO` stored at `ctx + 736`, which is then wiped (`ctx[672, 1248)`: the
 wipe after `cryptO` covers only `ctx[672, 800)` past `fold` bytes); from
-`buf` if `tailO` computed its keystream (65 to 256 bytes after the whole
-chunks), from `ctx + 736` if the prologue did (`twoKs`: 1 to 64 after them),
-otherwise by the implementation `x` of `vg_chacha20_xor` from the counter the
-chunks left. -/
+`buf` if `tailO` computed its keystream (193 to 256 bytes after the whole
+chunks), from `ctx + 736` if the prologue did (`twoKs`, `fourKs`: 1 to 192
+after them) or `tail3O` or `tailKO` (257 to 511, then wiped), otherwise (none)
+by the implementation `x` of `vg_chacha20_xor` from the counter the chunks
+left. The call falls through at its offset before the tails were added, and
+the padding of the wipe keeps the code after the branches at its offset
+modulo 64. -/
 def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm 512)])
   (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
     (.seq (.seq (.block (restTest 193 64))
       (.ite .b (xorTail x.wide 128)
-        (.seq (.block (restTest 1 192))
-          (.ite .b (xorTail x.wide 736) (.seq (.block restArgs) (.call x.name x.code))))))
+        (.seq (.block (restTest 1 511))
+          (.ite .b
+            (.seq (xorTail x.wide 736) (.seq (.block (restTest 257 255))
+              (.ite .b (.seq (.block [.mov32 .rdx (.imm 576)])
+                (.seq (zeroKs x.wide) (.block (padIns .rax 3)))) (.block []))))
+            (.seq (.block restArgs) (.call x.name x.code))))))
       (.block (padIns .rax 20))))
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
