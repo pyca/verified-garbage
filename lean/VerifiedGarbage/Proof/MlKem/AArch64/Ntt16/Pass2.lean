@@ -285,14 +285,22 @@ theorem lane_zt {s : State} {b k K : Nat} {x y : VReg}
   rw [hx k hk, hy k hk, show 8 * 0 + k = k by omega, (blockHalves_get b hk).1, (blockHalves_get b hk).2.1, hK]
   exact ⟨rfl, rfl⟩
 
-theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {sb : State}
-    {t : Addr} (h : L2 s₀ mB b sb t) :
-    WP isa (.block pass2Body) sb fun s' => L2 s₀ mB (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
-  simp only [pass2Body, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
+/-- The four layers of block `b` and the reduction of each lane (`pass2Arith`), from its four
+vectors after pass 1 and its table. -/
+theorem p2_arith {rest : List Instr} {Q : State → Prop} {P : Poly} {b : Nat} (hb : b < 8) {s : State}
+    (a0 : IRep P 3 (32 * b) (seg 0) (s.v .v0)) (a1 : IRep P 3 (32 * b) (seg 8) (s.v .v1))
+    (a2 : IRep P 3 (32 * b) (seg 16) (s.v .v2)) (a3 : IRep P 3 (32 * b) (seg 24) (s.v .v3))
+    (t20 : ∀ e < 8, vhalf (s.v .v20) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 0 + e) 0))
+    (t21 : ∀ e < 8, vhalf (s.v .v21) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 1 + e) 0))
+    (t22 : ∀ e < 8, vhalf (s.v .v22) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 2 + e) 0))
+    (t23 : ∀ e < 8, vhalf (s.v .v23) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 3 + e) 0))
+    (hq : Cst (s.v .v31) fun _ => 3329) (h10 : Cst (s.v .v30) fun _ => 10)
+    (kk : ∀ s₂₆, VChg arRegs s s₂₆ →
+      (∀ i < 4, ∀ e < 8, (vhalf (s₂₆.v (row i)) e).toNat = ((nttL 7 P)[32 * b + 8 * i + e]!).val) →
+      WP isa (.block rest) s₂₆ Q) :
+    WP isa (.block (pass2Arith ++ rest)) s Q := by
+  simp only [pass2Arith, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
     List.flatMap_nil, List.append_nil]
-  refine p2_loads hp hb h fun s c₀ a0 a1 a2 a3 t20 t21 t22 t23 => ?_
-  have hq : Cst (s.v .v31) fun _ => 3329 := by rw [c₀.get .v31]; exact h.q
-  have h10 : Cst (s.v .v30) fun _ => 10 := by rw [c₀.get .v30]; exact h.c10
   have hb0 : 32 * b % 32 = 0 := by omega
   have hb1 : 32 * b + 32 ≤ 256 := by omega
   have Z0 := lane_zt (k := 0) (K := 8 + b) t20 t21 (by decide) rfl
@@ -421,17 +429,26 @@ theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8)
     (h10 := by rw [c₂₅.get .v30, c₂₄.get .v30, c₂₃.get .v30]; exact k₂₂)
     (hq := by rw [c₂₅.get .v31, c₂₄.get .v31, c₂₃.get .v31]; exact q₂₂) (k := fun s₂₆ c₂₆ n3 => ?_)
   have out : ∀ i < 4, ∀ e < 8,
-      (vhalf (s₂₆.v (row i)) e).toNat = ((nttL 7 (P₀ s₀))[32 * b + 8 * i + e]!).val := by
+      (vhalf (s₂₆.v (row i)) e).toNat = ((nttL 7 P)[32 * b + 8 * i + e]!).val := by
     intro i hi e he
-    have fix : ∀ a, (nttL 7 (P₀ s₀))[32 * b + (seg a).getD e 0]! = (nttL 7 (P₀ s₀))[32 * b + a + e]! :=
+    have fix : ∀ a, (nttL 7 P)[32 * b + (seg a).getD e 0]! = (nttL 7 P)[32 * b + a + e]! :=
       fun a => by rw [seg_getD _ he, Nat.add_assoc]
     match i, hi with
     | 0, _ => rw [show row 0 = .v0 from rfl, c₂₆.get .v0, c₂₅.get .v0, c₂₄.get .v0, n0 e he, fix]
     | 1, _ => rw [show row 1 = .v1 from rfl, c₂₆.get .v1, c₂₅.get .v1, n1 e he, fix]
     | 2, _ => rw [show row 2 = .v2 from rfl, c₂₆.get .v2, n2 e he, fix]
     | 3, _ => rw [show row 3 = .v3 from rfl, n3 e he, fix]
-  have CC := (((((((((((c₀.trans C₄).trans C₇).trans C₁₀).trans cz).trans c₁₇).trans cw).trans c₂₂).trans
-    c₂₃).trans c₂₄).trans c₂₅).trans c₂₆)
+  exact kk s₂₆ ((((((((((C₄.trans C₇).trans C₁₀).trans cz).trans c₁₇).trans cw).trans c₂₂).trans
+    c₂₃).trans c₂₄).trans c₂₅).trans c₂₆).mono out
+
+theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {sb : State}
+    {t : Addr} (h : L2 s₀ mB b sb t) :
+    WP isa (.block pass2Body) sb fun s' => L2 s₀ mB (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
+  simp only [pass2Body, pass2Loads, List.cons_append, List.nil_append, List.append_assoc]
+  refine p2_loads hp hb h fun s c₀ a0 a1 a2 a3 t20 t21 t22 t23 => ?_
+  refine p2_arith hb a0 a1 a2 a3 t20 t21 t22 t23 (by rw [c₀.get .v31]; exact h.q)
+    (by rw [c₀.get .v30]; exact h.c10) fun s₂₆ C' out => ?_
+  have CC := c₀.trans C'
   have st₂₆ : St s₀ s₂₆ := h.st.vchg CC
   have z29 : ∀ e < 8, vhalf (s₂₆.v .v29) e = 0 := fun e he => by
     rw [CC.get .v29 (by simp)]; exact h.c0 e he

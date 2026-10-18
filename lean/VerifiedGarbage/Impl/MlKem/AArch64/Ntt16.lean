@@ -87,16 +87,27 @@ def bfRows (k : Nat) (ps : List (Nat × Nat)) : List Instr :=
   [.vop (.dupE .h8 .v22 .v18 k), .vop (.dupE .h8 .v23 .v19 k)] ++
     ps.flatMap fun (a, b) => bf (row a) (row b) .v22 .v23
 
+/-- The first three layers on the rows of a chunk. -/
+def pass1Arith : List Instr :=
+  bfRows 0 [(0, 4), (1, 5), (2, 6), (3, 7)] ++
+  bfRows 1 [(0, 2), (1, 3)] ++ bfRows 2 [(4, 6), (5, 7)] ++
+  bfRows 3 [(0, 1)] ++ bfRows 4 [(2, 3)] ++ bfRows 5 [(4, 5)] ++ bfRows 6 [(6, 7)]
+
 /-- Chunk `c`: `x2 = f + 32c`, `x3 = scratch + 16c`. -/
 def pass1Body : List Instr :=
   ((List.range 8).flatMap fun r =>
     [.ldrq .v20 .x2 (128 * r), .ldrq .v21 .x2 (128 * r + 16),
      .vop (.perm .uzp1 .h8 (row r) .v20 .v21)]) ++
-  bfRows 0 [(0, 4), (1, 5), (2, 6), (3, 7)] ++
-  bfRows 1 [(0, 2), (1, 3)] ++ bfRows 2 [(4, 6), (5, 7)] ++
-  bfRows 3 [(0, 1)] ++ bfRows 4 [(2, 3)] ++ bfRows 5 [(4, 5)] ++ bfRows 6 [(6, 7)] ++
+  pass1Arith ++
   ((List.range 8).map fun r => .strq (row r) .x3 (64 * r)) ++
   [.addImm .x .x2 .x2 32, .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1]
+
+/-- Chunk `c` of `f` with 16-bit coefficients: `x2 = f + 16c`, `x3 = scratch + 16c`. -/
+def pass1BodyW : List Instr :=
+  ((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++
+  pass1Arith ++
+  ((List.range 8).map fun r => .strq (row r) .x3 (64 * r)) ++
+  [.addImm .x .x2 .x2 16, .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1]
 
 /-- Layers 6 and 7 on the vectors `p`, `q'` (coefficients `8i … 8i + 15` of
 the block), with the zetas of layer 6 in `z6`, `t6` and of layer 7 in `z7`,
@@ -112,11 +123,9 @@ def normalize (x : VReg) : List Instr :=
   [.vop (.mulH .sqrdmulh .v16 x .v30), .vop (.mulH .mls x .v16 .v31),
    .vop (.shift .sshr .h8 .v16 x 15), .vop (.logic .and .v16 .v16 .v31), .vop (.add .h8 x x .v16)]
 
-/-- Block `b`: `x2 = scratch + 64b`, `x6 = scratch + 512 + 64b`, `x4 = f + 128b`. -/
-def pass2Body : List Instr :=
-  [.ldrq .v0 .x2 0, .ldrq .v1 .x2 16, .ldrq .v2 .x2 32, .ldrq .v3 .x2 48,
-   .ldrq .v20 .x6 0, .ldrq .v21 .x6 16, .ldrq .v22 .x6 32, .ldrq .v23 .x6 48,
-   .vop (.dupE .h8 .v24 .v20 0), .vop (.dupE .h8 .v25 .v21 0)] ++
+/-- The four layers of a block of pass 2, and each lane reduced. -/
+def pass2Arith : List Instr :=
+  [.vop (.dupE .h8 .v24 .v20 0), .vop (.dupE .h8 .v25 .v21 0)] ++
   bf .v0 .v2 .v24 .v25 ++ bf .v1 .v3 .v24 .v25 ++
   [.vop (.dupE .h8 .v24 .v20 1), .vop (.dupE .h8 .v25 .v21 1)] ++ bf .v0 .v1 .v24 .v25 ++
   [.vop (.dupE .h8 .v24 .v20 2), .vop (.dupE .h8 .v25 .v21 2)] ++ bf .v2 .v3 .v24 .v25 ++
@@ -127,11 +136,26 @@ def pass2Body : List Instr :=
   [.vop (.perm .zip2 .s4 .v26 .v24 .v24), .vop (.perm .zip2 .s4 .v27 .v25 .v25),
    .vop (.perm .zip2 .h8 .v28 .v22 .v22), .vop (.perm .zip2 .h8 .v19 .v23 .v23)] ++
   lastTwo .v2 .v3 .v26 .v27 .v28 .v19 ++
-  ([VReg.v0, .v1, .v2, .v3].flatMap normalize) ++
+  ([VReg.v0, .v1, .v2, .v3].flatMap normalize)
+
+/-- The loads of block `b`. -/
+def pass2Loads : List Instr :=
+  [.ldrq .v0 .x2 0, .ldrq .v1 .x2 16, .ldrq .v2 .x2 32, .ldrq .v3 .x2 48,
+   .ldrq .v20 .x6 0, .ldrq .v21 .x6 16, .ldrq .v22 .x6 32, .ldrq .v23 .x6 48]
+
+/-- Block `b`: `x2 = scratch + 64b`, `x6 = scratch + 512 + 64b`, `x4 = f + 128b`. -/
+def pass2Body : List Instr :=
+  pass2Loads ++ pass2Arith ++
   ((List.range 4).flatMap fun i =>
     [.vop (.perm .zip1 .h8 .v24 (row i) .v29), .vop (.perm .zip2 .h8 .v25 (row i) .v29),
      .strq .v24 .x4 (32 * i), .strq .v25 .x4 (32 * i + 16)]) ++
   [.addImm .x .x2 .x2 64, .addImm .x .x6 .x6 64, .addImm .x .x4 .x4 128, .subImm .x .x5 .x5 1]
+
+/-- Block `b` of `f` with 16-bit coefficients: `x4 = f + 64b`. -/
+def pass2BodyW : List Instr :=
+  pass2Loads ++ pass2Arith ++
+  ((List.range 4).map fun i => .strq (row i) .x4 (16 * i)) ++
+  [.addImm .x .x2 .x2 64, .addImm .x .x6 .x6 64, .addImm .x .x4 .x4 64, .subImm .x .x5 .x5 1]
 
 def ntt : Prog isa :=
   .seq (.block (halves tableHalves .x1 512 ++ consts ++

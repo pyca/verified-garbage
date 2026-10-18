@@ -177,36 +177,15 @@ end
 
 /-! ## A chunk -/
 
-/-- After `c` chunks of pass 1. -/
-structure L1 (s₀ : State) (c : Nat) (s : State) (withTable : Bool := true) : Prop where
-  st : St s₀ s
-  x2 : s.gpr .x2 = coeffAddr (fP s₀) (8 * c)
-  x3 : s.gpr .x3 = sP s₀ + BitVec.ofNat 64 (16 * c)
-  x5 : (s.gpr .x5).toNat = 4 - c
-  frame : Frame [polyRegion (sP s₀)] s₀.mem s.mem
-  tab : if withTable then ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j else True
-  scr : ∀ r < 8, ∀ c' < c, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c')) 16)
-    (fun e => (nttL 3 (P₀ s₀))[32 * r + 8 * c' + e]!) (4 * 3329)
-  z : ∀ k < 7, vhalf (s.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
-    vhalf (s.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)))
-  q : Cst (s.v .v31) fun _ => 3329
-  c10 : Cst (s.v .v30) fun _ => 10
-  c0 : Cst (s.v .v29) fun _ => 0
-
-theorem getD_rep_lt {n r a : Nat} (hr : r < n) : (List.replicate n a).getD r 0 = a := by
-  simp [List.getD_eq_getElem?_getD, hr]
-
-theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} {withTable : Bool} (h : L1 s₀ c s withTable) :
-    WP isa (.block pass1Body) s fun s' => L1 s₀ (c + 1) s' withTable ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ c + 1 ≠ 4) := by
-  simp only [pass1Body, List.append_assoc]
-  have hpoly : PolyIs s.mem (fP s₀) (P₀ s₀) :=
-    polyIs_frame h.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩
-  refine p1_loads hp hc h.st h.x2 hpoly fun s₁ c₁ h₁ => ?_
-  have z₁ : ∀ k < 7, vhalf (s₁.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
-      vhalf (s₁.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
-    rw [c₁.get .v18, c₁.get .v19]; exact h.z
-  have q₁ : Cst (s₁.v .v31) fun _ => 3329 := by rw [c₁.get .v31]; exact h.q
+/-- The first three layers on the rows of chunk `c` (`pass1Arith`). -/
+theorem p1_arith {rest : List Instr} {Q : State → Prop} {P : Poly} {c : Nat} (hc : c < 4) {s₁ : State} (h₁ : Rows P c (List.replicate 8 0) 8 s₁)
+    (z₁ : ∀ k < 7, vhalf (s₁.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₁.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))))
+    (q₁ : Cst (s₁.v .v31) fun _ => 3329)
+    (kk : ∀ s₈, VChg (.v22 :: .v23 :: bfRegs) s₁ s₈ → Rows P c (List.replicate 8 3) 8 s₈ →
+      WP isa (.block rest) s₈ Q) :
+    WP isa (.block (pass1Arith ++ rest)) s₁ Q := by
+  simp only [pass1Arith, List.append_assoc]
   refine rows_bfRows hc (K := 1) (by decide) _ (lay' := [1, 1, 1, 1, 1, 1, 1, 1]) (by decide) (by decide) h₁ (z₁ 0 (by decide)).1
     (z₁ 0 (by decide)).2 q₁ fun s₂ c₂ h₂ => ?_
   have z₂ : ∀ k < 7, vhalf (s₂.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
@@ -245,7 +224,40 @@ theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State
   have q₇ : Cst (s₇.v .v31) fun _ => 3329 := by rw [c₇.get .v31]; exact q₆
   refine rows_bfRows hc (K := 7) (by decide) _ (by decide) (lay' := List.replicate 8 3) (by decide) h₇
     (z₇ 6 (by decide)).1 (z₇ 6 (by decide)).2 q₇ fun s₈ c₈ h₈ => ?_
-  have C := c₁.trans (c₂.trans (c₃.trans (c₄.trans (c₅.trans (c₆.trans (c₇.trans c₈))))))
+  exact kk s₈ ((c₂.trans (c₃.trans (c₄.trans (c₅.trans (c₆.trans (c₇.trans c₈)))))).mono) h₈
+
+/-- After `c` chunks of pass 1. -/
+structure L1 (s₀ : State) (c : Nat) (s : State) (withTable : Bool := true) : Prop where
+  st : St s₀ s
+  x2 : s.gpr .x2 = coeffAddr (fP s₀) (8 * c)
+  x3 : s.gpr .x3 = sP s₀ + BitVec.ofNat 64 (16 * c)
+  x5 : (s.gpr .x5).toNat = 4 - c
+  frame : Frame [polyRegion (sP s₀)] s₀.mem s.mem
+  tab : if withTable then ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j else True
+  scr : ∀ r < 8, ∀ c' < c, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c')) 16)
+    (fun e => (nttL 3 (P₀ s₀))[32 * r + 8 * c' + e]!) (4 * 3329)
+  z : ∀ k < 7, vhalf (s.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+    vhalf (s.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)))
+  q : Cst (s.v .v31) fun _ => 3329
+  c10 : Cst (s.v .v30) fun _ => 10
+  c0 : Cst (s.v .v29) fun _ => 0
+
+theorem getD_rep_lt {n r a : Nat} (hr : r < n) : (List.replicate n a).getD r 0 = a := by
+  simp [List.getD_eq_getElem?_getD, hr]
+
+theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} {withTable : Bool} (h : L1 s₀ c s withTable) :
+    WP isa (.block pass1Body) s fun s' => L1 s₀ (c + 1) s' withTable ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ c + 1 ≠ 4) := by
+  simp only [pass1Body, List.append_assoc]
+  have hpoly : PolyIs s.mem (fP s₀) (P₀ s₀) :=
+    polyIs_frame h.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩
+  refine p1_loads hp hc h.st h.x2 hpoly fun s₁ c₁ h₁ => ?_
+  have z₁ : ∀ k < 7, vhalf (s₁.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₁.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
+    rw [c₁.get .v18, c₁.get .v19]; exact h.z
+  have q₁ : Cst (s₁.v .v31) fun _ => 3329 := by rw [c₁.get .v31]; exact h.q
+  refine p1_arith hc h₁ z₁ q₁ fun s₈ c₈ h₈ => ?_
+  have C := c₁.trans c₈
   have st₈ : St s₀ s₈ := h.st.vchg C
   refine wp_stores (p := sP s₀) (base := fun r => 64 * r + 16 * c)
     (fun r _ => by rw [C.gpr, h.x3, ptr_add]; congr 2; omega) (fun r hr => ⟨by omega, by omega⟩)
