@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS16
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -67,8 +70,51 @@ variable (K : Kem16)
 abbrev kpW : List (Ptr × Nat) :=
   [((.r12, 0), 384 * K.L.k), ((.r13, 0), 384 * K.L.k), (sc K.oR, 1024 * K.L.k), (sc K.oZ, kScrE)]
 
+/-- What entry `e` of `Â` writes. -/
+abbrev ijW (e : Nat) : List (Ptr × Nat) :=
+  [(sc (oSB + 32), 1)] ++ [(sc (oSB + 33), 1)] ++ [(aP K e, 512), (sc K.oW, 2048)]
+
+/-- A piece writing `ws` keeps `KA` and the first `e` entries of `Â`. -/
+def matKeep (e : Nat) (ws : List (Ptr × Nat)) : Bool :=
+  kcChk K.L ws && keepB (kgB K.L) ws (sc oG) 32 && keepB (kgB K.L) ws sigP 32 &&
+    keepB (kgB K.L) ws (sc oSB) 32 && (List.range e).all fun e' => keepB (kgB K.L) ws (aP K e') 512
+
+/-- Entry `e` of `Â`, on its own. -/
+def kbChk (e : Nat) : Bool := ij16Chk (kgB K.L) (kgW K.L) (aP K e) (sc K.oW) && matKeep K e (ijW K e)
+
+/-- Entries `4q, …, 4q + 3` of `Â`, at once. -/
+def kqChk (q : Nat) : Bool :=
+  quad16Chk (kgB K.L) (kgW K.L) (K.oA + 512 * (4 * q)) K.oW &&
+    matKeep K (4 * q) (quad16W (K.oA + 512 * (4 * q)) K.oW)
+
+/-- A piece writing `ws` keeps `KRest16 n`. -/
+def restChk (n : Nat) (ws : List (Ptr × Nat)) : Bool :=
+  kcChk K.L ws && keepB (kgB K.L) ws (sc oG) 32 && keepB (kgB K.L) ws sigP 32 &&
+    (List.range (K.L.k * K.L.k)).all (fun e => keepB (kgB K.L) ws (aP K e) 512) &&
+    (List.range (2 * K.L.k)).all (fun N => keepB (kgB K.L) ws (prfO K N) 128) &&
+    (List.range n).all (fun N => keepB (kgB K.L) ws (rP K N) 512)
+
+/-- What `prfs` writes. -/
+abbrev prW : List (Ptr × Nat) := prfsW (2 * K.L.k) K.oPR (K.oW / 32)
+
+def prChk : Bool :=
+  prfsChk (kgB K.L) (kgW K.L) (2 * K.L.k) K.oPR (K.oW / 32) && kcChk K.L (prW K) &&
+    keepB (kgB K.L) (prW K) (sc oG) 32 && keepB (kgB K.L) (prW K) sigP 32 &&
+    (List.range (K.L.k * K.L.k)).all (fun e => keepB (kgB K.L) (prW K) (aP K e) 512)
+
+def seChk (N : Nat) : Bool :=
+  twoChk (kgB K.L) (kgW K.L) (prfO K N) 128 (rP K N) 512 && restChk K N [(rP K N, 512)]
+
 /-- What key generation with 16-bit polynomials needs of the layout, evaluated for each parameter set. -/
 structure Kg16Wf : Prop extends KgWfB K.L where
+  -- the matrix
+  kq : ∀ q < K.L.k * K.L.k / 4, kqChk K q = true
+  kb : ∀ e < K.L.k * K.L.k, 4 * (K.L.k * K.L.k / 4) ≤ e → kbChk K e = true
+  flagA : ∀ e < K.L.k * K.L.k, keepB (kgB K.L) [] (aP K e) 512 = true
+  -- the samples
+  pr : prChk K = true
+  se : ∀ N < 2 * K.L.k, seChk K N = true
+  -- the K-PKE function
   kp : kpChk (kgB K.L) (kgW K.L) K.L (.r12, 0) (.r13, 0) (sc K.oA) (sc K.oR) (sc K.oZ) = true
   kpK : kcChk K.L (kpW K) = true
   kpG : keepB (kgB K.L) (kpW K) (sc oG) 32 = true

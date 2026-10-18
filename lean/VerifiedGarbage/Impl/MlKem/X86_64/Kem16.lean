@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
 public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
 
 /-!
 # ML-KEM on x86-64: the layout of the top-level functions with 16-bit polynomials
@@ -48,11 +49,30 @@ abbrev aP (e : Nat) : Ptr := sc (K.oA + 512 * e)
 abbrev prfO (N : Nat) : Ptr := sc (K.oPR + 128 * N)
 abbrev rP (N : Nat) : Ptr := sc (K.oR + 512 * N)
 
+/-- The `k²` entries of `Â`, with the samplers `p` (an implementation's `Callee4.s16`). -/
+def mat (p : String × Prog isa) : Prog isa := samples16 p K.L.k K.oA (sc K.oW)
+
+/-- `SamplePolyCBD₂(PRF₂(σ, N))` to polynomial `N`. -/
+def cbdN (A : Arith) (N : Nat) : Prog isa := cbd2_16At A (prfO K N) (rP K N)
+
+/-- The `n` outputs of `PRF₂` and the polynomials sampled from them. -/
+def noise (c : Callee4) (n : Nat) : Prog isa :=
+  .seq (c.prfs 0 n K.oPR (K.oW / 32)) (seqR (cbdN K c.arith) 0 n)
+
 /-- `ŝ`, `t̂` encoded to the keys, and the keys' last pieces. -/
 def kgTail : Prog isa :=
   .seq (K.L.kpkeKgAt (.r12, 0) (.r13, 0) (sc K.oA) (sc K.oR) (sc K.oZ)) (KeyGen.fin K.L)
 
+/-- Key generation after `Â`, if every `SampleNTT` succeeded. -/
+def kgRest (c : Callee4) : Prog isa := .seq (noise K c (2 * K.L.k)) (kgTail K)
+
 end Top16
+
+open KeyGen Top16 in
+/-- The key generation of the parameter set of `K`, with 16-bit polynomials,
+with the samplers `p` and the rest of the implementation `c`. -/
+def kemKeyGen16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
+  .seq (.block pro) (.seq (gRho K.L) (.seq (mat K p) (.seq (ifOk (kgRest K c)) (.block topEpi))))
 
 /-- ML-KEM-768's layout: `Â` 4608 bytes from 4096, the others (at most
 3584 bytes) from 8704, and the K-PKE functions' working space (20480 bytes)
