@@ -374,7 +374,9 @@ fn decrypt_with(
 /// generated constants of the CPU features it needs (none for the baseline
 /// ISA's), and, for the arms that have them, used on x86-64 only, those
 /// calling its other RSA backends: `encrypt_adx`, `encrypt_ifma`,
-/// `decrypt_adx` and `decrypt_ifma`.
+/// `decrypt_adx` and `decrypt_ifma`; and, used on ARMv7 only, decryption
+/// calling the private-key operation with `umaal`, `decrypt_umaal`
+/// (encryption calls the baseline's public-key operation there).
 /// With MGF1 over another hash function, the arms after `never` are the
 /// pairs of implementations no CPU chooses: they are there for the match to
 /// be exhaustive, and the test checks that no set of features chooses them.
@@ -431,6 +433,9 @@ macro_rules! oaep_pair {
             encrypt_ifma: $enc_ifma:path [$($eireq:path),*],
             decrypt_adx: $dec_adx:path [$($dareq:path),*],
             decrypt_ifma: $dec_ifma:path [$($direq:path),*]
+        )?
+        $(,
+            decrypt_umaal: $dec_umaal:path [$($dureq:path),*]
         )? $(,)?
     }) => {
         (
@@ -442,6 +447,17 @@ macro_rules! oaep_pair {
                     #[cfg(target_arch = "x86_64")]
                     $crate::rsa::Backend::Ifma => $enc_ifma,
                 )?
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                $crate::rsa::Backend::Umaal => $enc,
             },
             match $rsa {
                 $crate::rsa::Backend::Baseline => $dec,
@@ -450,6 +466,19 @@ macro_rules! oaep_pair {
                     $crate::rsa::Backend::Adx => $dec_adx,
                     #[cfg(target_arch = "x86_64")]
                     $crate::rsa::Backend::Ifma => $dec_ifma,
+                )?
+                $(
+                    #[cfg(all(
+                        target_arch = "arm",
+                        any(
+                            target_os = "linux",
+                            target_os = "android",
+                            target_os = "freebsd",
+                            target_os = "netbsd",
+                            target_os = "openbsd"
+                        )
+                    ))]
+                    $crate::rsa::Backend::Umaal => $dec_umaal,
                 )?
             },
         )
@@ -462,6 +491,9 @@ macro_rules! oaep_pair {
             encrypt_ifma: $enc_ifma:path [$($eireq:path),*],
             decrypt_adx: $dec_adx:path [$($dareq:path),*],
             decrypt_ifma: $dec_ifma:path [$($direq:path),*]
+        )?
+        $(,
+            decrypt_umaal: $dec_umaal:path [$($dureq:path),*]
         )? $(,)?
     }) => {
         (
@@ -473,6 +505,17 @@ macro_rules! oaep_pair {
                     #[cfg(target_arch = "x86_64")]
                     $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($eireq),*]),
                 )?
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                $crate::rsa::Backend::Umaal => $crate::cpu::Features::all(&[$($ereq),*]),
             },
             match $rsa {
                 $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($dreq),*]),
@@ -481,6 +524,19 @@ macro_rules! oaep_pair {
                     $crate::rsa::Backend::Adx => $crate::cpu::Features::all(&[$($dareq),*]),
                     #[cfg(target_arch = "x86_64")]
                     $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($direq),*]),
+                )?
+                $(
+                    #[cfg(all(
+                        target_arch = "arm",
+                        any(
+                            target_os = "linux",
+                            target_os = "android",
+                            target_os = "freebsd",
+                            target_os = "netbsd",
+                            target_os = "openbsd"
+                        )
+                    ))]
+                    $crate::rsa::Backend::Umaal => $crate::cpu::Features::all(&[$($dureq),*]),
                 )?
             },
         )

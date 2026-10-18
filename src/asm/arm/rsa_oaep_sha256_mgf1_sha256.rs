@@ -1059,3 +1059,615 @@ bx lr",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
     )
 }
+
+/// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+
+/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+///
+/// Contract: `VG.Spec.RsaOaep.decryptContract` of `VG.Spec.Mgf1.sha256` and `VG.Spec.Mgf1.sha256`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+///
+/// This implementation calls `vg_rsa_private_checked_umaal`, hashes the label with `vg_sha256_update` and unmasks the seed and `DB` with MGF1 calling `vg_sha256_update`. The checks of `Y`, `lHash'` and the separator, the scan for it and the shift of the message to the start of `out` are masks computed without branches, reading every byte of `EM` whatever the outcome; only the lengths and the public key decide a branch or an address.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `label` must be valid for reads of `label_len` bytes.
+/// * `ct` must be valid for reads of `ct_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `ct_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_umaal(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #128
+add r12, sp, #0
+ldr r0, [sp, #252]
+str r0, [r12, #64]
+add r12, sp, #0
+ldr r0, [sp, #188]
+str r0, [r12, #0]
+ldr r0, [sp, #192]
+str r0, [r12, #4]
+ldr r0, [sp, #244]
+str r0, [r12, #8]
+ldr r0, [sp, #184]
+str r0, [r12, #12]
+ldr r0, [sp, #196]
+str r0, [r12, #16]
+ldr r0, [sp, #200]
+str r0, [r12, #20]
+ldr r0, [sp, #204]
+str r0, [r12, #24]
+ldr r0, [sp, #208]
+str r0, [r12, #28]
+ldr r0, [sp, #212]
+str r0, [r12, #32]
+ldr r0, [sp, #200]
+str r0, [r12, #36]
+ldr r0, [sp, #220]
+str r0, [r12, #40]
+ldr r0, [sp, #208]
+str r0, [r12, #44]
+ldr r0, [sp, #228]
+str r0, [r12, #48]
+ldr r0, [sp, #200]
+str r0, [r12, #52]
+ldr r0, [sp, #64]
+movw lr, #8192
+add r0, r0, lr
+str r0, [r12, #56]
+ldr r0, [sp, #256]
+movw r1, #1024
+sub r0, r0, r1
+str r0, [r12, #60]
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+ldr r1, [sp, #184]
+ldr r2, [sp, #140]
+ldr r3, [sp, #184]
+bl {vg_rsa_private_checked_umaal}
+add r12, sp, #0
+str r0, [r12, #84]
+ldr r0, [sp, #184]
+movw r1, #66
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 20f
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha256_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #236]
+ldr r7, [sp, #240]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3392
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #240]
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha256_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1
+add r0, r0, lr
+movw r1, #32
+ldr r2, [sp, #64]
+movw lr, #33
+add r2, r2, lr
+ldr r3, [sp, #184]
+movw r4, #33
+sub r3, r3, r4
+str r0, [r12, #76]
+str r1, [r12, #80]
+str r2, [r12, #68]
+str r3, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+str r0, [r12, #96]
+22:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha256_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #68]
+ldr r7, [sp, #72]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3456
+add r0, r0, lr
+ldr r1, [sp, #92]
+lsr r2, r1, #24
+strb r2, [r0, #0]
+lsr r2, r1, #16
+strb r2, [r0, #1]
+lsr r2, r1, #8
+strb r2, [r0, #2]
+strb r1, [r0, #3]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3456
+add r1, r1, lr
+movw r7, #4
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+add r2, r2, #4
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha256_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #76]
+ldr r2, [sp, #96]
+add r0, r0, r2
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r3, [sp, #80]
+sub r3, r3, r2
+movw r4, #32
+sub r5, r3, r4
+lsr r5, r5, #31
+movw r6, #0
+sub r5, r6, r5
+eor r6, r3, r4
+and r6, r6, r5
+eor lr, r4, r6
+23:
+ldrb r2, [r0, #0]
+ldrb r3, [r1, #0]
+eor r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 23b
+add r12, sp, #0
+ldr r0, [sp, #92]
+add r0, r0, #1
+str r0, [r12, #92]
+ldr r0, [sp, #96]
+movw r1, #32
+add r0, r0, r1
+str r0, [r12, #96]
+ldr r1, [sp, #80]
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 22b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #33
+add r0, r0, lr
+ldr r1, [sp, #184]
+movw r2, #33
+sub r1, r1, r2
+ldr r2, [sp, #64]
+movw lr, #1
+add r2, r2, lr
+movw r3, #32
+str r0, [r12, #76]
+str r1, [r12, #80]
+str r2, [r12, #68]
+str r3, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+str r0, [r12, #96]
+24:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+bl {vg_sha256_init}
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #68]
+ldr r7, [sp, #72]
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+movw r2, #0
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3456
+add r0, r0, lr
+ldr r1, [sp, #92]
+lsr r2, r1, #24
+strb r2, [r0, #0]
+lsr r2, r1, #16
+strb r2, [r0, #1]
+lsr r2, r1, #8
+strb r2, [r0, #2]
+strb r1, [r0, #3]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3456
+add r1, r1, lr
+movw r7, #4
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+movw r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #3072
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r10, [sp, #64]
+movw lr, #3520
+add r10, r10, lr
+ldr r2, [sp, #72]
+add r2, r2, #4
+movw r3, #0
+mov r12, r10
+push {{r1, r12}}
+bl {vg_sha256_finalize_scratch}
+ldr r1, [sp], #8
+add r12, sp, #0
+ldr r0, [sp, #76]
+ldr r2, [sp, #96]
+add r0, r0, r2
+ldr r1, [sp, #64]
+movw lr, #3328
+add r1, r1, lr
+ldr r3, [sp, #80]
+sub r3, r3, r2
+movw r4, #32
+sub r5, r3, r4
+lsr r5, r5, #31
+movw r6, #0
+sub r5, r6, r5
+eor r6, r3, r4
+and r6, r6, r5
+eor lr, r4, r6
+25:
+ldrb r2, [r0, #0]
+ldrb r3, [r1, #0]
+eor r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 25b
+add r12, sp, #0
+ldr r0, [sp, #92]
+add r0, r0, #1
+str r0, [r12, #92]
+ldr r0, [sp, #96]
+movw r1, #32
+add r0, r0, r1
+str r0, [r12, #96]
+ldr r1, [sp, #80]
+sub r0, r0, r1
+lsr r0, r0, #31
+cmp r0, #0
+bne 24b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #33
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #3392
+add r1, r1, lr
+movw r2, #0
+movw lr, #32
+26:
+ldrb r3, [r0, #0]
+ldrb r12, [r1, #0]
+eor r3, r3, r12
+orr r2, r2, r3
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 26b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #0
+add r0, r0, lr
+ldrb r3, [r0, #0]
+orr r2, r2, r3
+add r12, sp, #0
+str r2, [r12, #100]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #65
+add r0, r0, lr
+ldr lr, [sp, #184]
+movw r1, #65
+sub lr, lr, r1
+movw r1, #0
+movw r4, #0
+movw r5, #0
+movw r7, #0
+sub r6, r7, #1
+27:
+ldrb r2, [r0, #0]
+sub r3, r2, #1
+lsr r3, r3, #31
+sub r8, r3, #1
+and r8, r8, r6
+and r9, r1, r8
+orr r4, r4, r9
+and r9, r2, r8
+orr r5, r5, r9
+sub r9, r7, r3
+and r6, r6, r9
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 27b
+add r12, sp, #0
+ldr r1, [sp, #100]
+eor r5, r5, #1
+orr r5, r5, r6, lsr #31
+orr r1, r1, r5
+str r1, [r12, #100]
+str r4, [r12, #104]
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+movw r2, #0
+movw lr, #2048
+28:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 28b
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+ldr r1, [sp, #64]
+movw lr, #65
+add r1, r1, lr
+ldr lr, [sp, #184]
+movw r2, #65
+sub lr, lr, r2
+29:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 29b
+add r12, sp, #0
+ldr r0, [sp, #104]
+add r0, r0, #1
+str r0, [r12, #108]
+movw r0, #1
+str r0, [r12, #112]
+movw r0, #10
+str r0, [r12, #116]
+210:
+add r12, sp, #0
+ldr r0, [sp, #64]
+movw lr, #1024
+add r0, r0, lr
+ldr r1, [sp, #112]
+add r1, r0, r1
+ldr r2, [sp, #108]
+and r2, r2, #1
+movw r3, #0
+sub r2, r3, r2
+movw lr, #1024
+211:
+ldrb r3, [r0, #0]
+ldrb r4, [r1, #0]
+eor r4, r4, r3
+and r4, r4, r2
+eor r3, r3, r4
+strb r3, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 211b
+add r12, sp, #0
+ldr r0, [sp, #108]
+lsr r0, r0, #1
+str r0, [r12, #108]
+ldr r0, [sp, #112]
+add r0, r0, r0
+str r0, [r12, #112]
+ldr r0, [sp, #116]
+sub r0, r0, #1
+str r0, [r12, #116]
+cmp r0, #0
+bne 210b
+add r12, sp, #0
+ldr r0, [sp, #84]
+eor r0, r0, #1
+sub r0, r0, #1
+lsr r0, r0, #31
+ldr r1, [sp, #100]
+sub r1, r1, #1
+lsr r1, r1, #31
+and r0, r0, r1
+movw r1, #0
+sub r0, r1, r0
+str r0, [r12, #88]
+add r12, sp, #0
+ldr r1, [sp, #64]
+movw lr, #1024
+add r1, r1, lr
+ldr r0, [sp, #128]
+ldr lr, [sp, #184]
+212:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 212b
+add r12, sp, #0
+ldr r0, [sp, #128]
+ldr lr, [sp, #184]
+ldr r2, [sp, #88]
+213:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 213b
+add r12, sp, #0
+ldr r3, [sp, #184]
+movw r1, #66
+sub r3, r3, r1
+ldr r1, [sp, #104]
+sub r3, r3, r1
+ldr r1, [sp, #88]
+and r3, r3, r1
+ldr r1, [sp, #136]
+movw r2, #0
+str r3, [r1, #0]
+str r2, [r1, #4]
+add r12, sp, #0
+ldr r1, [sp, #84]
+eor r1, r1, #2
+sub r1, r1, #1
+lsr r1, r1, #31
+lsl r0, r1, #1
+ldr r1, [sp, #88]
+and r1, r1, #1
+orr r0, r0, r1
+b 21f
+20:
+add r12, sp, #0
+ldr r0, [sp, #128]
+ldr lr, [sp, #184]
+movw r2, #0
+214:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 214b
+add r12, sp, #0
+ldr r1, [sp, #136]
+movw r3, #0
+movw r2, #0
+str r3, [r1, #0]
+str r2, [r1, #4]
+add r12, sp, #0
+ldr r1, [sp, #84]
+eor r1, r1, #2
+sub r1, r1, #1
+lsr r1, r1, #31
+lsl r0, r1, #1
+21:
+add sp, sp, #128
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+    )
+}
