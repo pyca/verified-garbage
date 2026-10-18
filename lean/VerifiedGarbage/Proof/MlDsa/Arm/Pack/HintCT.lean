@@ -90,6 +90,10 @@ theorem exec_pure {i : Instr} (hi : ∀ t n off, i ≠ .ldr t n off ∧ i ≠ .l
     simp only [exec] at h
     split at h <;> cases h
     exact ⟨rfl, rfl, rfl⟩
+  | umaal =>
+    simp only [exec] at h
+    split at h <;> cases h
+    exact ⟨rfl, rfl, rfl⟩
   | _ =>
     simp only [exec, Option.map_eq_some_iff, Option.some.injEq] at h
     first
@@ -186,6 +190,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   | mul => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | mla => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | addSp => exact base (fun _ _ _ => by simp) hs e₁ e₂
+  | umaal => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | alloc | free => simp only [exec, reduceCtorEq] at e₁
 
 /-- Taint tracking over memory both runs agree on, for ARMv7. -/

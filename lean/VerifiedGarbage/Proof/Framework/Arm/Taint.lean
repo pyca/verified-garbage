@@ -176,6 +176,9 @@ def step (τ : T) : Instr → Option T
   | .rev d m => some { τ with regs := set τ d (pub τ m), bases := kill τ d }
   | .mul d n m => some { τ with regs := set τ d (pub τ n && pub τ m), bases := kill τ d }
   | .mla d n m a => some { τ with regs := set τ d (pub τ n && pub τ m && pub τ a), bases := kill τ d }
+  -- A long multiply, which writes two registers, is not analysed: code with
+  -- one is proven constant time otherwise.
+  | .umaal .. => none
   | .ldr t n off =>
     if pub τ n then some { τ with regs := set τ t (slotPub τ n off 4), bases := kill τ t } else none
   | .str t n off => storeStep τ n off 4 (pub τ t)
@@ -567,7 +570,7 @@ do not; a frame's pop writes its register). -/
 def dst : Instr → Option Reg
   | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
   | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
-  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none
+  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ | .umaal .. => none
 
 theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     (h : exec i s = some s') :
@@ -628,7 +631,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | umaal => simp only [step, reduceCtorEq] at hs
   | mov d o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.map_eq_some_iff] at e₁ e₂
@@ -959,6 +962,7 @@ def stepK (τ : T) : Instr → Option T
   | .rev d m => some { τ with regs := setK τ d (pub τ m), bases := killK τ d }
   | .mul d n m => some { τ with regs := setK τ d (pub τ n && pub τ m), bases := killK τ d }
   | .mla d n m a => some { τ with regs := setK τ d (pub τ n && pub τ m && pub τ a), bases := killK τ d }
+  | .umaal .. => none
   | .ldr t n off =>
     bif pub τ n then some { τ with regs := setK τ t (slotPubK τ n off 4), bases := killK τ t } else none
   | .str t n off => storeStepK τ n off 4 (pub τ t)
@@ -1128,6 +1132,7 @@ def stepKDFn : Instr → Step
   | .rev d m => ⟨fun τ => some { τ with regs := setK τ d (pub τ m), bases := killK τ d }⟩
   | .mul d n m => ⟨fun τ => some { τ with regs := setK τ d (pub τ n && pub τ m), bases := killK τ d }⟩
   | .mla d n m a => ⟨fun τ => some { τ with regs := setK τ d (pub τ n && pub τ m && pub τ a), bases := killK τ d }⟩
+  | .umaal .. => ⟨fun _ => none⟩
   | .ldr t n off => ⟨fun τ =>
     bif pub τ n then some { τ with regs := setK τ t (slotPubK τ n off 4), bases := killK τ t } else none⟩
   | .str t n off => ⟨fun τ => storeStepKD τ n off 4 (pub τ t)⟩
