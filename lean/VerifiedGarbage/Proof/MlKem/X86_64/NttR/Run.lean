@@ -44,8 +44,9 @@ def initA : St :=
   ⟨(List.range 16).map (fun r => if r = 15 then List.replicate 16 (.c qN) else List.replicate 16 .junk),
    [junks 16, inTerms]⟩
 
-/-- The registers and `S` after pass A, the output not yet written. -/
-def toB (σ : St) : St := ⟨σ.regs, [σ.mem.getD 0 [], junks 32]⟩
+/-- The registers and `S` after pass A, the output not yet written, and
+`ymm3` forgotten (pass A of `u32`s packs through it, that of `u16`s does not). -/
+def toB (σ : St) : St := ⟨(σ.set .xmm3 (List.replicate 16 .junk)).regs, [σ.mem.getD 0 [], junks 32]⟩
 
 /-- The output's words are the reduced coefficients, in the low words of their `u32`s. -/
 def outOk (σ : St) : Bool :=

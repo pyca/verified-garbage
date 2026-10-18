@@ -7,12 +7,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
-# ML-KEM on x86-64: the NTT on registers, of `u16`s, to an accumulator
+# ML-KEM on x86-64: the NTT on registers, of `u16`s
 
 `nttR16 pb` is `nttR pb` reading the polynomial at `rdi` as `u16`s
 (`PolyIsW 16`): pass A of `u16`s (`passA16`) leaves pass B the state pass A
 of `u32`s does (`stA16_toBA`), so `checkAcc pb d` says it leaves `NTT` of the
-polynomial in the accumulator at `d` too (`nttRAcc16_ok`).
+polynomial in the accumulator at `d` too (`nttRAcc16_ok`), and `check pb d`
+that it leaves it as `u32`s at `d` (`nttR16_ok`).
 -/
 
 @[expose] public section
@@ -162,6 +163,95 @@ theorem nttRAcc16_ok {pb : List Instr} {d : Reg} (hc : checkAcc pb d = true) (hd
       simp only [rbase, rlen, rsBA, List.getD_cons_succ, List.getD_cons_zero, gd] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr d).toNat + 1 ≤ 512
+      omega
+  · refine ⟨fun r hr => ?_, ?_, ?_⟩
+    · show s3.gpr r = s.gpr r
+      rw [hr3.gpr]; exact k1.1 r hr
+    · show s3.rd = s.rd
+      rw [hr3.rd]; exact k1.2.1
+    · show s3.wr = s.wr
+      rw [hr3.wr]; exact k1.2.2
+
+theorem toB_eq_of_toBA {a b : St} (h : toBA a = toBA b) : toB a = toB b := by
+  simp only [toBA, toB, St.mk.injEq, List.cons.injEq] at h ⊢
+  exact ⟨h.1, h.2.1, trivial⟩
+
+/-- `nttR16 pb` leaves `NTT` of the polynomial of `u16`s at `rdi` as `u32`s at
+`d`, if `check pb d`. -/
+theorem nttR16_ok {pb : List Instr} {d : Reg} (hc : check pb d = true) (hd : d = .rdi ∨ d = .r10) {s : State}
+    (hS : pR (s.gpr .rsi) ∈ s.wr) (hI : sR (s.gpr .rdi) ∈ s.rd ++ s.wr) (hO : pR (s.gpr d) ∈ s.wr)
+    (hDI : (sR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi))) (hDO : (pR (s.gpr d)).Disjoint (pR (s.gpr .rsi)))
+    (hred : ReducedW 16 s.mem (s.gpr .rdi)) :
+    WP isa (nttR16 pb) s fun s' => PolyIs s'.mem (s.gpr d) (ntt (polyAtW 16 s.mem (s.gpr .rdi))) ∧
+      Frame [pR (s.gpr d), pR (s.gpr .rsi)] s.mem s'.mem ∧ Keep [.rax, .r8] s s' := by
+  unfold check at hc
+  split at hc <;> [skip; cases hc]
+  rename_i σA hA
+  split at hc <;> [skip; cases hc]
+  rename_i σB hB
+  obtain ⟨σ₁₆, σ', h16, hA', heq⟩ := stA16_toBA
+  have eA : σ' = σA := Option.some.inj (hA'.symm.trans hA)
+  subst eA
+  unfold nttR16
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (pro_ok s) fun s1 ⟨h8, hq, hm1, k1⟩ => ?_
+  have g : ∀ r, r ≠ .rax → r ≠ .r8 → s1.gpr r = s.gpr r := fun r h1 h2 =>
+    k1.1 r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2⟩)
+  have gdi : s1.gpr .rdi = s.gpr .rdi := g _ (by decide) (by decide)
+  have gsi : s1.gpr .rsi = s.gpr .rsi := g _ (by decide) (by decide)
+  have gd : s1.gpr d = s.gpr d := g _ (by rcases hd with rfl | rfl <;> decide) (by rcases hd with rfl | rfl <;> decide)
+  let W := inW16 s.mem (s.gpr .rdi)
+  let F := polyAtW 16 s.mem (s.gpr .rdi)
+  have hW : ∀ p < 256, (W[p]!).toNat = (F[p]!).val := fun p hp => by
+    rw [inW16_get _ _ hp, ← coeffAtW16_word, VG.Proof.MlKem.polyIsW_toNat (f := F) ⟨hred, rfl⟩ (by rw [n_eq]; exact hp)]
+  have hM : Model fwdRules (Lf W) (Of W) := model W fun p hp => by
+    rw [hW p hp]; have := (F[p]!).isLt; simp only [q] at this; omega
+  have hrep : PolyRep 1 W F := fun p hp => VG.Proof.MlKem.X86_64.Rep.of_can (hW p hp)
+  have hrel0 : Rel rsA16 (Lf W) (Of W) initA16 s1 s1 := by
+    refine initA16_rel (fun p hp => ?_) hq
+    show (LW W 0)[p]! = _
+    rw [gdi, hm1]; exact inW16_get _ _ hp
+  have cA : Ctx rsA16 s1 := ctx16 (by rw [gsi, k1.2.2]; exact hS) (by rw [gdi, k1.2.1, k1.2.2]; exact hI)
+    (by rw [gdi, gsi]; exact hDI) h8
+  have cB : Ctx (rsB d) s1 := ctx2 (by rw [gsi, k1.2.2]; exact hS)
+    (by rw [gd, k1.2.1, k1.2.2]; exact List.mem_append_right _ hO)
+    (fun _ => by rw [gd, k1.2.2]; exact hO) (by rw [gd, gsi]; exact hDO) h8
+  refine WP.mono (run_ok hM cA passA16 hrel0 h16) fun s2 hr2 => ?_
+  have hr2' := reframe (d := d) hr2
+  rw [toB_eq_of_toBA heq] at hr2'
+  refine WP.mono (run_ok hM cB pb hr2' hB) fun s3 hr3 => ?_
+  refine WP.block_cons_iff.2 ⟨_, rfl, WP.block_nil ⟨?_, ?_, ?_⟩⟩
+  · have hb : rbase (rsB d) s1 1 = s.gpr d := by simp [rbase, rsB, gd]
+    refine VG.Proof.MlKem.polyIs_of_toNat fun p hp => ?_
+    rw [n_eq] at hp
+    have h0 := hr3.mem 1 (2 * p) (by simp [rsB]) (by simp [rlen, rsB]; omega)
+    have h1 := hr3.mem 1 (2 * p + 1) (by simp [rsB]) (by simp [rlen, rsB]; omega)
+    rw [outOk_get hc (by omega), hb] at h0 h1
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), show 2 * p / 2 = p by omega] at h0
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))] at h1
+    have e0 := h0.eq rfl
+    have e1 := h1.eq rfl
+    show (coeffAt s3.mem (s.gpr d) p).toNat = _
+    rw [coeff_words, toNat_app16, e0, e1]
+    simp only [E.eval]
+    rw [Of_ntt W F hrep hp]
+    simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_mul, Nat.zero_add]
+    rfl
+  · intro x hx
+    show s3.mem x = s.mem x
+    rw [← hm1]
+    refine hr3.fr x fun k hk hw hlt => ?_
+    simp only [rsB, List.length_cons, List.length_nil] at hk
+    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    · refine hx (pR (s.gpr .rsi)) (by simp) ?_
+      simp only [rbase, rlen, rsB, List.getD_cons_zero, gsi] at hlt
+      rw [Offset.lt_iff x _ (by decide)] at hlt
+      show (x - s.gpr .rsi).toNat + 1 ≤ 1024
+      simp only [oS] at hlt; omega
+    · refine hx (pR (s.gpr d)) (by simp) ?_
+      simp only [rbase, rlen, rsB, List.getD_cons_succ, List.getD_cons_zero, gd] at hlt
+      rw [Offset.lt_iff x _ (by decide)] at hlt
+      show (x - s.gpr d).toNat + 1 ≤ 1024
       omega
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · show s3.gpr r = s.gpr r

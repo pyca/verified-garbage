@@ -52,17 +52,17 @@ theorem encMul16Y4_correct : ∀ s, (encMulK16 4).pre s →
   encMul16Y_correct (.inr rfl) encMul16Y4_wo encMul16Y4_ctl
 
 theorem kgMul16Y3_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-    (KgMul.innerG (KpkeMul.rowKRs rowY16 3 512) Bodies.avx2 3) = true := writesOnly_of (by lit_decide)
+    (KgMul.innerG KpkeMul.nttK16 (KpkeMul.rowKRs rowY16 3 512) Bodies.avx2 3) = true := writesOnly_of (by lit_decide)
 
 theorem kgMul16Y4_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-    (KgMul.innerG (KpkeMul.rowKRs rowY16 4 512) Bodies.avx2 4) = true := writesOnly_of (by lit_decide)
+    (KgMul.innerG KpkeMul.nttK16 (KpkeMul.rowKRs rowY16 4 512) Bodies.avx2 4) = true := writesOnly_of (by lit_decide)
 
 theorem kgMul16Y3_ctl : ctlOk (keygenMul16Y 3) = true := by lit_decide
 theorem kgMul16Y4_ctl : ctlOk (keygenMul16Y 4) = true := by lit_decide
 
 theorem kgMul16Y_correct {k : Nat} (hk : k = 3 ∨ k = 4)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (KgMul.innerG (KpkeMul.rowKRs rowY16 k 512) Bodies.avx2 k) = true)
+      (KgMul.innerG KpkeMul.nttK16 (KpkeMul.rowKRs rowY16 k 512) Bodies.avx2 k) = true)
     (hctl : ctlOk (keygenMul16Y k) = true) (s : State) (hs : (kgMulK16 k).pre s) :
     ∃ t s', Exec isa (keygenMul16Y k) s t s' ∧ abiPreserved s s' ∧ (kgMulK16 k).post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := KgMul.wp_all16 hs hk hwo

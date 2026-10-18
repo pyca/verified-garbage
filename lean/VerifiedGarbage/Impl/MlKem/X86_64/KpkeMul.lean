@@ -184,13 +184,19 @@ def startE (B : Bodies) (k : Nat) : Prog isa :=
 
 /-! ### `vg_mlkem*_keygen_mul` -/
 
-/-- `NTT(s[j])` in place (at `r12`) and `NTT(e[j])` (at `r15`) to `t[j]` (at
-`rbp`); then the next `j`. -/
-def nttK (B : Bodies) : Prog isa :=
+/-- `NTT(s[j])` in place (at `r12`) and `NTT(e[j])` (at `r15`, by `nttE`,
+`se` bytes apart) to `t[j]` (at `rbp`); then the next `j`. -/
+def nttKg (B : Bodies) (nttE : Prog isa) (se : BitVec 32) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r12), .mov .rsi (.reg .rbx), .mov .r10 (.reg .r12)])
     (.seq B.nttO (.seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .rbx), .mov .r10 (.reg .rbp)])
-      (.seq B.nttO (.block [.alu .add .r12 (.imm 1024), .alu .add .r15 (.imm 1024), .alu .add .rbp (.imm 1024),
+      (.seq nttE (.block [.alu .add .r12 (.imm 1024), .alu .add .r15 (.imm se), .alu .add .rbp (.imm 1024),
         .alu .sub .r14 (.imm 1)]))))
+
+/-- `nttKg` of `e` as `u32`s. -/
+def nttK (B : Bodies) : Prog isa := nttKg B B.nttO 1024
+
+/-- `nttKg` with AVX2, of `e` as `u16`s. -/
+def nttK16 : Prog isa := nttKg Bodies.avx2 (nttR16 NttR.passBsR10) 512
 
 /-- Term `j` of row `i`: `Â[i, j] ×_T ŝ[j]`, with row `i` of `Â` at `r13` and
 `ŝ` at `r12`, added to the accumulator at `rbp`. -/
@@ -328,20 +334,22 @@ def decryptMulY (k : Nat) : Prog isa :=
     (.block restore))
 
 open KpkeMul in
-/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B` and the rows `row`. -/
-def keygenMulg (row : Prog isa) (B : Bodies) (k : Nat) : Prog isa :=
+/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`, the `NTT`s of
+`s` and `e` by `term` and the rows `row`. -/
+def keygenMulg (term row : Prog isa) (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov .r15 (.reg .rcx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop row .ne))))
+    (.seq (withMxcsr .rbx oMx (.seq (.loop term .ne) (.seq (.block (midK B k)) (.loop row .ne))))
     (.block restore))
 
 open KpkeMul in
 /-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/
-def keygenMul (B : Bodies) (k : Nat) : Prog isa := keygenMulg (rowOf B k) B k
+def keygenMul (B : Bodies) (k : Nat) : Prog isa := keygenMulg (nttK B) (rowOf B k) B k
 
 open KpkeMul in
-/-- `keygenMul` with AVX2, reading `Â` as `k²` polynomials of `u16`s (`rowY16`). -/
-def keygenMul16Y (k : Nat) : Prog isa := keygenMulg (rowKRs rowY16 k 512) Bodies.avx2 k
+/-- `keygenMul` with AVX2, reading `Â` as `k²` polynomials of `u16`s (`rowY16`)
+and `e` as `k` (`nttK16`). -/
+def keygenMul16Y (k : Nat) : Prog isa := keygenMulg nttK16 (rowKRs rowY16 k 512) Bodies.avx2 k
 
 open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k`, with the code of `B`. -/
