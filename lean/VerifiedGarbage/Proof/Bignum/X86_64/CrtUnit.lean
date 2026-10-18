@@ -77,7 +77,8 @@ theorem unitWith_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
     (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
     (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X)
-    (hstep : ∀ s₂, SubCtx s₂ B Z o w wx mx → XVals s₂ B o wx mx X → Keep (mmRegs ++ [.rdi]) s s₂ → Frm B (gRanges w) s.mem s₂.mem →
+    (hstep : ∀ s₂, SubCtx s₂ B Z o w wx mx → XVals s₂ B o wx mx X → Keep (mmRegs ++ ([.rdi] : List Reg)) s s₂ →
+      Frm B (gRanges w) s.mem s₂.mem →
       (ok → X ∣ N → wv s₂.mem B (slot w Public.aY) w % X = (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X) →
       WP isa (seqs step) s₂ fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx < X ∧

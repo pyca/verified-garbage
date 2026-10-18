@@ -85,12 +85,13 @@ theorem nChunks_two {w wx : Nat} (hw2 : w = 2 * wx) (hwx : 1 ≤ wx) : nChunks w
 `R_n² mod n` and `x R_n mod n` (`R_n = R_X²`). Only the prime's workspace
 changes. -/
 theorem prepWith_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
-    {sl o wx : Nat} {ok okY : Prop} {fin : List (Prog isa)} (hfne : fin ≠ []) (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
+    {sl o wx : Nat} {ok okY : Prop} {fin : List (Prog isa)} (hfne : fin ≠ []) (hg : Good s B Z w minv)
+    (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
     (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hw2 : w = 2 * wx) (hsl : sl < 32)
     (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hN : NVals s B w minv N ok)
     (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hfin : ∀ s₅, SubCtx s₅ B Z o w wx mx → XVals s₅ B o wx mx X → Keep (mmRegs ++ [.rdi]) s s₅ →
+    (hfin : ∀ s₅, SubCtx s₅ B Z o w wx mx → XVals s₅ B o wx mx X → Keep (mmRegs ++ ([.rdi] : List Reg)) s s₅ →
       Frm B [xRange o wx] s.mem s₅.mem → wv s₅.mem (off B o) (slot wx Public.aY) wx < X →
       (ok → X ∣ N → wv s₅.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx * 2) % X) →
       WP isa (seqs fin) s₅ fun s₆ => SubCtx s₆ B Z o w wx mx ∧ XVals s₆ B o wx mx X ∧
