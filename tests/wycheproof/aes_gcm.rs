@@ -54,6 +54,21 @@ fn stream_decrypt(key: &AesGcm, c: &Case) -> Result<Vec<u8>, Error> {
     Ok(buf)
 }
 
+/// Check an extension length against the prefix of a published full tag.
+fn truncated<const N: usize>(key: &AesGcm, c: &Case) {
+    let tag: &[u8; N] = c.tag.0[..N].try_into().unwrap();
+    let mut buf = c.ct.0.clone();
+    key.decrypt_in_place_truncated(&c.iv.0, &c.aad.0, &mut buf, tag)
+        .unwrap();
+    assert_eq!(buf, c.msg.0);
+    let mut d = key.decryptor(&c.iv.0).unwrap();
+    d.update_aad(&c.aad.0).unwrap();
+    buf.copy_from_slice(&c.ct.0);
+    d.update(&mut buf).unwrap();
+    d.finalize_truncated(tag).unwrap();
+    assert_eq!(buf, c.msg.0);
+}
+
 #[test]
 fn aes_gcm() {
     require_vectors!();
@@ -89,6 +104,12 @@ fn aes_gcm() {
                     assert_eq!((out, sealed), (c.ct.0.clone(), Ok(tag)), "tcId {id}");
                 }
                 assert_eq!(stream_decrypt(&key, c), Ok(c.msg.0.clone()), "tcId {id}");
+                truncated::<5>(&key, c);
+                truncated::<6>(&key, c);
+                truncated::<7>(&key, c);
+                truncated::<9>(&key, c);
+                truncated::<10>(&key, c);
+                truncated::<11>(&key, c);
                 valid.add();
             }
             // The file has no acceptable vectors.
