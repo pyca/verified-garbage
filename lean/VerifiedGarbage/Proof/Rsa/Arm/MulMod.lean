@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.MulModArithmetic
 public import VerifiedGarbage.Proof.Rsa.Arm.AddMod
 
 /-! # `mulMod` on ARMv7: `[a] = ([a] + ([y] mod 2^k) [x]) mod [m]`
@@ -28,18 +29,11 @@ abbrev mulArrs (y x a t : Nat) : List Nat := [y, x, a, t, t + 1, t + 2, t + 3]
 /-- One step's arithmetic. -/
 theorem mulMod_arith {A0 X0 Y0 M i : Nat} :
     ((A0 + Y0 % 2 ^ i * X0) % M + (Y0 / 2 ^ i) % 2 * (2 ^ i * X0 % M)) % M =
-      (A0 + Y0 % 2 ^ (i + 1) * X0) % M := by
-  have e : Y0 % 2 ^ (i + 1) = Y0 % 2 ^ i + 2 ^ i * ((Y0 / 2 ^ i) % 2) := by
-    rw [Nat.pow_succ, Nat.mod_mul, Nat.mul_comm]
-  rw [e, Nat.add_mul, ← Nat.add_assoc, Nat.add_mod, Nat.mod_mod, ← Nat.add_mod,
-    Nat.add_mod (A0 + Y0 % 2 ^ i * X0), Nat.mul_mod ((Y0 / 2 ^ i) % 2), Nat.mod_mod, ← Nat.mul_mod,
-    ← Nat.add_mod]
-  congr 1
-  rw [Nat.mul_comm (2 ^ i)]
-  ac_rfl
+      (A0 + Y0 % 2 ^ (i + 1) * X0) % M :=
+  VG.Proof.Rsa.mulMod_arith
 
-theorem double_arith {X0 M i : Nat} : (2 ^ i * X0 % M + 2 ^ i * X0 % M) % M = 2 ^ (i + 1) * X0 % M := by
-  rw [← Nat.add_mod, ← Nat.two_mul, Nat.pow_succ, Nat.mul_comm (2 ^ i) 2, Nat.mul_assoc]
+theorem double_arith {X0 M i : Nat} : (2 ^ i * X0 % M + 2 ^ i * X0 % M) % M = 2 ^ (i + 1) * X0 % M :=
+  VG.Proof.Rsa.double_arith
 
 theorem nm0 {j : Nat} : ∀ k ∈ ([] : List Nat), k ≠ j := fun _ h => absurd h List.not_mem_nil
 
