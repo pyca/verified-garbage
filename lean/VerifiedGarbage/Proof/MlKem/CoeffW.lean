@@ -37,6 +37,10 @@ theorem cval_true (m : Mem) (p : Addr) (i : Nat) : cval true m p i = (coeffAtW 1
 
 theorem cAddr_false (p : Addr) (i : Nat) : cAddr false p i = coeffAddr p i := rfl
 
+/-- A 32-bit store at coefficient `i` stays in the 1024-byte slot of a polynomial. -/
+theorem cs_store_le (w16 : Bool) {i : Nat} (hi : i < 256) : cs w16 * i + 4 ≤ 1024 := by
+  cases w16 <;> simp only [cs, Bool.false_eq_true, ite_false, ite_true] <;> omega
+
 theorem cAddr_add (w16 : Bool) (p : Addr) (j k : Nat) :
     cAddr w16 p j + BitVec.ofNat 64 (cs w16 * k) = cAddr w16 p (j + k) := by
   simp only [cAddr, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]

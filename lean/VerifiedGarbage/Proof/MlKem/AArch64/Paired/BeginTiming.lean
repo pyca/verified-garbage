@@ -27,17 +27,19 @@ structure BeginInput (sb ss oa ob : Nat) (p seed outA outB table : Addr) (s : St
  context : Context p outA outB table s
  symbol : s.syms "VG_MLKEM_REJ_SHUFFLE"=table
 
-structure Prepared (A B : Spec.Sha3.State) (oa ob : Nat) (p table : Addr) (s t : State) : Prop where
+structure PreparedW (w16 : Bool) (A B : Spec.Sha3.State) (oa ob : Nat) (p table : Addr) (s t : State) : Prop where
  keep : Keep prepareRegs s t
- ready : InitialReady (shakeStream A) (shakeStream B) oa ob t
+ ready : InitialReadyW w16 (shakeStream A) (shakeStream B) oa ob t
  pointer : t.gpr .x19=p
  tablePtr : t.gpr .x16=table
 
-theorem prepare_ok {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
+abbrev Prepared := PreparedW false
+
+theorem prepare_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
     (h : BeginInput sb ss oa ob p seed outA outB table s) :
     WP isa (prepareCode sb ss a b k) s
-      (Prepared (seedState s.mem seed a k) (seedState s.mem seed b k) oa ob p table s) := by
+      (PreparedW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) oa ob p table s) := by
   refine WP.seq (WP.mono_syms (start_ok (a:=a) (b:=b) (k:=k) hss hsb h8
     h.ptr h.seedPtr h.readable h.context.scratch h.separate) fun u ⟨ku,fu,_,u19,_,_,buA,buB⟩ sy => ?_)
   have cu : Context p outA outB table u := h.context.frame ku.rd ku.wr (fu.mono (by simp [stepWrites]))
@@ -65,8 +67,8 @@ theorem prepare_ok {s : State} {p seed outA outB table : Addr} {sb ss a b k oa o
       intro r hr; rw [List.mem_singleton.mp hr]
       exact Offset.disjoint p (by decide) (by decide) (by decide)
     exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-  have ea := ctv.env (N:=168) (off:=400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-  have eb := ctv.env (N:=168) (off:=904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+  have ea := ctv.env (w16 := w16) (N:=168) (off:=400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+  have eb := ctv.env (w16 := w16) (N:=168) (off:=904) v16 (by decide) (by decide) (Or.inr rfl) streamB
   refine ⟨(ku.trans kv).mono (by simp [prepareRegs]),?_,v19,v16⟩
   refine ⟨⟨?_,cv,?_,?_,?_⟩,⟨?_,cv,?_,?_,?_⟩,?_,?_⟩
   · rw [v19,v28,h.outLeft]; exact ea
@@ -92,17 +94,17 @@ theorem prepare_ct (sb ss a b k : Nat) : ConstantTime isa (fun _=>True)
       (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_right hs]; rfl)
     taint_decide
 
-theorem begin_relCT {s u : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
+theorem begin_relCT {w16 : Bool} {s u : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoa : oa<65536) (hob : ob<65536)
     (ps : BeginInput sb ss oa ob p seed outA outB table s) (pu : BeginInput sb ss oa ob p seed outA outB table u)
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedA : seedState s.mem seed a k=seedState u.mem seed a k)
     (seedB : seedState s.mem seed b k=seedState u.mem seed b k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob)
-      (fun t v=>BeginPost (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s t ∧
-        BeginPost (seedState u.mem seed a k) (seedState u.mem seed b k) p outA outB table u v) := by
-  let R := fun t v : State=>Prepared (seedState s.mem seed a k) (seedState s.mem seed b k) oa ob p table s t ∧
-    Prepared (seedState u.mem seed a k) (seedState u.mem seed b k) oa ob p table u v
+    RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob w16)
+      (fun t v=>BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s t ∧
+        BeginPostW w16 (seedState u.mem seed a k) (seedState u.mem seed b k) p outA outB table u v) := by
+  let R := fun t v : State=>PreparedW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) oa ob p table s t ∧
+    PreparedW w16 (seedState u.mem seed a k) (seedState u.mem seed b k) oa ob p table u v
   have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sb ss a b k) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
@@ -110,7 +112,7 @@ theorem begin_relCT {s u : State} {p seed outA outB table : Addr} {sb ss a b k o
       (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact base)) et ev,
       exec_post (prepare_ok hss hsb h8 ps) et,exec_post (prepare_ok hss hsb h8 pu) ev⟩
   have grouped : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (prepareCode sb ss a b k) (initialCode oa ob)) (fun _ _=>True) := by
+      (.seq (prepareCode sb ss a b k) (initialCode oa ob w16)) (fun _ _=>True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
     exact initial_relCT hoa hob h.1.ready (by rw [seedA,seedB]; exact h.2.ready)
@@ -118,7 +120,7 @@ theorem begin_relCT {s u : State} {p seed outA outB table : Addr} {sb ss a b k o
       (h.1.pointer.trans h.2.pointer.symm)
       (by rw [h.1.keep.get .x28,h.2.keep.get .x28,base])
       (h.1.tablePtr.trans h.2.tablePtr.symm) t v tr ur t' v' ⟨rfl,rfl⟩ et ev
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob) (fun _ _=>True) :=
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob w16) (fun _ _=>True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v

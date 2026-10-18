@@ -55,11 +55,11 @@ theorem segment_ok {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte}
     WP isa (Impl.MlKem.AArch64.Rej8.rejLoop w16) s (PostW w16 initial N B aP s) :=
   loop_ok h.env hN hm h.inv h.constants
 
-theorem segment_relCT {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s u : State} (hs : Entry initial N B bP aP s) (hu : Entry initial N B bP aP u)
+theorem segment_relCT {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s u : State} (hs : EntryW w16 initial N B bP aP s) (hu : EntryW w16 initial N B bP aP u)
     (hsp : s.sp=u.sp) (htab : s.gpr .x16=u.gpr .x16) (hN : 0<N) (hm : N%4=0) :
-    RelCT isa (fun a b => a=s ∧ b=u) Impl.MlKem.AArch64.Rej8.rejLoop
-      (fun a b => Post initial N B aP s a ∧ Post initial N B aP u b) :=
+    RelCT isa (fun a b => a=s ∧ b=u) (Impl.MlKem.AArch64.Rej8.rejLoop w16)
+      (fun a b => PostW w16 initial N B aP s a ∧ PostW w16 initial N B aP u b) :=
   RelCT.mono (loop_relCT hs.env hu.env hsp htab hN hm)
     (by intro a b h; rcases h with ⟨rfl,rfl⟩; exact ⟨hs.inv,hu.inv,hs.constants,hu.constants⟩)
     (fun _ _ h => h)

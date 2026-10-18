@@ -36,8 +36,8 @@ theorem loadCheckpoint_ct (slot : Nat) : ConstantTime isa (fun _ => True)
     (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)]) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19]) (fun _ _ _ _ h => h) (hc := .block []) rfl
 
-theorem zeroSuffix_ct : ConstantTime isa (fun _ => True)
-    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x3,.x4])) Rej8.zeroSuffix :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x3,.x4]) (fun _ _ _ _ h => h) (by taint_decide)
+theorem zeroSuffix_ct (w16 : Bool) : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x3,.x4])) (Rej8.zeroSuffix w16) := by
+  cases w16 <;> exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x3,.x4]) (fun _ _ _ _ h => h) (by taint_decide)
 
 end VG.Proof.MlKem.AArch64.Paired
