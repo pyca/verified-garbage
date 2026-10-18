@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on x86-64 -/
@@ -37,6 +38,14 @@ def artifacts : List Artifact := [
         `vg_ghash_pclmul`."]
     code := Impl.Gcm.X86_64.Vpclmul.ghash
     verified := Proof.Gcm.X86_64.Vpclmul.ghash_verified
+    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
+  Spec.Gcm.prepareApi.artifact X86_64.target {
+    suffix := "_vpclmul"
+    notes := ["Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute \
+        them, two in each register, already prepared, then each pair times `H'¹⁶` twice, eight \
+        independent multiplications at a time, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
+    code := Impl.Gcm.X86_64.Prepare.prepare
+    verified := Proof.Gcm.X86_64.Prepare.prepare_verified
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] }]
 
 end VG.Artifacts.Gcm.X86_64
