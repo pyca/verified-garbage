@@ -121,11 +121,21 @@ class Output(unittest.TestCase):
         self.assertEqual(len({e["runs"] for e in icx}), 1)
         self.assertTrue(all("shards" not in e for e in full["cpu"]))
 
-    def test_push_builds_every_job(self):
+    def test_push_builds_one_job_per_cache(self):
         push, full = run("push"), run("merge_group")
         self.assertEqual((push["arches"], push["all"]), ([], False))
-        for job in ("rust", "thumb", "cpu"):
+        for job in ("rust", "thumb"):
             self.assertEqual(push[job], [dict(e, tests=False) for e in full[job]])
+        # The CPU jobs, which build the same tests, once per runner
+        # architecture and container: the first of each.
+        cpu = [dict(e, tests=False) for e in full["cpu"]]
+        self.assertEqual(push["cpu"], [e for i, e in enumerate(cpu)
+                                       if all(rust_arches.cache_of(e) != rust_arches.cache_of(d)
+                                              for d in cpu[:i])])
+        self.assertEqual({rust_arches.cache_of(e) for e in push["cpu"]},
+                         {rust_arches.cache_of(e) for e in full["cpu"]})
+        self.assertEqual({e.get("arch", "x86_64") for e in push["cpu"]}, {"x86_64", "x86", "aarch64"})
+        self.assertEqual(len(push["cpu"]), 3)
 
 
 class Workflow(unittest.TestCase):
