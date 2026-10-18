@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h`, `vg_mlkem1024_decaps` and `vg_mlkem1024_check_ek`
@@ -12,7 +13,9 @@ public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
 The key generation, encapsulation and decapsulation of ML-KEM
 (`Impl/MlKem/X86_64/`) for ML-KEM-1024 (`kem1024`): `k = 4`, `d_u = 11`
 and `d_v = 5`, which `vg_mlkem1024_compress_encode` and
-`vg_mlkem1024_decode_decompress` (`Compress.lean`) take. The 16 entries of
+`vg_mlkem1024_decode_decompress` (`Compress.lean`) take, or, with the
+implementations `Codecs.avx2`, `vg_mlkem1024_compress_encode_avx2` and
+`vg_mlkem1024_decode_decompress_avx2` (`CompressAvx2.lean`). The 16 entries of
 `Â` are polynomials 17–32 of the working space (`Â[i, j]` is polynomial
 `17 + 4i + j`), after the accumulator (polynomial 15) and the products
 (polynomial 16), and the ciphertext of the re-encryption (1568 bytes) is in
@@ -29,6 +32,25 @@ namespace VG.Impl.MlKem1024.X86_64
 
 open VG.X86_64 VG.Impl.MlKem.X86_64
 
+/-- The compression and decompression of ML-KEM-1024's widths that go with the
+implementations `cs` of ML-KEM-768's (`Codecs`): the baseline ones, or those
+with AVX2. -/
+def ceN1024 : Codecs → String
+  | .base => "vg_mlkem1024_compress_encode"
+  | .avx2 => "vg_mlkem1024_compress_encode_avx2"
+
+def ce1024 : Codecs → Prog isa
+  | .base => compressEncode1024
+  | .avx2 => compressEncode1024Avx2
+
+def ddN1024 : Codecs → String
+  | .base => "vg_mlkem1024_decode_decompress"
+  | .avx2 => "vg_mlkem1024_decode_decompress_avx2"
+
+def dd1024 : Codecs → Prog isa
+  | .base => decodeDecompress1024
+  | .avx2 => decodeDecompress1024Avx2
+
 /-- ML-KEM-1024. -/
 def kem1024 : Kem where
   p := Spec.MlKem.mlKem1024
@@ -39,10 +61,10 @@ def kem1024 : Kem where
   pCT := 33
   pU := 8
   pZ := 40
-  ceN := fun _ => "vg_mlkem1024_compress_encode"
-  ce := fun _ => compressEncode1024
-  ddN := fun _ => "vg_mlkem1024_decode_decompress"
-  dd := fun _ => decodeDecompress1024
+  ceN := ceN1024
+  ce := ce1024
+  ddN := ddN1024
+  dd := dd1024
 
 abbrev keyGen1024 (c : Callee4) : Prog isa := kemKeyGen kem1024 c
 abbrev encapsH1024 (c : Callee4) : Prog isa := kemEncapsH kem1024 c

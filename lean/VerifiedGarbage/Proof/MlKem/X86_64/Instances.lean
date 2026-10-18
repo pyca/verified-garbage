@@ -30,13 +30,16 @@ theorem decaps_spSafe (v : Sample4Impl) :
 theorem keyGen1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.keyGen1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
   s4_sp v
+  all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
 
 theorem encapsH1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.encapsH1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
   s4_sp v
+  all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
 
 theorem decaps1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.decaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
   s4_sp v
+  all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
 
 end VG.Proof.MlKem.X86_64
