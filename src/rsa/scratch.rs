@@ -12,7 +12,6 @@ use core::{
     sync::atomic::AtomicPtr,
 };
 
-#[cfg(any(test, not(target_arch = "x86")))]
 use core::sync::atomic::Ordering;
 
 /// A cache line of a [`Scratch`].
@@ -76,7 +75,6 @@ impl VerifyScratch {
     /// is the message) wipes it; signature verification, whose every value
     /// (the modulus, the signature, the encoded message it recovers and the
     /// intermediates of a public exponentiation of it) is public, need not.
-    #[cfg(any(test, not(target_arch = "x86")))]
     pub(crate) fn take(&self, words: usize, wipe: bool) -> ScratchLease<'_> {
         let pointer = self.0.swap(ptr::null_mut(), Ordering::Acquire);
         let mut buffer = if pointer.is_null() {
@@ -126,7 +124,6 @@ impl Drop for VerifyScratch {
     }
 }
 
-#[cfg(any(test, not(target_arch = "x86")))]
 pub(crate) struct ScratchLease<'a> {
     pool: &'a VerifyScratch,
     // The atomic cache transfers the Vec descriptor through one stable pointer.
@@ -134,20 +131,17 @@ pub(crate) struct ScratchLease<'a> {
     buffer: Option<Box<Vec<u64>>>,
     wipe: bool,
 }
-#[cfg(any(test, not(target_arch = "x86")))]
 impl Deref for ScratchLease<'_> {
     type Target = [u64];
     fn deref(&self) -> &[u64] {
         self.buffer.as_ref().unwrap()
     }
 }
-#[cfg(any(test, not(target_arch = "x86")))]
 impl DerefMut for ScratchLease<'_> {
     fn deref_mut(&mut self) -> &mut [u64] {
         self.buffer.as_mut().unwrap()
     }
 }
-#[cfg(any(test, not(target_arch = "x86")))]
 impl Drop for ScratchLease<'_> {
     fn drop(&mut self) {
         let mut buffer = self.buffer.take().unwrap();

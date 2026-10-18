@@ -373,7 +373,6 @@ pub(crate) mod tests {
     }
 
     /// `composite(32, false)` loaded, with `d = 1`, and its public key.
-    #[cfg(not(target_arch = "x86"))]
     pub(crate) fn composite_key() -> (PrivateKey, PublicKey) {
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         (
