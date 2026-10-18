@@ -25,11 +25,8 @@ theorem keygen_depth (v : Backend) :
     show Random.sample.x86_64Depth = 0 from rfl,
     show RandomSign.finish.x86_64Depth = 0 from rfl,
     Nat.zero_max, Nat.max_zero]
-  have h1 := v.parametersDepth
-  have h2 := v.deriveDepth
-  have h3 : (Instr.alloc Random.frameBytes).frameBytes = 248 := rfl
-  rw [h3]
-  omega
+  have hm := Nat.max_le.mpr ⟨Nat.add_le_add_right v.parametersDepth 8, Nat.add_le_add_right v.deriveDepth 8⟩
+  exact Nat.add_le_add_right hm 248
 
 structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : State) : Prop where
   rd : t.rd = s.rd

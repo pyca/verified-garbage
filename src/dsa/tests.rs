@@ -303,3 +303,148 @@ fn import_lengths_errors_and_backends() {
         assert!(!format!("{error:?}").is_empty());
     }
 }
+
+#[cfg(target_arch = "x86_64")]
+fn domain(
+    v: &alloc::collections::BTreeMap<alloc::string::String, alloc::string::String>,
+) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    (p, q, g)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn cavp_generated_keys() {
+    for (i, v) in vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true)
+        .iter()
+        .enumerate()
+    {
+        let (p, q, g) = domain(v);
+        let y = hex(&v["Y"], p.len());
+        let x = hex(&v["X"], q.len());
+        // A published x is below q, so it is accepted as the first draw.
+        let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+            buf.copy_from_slice(&x);
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            key.packed.0,
+            [&p[..], &q, &g, &y, &x].concat(),
+            "vector {i}"
+        );
+        assert_eq!(
+            key.public.packed,
+            [&p[..], &q, &g, &y].concat(),
+            "vector {i}"
+        );
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn generated_key_rejection_and_replay() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let (p, q, g) = domain(v);
+    let x = hex(&v["X"], q.len());
+    let mut draws = 0;
+    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        if draws == 0 {
+            buf.fill(0);
+        } else {
+            buf.copy_from_slice(&x);
+        }
+        draws += 1;
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(draws, 2);
+    assert_eq!(&key.packed.0[3 * p.len() + q.len()..], &x[..]);
+    let digest = [0x42; 32];
+    let signature = key.sign(&digest).unwrap();
+    assert!(key.public_key().verify(&digest, &signature));
+}
+
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn generated_keys_sign_and_verify() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    for (p_len, q_len) in [(128, 20), (256, 28), (256, 32), (384, 32)] {
+        let v = cases
+            .iter()
+            .find(|v| hex(&v["P"], 0).len() == p_len && hex(&v["Q"], 0).len() == q_len)
+            .unwrap();
+        let (p, q, g) = domain(v);
+        let key = PrivateKey::generate(&p, &q, &g).unwrap();
+        let other = PrivateKey::generate(&p, &q, &g).unwrap();
+        assert_ne!(key.packed.0, other.packed.0);
+        let digest = [0x5a; 32];
+        let signature = key.sign(&digest).unwrap();
+        assert!(key.public_key().verify(&digest, &signature));
+        assert!(!other.public_key().verify(&digest, &signature));
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn generation_errors() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let (p, q, g) = domain(&cases[0]);
+    for (p, q, g) in [
+        (&p[..], &q[..], &g[1..]),
+        (&p[1..], &q[..], &g[1..]),
+        (&p, &q[1..], &g),
+    ] {
+        assert_eq!(
+            PrivateKey::generate_with_rng(p, q, g, |_| panic!("no draw for bad widths"))
+                .unwrap_err(),
+            Error::Length
+        );
+    }
+    assert_eq!(
+        PrivateKey::generate_with_rng(&p, &q, &g, |_| Err(Error::Randomness)).unwrap_err(),
+        Error::Randomness
+    );
+    let mut draws = 0;
+    assert_eq!(
+        PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+            draws += 1;
+            if draws == 1 {
+                buf.fill(0);
+                Ok(())
+            } else {
+                Err(Error::Randomness)
+            }
+        })
+        .unwrap_err(),
+        Error::Randomness
+    );
+    draws = 0;
+    assert_eq!(
+        PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+            buf.fill(0);
+            draws += 1;
+            Ok(())
+        })
+        .unwrap_err(),
+        Error::InvalidKeyOrNonce
+    );
+    assert_eq!(draws, 128);
+    // g = p - 1 has order two, so the domain check fails before any draw is used.
+    let mut minus_one = p.clone();
+    *minus_one.last_mut().unwrap() -= 1;
+    draws = 0;
+    assert_eq!(
+        PrivateKey::generate_with_rng(&p, &q, &minus_one, |buf| {
+            buf.fill(1);
+            draws += 1;
+            Ok(())
+        })
+        .unwrap_err(),
+        Error::InvalidKeyOrNonce
+    );
+    assert_eq!(draws, 1);
+}

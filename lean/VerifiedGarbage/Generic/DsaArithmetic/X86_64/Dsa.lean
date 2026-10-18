@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyVerified
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -13,6 +14,34 @@ namespace VG.Generic.DsaArithmetic.X86_64.Dsa
 open VG.Proof.Dsa.X86_64
 
 def artifacts (v : Backend) : List Artifact := [
+  Spec.Dsa.generateKeyApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["Checks the domain before consuming randomness, samples x with the \
+      verified rejection sampler, then derives y = g^x with the selected Montgomery backend. \
+      Every failure zeros the entire output."]
+    code := Impl.Dsa.X86_64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
+      (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul)
+    stack := v.stack + 256
+    verified := keygen_verified v
+    spSafe := keygen_sp v
+    features := v.features },
+  Spec.Dsa.checkParametersApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["g^q mod p uses the selected Montgomery backend."]
+    code := Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul
+    stack := v.stack
+    verified := v.parametersVerified
+    spSafe := v.parametersSp
+    features := v.features },
+  Spec.Dsa.deriveKeyApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["y = g^x mod p uses the selected Montgomery backend. \
+      Every failure zeros the entire output."]
+    code := Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul
+    stack := v.stack
+    verified := v.deriveVerified
+    spSafe := v.deriveSp
+    features := v.features },
   Spec.Dsa.randomSignApi.artifact X86_64.target {
     suffix := v.suffix
     notes := ["Rejection sampling and signing retries are verified \
