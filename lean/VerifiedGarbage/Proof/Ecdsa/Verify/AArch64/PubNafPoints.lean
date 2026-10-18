@@ -104,16 +104,19 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
         exact hrep) fun s₅ W => ?_
   have hs₅ := W.scr
-  have F₅ := F₃.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
+  have F₅ := F₃.unch h7 hn ((fixedOk_winX.append (fixedOk_slW (by decide))).append (fixedOk_cacheQ hc hn6))
+    W.unch
   have nw : ∀ i < 45, i ∉ ptsW → i ∉ otherI ++ tblI ++ [TMP] := by decide
   have v₅ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₅ i = sv c base s₃ i := fun hi hl =>
-    sv_unch W.unch h7 hn hi (apart_append (apart_winX hi) (apart_slW (nw _ hi hl)))
+    sv_unch W.unch h7 hn hi (apart_append (apart_append (apart_winX hi) (apart_slW (nw _ hi hl)))
+      (apart_cacheQ hc hn6 hi))
   have q₅ := hQ₂ _ _ _ (by rw [← W₃ (i := V) (by decide) (by decide)]; exact W.q)
   -- The sum.
   have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
-      exact sv_unch W.unch h7 hn (by decide) (apart_append (apart_winX (by decide)) (apart_slW (by decide)))
+      exact sv_unch W.unch h7 hn (by decide) (apart_append (apart_append (apart_winX (by decide))
+        (apart_slW (by decide))) (apart_cacheQ hc hn6 (by decide)))
   refine WP.mono (sum_ok hc hs₅ W.mod (fun i hi => ?_)) fun s₆ ⟨hs₆, rd₆, wr₆, U₆, M₆, rz₆, t₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -131,20 +134,21 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
     (sv_unch U₆ h7 hn hi (apart_slW (fun h => hl (sub₆ _ h)))).trans ((v₅ hi hl).trans (W₃ hi hl))
   have sub₅ : ∀ i ∈ otherI ++ tblI ++ [TMP], i ∈ ptsW ++ tblI := by decide
   have UW : Unch base ([(bitsAt c.n 0, 64 * c.n), (bitsAt c.n 0 + 64 * c.n, 8 * c.combCfg.zw)] ++
-      winX c ++ slW c (ptsW ++ tblI)) s.mem s₆.mem := by
+      winX c ++ slW c (ptsW ++ tblI) ++ PubNaf.cacheW (winQ c)) s.mem s₆.mem := by
     refine (U₁.trans (U₂.trans (U₃.trans (W.unch.trans U₆)))).mono fun w hw => ?_
     simp only [List.mem_append] at hw ⊢
-    rcases hw with hw | (hw | hw) | hw | (hw | hw) | hw
-    · exact Or.inl (Or.inl (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp hw))))
+    rcases hw with hw | (hw | hw) | hw | ((hw | hw) | hw) | hw
+    · exact Or.inl (Or.inl (Or.inl (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp hw)))))
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₂ i hi)))
-    · exact Or.inl (Or.inl (List.mem_cons_of_mem _ hw))
+      exact Or.inl (Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₂ i hi))))
+    · exact Or.inl (Or.inl (Or.inl (List.mem_cons_of_mem _ hw)))
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₃ i hi)))
-    · exact Or.inl (Or.inr hw)
-    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw; exact Or.inr (List.mem_map_of_mem (sub₅ i hi))
+      exact Or.inl (Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₃ i hi))))
+    · exact Or.inl (Or.inl (Or.inr hw))
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw; exact Or.inl (Or.inr (List.mem_map_of_mem (sub₅ i hi)))
+    · exact Or.inr hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₆ i hi)))
+      exact Or.inl (Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₆ i hi))))
   have tu : ∀ {i j}, i ∈ [UX, UY, UZ] → j ∈ [RX, RY, RZ] → sv c base s₃ i = sv c base s₂ j →
       tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s₂ (c.sl j) := fun hi _ e => by
     show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s₂ _)
@@ -169,7 +173,7 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
   · rw [UW.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
     · exact hM.flag
     · simp only [List.mem_append] at hw
-      rcases hw with (hw | hw) | hw
+      rcases hw with ((hw | hw) | hw) | hw
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         have := sl_below_bits c (i := FLAG) (by decide) 0 0
         rcases hw with rfl | rfl <;> exact Or.inl (by dsimp only; omega)
@@ -177,9 +181,11 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
           (fun h => Or.inl (by omega)) (fun h => Or.inr h)
       · exact (apart_slW (c := c) (i := FLAG) (by decide)) w hw |>.elim
           (fun h => Or.inl (by omega)) (fun h => Or.inr h)
+      · exact (apart_cacheQ hc hn6 (i := FLAG) (by decide)) w hw |>.elim
+          (fun h => Or.inl (by omega)) (fun h => Or.inr h)
   · refine unch_whole (hM.unch.trans UW) fun w hw => ?_
     simp only [List.mem_append] at hw
-    rcases hw with hw | (hw | hw) | hw
+    rcases hw with hw | ((hw | hw) | hw) | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add _)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
@@ -197,5 +203,8 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
       · show c.sl WB + 64 * (c.n + 1) ≤ size; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact sl_le' c h7 ((show ∀ i ∈ ptsW ++ tblI, i < 112 by decide) i hi)
+    · have := (cacheLayQ hc hn6).top
+      rw [PubNaf.cacheW, List.mem_singleton] at hw
+      subst hw; exact this
 
 end VG.Proof.Ecdsa.Verify.AArch64
