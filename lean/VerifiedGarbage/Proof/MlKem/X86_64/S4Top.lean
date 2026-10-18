@@ -88,7 +88,7 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PCW w16 X σ 4 s) :
 /-- Everything after the prologue, the round constants and the padded seeds. -/
 theorem body_ok {fast : Bool} {s : State} (h : SqInvW w16 σ 0 s) :
     WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
-      (.seq (run1 0) (.seq (run1 1) (.seq (run1 2) (.seq (run1 3) (tail4 fast))))))) s fun s' =>
+      (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (.seq (run1 3 w16) (tail4 fast w16))))))) s fun s' =>
       (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) (sqT_of h)) fun _ ⟨q₃, _⟩ =>
     WP.seq (WP.mono (p1_zero_ok hp q₃) fun _ p₀ => ?_))
@@ -102,9 +102,10 @@ theorem body_ok {fast : Bool} {s : State} (h : SqInvW w16 σ 0 s) :
 end
 
 theorem correct {fast : Bool} (σ : State) (hs : (sample4KW w16).pre σ) :
-    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ (sample4KW w16).post σ s' := by
+    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast w16) σ t s' ∧ abiPreserved σ s' ∧
+      (sample4KW w16).post σ s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok (fast := fast) hp h)
-  exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2, hF.1⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> cases w16 <;> decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlKem.X86_64.S4
