@@ -19,7 +19,8 @@ namespace VG.Proof.Bignum.X86_64.Ifma
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Impl.Rsa.X86_64.CrtIfma
-open VG.Proof.Bignum.X86_64.AmmSym (ops Ctx Keeps)
+open VG.Proof.Bignum (word)
+open VG.Proof.Bignum.X86_64.AmmSym (ops Ctx Keeps wrList)
 
 /-! ## The zeroing -/
 
@@ -238,5 +239,86 @@ theorem startsU_ok (e : Env lay2048 s₀ a m k bl) (g : GlobU s₀ s) (hz : ∀ 
     exact hz _ (by omega) t ht
 
 end
+
+/-! ## The whole multiplication -/
+
+theorem ammCoreU_code : ammCoreU lay2048 = .block (Instr.mov .r10 (.reg .rbx) :: (zerosU ++
+    ((List.range lay2048.nl).flatMap (ammStartU lay2048) ++
+    ((List.range lay2048.S).flatMap (fun i => (List.range lay2048.nl).flatMap fun p => ammStepU lay2048 p i) ++
+    (storeCode .r11 (accStores lay2048) ++ (Instr.movImm64 .r12 mask52 :: carryOut lay2048)))))) := by
+  simp only [ammCoreU, zerosU, ← accStores_code, List.append_assoc, List.cons_append, List.nil_append]
+
+/-- `ammCoreU lay2048` ends as `ammCore lay2048` does (`ammCore_ok`). -/
+theorem ammCoreU_ok {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat → Nat}
+    {bl : Nat → Nat → Nat} (e : Env lay2048 (s.setReg .r10 (s.gpr .rbx)) a m k bl) (hB : s.gpr .r11 = B)
+    (hs : Scr s B (lay2048.D * (lay2048.nl - 1) + lay2048.NB)) :
+    WP isa (ammCoreU lay2048) s fun s' =>
+      (∀ p < lay2048.nl, ∀ q < lay2048.L, word s'.mem B (lay2048.D * p + lay2048.off q) =
+        BitVec.ofNat 64 (carried (lm lay2048 a m k bl p lay2048.S) q)) ∧
+      (∀ p < lay2048.nl, s'.gpr (cReg p) = BitVec.ofNat 64 (carryIn (lm lay2048 a m k bl p lay2048.S) lay2048.L)) ∧
+      OutN lay2048 B 0 lay2048.NB s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.gpr .r12 = mask52 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hl : AmmOk lay2048 := .inl (.inl rfl)
+  have hst := hl.steps
+  have hS := S2048
+  have hD := hl.D_bounds
+  have hDn : lay2048.D * (lay2048.nl - 1) ≤ lay2048.D := D_le hl (show lay2048.nl - 1 < lay2048.nl by decide)
+  rw [ammCoreU_code, WP.block_cons_iff]
+  refine ⟨s.setReg .r10 (s.gpr .rbx), rfl, ?_⟩
+  rw [WP.block_append_iff]
+  refine WP.mono zerosU_ok fun s₁ ⟨hz, k₁⟩ => ?_
+  have g₁ : GlobU (s.setReg .r10 (s.gpr .rbx)) s₁ :=
+    ⟨fun t ht => by rw [hz (uzN lay2048) (by decide) t ht, ite_eq_left (by decide)],
+      k₁.gpr _ (by decide), k₁.gpr _ (by decide), k₁.gpr _ (by decide), k₁.mem, k₁.rd, k₁.wr⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (startsU_ok e g₁ fun r hr t ht => by rw [hz r (by omega) t ht, ite_eq_left (Or.inl hr)])
+    fun s₂ ⟨h₂, g₂, x₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (stepsU_chain e lay2048.S (Nat.le_refl _) s₂ h₂) fun s₃ ⟨h₃, g₃, x₃⟩ => ?_
+  have hB₃ : s₃.gpr .r11 = B := by
+    rw [g₃ _ (by decide), g₂ _ (by decide), k₁.gpr _ (by decide)]
+    exact (RegUpd.gpr_setReg_of_ne _ _ (by decide)).trans hB
+  have wr₃ : s₃.wr = s.wr := by rw [h₃.1.wr]; rfl
+  have m₃ : s₃.mem = s.mem := h₃.1.mem
+  rw [WP.block_append_iff]
+  refine WP.mono (stores_gen (accStores lay2048) s₃ hB₃ fun x hx =>
+    wr₃ ▸ (let ⟨_, h, c⟩ := hs.region (accStores_lt x hx) (by decide); ⟨_, h, c⟩)) fun s₄ h₄ => ?_
+  subst h₄
+  rw [WP.block_cons_iff]
+  refine ⟨_, rfl, ?_⟩
+  refine WP.mono (carryOut_ok hl (B := B) (L := fun p => lm lay2048 a m k bl p lay2048.S)
+    (fun p _ q hq => lm_lt (by decide) hst.2.2.2.1 hq)
+    (fun d hd => by rw [RegUpd.wr_setReg, wr₃]; exact hs.st hd)
+    (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₃)
+    (RegUpd.gpr_setReg_self _ _ _) fun p hp q hq => ?_) fun s' ⟨h, g, rd, wr, x⟩ => ?_
+  · have h1 := Nat.mod_lt q (show 0 < lay2048.R by decide)
+    have h2 : q / lay2048.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
+    have := read_stores hl s₃.mem B s₃ hp (k := q % lay2048.R) (t := q / lay2048.R) h1 h2
+    have er : regOf lay2048 p (q % lay2048.R) (lay2048.S % lay2048.R) =
+        regOf lay2048 p (q % lay2048.R) lay2048.S := by
+      rw [regOf_eq2048, regOf_eq2048, R2048, hS]; omega
+    rw [er, (h₃.2 p hp).lanes _ h1 _ h2, ite_eq_right (by omega), Nat.add_zero, Nat.mod_add_div] at this
+    rw [RegUpd.mem_setReg, show lay2048.D * p + lay2048.off q =
+      lay2048.D * p + 32 * (q % lay2048.R) + 8 * (q / lay2048.R) by unfold Lay.off; omega]
+    exact this
+  refine ⟨fun p hp q hq => by rw [h.words p hp q hq]; simp only [hq, true_or, ite_true],
+    fun p hp => by rw [h.c p hp]; simp only [Nat.not_lt_zero, ↓reduceIte], ?_,
+    fun r r1 r2 r3 r4 r5 r6 r7 => ?_,
+    by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact RegUpd.gpr_setReg_self _ _ _,
+    by rw [rd, RegUpd.rd_setReg, h₃.1.rd]; rfl, by rw [wr, RegUpd.wr_setReg, wr₃],
+    by rw [x, RegUpd.mxcsr_setReg, x₃, x₂, k₁.mxcsr]; rfl⟩
+  · have o := wrList_outN (l := lay2048) B (o := 0) (n := lay2048.NB) (by omega)
+      ((accStores lay2048).map fun x => (x.1, s₃.vy x.2)) s₃.mem fun x hx => by
+        obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+        exact accStores_win y hy
+    have hf : OutN lay2048 B 0 lay2048.NB
+        (wrList s₃.mem B ((accStores lay2048).map fun x => (x.1, s₃.vy x.2))) s'.mem := h.frame
+    have o' : OutN lay2048 B 0 lay2048.NB s.mem
+        (wrList s₃.mem B ((accStores lay2048).map fun x => (x.1, s₃.vy x.2))) :=
+      fun x hx => (o x hx).trans (congrFun m₃ x)
+    exact o'.trans hf
+  · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₃ r r1, g₂ r r1, k₁.gpr r r1,
+      RegUpd.gpr_setReg_of_ne _ _ r6]
 
 end VG.Proof.Bignum.X86_64.Ifma
