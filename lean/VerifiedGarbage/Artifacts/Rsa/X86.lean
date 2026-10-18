@@ -1,16 +1,23 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
+public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
-/-! Checked public RSA on baseline i686. -/
+/-! Public and private CRT RSA on baseline i686. -/
 
 @[expose] public section
 namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
+  Spec.Rsa.privateCrtApi.artifact X86.target {
+    code := Impl.Bignum.X86.Crt.code
+    verified := Proof.Bignum.X86.Crt.verified
+    spSafe := Proof.Bignum.X86.Crt.code_sp
+    stack := 20 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputedFn.code
     verified := Proof.Bignum.X86.precomputed_verified
