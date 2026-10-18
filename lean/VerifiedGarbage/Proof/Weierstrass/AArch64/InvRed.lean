@@ -338,7 +338,7 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have hn := hs.nowrap
   have hP : wordsVal s.mem base M.mo M.n = p := hM.val
   have hmo := hM.mo
-  simp only [mredC, List.append_assoc]
+  simp only [mredC, normC, List.append_assoc]
   -- `x16 = k`, `[t]` sign-extended.
   rw [WP.block_append_iff]
   refine WP.mono (mredHead_ok hs h12 ht ht8) fun s₁ ⟨x₁, e₁, k₁, O₁⟩ => ?_
