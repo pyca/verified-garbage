@@ -69473,7 +69473,7 @@ pub(crate) const VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
 ///
-/// This implementation computes the result `m` with `vg_rsa_private_crt_ifma` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_adx` and `vg_rsa_public_precomputed_checked_adx`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
+/// This implementation computes the result `m` with `vg_rsa_private_crt_ifma` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_adx` and `vg_rsa_public_precomputed_checked_ifma`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
 ///
 /// # Safety
 ///
@@ -69568,7 +69568,7 @@ mov rax, QWORD PTR [rsp+3344]
 mov QWORD PTR [rsp+16], rax
 mov rax, QWORD PTR [rsp+3352]
 mov QWORD PTR [rsp+24], rax
-call {vg_rsa_public_precomputed_checked_adx}
+call {vg_rsa_public_precomputed_checked_ifma}
 and rax, QWORD PTR [rsp+136]
 and rax, QWORD PTR [rsp+144]
 and rax, 1
@@ -69613,6 +69613,6 @@ ret
 .p2align 6",
         vg_rsa_private_crt_ifma = sym super::rsa::vg_rsa_private_crt_ifma,
         vg_rsa_public_precompute_adx = sym super::rsa::vg_rsa_public_precompute_adx,
-        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
+        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
     )
 }
