@@ -51,7 +51,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       batch when the public input requires it. `[u]G + [v]Q` uses one \
       joint Jacobian accumulator with width-7 and width-5 sparse signed digits, respectively. \
       Generator digits reuse the odd multiples in the first row of `VG_P256_COMB`. The eight \
-      odd multiples of `Q` cache their Jacobian `Z²` and `Z³` values. The joint loop doubles \
+      odd multiples of `Q` are built with co-Z arithmetic (ECDH's DBLU and ZADDU, adding `2Q` \
+      at a shared `Z`), which also yields the `Z²` and `Z³` values they cache. The joint loop doubles \
       its accumulator in place with five squares and three products, each linear combination \
       (`12a − 9b`, `4a − b`, `3a − 8b`) reduced once (ECDH's doubling), specializes arithmetic to the sparse P-256 prime, and keeps \
       field values in scalar registers across operations with checked scheduling and allocation, \
@@ -62,6 +63,6 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       the key and scalar checks, rejection of infinity, and `x ≡ r` modulo `n` into a mask."]
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerify_verified h.law h.inv h.invToM (Proof.P256.combOk7 h.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerify_verified h.law h.prime h.inv h.invToM (Proof.P256.combOk7 h.law) }]
 
 end VG.Generic.P256.AArch64.EcdsaP256
