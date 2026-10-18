@@ -34,7 +34,7 @@ theorem cv_map (is : List Nat) (f : Nat → Nat) {k : Nat} (hk : k<is.length)
   have he : (is.map fun i => ofNat (f i)).getD k 0=ofNat (f (is.getD k 0)) := by
     simp only [List.getD_eq_getElem?_getD,List.getElem?_map,
       List.getElem?_eq_getElem hk,Option.map_some,Option.getD_some]
-  rw [cv,he,val_ofNat,Nat.mod_eq_of_lt hb]
+  rw [cv,Sample.cvW,he,val_ofNat,Nat.mod_eq_of_lt hb]; rfl
 
 theorem accepted_cv (s : State) {k : Nat} (hk : k<acceptedCount s) :
     cv (acceptedValues s) k =
@@ -44,11 +44,11 @@ theorem accepted_cv (s : State) {k : Nat} (hk : k<acceptedCount s) :
 
 theorem append_cv {L R : List Zq} {i : Nat} (hi : L.length≤i) :
     cv (L++R) i=cv R (i-L.length) := by
-  simp only [cv,List.getD_eq_getElem?_getD,List.getElem?_append_right hi]
+  simp only [cv,Sample.cvW,List.getD_eq_getElem?_getD,List.getElem?_append_right hi]
 
 theorem append_cv_left {L R : List Zq} {i : Nat} (hi : i<L.length) :
     cv (L++R) i=cv L i := by
-  simp only [cv,List.getD_eq_getElem?_getD,List.getElem?_append_left hi]
+  simp only [cv,Sample.cvW,List.getD_eq_getElem?_getD,List.getElem?_append_left hi]
 
 /-- Stores beyond the compacted prefix are irrelevant: later batches may
 overwrite them, and bounded failure clears the entire remaining suffix. -/

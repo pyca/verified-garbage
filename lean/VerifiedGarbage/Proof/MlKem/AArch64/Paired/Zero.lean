@@ -26,6 +26,6 @@ theorem zeroExtra_ok (s : State) {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0
       rw [a4,show s.gpr .x19+BitVec.ofNat 64 (slot+8)=s.gpr .x19+BitVec.ofNat 64 slot+8 by
         rw [BitVec.ofNat_add,BitVec.add_assoc]; rfl]
       exact hcp.2)) fun u ⟨hu,hf,hc⟩ => ?_
-  exact ⟨(ha.keep.trans hu).mono (by decide),by rw [←ha.mem]; exact hf,hc,Sample.reduced_of_coeffs hc⟩
+  exact ⟨(ha.keep.trans hu).mono (by decide),by rw [←ha.mem]; exact hf,hc,Sample.reduced_of_coeffs (w16 := false) hc⟩
 
 end VG.Proof.MlKem.AArch64.Paired

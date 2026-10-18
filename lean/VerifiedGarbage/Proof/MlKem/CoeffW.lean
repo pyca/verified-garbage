@@ -91,4 +91,53 @@ theorem cval_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256)
       · simp only [e', and_false, ite_false]
         rw [ite_eq_right (by omega), ite_eq_right (by omega)]
 
+/-- The same store, as the `cw w16`-bit coefficient. -/
+theorem coeffAtW_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256)
+    (v : BitVec 32) (hv : v.toNat < 2 ^ 16) :
+    coeffAtW (cw w16) (m.writeW (cAddr w16 p j) v) p i =
+      if j = i then BitVec.ofNat (cw w16) v.toNat
+      else if w16 = true ∧ i = j + 1 then 0 else coeffAtW (cw w16) m p i := by
+  apply BitVec.eq_of_toNat_eq
+  have h := cval_writeW (w16 := w16) m p hi hj v hv
+  simp only [cval] at h
+  rw [h]
+  by_cases e : i = j
+  · subst e
+    rw [ite_eq_left rfl, ite_eq_left rfl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
+    have := v.isLt
+    cases w16 <;> simp only [cw, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  · rw [ite_eq_right e, ite_eq_right (Ne.symm e)]
+    split <;> simp
+
+/-- A 32-bit store at a coefficient stays in the polynomial's 1024 bytes. -/
+theorem cAddr_contains (w16 : Bool) (p : Addr) {i : Nat} (hi : i < 256) :
+    (polyRegion p).Contains (cAddr w16 p i) 4 := by
+  cases w16
+  · exact coeff_contains p (show i < n from hi)
+  · show (polyRegion p).Contains (p + BitVec.ofNat 64 (2 * i)) 4
+    exact Offset.contains_base p (by omega) (by omega)
+
+/-- The coefficients at `p`: the first `t` of them are `G`'s, the others `old`'s. -/
+def CoeffsUpToW (w16 : Bool) (m : Mem) (p : Addr) (t : Nat) (G old : Nat → BitVec (cw w16)) : Prop :=
+  ∀ i < 256, coeffAtW (cw w16) m p i = if i < t then G i else old i
+
+/-- `f` is stored with `w` bits at `p` if each coefficient is. -/
+theorem polyIsW_of_toNat {w : Nat} {m : Mem} {p : Addr} {f : Poly}
+    (h : ∀ i < n, (coeffAtW w m p i).toNat = (f[i]!).val) : PolyIsW w m p f := by
+  refine ⟨fun i hi => by rw [h i hi]; exact (f[i]!).isLt, ext_getElem! fun i hi => ?_⟩
+  rw [getElem!_eq _ hi]
+  simp only [polyAtW, Vector.getElem_ofFn]
+  rw [h i hi, ofNat_val]
+
+/-- All 256 coefficients written. -/
+theorem CoeffsUpToW.polyIs {w16 : Bool} {m : Mem} {p : Addr} {G old : Nat → BitVec (cw w16)}
+    (h : CoeffsUpToW w16 m p 256 G old) {f : Poly}
+    (hf : ∀ i < 256, G i = BitVec.ofNat (cw w16) (f[i]!).val) : PolyIsW (cw w16) m p f :=
+  polyIsW_of_toNat fun i hi => by
+    have hi' : i < 256 := hi
+    rw [h i hi', ite_eq_left hi', hf i hi', BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
+    have := val_lt f[i]!
+    have hq : q = 3329 := rfl
+    cases w16 <;> simp only [cw, Bool.false_eq_true, ite_false, ite_true] <;> omega
+
 end VG.Proof.MlKem

@@ -93,7 +93,7 @@ theorem fullFinish_ok {s flags : State} {p out : Addr} {B : Nat → Byte}
     ?_,?_,?_,?_,?_,?_⟩
   · rw [ku.mem,kd.mem]; exact frame
   · rw [ku.mem,kd.mem]; exact cc
-  · rw [ku.mem,kd.mem]; exact Sample.reduced_of_coeffs cc
+  · rw [ku.mem,kd.mem]; exact Sample.reduced_of_coeffs (w16 := false) cc
   · rw [ku.get .x24,kd.get .x24,kc.get .x24,eb,ha.keep.get .x24]
     apply congrArg (fun w : BitVec 64 => s.gpr .x24 &&& w)
     apply BitVec.eq_of_toNat_eq

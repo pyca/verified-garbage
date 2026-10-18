@@ -41,6 +41,6 @@ theorem zeroBoth_ok {s : State} {p a b c : Addr} {L M : List Zq}
   exact ⟨(kt.trans ku).mono (by decide),
     (ft.mono (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans
       (fu.mono (by intro r hr; rw [List.mem_singleton.mp hr]; simp)),
-    ca',Sample.reduced_of_coeffs ca',cu,ru⟩
+    ca',Sample.reduced_of_coeffs (w16 := false) ca',cu,ru⟩
 
 end VG.Proof.MlKem.AArch64.Paired

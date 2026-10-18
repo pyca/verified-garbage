@@ -26,9 +26,9 @@ theorem fast_finish {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
   have cb := full_coeffs h.right hf.2
   refine ⟨Keep.refl _ _,Frame.refl _ _,?_,?_,?_,?_,?_⟩
   · rw [ea]; exact ca
-  · exact Sample.reduced_of_coeffs ca
+  · exact Sample.reduced_of_coeffs (w16 := false) ca
   · rw [eb]; exact cb
-  · exact Sample.reduced_of_coeffs cb
+  · exact Sample.reduced_of_coeffs (w16 := false) cb
   · rw [ea,eb,ite_eq_left hf]
     rcases hs with hs|hs <;> rw [hs] <;> rfl
 

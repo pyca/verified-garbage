@@ -81,7 +81,7 @@ theorem lastCode_ok {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
           have eqFull := sampleAfter_full full 280 (by decide : 168≤280)
           have cc := full_coeffs hu.coeffs full
           apply wp_nil
-          refine ⟨hu.keep.mono (by decide),hu.frame,hu.saved,hu.ptr,?_,Sample.reduced_of_coeffs cc,?_⟩
+          refine ⟨hu.keep.mono (by decide),hu.frame,hu.saved,hu.ptr,?_,Sample.reduced_of_coeffs (w16 := false) cc,?_⟩
           · rw [eqFull]; exact cc
           · rw [eqFull,ite_eq_left full,hu.keep.get .x24]
             rcases hstatus with h | h <;> rw [h] <;> rfl
