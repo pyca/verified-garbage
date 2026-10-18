@@ -7,20 +7,22 @@ public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-structure ExtraReady (L : List Zq) (B : Nat→Byte) (buf slot : Nat) (aP : Addr) (s : State) : Prop where
-  env : Rej8.Env 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s
+structure ExtraReadyW (w16 : Bool) (L : List Zq) (B : Nat→Byte) (buf slot : Nat) (aP : Addr) (s : State) : Prop where
+  env : Rej8.EnvW w16 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s
   constants : Rej8.Constants s
   len : L.length≤256
-  coeffs : Rej8.Scalar.Coeffs s.mem aP L
-  saved : checkpoint (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem
+  coeffs : Rej8.Scalar.CoeffsW w16 s.mem aP L
+  saved : checkpointW w16 (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem
   out0 : InRegions s.wr (s.gpr .x19+BitVec.ofNat 64 slot) 8
   out1 : InRegions s.wr (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8
   apart : (polyRegion aP).Disjoint ⟨s.gpr .x19+BitVec.ofNat 64 slot,16⟩
 
-theorem load_resume {s : State} {L : List Zq} {B : Nat→Byte} {buf slot : Nat} {aP : Addr}
-    (ho : slot+8<32768) (ha : slot%8=0) (h : ExtraReady L B buf slot aP s) :
+abbrev ExtraReady := ExtraReadyW false
+
+theorem load_resume {w16 : Bool} {s : State} {L : List Zq} {B : Nat→Byte} {buf slot : Nat} {aP : Addr}
+    (ho : slot+8<32768) (ha : slot%8=0) (h : ExtraReadyW w16 L B buf slot aP s) :
     WP isa (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)]) s fun t =>
-      Only [.x3,.x4] s t ∧ Resume L B buf aP t := by
+      Only [.x3,.x4] s t ∧ ResumeW w16 L B buf aP t := by
   refine WP.mono (load_checkpoint s ho ha (in_rd_wr h.out0) (in_rd_wr h.out1)) fun t ⟨kt,hv,t3,t4⟩ => ?_
   refine ⟨kt,?_,?_,h.len,?_,t3.trans h.saved.1,?_⟩
   · rw [kt.get .x19]
@@ -40,15 +42,15 @@ theorem storeFlag_ct (slot : Nat) (flag : Reg) (hf : flag≠.x19) :
     | contradiction
     | exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x19]) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
 
-theorem extra_relCT {s u : State} {buf slot : Nat} (hb : buf<4096)
+theorem extra_relCT {w16 : Bool} {s u : State} {buf slot : Nat} (hb : buf<4096)
     (ho : slot+8<32768) (ha : slot%8=0) {flag : Reg} (hf : flag≠.x3 ∧ flag≠.x4 ∧ flag≠.x19)
     {B : Nat→Byte} {L : List Zq} {aP : Addr}
-    (ps : ExtraReady L B buf slot aP s) (pu : ExtraReady L B buf slot aP u)
+    (ps : ExtraReadyW w16 L B buf slot aP s) (pu : ExtraReadyW w16 L B buf slot aP u)
     (hsp : s.sp=u.sp) (h19 : s.gpr .x19=u.gpr .x19) (h16 : s.gpr .x16=u.gpr .x16) :
-    RelCT isa (fun a b=>a=s ∧ b=u) (Impl.MlKem.AArch64.Paired.extraReject buf slot flag)
-      (fun a b=>ExtraPost L B aP (s.gpr .x19+BitVec.ofNat 64 slot) flag s a ∧
-        ExtraPost L B aP (u.gpr .x19+BitVec.ofNat 64 slot) flag u b) := by
-  let R := fun a b=>Resume L B buf aP a ∧ Resume L B buf aP b ∧
+    RelCT isa (fun a b=>a=s ∧ b=u) (Impl.MlKem.AArch64.Paired.extraReject buf slot flag w16)
+      (fun a b=>ExtraPostW w16 L B aP (s.gpr .x19+BitVec.ofNat 64 slot) flag s a ∧
+        ExtraPostW w16 L B aP (u.gpr .x19+BitVec.ofNat 64 slot) flag u b) := by
+  let R := fun a b=>ResumeW w16 L B buf aP a ∧ ResumeW w16 L B buf aP b ∧
     a.sp=b.sp ∧ a.gpr .x19=b.gpr .x19 ∧ a.gpr .x16=b.gpr .x16
   have start : RelCT isa (fun a b=>a=s ∧ b=u)
       (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)]) R := by
@@ -63,7 +65,7 @@ theorem extra_relCT {s u : State} {buf slot : Nat} (hb : buf<4096)
     · rw [ka.get .x19,kb.get .x19,h19]
     · rw [ka.get .x16,kb.get .x16,h16]
   have trace : RelCT isa (fun a b=>a=s ∧ b=u)
-      (Impl.MlKem.AArch64.Paired.extraReject buf slot flag) (fun _ _=>True) := by
+      (Impl.MlKem.AArch64.Paired.extraReject buf slot flag w16) (fun _ _=>True) := by
     refine RelCT.seq start (RelCT.ite ?_ ?_ ?_)
     · intro a b h
       have he : a.gpr .x4=b.gpr .x4 := BitVec.eq_of_toNat_eq (h.1.x4.trans h.2.1.x4.symm)

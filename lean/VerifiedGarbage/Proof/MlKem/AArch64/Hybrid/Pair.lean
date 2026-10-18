@@ -98,8 +98,8 @@ theorem Pair3Post.outcome {L : KemLay} {s t : State} {p seed a b e st : Addr} {E
     (hk : 0<k) (hk256 : k≤256)
     (h : Pair3Post L (seedState s.mem seed i k) (seedState s.mem seed j k) p a b e st E n s t) :
     Pair3Outcome L (seedBytes s.mem seed i k) (seedBytes s.mem seed j k) p a b e st E n s t := by
-  have ra := Paired.accepted_result hk hk256 h.left
-  have rb := Paired.accepted_result hk hk256 h.right
+  have ra := Paired.accepted_result (w16 := false) hk hk256 h.left
+  have rb := Paired.accepted_result (w16 := false) hk hk256 h.right
   refine ⟨h.keep,h.frame,h.reducedLeft,h.reducedRight,?_,?_,?_,h.hash,h.ek⟩
   · rcases ra with ⟨_,ha⟩|⟨_,ha⟩
     · exact Or.inr ha

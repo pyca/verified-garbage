@@ -79,7 +79,7 @@ theorem lastCode_ok {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
             have he : u.gpr .x22=0 := BitVec.eq_of_toNat_eq (by rw [hu.flag,ite_eq_right hh]; rfl)
             rw [he] at hz; contradiction
           have eqFull := sampleAfter_full full 280 (by decide : 168≤280)
-          have cc := full_coeffs hu.coeffs full
+          have cc := full_coeffs (w16 := false) hu.coeffs full
           apply wp_nil
           refine ⟨hu.keep.mono (by decide),hu.frame,hu.saved,hu.ptr,?_,Sample.reduced_of_coeffs (w16 := false) cc,?_⟩
           · rw [eqFull]; exact cc
@@ -89,7 +89,7 @@ theorem lastCode_ok {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
       refine WP.mono (restore_ok h.keep h.ptr h.saved (by rw [h.keep.wr]; exact ctx.scratch)) fun v ⟨kv,mv,v24⟩ => ?_
       have coeffs : CoeffsUpTo v.mem out (sampleAfter [] (xofByte (seedBytes s.mem seed a k)) 280).length
           (Sample.cv (sampleAfter [] (xofByte (seedBytes s.mem seed a k)) 280)) (fun _=>0) := by rw [mv]; exact h.coeffs
-      exact ⟨kv,by rw [mv]; exact h.frame,coeffs,by rw [mv]; exact h.reduced,coeffs_sample_result coeffs,v24.trans h.status⟩)
+      exact ⟨kv,by rw [mv]; exact h.frame,coeffs,by rw [mv]; exact h.reduced,coeffs_sample_result (w16 := false) coeffs,v24.trans h.status⟩)
   exact WP.seq (WP.mono (WP.seq_iff.mp combined) fun u hu =>
     WP.seq (WP.mono (WP.seq_iff.mp hu) fun v hv =>
       WP.seq (WP.mono (WP.seq_iff.mp hv) fun w hw => WP.seq hw)))

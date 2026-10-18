@@ -69,8 +69,8 @@ theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 904) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-      have ea := ctv.env (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-      have eb := ctv.env (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+      have ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+      have eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
       have pv := pair_frame pu fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.base_disjoint p (by decide) (by decide))

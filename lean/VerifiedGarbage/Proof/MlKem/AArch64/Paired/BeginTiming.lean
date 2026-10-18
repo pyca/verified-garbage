@@ -67,8 +67,8 @@ theorem prepare_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb 
       intro r hr; rw [List.mem_singleton.mp hr]
       exact Offset.disjoint p (by decide) (by decide) (by decide)
     exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-  have ea := ctv.env (w16 := w16) (N:=168) (off:=400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-  have eb := ctv.env (w16 := w16) (N:=168) (off:=904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+  have ea := ctv.envW (w16 := w16) (N:=168) (off:=400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+  have eb := ctv.envW (w16 := w16) (N:=168) (off:=904) v16 (by decide) (by decide) (Or.inr rfl) streamB
   refine ⟨(ku.trans kv).mono (by simp [prepareRegs]),?_,v19,v16⟩
   refine ⟨⟨?_,cv,?_,?_,?_⟩,⟨?_,cv,?_,?_,?_⟩,?_,?_⟩
   · rw [v19,v28,h.outLeft]; exact ea

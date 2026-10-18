@@ -89,7 +89,7 @@ theorem plainPair_relCT {σ τ : State} (hp : Pre P (enL P) σ) (hq : Pre P (enL
     rw [Paired.seedState_eq _ _ (by lom) (by lom),Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h.1.b.rho,ba SB,h.2.1.b.rho]
-  have ct := Paired.pair_relCT (L:=P) (kg:=false) (a:=e) (by decide) (by decide) (by decide)
+  have ct := Paired.pair_relCT (w16:=false) (L:=P) (kg:=false) (a:=e) (by decide) (by decide) (by decide)
     (by change AH+1024*e<65536; lom) (by change AH+1024*(e+1)<65536; lom) ps pu
     (by rw [h.1.b.kb.sp,h.2.1.b.kb.sp,sm.sp]) (by rw [h.1.b.kb.x28,h.2.1.b.kb.x28,sm.base]) (seeds e) (seeds (e+1))
   have ht := exec_post (paired_stepH hp he h.1 h.2.2.1) et
