@@ -1130,15 +1130,13 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Not `SHORT_READY` here, though `open`'s short path reads the powers
-        // too: with that test, LLVM allocates registers on the long path
-        // differently, which costs every long message more than short ones
-        // gain.
+        // Short messages take the prepared instances too once their short path
+        // reads the powers (`short_ready`), as in `encrypt_in_place`.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if data.len() >= POWERS_MIN_LEN
+        if (data.len() >= POWERS_MIN_LEN || self.powers.short_ready())
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
@@ -2608,6 +2606,12 @@ mod tests {
                             let tag = warm.encrypt_in_place(nonce, aad, &mut actual).unwrap();
                             assert_eq!((&actual, tag), (&want, want_tag));
                             warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
+                                .unwrap();
+                            assert_eq!(actual, plain);
+                            // A truncated tag, by the same path.
+                            actual.clone_from(&want);
+                            let short_tag: &[u8; 12] = tag[..12].try_into().unwrap();
+                            warm.decrypt_in_place_truncated(nonce, aad, &mut actual, short_tag)
                                 .unwrap();
                             assert_eq!(actual, plain);
                             // A wrong tag leaves the ciphertext as it was.
