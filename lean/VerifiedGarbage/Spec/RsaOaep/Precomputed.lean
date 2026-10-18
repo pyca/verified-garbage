@@ -93,7 +93,7 @@ def decryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
         1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
         dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
-        Rsa.scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        RsaPss.scratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
     (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
         _qinvLen label labelLen ct _ctLen _scratch _scratchLen pre preLen m m' r =>
