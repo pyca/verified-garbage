@@ -1208,6 +1208,9 @@ impl AesGcm {
         if src.len() < POWERS_MIN_LEN && src.len() + rest.len() >= POWERS_MIN_LEN {
             return None;
         }
+        // A record of a multiple of 16 blocks whose last block `src` starts
+        // and the second piece fills.
+        let fills = src.len() % 16 != 0 && (src.len() + rest.len()) % 256 == 0;
         let split = match self.backend {
             // On 512-bit registers from `POWERS_MIN_LEN` bytes on: the short
             // path of the gathering is faster for less.
@@ -1215,19 +1218,18 @@ impl AesGcm {
                 vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512
             }
             // On 128- and 256-bit ones at any length, whose path for TLS
-            // records is faster than the others' at every length. The
-            // 256-bit one is slower than the gathering only for a record of
-            // a multiple of 16 blocks, of at most 4096 bytes, whose last
-            // block `src` starts and the second piece fills: the gathering
-            // seals its blocks in whole groups of 16, and `src`'s blocks end
-            // one block short of a group (a 1024-byte TLS record, of a
-            // 1023-byte payload: 31–36% slower; 16- to 64-byte records 3–41%
-            // faster, and those of 8192 bytes and more 1–7%).
-            Backend::VaesVpclmul
-                if src.len() % 16 == 0
-                    || (src.len() + rest.len()) % 256 != 0
-                    || src.len() + rest.len() > 4096 =>
-            {
+            // records is faster than the others' at every length, but for a
+            // record of a multiple of 16 blocks whose last block `src` starts
+            // and the second piece fills, on 256-bit ones: `seal_split` seals
+            // `src`'s whole blocks in groups of 16 and then that block alone.
+            // Up to 1024 bytes the gathering, which seals blocks in whole
+            // groups, is faster (a 1024-byte TLS record, of a 1023-byte
+            // payload: 31–36%); from 2048 bytes on, `seal_split` of `src` up
+            // to its last whole group (`cut`) is, with the rest of the
+            // record sealed in place as one group (2048 bytes: 1–4% faster
+            // than the gathering; 4096: 6–8%; 16384: 2–5% faster than all of
+            // `src`'s whole blocks).
+            Backend::VaesVpclmul if !fills || src.len() + rest.len() >= 2048 => {
                 vg_aes_gcm_seal_split_prepared_vaes_vpclmul
             }
             Backend::AesNiPclmulAvx => vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,
@@ -1246,6 +1248,14 @@ impl AesGcm {
         if ctx.is_null() {
             return None;
         }
+        // `seal_split` of `src` up to `cut`, the rest of it copied to `out`
+        // with the second piece and sealed there.
+        let cut = if fills && self.backend == Backend::VaesVpclmul {
+            src.len() / 256 * 256
+        } else {
+            src.len()
+        };
+        out[cut..src.len()].copy_from_slice(&src[cut..]);
         out[src.len()..].copy_from_slice(rest);
         let mut tag: Block = [0; 16];
         // SAFETY: `ctx` is a published key context (see `Powers::ctx`),
@@ -1253,10 +1263,11 @@ impl AesGcm {
         // reads of 1024 bytes as long as `self` lives, and the CPU has the
         // features of `self.backend`, whose `_prepared` instance this is.
         // `encrypt` checked that `out` is as long as the pieces in all, so
-        // `src.len() <= out.len()`, and `out` holds the second piece after
-        // `src.len()` bytes. The nonce, the additional data, `src`, `out`
-        // and `tag` are valid for their lengths, and `out` and `tag`, which
-        // the function writes, are distinct Rust objects from the others.
+        // `cut <= src.len() <= out.len()`, and `out` holds the rest of `src`
+        // and the second piece after `cut` bytes. The nonce, the additional
+        // data, `src` (for `cut` bytes), `out` and `tag` are valid for their
+        // lengths, and `out` and `tag`, which the function writes, are
+        // distinct Rust objects from the others.
         unsafe {
             split(
                 ctx,
@@ -1266,7 +1277,7 @@ impl AesGcm {
                 aad.as_ptr(),
                 aad.len(),
                 src.as_ptr(),
-                src.len(),
+                cut,
                 out.as_mut_ptr(),
                 out.len(),
                 &mut tag,
@@ -2669,7 +2680,7 @@ mod tests {
                 }
                 for len in [
                     0, 1, 15, 16, 17, 100, 255, 256, 257, 288, 481, 511, 512, 513, 767, 768, 769,
-                    1024, 1535, 1536, 2303, 2304, 2305, 3071, 3072, 3073, 4097, 10000,
+                    1024, 1535, 1536, 2048, 2303, 2304, 2305, 3071, 3072, 3073, 4097, 10000,
                 ] {
                     let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
                     for nonce_len in [12, 13] {
