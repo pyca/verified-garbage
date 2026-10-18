@@ -1,0 +1,33 @@
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+
+/-!
+# AES-GCM on x86-64: `seal`'s path for TLS records
+
+`vg_aes_gcm_seal_prepared` with a prepared key context
+(`VG.Spec.Gcm.PreparedPowersRepr`) takes a path of its own for the records of
+TLS too long for the short path: a 12-byte nonce and at most 16 bytes of
+additional data (`Fast.cond`). It is the other instances' body
+(`Short.sealLong`) with the additional data absorbed with the prepared `H'`
+(`Fast.aad`), where `oneAad` would copy it a byte at a time and call
+`vg_ghash`, which computes `H'` from `H` on every call.
+-/
+
+@[expose] public section
+
+namespace VG.Impl.AesGcm.X86_64.FastSeal
+
+open VG.X86_64
+open VG.Impl.AesGcm.X86_64 (Callees oneBlocks)
+
+variable (c : Callees)
+
+/-- After the entry: `Short.sealLong` with `Fast.aad`. -/
+def run : Prog isa := .seq Fast.aad (.seq (oneBlocks c.enc) Short.finish)
+
+/-- `Fast.cond`, then this path, or `other`. -/
+def sel (other : Prog isa) : Prog isa :=
+  .seq Fast.cond (.ite .e other (run c))
+
+end VG.Impl.AesGcm.X86_64.FastSeal

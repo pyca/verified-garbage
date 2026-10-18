@@ -51,20 +51,22 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) K.rd K.wr (by rw [K.mem]; exact Frame.refl _ _)
 
-/-- After the entry, the long `seal` up to the tag at `W`: `oneAad`,
-`oneBlocks` and `finishWith ks` leave what `sealRun_ok` does. -/
-theorem sealRunF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₁ : State}
-    {Ctx W SP Np A D : Addr} {nl al n : Nat}
+/-- After the entry, the long `seal` up to the tag at `W`: additional data
+absorbed by `aadP`, which leaves what `oneAad` does, then `oneBlocks` and
+`finishWith ks` leave what `sealRun_ok` does. -/
+theorem sealRunW_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    {aadP : Prog isa} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
-    (E : OneEntry s₀ Ctx W SP A D n s₁)
-    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) :
-    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (Impl.AesGcm.X86_64.Short.finishWith ks))) s₁
+    (hal : (s₀.gpr .r9).toNat = al)
+    (ha : WP isa aadP s₁
+      (OneMid s₀ Ctx W SP D n (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₁.mem)) :
+    WP isa (.seq aadP (.seq (oneBlocks B.enc) (Impl.AesGcm.X86_64.Short.finishWith ks))) s₁
       (SealRunPost s₀ Ctx W SP Np A D nl al n) := by
   have L := C.lay
   unfold SealRunPost
   generalize hR : (s₀.gpr .rsi).toNat = R
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
-  refine WP.seq (WP.mono (oneMid_ok v C E hNp hnl hal) fun s₂ M => ?_)
+  refine WP.seq (WP.mono ha fun s₂ M => ?_)
   generalize hH : ctxH s₀.mem Ctx = H at M ⊢
   generalize hiv : bytesAt s₀.mem Np nl = iv at M ⊢
   generalize ha : bytesAt s₀.mem A al = a at M ⊢
@@ -107,6 +109,30 @@ theorem sealRunF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (v : GcmIm
     · exact ⟨⟨D, n⟩, by simp, fun _ h => h⟩
     · exact ⟨below SP 24, by simp, fun _ h => h⟩
 
+/-- After the entry, the long `seal` up to the tag at `W`: `oneAad`,
+`oneBlocks` and `finishWith ks` leave what `sealRun_ok` does. -/
+theorem sealRunF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₁ : State}
+    {Ctx W SP Np A D : Addr} {nl al n : Nat}
+    (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
+    (E : OneEntry s₀ Ctx W SP A D n s₁)
+    (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) :
+    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (Impl.AesGcm.X86_64.Short.finishWith ks))) s₁
+      (SealRunPost s₀ Ctx W SP Np A D nl al n) :=
+  sealRunW_ok hF hks B C X hal (oneMid_ok v C E hNp hnl hal)
+
+/-- What `seal` needs of the code `lng` it runs when the short path does not
+apply, with a key context of kind `M`: what `sealRun_ok` leaves, after the
+entry. -/
+def SealLongOk (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
+  ∀ {s s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}, OneCtx s 4 Ctx W SP Np A D nl al n →
+    CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s → OneEntry s Ctx W SP A D n s₁ →
+    s.gpr .rdx = Np → (s.gpr .rcx).toNat = nl → (s.gpr .r9).toNat = al →
+    WP isa lng s₁ (SealRunPost s Ctx W SP Np A D nl al n)
+
+theorem sealLongOk_sealLong (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    SealLongOk M (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B)) :=
+  fun C X E hNp hnl hal => sealRunF_ok hF finKs_ksOk v B C X E hNp hnl hal
+
 /-- What the short path needs of its table of powers' code `pw` and its
 GHASH code `gh` with a key context of kind `M`: `PowFrom` from any entry
 with the context, for some view of the table. -/
@@ -120,34 +146,33 @@ theorem powOk_powers (hF : ShortFacts) {M : Gcm.X86_64.Stitch.CtxMode} :
 
 /-- `seal` after the entry: `cond`, then the short path or the other
 instances' body, which leave the same. -/
-theorem sealMid_ok (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
-    {pw gh : Prog isa} (hpw : PowOk M pw gh) {s s₁ : State}
+theorem sealMid_ok (hF : ShortFacts) {M : Gcm.X86_64.Stitch.CtxMode}
+    {pw gh lng : Prog isa} (hpw : PowOk M pw gh) (hlng : SealLongOk M lng) {s s₁ : State}
     {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 4 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s) (E : OneEntry s Ctx W SP A D n s₁)
     (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) :
-    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e
-        (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) Impl.AesGcm.X86_64.Short.finish))
-        (Impl.AesGcm.X86_64.Short.sealShort pw gh))) s₁
+    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e lng (Impl.AesGcm.X86_64.Short.sealShort pw gh))) s₁
       (SealRunPost s Ctx W SP Np A D nl al n) :=
   WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
-    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => sealRunF_ok hF finKs_ksOk v B C X E₂ hNp hnl hal) fun h => by
+    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => hlng C X E₂ hNp hnl hal) fun h => by
       have h' := Decidable.not_not.mp (of_decide_eq_false h)
       exact sealShort_ok hF C (hpw X).choose_spec E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1)
 
-/-- `vg_aes_gcm_seal` with the short path and the table of powers from `pw`,
-for a key context of kind `M`. -/
-theorem sealMW_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {pw gh : Prog isa}
-    (hpw : PowOk M pw gh) {s : State} (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
-    WP isa (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) pw gh) s fun s' =>
+/-- `vg_aes_gcm_seal` with the short path, the table of powers from `pw`,
+and `lng` when the short path does not apply, for a key context of kind
+`M`. -/
+theorem sealMW_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {pw gh lng : Prog isa}
+    (hpw : PowOk M pw gh) (hlng : SealLongOk M lng) {s : State} (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
+    WP isa (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) pw gh lng) s fun s' =>
       gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' :=
-  sealM_of hp (sealMid_ok hF v B hpw)
+  sealM_of hp (sealMid_ok hF hpw hlng)
 
 /-- `vg_aes_gcm_seal` with the short path, for a key context of kind `M`. -/
 theorem sealM_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
     (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
     WP isa (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)) s fun s' =>
       gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' :=
-  sealMW_wp hF v B (powOk_powers hF) hp
+  sealMW_wp hF v B (powOk_powers hF) (sealLongOk_sealLong hF v B) hp
 
 /-- What `open` needs of the code `lng` it runs when the short path does not
 apply, with a key context of kind `M`: what `openOk_ok` leaves, after the
