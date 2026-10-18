@@ -30,7 +30,7 @@ def powSteps (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List
 theorem qPhase_eq (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : qPhase mul ex =
     unitSteps mul sWsQ ++ ([mul Public.aY Public.aXm Public.aY] ++
       (powSteps mul ex sWsQ sDq sQlen ++ [mul Public.aY Public.aY Public.aOne, .block [leave]])) := by
-  simp only [qPhase, unitSteps, powSteps, enterQ, List.append_assoc, List.cons_append, List.nil_append]
+  simp only [qPhase, unit, unitSteps, powSteps, enterQ, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- A Montgomery multiplication in the modulus' workspace that changes only
 `Y`, the accumulator and the temporary. -/

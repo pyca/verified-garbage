@@ -82,7 +82,7 @@ theorem prep_eq (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) :
     CrtIfma.prep mul sl = ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ (redc mul Public.aR2 ++
       (copyArr Public.aY aXc ++ (redc mul Public.aXm ++ (([mul aT Public.aY aXc] : List (Prog isa)) ++
         (copyArr aXc aT ++ [mul Public.aY Public.aY Public.aOne, .block [leave]]))))) := by
-  simp only [CrtIfma.prep, List.append_assoc]
+  simp only [CrtIfma.prep, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- Entering the prime's workspace, from `n`'s. -/
 theorem enter_rpre {s : State} {p : UPub} {sl j : Nat} (hj : j < 8) {mx : BitVec 64} {X : Nat}

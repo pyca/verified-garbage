@@ -119,7 +119,7 @@ theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
   rw [show CrtIfma.prep M.mm sl = (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
       redc M.mm Public.aR2) ++ (copyArr Public.aY aXc ++ (redc M.mm Public.aXm ++ (([M.mm aT Public.aY aXc] :
       List (Prog isa)) ++ (copyArr aXc aT ++ [M.mm Public.aY Public.aY Public.aOne, .block [leave]])))) by
-    simp only [CrtIfma.prep, List.append_assoc]]
+    simp only [CrtIfma.prep, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.cons_append, List.nil_append]]
   -- `aXc := R_n² R_X^-2 = R_X²`.
   refine wp_seqs_append (by simp) (by simp [copyArr]) (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg
     hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1) fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, r₁, k₁⟩ => ?_)
