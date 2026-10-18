@@ -84,15 +84,25 @@ theorem nChunks_two {w wx : Nat} (hw2 : w = 2 * wx) (hwx : 1 ≤ wx) : nChunks w
 /-- `prep`: `R_X` into the prime's `aY`, `x R_X` into its `aXc`, from `n`'s
 `R_n² mod n` and `x R_n mod n` (`R_n = R_X²`). Only the prime's workspace
 changes. -/
-theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
-    {sl o wx : Nat} {ok : Prop} (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
+theorem prepWith_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
+    {sl o wx : Nat} {ok okY : Prop} {fin : List (Prog isa)} (hfne : fin ≠ []) (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
     (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hw2 : w = 2 * wx) (hsl : sl < 32)
     (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hN : NVals s B w minv N ok)
     (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
-    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1) :
-    WP isa (seqs (CrtIfma.prep M.mm sl)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧
+    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
+    (hfin : ∀ s₅, SubCtx s₅ B Z o w wx mx → XVals s₅ B o wx mx X → Keep (mmRegs ++ [.rdi]) s s₅ →
+      Frm B [xRange o wx] s.mem s₅.mem → wv s₅.mem (off B o) (slot wx Public.aY) wx < X →
+      (ok → X ∣ N → wv s₅.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx * 2) % X) →
+      WP isa (seqs fin) s₅ fun s₆ => SubCtx s₆ B Z o w wx mx ∧ XVals s₆ B o wx mx X ∧
+        Frm B [xRange o wx] s₅.mem s₆.mem ∧ wv s₆.mem (off B o) (slot wx Public.aY) wx < X ∧
+        (okY → X ∣ N → wv s₆.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+        wv s₆.mem (off B o) (slot wx aXc) wx = wv s₅.mem (off B o) (slot wx aXc) wx ∧
+        word s₆.mem (off B o) (8 * sMaskX) = word s₅.mem (off B o) (8 * sMaskX) ∧ Keep mmRegs s₅ s₆) :
+    WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2 ++
+      copyArr Public.aY aXc ++ redc M.mm Public.aXm ++ ([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT ++ fin ++ ([.block [leave]] : List (Prog isa)))) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧
       XVals t B o wx mx X ∧ wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      (okY → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
       wv t.mem (off B o) (slot wx aXc) wx < X ∧
       (ok → X ∣ N → wv t.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X) ∧
       Frm B [xRange o wx] s.mem t.mem ∧ Keep mmRegs s t ∧
@@ -116,10 +126,12 @@ theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
       omega_using []
   have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
-  rw [show CrtIfma.prep M.mm sl = (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
-      redc M.mm Public.aR2) ++ (copyArr Public.aY aXc ++ (redc M.mm Public.aXm ++ (([M.mm aT Public.aY aXc] :
-      List (Prog isa)) ++ (copyArr aXc aT ++ [M.mm Public.aY Public.aY Public.aOne, .block [leave]])))) by
-    simp only [CrtIfma.prep, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.cons_append, List.nil_append]]
+  rw [show ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2 ++
+      copyArr Public.aY aXc ++ redc M.mm Public.aXm ++ ([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT ++ fin ++ ([.block [leave]] : List (Prog isa)) =
+      (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2) ++
+      (copyArr Public.aY aXc ++ (redc M.mm Public.aXm ++ (([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      (copyArr aXc aT ++ (fin ++ [.block [leave]]))))) by simp only [List.append_assoc]]
   -- `aXc := R_n² R_X^-2 = R_X²`.
   refine wp_seqs_append (by simp) (by simp [copyArr]) (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg
     hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1) fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, r₁, k₁⟩ => ?_)
@@ -171,47 +183,73 @@ theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
   have hY₅ : wv s₅.mem (off B o) (slot wx Public.aY) wx = wv s₄.mem (off B o) (slot wx Public.aY) wx := by
     have := slot_sep (w := wx) (show Public.aY ≠ aXc by decide)
     exact ho₅.wv (by omega_using [this]) (by omega_using [lY, hz₄])
-  -- `aY := R_X² R_X^-1 = R_X`.
-  refine WP.seq (WP.mono (M.mm_ok (o := Public.aY) (a := Public.aY) (b := Public.aOne) hc₅.good (Nat.le_refl _)
-    hwx2 (by omega_using [hw28, hwx]) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hX₅.inv
-    (by rw [hX₅.n, hX₅.one]; exact hX1)) fun s₆ ⟨_, hlt₆, hm₆, ha₆, k₆⟩ => ?_)
-  rw [hX₅.n, hX₅.one, Nat.mul_one] at hm₆
-  rw [hX₅.n] at hlt₆
-  obtain ⟨hc₆, hX₆, fx₆⟩ := hc₅.of_arrays hX₅ ha₆ (by
-    intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl | rfl <;> decide) k₆.2.2 (k₆.gpr (by decide)) (by omega_using [hwx2])
-  have hC₆ : wv s₆.mem (off B o) (slot wx aXc) wx = wv s₄.mem (off B o) (slot wx aT) wx := by
-    rw [ha₆.wv_of_not_mem (by decide) (by decide) hz₄, hv₅]
+  -- `aY`'s `R_X²`.
+  have h1 : ok → X ∣ N → wv s₁.mem (off B o) (slot wx aXc) wx % X = 2 ^ (64 * wx * 2) % X := fun hok hd =>
+    VG.Proof.Bignum.mont_cancel hRR (by
+      rw [hv₁, ← Nat.mod_mod_of_dvd _ hd, hN.r2 hok, Nat.mod_mod_of_dvd _ hd, e2, ← Nat.pow_add])
+  refine wp_seqs_append hfne (by simp) (WP.mono (hfin s₅ hc₅ hX₅
+    ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅ |>.mono (by decide))
+    ((((f02.trans fx₃).trans fx₄).trans fx₅)) (by rw [hY₅, hY₄, hY₃]; exact hlt₁)
+    (fun hok hd => by rw [hY₅, hY₄, hY₃]; exact h1 hok hd)) fun s₆ ⟨hc₆, hX₆, fx₆, hlt₆, hv₆, hC₆', hmk₆, k₆⟩ => ?_)
+  have hC₆ : wv s₆.mem (off B o) (slot wx aXc) wx = wv s₄.mem (off B o) (slot wx aT) wx := by rw [hC₆', hv₅]
   have fall := ((((f02.trans fx₃).trans fx₄).trans fx₅).trans fx₆)
   refine WP.mono (leaveBack_ok hg hc₆ fall hlo) fun t ⟨hg', hm', k'⟩ => ?_
   have kall := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k'
   refine ⟨hg', by rw [hm']; exact hc₆.ws, ?_, by rw [hm']; exact hlt₆, fun hok hd => ?_,
     by rw [hm', hC₆]; exact hT₄, fun hok hd => ?_, by rw [hm']; exact fall, ⟨fun r hr => ?_, kall.2⟩, ?_⟩
   · rw [show t = { t with mem := s₆.mem } by rw [← hm']]; exact ⟨hX₆.n, hX₆.inv, hX₆.one⟩
-  · -- `aXc₁ = R_X²`, so `aY R_X ≡ R_X²`.
-    have h1 : wv s₁.mem (off B o) (slot wx aXc) wx % X = 2 ^ (64 * wx * 2) % X :=
-      VG.Proof.Bignum.mont_cancel hRR (by
-        rw [hv₁, ← Nat.mod_mod_of_dvd _ hd, hN.r2 hok, Nat.mod_mod_of_dvd _ hd, e2, ← Nat.pow_add])
-    apply VG.Proof.Bignum.mont_cancel hRx
-    rw [hm', hm₆, hY₅, hY₄, hY₃, h1, ← Nat.pow_add]
-    congr 2; omega_using []
+  · rw [hm']; exact hv₆ hok hd
   · -- `aXc₃ = x`, so `aT₄ R_X ≡ R_X² x`.
     have h3 : wv s₃.mem (off B o) (slot wx aXc) wx % X = C % X :=
       VG.Proof.Bignum.mont_cancel hRR (by
         rw [hv₃, hXm₂, ← Nat.mod_mod_of_dvd _ hd, hXm hok, Nat.mod_mod_of_dvd _ hd, e2])
-    have h1 : wv s₁.mem (off B o) (slot wx aXc) wx % X = 2 ^ (64 * wx * 2) % X :=
-      VG.Proof.Bignum.mont_cancel hRR (by
-        rw [hv₁, ← Nat.mod_mod_of_dvd _ hd, hN.r2 hok, Nat.mod_mod_of_dvd _ hd, e2, ← Nat.pow_add])
     apply VG.Proof.Bignum.mont_cancel hRx
-    rw [hm', hC₆, hm₄, hY₃, Nat.mul_mod, h3, h1, ← Nat.mul_mod, Nat.mul_comm, Nat.mul_assoc C, ← Nat.pow_add]
+    rw [hm', hC₆, hm₄, hY₃, Nat.mul_mod, h3, h1 hok hd, ← Nat.mul_mod, Nat.mul_comm, Nat.mul_assoc C, ← Nat.pow_add]
     congr 3; omega_using []
   · by_cases h : r = .rdi
     · subst h; rw [hg'.rdi, hg.rdi]
     · exact kall.1 r (by revert hr h; cases r <;> decide)
   · have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
-    rw [hm', ha₆.hslot (by decide), ho₅.word (.inl (by omega_using [hC0, hmx])) (by omega_using [hmx]), ha₄.hslot (by decide),
+    rw [hm', hmk₆, ho₅.word (.inl (by omega_using [hC0, hmx])) (by omega_using [hmx]), ha₄.hslot (by decide),
       r₃.word_eq hrm (by omega_using [hmx]), ho₂.word (.inl (by omega_using [hY0, hmx])) (by omega_using [hmx]),
           r₁.word_eq hrm (by omega_using [hmx])]
+
+theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
+    {sl o wx : Nat} {ok : Prop} (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
+    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hw2 : w = 2 * wx) (hsl : sl < 32)
+    (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hN : NVals s B w minv N ok)
+    (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
+    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1) :
+    WP isa (seqs (CrtIfma.prep M.mm sl)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧
+      XVals t B o wx mx X ∧ wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+      (ok → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      wv t.mem (off B o) (slot wx aXc) wx < X ∧
+      (ok → X ∣ N → wv t.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X) ∧
+      Frm B [xRange o wx] s.mem t.mem ∧ Keep mmRegs s t ∧
+      word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) := by
+  have hwx : wx ≤ w := by omega_using [hw2]
+  have hRx : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
+  rw [show CrtIfma.prep M.mm sl = ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aR2 ++
+      copyArr Public.aY aXc ++ redc M.mm Public.aXm ++ ([M.mm aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT ++ [M.mm Public.aY Public.aY Public.aOne] ++ ([.block [leave]] : List (Prog isa)) by
+    simp only [CrtIfma.prep, Bool.false_eq_true, ↓reduceIte, List.append_assoc, List.cons_append, List.nil_append]]
+  refine prepWith_ok M (fin := [M.mm Public.aY Public.aY Public.aOne]) (by simp) hg hw28 hlo hhi hwx2 hw2 hsl hslv hws
+    hN hXm hX hX1 hXodd fun s₅ hc₅ hX₅ _ _ _ hv₅ => ?_
+  -- `aY := R_X² R_X^-1 = R_X`.
+  refine WP.mono (M.mm_ok (o := Public.aY) (a := Public.aY) (b := Public.aOne) hc₅.good (Nat.le_refl _)
+    hwx2 (by omega_using [hw28, hwx]) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    hX₅.inv (by rw [hX₅.n, hX₅.one]; exact hX1)) fun s₆ ⟨_, hlt₆, hm₆, ha₆, k₆⟩ => ?_
+  rw [hX₅.n, hX₅.one, Nat.mul_one] at hm₆
+  rw [hX₅.n] at hlt₆
+  have hz₅ : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc₅.good.scr.nowrap; omega_using [this]
+  obtain ⟨hc₆, hX₆, fx₆⟩ := hc₅.of_arrays hX₅ ha₆ (by
+    intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl <;> decide) k₆.2.2 (k₆.gpr (by decide)) (by omega_using [hwx2])
+  refine ⟨hc₆, hX₆, fx₆, hlt₆, fun hok hd => ?_, ha₆.wv_of_not_mem (by decide) (by decide) hz₅,
+    ha₆.hslot (by decide), k₆⟩
+  apply VG.Proof.Bignum.mont_cancel hRx
+  rw [hm₆, hv₅ hok hd, ← Nat.pow_add]
+  congr 2; omega_using []
 
 theorem Good.of_outsideArr {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {j n : Nat}
     (h : Good s B Z w minv) (ho : Outside B (slot w j) n s.mem t.mem) (hk : Keep mmRegs s t) :
