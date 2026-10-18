@@ -212,11 +212,8 @@ def firstTwo (p q' z7 t7 z6 t6 : VReg) : List Instr :=
   [.vop (.perm .trn1 .s4 .v4 p q'), .vop (.perm .trn2 .s4 .v5 p q')] ++ gs .v4 .v5 z6 t6 ++
   [.vop (.perm .trn1 .d2 p .v4 .v5), .vop (.perm .trn2 .d2 q' .v4 .v5)]
 
-/-- Block `b`: `x2 = f + 128b`, `x3 = scratch + 64b`, `x6 = scratch + 512 + 64b`. -/
-def invPass1Body : List Instr :=
-  ((List.range 4).flatMap fun i =>
-    [.ldrq .v20 .x2 (32 * i), .ldrq .v21 .x2 (32 * i + 16),
-     .vop (.perm .uzp1 .h8 (row i) .v20 .v21)]) ++
+/-- The table of block `b` and its first four layers of the inverse. -/
+def invPass1Arith : List Instr :=
   [.ldrq .v20 .x6 0, .ldrq .v21 .x6 16, .ldrq .v22 .x6 32, .ldrq .v23 .x6 48,
    .vop (.perm .zip2 .h8 .v24 .v20 .v20), .vop (.perm .zip2 .h8 .v25 .v21 .v21),
    .vop (.perm .zip1 .h8 .v28 .v22 .v22), .vop (.perm .zip1 .h8 .v19 .v23 .v23),
@@ -229,19 +226,38 @@ def invPass1Body : List Instr :=
   [.vop (.dupE .h8 .v24 .v20 2), .vop (.dupE .h8 .v25 .v21 2)] ++ gs .v2 .v3 .v24 .v25 ++
   ([VReg.v0, .v1, .v2, .v3].flatMap reduce) ++
   [.vop (.dupE .h8 .v24 .v20 0), .vop (.dupE .h8 .v25 .v21 0)] ++
-  gs .v0 .v2 .v24 .v25 ++ gs .v1 .v3 .v24 .v25 ++
+  gs .v0 .v2 .v24 .v25 ++ gs .v1 .v3 .v24 .v25
+
+/-- Block `b`: `x2 = f + 128b`, `x3 = scratch + 64b`, `x6 = scratch + 512 + 64b`. -/
+def invPass1Body : List Instr :=
+  ((List.range 4).flatMap fun i =>
+    [.ldrq .v20 .x2 (32 * i), .ldrq .v21 .x2 (32 * i + 16),
+     .vop (.perm .uzp1 .h8 (row i) .v20 .v21)]) ++
+  invPass1Arith ++
   ((List.range 4).map fun i => .strq (row i) .x3 (16 * i)) ++
   [.addImm .x .x2 .x2 128, .addImm .x .x3 .x3 64, .addImm .x .x6 .x6 64, .subImm .x .x5 .x5 1]
+
+/-- Block `b` of `f` with 16-bit coefficients: `x2 = f + 64b`. -/
+def invPass1BodyW : List Instr :=
+  ((List.range 4).map fun i => .ldrq (row i) .x2 (16 * i)) ++
+  invPass1Arith ++
+  ((List.range 4).map fun i => .strq (row i) .x3 (16 * i)) ++
+  [.addImm .x .x2 .x2 64, .addImm .x .x3 .x3 64, .addImm .x .x6 .x6 64, .subImm .x .x5 .x5 1]
+
+/-- The last three layers of the inverse on the rows of a chunk, and the factor 3303 and its
+`tw` in `v22`, `v23`. -/
+def invPass2Arith : List Instr :=
+  gsRows 0 [(0, 1)] ++ gsRows 1 [(2, 3)] ++ gsRows 2 [(4, 5)] ++ gsRows 3 [(6, 7)] ++
+  gsRows 4 [(0, 2), (1, 3)] ++ gsRows 5 [(4, 6), (5, 7)] ++
+  ((List.range 8).flatMap fun r => reduce (row r)) ++
+  gsRows 6 [(0, 4), (1, 5), (2, 6), (3, 7)] ++
+  [.vop (.dupE .h8 .v22 .v18 7), .vop (.dupE .h8 .v23 .v19 7)]
 
 /-- Chunk `c`: `x2 = scratch + 16c`, `x3 = f + 32c`; the zetas `ζ₇ … ζ₁` and
 3303 in `v18`, `v19` (built after pass 1, which uses `v19`). -/
 def invPass2Body : List Instr :=
   ((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++
-  gsRows 0 [(0, 1)] ++ gsRows 1 [(2, 3)] ++ gsRows 2 [(4, 5)] ++ gsRows 3 [(6, 7)] ++
-  gsRows 4 [(0, 2), (1, 3)] ++ gsRows 5 [(4, 6), (5, 7)] ++
-  ((List.range 8).flatMap fun r => reduce (row r)) ++
-  gsRows 6 [(0, 4), (1, 5), (2, 6), (3, 7)] ++
-  [.vop (.dupE .h8 .v22 .v18 7), .vop (.dupE .h8 .v23 .v19 7)] ++
+  invPass2Arith ++
   ((List.range 8).flatMap fun r =>
     [.vop (.mulH .mul .v16 (row r) .v22), .vop (.mulH .sqrdmulh .v17 (row r) .v23),
      .vop (.mulH .mls .v16 .v17 .v31), .vop (.shift .sshr .h8 .v17 .v16 15),
@@ -249,6 +265,17 @@ def invPass2Body : List Instr :=
      .vop (.perm .zip1 .h8 .v24 .v16 .v29), .vop (.perm .zip2 .h8 .v25 .v16 .v29),
      .strq .v24 .x3 (128 * r), .strq .v25 .x3 (128 * r + 16)]) ++
   [.addImm .x .x2 .x2 16, .addImm .x .x3 .x3 32, .subImm .x .x5 .x5 1]
+
+/-- Chunk `c` of `f` with 16-bit coefficients: `x3 = f + 16c`. -/
+def invPass2BodyW : List Instr :=
+  ((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++
+  invPass2Arith ++
+  ((List.range 8).flatMap fun r =>
+    [.vop (.mulH .mul .v16 (row r) .v22), .vop (.mulH .sqrdmulh .v17 (row r) .v23),
+     .vop (.mulH .mls .v16 .v17 .v31), .vop (.shift .sshr .h8 .v17 .v16 15),
+     .vop (.logic .and .v17 .v17 .v31), .vop (.add .h8 .v16 .v16 .v17),
+     .strq .v16 .x3 (64 * r)]) ++
+  [.addImm .x .x2 .x2 16, .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1]
 
 def nttInv : Prog isa :=
   .seq (.block (halves invTableHalves .x1 512 ++ qConsts ++

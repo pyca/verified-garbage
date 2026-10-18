@@ -192,29 +192,28 @@ theorem ilane_zt {s : State} {b k K : Nat} {x y : VReg}
     (invBlockHalves_get b hk).2.1, hK]
   exact ⟨rfl, rfl⟩
 
-theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : State} {t : Addr} (h : LI1 s₀ b sb t) :
-    WP isa (.block invPass1Body) sb fun s' => LI1 s₀ (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
-  simp only [invPass1Body, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
+/-- The registers of a block's arithmetic in pass 1 of the inverse. -/
+abbrev iarRegs : List VReg :=
+  [.v0, .v1, .v2, .v3, .v4, .v5, .v16, .v17, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28]
+
+/-- The first four layers of the inverse on block `b` (`invPass1Arith`), from its four vectors
+and its table at `t`. -/
+theorem ip1_arith {rest : List Instr} {Q : State → Prop} {P : Poly} {b : Nat} (hb : b < 8) {s : State}
+    {t : Addr}
+    (a6 : ∀ i < 4, s.gpr .x6 + BitVec.ofNat 64 (16 * i) = t + BitVec.ofNat 64 (64 * b + 16 * i))
+    (i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16)
+    (tl : ∀ i < 4, ∀ e < 8, vhalf (s.mem.read (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16) e =
+      BitVec.ofNat 16 ((invBlockHalves b).getD (8 * i + e) 0))
+    (R : ∀ i < 4, IRepI P 0 (32 * b) (seg (8 * i)) 3329 (s.v (row i)))
+    (hq : Cst (s.v .v31) fun _ => 3329) (h10 : Cst (s.v .v30) fun _ => 10)
+    (kk : ∀ s₃₀, VChg iarRegs s s₃₀ →
+      (∀ i < 4, IRepI P 4 (32 * b) (seg (8 * i)) (2 * 3329) (s₃₀.v (row i))) →
+      WP isa (.block rest) s₃₀ Q) :
+    WP isa (.block (invPass1Arith ++ rest)) s Q := by
+  simp only [invPass1Arith, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
     List.flatMap_nil, List.append_nil]
-  have hpoly : PolyIs sb.mem (fP s₀) (P₀ s₀) :=
-    polyIs_frame h.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩
-  refine i_loads hp hb h.st h.x2 hpoly fun s c₀ R => ?_
   have hb0 : 32 * b % 32 = 0 := by omega
   have hb1 : 32 * b + 32 ≤ 256 := by omega
-  have st := h.st.vchg c₀
-  have a6 : ∀ i < 4, s.gpr .x6 + BitVec.ofNat 64 (16 * i) =
-      t + BitVec.ofNat 64 (64 * b + 16 * i) := fun i _ => by rw [c₀.gpr, h.x6, ptr_add]
-  have i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16 :=
-    fun i hi => by rw [st.rd,st.wr]; exact h.tableRead _ (by omega)
-  have tl : ∀ i < 4, ∀ e < 8, vhalf (s.mem.read (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16) e =
-      BitVec.ofNat 16 ((invBlockHalves b).getD (8 * i + e) 0) := fun i hi e he => by
-    have ht : ∀ j < 64, s.mem.readW (t + BitVec.ofNat 64 (8 * j)) 64 = hw4 invTableHalves j :=
-      fun j hj => by rw [c₀.mem]; exact h.tab j hj
-    have := vhalf_table (off:=0) (by simpa only [Nat.zero_add] using ht) (i := 4 * b + i) (by omega) he
-    rw [show 0 + 16 * (4 * b + i) = 64 * b + 16 * i by omega,
-      show 8 * (4 * b + i) + e = 32 * b + (8 * i + e) by omega, invTableHalves_get hb (by omega)] at this
-    exact this
   refine ld_step (VChg.refl [] s) (by decide) (a6 0 (by decide)) (i6 0 (by decide)) fun s₁ c₁ v₁ o₁ => ?_
   refine ld_step c₁ (by decide) (a6 1 (by decide)) (i6 1 (by decide)) fun s₂ c₂ v₂ o₂ => ?_
   refine ld_step c₂ (by decide) (a6 2 (by decide)) (i6 2 (by decide)) fun s₃ c₃ v₃ o₃ => ?_
@@ -259,10 +258,10 @@ theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : Sta
       rw [h₉.get .v25, h₈.get .v25, h₇.get .v25, h₆.v, h₅.get .v21]; exact itrep_zip2 hb t21
     rw [h₁₀.v]
     exact trep_perm (src_s4 .zip1 _ _) (by decide) t t (by decide)
-  have q₁₀ : Cst (s₁₀.v .v31) fun _ => 3329 := by rw [cz.get .v31, C₄.get .v31, c₀.get .v31]; exact h.q
-  have r0 : IRepI (P₀ s₀) 0 (32 * b) (seg 0) 3329 (s₁₀.v .v0) := by
+  have q₁₀ : Cst (s₁₀.v .v31) fun _ => 3329 := by rw [cz.get .v31, C₄.get .v31]; exact hq
+  have r0 : IRepI P 0 (32 * b) (seg 0) 3329 (s₁₀.v .v0) := by
     rw [cz.get .v0, C₄.get .v0]; exact R 0 (by decide)
-  have r1 : IRepI (P₀ s₀) 0 (32 * b) (seg 8) 3329 (s₁₀.v .v1) := by
+  have r1 : IRepI P 0 (32 * b) (seg 8) 3329 (s₁₀.v .v1) := by
     rw [cz.get .v1, C₄.get .v1]; exact R 1 (by decide)
   refine firstTwo_ok (p := .v0) (q' := .v1) (z7 := .v28) (t7 := .v19) (z6 := .v26) (t6 := .v27)
     (op := seg 0) (oq := seg 8) (hok := by decide) (hb := hb0) (hb' := hb1)
@@ -343,8 +342,8 @@ theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : Sta
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> rw [c₂₂.get _ (by decide), c₂₁.get _ (by decide)]
   have k₂₂ : Cst (s₂₂.v .v30) fun _ => 10 := by
-    rw [tt₂₂ .v30 (by simp), tt₁₉ .v30 (by simp), tt .v30 (by simp), C₄.get .v30, c₀.get .v30]
-    exact h.c10
+    rw [tt₂₂ .v30 (by simp), tt₁₉ .v30 (by simp), tt .v30 (by simp), C₄.get .v30]
+    exact h10
   have q₂₂ : Cst (s₂₂.v .v31) fun _ => 3329 := by rw [tt₂₂ .v31 (by simp), tt₁₉ .v31 (by simp)]; exact q₁₆
   refine reduce_ok (x := .v0) (hx := by rw [tt₂₂ .v0 (by simp)]; exact f0) (hB := by decide)
     (h10 := k₂₂) (hq := q₂₂) (k := fun s₂₃ c₂₃ g0 => ?_)
@@ -387,16 +386,40 @@ theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : Sta
     (ht := by rw [c₂₉.get .v25, h₂₈.v, t21']
               exact trep_dup Z0.2 fun e he => by simp only [getD_rep_lt he]; omega)
     (hq := by rw [c₂₉.get .v31]; exact q₂₈) (hB := by decide) (k := fun s₃₀ c₃₀ k1 k3 => ?_)
-  have CC := ((((((((((((c₀.trans C₄).trans cz).trans c₁₁).trans cw).trans c₁₆).trans c₁₈).trans
-    c₁₉).trans c₂₁).trans c₂₂).trans cr).trans c₂₈).trans c₂₉).trans c₃₀
-  have st₃₀ : St s₀ s₃₀ := h.st.vchg CC
-  have rows : ∀ i < 4, IRepI (P₀ s₀) 4 (32 * b) (seg (8 * i)) (2 * 3329) (s₃₀.v (row i)) := by
+  have rows : ∀ i < 4, IRepI P 4 (32 * b) (seg (8 * i)) (2 * 3329) (s₃₀.v (row i)) := by
     intro i hi
     match i, hi with
     | 0, _ => rw [show row 0 = .v0 from rfl, c₃₀.get .v0]; exact k0
     | 1, _ => exact k1
     | 2, _ => rw [show row 2 = .v2 from rfl, c₃₀.get .v2]; exact k2.mono (by decide)
     | 3, _ => exact k3.mono (by decide)
+  exact kk s₃₀ ((((((((((((C₄.trans cz).trans c₁₁).trans cw).trans c₁₆).trans c₁₈).trans
+    c₁₉).trans c₂₁).trans c₂₂).trans cr).trans c₂₈).trans c₂₉).trans c₃₀).mono rows
+
+theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : State} {t : Addr} (h : LI1 s₀ b sb t) :
+    WP isa (.block invPass1Body) sb fun s' => LI1 s₀ (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
+  simp only [invPass1Body, List.append_assoc]
+  have hpoly : PolyIs sb.mem (fP s₀) (P₀ s₀) :=
+    polyIs_frame h.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩
+  refine i_loads hp hb h.st h.x2 hpoly fun s c₀ R => ?_
+  have st := h.st.vchg c₀
+  have a6 : ∀ i < 4, s.gpr .x6 + BitVec.ofNat 64 (16 * i) =
+      t + BitVec.ofNat 64 (64 * b + 16 * i) := fun i _ => by rw [c₀.gpr, h.x6, ptr_add]
+  have i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16 :=
+    fun i hi => by rw [st.rd,st.wr]; exact h.tableRead _ (by omega)
+  have tl : ∀ i < 4, ∀ e < 8, vhalf (s.mem.read (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16) e =
+      BitVec.ofNat 16 ((invBlockHalves b).getD (8 * i + e) 0) := fun i hi e he => by
+    have ht : ∀ j < 64, s.mem.readW (t + BitVec.ofNat 64 (8 * j)) 64 = hw4 invTableHalves j :=
+      fun j hj => by rw [c₀.mem]; exact h.tab j hj
+    have := vhalf_table (off:=0) (by simpa only [Nat.zero_add] using ht) (i := 4 * b + i) (by omega) he
+    rw [show 0 + 16 * (4 * b + i) = 64 * b + 16 * i by omega,
+      show 8 * (4 * b + i) + e = 32 * b + (8 * i + e) by omega, invTableHalves_get hb (by omega)] at this
+    exact this
+  refine ip1_arith hb a6 i6 tl R (by rw [c₀.get .v31]; exact h.q) (by rw [c₀.get .v30]; exact h.c10)
+    fun s₃₀ C' rows => ?_
+  have CC := c₀.trans C'
+  have st₃₀ : St s₀ s₃₀ := h.st.vchg CC
   refine wp_stores (p := sP s₀) (base := fun r => 64 * b + 16 * r)
     (fun r _ => by rw [CC.gpr, h.x3, ptr_add]) (fun r hr => ⟨by omega, by omega⟩)
     (fun r hr => by omega) (fun r hr r' hr' e => by omega) (fun r hr => inS hp st₃₀ (by omega))
