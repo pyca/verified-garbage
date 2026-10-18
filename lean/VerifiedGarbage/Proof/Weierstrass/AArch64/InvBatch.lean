@@ -163,11 +163,17 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
 
 /-! ## A batch -/
 
+/-- The update of `f`, `g`, staged in `[nf]`, `[ng]`, through `[t]`. -/
+abbrev fgCodeAt (P : InvCfg) (nf ng t : Nat) : List Instr :=
+  ((maskOf .x16 .x4 ++ maskOf .x17 .x5 ++ lin .x4 .x5 .x16 .x17 t P.sF P.sG P.L P.L) ++ shr59 nf t P.L) ++
+  (((maskOf .x16 .x6 ++ maskOf .x17 .x7 ++ lin .x6 .x7 .x16 .x17 t P.sF P.sG P.L P.L) ++ shr59 ng t P.L) ++
+  (copyW P.sF nf P.L ++ copyW P.sG ng P.L))
+
+theorem fgUpdateAt_eq (P : InvCfg) (nf ng t : Nat) : P.fgUpdateAt nf ng t = fgCodeAt P nf ng t := by
+  simp only [fgCodeAt, InvCfg.fgUpdateAt, List.append_assoc]
+
 /-- The update of `f`, `g`. -/
-abbrev fgCode (P : InvCfg) : List Instr :=
-  ((maskOf .x16 .x4 ++ maskOf .x17 .x5 ++ lin .x4 .x5 .x16 .x17 P.sT P.sF P.sG P.L P.L) ++ shr59 P.sNF P.sT P.L) ++
-  (((maskOf .x16 .x6 ++ maskOf .x17 .x7 ++ lin .x6 .x7 .x16 .x17 P.sT P.sF P.sG P.L P.L) ++ shr59 P.sNG P.sT P.L) ++
-  (copyW P.sF P.sNF P.L ++ copyW P.sG P.sNG P.L))
+abbrev fgCode (P : InvCfg) : List Instr := fgCodeAt P P.sNF P.sNG P.sT
 
 /-- The update of `a`, `b`. -/
 abbrev abCode (P : InvCfg) : List Instr :=
@@ -178,7 +184,7 @@ abbrev abCode (P : InvCfg) : List Instr :=
 
 theorem update_eq (P : InvCfg) :
     (.movz .x .x12 0 0 :: P.fgUpdate) ++ P.abUpdate = ([.movz .x .x12 0 0] : List Instr) ++ (fgCode P ++ abCode P) := by
-  simp only [fgCode, abCode, InvCfg.fgUpdate, InvCfg.abUpdate, InvCfg.L, List.append_assoc, List.cons_append,
+  simp only [fgCode, abCode, InvCfg.fgUpdate, InvCfg.fgUpdateAt, InvCfg.abUpdate, InvCfg.L, List.append_assoc, List.cons_append,
     List.nil_append]
 
 theorem Unch.wv2 {base : Addr} {a b : Nat × Nat} {m m' : Mem} (h : Unch base [a, b] m m') {d k : Nat}
@@ -217,6 +223,65 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
   exact ⟨hD, hU, hV, hQ, hR, by rw [k₂.gpr _ (by decide), c19], by rw [k₂.mem, m₁],
     (k₁.mono (by decide)).trans ((Keeps.regs k₂).mono (by decide))⟩
 
+/-- A batch's update of `f`, `g`, by the matrix in `x4`–`x7`, staged in `[nf]`, `[ng]`
+through `[t]`, past `g` in the table. -/
+theorem fgUpdAt_ok {P : InvCfg} {nf ng t : Nat} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
+    (hnf : P.sG + 8 * P.L ≤ nf) (hng : nf + 8 * P.L ≤ ng) (htt : ng + 8 * P.L ≤ t)
+    (hte : t + 8 * P.L ≤ P.tbl + 9 * (8 * P.M.n)) (hnf8 : nf % 8 = 0) (hng8 : ng % 8 = 0) (ht8 : t % 8 = 0)
+    (hp : p < 2 ^ (64 * P.M.n)) (h12 : s.gpr .x12 = 0) {u v q r f g : Int}
+    (h4 : s.gpr .x4 = BitVec.ofInt 64 u) (h5 : s.gpr .x5 = BitVec.ofInt 64 v)
+    (h6 : s.gpr .x6 = BitVec.ofInt 64 q) (h7 : s.gpr .x7 = BitVec.ofInt 64 r)
+    (huv : |u| + |v| ≤ 2 ^ 59) (hqr : |q| + |r| ≤ 2 ^ 59)
+    (hF : (wordsVal s.mem base P.sF P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) = f % ((2 ^ (64 * P.L) : Nat) : Int))
+    (hG : (wordsVal s.mem base P.sG P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) = g % ((2 ^ (64 * P.L) : Nat) : Int))
+    (hf : |f| ≤ p) (hg : |g| ≤ p) (hdf : 2 ^ 59 ∣ u * f + v * g) (hdg : 2 ^ 59 ∣ q * f + r * g) :
+    WP isa (.block (fgCodeAt P nf ng t)) s fun t' =>
+      (wordsVal t'.mem base P.sF P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) =
+        ((u * f + v * g) / 2 ^ 59) % ((2 ^ (64 * P.L) : Nat) : Int) ∧
+      (wordsVal t'.mem base P.sG P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) =
+        ((q * f + r * g) / 2 ^ 59) % ((2 ^ (64 * P.L) : Nat) : Int) ∧
+      KeepRegs [.x2, .x3, .x8, .x9, .x10, .x16, .x17] s t' ∧
+      Unch base [(t, 8 * P.L), (nf, 8 * P.L), (ng, 8 * P.L), (P.sF, 8 * P.L), (P.sG, 8 * P.L)] s.mem t'.mem := by
+  have hn := hs.nowrap
+  obtain ⟨eL, eF, eG, -, -, -, -, -⟩ := slots P
+  have n4 := hL.n4; have htbl := hL.tbl; have htbl8 := hL.tbl8
+  have hp' : p < 2 ^ (64 * (P.L - 1)) := by rw [eL, Nat.add_sub_cancel]; exact hp
+  rw [WP.block_append_iff]
+  refine WP.mono (fHalf_ok hs h12 (w := .x4) (w' := .x5) (by decide) (by decide) h4 h5 huv
+    (T := t) (x := P.sF) (y := P.sG) (dst := nf) (L := P.L) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    hF hG hf hg hp' hdf) fun s₁ ⟨e₁, k₁, U₁⟩ => ?_
+  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  have rF : wordsVal s₁.mem base P.sF P.L = wordsVal s.mem base P.sF P.L :=
+    Unch.wv2 U₁ (Or.inl (show P.sF + 8 * P.L ≤ t by omega_arith)) (Or.inl (show P.sF + 8 * P.L ≤ nf by omega_arith))
+      (by omega_arith)
+  have rG : wordsVal s₁.mem base P.sG P.L = wordsVal s.mem base P.sG P.L :=
+    Unch.wv2 U₁ (Or.inl (show P.sG + 8 * P.L ≤ t by omega_arith)) (Or.inl (show P.sG + 8 * P.L ≤ nf by omega_arith))
+      (by omega_arith)
+  rw [WP.block_append_iff]
+  refine WP.mono (fHalf_ok hs₁ (by rw [k₁.gpr _ (by decide), h12]) (w := .x6) (w' := .x7) (by decide) (by decide)
+    (by rw [k₁.gpr _ (by decide)]; exact h6) (by rw [k₁.gpr _ (by decide)]; exact h7) hqr
+    (T := t) (x := P.sF) (y := P.sG) (dst := ng) (L := P.L) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by rw [rF]; exact hF) (by rw [rG]; exact hG) hf hg hp' hdg) fun s₂ ⟨e₂, k₂, U₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  have rNF : wordsVal s₂.mem base nf P.L = wordsVal s₁.mem base nf P.L :=
+    Unch.wv2 U₂ (Or.inl (show nf + 8 * P.L ≤ t by omega_arith)) (Or.inl (show nf + 8 * P.L ≤ ng by omega_arith))
+      (by omega_arith)
+  rw [WP.block_append_iff]
+  refine WP.mono (copyW_ok hs₂ (dst := P.sF) (src := nf) (by omega_arith) (by omega_arith) P.L (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  have rNG : wordsVal s₃.mem base ng P.L = wordsVal s₂.mem base ng P.L := O₃.wordsVal (by omega_arith) (by omega_arith)
+  refine WP.mono (copyW_ok hs₃ (dst := P.sG) (src := ng) (by omega_arith) (by omega_arith) P.L (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun t' ⟨e₄, k₄, O₄⟩ => ⟨?_, ?_, ?_, ?_⟩
+  · rw [O₄.wordsVal (by omega_arith) (by omega_arith), e₃, rNF]; exact e₁
+  · rw [e₄, rNG]; exact e₂
+  · exact (k₁.trans k₂).trans ((k₃.trans k₄).mono (by decide))
+  · refine ((U₁.trans U₂).trans (O₃.unch.trans O₄.unch)).mono fun w hw => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    rcases hw with h | h | h | h | h | h <;> simp only [h, true_or, or_true]
+
 /-- A batch's update of `f`, `g`, by the matrix in `x4`–`x7`. -/
 theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
     (hp : p < 2 ^ (64 * P.M.n)) (h12 : s.gpr .x12 = 0) {u v q r f g : Int}
@@ -233,45 +298,11 @@ theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
         ((q * f + r * g) / 2 ^ 59) % ((2 ^ (64 * P.L) : Nat) : Int) ∧
       KeepRegs [.x2, .x3, .x8, .x9, .x10, .x16, .x17] s t ∧
       Unch base [(P.sT, 8 * P.L), (P.sNF, 8 * P.L), (P.sNG, 8 * P.L), (P.sF, 8 * P.L), (P.sG, 8 * P.L)] s.mem t.mem := by
-  have hn := hs.nowrap
   obtain ⟨eL, eF, eG, eA, eB, eNF, eNG, eT⟩ := slots P
-  have n4 := hL.n4; have htbl := hL.tbl; have htbl8 := hL.tbl8
-  have hp' : p < 2 ^ (64 * (P.L - 1)) := by rw [eL, Nat.add_sub_cancel]; exact hp
-  rw [WP.block_append_iff]
-  refine WP.mono (fHalf_ok hs h12 (w := .x4) (w' := .x5) (by decide) (by decide) h4 h5 huv
-    (T := P.sT) (x := P.sF) (y := P.sG) (dst := P.sNF) (L := P.L) (by omega_using [eL, n4]) (by omega_using [eL, eF, n4, htbl]) (by omega_using [eF, htbl8]) (by omega_using [eL, eG, n4, htbl])
-    (by omega_using [eG, htbl8]) (by omega_using [eL, eT, n4, htbl]) (by omega_using [eT, htbl8]) (by omega_using [eL, eNF, n4, htbl]) (by omega_using [eNF, htbl8]) (by omega_using [eL, eF, eT]) (by omega_using [eL, eG, eT]) (by omega_using [eL, eNF, eT])
-    hF hG hf hg hp' hdf) fun s₁ ⟨e₁, k₁, U₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have rF : wordsVal s₁.mem base P.sF P.L = wordsVal s.mem base P.sF P.L :=
-    Unch.wv2 U₁ (Or.inl (show P.sF + 8 * P.L ≤ P.sT by omega_using [eL, eF, eT])) (Or.inl (show P.sF + 8 * P.L ≤ P.sNF by omega_using [eL, eF, eNF]))
-      (by omega_using [eL, eF, n4, htbl, hn])
-  have rG : wordsVal s₁.mem base P.sG P.L = wordsVal s.mem base P.sG P.L :=
-    Unch.wv2 U₁ (Or.inl (show P.sG + 8 * P.L ≤ P.sT by omega_using [eL, eG, eT])) (Or.inl (show P.sG + 8 * P.L ≤ P.sNF by omega_using [eL, eG, eNF]))
-      (by omega_using [eL, eG, n4, htbl, hn])
-  rw [WP.block_append_iff]
-  refine WP.mono (fHalf_ok hs₁ (by rw [k₁.gpr _ (by decide), h12]) (w := .x6) (w' := .x7) (by decide) (by decide)
-    (by rw [k₁.gpr _ (by decide)]; exact h6) (by rw [k₁.gpr _ (by decide)]; exact h7) hqr
-    (T := P.sT) (x := P.sF) (y := P.sG) (dst := P.sNG) (L := P.L) (by omega_using [eL, n4]) (by omega_using [eL, eF, n4, htbl]) (by omega_using [eF, htbl8]) (by omega_using [eL, eG, n4, htbl])
-    (by omega_using [eG, htbl8]) (by omega_using [eL, eT, n4, htbl]) (by omega_using [eT, htbl8]) (by omega_using [eL, eNG, n4, htbl]) (by omega_using [eNG, htbl8]) (by omega_using [eL, eF, eT]) (by omega_using [eL, eG, eT]) (by omega_using [eL, eNG, eT])
-    (by rw [rF]; exact hF) (by rw [rG]; exact hG) hf hg hp' hdg) fun s₂ ⟨e₂, k₂, U₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have rNF : wordsVal s₂.mem base P.sNF P.L = wordsVal s₁.mem base P.sNF P.L :=
-    Unch.wv2 U₂ (Or.inl (show P.sNF + 8 * P.L ≤ P.sT by omega_using [eL, eNF, eT])) (Or.inl (show P.sNF + 8 * P.L ≤ P.sNG by omega_using [eL, eNF, eNG]))
-      (by omega_using [eL, eNF, n4, htbl, hn])
-  rw [WP.block_append_iff]
-  refine WP.mono (copyW_ok hs₂ (dst := P.sF) (src := P.sNF) (by omega_using [eNF, htbl8]) (by omega_using [eF, htbl8]) P.L (by omega_using [eL, eNF, n4, htbl]) (by omega_using [eL, eF, n4, htbl])
-    (by omega_using [eL, eF, eNF])) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have rNG : wordsVal s₃.mem base P.sNG P.L = wordsVal s₂.mem base P.sNG P.L := O₃.wordsVal (by omega_using [eL, eF, eNG]) (by omega_using [eL, eNG, n4, htbl, hn])
-  refine WP.mono (copyW_ok hs₃ (dst := P.sG) (src := P.sNG) (by omega_using [eNG, htbl8]) (by omega_using [eG, htbl8]) P.L (by omega_using [eL, eNG, n4, htbl]) (by omega_using [eL, eG, n4, htbl])
-    (by omega_using [eL, eG, eNG])) fun t ⟨e₄, k₄, O₄⟩ => ⟨?_, ?_, ?_, ?_⟩
-  · rw [O₄.wordsVal (by omega_using [eL, eF, eG]) (by omega_using [eL, eF, n4, htbl, hn]), e₃, rNF]; exact e₁
-  · rw [e₄, rNG]; exact e₂
-  · exact (k₁.trans k₂).trans ((k₃.trans k₄).mono (by decide))
-  · refine ((U₁.trans U₂).trans (O₃.unch.trans O₄.unch)).mono fun w hw => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-    rcases hw with h | h | h | h | h | h <;> simp only [h, true_or, or_true]
+  have n4 := hL.n4; have htbl8 := hL.tbl8
+  exact fgUpdAt_ok hL hs (by omega_using [eL, eG, eNF]) (by omega_using [eL, eNF, eNG])
+    (by omega_using [eL, eNG, eT]) (by omega_using [eL, eT, n4]) (by omega_using [eNF, htbl8])
+    (by omega_using [eNG, htbl8]) (by omega_using [eT, htbl8]) hp h12 h4 h5 h6 h7 huv hqr hF hG hf hg hdf hdg
 
 /-- A batch's update of `a`, `b`, by the matrix in `x4`–`x7`. -/
 theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
