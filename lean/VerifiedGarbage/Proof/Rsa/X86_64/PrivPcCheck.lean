@@ -23,13 +23,13 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.Rsa (gOf checkResult released check_logic bytesAt_length')
 
 theorem checkP_eq (pdName : String) (pd : Prog isa) :
-    seqs ([.block pdArgs, .call pdName pd] ++ PrivCheckedPc.tail) =
+    seqs (([.block pdArgs, .call pdName pd] : List (Prog isa)) ++ PrivCheckedPc.tail) =
       .seq (.block pdArgs) (.seq (.call pdName pd) (seqs PrivCheckedPc.tail)) := rfl
 
 /-- Everything after the CRT, from any state the frame allows: whatever `M`
 holds and the CRT returned. -/
 theorem checkP_ok (P : PublicImpl) (pdName : String) {s t : State} (hp : PreFPc s) (he : EnvP s t) :
-    WP isa (seqs ([.block pdArgs, .call pdName (P.code)] ++ PrivCheckedPc.tail)) t fun t' =>
+    WP isa (seqs (([.block pdArgs, .call pdName (P.code)] : List (Prog isa)) ++ PrivCheckedPc.tail)) t fun t' =>
       EnvP s t' ∧
       (Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) =
           some (Spec.Rsa.wordsAt s.mem (stackArg s 14) (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat)) →

@@ -39,7 +39,7 @@ theorem wp_allocP {body : Prog isa} {s : State} {Q : State → Prop} (hsp : fram
 theorem bodyP_eq (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) :
     PrivCheckedPc.body crtName crt pdName pd =
       .seq (.block crtArgs) (.seq (.call crtName crt)
-        (seqs ([.block pdArgs, .call pdName pd] ++ PrivCheckedPc.tail))) := rfl
+        (seqs (([.block pdArgs, .call pdName pd] : List (Prog isa)) ++ PrivCheckedPc.tail))) := rfl
 
 /-- The return address is outside everything the function writes. -/
 theorem retP_frame {s : State} (hp : PreFPc s) {m : Mem} (h : Frame [stkRP s, outR s, scrR s] s.mem m) :
