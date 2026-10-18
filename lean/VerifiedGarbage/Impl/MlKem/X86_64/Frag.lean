@@ -351,16 +351,20 @@ structure Callee4 where
   matrix while absorbing three blocks of `ek` into `H`'s sponge
   (`Sample4.sampleH`), if the implementation has one. -/
   batchH : Option (Prog isa)
+  /-- The same implementation with 16-bit coefficients. -/
+  name16 : String
+  code16 : Prog isa
 
-def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none⟩
+def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none,
+  "vg_mlkem16_sample_ntt4", Sample4.sampleNTT4 true⟩
 def Callee4.avx2 : Callee4 :=
   ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, (fun n k o w => prfsAvx2 n k o w), .avx2,
-    some Sample4.sampleH⟩
+    some Sample4.sampleH, "vg_mlkem16_sample_ntt4_avx2", Sample4.sampleNTT4Avx2 false true⟩
 
 /-- Four-way sampling with AVX-512VL quadword rotates. -/
 def Callee4.avx512 : Callee4 :=
   ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, (fun n k o w => prfsAvx2 n k o w true), .avx2,
-    some (Sample4.sampleH true)⟩
+    some (Sample4.sampleH true), "vg_mlkem16_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true true⟩
 
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
 `a`, with the working space `scr` (8192 bytes), and `r15 ← r15 ∧ result`. -/
