@@ -28,7 +28,7 @@ abstract `HashLaw` and never import polynomial algebra.
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok const_ok ldrev_ok hInv_ok Only rev_eq)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok constImm_ok ldrev_ok hInvImm_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (preg setupG lows highs setupC setup ordE ordD enc dec)
 open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
@@ -73,9 +73,9 @@ theorem tree_ok {H : Q} (k a b : Nat) (hk8 : k < 8) (ha : a < k) (hb : b < k) (h
 
 /-- The SSE code of `setupG`. -/
 def setupGS : List Instr :=
-  Impl.Gcm.X86_64.Pclmul.const .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
-  Impl.Gcm.X86_64.Pclmul.const .xmm1 poly ++
-  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInv ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
+  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInvImm ++
   Impl.Gcm.X86_64.Pclmul.mul (preg 1) (preg 0) (preg 0) ++ Impl.Gcm.X86_64.Pclmul.mul (preg 2) (preg 1) (preg 0) ++
   Impl.Gcm.X86_64.Pclmul.mul (preg 3) (preg 1) (preg 1) ++ Impl.Gcm.X86_64.Pclmul.mul (preg 4) (preg 3) (preg 0) ++
   Impl.Gcm.X86_64.Pclmul.mul (preg 5) (preg 3) (preg 1) ++ Impl.Gcm.X86_64.Pclmul.mul (preg 6) (preg 3) (preg 2) ++
@@ -104,15 +104,15 @@ theorem setupGS_ok (t : State) (hin : InRegions (t.rd ++ t.wr) (t.gpr .rdi + Bit
       (∀ r, r ≠ .rax → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   simp only [setupGS, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
+  refine WP.mono (constImm_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
+  refine WP.mono (constImm_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
   have o₁₂ := o₁.trans o₂
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok .xmm7 .rdi 240 t₂ (by decide) (by rw [o₂.xmm _ (by decide), c₁, rev_eq])
     (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact hin)) fun t₃ ⟨l₃, o₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (hInv_ok t₃) fun t₄ ⟨h₄, o₄⟩ => ?_
+  refine WP.mono (hInvImm_ok t₃) fun t₄ ⟨h₄, o₄⟩ => ?_
   have o₁₄ := (o₁₂.trans o₃).trans o₄
   rw [o₁₂.mem, o₁₂.gpr _ (by decide)] at l₃
   let H := φ (blockAt t.mem (t.gpr .rdi + BitVec.ofInt 64 ((240 : Nat) : Int)))
@@ -510,7 +510,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Proof.Gcm.X86_64.Pclmul (const_ok Only rev_eq)
+open VG.Proof.Gcm.X86_64.Pclmul (constImm_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encR dec decR)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Proof.Gcm.X86_64 (revMask)
@@ -519,8 +519,8 @@ open VG.Spec.Gcm (Block blockAt hpow)
 
 /-- The SSE code of `setupGR`. -/
 def setupGRS : List Instr :=
-  Impl.Gcm.X86_64.Pclmul.const .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
-  Impl.Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
   (List.range 8).map fun i => .movdquLoad (preg i) (at_ .rdi (prepOff (i + 1)))
 
 theorem lane0_setupGR : lane0Block setupGR = some setupGRS := by decide +kernel
@@ -563,9 +563,9 @@ theorem setupGRS_ok (t : State)
       (∀ r, r ≠ .rax → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   simp only [setupGRS, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
+  refine WP.mono (constImm_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
+  refine WP.mono (constImm_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
   have o₁₂ := o₁.trans o₂
   refine WP.mono (loadsS_ok t₂ 8 (by decide) (fun i hi => by
     rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr .rdi (by decide)]; exact hin i hi)) fun t₃ ⟨l₃, o₃⟩ => ?_
