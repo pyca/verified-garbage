@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
 public import VerifiedGarbage.Proof.Dsa.X86_64.Calls
+public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenCalls
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
@@ -36,6 +37,12 @@ def variant : Backend where
   signSp := Code.all_of_allInstrs (by decide +kernel)
   verifySp := Code.all_of_allInstrs (by decide +kernel)
   signDepth := by decide +kernel
+  parametersVerified := parameters_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
+  deriveVerified := derive_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
+  parametersSp := Code.all_of_allInstrs (by decide +kernel)
+  deriveSp := Code.all_of_allInstrs (by decide +kernel)
+  parametersDepth := by decide +kernel
+  deriveDepth := by decide +kernel
   stackBound := by decide
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Adx
