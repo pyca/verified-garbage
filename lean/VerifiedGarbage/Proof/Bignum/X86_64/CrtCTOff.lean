@@ -55,15 +55,15 @@ def OffQF (p : LPub) (D : OffD) (s : State) : Prop :=
     InRegions (s.rd ++ s.wr) (off (off D.B D.op) (8 * sW)) 8 ∧
     word s.mem (off D.B D.op) (8 * sW) = BitVec.ofNat 64 D.wp
 
-theorem OffPF.congr {p : LPub} {D : OffD} {s t : State} {rs : List Reg} (h : OffPF p D s) (hm : t.mem = s.mem)
-    (k : Keep rs s t) : OffPF p D t := by
+theorem OffPF.congr {p : LPub} {D : OffD} {s t : State} (h : OffPF p D s) (hm : t.mem = s.mem)
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : OffPF p D t := by
   obtain ⟨a, b, c, d⟩ := h
-  exact ⟨by rw [k.2.1, k.2.2]; exact a, by rw [hm]; exact b, by rw [k.2.1, k.2.2]; exact c, by rw [hm]; exact d⟩
+  exact ⟨by rw [hrd, hwr]; exact a, by rw [hm]; exact b, by rw [hrd, hwr]; exact c, by rw [hm]; exact d⟩
 
-theorem OffQF.congr {p : LPub} {D : OffD} {s t : State} {rs : List Reg} (h : OffQF p D s) (hm : t.mem = s.mem)
-    (k : Keep rs s t) : OffQF p D t := by
+theorem OffQF.congr {p : LPub} {D : OffD} {s t : State} (h : OffQF p D s) (hm : t.mem = s.mem)
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : OffQF p D t := by
   obtain ⟨a, b, c, d, e⟩ := h
-  exact ⟨a.congr hm k, by rw [k.2.1, k.2.2]; exact b, by rw [hm]; exact c, by rw [k.2.1, k.2.2]; exact d,
+  exact ⟨a.congr hm hrd hwr, by rw [hrd, hwr]; exact b, by rw [hm]; exact c, by rw [hrd, hwr]; exact d,
     by rw [hm]; exact e⟩
 
 /-- After `offP`'s first load: `n`'s base in `rax`. -/
@@ -88,12 +88,12 @@ theorem offLink_ct {α : Type} (π : α → LPub) (δ : α → OffD) {j : Nat} {
 
 /-- `offP`: `R_p mod p` at word `2 w` of `pre`, from a prime's workspace. -/
 theorem offP_ct {α : Type} (π : α → LPub) (δ : α → OffD) {j : Nat} {Q : α → State → Prop}
-    (hF : ∀ a s, Q a s → OffPF (π a) (δ a) s) (hd : ∀ a, (π a).d = 2 * (δ a).w) :
+    (hF : ∀ a s, Q a s → OffPF (π a) (δ a) s) (hd : ∀ a s, Q a s → (π a).d = 2 * (δ a).w) :
     RelCT isa (Two fun a s => LpA j (π a) s ∧ Q a s) (.block Crt.offP) (Two (LpB j)) := by
   rw [show Crt.offP = ([.mov .rax (.mem (hdr sLink))] : List Instr) ++
     [.mov .rax (.mem (Crt.ws .rax sW)), .alu .add .rax (.reg .rax)] from rfl]
   refine RelCT.block_append (RelCT.seq (offLink_ct π δ (F := fun p D s => OffPF p D s ∧ p.d = 2 * D.w)
-    (fun a s h => ⟨hF a s h, hd a⟩) (fun _ _ _ h => h.1) fun _ _ _ _ h hm k => ⟨h.1.congr hm k, h.2⟩) ?_)
+    (fun a s h => ⟨hF a s h, hd a s h⟩) (fun _ _ _ h => h.1) fun _ _ _ _ h hm k => ⟨h.1.congr hm k.2.1 k.2.2, h.2⟩) ?_)
   refine RelCT.mono (two_piece (Φ := OffP1 j fun p D s => OffPF p D s ∧ p.d = 2 * D.w)
     (Ψ := fun p => LpB j p.1) [.rax] (pins_of (fun p _ => p.2.B) fun p s h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.2.2) (by taint_decide) ?_)
@@ -113,15 +113,15 @@ def OffQ3 (j : Nat) (F : LPub → OffD → State → Prop) (p : LPub × OffD) (s
 
 /-- `offQ`: `R_q mod q` at word `2 w + w_p` of `pre`, from a prime's workspace. -/
 theorem offQ_ct {α : Type} (π : α → LPub) (δ : α → OffD) {j : Nat} {Q : α → State → Prop}
-    (hF : ∀ a s, Q a s → OffQF (π a) (δ a) s) (hd : ∀ a, (π a).d = 2 * (δ a).w + (δ a).wp) :
+    (hF : ∀ a s, Q a s → OffQF (π a) (δ a) s) (hd : ∀ a s, Q a s → (π a).d = 2 * (δ a).w + (δ a).wp) :
     RelCT isa (Two fun a s => LpA j (π a) s ∧ Q a s) (.block Crt.offQ) (Two (LpB j)) := by
   rw [show Crt.offQ = ([.mov .rax (.mem (hdr sLink))] : List Instr) ++
     (([.mov .rax (.mem (Crt.ws .rax sW)), .alu .add .rax (.reg .rax), .mov .rdx (.mem (hdr sLink))] : List Instr) ++
       (([.mov .rdx (.mem (Crt.ws .rdx sWsP))] : List Instr) ++ [.alu .add .rax (.mem (Crt.ws .rdx sW))])) from rfl]
   let F : LPub → OffD → State → Prop := fun p D s => OffQF p D s ∧ p.d = 2 * D.w + D.wp
   have hFk : ∀ p D s t, F p D s → t.mem = s.mem → ∀ {rs : List Reg}, Keep rs s t → F p D t :=
-    fun _ _ _ _ h hm _ k => ⟨h.1.congr hm k, h.2⟩
-  refine RelCT.block_append (RelCT.seq (offLink_ct π δ (F := F) (fun a s h => ⟨hF a s h, hd a⟩)
+    fun _ _ _ _ h hm _ k => ⟨h.1.congr hm k.2.1 k.2.2, h.2⟩
+  refine RelCT.block_append (RelCT.seq (offLink_ct π δ (F := F) (fun a s h => ⟨hF a s h, hd a s h⟩)
     (fun _ _ _ h => h.1.1) fun _ _ _ _ h hm k => hFk _ _ _ _ h hm k) ?_)
   refine RelCT.block_append (RelCT.seq (two_piece (Φ := OffP1 j F) (Ψ := OffQ2 j F) [.rax, .rdi]
     (pins_of (fun p r => if r = .rax then p.2.B else p.1.W) fun p s h r hr => by
