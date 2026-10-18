@@ -129,6 +129,15 @@ class Plan(Project):
         (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
         self.assertEqual(self.stale(), 3)
 
+    def test_needed_takes_whole_precompiled_libraries(self):
+        self.edit('globs = ["VerifiedGarbage.Spec.A"]', 'globs = ["VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
+        (self.lean / "VerifiedGarbage/UsesA.lean").write_text("import VerifiedGarbage.Spec.A\n")
+        closure = shards.closures(shards.imports(shards.modules()))
+        # Importing Spec.A loads NativeSpec, built from Spec.B too.
+        self.assertEqual(shards.needed(["VerifiedGarbage.UsesA"], closure),
+                         {"VerifiedGarbage.UsesA", "VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"})
+        self.assertEqual(shards.needed(["VerifiedGarbage.Other"], closure), {"VerifiedGarbage.Other"})
+
     def test_a_setting_rebuilds_everything(self):
         self.edit('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]')
         self.assertEqual(self.stale(), 5)
@@ -233,6 +242,26 @@ class Many(Project):
     def count(self, each):
         self.manifest["times"] = {m: (each if m in self.SINKS else 0.0) for m in shards.modules()}
         return len(shards.plan(self.manifest)["targets"])
+
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
+    def test_only_sinks_with_something_to_build(self):
+        # Half the sinks changed: the shards build those, and are given no
+        # other sink (the root module, `Other`, the unchanged half).
+        self.manifest["inputs"] = shards.inputs()
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        self.manifest["times"] = {m: 400.0 for m in shards.modules()}
+        changed = self.SINKS[:20]
+        for m in changed:
+            (self.lean / f"{m.replace('.', '/')}.lean").write_text("-- changed\n")
+        p = shards.plan(self.manifest)
+        self.assertGreater(len(p["targets"]), 1)
+        self.assertEqual(sorted(t for ts in p["targets"] for t in ts), sorted(changed))
+        # `closure`: what a shard needs of the last build, its sinks here.
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps(p))
+        with mock.patch("sys.stdout", new_callable=io.StringIO) as out:
+            self.assertEqual(shards.main(["closure", str(plan), "1"]), 0)
+        self.assertEqual(out.getvalue().split(), sorted(p["targets"][0]))
 
     def test_a_shard_per_work(self):
         # 2000 s of work: three shards (two would be slower).

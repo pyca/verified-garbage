@@ -14,6 +14,12 @@ inputs:
   restore-keys:
     description: Fallbacks, one per line, most preferred first.
     required: true
+  modules:
+    description: >
+      A file of the project's modules (`lean_shards.py closure`) to unpack
+      alone, for a shard; empty for every module.
+    required: false
+    default: ""
 
 outputs:
   cache-hit:
@@ -144,7 +150,9 @@ runs:
     - name: Unpack this project's build
       if: ${{ hashFiles('lean/.lake/ltar/index.json') != '' }}
       shell: bash
-      run: python3 ci/lean_cache.py restore lean
+      env:
+        MODULES: ${{ inputs.modules }}
+      run: python3 ci/lean_cache.py restore lean ${MODULES:+--modules "$MODULES"}
     - uses: ./.github/actions/lean-mathlib
       with:
         mods: ${{ steps.lean-setup.outputs.mods }}

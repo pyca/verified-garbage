@@ -41,6 +41,11 @@ assembles their outputs (the last shard to finish, normally) builds.
                                         $GITHUB_OUTPUT
   lean_shards.py targets PLAN SHARD     the sinks of SHARD, as `lake build`
                                         targets (`+Module`), one per line
+  lean_shards.py closure PLAN SHARD     the modules SHARD's build needs (its
+                                        sinks, what they import, and the
+                                        precompiled libraries of those), one
+                                        per line: what it needs of the last
+                                        build
   lean_shards.py outputs PLAN SHARD     of the paths on stdin (files under
                                         `lean/.lake/build/`, relative to it),
                                         those that are outputs of SHARD's
@@ -140,6 +145,27 @@ def inputs() -> dict:
     settings, libraries = lakefile_inputs((LEAN / "lakefile.toml").read_text())
     files = {f: digest(LEAN / f) for f in INPUTS if f != "lakefile.toml"}
     return {**files, "lakefile.toml settings": settings, "libraries": libraries}
+
+
+def needed(targets: list[str], closure: dict[str, frozenset[str]]) -> set[str]:
+    """The modules a build of `targets` needs built: what they import, and
+    every module of a precompiled library one of those is in (Lake links
+    the whole library's shared library for a module importing any of its
+    modules), with what those import in turn."""
+    config = tomllib.loads((LEAN / "lakefile.toml").read_text())
+    native = [
+        {m for m in closure if any(matches(f"{k}:{e}", m, closure) for k in MODULE_LISTS for e in lib.get(k, []))}
+        for lib in config.get("lean_lib", []) if lib.get("precompileModules")
+    ]
+    out = set().union(*(closure[t] for t in targets))
+    grown = True
+    while grown:
+        grown = False
+        for lib in native:
+            if out & lib and not lib <= out:
+                out |= set().union(*(closure[m] for m in lib))
+                grown = True
+    return out
 
 
 def matches(entry: str, module: str, closure: dict[str, frozenset[str]]) -> bool:
@@ -273,7 +299,10 @@ def schedule(
     # critical path is the longest of its sinks'.
     path = paths(imps, cost)
     imported = {i for m in imps for i in imps[m]}
-    total = {m: sum(cost[x] for x in closure[m]) for m in imps if m not in imported}
+    # Only the sinks with something stale to build: the job that assembles
+    # the build checks every module, so a shard need not find the others
+    # up to date too, nor restore what they import (`closure`).
+    total = {m: sum(cost[x] for x in closure[m]) for m in imps if m not in imported and closure[m] & stale}
     # Largest first by work, not by estimate: taking long chains first spreads
     # what they import over more shards, which then build it more than once.
     sinks = sorted(total, key=lambda m: (-total[m], m))
@@ -362,10 +391,13 @@ def main(args: list[str]) -> int:
         print(f"count={count}")
         print(f"shards={json.dumps([str(i + 1) for i in range(count)])}")
         return 0
-    if len(args) == 3 and args[0] in ("targets", "outputs"):
+    if len(args) == 3 and args[0] in ("targets", "closure", "outputs"):
         p = read_json(args[1])
         i = shard_index(p, args[2])
-        if args[0] == "targets":
+        if args[0] == "closure":
+            for m in sorted(needed(p["targets"][i], closures(imports(modules())))):
+                print(m)
+        elif args[0] == "targets":
             # `+`: the module, not the package or library of the same name
             # (`VerifiedGarbage` is all three).
             for m in p["targets"][i]:
