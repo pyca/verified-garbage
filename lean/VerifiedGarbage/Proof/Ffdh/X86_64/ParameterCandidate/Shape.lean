@@ -16,7 +16,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.Ffdh.ParameterCandidate
 
 theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
-    (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hlen : bs.length = (bits + 7) / 8)
+    (hb1 : 9 ≤ bits) (hb2 : bits ≤ 8192) (hlen : bs.length = (bits + 7) / 8)
     (hrp : s.gpr .rsi = rp) (hop : s.gpr .rdi = op)
     (hn : s.gpr .rcx = BitVec.ofNat 64 bs.length) (hbits : s.gpr .rdx = BitVec.ofNat 64 bits)
     (hrd : ∀ i < bs.length, InRegions (s.rd ++ s.wr) (off rp i) 1)
