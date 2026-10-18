@@ -70,6 +70,40 @@ def initPreparedApi : Api where
     and key length are public. Contract: `VG.Spec.Gcm.initPreparedContract`."
   safety := initPrecomputedApi.safety
 
+/-- A 1024-byte context, whose first 256 bytes are a key context. -/
+def prepareSig : Sig where
+  params := [("ctx", .array true .u64 128)]
+
+/-- Keeps the first 256 bytes, and writes the 48 prepared powers of the hash
+subkey in its bytes 240–255 (`ctxH`). With those bytes a key context
+(`KeyRepr`, as `vg_aes_gcm_init` writes it), the result is the context
+`vg_aes_gcm_init_prepared` writes for the same key. -/
+def preparePost (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
+  Aes.bytesAt m' ctx 256 = Aes.bytesAt m ctx 256 ∧ PreparedPowersRepr m' ctx
+
+/-- No precondition: the powers are those of whatever hash subkey the
+context holds. -/
+def prepareContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  prepareSig.contract A (post := preparePost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- Prepares a key context in place on any target, without the key. -/
+def prepareApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_prepare"
+  sig := prepareSig
+  writeArgs := true
+  contracts := some fun A stack => prepareContract A stack
+  summary := "Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of \
+    `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first \
+    256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores \
+    `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
+    128-bit words, `H` being the hash subkey in its bytes 240–255. This is what \
+    `vg_aes_gcm_init_prepared` writes for the key, without the key or its expansion. \
+    Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context \
+    satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not \
+    the hash subkey."
+  safety := []
+
 /-- Prepared-context validity, in addition to each API's existing safety requirements. -/
 def preparedSafety : String :=
   "`*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`)."

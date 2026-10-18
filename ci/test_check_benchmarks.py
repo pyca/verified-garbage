@@ -789,6 +789,41 @@ class Lacking(unittest.TestCase):
         self.assertNotIn('()', bench_compare.not_measured('avx', 'avx', None))
 
 
+class Executables(unittest.TestCase):
+    def test_every_platform_has_an_executable_format(self):
+        self.assertEqual(set(bench_compare.EXECUTABLES), set(planner.PLATFORMS) | set(planner.MANUAL_PLATFORMS))
+
+    def test_check_arch_reads_the_header(self):
+        # The first 20 bytes of an ELF (class, then e_machine at 18) or a
+        # 64-bit Mach-O (cputype at 4) of each architecture.
+        elf = lambda bits, machine: (b'\x7fELF' + bytes([bits // 32]) + bytes(13)
+                                     + machine.to_bytes(2, 'little'))
+        headers = {
+            'x86_64': elf(64, 62), 'aarch64': elf(64, 183), 'x86': elf(32, 3), 'arm': elf(32, 40),
+            'aarch64-apple': b'\xcf\xfa\xed\xfe' + (0x0100000C).to_bytes(4, 'little') + bytes(12),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = pathlib.Path(tmp, 'bench')
+            for built, header in headers.items():
+                binary.write_bytes(header)
+                for arch in headers:
+                    with self.subTest(built=built, arch=arch):
+                        if arch == built:
+                            bench_compare.check_arch(binary, arch)
+                        else:
+                            with self.assertRaisesRegex(SystemExit, f"not {arch}'s"):
+                                bench_compare.check_arch(binary, arch)
+            binary.write_bytes(b'#!/bin/sh\n')
+            with self.assertRaises(SystemExit):
+                bench_compare.check_arch(binary, 'arm')
+
+    def test_this_machine_is_its_architecture(self):
+        arch = {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64-apple'}.get(os.uname().machine)
+        if arch is None or not os.path.exists('/bin/sh'):
+            self.skipTest('no architecture of EXECUTABLES')
+        bench_compare.check_arch(os.path.realpath('/bin/sh'), arch)
+
+
 if __name__ == '__main__':
     unittest.main()
 

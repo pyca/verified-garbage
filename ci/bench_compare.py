@@ -202,6 +202,36 @@ def build(checkout, bench=None):
     raise RuntimeError(f"no benchmark binary built for {checkout}")
 
 
+# The executable format of each `--arch` (ci/bench_arches.py's platforms):
+# ELF's class (32 or 64 bits) and `e_machine`, or Mach-O's `cputype`.
+EXECUTABLES = {
+    "x86_64": ("ELF", 64, 62),
+    "aarch64": ("ELF", 64, 183),
+    "x86": ("ELF", 32, 3),
+    "arm": ("ELF", 32, 40),
+    "aarch64-apple": ("Mach-O", 64, 0x0100000C),
+}
+
+
+def executable(binary):
+    """`binary`'s format, word size and machine, as in `EXECUTABLES`."""
+    with open(binary, "rb") as f:
+        header = f.read(20)
+    if header[:4] == b"\x7fELF":
+        return "ELF", 32 * header[4], int.from_bytes(header[18:20], "little")
+    if header[:4] == b"\xcf\xfa\xed\xfe":
+        return "Mach-O", 64, int.from_bytes(header[4:8], "little")
+    return None
+
+
+def check_arch(binary, arch):
+    """Stops unless `binary` is code of `arch`: ARMv7's benchmarks are
+    cross-compiled on an AArch64 host (ci/bench_arches.py), so a build that
+    lost its target would otherwise measure AArch64's code as ARMv7's."""
+    if executable(binary) != EXECUTABLES[arch]:
+        raise SystemExit(f"{binary} is {executable(binary)}, not {arch}'s {EXECUTABLES[arch]}")
+
+
 def fresh_copy(binary, i):
     """A copy of `binary` in a new file: the page cache holds a file's pages
     by inode, so the copy's table is read into newly chosen physical pages."""
@@ -433,6 +463,7 @@ def main():
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
+    p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
@@ -450,6 +481,9 @@ def main():
         binaries["base"], note, source = build_base(base, head)
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)
+    if args.arch:
+        for binary in filter(None, binaries.values()):
+            check_arch(binary, args.arch)
 
     # Both sides run the same groups, which head's list of them decides. It
     # also says which benchmark has each group, so that the sides can run

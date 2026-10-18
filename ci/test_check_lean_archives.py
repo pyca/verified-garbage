@@ -4,6 +4,8 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
+import tarfile
 import tempfile
 import unittest
 
@@ -97,6 +99,20 @@ class LeanArchiveTests(unittest.TestCase):
         self.assertEqual(sorted(str(p.relative_to(ltar)) for p in ltar.rglob("*.ltar")),
                          ["build/A/B.ltar", "build/C.ltar",
                           "packages/mathlib/.lake/build/Mathlib/Order.ltar"])
+        self.check_unpack(data)
+
+    def test_unpack_reads_the_tar_before_files_tar(self):
+        # `pack`'s tar before `files.tar` (`latest` in the registry): the
+        # archives, then every other file as a member of its own.
+        roots = [Path(".lake/build"), Path(".lake/packages")]
+        packed = lean_cache.update(self.lean, roots, 2, 5, str(self.stub))
+        paths = lean_cache.other_files(self.lean, roots, packed)
+        data = subprocess.run(["tar", "-C", str(self.lean), "-cf", "-", ".lake/ltar",
+                               "--no-recursion", "--null", "-T", "-"],
+                              input="\0".join(paths).encode(), capture_output=True, check=True).stdout
+        self.check_unpack(data)
+
+    def check_unpack(self, data):
         target = self.root / "restored"
         target.mkdir()
         with tempfile.TemporaryDirectory() as tmp:
@@ -141,6 +157,51 @@ class LeanArchiveTests(unittest.TestCase):
         self.assertIn("packages/mathlib/.lake/build/Mathlib/Order", index)
         self.assertTrue((self.lean / ".lake/ltar/packages/mathlib/.lake/build/Mathlib/Order.ltar").exists())
         self.assertEqual(self.log.read_text(), "")
+
+    def test_store_and_restore(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        ltar = self.lean / ".lake/ltar"
+        self.assertTrue((ltar / "files.tar").is_file())
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*") if p.is_file()}
+        # Restored where only `.lake/ltar` was kept, as from the Actions cache.
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        ltar.rename(target / ".lake/ltar")
+        lean_cache.restore(target, 2, str(self.stub))
+        restored = {p.relative_to(target): p.read_bytes()
+                    for p in (target / ".lake/build").rglob("*") if p.is_file()}
+        self.assertEqual(restored, original)
+        # The archives stay, so the next store packs nothing.
+        self.log.write_text("")
+        lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
+        self.assertEqual(self.log.read_text(), "")
+
+    def test_restore_fails_when_tar_does(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        (self.lean / ".lake/ltar").rename(target / ".lake/ltar")
+        # `tar` cannot write a file where a directory (not empty) is.
+        write(target / ".lake/build/lib/libNative.so/file", "")
+        with self.assertRaisesRegex(SystemExit, "tar failed"):
+            lean_cache.restore(target, 2, str(self.stub))
+
+    def test_pack_writes_its_own_files_tar_first(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        data, _ = self.pack()
+        with tarfile.open(fileobj=io.BytesIO(data)) as tar:
+            names = tar.getnames()
+            inner = tarfile.open(fileobj=tar.extractfile(".lake/ltar/files.tar")).getnames()
+        self.assertEqual(names[0], ".lake/ltar/files.tar")
+        self.assertEqual(names.count(".lake/ltar/files.tar"), 1)
+        self.assertIn(".lake/ltar/build/C.ltar", names)
+        # `pack`'s, of both directories, not `store`'s, of the build alone.
+        self.assertIn(".lake/packages/mathlib/Mathlib.lean", inner)
+        self.assertIn(".lake/build/lib/libNative.so", inner)
+        # Its files again after the archives, for an `unpack` from before it.
+        ltars = [i for i, name in enumerate(names) if name.startswith(".lake/ltar/")]
+        self.assertEqual(names[ltars[-1] + 1:], inner)
 
     def test_build_of(self):
         self.assertEqual(lean_cache.build_of("build/A/B"), Path(".lake/build"))

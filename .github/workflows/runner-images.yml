@@ -32,9 +32,8 @@ jobs:
           # (actions/runner-images#14790); drop it once the runner has Docker
           # 29.4.3 or later.
           - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-26.04, run-options: "--security-opt seccomp=unconfined"}
-          # For ARMv7's benchmarks, which need AArch32.
-          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-26.04-arm}
-          # For ARMv7's and Thumb's tests, on any ARM64 host.
+          # For ARMv7's and Thumb's tests, on any ARM64 host, and ARMv7's
+          # benchmarks, on one with AArch32.
           - {tag: "verified-garbage-runner:armv7-cross", platform: "linux/arm64", os: ubuntu-26.04-arm}
     name: ${{ matrix.image.tag }}
     runs-on: ${{ matrix.image.os }}

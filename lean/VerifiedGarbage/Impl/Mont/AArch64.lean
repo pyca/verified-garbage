@@ -283,23 +283,23 @@ def mulConst (M : Mod) : List Instr :=
     | some v => const64 .x6 (BitVec.ofNat 64 v)
     | none => []
 
-/-- The first row, into the cleared accumulator `ts` (`n + 1` words) for the
-multiplicand's words in the registers `bs`: the low words of `x b_j` straight
-into `ts`, and then a chain of the high words, one word up. -/
-def rowInit (x : Reg) (ts bs : List Reg) : List Instr :=
+/-- The first row, into the accumulator `ts` (`n + 1` words, the top one
+cleared) for the multiplicand's words in the registers `bs`: the low words of
+`x b_j` straight into `ts`, and then a chain of the high words, one word up. -/
+def rowInit (rm x : Reg) (ts bs : List Reg) : List Instr :=
   (ts.zip bs).map (fun (t, r) => .mul .x t x r) ++
-    chainSkip .x0 x ((ts.tail.zip bs).map fun (t, r) => (t, some (.hi (.reg r))))
+    chainSkip rm x ((ts.tail.zip bs).map fun (t, r) => (t, some (.hi (.reg r))))
 
 /-- The words a row of products adds to: the window, or its low `n + 1` words
 for a tight modulus, whose sum fits in them. -/
 def prodWins (M : Mod) (i : Nat) : List Reg :=
   if M.tight then (wins M.n i).take (M.n + 1) else wins M.n i
 
-/-- `T += a_i [b]`: the first row straight into the cleared accumulator when
+/-- `T += a_i [b]`: the first row straight into the accumulator when
 `[b]` is in registers, else a row. -/
 def prodRow (M : Mod) (ra rb : Reg) (a b i : Nat) : List Instr :=
   ([.ldr .x .x1 ra (a + 8 * i)] : List Instr) ++
-    if i = 0 ∧ M.n ≤ 4 then rowInit .x1 ((wins M.n 0).take (M.n + 1)) (bRegs.take M.n)
+    if i = 0 ∧ M.n ≤ 4 then rowInit .x0 .x1 ((wins M.n 0).take (M.n + 1)) (bRegs.take M.n)
     else row rb .x1 (prodWins M i) (bWords b 0 M.n)
 
 /-- Round `i` of `mul o a b`: `T += a_i [b]`, then `T += u m` with
@@ -314,10 +314,14 @@ def round (M : Mod) (ra rb : Reg) (a b i : Nat) : List Instr :=
       row .x0 (win M.n i 0) (wins M.n i).tail (ws.map (fWord (firstGen ws))) ++
         ([.movz .x (win M.n i 0) 0 0] : List Instr)
 
+/-- The accumulator's words the first round needs cleared: its top two when
+the first row writes the others (`rowInit`, for `n ≤ 4`), else all of them. -/
+def accClear (n : Nat) : List Reg := if n ≤ 4 then (acc n).drop n else acc n
+
 /-- `x7 = 0`, the words of `[rb + b]` in `bRegs` (all of them for `n ≤ 4`),
-`x6` and the accumulator cleared. -/
+`x6` and the accumulator cleared (`accClear`). -/
 def mulSetup (M : Mod) (rb : Reg) (b : Nat) : List Instr :=
-  zero7 :: loadsR rb (bRegs.take M.n) b ++ mulConst M ++ zeros (acc M.n)
+  zero7 :: loadsR rb (bRegs.take M.n) b ++ mulConst M ++ zeros (accClear M.n)
 
 /-- `[ro + o] = [ra + a] [rb + b] R⁻¹ mod m` (`o` may be `a` or `b`); the
 modulus is at `x0 + M.mo`. -/

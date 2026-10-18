@@ -139,10 +139,13 @@ import re
 import sys
 import tomllib
 
-# The architectures benchmarked, and where each one runs natively: the 32-bit
-# ones in a 32-bit userspace container, built by ci/runner.Dockerfile, on the
-# 64-bit host of the same family (as ci.yml's `rust` job tests x86; it
-# cross-compiles ARMv7's tests, to run them under QEMU where the host can't).
+# The architectures benchmarked, and where each one runs natively, in the
+# images ci/runner.Dockerfile builds, as ci.yml's `rust` job tests them (so
+# that its build of the dependencies is the cache bench.yml restores): x86 in
+# a 32-bit userspace on the x86-64 host, and ARMv7 cross-compiled on the
+# ARM64 host, in armv7-cross, whose binaries run natively. bench_compare.py
+# runs them itself, not through ci/arm32-run, so on a host without AArch32
+# they fail rather than time QEMU.
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-26.04"},
     "aarch64": {"os": "ubuntu-26.04-arm"},
@@ -156,8 +159,7 @@ PLATFORMS = {
     },
     "arm": {
         "os": "ubuntu-26.04-arm",
-        "image": "ghcr.io/pyca/verified-garbage-runner:armv7l",
-        "options": "--platform linux/arm/v7",
+        "image": "ghcr.io/pyca/verified-garbage-runner:armv7-cross",
     },
 }
 

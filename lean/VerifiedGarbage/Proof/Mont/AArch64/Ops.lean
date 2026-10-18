@@ -122,16 +122,24 @@ theorem x0_not_bRegs_take (n : Nat) : Reg.x0 ∉ bRegs.take n :=
   fun h => absurd (List.mem_of_mem_take h) (by decide)
 
 theorem mulSetup_eq (M : Mod) (rb : Reg) (b : Nat) : mulSetup M rb b = ([zero7] : List Instr) ++
-    (loadsR rb (bRegs.take M.n) b ++ (mulConst M ++ zeros (acc M.n))) := by
+    (loadsR rb (bRegs.take M.n) b ++ (mulConst M ++ zeros (accClear M.n))) := by
   simp only [mulSetup, List.cons_append, List.nil_append, List.append_assoc]
 
+theorem wins_zero_lt : ∀ n < 10, wins n 0 = acc n := by decide
+
+theorem accClear_sub {n : Nat} : ∀ r ∈ accClear n, r ∈ acc n := fun r hr => by
+  unfold accClear at hr
+  split at hr
+  · exact List.mem_of_mem_drop hr
+  · exact hr
+
 /-- `x7 = 0`, `[b]`'s words in `bRegs`, the reduction's constant in `x6`, and
-the accumulator cleared. -/
+the accumulator ready for the first round. -/
 theorem setup_ok {s : State} {M : Mod}
     (hn : M.n < 10) {rb : Reg} {pb : Addr} {sb : Nat} (hpb : Ptr s rb pb sb) (hrb : PtrOk M.n rb)
     {b : Nat} (hb : b + 8 * M.n ≤ sb) (hb8 : b % 8 = 0) :
     WP isa (.block (mulSetup M rb b)) s fun s' =>
-      s'.gpr .x7 = 0 ∧ BRegs s' pb b M.n ∧ ConstOk M s' ∧ regsVal s' (wins M.n 0) = 0 ∧
+      s'.gpr .x7 = 0 ∧ BRegs s' pb b M.n ∧ ConstOk M s' ∧ AccInit M s' ∧
         Keeps (.x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: acc M.n) s s' := by
   have hacc := acc_regs_lt _ hn
   have nacc : ∀ r ∈ [Reg.x0, .x4, .x5, .x6, .x7, .x16, .x17], r ∉ acc M.n := fun r hr h => by
@@ -174,18 +182,27 @@ theorem setup_ok {s : State} {M : Mod}
         rw [hg, Option.some.injEq] at hv'
         rw [e, hv']
   refine WP.mono hC fun s₂ ⟨c₂, k₂⟩ => ?_
-  refine WP.mono (zeros_ok s₂ (acc M.n)) fun s₃ ⟨z₃, k₃⟩ => ?_
+  refine WP.mono (zeros_ok s₂ (accClear M.n)) fun s₃ ⟨z₃, k₃⟩ => ?_
+  have ncl : ∀ r ∈ [Reg.x0, .x4, .x5, .x6, .x7, .x16, .x17], r ∉ accClear M.n :=
+    fun r hr h => nacc r hr (accClear_sub r h)
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
-  · rw [k₃.gpr _ (nacc .x7 (by simp)), k₂.gpr _ (by decide), z₁]
+  · rw [k₃.gpr _ (ncl .x7 (by simp)), k₂.gpr _ (by decide), z₁]
   · exact (hBR₁.keep k₂.mem fun r hr => k₂.gpr r (by
       rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> decide)).keep k₃.mem fun r hr =>
-        k₃.gpr r (nacc r (by rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> simp))
-  · exact c₂.keep (k₃.gpr _ (nacc .x6 (by simp)))
-  · exact regsVal_zero fun r hr => z₃ r (wins_sub_acc hn 0 r hr)
+        k₃.gpr r (ncl r (by rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> simp))
+  · exact c₂.keep (k₃.gpr _ (ncl .x6 (by simp)))
+  · refine ⟨fun r hr => z₃ r ?_, fun h4 => regsVal_zero fun r hr => z₃ r ?_⟩
+    · rw [wins_zero_lt _ hn] at hr
+      unfold accClear; split
+      · exact hr
+      · exact List.mem_of_mem_drop hr
+    · rw [wins_zero_lt _ hn] at hr
+      unfold accClear; rw [ite_eq_right h4]; exact hr
   · refine ((k₀.mono (by sub_regs)).trans (k₁.mono fun q hq => ?_)).trans
       ((k₂.mono (by sub_regs)).trans (k₃.mono fun q hq => ?_))
     · rcases htake q hq with rfl | rfl | rfl | rfl <;> simp
-    · simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hq)))))
+    · simp only [List.mem_cons]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (accClear_sub q hq))))))
 
 theorem dRegs_clob : ∀ n < 10, ∀ r ∈ dRegs n, r ∈ clob n := by
   unfold clob; decide
@@ -258,6 +275,7 @@ theorem mulR_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   refine WP.mono (rounds_ok h7 hra hrb ha hb hM.mo ha8 hb8 hA.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁ hpa₁ hpb₁ z₁
     (by rw [hmem₁]; exact hM.val) hBR₁ h6₁ (by rw [hmem₁]; exact hB) h0)
     fun s₂ ⟨⟨U, eU⟩, hT, k₂, _⟩ => ?_
+  rw [accV_of_pos M s₂ hM.n0] at eU hT
   have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by
     intro r hr h
     by_cases hr' : r ∈ acc M.n
