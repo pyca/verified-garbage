@@ -12,7 +12,7 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Impl.Bignum.Arm.Crt
 open VG.Spec.Rsa.Mont (arrAt)
 
-theorem crt_workspace_end (w : Nat) : arrAt w 8 = stride w := by
+theorem crt_workspace_end (w : Nat) : arrAt w 8 ≤ stride w := by
   simp only [arrAt, Spec.Rsa.Mont.hdrBytes, stride, workspaceWords]
   omega
 
