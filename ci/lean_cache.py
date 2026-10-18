@@ -17,34 +17,36 @@ archive is `.lake/ltar/<build>/<Module>.ltar`, where `<build>` is its build
 directory relative to `.lake/` (`build`, or `packages/mathlib/.lake/build`).
 `.lake/ltar/index.json` records the dependency hash and output hashes of
 each archive's module: `pack` packs only the modules that changed since,
-and removes the archives of modules that no longer exist. It then writes a
-tar of `.lake/ltar` and of every other file in the directories (the
-outputs' `.hash` files, native libraries, Lake's checkouts of the
-dependencies) to stdout.
+and removes the archives of modules that no longer exist. It writes every
+other file in the directories (the outputs' `.hash` files, native
+libraries, Lake's checkouts of the dependencies) to `.lake/ltar/files.tar`,
+then a tar of `.lake/ltar`, `files.tar` first, to stdout.
 
 It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 (`.github/actions/leantar`), which packs every module in one process at zstd
 level `--level` (default 5); the toolchain's own `leantar` takes half a
 CPU-second for each module.
 
-`store` updates the archives the same way, and writes the other files of
-the directories to `.lake/ltar/files.tar` rather than to stdout, so that
-`.lake/ltar` alone holds the build: CI's Actions cache keeps it, and each
-job that restores it runs `restore`, which extracts `files.tar` and unpacks
-every archive, keeping them, so that the build's next `store` packs only
-what changed. `pack` leaves `files.tar` out of its tar.
+`store` does the same but for the tar to stdout, so that `.lake/ltar`
+alone holds the build: CI's Actions cache keeps it, and each job that
+restores it runs `restore`, which extracts `files.tar` and unpacks every
+archive, keeping them, so that the build's next `store` packs only what
+changed.
 
-`unpack` extracts such a tar from stdin into the Lean project. It writes
-each file that is not an archive in its place, and passes the archives to
+`unpack` extracts such a tar from stdin into the Lean project. `tar`
+extracts `files.tar` in the background, as `restore` does: its files are
+most of the files, each small, and `tarfile` would create them one at a
+time, as long as `leantar` takes for all the archives. The archives go to
 the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
-the next arrives. The outputs come out byte for byte as they were packed;
-the `.trace` keeps everything Lake reads (the dependency hash, the outputs'
-hashes and the build's messages, with the profile `ci/lean_profile.py`
-reads), without the record of the build's inputs that Lake writes only for
-people to read.
+the next arrives. In a tar from before `files.tar`, whose other files are
+members of their own, it writes each in its place. The outputs come out
+byte for byte as they were packed; the `.trace` keeps everything Lake reads (the dependency hash,
+the outputs' hashes and the build's messages, with the profile
+`ci/lean_profile.py` reads), without the record of the build's inputs that
+Lake writes only for people to read.
 
-It stages each batch in `--tmp` (default: `/dev/shm`, a tmpfs, when there
-is one), so the archives never reach the disk, and removes them.
+It stages `files.tar` and each batch in `--tmp` (default: `/dev/shm`, a
+tmpfs, when there is one), so they never reach the disk, and removes them.
 """
 
 import argparse
@@ -164,13 +166,12 @@ def other_files(lean, roots, packed):
 
 
 def pack(lean, roots, jobs, level, tool, out):
-    paths = other_files(lean, roots, update(lean, roots, jobs, level, tool))
+    store(lean, roots, jobs, level, tool)
     out.flush()
-    # The archives (`.lake/ltar`, but for `store`'s tar) first, then
-    # everything else.
-    subprocess.run(["tar", "-C", str(lean), "-cf", "-", f"--exclude={LTAR / FILES}", str(LTAR),
-                    "--no-recursion", "--null", "-T", "-"],
-                   input="\0".join(paths).encode(), stdout=out, check=True)
+    # `files.tar` first, so that `unpack` extracts it while the archives
+    # unpack.
+    subprocess.run(["tar", "-C", str(lean), "-cf", "-", str(LTAR / FILES), f"--exclude={LTAR / FILES}",
+                    str(LTAR)], stdout=out, check=True)
 
 
 def store(lean, roots, jobs, level, tool):
@@ -181,19 +182,37 @@ def store(lean, roots, jobs, level, tool):
 
 def restore(lean, jobs, tool):
     ltars = lean / LTAR
-    if (ltars / FILES).is_file():
-        subprocess.run(["tar", "--no-same-owner", "-xf", str(ltars / FILES), "-C", str(lean)], check=True)
-    records = []
-    for ltar in sorted(ltars.rglob("*.ltar")):
-        build = build_of(ltar.relative_to(ltars))
-        records.append({"file": str(ltar.relative_to(lean)),
-                        "base": [str(build / "lib/lean"), str(build / "ir")]})
-    if records:
-        # `-f`: a trace already there (from a build of other sources) would
-        # otherwise keep that build's outputs.
-        subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs), "-x", "-j", "-"],
-                       cwd=lean, input=json.dumps(records).encode(), check=True)
+    files = extract(lean, ltars / FILES) if (ltars / FILES).is_file() else None
+    try:
+        records = []
+        for ltar in sorted(ltars.rglob("*.ltar")):
+            build = build_of(ltar.relative_to(ltars))
+            records.append({"file": str(ltar.relative_to(lean)),
+                            "base": [str(build / "lib/lean"), str(build / "ir")]})
+        if records:
+            # `-f`: a trace already there (from a build of other sources) would
+            # otherwise keep that build's outputs.
+            subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs), "-x", "-j", "-"],
+                           cwd=lean, input=json.dumps(records).encode(), check=True)
+    finally:
+        finish(files)
     print(f"Unpacked {len(records)} modules", file=sys.stderr)
+
+
+def extract(lean, files):
+    """Starts `tar` extracting a `files.tar` into the Lean project. It runs
+    while the archives unpack: its files are most of the files, each small.
+    `--no-same-owner`: CI's runner user owns the archive's files, and
+    extracting them as root (as in a container) would keep that owner. Git
+    would then refuse the dependencies' checkouts, so Lake would clone them
+    again and build Mathlib from source."""
+    return subprocess.Popen(["tar", "--no-same-owner", "-xf", str(files), "-C", str(lean)])
+
+
+def finish(files):
+    """Waits for `extract`'s `tar`, if there is one, and fails if it did."""
+    if files is not None and files.wait():
+        raise SystemExit(f"tar failed ({files.returncode})")
 
 
 def build_of(rel):
@@ -224,16 +243,24 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
         proc.stdin.close()
         return proc
 
+    files = None
     try:
         # The archives go to the staging directory, a batch at a time, and
-        # `leantar` unpacks each batch while the next arrives; every other
-        # file goes where it belongs.
+        # `leantar` unpacks each batch while the next arrives; `files.tar`
+        # goes there too, for `tar`.
         records, size, n = [], 0, 0
         with tarfile.open(fileobj=stream, mode="r|") as tar:
             for member in tar:
                 rel = Path(member.name)
                 if rel.parts[:2] != LTAR.parts:
+                    # The tar from before `files.tar`, until the published
+                    # cache is replaced.
                     tar.extract(member, lean, set_attrs=True, filter=without_owner)
+                    continue
+                if rel == LTAR / FILES and member.isfile() and files is None:
+                    with open(stage / FILES, "wb") as f:
+                        shutil.copyfileobj(tar.extractfile(member), f)
+                    files = extract(lean, stage / FILES)
                     continue
                 if not member.isfile() or rel.suffix != ".ltar":
                     continue  # the index, and directories
@@ -258,15 +285,15 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
     finally:
         if running is not None:
             running.wait()
-        shutil.rmtree(stage)
+        try:
+            finish(files)
+        finally:
+            shutil.rmtree(stage)
     print(f"Unpacked {count} modules", file=sys.stderr)
 
 
 def without_owner(member, path):
-    """`tar --no-same-owner`: CI's runner user owns the archive's files, and
-    extracting them as root (as in a container) would keep that owner. Git
-    would then refuse the dependencies' checkouts, so Lake would clone them
-    again and build Mathlib from source."""
+    """`tar --no-same-owner` (see `extract`)."""
     return tarfile.tar_filter(member, path).replace(uid=None, gid=None, uname=None, gname=None)
 
 
