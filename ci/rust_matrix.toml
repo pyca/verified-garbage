@@ -253,7 +253,9 @@ avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
 # and AES-CCM with the scalar AES, and RSAES-PKCS1-v1_5 decryption
 # with the scalar SHA-256 (the unrestricted runs of the plain tests
 # take its `_sha256_sha2` instance), and the unrestricted run and
-# `none` AES-GCM-SIV's and AES-OCB's `_aes` and scalar instances.
+# `none` AES-OCB's `_aes` and scalar instances. AES-GCM and
+# AES-GCM-SIV: the unrestricted run takes their `_aes_sha3` instances,
+# `aes` their `_aes` ones, and `none` AES-GCM-SIV's scalar ones.
 # RSAES-OAEP: `sha2` takes SHA-1's and SHA-256's `_sha2`
 # instances with SHA-512's scalar ones, `none` the scalar ones,
 # `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
@@ -265,6 +267,7 @@ os = "ubuntu-26.04-arm"
 runs = """
 - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 neon | chacha20
+aes | aes_gcm aes_gcm_siv
 sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
 sha2 | rsa_oaep
 sha2,sha3 | rsa_oaep
