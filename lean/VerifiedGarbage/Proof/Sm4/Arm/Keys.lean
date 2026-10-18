@@ -117,7 +117,7 @@ theorem keyOne_step {s : State} {b sched : BitVec 32} {e i : Nat} (hp : SchedPre
       entry_addr] at h
     rw [entryW, h]
   have hall₂ : ([Reg.r1, .r2, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .lr].all fun r =>
-      keyPlanes.all fun i => dstOf i != some r) = true := by decide +kernel
+      keyPlanes.all fun i => !clobbers i r) = true := by decide +kernel
   refine ⟨s₂, ?_, fun r h0 h3 h11 => ?_, by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁], ?_, ?_⟩
   · rw [keyOne, runBlock_app, e₁, Option.bind_some, e₂]
   · rw [o₂ r (List.all_eq_true.mp hall₂ r (by revert h0 h3 h11; cases r <;> decide)), o₁ r h0]

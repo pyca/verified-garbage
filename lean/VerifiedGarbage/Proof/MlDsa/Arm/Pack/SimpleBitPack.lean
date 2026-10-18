@@ -74,9 +74,9 @@ theorem sbp_wp {s₀ : State} (hp : SbpPre s₀) :
         by rw [h₂.2.2.2.2, h₁.2.2.2.2]⟩
 
 /-- `simpleBitPack` writes no register the ABI preserves. -/
-theorem sbp_preserves : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.MlDsa.Arm.Pack.simpleBitPack, dstOf i ≠ some r := by
+theorem sbp_preserves : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.MlDsa.Arm.Pack.simpleBitPack, clobbers i r = false := by
   have h : (instrs Impl.MlDsa.Arm.Pack.simpleBitPack).all
-      (fun i => preserved.all fun r => dstOf i != some r) = true := by
+      (fun i => preserved.all fun r => !clobbers i r) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr

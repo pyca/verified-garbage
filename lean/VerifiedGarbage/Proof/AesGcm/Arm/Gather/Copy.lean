@@ -154,7 +154,7 @@ theorem and3 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n &&& BitVec.ofNat 32
 
 /-- A run keeps a register no instruction of the code writes. -/
 theorem WP.keepGpr {c : Prog isa} {s : State} {Q : State → Prop} {r : Reg} (h : WP isa c s Q)
-    (hc : ∀ i ∈ instrs c, dstOf i ≠ some r) (hn : c.noCalls = true) :
+    (hc : ∀ i ∈ instrs c, clobbers i r = false) (hn : c.noCalls = true) :
     WP isa c s fun s' => Q s' ∧ s'.gpr r = s.gpr r := by
   obtain ⟨t, s', he, hq⟩ := h
   exact ⟨t, s', he, hq, Exec.gpr hc he (.inl hn)⟩

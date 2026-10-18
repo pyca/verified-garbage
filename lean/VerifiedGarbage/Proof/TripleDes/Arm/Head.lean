@@ -73,7 +73,7 @@ theorem blockLoad_ok (s : State)
   · exact sp₂.trans sp₁
   · intro r hr
     have checks : ∀ r ∈ loadKept,
-        ((instrs initialPermutation.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+        ((instrs initialPermutation.lit).all fun op => !clobbers op r) = true := by decide +kernel
     have unused : ∀ r ∈ loadKept, r ≠ .r4 ∧ r ≠ .r5 := by decide
     exact (reg₂ r (checks r hr)).trans (reg₁ r (unused r hr).1 (unused r hr).2)
 

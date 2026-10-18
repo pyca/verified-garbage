@@ -36,11 +36,11 @@ theorem VW.congr {s s' : State} {a : Nat} {v : BitVec 64 × BitVec 64} (h : VW s
 
 theorem ok_fromBsCfg {s : State} (hs : Scr s (s.gpr sb)) : Ok fromBsCfg s := ok_fromBs hs
 
-theorem bcast_all : (layerKeep.all fun r => bcast.all fun i => dstOf i != some r) = true ∧
+theorem bcast_all : (layerKeep.all fun r => bcast.all fun i => !clobbers i r) = true ∧
     bcast.all (storesIn (4 * d1Slot) (4 * keySlot)) = true := by
   constructor <;> decide +kernel
 
-theorem unbcast_all : (layerKeep.all fun r => unbcast.all fun i => dstOf i != some r) = true ∧
+theorem unbcast_all : (layerKeep.all fun r => unbcast.all fun i => !clobbers i r) = true ∧
     unbcast.all (storesIn (4 * wSlot) (4 * wSlot + 16)) = true := by
   constructor <;> decide +kernel
 

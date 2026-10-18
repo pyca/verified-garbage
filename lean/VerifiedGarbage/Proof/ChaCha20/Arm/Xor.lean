@@ -335,8 +335,8 @@ theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
 
 /-! ## Calling the block function -/
 
-theorem block_keeps_r1 : ∀ i ∈ instrs Impl.ChaCha20.Arm.block, dstOf i ≠ some .r1 := by
-  have : ((instrs Impl.ChaCha20.Arm.block).all fun i => dstOf i != some .r1) = true := by
+theorem block_keeps_r1 : ∀ i ∈ instrs Impl.ChaCha20.Arm.block, clobbers i .r1 = false := by
+  have : ((instrs Impl.ChaCha20.Arm.block).all fun i => !clobbers i .r1) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp this i hi

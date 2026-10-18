@@ -50,8 +50,8 @@ theorem not_layerWrites (r : Reg) (hr : r ∉ layerWrites) : r ∈ layerKeep := 
 
 /-- A block that writes none of `layerKeep` writes only `layerWrites`. -/
 theorem writes_rest {is : List Instr}
-    (h : layerKeep.all (fun r => is.all fun i => dstOf i != some r) = true)
-    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => dstOf i != some r) = true :=
+    (h : layerKeep.all (fun r => is.all fun i => !clobbers i r) = true)
+    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => !clobbers i r) = true :=
   List.all_eq_true.mp h r (not_layerWrites r hr)
 
 /-- `SBOX1`, at every bit position of the words in `q 0 … q 7`. -/
@@ -68,7 +68,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     simpa using this
   have key : ∀ p < 32, ∃ s', runBlock isa Impl.Camellia.Arm.sboxCode s = some s' ∧
       Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
-        (fun r => (Impl.Camellia.Arm.sboxCode.all fun i => dstOf i != some r) = false) := by
+        (fun r => (Impl.Camellia.Arm.sboxCode.all fun i => !clobbers i r) = false) := by
     intro p hp
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),

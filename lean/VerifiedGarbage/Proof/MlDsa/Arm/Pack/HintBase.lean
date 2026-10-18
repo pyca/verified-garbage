@@ -153,8 +153,8 @@ theorem entry_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 
   run_block [ia]
 
 /-- No instruction of `c` writes `r`, by evaluating `Code.allInstrs`. -/
-theorem noWrite {c : Prog isa} {r : Reg} (h : c.allInstrs (fun i => dstOf i != some r) = true) :
-    ∀ i ∈ instrs c, dstOf i ≠ some r := by
+theorem noWrite {c : Prog isa} {r : Reg} (h : c.allInstrs (fun i => !clobbers i r) = true) :
+    ∀ i ∈ instrs c, clobbers i r = false := by
   rw [Code.allInstrs_eq, List.all_eq_true] at h
   intro i hi
   simpa using h i hi

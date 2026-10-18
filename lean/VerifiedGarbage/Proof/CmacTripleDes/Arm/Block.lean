@@ -323,9 +323,9 @@ theorem fp_check :
       (linPost 6 [(.r0, fpG0), (.r1, fpG1)]) = true := by
   lit_decide
 
-theorem ip_kept : [Reg.r9, .r10].all (fun r => ipCode.all fun i => dstOf i != some r) = true := by lit_decide
+theorem ip_kept : [Reg.r9, .r10].all (fun r => ipCode.all fun i => !clobbers i r) = true := by lit_decide
 
-theorem fp_kept : [Reg.r9, .r10].all (fun r => fpCode.all fun i => dstOf i != some r) = true := by lit_decide
+theorem fp_kept : [Reg.r9, .r10].all (fun r => fpCode.all fun i => !clobbers i r) = true := by lit_decide
 
 theorem ipSrc_lt : ∀ j < 64, ipSrc j < 64 := by lit_decide
 

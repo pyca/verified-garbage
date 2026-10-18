@@ -58,7 +58,7 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
       (∀ j ∈ keep, j < c.slots →
         s'.mem.readW (wordAddr (s.gpr c.base) j) 32 = s.mem.readW (wordAddr (s.gpr c.base) j) 32) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ r, (is.all fun i => dstOf i != some r) = true → s'.gpr r = s.gpr r) ∧
+      (∀ r, (is.all fun i => !clobbers i r) = true → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion c s] s.mem s'.mem ∧ s'.gpr c.base = s.gpr c.base ∧
       s'.gpr c.ext = s.gpr c.ext := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk

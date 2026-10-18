@@ -181,7 +181,7 @@ theorem stores_ct (ks : List Nat) :
   | nil => exact Whole.block_nil_ct
   | cons k ks ih =>
     refine Whole.block_cons_ct (fun a b a' b' hp ea eb => ⟨by simp only [addrs, hp], ?_⟩) ih
-    rw [exec_gpr (by simp [dstOf]) ea, exec_gpr (by simp [dstOf]) eb, hp]
+    rw [exec_gpr (by simp [clobbers, dstOf]) ea, exec_gpr (by simp [clobbers, dstOf]) eb, hp]
 
 theorem zero_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L zeroValues []))
     (.block zeroStores) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
@@ -199,7 +199,7 @@ theorem zero_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L zero
     exact WP.mono (zeroStores_step hc hL (r0 hs) (r1 hs)) fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩
 
 /-- Instructions that address memory only through `r12`, and leave it alone. -/
-theorem r12_ct (is : List Instr) (hd : ∀ i ∈ is, dstOf i ≠ some .r12)
+theorem r12_ct (is : List Instr) (hd : ∀ i ∈ is, clobbers i .r12 = false)
     (ha : ∀ i ∈ is, ∀ a b : State, a.gpr .r12 = b.gpr .r12 → addrs i a = addrs i b) :
     RelCT isa (fun a b => a.sp = b.sp ∧ a.gpr .r12 = b.gpr .r12) (.block is)
       (fun a b => a.sp = b.sp ∧ a.gpr .r12 = b.gpr .r12) := by

@@ -58,7 +58,7 @@ theorem countedDouble_parts_ok {n size m : Nat} {base : Addr} {s : State}
     (by rw [hD]; omega_using [acc_le]) (by rw [hW]; exact a_le) (by rw [hW]; exact b_le)
     (by rw [hD]; omega_using [acc16]) (by rw [hW]; exact a16) (by omega_using [b16])
     (by rw [hD, hW]; omega_using [sa]) (by rw [hD, hW]; omega_using [sb])) (r := .r1) (by
-      simp [instrs, addDigits, ptrLoop, ptr, addDigitD, half, bump, mask16, dstOf]))
+      simp [instrs, addDigits, ptrLoop, ptr, addDigitD, half, bump, mask16, clobbers, dstOf]))
     fun t₀ ⟨⟨w₀, V₀, D₀, O₀, R₀⟩, C₀⟩ => ?_)
   refine WP.seq (wp_mov (op2_reg _ _) fun t₁ U => WP.block_nil ?_)
   have w₁ := w₀.of_upd U (by decide)
@@ -76,7 +76,7 @@ theorem countedDouble_parts_ok {n size m : Nat} {base : Addr} {s : State}
     (by rw [hD]; omega_using [acc16]) o16 (by rw [hW]; exact tmp16) (by rw [hW]; exact mo16)
     (by rw [hD, hW]; omega_using [stmp]) (by rw [hW]; exact tmo) (by rw [hD, hW]; omega_using [so])
     (by rw [hW]; exact ot) (by rw [hW]; exact hm₁) hm0 (by rw [hD]; exact D₁) (by rw [hD, V₁]; omega_using [hA, hB])) (r := .r0) (by
-      simp [instrs, csubD, ptrLoop, ptr, diffDigitD, half, bump, mask16, dstOf]))
+      simp [instrs, csubD, ptrLoop, ptr, diffDigitD, half, bump, mask16, clobbers, dstOf]))
     fun t ⟨⟨wt, V, O, R⟩, C⟩ => ⟨wt, ?_, ?_, R₁.trans R, C.trans C₁⟩
   · rw [hW] at V; rw [V, hD, V₁]
   · rw [hW] at O

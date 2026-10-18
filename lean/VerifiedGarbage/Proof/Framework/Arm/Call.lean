@@ -53,7 +53,7 @@ theorem WP.call {n : String} {c : Prog isa} {k : Contract isa}
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Frame wr s.mem s'.mem →
       (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
-      (∀ r, (∀ i ∈ instrs c, dstOf i ≠ some r) → r ∉ linkRegs → s'.gpr r = s.gpr r) →
+      (∀ r, (∀ i ∈ instrs c, clobbers i r = false) → r ∉ linkRegs → s'.gpr r = s.gpr r) →
       k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s')
     (hn : c.noCalls = true := by decide +kernel) : WP isa (.call n c) s Q := by
   obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre

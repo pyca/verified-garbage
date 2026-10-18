@@ -292,9 +292,9 @@ theorem t1_wp {s₀ : State} (hp : T1Pre s₀) :
     simpleBitUnpack_get _ _ hi, show bitlen t1Max = 10 by decide, ofInt_t1 hy]
 
 /-- `unpackT1` writes no register the ABI preserves. -/
-theorem t1_preserves : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.MlDsa.Arm.Pack.unpackT1, dstOf i ≠ some r := by
+theorem t1_preserves : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.MlDsa.Arm.Pack.unpackT1, clobbers i r = false := by
   have h : (instrs Impl.MlDsa.Arm.Pack.unpackT1).all
-      (fun i => preserved.all fun r => dstOf i != some r) = true := by
+      (fun i => preserved.all fun r => !clobbers i r) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
