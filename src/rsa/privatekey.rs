@@ -638,6 +638,35 @@ mod tests {
         assert!(key(&mul(&p, &dp)).check_key());
     }
 
+    // Exercise the full checker even for CRT inputs that the constructor
+    // rejects. Keep all byte lengths unchanged, as required by its FFI.
+    #[test]
+    fn check_key_crt_ranges() {
+        for a in SIZES {
+            for swap in [false, true] {
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
+                let d = mul(ones, third);
+                let new = || PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
+                assert!(new().check_key());
+                for component in 0..3 {
+                    for byte in [0, 0xff] {
+                        let mut key = new();
+                        let value = match component {
+                            0 => &mut key.dp,
+                            1 => &mut key.dq,
+                            _ => &mut key.qinv,
+                        };
+                        // An invalid range must keep rejecting the key even
+                        // when the shortened reduction's bound does not hold.
+                        value.fill(byte);
+                        assert!(!key.check_key());
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn private_from_components_invalid() {
         let [n, ..] = composite(32, false);
