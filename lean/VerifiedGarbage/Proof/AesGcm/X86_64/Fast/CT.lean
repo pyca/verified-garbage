@@ -31,7 +31,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Fast
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
-open VG.Impl.AesGcm.X86_64.Fast (aadPad aadMul aadReg aadMulR aadSome)
+open VG.Impl.AesGcm.X86_64.Fast (aadPad aadMul aadReg aadFull aadMulR aadSome)
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
@@ -58,6 +58,10 @@ def A3 (M : CtxMode) (Ctx W SP : Addr) (R : Nat) (A : Addr) (al : Nat) (D : Addr
 /-- After the additional data's length is compared with 5. -/
 def A5 (M : CtxMode) (Ctx W SP : Addr) (R : Nat) (A : Addr) (al : Nat) (D : Addr) (n : Nat) (s : State) : Prop :=
   OneS M Ctx W SP R A al D n none s ∧ s.gpr .rcx = BitVec.ofNat 64 al ∧ s.zf = some (decide (al = 5))
+
+/-- After the additional data's length is compared with 16. -/
+def A16 (M : CtxMode) (Ctx W SP : Addr) (R : Nat) (A : Addr) (al : Nat) (D : Addr) (n : Nat) (s : State) : Prop :=
+  OneS M Ctx W SP R A al D n none s ∧ s.gpr .rcx = BitVec.ofNat 64 al ∧ s.zf = some (decide (al = 16))
 
 theorem envRegs_mem {r : Reg} (hr : r ∈ [Reg.r12, .r13, .r14, .r15, .rsp]) : r = .r12 ∨ r ∈ [Reg.r13, .r14, .r15, .rsp] := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -147,14 +151,38 @@ theorem aad_rel :
       (c := .block (aadReg ++ aadMulR)) [.rsi] (fun _ h => h.1.env) (fun _ h => h.1.env) (keepsEnv (by decide +kernel))
       ⟨_, by simp only [aadO]; taint_decide⟩ hr hr (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) ⟨_, by taint_decide⟩
+    -- The length compared with 16.
+    have w₁₆ : ∀ s, A5 M Ctx W SP R A al D n s →
+        WP isa (.block [.alu .cmp .rcx (imm 16)]) s (A16 M Ctx W SP R A al D n) := fun s h => by
+      obtain ⟨t, run, zf, -, g, m, rd, wr⟩ := cmpImm_ok s .rcx h.2.1 h.1.dA.lt (show 16 < 2 ^ 31 by decide)
+      have he : Env Ctx (W + BitVec.ofNat 64 16) W SP t := h.1.env.keep (fun r _ => by rw [g]) rd wr
+      exact WP.of_runBlock ⟨t, run, h.1.frame L he rd wr hDW (by rw [m]; exact Frame.refl _ _),
+        by rw [g]; exact h.2.1, zf⟩
+    have r₁₆ := rel_next (rel_taint (P := fun s₁ s₂ => A5 M Ctx W SP R A al D n s₁ ∧ A5 M Ctx W SP R A al D n s₂)
+      [.rcx] (fun _ _ h r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.1, h.2.2.1]) ⟨_, by taint_decide⟩) w₁₆ w₁₆
+    -- Sixteen bytes, loaded whole.
+    have hr₁₆ : ∀ s, A16 M Ctx W SP R A al D n s →
+        WP isa (.block [.mov .rsi (.mem (at_ .r15 aadO))]) s fun t => t.gpr .rsi = A := fun s h => by
+      have q := h.1.env.perm.wR (show 232 + 8 ≤ 2560 by decide)
+      have h15 := h.1.env.r15
+      have ha := h.1.aad
+      obtain ⟨t, run, ht⟩ : ∃ t, runBlock isa [.mov .rsi (.mem (at_ .r15 aadO))] s = some t ∧ t.gpr .rsi = A := by
+        refine ⟨_, by xrun [h15, q], ?_⟩
+        simp [gpr_setReg, ha]
+      exact WP.of_runBlock ⟨t, run, ht⟩
+    have full := rel_piece (F₁ := A16 M Ctx W SP R A al D n) (F₂ := A16 M Ctx W SP R A al D n)
+      (c := .block (aadFull ++ aadMulR)) [.rsi] (fun _ h => h.1.env) (fun _ h => h.1.env) (keepsEnv (by decide +kernel))
+      ⟨_, by simp only [aadO]; taint_decide⟩ hr₁₆ hr₁₆ (fun _ _ h₁ h₂ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) ⟨_, by taint_decide⟩
     -- Any other length, padded in `T`, and multiplied.
-    have hw : ∀ s, A5 M Ctx W SP R A al D n s →
+    have hw : ∀ s, A16 M Ctx W SP R A al D n s →
         WP isa (.block (([.mov32 .rax (imm 0), .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax] :
           List Instr) ++ ptr .rdi .r15 tO ++ ([.mov .rsi (.mem (at_ .r15 aadO))] : List Instr))) s
           fun t => t.gpr .rsi = A ∧ t.gpr .rdi = W + BitVec.ofNat 64 96 ∧ t.gpr .rcx = BitVec.ofNat 64 al :=
       fun s h => WP.mono (aadPadHead_ok L h.1.env h.1.dA h1 h16 h.1.aad h.2.1) fun _ ⟨_, _, _, _, lp⟩ =>
         ⟨lp.rsi, lp.rdi, lp.rcx⟩
-    have pad := rel_piece (F₁ := A5 M Ctx W SP R A al D n) (F₂ := A5 M Ctx W SP R A al D n) (c := copyLoop)
+    have pad := rel_piece (F₁ := A16 M Ctx W SP R A al D n) (F₂ := A16 M Ctx W SP R A al D n) (c := copyLoop)
       [.rsi, .rdi, .rcx] (fun _ h => h.1.env) (fun _ h => h.1.env) (keepsEnv (by decide +kernel))
       ⟨_, by simp only [tO, aadO, ptr]; taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -162,14 +190,16 @@ theorem aad_rel :
         · rw [h₁.1, h₂.1]
         · rw [h₁.2.1, h₂.2.1]
         · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩
-    have wp : ∀ s, A5 M Ctx W SP R A al D n s → WP isa aadPad s (Env Ctx (W + BitVec.ofNat 64 16) W SP) :=
+    have wp : ∀ s, A16 M Ctx W SP R A al D n s → WP isa aadPad s (Env Ctx (W + BitVec.ofNat 64 16) W SP) :=
       fun s h => WP.mono (aadPad_ok L h.1.env h.1.dA h1 h16 h.1.aad h.2.1) fun _ g => g.1
     have pad' := rel_next (c := aadPad) (by unfold aadPad; exact pad) wp wp
     have mul := rel_taint (P := fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧
       Env Ctx (W + BitVec.ofNat 64 16) W SP s₂) (c := .block aadMul) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => env_agree h.1 h.2) ⟨_, by taint_decide⟩
     have some := RelCT.seq r₅ (rel_ite_e (fun _ _ h => by rw [h.1.2.2, h.2.2.2])
-      (reg.mono (fun _ _ h => h.1) fun _ _ h => h) ((RelCT.seq pad' mul).mono (fun _ _ h => h.1) fun _ _ h => h))
+      (reg.mono (fun _ _ h => h.1) fun _ _ h => h) ((RelCT.seq r₁₆ (rel_ite_e (fun _ _ h => by rw [h.1.2.2, h.2.2.2])
+        (full.mono (fun _ _ h => h.1) fun _ _ h => h) ((RelCT.seq pad' mul).mono (fun _ _ h => h.1) fun _ _ h => h))).mono
+        (fun _ _ h => h.1) fun _ _ h => h))
     unfold aadSome
     exact some.mono (fun _ _ h => h.1) fun _ _ h => h
   unfold Impl.AesGcm.X86_64.Fast.aad
