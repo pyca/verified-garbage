@@ -4,6 +4,9 @@
   python3 ci/lean_cache.py pack lean .lake/build .lake/packages | zstd -T0 -5 -o cache.tar.zst
   zstd -dc cache.tar.zst | python3 ci/lean_cache.py unpack lean
 
+  python3 ci/lean_cache.py store lean .lake/build    # then cache lean/.lake/ltar
+  python3 ci/lean_cache.py restore lean              # after restoring it
+
 `pack` updates `.lake/ltar/`, which holds an `.ltar` archive of each built
 module's outputs (its `.olean`, `.olean.server`, `.olean.private`, `.ilean`,
 `.ir.sig`, `.ir`, `.c` and `.trace`) in the given directories (relative to
@@ -23,6 +26,13 @@ It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 (`.github/actions/leantar`), which packs every module in one process at zstd
 level `--level` (default 5); the toolchain's own `leantar` takes half a
 CPU-second for each module.
+
+`store` updates the archives the same way, and writes the other files of
+the directories to `.lake/ltar/files.tar` rather than to stdout, so that
+`.lake/ltar` alone holds the build: CI's Actions cache keeps it, and each
+job that restores it runs `restore`, which extracts `files.tar` and unpacks
+every archive, keeping them, so that the build's next `store` packs only
+what changed. `pack` leaves `files.tar` out of its tar.
 
 `unpack` extracts such a tar from stdin into the Lean project. It writes
 each file that is not an archive in its place, and passes the archives to
@@ -52,6 +62,8 @@ from pathlib import Path
 OUTPUTS = [(0, ".olean"), (0, ".olean.server"), (0, ".olean.private"), (0, ".ilean"),
            (0, ".ir.sig"), (0, ".ir"), (1, ".c")]
 LTAR = Path(".lake/ltar")
+# `store`'s tar of the files not in an archive.
+FILES = "files.tar"
 # The key of each archive's module (`key`), by archive, so `pack` repacks only what changed.
 INDEX = "index.json"
 
@@ -89,7 +101,9 @@ def key(trace):
     return json.dumps([t["depHash"], t["outputs"]], sort_keys=True)
 
 
-def pack(lean, roots, jobs, level, tool, out):
+def update(lean, roots, jobs, level, tool):
+    """Brings the archives of `.lake/ltar` up to date with the builds under
+    `roots`, and returns the files they hold."""
     ltars = lean / LTAR
     old = json.loads((ltars / INDEX).read_text()) if (ltars / INDEX).is_file() else {}
     builds = list(build_dirs(lean, roots))
@@ -132,6 +146,11 @@ def pack(lean, roots, jobs, level, tool, out):
             removed += 1
     (ltars / INDEX).write_text(json.dumps(index, sort_keys=True))
     print(f"Packed {len(tasks)} modules, kept {kept}, removed {removed}", file=sys.stderr)
+    return packed
+
+
+def other_files(lean, roots, packed):
+    """The entries under `roots` that are not in a module's archive."""
     paths = []
     for root in roots:
         for dirpath, dirnames, filenames in os.walk(lean / root):
@@ -141,10 +160,40 @@ def pack(lean, roots, jobs, level, tool, out):
             paths += [str(rel / f) for f in sorted(filenames) if rel / f not in packed]
             # Symbolic links to directories are entries, not walked.
             paths += [str(rel / d) for d in dirnames if (lean / rel / d).is_symlink()]
+    return paths
+
+
+def pack(lean, roots, jobs, level, tool, out):
+    paths = other_files(lean, roots, update(lean, roots, jobs, level, tool))
     out.flush()
-    # The archives (all of `.lake/ltar`) first, then everything else.
-    subprocess.run(["tar", "-C", str(lean), "-cf", "-", str(LTAR), "--no-recursion", "--null", "-T", "-"],
+    # The archives (`.lake/ltar`, but for `store`'s tar) first, then
+    # everything else.
+    subprocess.run(["tar", "-C", str(lean), "-cf", "-", f"--exclude={LTAR / FILES}", str(LTAR),
+                    "--no-recursion", "--null", "-T", "-"],
                    input="\0".join(paths).encode(), stdout=out, check=True)
+
+
+def store(lean, roots, jobs, level, tool):
+    paths = other_files(lean, roots, update(lean, roots, jobs, level, tool))
+    subprocess.run(["tar", "-C", str(lean), "-cf", str(lean / LTAR / FILES), "--no-recursion",
+                    "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
+
+
+def restore(lean, jobs, tool):
+    ltars = lean / LTAR
+    if (ltars / FILES).is_file():
+        subprocess.run(["tar", "--no-same-owner", "-xf", str(ltars / FILES), "-C", str(lean)], check=True)
+    records = []
+    for ltar in sorted(ltars.rglob("*.ltar")):
+        build = build_of(ltar.relative_to(ltars))
+        records.append({"file": str(ltar.relative_to(lean)),
+                        "base": [str(build / "lib/lean"), str(build / "ir")]})
+    if records:
+        # `-f`: a trace already there (from a build of other sources) would
+        # otherwise keep that build's outputs.
+        subprocess.run([tool or str(leantar(lean)), "-f", "--jobs", str(jobs), "-x", "-j", "-"],
+                       cwd=lean, input=json.dumps(records).encode(), check=True)
+    print(f"Unpacked {len(records)} modules", file=sys.stderr)
 
 
 def build_of(rel):
@@ -232,8 +281,12 @@ def main(argv=None):
     p = sub.add_parser("pack", help="write a tar of the directories to stdout")
     p.add_argument("lean", type=Path, help="the Lean project (lean/)")
     p.add_argument("roots", nargs="+", type=Path, help="directories to pack, relative to it")
-    p.add_argument("--level", type=int, default=5, help="zstd level (default: 5)")
-    p.add_argument("--leantar", default="leantar-batch", help="a leantar with `-p` (default: leantar-batch)")
+    st = sub.add_parser("store", help="update `.lake/ltar`, with a tar of the other files in it")
+    st.add_argument("lean", type=Path, help="the Lean project (lean/)")
+    st.add_argument("roots", nargs="+", type=Path, help="directories to store, relative to it")
+    r = sub.add_parser("restore", help="restore what `store` stored, keeping `.lake/ltar`")
+    r.add_argument("lean", type=Path, help="the Lean project (lean/)")
+    r.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
     u = sub.add_parser("unpack", help="extract a tar of `pack` from stdin")
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
@@ -241,11 +294,19 @@ def main(argv=None):
     u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
     u.add_argument("--tmp", default=tmp_dir(),
                    help="where to stage the archives (default: /dev/shm, if there is one)")
-    for q in (p, u):
+    for q in (p, st):
+        q.add_argument("--level", type=int, default=5, help="zstd level (default: 5)")
+        q.add_argument("--leantar", default="leantar-batch",
+                       help="a leantar with `-p` (default: leantar-batch)")
+    for q in (p, st, r, u):
         q.add_argument("--jobs", type=int, default=os.cpu_count())
     args = parser.parse_args(argv)
     if args.command == "pack":
         pack(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, sys.stdout.buffer)
+    elif args.command == "store":
+        store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar)
+    elif args.command == "restore":
+        restore(args.lean.resolve(), args.jobs, args.leantar)
     else:
         unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer)
 

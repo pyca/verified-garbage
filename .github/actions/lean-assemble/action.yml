@@ -109,20 +109,28 @@ runs:
     # Lake writes a module's `ir/*.setup.json` (its options, and the paths
     # of its imports' outputs, for `lean --setup`) before compiling it, and
     # never reads it again: an up-to-date module needs none, and a rebuilt
-    # one gets a new one. They are 1.9 GB of the 10 GB every Lean job would
-    # otherwise unpack, for nothing (`lake setup-file` writes one when
-    # profiling needs it).
+    # one gets a new one. They are 1.9 GB, which `store` would keep, for
+    # nothing (`lake setup-file` writes one when profiling needs it).
     - name: Remove the modules' setup files
       if: ${{ steps.manifest.outcome == 'success' }}
       shell: bash
       working-directory: lean
       run: find .lake/build/ir -name '*.setup.json' -delete
+    # The build's module archives, packing only the modules whose outputs
+    # changed since the archives `lean-prepare` restored.
+    - if: ${{ steps.manifest.outcome == 'success' }}
+      uses: ./.github/actions/leantar
+    - name: Store this project's build
+      if: ${{ steps.manifest.outcome == 'success' }}
+      shell: bash
+      working-directory: lean
+      run: python3 ../ci/lean_cache.py store . .lake/build
     # If two jobs both save, the second only warns that the key is taken.
     - name: Save this project's build
       if: ${{ steps.manifest.outcome == 'success' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: lean/.lake/build
+        path: lean/.lake/ltar
         key: ${{ inputs.cache-key }}
     # After the build, so that a plan never finds a manifest without its
     # build.

@@ -111,24 +111,8 @@ jobs:
         run: |
           # Never publish a fallback or an empty project build.
           [ "$CACHE_HIT" = true ] || { echo "::error::The checked build cache is missing"; exit 1; }
-      # Its archives of the modules that have not changed since are reused,
-      # so only the others are packed again (ci/lean_cache.py). The
-      # registry is public: the pull needs no token.
-      - name: Restore the published module archives
-        if: ${{ steps.publish.outputs.needed == 'true' }}
-        run: |
-          key=$(jq -r '.annotations["io.pyca.lean.cache-key"] // empty' "$RUNNER_TEMP/lean-cache-manifest.json" 2>/dev/null || true)
-          case "$key" in
-            *"-$CACHE_FORMAT") ;;
-            *) echo "No published cache in this format: packing every module."; exit 0 ;;
-          esac
-          # A failed download must not leave a partial archive that the
-          # index vouches for: then pack everything.
-          set -o pipefail
-          if ! python3 ci/fetch_lean_cache.py | zstd -dc | tar -xf - -C lean .lake/ltar; then
-            echo "::warning::Restoring the published archives failed: packing every module."
-            rm -rf lean/.lake/ltar
-          fi
+      # The build's archives come from CI's cache (`lean-prepare`): `pack`
+      # packs only the dependencies' modules.
       - uses: ./.github/actions/leantar
         if: ${{ steps.publish.outputs.needed == 'true' }}
       # The archive goes to memory: it is uploaded, then discarded.

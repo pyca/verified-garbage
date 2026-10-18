@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import tarfile
 import tempfile
 import unittest
 
@@ -130,6 +131,33 @@ class LeanArchiveTests(unittest.TestCase):
         self.assertIn("packages/mathlib/.lake/build/Mathlib/Order", index)
         self.assertTrue((self.lean / ".lake/ltar/packages/mathlib/.lake/build/Mathlib/Order.ltar").exists())
         self.assertEqual(self.log.read_text(), "")
+
+    def test_store_and_restore(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        ltar = self.lean / ".lake/ltar"
+        self.assertTrue((ltar / "files.tar").is_file())
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*") if p.is_file()}
+        # Restored where only `.lake/ltar` was kept, as from the Actions cache.
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        ltar.rename(target / ".lake/ltar")
+        lean_cache.restore(target, 2, str(self.stub))
+        restored = {p.relative_to(target): p.read_bytes()
+                    for p in (target / ".lake/build").rglob("*") if p.is_file()}
+        self.assertEqual(restored, original)
+        # The archives stay, so the next store packs nothing.
+        self.log.write_text("")
+        lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
+        self.assertEqual(self.log.read_text(), "")
+
+    def test_pack_leaves_out_stores_files(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        data, _ = self.pack()
+        with tarfile.open(fileobj=io.BytesIO(data)) as tar:
+            names = tar.getnames()
+        self.assertNotIn(".lake/ltar/files.tar", names)
+        self.assertIn(".lake/ltar/build/C.ltar", names)
 
     def test_build_of(self):
         self.assertEqual(lean_cache.build_of("build/A/B"), Path(".lake/build"))
