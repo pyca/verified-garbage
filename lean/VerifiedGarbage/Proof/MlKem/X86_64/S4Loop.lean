@@ -268,15 +268,15 @@ theorem vec2_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) (
   have haddr : s₁.gpr .rbp + BitVec.ofNat 64 (cw w16 / 8 * (s₁.gpr .rdi).toNat) =
       cAddr w16 (poly4W w16 (aP σ) K) (Lt σ K (b + t)).length := by
     rw [hbp, hdi]
-  have hrd : s₁.rd ++ s₁.wr = [sdR σ, aR w16 σ, scrR σ] := regs hp h.lb.env
-  have hin8 : (aR w16 σ).Contains (cAddr w16 (poly4W w16 (aP σ) K) (Lt σ K (b + t)).length) (8 * cw w16 / 8) := by
+  have hrd : s₁.rd ++ s₁.wr = [sdR σ, aRW w16 σ, scrR σ] := regs hp h.lb.env
+  have hin8 : (aRW w16 σ).Contains (cAddr w16 (poly4W w16 (aP σ) K) (Lt σ K (b + t)).length) (8 * cw w16 / 8) := by
     rw [cAddr, poly4W, Offset.add_add]; exact Offset.contains_base _ (by wd_omega) (by wd_omega)
   have hout : InRegions s₁.wr (cAddr w16 (poly4W w16 (aP σ) K) (Lt σ K (b + t)).length) (cw w16) := by
     rw [h.lb.env.wr, hp.wr]
-    exact ⟨aR w16 σ, by simp, by rw [show cw w16 = 8 * cw w16 / 8 by omega]; exact hin8⟩
+    exact ⟨aRW w16 σ, by simp, by rw [show cw w16 = 8 * cw w16 / 8 by omega]; exact hin8⟩
   have hsep : ∀ V : BitVec (8 * cw w16), (s₁.mem.writeW (cAddr w16 (poly4W w16 (aP σ) K) (Lt σ K (b + t)).length)
       V).readW (at' σ (oTab + 8 * M + 4)) 32 = s₁.mem.readW (at' σ (oTab + 8 * M + 4)) 32 := fun V =>
-    ((Frame.refl _ _).writeW (List.mem_singleton_self (aR w16 σ)) V hin8).readW
+    ((Frame.refl _ _).writeW (List.mem_singleton_self (aRW w16 σ)) V hin8).readW
       (r := scrR σ) (Offset.contains_base _ (by simp only [oTab]; bdd_omega) (by simp only [oTab]; bdd_omega))
       (by simpa using hp.a_scr.symm) (by decide)
   refine WP.mono (vput_ok w16 c₁ h0 hax

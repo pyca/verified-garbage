@@ -196,7 +196,7 @@ theorem sqTs_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {t b n : Nat} (hn 
 /-- `Env` after writes apart from the saved registers, in the regions of the precondition. -/
 theorem EnvW.apart {σ s s' : State} (he : EnvW w16 σ s) {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hsv : ∀ r ∈ rs, (⟨at' σ oSave, 40⟩ : Region).Disjoint r)
-    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR w16 σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsub : ∀ r ∈ rs, ∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : EnvW w16 σ s' := by
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, by rw [hg .rbx (by simp), he.rbx], by rw [hg .r12 (by simp), he.r12],
     by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
@@ -209,7 +209,7 @@ theorem EnvW.apart {σ s s' : State} (he : EnvW w16 σ s) {rs : List Region} (hf
 theorem SqTW.apart {σ : State} {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : SqTW w16 σ t n s) {rs : List Region}
     (hf : Frame rs s.mem s'.mem) (hlow : ∀ r ∈ rs, (lowR σ).Disjoint r)
     (hsv : ∀ r ∈ rs, (⟨at' σ oSave, 40⟩ : Region).Disjoint r)
-    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR w16 σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsub : ∀ r ∈ rs, ∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : SqTW w16 σ t n s' := by
   refine ⟨h.env.apart hf hsv hsub hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),

@@ -113,7 +113,7 @@ theorem finish_ct : RelCT isa (R4 fun σ s => Batch σ 2 0 112 4 s) finish (fun 
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide)))
 
 theorem ct : ConstantTime isa r4K.pre r4K.pub VG.Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (RelCT.mono
+  refine relStart (Q := fun _ _ => True) (RelCT.seq (start_ct (w16 := false)) (RelCT.seq (RelCT.mono
     (sqT_ct (t := 0) (by decide) (by decide) sqTaint)
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, sqT_of h₁, sqT_of h₂⟩) fun _ _ h => h) ?_))
   refine RelCT.seq (relInv (fun σ s hp h => zeroJ_ok (pre_of hp) h)

@@ -206,7 +206,7 @@ theorem sqYs_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {
 theorem SqY.apart {σ : State} {Y : Spec.Sha3.State} {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : SqY σ Y t n s)
     {rs : List Region} (hf : Frame rs s.mem s'.mem) (hlow : ∀ r ∈ rs, (lowR σ).Disjoint r)
     (hsv : ∀ r ∈ rs, (⟨at' σ oSave, 40⟩ : Region).Disjoint r)
-    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR false σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : SqY σ Y t n s' := by
   refine ⟨h.env.apart hf hsv hsub hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),

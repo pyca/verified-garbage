@@ -99,7 +99,7 @@ variable {σ : State} (hp : PreW w16 σ)
 include hp
 
 omit hp in
-theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (cRegion w16 (poly4W w16 (aP σ) K)) (aR w16 σ) :=
+theorem sub_poly {K : Nat} (hK : K < 4) : Region.Sub (cRegion w16 (poly4W w16 (aP σ) K)) (aRW w16 σ) :=
   Offset.sub_base _ (by wd_omega)
 
 /-- Polynomial `K` is apart from the scratch space. -/
@@ -117,7 +117,7 @@ theorem EnvW.poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvW w16 σ s)
   · rw [hf.readW (Region.contains_self _ _) (by
         simpa using scr_poly hp hK (a := oSave + 8 * i) (n := 8) (by simp only [oSave]; omega)) (by decide)]
     exact he.saved i hi
-  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aR w16 σ, by simp, sub_poly hK⟩
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aRW w16 σ, by simp, sub_poly hK⟩
 
 /-- Writes to polynomial `K` keep `LB`. -/
 theorem LBW.poly {s₀ : State} {K b : Nat} (hK : K < 4) {s s' : State} (h : LBW w16 σ s₀ K b s)
@@ -179,7 +179,7 @@ theorem lat_step {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t < 168) (hbt :
   have hL : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
   have hw : WrA w16 s.wr (poly4W w16 (aP σ) K) := fun j hj => by
     rw [h.lb.env.wr, hp.wr]
-    refine ⟨aR w16 σ, by simp, ?_⟩
+    refine ⟨aRW w16 σ, by simp, ?_⟩
     rw [cAddr, poly4W, Offset.add_add]
     exact Offset.contains_base _ (by wd_omega) (by wd_omega)
   refine WP.mono (snBody_ok w16 s (aP := poly4W w16 (aP σ) K) h.rbp h.rdi hL hw h.stored
@@ -213,7 +213,7 @@ theorem okN_succ (K : Nat) : BitVec.setWidth 64 ((BitVec.ofNat 64 (okN σ K)).se
     cases (sampleNTT minIterations (B σ K)).isSome <;> rfl
 
 /-- The seed at `seeds + 34 K`. -/
-theorem seed_bytes {K : Nat} (hK : K < 4) {m : Mem} (hf : Frame [aR w16 σ, scrR σ, stkR σ] σ.mem m) :
+theorem seed_bytes {K : Nat} (hK : K < 4) {m : Mem} (hf : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem m) :
     bytesAt m (sd σ + BitVec.ofNat 64 (34 * K)) 34 = B σ K := by
   rw [bytesAt_frame hf (by simpa using ⟨hp.sd_a.sub_left (Offset.sub_base _ (by omega)),
     hp.sd_scr.sub_left (Offset.sub_base _ (by omega)), (hp.stk_sd.sub_right (Offset.sub_base _ (by omega))).symm⟩)
@@ -228,21 +228,24 @@ theorem scr6144_lt : (at' σ oScalar).toNat + 2048 ≤ 2 ^ 64 := by
 
 /-- The regions of `vg_mlkem_sample_ntt`'s call for seed `K`. -/
 abbrev cRd (σ : State) (K : Nat) : List Region := [⟨sd σ + BitVec.ofNat 64 (34 * K), 34⟩]
-abbrev cWr (w16 : Bool) (σ : State) (K : Nat) : List Region := [cRegion w16 (poly4W w16 (aP σ) K), ⟨at' σ oScalar, 2048⟩]
+abbrev cWrW (w16 : Bool) (σ : State) (K : Nat) : List Region := [cRegion w16 (poly4W w16 (aP σ) K), ⟨at' σ oScalar, 2048⟩]
+
+/-- The same for 32-bit coefficients. -/
+abbrev cWr (σ : State) (K : Nat) : List Region := [pR (poly4 (aP σ) K), ⟨at' σ oScalar, 2048⟩]
 
 omit hp in
-theorem c_sub {K : Nat} (hK : K < 4) : ∀ r ∈ cWr w16 σ K ++ [stkR σ],
-    (∃ R ∈ [aR w16 σ, scrR σ, stkR σ], Region.Sub r R) := by
+theorem c_subW {K : Nat} (hK : K < 4) : ∀ r ∈ cWrW w16 σ K ++ [stkR σ],
+    (∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R) := by
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl) | rfl
-  · exact ⟨aR w16 σ, by simp, sub_poly hK⟩
+  · exact ⟨aRW w16 σ, by simp, sub_poly hK⟩
   · exact ⟨scrR σ, by simp, sub_scr (by simp only [oScalar]; omega)⟩
   · exact ⟨stkR σ, by simp, fun _ h => h⟩
 
 /-- A region the call writes is apart from `⟨at' σ a, n⟩` in the scratch space below 6144. -/
-theorem c_disj {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ oScalar) :
-    ∀ r ∈ cWr w16 σ K ++ [stkR σ], Region.Disjoint ⟨at' σ a, n⟩ r := by
+theorem c_disjW {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ oScalar) :
+    ∀ r ∈ cWrW w16 σ K ++ [stkR σ], Region.Disjoint ⟨at' σ a, n⟩ r := by
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl) | rfl
@@ -253,13 +256,13 @@ theorem c_disj {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ oScalar) :
 /-- `PC` after the call. -/
 theorem PCW.call {X : Mem → Prop} {K : Nat} (hK : K < 4) {s s' : State} (h : PCW w16 X σ K s) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r)
-    (hf : Frame (cWr w16 σ K ++ [stkR σ]) s.mem s'.mem)
-    (hX : ∀ m m', Frame (cWr w16 σ K ++ [stkR σ]) m m' → X m → X m') : PCW w16 X σ K s' := by
+    (hf : Frame (cWrW w16 σ K ++ [stkR σ]) s.mem s'.mem)
+    (hX : ∀ m m', Frame (cWrW w16 σ K ++ [stkR σ]) m m' → X m → X m') : PCW w16 X σ K s' := by
   refine ⟨⟨hrd.trans h.env.rd, hwr.trans h.env.wr, by rw [hg .rbx (by simp), h.env.rbx],
       by rw [hg .r12 (by simp), h.env.r12], by rw [hg .r13 (by simp), h.env.r13], by rw [hg .rsp (by simp), h.env.rsp],
-      by rw [hg .r15 (by simp), h.env.r15], fun i hi => ?_, h.env.frame.trans (hf.sub (c_sub (σ := σ) hK))⟩,
+      by rw [hg .r15 (by simp), h.env.r15], fun i hi => ?_, h.env.frame.trans (hf.sub (c_subW (σ := σ) hK))⟩,
     ?_, by rw [hg .r14 (by simp), h.r14], fun k hk f e => ?_⟩
-  · rw [hf.readW (Region.contains_self _ _) (c_disj hp hK (by simp only [oSave, oScalar]; omega)) (by decide)]
+  · rw [hf.readW (Region.contains_self _ _) (c_disjW hp hK (by simp only [oSave, oScalar]; omega)) (by decide)]
     exact h.env.saved i hi
   · exact hX _ _ hf h.buf
   · refine polyIsW_frame w16 hf (fun r hr => ?_) (h.polys k hk f e)
@@ -273,22 +276,22 @@ theorem PCW.call {X : Mem → Prop} {K : Nat} (hK : K < 4) {s s' : State} (h : P
 omit hp in
 theorem sx6144 : BitVec.signExtend 64 (BitVec.ofNat 32 oScalar) = BitVec.ofNat 64 6144 := by decide
 
-theorem regs {s : State} (he : EnvW w16 σ s) : s.rd ++ s.wr = [sdR σ, aR w16 σ, scrR σ] := by
+theorem regs {s : State} (he : EnvW w16 σ s) : s.rd ++ s.wr = [sdR σ, aRW w16 σ, scrR σ] := by
   rw [he.rd, he.wr, hp.rd, hp.wr]; rfl
 
 theorem cov {s : State} (he : EnvW w16 σ s) {K : Nat} (hK : K < 4) :
-    Covers (cRd σ K ++ cWr w16 σ K) (s.rd ++ s.wr) ∧ Covers (cWr w16 σ K) s.wr := by
+    Covers (cRd σ K ++ cWrW w16 σ K) (s.rd ++ s.wr) ∧ Covers (cWrW w16 σ K) s.wr := by
   refine ⟨Covers.of_sub fun r hr => ?_, Covers.of_sub fun r hr => ?_⟩
   · rw [regs hp he]
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨sdR σ, by simp, 34 * K, rfl, by simp only; omega⟩
-    · exact ⟨aR w16 σ, by simp, pBytes w16 * K, rfl, by simp only; wd_omega⟩
+    · exact ⟨aRW w16 σ, by simp, pBytes w16 * K, rfl, by simp only; wd_omega⟩
     · exact ⟨scrR σ, by simp, oScalar, rfl, by simp only [oScalar]; omega⟩
   · rw [he.wr, hp.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨aR w16 σ, by simp, pBytes w16 * K, rfl, by simp only; wd_omega⟩
+    · exact ⟨aRW w16 σ, by simp, pBytes w16 * K, rfl, by simp only; wd_omega⟩
     · exact ⟨scrR σ, by simp, oScalar, rfl, by simp only [oScalar]; omega⟩
 
 omit hp in
@@ -336,7 +339,7 @@ theorem argK_kS {X : Mem → Prop} {K : Nat} (hK : K < 4) {s : State} (h : ArgIW
   rw [h.pinv.env.rsp]; exact hp.stk_sd.sub_right (Offset.sub_base (sd σ) (d := 34 * K) (n := 34) (by omega))
 
 theorem argK_pre {X : Mem → Prop} {K : Nat} (hK : K < 4) {s : State} (h : ArgIW w16 X σ K s) :
-    (sampleKW w16).pre (s.callEntry.withRegions (cRd σ K) (cWr w16 σ K)) := by
+    (sampleKW w16).pre (s.callEntry.withRegions (cRd σ K) (cWrW w16 σ K)) := by
   have hsp : s.gpr .rsp = σ.gpr .rsp := h.pinv.env.rsp
   have kS := argK_kS hp hK h
   have kA : (below (s.gpr .rsp) 24).Disjoint (cRegion w16 (poly4W w16 (aP σ) K)) := by
@@ -363,7 +366,7 @@ structure CallIW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : Sta
 abbrev CallI := CallIW false
 
 theorem callK_ok {X : Mem → Prop} {K : Nat} (hK : K < 4)
-    (hX : ∀ m m', Frame (cWr w16 σ K ++ [stkR σ]) m m' → X m → X m') {s : State} (h : ArgIW w16 X σ K s) :
+    (hX : ∀ m m', Frame (cWrW w16 σ K ++ [stkR σ]) m m' → X m → X m') {s : State} (h : ArgIW w16 X σ K s) :
     WP isa (.call (if w16 then "vg_mlkem16_sample_ntt" else "vg_mlkem_sample_ntt") (sampleNTTW w16)) s
       (CallIW w16 X σ K) := by
   have hcv := cov hp h.pinv.env hK
@@ -393,6 +396,29 @@ theorem andK_ok {X : Mem → Prop} {K : Nat} {s : State} (h : CallIW w16 X σ K 
   by_cases ek : k = K
   · subst ek; exact h.poly f e
   · exact h₃.polys k (by omega) f e
+
+end
+
+section
+variable {σ : State}
+
+/-- `c_subW` for 32-bit coefficients. -/
+theorem c_sub {K : Nat} (hK : K < 4) : ∀ r ∈ cWr σ K ++ [stkR σ],
+    (∃ R ∈ [aR σ, scrR σ, stkR σ], Region.Sub r R) := by
+  intro r hr
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with (rfl | rfl) | rfl
+  · exact ⟨aR σ, by simp, sub_poly (w16 := false) hK⟩
+  · exact ⟨scrR σ, by simp, sub_scr (by simp only [oScalar]; omega)⟩
+  · exact ⟨stkR σ, by simp, fun _ h => h⟩
+
+/-- `c_disjW` for 32-bit coefficients. -/
+theorem c_disj (hp : Pre σ) {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ oScalar) :
+    ∀ r ∈ cWr σ K ++ [stkR σ], Region.Disjoint ⟨at' σ a, n⟩ r :=
+  fun r hr => c_disjW (w16 := false) hp hK h r (by
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with (rfl | rfl) | rfl
+    exacts [.inl (.inl rfl), .inl (.inr rfl), .inr rfl])
 
 end
 

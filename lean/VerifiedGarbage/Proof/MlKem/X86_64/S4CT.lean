@@ -77,7 +77,7 @@ end
 
 theorem start_ct : RelCT isa (R4W w16 fun σ s => s = σ)
     (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) ++ absorb4)) (R4W w16 fun σ s => SqInvW w16 σ 0 s) :=
-  relInv (fun σ s hp h => by subst h; exact start_ok (pre_of hp))
+  relInv (fun σ s hp h => by subst h; exact start_ok (preW_of hp))
     (taintRel [.rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -92,7 +92,7 @@ theorem env_rbx {σ₁ σ₂ s₁ s₂ : State} (hq : sample4K.pub σ₁ σ₂) 
 theorem sqT_ct {fast : Bool} {t b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {hc : VG.Taint.Hint X86_64.Taint.T}
     (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n fast) hc).isSome = true) :
     RelCT isa (R4W w16 fun σ s => SqTW w16 σ t b s) (squeezes b n fast) (R4W w16 fun σ s => SqTW w16 σ t (b + n) s) :=
-  relInv (fun σ s hp h => WP.mono (sqTs_ok (fast := fast) (pre_of hp) hn hbn h) fun _ h' => h'.1)
+  relInv (fun σ s hp h => WP.mono (sqTs_ok (fast := fast) (preW_of hp) hn hbn h) fun _ h' => h'.1)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
@@ -125,12 +125,12 @@ theorem relInvX {X : State → State → Prop} {I I' : State → State → State
 
 theorem bpre {σ : State} (hp : (sample4KW w16).pre σ) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t < 168) {s : State}
     (h : LAtW w16 σ s₀ K b t s) : BPre w16 s (poly4W w16 (aP σ) K) (Lt σ K (b + t)) := by
-  have hp' := pre_of hp
+  have hp' := preW_of hp
   refine ⟨h.rbp, h.rdi, sampleAfter_length_le (a := []) (by simp) _ (b + t), fun j hj => ?_, h.stored,
     by simpa using lat_regions hp' hK h (j := 0) (by bdd_omega), lat_regions hp' hK h (by bdd_omega),
     lat_regions hp' hK h (by bdd_omega)⟩
   rw [h.lb.env.wr, hp'.wr]
-  refine ⟨aR w16 σ, by simp, ?_⟩
+  refine ⟨aRW w16 σ, by simp, ?_⟩
   rw [cAddr, poly4W, Offset.add_add]
   exact Offset.contains_base _ (by wd_omega) (by wd_omega)
 
@@ -164,9 +164,9 @@ theorem iloop_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (h
         x'.zf = some (x.gpr .rcx - 1 == 0)) ∧ x'.gpr .r10 = x.gpr .r10)
     (RelCT.mono (body_ct w16) (fun x y h => gi_brel hK ht hbt h) fun _ _ _ => trivial) (fun x y h => ?_) ?_
   · obtain ⟨σ₁, σ₂, s₀₁, s₀₂, u, p₁, p₂, _, _, hu, _, _, l₁, l₂, _⟩ := h
-    exact ⟨WP.all (fun p hp' => WP.gpr (lat_step (pre_of hp'.1) hK (by bdd_omega) (by bdd_omega) hp'.2.2)
+    exact ⟨WP.all (fun p hp' => WP.gpr (lat_step (preW_of hp'.1) hK (by bdd_omega) (by bdd_omega) hp'.2.2)
         (r := .r10) (by cases w16 <;> decide)) ⟨(σ₁, s₀₁, u), p₁, hu, l₁⟩,
-      WP.all (fun p hp' => WP.gpr (lat_step (pre_of hp'.1) hK (by bdd_omega) (by bdd_omega) hp'.2.2)
+      WP.all (fun p hp' => WP.gpr (lat_step (preW_of hp'.1) hK (by bdd_omega) (by bdd_omega) hp'.2.2)
         (r := .r10) (by cases w16 <;> decide)) ⟨(σ₂, s₀₂, u), p₂, hu, l₂⟩⟩
   · intro x y x' y' ⟨σ₁, σ₂, s₀₁, s₀₂, u, p₁, p₂, hq, hn, hu, x₁, x₂, l₁, l₂, c₁, c₂, d₁, d₂, v₁, v₂⟩ f₁ f₂
     obtain ⟨⟨l₁', r₁, z₁⟩, e₁⟩ := f₁ (σ₁, s₀₁, u) ⟨p₁, hu, l₁⟩
@@ -226,12 +226,12 @@ theorem vgrp_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK
     refine RelCT.mono
       (P := RXW w16 X fun σ s₀ s => LAtW w16 σ s₀ K b t s ∧ VC s ∧ (Lt σ K (b + t)).length < 249 ∧ s.gpr .r10 = c)
       (RelCT.seq (relInvX (I' := fun σ s₀ s => VIW w16 σ s₀ K b t s ∧ s.gpr .r10 = c)
-          (fun σ s₀ s hp _ h => WP.mono (vec1_ok (pre_of hp) hK ht hbt h.1 h.2.1 h.2.2.1) fun _ ⟨hi, h10⟩ =>
+          (fun σ s₀ s hp _ h => WP.mono (vec1_ok (preW_of hp) hK ht hbt h.1 h.2.1 h.2.2.1) fun _ ⟨hi, h10⟩ =>
             ⟨hi, by rw [h10]; exact h.2.2.2⟩)
           (taintRel [.rsi] (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.rsi, h₂.1.rsi, at', at', pub_scr hq])
             (by taint_decide)))
-        (relInvX (fun σ s₀ s hp _ h => WP.mono (vec2_ok (pre_of hp) hK ht hbt h.1) fun _ ⟨l, v, h10⟩ =>
+        (relInvX (fun σ s₀ s hp _ h => WP.mono (vec2_ok (preW_of hp) hK ht hbt h.1) fun _ ⟨l, v, h10⟩ =>
             ⟨⟨l, fun _ => v⟩, by rw [h10]; exact h.2⟩)
           (taintRel [.rbx, .rax, .rbp, .rdi, .rsi] (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -277,22 +277,22 @@ theorem vgrp_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK
 
 /-- The call of `vg_mlkem_sample_ntt` on seed `K`, with `X σ` of the memory, which its writes keep. -/
 theorem call_ct {X : State → Mem → Prop} {K : Nat} (hK : K < 4)
-    (hX : ∀ σ, (sample4KW w16).pre σ → ∀ m m', Frame (cWr w16 σ K ++ [stkR σ]) m m' → X σ m → X σ m') :
+    (hX : ∀ σ, (sample4KW w16).pre σ → ∀ m m', Frame (cWrW w16 σ K ++ [stkR σ]) m m' → X σ m → X σ m') :
     RelCT isa (R4W w16 fun σ s => ArgIW w16 (X σ) σ K s)
       (.call (if w16 then "vg_mlkem16_sample_ntt" else "vg_mlkem_sample_ntt") (sampleNTTW w16))
       (R4W w16 fun σ s => CallIW w16 (X σ) σ K s) :=
-  relInv (fun σ s hp h => callK_ok (pre_of hp) hK (hX σ hp) h) (RelCT.callEx (sampleW_correct w16) (sampleW_ct w16)
+  relInv (fun σ s hp h => callK_ok (preW_of hp) hK (hX σ hp) h) (RelCT.callEx (sampleW_correct w16) (sampleW_ct w16)
     fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => by
       have hsp : s₁.gpr .rsp = s₂.gpr .rsp := by rw [h₁.pinv.env.rsp, h₂.pinv.env.rsp, pub_sp hq]
-      refine ⟨_, _, _, _, argK_pre (pre_of p₁) hK h₁, argK_pre (pre_of p₂) hK h₂, ?_,
-        (cov (pre_of p₁) h₁.pinv.env hK).1, (cov (pre_of p₁) h₁.pinv.env hK).2,
-        (cov (pre_of p₂) h₂.pinv.env hK).1, (cov (pre_of p₂) h₂.pinv.env hK).2, hsp⟩
+      refine ⟨_, _, _, _, argK_pre (preW_of p₁) hK h₁, argK_pre (preW_of p₂) hK h₂, ?_,
+        (cov (preW_of p₁) h₁.pinv.env hK).1, (cov (preW_of p₁) h₁.pinv.env hK).2,
+        (cov (preW_of p₂) h₂.pinv.env hK).1, (cov (preW_of p₂) h₂.pinv.env hK).2, hsp⟩
       simp only [sampleKW, State.withRegions_gpr, State.withRegions_mem, State.callEntry_rsp,
         ce_gpr' _ (by decide : Reg.rdi ≠ .rsp), ce_gpr' _ (by decide : Reg.rsi ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rdx ≠ .rsp), h₁.rdi, h₂.rdi, h₁.rsi, h₂.rsi, h₁.rdx, h₂.rdx]
-      rw [ce_bytesAt24 s₁ (n := 34) (by decide) (argK_kS (pre_of p₁) hK h₁),
-        ce_bytesAt24 s₂ (n := 34) (by decide) (argK_kS (pre_of p₂) hK h₂),
-        seed_bytes (pre_of p₁) hK h₁.pinv.env.frame, seed_bytes (pre_of p₂) hK h₂.pinv.env.frame, pub_B hq hK]
+      rw [ce_bytesAt24 s₁ (n := 34) (by decide) (argK_kS (preW_of p₁) hK h₁),
+        ce_bytesAt24 s₂ (n := 34) (by decide) (argK_kS (preW_of p₂) hK h₂),
+        seed_bytes (preW_of p₁) hK h₁.pinv.env.frame, seed_bytes (preW_of p₂) hK h₂.pinv.env.frame, pub_B hq hK]
       simp only [pub_sd hq, pub_aP hq, at', pub_scr hq, hsp, and_self])
 
 /-- The arguments of the call on seed `K`, given their taint analysis. -/
@@ -400,20 +400,20 @@ theorem run1_ct {K : Nat} (hK : K < 4) {h₂ : VG.Taint.Hint X86_64.Taint.T}
     RelCT isa (R4W w16 fun σ s => P1W w16 σ K s) (run1 K w16) (R4W w16 fun σ s => P1W w16 σ (K + 1) s) := by
   obtain ⟨⟨_, c₁⟩, _⟩ := setup_taint hK w16
   exact run_ct (N := 21) hK (by decide) (by decide) (by decide)
-    (fun σ s hp h => ⟨h.sq.env, setup_ok (pre_of hp) hK (lb1 hK h)⟩)
-    (fun σ s₀ s hp h₀ hA => run1End_ok (pre_of hp) hK h₀ hA) c₁ c₂
+    (fun σ s hp h => ⟨h.sq.env, setup_ok (preW_of hp) hK (lb1 hK h)⟩)
+    (fun σ s₀ s hp h₀ hA => run1End_ok (preW_of hp) hK h₀ hA) c₁ c₂
 
 theorem run2_ct {K : Nat} (hK : K < 4) {h₂ : VG.Taint.Hint X86_64.Taint.T}
     (c₂ : (taint.check (X86_64.Taint.ofRegs [.rbx]) (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) h₂).isSome = true) :
     RelCT isa (R4W w16 fun σ s => P2W w16 σ K s) (run2 K w16) (R4W w16 fun σ s => P2W w16 σ (K + 1) s) := by
   obtain ⟨_, ⟨_, c₁⟩⟩ := setup_taint hK w16
   exact run_ct (N := 14) hK (by decide) (by decide) (by decide)
-    (fun σ s hp h => ⟨h.sq.env, contSetup_ok (pre_of hp) hK (lb2 hK h)
+    (fun σ s hp h => ⟨h.sq.env, contSetup_ok (preW_of hp) hK (lb2 hK h)
       (by rw [h.j K hK, ite_eq_right (by omega)]) (by have := h.st K hK; rwa [ite_eq_right (by omega)] at this)⟩)
-    (fun σ s₀ s hp h₀ hA => run2End_ok (pre_of hp) hK h₀ hA) c₁ c₂
+    (fun σ s₀ s hp h₀ hA => run2End_ok (preW_of hp) hK h₀ hA) c₁ c₂
 
 theorem tab_ct : RelCT isa (R4W w16 fun σ s => SqTW w16 σ 0 3 s) (.block tabBuild) (R4W w16 fun σ s => P1W w16 σ 0 s) :=
-  relInv (fun σ s hp h => p1_zero_ok (pre_of hp) h)
+  relInv (fun σ s hp h => p1_zero_ok (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))
 
@@ -427,7 +427,7 @@ theorem pub_allFull {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) (t : N
 
 theorem check_ct : RelCT isa (R4W w16 fun σ s => P1W w16 σ 4 s)
     (.block (cntFlags ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr))) (R4W w16 (CheckedW w16)) :=
-  relInv (fun σ s hp h => check_ok (pre_of hp) h)
+  relInv (fun σ s hp h => check_ok (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))
 
@@ -440,14 +440,14 @@ theorem more4_ct {fast : Bool} : RelCT isa (R4W w16 (CheckedW w16)) (more4 fast 
     · exact ⟨_, by taint_decide⟩
     · exact ⟨_, by taint_decide⟩
   obtain ⟨_, csq⟩ := hsq
-  refine RelCT.seq (relInv (fun σ s hp h => sqM_ok (fast := fast) (pre_of hp) h)
+  refine RelCT.seq (relInv (fun σ s hp h => sqM_ok (fast := fast) (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) csq)) ?_
   refine RelCT.seq (run2_ct (K := 0) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2_ct (K := 1) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2_ct (K := 2) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2_ct (K := 3) (by decide) (by taint_decide)) ?_
-  exact relInv (fun σ s hp h => last_ok (pre_of hp) h)
+  exact relInv (fun σ s hp h => last_ok (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))
 

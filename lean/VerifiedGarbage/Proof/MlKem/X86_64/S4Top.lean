@@ -104,7 +104,7 @@ end
 theorem correct {fast : Bool} (σ : State) (hs : (sample4KW w16).pre σ) :
     ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast w16) σ t s' ∧ abiPreserved σ s' ∧
       (sample4KW w16).post σ s' := by
-  have hp := pre_of hs
+  have hp := preW_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok (fast := fast) hp h)
   exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> cases w16 <;> decide +kernel) he hF.2, hF.1⟩
 

@@ -141,11 +141,11 @@ theorem low_poly {K : Nat} (hK : K < 4) : (lowR σ).Disjoint (cRegion w16 (poly4
     (sub_poly hK)
 
 omit hp in
-theorem sub_polyR {K : Nat} (hK : K < 4) : ∀ r ∈ [cRegion w16 (poly4W w16 (aP σ) K)], ∃ R ∈ [aR w16 σ, scrR σ, stkR σ], Region.Sub r R :=
-  fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨aR w16 σ, by simp, sub_poly hK⟩
+theorem sub_polyR {K : Nat} (hK : K < 4) : ∀ r ∈ [cRegion w16 (poly4W w16 (aP σ) K)], ∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R :=
+  fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨aRW w16 σ, by simp, sub_poly hK⟩
 
 omit hp in
-theorem sub_cntR : ∀ r ∈ [cntR σ], ∃ R ∈ [aR w16 σ, scrR σ, stkR σ], Region.Sub r R :=
+theorem sub_cntR : ∀ r ∈ [cntR σ], ∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R :=
   fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨scrR σ, by simp, sub_scr (by simp only [oCnt]; omega)⟩
 
 omit hp in

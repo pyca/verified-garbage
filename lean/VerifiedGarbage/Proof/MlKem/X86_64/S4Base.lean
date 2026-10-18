@@ -96,20 +96,25 @@ end
 macro "wd_omega" : tactic => `(tactic| (cases ‹Bool› <;> (try simp only [pBytes, cw, Bool.false_eq_true, ↓reduceIte] at *) <;> omega))
 
 /-- The four polynomials. -/
-abbrev aR (w16 : Bool) (σ : State) : Region := ⟨aP σ, 4 * pBytes w16⟩
+abbrev aRW (w16 : Bool) (σ : State) : Region := ⟨aP σ, 4 * pBytes w16⟩
+
+/-- The four polynomials of 32-bit coefficients. -/
+abbrev aR (σ : State) : Region := ⟨aP σ, 4096⟩
+
+@[simp] theorem aRW_false (σ : State) : aRW false σ = aR σ := rfl
 
 /-- The precondition, by name. -/
 structure PreW (w16 : Bool) (σ : State) : Prop where
   rd : σ.rd = [sdR σ]
-  wr : σ.wr = [aR w16 σ, scrR σ]
-  sd_a : (sdR σ).Disjoint (aR w16 σ)
+  wr : σ.wr = [aRW w16 σ, scrR σ]
+  sd_a : (sdR σ).Disjoint (aRW w16 σ)
   sd_scr : (sdR σ).Disjoint (scrR σ)
-  a_scr : (aR w16 σ).Disjoint (scrR σ)
+  a_scr : (aRW w16 σ).Disjoint (scrR σ)
   ret_sd : (retR σ).Disjoint (sdR σ)
-  ret_a : (retR σ).Disjoint (aR w16 σ)
+  ret_a : (retR σ).Disjoint (aRW w16 σ)
   ret_scr : (retR σ).Disjoint (scrR σ)
   stk_sd : (stkR σ).Disjoint (sdR σ)
-  stk_a : (stkR σ).Disjoint (aR w16 σ)
+  stk_a : (stkR σ).Disjoint (aRW w16 σ)
   stk_scr : (stkR σ).Disjoint (scrR σ)
   a_lt : (aP σ).toNat + 4 * pBytes w16 ≤ 2 ^ 64
   scr_lt : (scr σ).toNat + 8192 ≤ 2 ^ 64
@@ -117,9 +122,11 @@ structure PreW (w16 : Bool) (σ : State) : Prop where
 /-- The precondition of `vg_mlkem_sample_ntt4`'s proofs, with 32-bit coefficients. -/
 abbrev Pre := PreW false
 
-theorem pre_of {σ : State} (h : (sample4KW w16).pre σ) : PreW w16 σ :=
+theorem preW_of {σ : State} (h : (sample4KW w16).pre σ) : PreW w16 σ :=
   let ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
+
+theorem pre_of {σ : State} (h : sample4K.pre σ) : Pre σ := preW_of (w16 := false) h
 
 /-- What holds between the pieces. -/
 structure EnvW (w16 : Bool) (σ s : State) : Prop where
@@ -131,7 +138,7 @@ structure EnvW (w16 : Bool) (σ s : State) : Prop where
   rsp : s.gpr .rsp = σ.gpr .rsp
   r15 : s.gpr .r15 = σ.gpr .r15
   saved : ∀ i < 5, s.mem.readW (at' σ (oSave + 8 * i)) 64 = σ.gpr (saved.getD i .rbx)
-  frame : Frame [aR w16 σ, scrR σ, stkR σ] σ.mem s.mem
+  frame : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem s.mem
 
 /-- What holds between the pieces, with 32-bit coefficients. -/
 abbrev Env := EnvW false
@@ -144,7 +151,7 @@ omit hp in
 theorem sub_scr {a n : Nat} (h : a + n ≤ 8192) : Region.Sub ⟨at' σ a, n⟩ (scrR σ) := Offset.sub_base _ h
 
 omit hp in
-theorem sub_a {a n : Nat} (h : a + n ≤ 4 * pBytes w16) : Region.Sub ⟨aP σ + BitVec.ofNat 64 a, n⟩ (aR w16 σ) :=
+theorem sub_a {a n : Nat} (h : a + n ≤ 4 * pBytes w16) : Region.Sub ⟨aP σ + BitVec.ofNat 64 a, n⟩ (aRW w16 σ) :=
   Offset.sub_base _ h
 
 theorem in_scr {s : State} (hw : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 8192) : InRegions s.wr (at' σ a) n := by
@@ -159,12 +166,12 @@ theorem in_sd' {s : State} (hr : s.rd = σ.rd) (hw : s.wr = σ.wr) {a n : Nat} (
   rw [hr, hw, hp.rd, hp.wr]; exact ⟨sdR σ, by simp, Offset.contains_base _ h (by omega)⟩
 
 /-- The seeds are not written. -/
-theorem seeds_frame {m : Mem} (hf : Frame [aR w16 σ, scrR σ, stkR σ] σ.mem m) {a : Nat} (ha : a < 136) :
+theorem seeds_frame {m : Mem} (hf : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem m) {a : Nat} (ha : a < 136) :
     m (sd σ + BitVec.ofNat 64 a) = σ.mem (sd σ + BitVec.ofNat 64 a) :=
   hf.bytes (R := sdR σ) (by simpa using ⟨hp.sd_a, hp.sd_scr, hp.stk_sd.symm⟩) (by simp) ha
 
 /-- Byte `a` of seed `k`. -/
-theorem seed_byte {m : Mem} (hf : Frame [aR w16 σ, scrR σ, stkR σ] σ.mem m) {k a : Nat} (hk : k < 4) (ha : a < 34) :
+theorem seed_byte {m : Mem} (hf : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem m) {k a : Nat} (hk : k < 4) (ha : a < 34) :
     m (sd σ + BitVec.ofNat 64 (34 * k + a)) = (B σ k).getD a 0 := by
   rw [seeds_frame hp hf (by omega), B, seed4, ← Offset.add_add]
   simp [bytesAt, ha]

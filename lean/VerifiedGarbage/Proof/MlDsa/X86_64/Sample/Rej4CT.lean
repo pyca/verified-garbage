@@ -163,7 +163,7 @@ theorem second_ct {K : Nat} (hK : K < 4) {h₁ : VG.Taint.Hint X86_64.Taint.T}
 /-! ## The whole function -/
 
 theorem ct : ConstantTime isa r4K.pre r4K.pub rejNTT4Avx2 := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (RelCT.mono
+  refine relStart (Q := fun _ _ => True) (RelCT.seq (start_ct (w16 := false)) (RelCT.seq (RelCT.mono
     (sqT_ct (t := 0) (by decide) (by decide) sqTaint)
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, sqT_of h₁, sqT_of h₂⟩) fun _ _ h => h) ?_))
   refine RelCT.seq (relInv (fun σ s hp h => zeroJ_ok (pre_of hp) h)

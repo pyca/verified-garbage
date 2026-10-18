@@ -56,7 +56,7 @@ end
 theorem correct_scalar (σ : State) (hs : (sample4KW w16).pre σ) :
     ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4 w16) σ t s' ∧ abiPreserved σ s' ∧
       (sample4KW w16).post σ s' := by
-  have hp := pre_of hs
+  have hp := preW_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok hp) fun _ h => scalar_body_ok hp h)
   exact ⟨t, s', he, abiPreserved_of_exec (by cases w16 <;> decide +kernel) he hF.2, hF.1⟩
 
@@ -79,7 +79,7 @@ theorem ct_scalar : ConstantTime isa (sample4KW w16).pre (sample4KW w16).pub (Im
   refine relStart (Q := fun _ _ => True) (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => PCW w16 NoX σ 0 s)
     (fun σ s hp h => by
       subst h
-      exact WP.mono (pro_ok (pre_of hp)) fun _ h => ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩)
+      exact WP.mono (pro_ok (preW_of hp)) fun _ h => ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩)
     (taintRel [.rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -125,7 +125,7 @@ theorem run1EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : St
         exact scr_poly hp (by omega) (a := oSave) (n := 40) (by simp only [oSave]; omega)) (sub_polyR (by omega))
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
-      sub_cntR k.2.1 k.2.2 g₃,
+      (sub_cntR (w16 := false)) k.2.1 k.2.2 g₃,
     tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact tab_cnt) hf₃ h₂.lb.tab, fun k hk => ?_, fun k hk => ?_,
     (h.hs.frame h₂.lb.fr fun r hr => by rw [List.mem_singleton.mp hr]; exact (poly_hs hp (by omega)).symm).frame hf₃
       fun r hr => by rw [List.mem_singleton.mp hr]; exact (cnt_hs σ).symm⟩
@@ -259,7 +259,7 @@ theorem run2EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : St
         exact scr_poly hp (by omega) (a := oSave) (n := 40) (by simp only [oSave]; omega)) (sub_polyR (by omega))
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
-      sub_cntR k.2.1 k.2.2 g₃,
+      (sub_cntR (w16 := false)) k.2.1 k.2.2 g₃,
     tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact tab_cnt) hf₃ h₂.lb.tab, fun k hk => ?_, fun k hk => ?_,
     (h.hs.frame h₂.lb.fr fun r hr => by rw [List.mem_singleton.mp hr]; exact (poly_hs hp (by omega)).symm).frame hf₃
       fun r hr => by rw [List.mem_singleton.mp hr]; exact (cnt_hs σ).symm⟩
