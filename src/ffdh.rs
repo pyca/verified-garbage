@@ -206,6 +206,26 @@ impl Drop for PrivateKey {
     }
 }
 impl PrivateKey {
+    /// Import an unsigned big-endian `x`, deriving `y = g^x mod p`.
+    /// This accepts private components from PKCS#8, which omits `y`.
+    /// Checks the scalar range and the derived public value. Parsing and
+    /// the exponentiation schedule follow [`Self::from_components`].
+    pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
+        let exponent_len = x.len().min(params.p.len());
+        let (zeros, scalar) = x.split_at(x.len() - exponent_len);
+        if scalar.is_empty() || zeros.iter().any(|&b| b != 0) {
+            return Err(Error::InvalidKey);
+        }
+        let mut y = alloc::vec![0; params.p.len()];
+        // A checked domain's generator is a valid public value. Exchange
+        // computes g^x, rejecting degenerate results; from_components then
+        // checks the scalar range and the resulting key pair.
+        if !params.domain.exchange(scalar, &params.g, &mut y) {
+            return Err(Error::InvalidKey);
+        }
+        Self::from_components(params, &y, x)
+    }
+
     /// Import y and x with variable-time parsing; check range and y=g^x mod p.
     /// The encoding length of x is public and determines the fixed
     /// exponentiation schedule, capped at the modulus width. Leading zeros
