@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+public import VerifiedGarbage.Impl.Weierstrass.CoZ
 
 /-!
 # Public width-five NAF multiplication of any word count
@@ -12,7 +13,8 @@ fields whose products may be calls (`Mont.callOf`): the signed digits of `k`
 table's entry for each nonzero digit (`window`). The table holds no operand
 of a product: `2P` is kept in `E` while the table is built, and an entry is
 copied to `E` before it is added, so the table may lie above the products'
-offsets. The loop alternates between `R` and `D` rather than copying the
+offsets. The table is built by co-Z arithmetic, for a `P` whose `z` is one.
+The loop alternates between `R` and `D` rather than copying the
 result of each doubling and addition back. Every branch and address depends
 on the digits of `k` and on the points, so only on public values.
 -/
@@ -80,16 +82,32 @@ def stride (K : WinCfg) : Nat := 24 * K.M.n
 def store (K : WinCfg) : List Instr :=
   (List.range (3 * K.M.n)).flatMap fun i => [ld .x4 (K.R.x + 8 * i), .str .x .x4 .x20 (K.tbl + 8 * i)]
 
-/-- `R = R + 2P` (`2P` in `E`) into `D`, back to `R`, and stored in the next entry. -/
+/-- The co-Z programs' slots (`CoZ`): the addend in `E`, the temporaries,
+the sum in `R`, two unused slots and `P`, whose `z` is one. -/
+def coZσ (K : WinCfg) (i : Nat) : Nat :=
+  [K.E.x, K.E.y, K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5, K.R.x, K.R.y, K.R.z,
+    K.D.x, K.D.y, K.P.x, K.P.y, K.P.z].getD i K.P.x
+
+def dbluOps (K : WinCfg) : List FOp := CoZ.dblu.map (CoZ.rename (coZσ K))
+def zadduOps (K : WinCfg) : List FOp := CoZ.zaddu.map (CoZ.rename (coZσ K))
+
+/-- After DBLU (`R = 2P`, `(t3, t2)` = `P` at its `Z`): the addend `E = 2P`, `R = P`. -/
+def swap (K : WinCfg) : List Instr :=
+  copy K.M.n K.E.x K.R.x ++ copy K.M.n K.E.y K.R.y ++ copy K.M.n K.R.x K.S.t3 ++
+    copy K.M.n K.R.y K.S.t2
+
+/-- `R = R + 2P` by ZADDU, `E = 2P` at the new `Z`, stored in the next entry. -/
 def tableStep (K : WinCfg) : Prog isa :=
-  .seq (.seq (jacAdd K K.R K.E K.D) (.block (copyPt K.M.n K.R K.D))) <|
+  .seq (fprogB K.M (zadduOps K)) <|
     .block (store K ++ [.addImm .x .x20 .x20 (stride K), decCounter])
 
-/-- `E = 2P`, `R = P` into the first entry, then the seven others. -/
+/-- `R = P` (affine) into the first entry, then by co-Z arithmetic `2P` and
+`P` at one `Z`, and the seven other entries, each adding `2P`. -/
 def table (K : WinCfg) : Prog isa :=
-  .seq (fprogB K.M (dblJ K.S K.P K.E)) <|
   .seq (.block (copyPt K.M.n K.R K.P ++ [.addImm .x .x20 .x0 0] ++ store K ++
     [.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0])) <|
+  .seq (fprogB K.M (dbluOps K)) <|
+  .seq (.block (swap K)) <|
   .loop (tableStep K) (.nonzero .x .x19)
 
 /-! ## The multiplication -/
