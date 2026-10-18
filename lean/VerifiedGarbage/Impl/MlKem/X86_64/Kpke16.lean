@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-KEM on x86-64: K-PKE in one call, with 16-bit polynomials
@@ -115,6 +116,68 @@ def decBody : Prog isa :=
   .seq (seqR (uHat L A) 0 L.k) (.seq (seqR (sHat L A) 0 L.k)
     (.seq (vHat L A) (.seq (prod L inner) (.seq (wSub L A) (mOut L A)))))
 
+/-! ## `vg_mlkem*_kpke_encrypt` -/
+
+/-- The saved registers of `kpkeEnc`. -/
+def oKSE : Nat := 19456
+
+/-- Save `kRegs` at `scratch + oKSE`, and move the arguments to them:
+`ct` to `r15`, `a` to `rbp`, `t` to `r12`, `r` to `r13`, `m` to `r14`. -/
+def proE : List Instr :=
+  (List.range 6).map (fun i => .store (at_ .r9 (oKSE + 8 * i)) (kRegs.getD i .rbx)) ++
+    [.mov .rbx (.reg .r9), .mov .r15 (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
+      .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8)]
+
+/-- Restore `kRegs` (`rbx` last). -/
+def epiE : List Instr :=
+  [.mov .r15 (.mem (at_ .rbx (oKSE + 40))), .mov .r14 (.mem (at_ .rbx (oKSE + 32))),
+    .mov .r13 (.mem (at_ .rbx (oKSE + 24))), .mov .r12 (.mem (at_ .rbx (oKSE + 16))),
+    .mov .rbp (.mem (at_ .rbx (oKSE + 8))), .mov .rbx (.mem (at_ .rbx oKSE))]
+
+/-- The polynomial of `u16`s at `b` as `u32`s in `f`, inline. -/
+def widenIn (b f : Ptr) : Prog isa := .seq (.block (lea .rdx b ++ lea .r9 f)) vunpack
+
+/-- `t̂[i] = ByteDecode₁₂(ek_PKE[384i : 384i + 384])`, to polynomial `k + i`. -/
+def tHatE (i : Nat) : Prog isa := .seq (.block (lea .rdi (.r12, 384 * i) ++ lea .rsi (qP (L.k + i)))) A.dec12
+
+/-- `y[j]`, to polynomial `j`. -/
+def yE (j : Nat) : Prog isa := widenIn (.r13, 512 * j) (qP j)
+
+/-- `NTT⁻¹(Â^⊺ ∘ ŷ)` and `NTT⁻¹(t̂^⊺ ∘ ŷ)`, to the `k + 1` polynomials from
+`2k`: the code of `vg_mlkem*_encrypt_mul` (`mul`), from `a`. -/
+def prodE (mul : Nat → Prog isa) : Prog isa :=
+  .seq (.block (lea .rdi (qP (2 * L.k)) ++ lea .rsi (.rbp, 0) ++ lea .rdx (qP L.k) ++ lea .rcx (qP 0) ++
+    lea .r8 (.rbx, 0))) (mul L.k)
+
+/-- `f += g`, inline. -/
+def addIn (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) A.add
+
+/-- The polynomial for `e₁[i]`, `e₂` and `μ`. -/
+abbrev eP (L : Kem) : Ptr := qP (3 * L.k + 1)
+
+/-- `u[i] = NTT⁻¹(Â^⊺ ∘ ŷ)[i] + e₁[i]`, and `ByteEncode_{d_u}(Compress_{d_u}(u[i]))` to `c₁`. -/
+def uE (i : Nat) : Prog isa :=
+  .seq (widenIn (.r13, 512 * (L.k + i)) (eP L)) (.seq (addIn A (qP (2 * L.k + i)) (eP L))
+    (.seq (.block (lea .rdi (qP (2 * L.k + i)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 L.du))] ++
+      lea .rdx (.r15, 32 * L.du * i) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.du)))]))
+      (L.ce A.codecs)))
+
+/-- `v = NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂ + μ`, and `ByteEncode_{d_v}(Compress_{d_v}(v))` to `c₂`. -/
+def vE : Prog isa :=
+  .seq (widenIn (.r13, 512 * (2 * L.k)) (eP L)) (.seq (addIn A (qP (3 * L.k)) (eP L))
+    (.seq (.seq (.block (lea .rdi (.r14, 0) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 (32 * 1))),
+        .mov32 .rdx (.imm (BitVec.ofNat 32 1))] ++ lea .rcx (eP L))) A.codecs.dd) (.seq (addIn A (qP (3 * L.k)) (eP L))
+      (.seq (.block (lea .rdi (qP (3 * L.k)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 L.dv))] ++
+        lea .rdx (.r15, 32 * L.du * L.k) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.dv)))]))
+        (L.ce A.codecs)))))
+
+variable (mul : Nat → Prog isa)
+
+/-- The body, between `proE` and `epiE`. -/
+def encBody : Prog isa :=
+  .seq (seqR (tHatE L A) 0 L.k) (.seq (seqR yE 0 L.k)
+    (.seq (prodE L mul) (.seq (seqR (uE L A) 0 L.k) (vE L A))))
+
 end Kpke16
 
 open Kpke16 in
@@ -122,5 +185,11 @@ open Kpke16 in
 and the code `inner` of its products. -/
 def kpkeDec (L : Kem) (A : Arith) (inner : Nat → Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (decBody L A inner) (.block epi))
+
+open Kpke16 in
+/-- `vg_mlkem*_kpke_encrypt` of the parameter set `L`, with the arithmetic of
+`A` and the code `mul` of `vg_mlkem*_encrypt_mul` (reading `Â` as `u16`s). -/
+def kpkeEnc (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa :=
+  .seq (.block proE) (.seq (encBody L A mul) (.block epiE))
 
 end VG.Impl.MlKem.X86_64

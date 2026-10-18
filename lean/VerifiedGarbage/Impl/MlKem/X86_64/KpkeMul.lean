@@ -299,6 +299,10 @@ them in one row of products (`rowEY`) and `NTT⁻¹`. -/
 def encryptMulY (k : Nat) : Prog isa := encryptMulYg (rowAY k) k
 
 open KpkeMul in
+/-- `encryptMulY` reading `Â` as `k²` polynomials of `u16`s (`rowEY16`). -/
+def encryptMul16Y (k : Nat) : Prog isa := encryptMulYg (rowAY16 k) k
+
+open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k` with AVX2: `û[j] = NTT(u'[j])` to
 the accumulators at `scratch + 1024 + 512 j`, then `w` from them in one row
 of products (`rowEY`) and `NTT⁻¹`. -/
