@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
 public import VerifiedGarbage.Proof.Dsa.Arm.ScheduleTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Framework.Omega
@@ -37,9 +38,9 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
   simp only [SignVerify.signCompute, Core.sequence, List.foldr]
-  refine SameTrace.seq (publicKey_trace X mp mq mg my D₁ D₂)
-    (publicKey_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (publicKey_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
+  refine SameTrace.seq (PublicValidation.call_trace X mp mq mg my D₁ D₂)
+    (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
+    (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => ?_
   have X₁ := X.run A₁ A₂
   refine SameTrace.seq (privateKey_trace X₁ mp mq mg my mx mk D₁ D₂)
@@ -94,9 +95,9 @@ theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : N
   have Lu : Impl.Dsa.Layout.u = 14816 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
   simp only [SignVerify.verifyCompute, Core.sequence, List.foldr]
-  refine SameTrace.seq (publicKey_trace X mp mq mg my D₁ D₂)
-    (publicKey_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (publicKey_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
+  refine SameTrace.seq (PublicValidation.call_trace X mp mq mg my D₁ D₂)
+    (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
+    (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => ?_
   have X₁ := X.run A₁ A₂
   refine SameTrace.assoc_left (SameTrace.seq (range_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega) (by omega) X.C₁.S.wq

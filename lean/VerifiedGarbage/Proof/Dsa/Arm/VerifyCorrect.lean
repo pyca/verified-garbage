@@ -189,7 +189,7 @@ theorem verify_correct {s : State} (h : verifyPre s) :
       fun t₃ ⟨Z₃, Rn₃⟩ => ?_
     have E₃ := E₂.keep fok Rn₃.rest (by decide) Rn₃.mem (fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega)
     have e := verifyBytes_eq s.mem (State.addr (arg s 0))
         (Spec.Rsa.bytesAt s.mem (State.addr (arg s 2)) (arg s 3).toNat) hv valid
       (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr1) (verifyKey _ _ (by omega))
