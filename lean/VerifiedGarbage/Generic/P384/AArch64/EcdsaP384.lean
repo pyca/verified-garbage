@@ -27,11 +27,12 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
   Spec.Ecdsa.P384.signApi.artifact AArch64.target {
     notes := ["The function saves the callee-saved registers \
       `x19`–`x25` in `scratch`. Field elements and scalars are six 64-bit words in \
-      Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and \
-      `umulh`, four of the multiplicand's words in registers and the other two loaded for each \
-      word of the multiplier; each reduction step multiplies the accumulator's low word by \
-      `-m⁻¹ mod 2⁶⁴` and adds that multiple of the modulus) with a final conditional \
-      subtraction. `[k]G` is a fixed-base comb of 7-bit signed digits: the 55 windows `k_j` of \
+      Montgomery form, field elements multiplied by calls of `vg_p384_mul_mod_p` (the schedule of \
+      s2n-bignum's `bignum_montmul_p384_alt`: the full twelve-word product, six short Montgomery \
+      reductions by the three nonzero words of `2^384 - p`, and a final conditional subtraction), \
+      and scalars multiplied by calls of `vg_p384_mul_mod_n` (word-by-word Montgomery \
+      multiplication, CIOS, with a final conditional subtraction). `[k]G` is a fixed-base comb of \
+      7-bit signed digits: the 55 windows `k_j` of \
       `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
       2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
       static `VG_P384_COMB` (330 KB), with no doublings: each entry is selected in constant time by \
@@ -55,11 +56,13 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
     notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
       field arithmetic, comb and inversions, with `vg_ecdh_p384`'s checks of the public key: it \
       saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
-      scalars are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
-      multiplication (CIOS, with `mul` and `umulh`, four of the multiplicand's words in registers \
-      and the other two loaded for each word of the multiplier; each reduction step multiplies \
-      the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adds that multiple of the modulus) with a \
-      final conditional subtraction. The key is checked without branches \
+      scalars are six 64-bit words in Montgomery form, field elements multiplied and squared by \
+      calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p` (the schedules of s2n-bignum's \
+      `bignum_montmul_p384_alt` and `bignum_montsqr_p384_alt`: the full twelve-word product or \
+      square, six short Montgomery reductions by the three nonzero words of `2^384 - p`, and a \
+      final conditional subtraction), and scalars multiplied by calls of `vg_p384_mul_mod_n` \
+      (word-by-word Montgomery multiplication, CIOS, with a final conditional subtraction). The \
+      key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
       `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G` is the \
