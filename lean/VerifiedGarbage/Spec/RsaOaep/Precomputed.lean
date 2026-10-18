@@ -63,7 +63,7 @@ def encryptPrecomputedApi : Api where
   sig := encryptPrecomputedSig H
   writeArgs := true
   contracts := some fun A stack => encryptPrecomputedContract H G A stack
-  summary := (encryptApi H G).summary ++ "\n\n\
+  summary := encryptSummary H G ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     writes and returns exactly what is specified above. If `pre` does not hold \
@@ -71,7 +71,7 @@ def encryptPrecomputedApi : Api where
     the timing guarantee still apply. Timing may additionally depend on the \
     contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaOaep.encryptPrecomputedContract`."
-  safety := (encryptApi H G).safety ++
+  safety := encryptSafety H G ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be encryption's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]
