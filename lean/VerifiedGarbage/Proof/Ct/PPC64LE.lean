@@ -18,10 +18,7 @@ public import VerifiedGarbage.Spec.Ct.Contract
 meta import VerifiedGarbage.Spec.Ct.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Constant-time byte comparison on PPC64LE

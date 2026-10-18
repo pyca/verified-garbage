@@ -6,10 +6,7 @@ public import VerifiedGarbage.Proof.Hmac.Common
 meta import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Proof.Hmac.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Hmac.PPC64LE.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-256 on PPC64LE: `finalize`
