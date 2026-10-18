@@ -142,7 +142,8 @@ theorem crt_narrowCopied_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
     (keeps_array_num keepsT fitsN op4 (by decide)).trans r2, by have := sharedT.stack.nowrap; omega, by omega,
     sharedT.stack.read (by omega), sharedT.stack.read (by omega), sharedT.stack.pointer i, ?_,
     sharedT.buffers.source i.succ, (sharedT.buffers.sourceSeparate i.succ).sub_right
-      (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member), ?_, ?_⟩
+      (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member), ?_, ?_,
+      table_fits le⟩
   · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega] using sharedT.stack.length i
   · rcases expI with rfl | rfl
     · exact shared.buffers.pPositive
@@ -207,7 +208,7 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
       (narrowExp (56 + 8 * i.val)) (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
     obtain ⟨⟨_, M1, x1, h1⟩, ⟨_, M2, x2, h2⟩, sp⟩ := h
-    exact crt_narrowExp_ct fitV s t tr1 tr2 u w ⟨h1, h2, sp⟩ e1 e2
+    exact crt_narrowExp_ct fitV (table_fits le) s t tr1 tr2 u w ⟨h1, h2, sp⟩ e1 e2
   have resultCT := crt_narrowResult_ct (bs1 := bs1) (bs2 := bs2) kind le
   rw [narrowPower] at e1 e2
   exact (crt_seq_ct reduceCT (fun s h => crt_narrowReduced_ready s h.1 kind h.2.1 h.2.2)

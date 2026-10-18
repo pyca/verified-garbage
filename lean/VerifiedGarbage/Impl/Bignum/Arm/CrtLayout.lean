@@ -16,8 +16,10 @@ exponentiation in turn. Everything fits the shared RSA scratch API.
 
 namespace VG.Impl.Bignum.Arm.Crt
 
-/-- Each arithmetic workspace contains a header and eight padded arrays. -/
-def workspaceWords (w : Nat) : Nat := 8 * w + 48
+/-- Each arithmetic workspace contains a header and sixteen padded arrays:
+the eight of the RSA layout, and room for a table of eight powers after
+them, which the narrow workspace's exponentiation uses. -/
+def workspaceWords (w : Nat) : Nat := 16 * w + 64
 def stride (w : Nat) : Nat := 8 * workspaceWords w
 def pOffset (w : Nat) : Nat := stride w
 def qOffset (w : Nat) : Nat := 2 * stride w

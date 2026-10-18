@@ -110,7 +110,7 @@ theorem crt_expanded_context {s : State} {base : BitVec 32} {size w : Nat}
     ⟨pfit, by simp [crtExpanded, State.withRegions, crtRegions]⟩,
     ⟨qfit, by simp [crtExpanded, State.withRegions, crtRegions]⟩,
     ⟨nfit, by simp [crtExpanded, State.withRegions, crtRegions]⟩, hw, hw', ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [crt_workspace_end]; exact Nat.le_refl _
+  · exact crt_workspace_end w
   · rw [paddr]
     exact Offset.base_disjoint _ (by simp [pOffset, stride]) (by change stride w + stride w ≤ 2 ^ 64; omega)
   · rw [qaddr]

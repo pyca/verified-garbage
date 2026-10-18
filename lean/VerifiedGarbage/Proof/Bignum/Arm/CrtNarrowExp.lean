@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpPhase
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.Stack
@@ -12,7 +13,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Stack
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
-open VG.Spec.Rsa.Mont (numAt)
+open VG.Spec.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 /-- A prepared narrow workspace holding the reduced input, and the exponent's saved argument. -/
@@ -32,6 +33,13 @@ structure NarrowExpInput (base ep : BitVec 32) (len v M x eLen es : Nat) (eb : L
   separate : Region.Disjoint ⟨State.addr ep, eLen⟩ ⟨State.addr base, 8 * len⟩
   positive : 0 < eLen
   fits : eLen < 2 ^ 32
+  /-- Room for the windowed exponentiation's table after the eight arrays. -/
+  tableFits : arrAt v 16 ≤ 8 * len
+
+/-- A narrow workspace of a width at most the modulus's has room for the table. -/
+theorem table_fits {v W : Nat} (h : v ≤ W) : arrAt v 16 ≤ 8 * workspaceWords W := by
+  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, workspaceWords]
+  omega
 
 theorem crt_exponentArgs_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
     (h : NarrowExpInput base ep len v M x eLen es eb s) :
@@ -55,7 +63,7 @@ theorem NarrowExpInput.of_mem {s t : State} {base ep : BitVec 32} {len v M x eLe
     by rw [rest.rd, rest.wr, rest.sp]; exact h.pointerRead, by rw [rest.rd, rest.wr, rest.sp]; exact h.countRead,
     by rw [mem, rest.sp]; exact h.pointer, by rw [mem, rest.sp]; exact h.count,
     h.exponent.after_frame (regions := []) (by rw [mem]; exact Frame.refl _ _) rest (by simp),
-    h.separate, h.positive, h.fits⟩
+    h.separate, h.positive, h.fits, h.tableFits⟩
 
 theorem crt_narrowControls_ready (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
     (h : NarrowExpInput base ep len v M x eLen es eb s)
@@ -93,7 +101,7 @@ theorem crt_narrowExp_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : 
   rw [WP.seq_iff]
   refine WP.mono (crt_narrowControls_ready u (h.of_mem memU restU) pointerU countU) ?_
   rintro z ⟨input, frameZ, restZ⟩
-  refine WP.mono (secretExpPhase_ok z input) ?_
+  refine WP.mono (windowExpPhase_ok z input h.tableFits) ?_
   rintro t ⟨ready, value, _, _, _, frameT, restT⟩
   rw [memU] at frameZ
   exact ⟨ready, value, frameZ.trans frameT, (restU.mono (by simp [roundClobbers])).trans (restZ.trans restT)⟩

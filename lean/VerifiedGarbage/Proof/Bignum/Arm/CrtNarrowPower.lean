@@ -107,7 +107,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     refine ⟨readyX, modX, oddY, inputX, r2X, by have := sharedX.stack.nowrap; omega, by omega,
       sharedX.stack.read (by omega), sharedX.stack.read (by omega), sharedX.stack.pointer i, ?_,
       sharedX.buffers.source i.succ, (sharedX.buffers.sourceSeparate i.succ).sub_right
-        (crt_region_sub_workspace sharedX.buffers.workspace sharedX.buffers.storageFits sharedX.narrow_member), ?_, ?_⟩
+        (crt_region_sub_workspace sharedX.buffers.workspace sharedX.buffers.storageFits sharedX.narrow_member), ?_, ?_,
+        ?_⟩
     · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega] using sharedX.stack.length i
     · rcases expI with rfl | rfl
       · exact h.buffers.pPositive
@@ -115,6 +116,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     · rcases expI with rfl | rfl
       · change g.pLength < _; have := h.buffers.pShort; omega
       · change g.qLength < _; have := h.buffers.qShort; omega
+    · exact table_fits le
   rw [WP.seq_iff]
   refine WP.mono (crt_narrowExp_ok x expIn) ?_
   rintro e ⟨readyE, valueE, frameE, restE⟩

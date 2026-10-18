@@ -15,7 +15,7 @@ namespace VG.Impl.Bignum.Arm.Crt
 open VG VG.Arm
 
 def linkStride : List Instr :=
-  [.ldr .r7 .r0 48, .mov .r1 (.shifted .r7 .lsl 6), .dp .add .r1 .r1 (.imm 384), .mov .r2 (.reg .r0)]
+  [.ldr .r7 .r0 48, .mov .r1 (.shifted .r7 .lsl 7), .dp .add .r1 .r1 (.imm 512), .mov .r2 (.reg .r0)]
 def productStride : List Instr := [.mov .r1 (.shifted .r7 .lsl 4), .dp .add .r1 .r1 (.imm 8)]
 def advanceLink (d : Nat) : List Instr := [.dp .add .r2 .r2 (.reg .r1), .str .r2 .r0 d]
 def linksTail : Prog isa :=

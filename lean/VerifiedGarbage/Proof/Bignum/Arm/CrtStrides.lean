@@ -27,7 +27,7 @@ theorem crt_linkStride_ok (s : State) {base : BitVec 32} {size w : Nat}
     (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans (d.rest (by simp))))⟩
   · rw [d.other .r7 (by decide), c.other .r7 (by decide), b.other .r7 (by decide), a.gpr, count]
   · rw [d.other .r1 (by decide), c.gpr, dpVal, b.gpr, a.gpr, count, BitVec.shiftLeft_eq_mul_twoPow]
-    change BitVec.ofNat 32 w * BitVec.ofNat 32 64 + BitVec.ofNat 32 384 = _
+    change BitVec.ofNat 32 w * BitVec.ofNat 32 128 + BitVec.ofNat 32 512 = _
     rw [← BitVec.ofNat_mul, ← BitVec.ofNat_add]
     congr 1
     simp only [stride, workspaceWords]
