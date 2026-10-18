@@ -328,25 +328,34 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
     · subst h; rw [hdi, hg.rdi]
     · exact (kall.mono (rs' := .rdi :: mmRegs) (by decide)).1 r (by rw [List.mem_cons, not_or]; exact ⟨h, hr⟩)
 
-/-- `p`'s phase: `h = (m_p - m_q) qInv mod p` into `p`'s `Y` if `p` divides
-`N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
-theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
-    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool} {ok : Prop}
+/-- `p`'s phase, with `U` setting the modulus' and the prime's `Y`. -/
+theorem pPhaseWith_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
+    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool} {ok okY : Prop} {U : List (Prog isa)}
+    (hU : U ≠ [])
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ oq)
     (hqhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
-    (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
+    (hslv : word s.mem B (8 * sWsP) = off B o)
     (hslq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wq mq)
-    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N)
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1)
     (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
-    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
+    (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
     (hep : word s.mem B (8 * sDp) = ep) (hel : word s.mem B (8 * sPlen) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
-    (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    WP isa (seqs (pPhase M.mm E.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+    (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X)
+    (hunit : WP isa (seqs U) s fun t =>
+      Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+      wv t.mem B (slot w Public.aY) w < N ∧
+      (ok → wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N) ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-      (ok → c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
+      (okY → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
+      Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t) :
+    WP isa (seqs (U ++ (mqSteps M.mm ++ ([M.mm Public.aY Public.aXm Public.aY] ++
+      (powSteps M.mm E.code sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps M.mm)))))) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+      wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+      (ok → okY → c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
         b % X = wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * wx) % X ∧ b < X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X =
           (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
@@ -375,11 +384,9 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   have hqh : ∀ {m m' : Mem}, Frm B (pRanges w ++ [xRange o wx]) m m' → ∀ i < 32,
       word m' (off B oq) (8 * i) = word m (off B oq) (8 * i) := fun f i hi => by
     rw [word_off, word_off]; exact f.px_above hlo (by omega_arith) (by omega_arith)
-  rw [pPhase_eq]
   -- `R_p mod p`.
-  refine wp_seqs_append (by simp [unitSteps]) (by simp [mqSteps]) ?_
-  refine WP.mono (unitPhase_ok M hg hw hw28 hlo (by have := tabBytes_le_wsTab wx; omega_using [hhi', this]) hwx2 hwx (sl := sWsP) (by decide) (by decide) (by decide) hslv
-    hws hN hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, hpy₁, hM₁, f₁, k₁⟩ => ?_
+  refine wp_seqs_append hU (by simp [mqSteps]) ?_
+  refine WP.mono hunit fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, hpy₁, hM₁, f₁, k₁⟩ => ?_
   have f₁' := hsub sgx f₁
   -- `m_q G mod N`.
   refine wp_seqs_append (by simp [mqSteps]) (by simp) ?_
@@ -432,8 +439,8 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   -- `c^dP R_p mod p`.
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_
   refine WP.mono (powPhase_ok M E hg₃ hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide)
-    (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv) hws₃ hX₃ hX1 hXodd hcg
-    (by rw [hpY₃]; exact hpl₁) (fun hok hd => by rw [hpY₃]; exact hpy₁ hok hd) (sd := sDp) (slen := sPlen) (by decide)
+    (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv) hws₃ hX₃ hX1 hXodd (ok := ok ∧ okY)
+    (fun h => hcg h.1) (by rw [hpY₃]; exact hpl₁) (fun h hd => by rw [hpY₃]; exact hpy₁ h.2 hd) (sd := sDp) (slen := sPlen) (by decide)
     (by decide) (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2
     (he.congrK i03 ((k₁.trans k₂).trans k₃))) fun s₄ ⟨hc₄, hX₄, hlt₄, hv₄, hM₄, fx₄, k₄⟩ => ?_
@@ -464,7 +471,7 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     rw [f₀₅.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv
   have a2 : WsAt s₅.mem B o wx mx := by rw [hm₅]; exact hc₄.ws
   have a3 : wv s₅.mem (off B o) (slot wx Public.aY) wx < X := by rw [hm₅]; exact hlt₄
-  have a4 : ok → X ∣ N → wv s₅.mem (off B o) (slot wx Public.aY) wx % X =
+  have a4 : ok ∧ okY → X ∣ N → wv s₅.mem (off B o) (slot wx Public.aY) wx % X =
       C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X := fun hok hd => by rw [hm₅]; exact hv₄ hok hd
   have a5 : word s₅.mem (off B o) (8 * sMaskX) = mask c := by
     rw [hm₅, hM₄, hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
@@ -472,12 +479,43 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     rw [f₀₅.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp
   have a7 : word s₅.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length := by
     rw [f₀₅.px_hdr hlo (by decide) (by decide) (by decide), hql]; exact hel
-  refine WP.mono (hPart_ok M hg₅ hw28 hlo hhi' hwx2 hwx a1 a2 hX₅ hX1 hXodd hXn₅ a3 a4 a5 hc a6 a7
+  refine WP.mono (hPart_ok M hg₅ hw28 hlo hhi' hwx2 hwx a1 a2 hX₅ hX1 hXodd (fun h => hXn₅ h.1) a3 a4 a5 hc a6 a7
     (hqs.congrK i05 k05) (by omega_arith) (by omega_arith) hqw hqi) fun t ⟨hg', hws', hX', hlt', hh', fx', k'⟩ => ?_
   have kall := k05.trans k'
-  refine ⟨hg', hws', hX', hlt', hh', f₀₅.trans (hsub sx fx'), ⟨fun r hr => ?_, kall.2⟩⟩
+  refine ⟨hg', hws', hX', hlt', fun a b => hh' ⟨a, b⟩, f₀₅.trans (hsub sx fx'), ⟨fun r hr => ?_, kall.2⟩⟩
   by_cases h : r = .rdi
   · subst h; rw [hg'.rdi, hg.rdi]
   · exact (kall.mono (rs' := .rdi :: mmRegs) (by decide)).1 r (by rw [List.mem_cons, not_or]; exact ⟨h, hr⟩)
+
+
+/-- `p`'s phase: `h = (m_p - m_q) qInv mod p` into `p`'s `Y` if `p` divides
+`N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
+theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
+    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool} {ok : Prop}
+    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ oq)
+    (hqhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
+    (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
+    (hslq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wq mq)
+    (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N)
+    (hXm : ok → wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
+    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
+    (hmask : word s.mem (off B o) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
+    (hep : word s.mem B (8 * sDp) = ep) (hel : word s.mem B (8 * sPlen) = BitVec.ofNat 64 eb.length)
+    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb)
+    (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
+    (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
+    WP isa (seqs (pPhase M.mm E.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+      wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+      (ok → c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
+        b % X = wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * wx) % X ∧ b < X ∧
+        wv t.mem (off B o) (slot wx Public.aY) wx * 2 ^ (64 * wx) % X =
+          (a + X - b) % X * Spec.Rsa.os2ip qib % X) ∧
+      Frm B (pRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
+  rw [pPhase_eq]
+  refine WP.mono (pPhaseWith_ok M E (by simp [unitSteps]) hg hw hw28 hlo hhi hqhi hwx2 hwx hwq hwq' hslv hslq hwsq
+    hN hodd hXm hX1 hXodd hmask hc hep hel hL1 hL2 he hqp hql hqs hqw hqi
+    (unitPhase_ok M hg hw hw28 hlo (by have := tabBytes_le_wsTab wx; omega) hwx2 hwx (sl := sWsP) (by decide)
+      (by decide) (by decide) hslv hws hN hodd hN1 hX hX1 hXodd))
+    fun t ⟨a, b, c, d, e, f, g⟩ => ⟨a, b, c, d, fun hok => e hok hok, f, g⟩
 
 end VG.Proof.Bignum.X86_64
