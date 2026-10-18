@@ -23,19 +23,6 @@ open VG.Impl.Weierstrass.AArch64.PubNaf
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open Spec.Weierstrass
 
-/-- The cache, as one range. -/
-def cacheW (K : WinCfg) : List (Nat × Nat) := [(cacheAt K 1, 128 * K.M.n)]
-
-/-- The cache lies above every slot, the modulus, its temporary area and the
-digits, and within the working space. -/
-structure CacheLay (K : WinCfg) (size : Nat) : Prop where
-  slots : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ cacheAt K 1
-  tmp : K.M.tmp + 8 * K.M.n ≤ cacheAt K 1
-  mo : K.M.mo + 8 * K.M.n ≤ cacheAt K 1
-  bits : K.bits + 4 * K.J ≤ cacheAt K 1
-  top : cacheAt K 1 + 128 * K.M.n ≤ size
-  al : cacheAt K 1 % 8 = 0
-
 theorem cacheAt_eq (K : WinCfg) (a : Nat) :
     cacheAt K a = cacheAt K 1 + 16 * K.M.n * (a - 1) := by
   simp only [cacheAt, Nat.sub_self, Nat.mul_zero, Nat.add_zero]
@@ -159,13 +146,24 @@ theorem CacheOk.unch {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : W
     CacheOk K C base s' :=
   CacheUpTo.unch hL hC (Nat.le_refl _) h hU (away_loopW hL hC 8) hn
 
+/-- The cache depends on memory alone. -/
+theorem CacheUpTo.ofMem {K : WinCfg} {C : Curve} {base : Addr} {m : Nat} {s t : State}
+    (hm : t.mem = s.mem) (h : CacheUpTo K C base m s) : CacheUpTo K C base m t := by
+  intro a h1 h8
+  have e : ∀ x, tmv C K.M.n base t x = tmv C K.M.n base s x := fun x => by
+    show toM _ _ _ = toM _ _ _; rw [hm]
+  obtain ⟨l2, l3, e2, e3⟩ := h a h1 h8
+  refine ⟨hm ▸ l2, hm ▸ l3, ?_, ?_⟩ <;> simp only [e]
+  exacts [e2, e3]
+
 /-- The facts about the state before the multiplication hold after the table
 and the cache, which write the window method's slots and the cache. -/
 theorem NafFixed.rebase {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
-    (hC : CacheLay K size) {P : Point C} {s₀ s : State} (hF : NafFixed K C base s₀ P k)
+    {P : Point C} {s₀ s : State} (hF : NafFixed K C base s₀ P k)
     (hU : Unch base (winW K ++ cacheW K) s₀.mem s.mem) (hn : base.toNat + size ≤ 2 ^ 64) :
     NafFixed K C base s P k := by
   have hW := hL.win
+  have hC := hL.cache
   have ro : ∀ x ∈ winRo K, wordsVal s.mem base x K.M.n = wordsVal s₀.mem base x K.M.n := by
     intro x hx
     have hs := winRo_slots K x hx

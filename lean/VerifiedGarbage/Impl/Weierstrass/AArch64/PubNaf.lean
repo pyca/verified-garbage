@@ -133,14 +133,14 @@ def cacheTo (K : WinCfg) : Nat → Prog isa
 /-- The cache of the eight entries. -/
 def cache (K : WinCfg) : Prog isa := cacheTo K 8
 
-/-- Entry `x2` (`1 … 8`, of `[2 x2 - 1]P`), into `E`, and its `Z²` and `Z³`
-into `R.y` and `R.z`, which the addition writes only after reading them. -/
+/-- Entry `x2` (`1 … 8`, of `[2 x2 - 1]P`), into `E`, and first its `Z²` and
+`Z³` into `R.y` and `R.z`, which the addition writes only after reading them. -/
 def entry (K : WinCfg) : List Instr :=
-  [.subImm .x .x2 .x2 1, .movz .x .x17 (BitVec.ofNat 16 (16 * K.M.n)) 0, .mul .x .x5 .x2 .x17,
-   .add .x .x5 .x0 .x5, .movz .x .x17 (BitVec.ofNat 16 (stride K)) 0, .mul .x .x2 .x2 .x17,
-   .add .x .x16 .x0 .x2] ++
-  ((List.range (3 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x16 (K.tbl + 8 * i), st .x4 (K.E.x + 8 * i)]) ++
-  ((List.range (2 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x5 (cacheAt K 1 + 8 * i), st .x4 (K.R.y + 8 * i)])
+  [.subImm .x .x2 .x2 1, .movz .x .x17 (BitVec.ofNat 16 (16 * K.M.n)) 0, .mul .x .x17 .x2 .x17,
+   .add .x .x16 .x0 .x17] ++
+  ((List.range (2 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x16 (cacheAt K 1 + 8 * i), st .x4 (K.R.y + 8 * i)]) ++
+  [.movz .x .x17 (BitVec.ofNat 16 (stride K)) 0, .mul .x .x2 .x2 .x17, .add .x .x16 .x0 .x2] ++
+  ((List.range (3 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x16 (K.tbl + 8 * i), st .x4 (K.E.x + 8 * i)])
 
 /-- The entry of the digit `x2`'s magnitude, negated for a negative digit. -/
 def signedEntry (K : WinCfg) : Prog isa :=

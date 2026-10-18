@@ -72,7 +72,7 @@ theorem OddTbl.away {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat} (hL : 
 
 /-- Entry `a`'s `Z²` and `Z³` into the cache. -/
 theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : NafLay K size)
-    (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : CacheLay K size) {P : Point C} {u : State}
+    (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {P : Point C} {u : State}
     (hs : Scr u base size) (hM : ModOkA K.M size C.p u.mem base) (hT : OddTbl K C base P 8 u)
     {a : Nat} (ha1 : 1 ≤ a) (ha8 : a ≤ 8) :
     WP isa (cacheOne K a) u fun v =>
@@ -87,6 +87,7 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
         tmv C K.M.n base u (K.tblPt a).z *
           (tmv C K.M.n base u (K.tblPt a).z * tmv C K.M.n base u (K.tblPt a).z) := by
   have hW := hL.win
+  have hC := hL.cache
   have hn := hs.nowrap
   have hn0 := hW.n0
   have hz : (K.tblPt a).z ∈ winSlots K := tbl_slot ha1 ha8 _ (by simp)
@@ -185,7 +186,7 @@ theorem cacheOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Na
 
 /-- Entries `1 … m` into the cache, keeping the table. -/
 theorem cacheTo_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : NafLay K size)
-    (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : CacheLay K size) {P : Point C} {s : State}
+    (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {P : Point C} {s : State}
     (hs : Scr s base size) (hM : ModOkA K.M size C.p s.mem base) (hT : OddTbl K C base P 8 s) :
     ∀ m ≤ 8, WP isa (cacheTo K m) s fun t =>
       Scr t base size ∧ KeepRegs (nafClob K.M.n) s t ∧ Unch base (cacheW K ++ loopW K) s.mem t.mem ∧
@@ -193,11 +194,12 @@ theorem cacheTo_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Naf
   | 0, _ => WP.block_nil ⟨hs, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hT, fun _ h1 h0 => by omega⟩
   | m + 1, hm => by
     have hW := hL.win
+    have hC := hL.cache
     have hn := hs.nowrap
     rw [cacheTo]
-    refine WP.seq (WP.mono (cacheTo_ok hL hp hC hs hM hT m (by omega))
+    refine WP.seq (WP.mono (cacheTo_ok hL hp hs hM hT m (by omega))
       fun t ⟨st, kt, Ut, Mt, Tt, Ct⟩ => ?_)
-    refine WP.mono (cacheOne_ok hL hp hC st Mt Tt (a := m + 1) (by omega) hm)
+    refine WP.mono (cacheOne_ok hL hp st Mt Tt (a := m + 1) (by omega) hm)
       fun v ⟨sv, kv, Uv, Mv, l0, l1, e0, e1⟩ => ?_
     have hA : Away K m ([(cacheAt K (m + 1), 16 * K.M.n)] ++ loopW K) :=
       away_append (fun w hw => by simp at hw; subst hw; exact Or.inr (Nat.le_refl _))

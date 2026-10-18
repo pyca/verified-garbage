@@ -23,13 +23,27 @@ namespace VG.Proof.Weierstrass.AArch64.PubNaf
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG.Impl.Weierstrass.AArch64.PubNaf (cacheAt)
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
 
+/-- The cache, as one range. -/
+def cacheW (K : WinCfg) : List (Nat × Nat) := [(cacheAt K 1, 128 * K.M.n)]
+
+/-- The cache lies above every slot, the modulus, its temporary area and the
+digits, and within the working space. -/
+structure CacheLay (K : WinCfg) (size : Nat) : Prop where
+  slots : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ cacheAt K 1
+  tmp : K.M.tmp + 8 * K.M.n ≤ cacheAt K 1
+  mo : K.M.mo + 8 * K.M.n ≤ cacheAt K 1
+  bits : K.bits + 4 * K.J ≤ cacheAt K 1
+  top : cacheAt K 1 + 128 * K.M.n ≤ size
+  al : cacheAt K 1 % 8 = 0
+
 /-- The window method's layout, with points of consecutive coordinates `R`
 and `E` (which the table's copies read and write), digits for `64 n + 1`
-bytes, and a modulus of other than four words (whose doubling is not
-P-256's forwarded one). -/
+bytes, a modulus of other than four words (whose doubling is not
+P-256's forwarded one), and the cache above it all (`CacheLay`). -/
 structure NafLay (K : WinCfg) (size : Nat) : Prop where
   win : WinLay K size
   al : WinA K
@@ -40,6 +54,7 @@ structure NafLay (K : WinCfg) (size : Nat) : Prop where
   rxz : K.R.z = K.R.x + 16 * K.M.n
   exy : K.E.y = K.E.x + 8 * K.M.n
   exz : K.E.z = K.E.x + 16 * K.M.n
+  cache : CacheLay K size
 
 /-- The registers the multiplication changes. -/
 def nafClob (n : Nat) : List Reg := .x20 :: combClob n
