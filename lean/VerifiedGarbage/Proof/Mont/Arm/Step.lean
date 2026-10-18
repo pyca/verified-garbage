@@ -71,6 +71,12 @@ theorem digitAt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   exact ⟨u₂.gpr, fun r hr => (u₂.other r hr).trans (u₁.other r hr), u₂.mem.trans u₁.mem, u₂.rd.trans u₁.rd,
     u₂.wr.trans u₁.wr, u₂.sp.trans u₁.sp⟩
 
+/-- `mla d n m a`: `d = n · m + a`. -/
+theorem wp_mla {s : State} {is : List Instr} {Q : State → Prop} {d n m a : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr n * s.gpr m + s.gpr a) → WP isa (.block is) s' Q) :
+    WP isa (.block (.mla d n m a :: is)) s Q :=
+  VG.Proof.X25519.Arm.WP.cons rfl (k _ (Upd.setReg _ _ _))
+
 /-- `[r0 + acc + 4j] += r2 · d_j + r3`, the carry to `r3`. -/
 theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc src i j : Nat}
     {rb : Reg} {K d : Nat} (hb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = src)
@@ -87,64 +93,61 @@ theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       Rest [.r3, .r5, .r7] s u := by
   simp only [mulStep]
   refine digitAt_ok hs hb hK h6 hsrc fun s₁ u₁ => ?_
-  refine wp_mul fun s₂ u₂ => ?_
-  have hs₂ : Scr s₂ base size := hs.of_rest ((u₁.rest (ws := [.r7]) (by simp)).trans (u₂.rest (by simp)))
-    (by decide)
-  have hp₂ : s₂.gpr .r0 = s₂.gpr .r12 + BitVec.ofNat 32 (4 * i) := by
-    rw [u₂.other _ (by decide), u₁.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  have hs₁ : Scr s₁ base size := hs.of_rest (u₁.rest (ws := [.r7]) (by simp)) (by decide)
+  have hp₁ : s₁.gpr .r0 = s₁.gpr .r12 + BitVec.ofNat 32 (4 * i) := by
+    rw [u₁.other _ (by decide), u₁.other _ (by decide)]
     exact hp
-  refine wp_ldr (hs.off_lt (by omega)) (hs₂.ea_at hp₂ (by omega)) (hs₂.read ht) fun s₃ u₃ => ?_
+  refine wp_ldr (hs.off_lt (by omega)) (hs₁.ea_at hp₁ (by omega)) (hs₁.read ht) fun s₂ u₂ => ?_
+  refine wp_mla fun s₃ u₃ => ?_
   refine wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
   refine wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
-  refine wp_dp (op2_reg _ _) fun s₆ u₆ => ?_
-  have hs₆ : Scr s₆ base size := hs₂.of_rest (((u₃.rest (ws := [.r5, .r7]) (by simp)).trans
-    (u₄.rest (by simp))).trans ((u₅.rest (by simp)).trans (u₆.rest (by simp)))) (by decide)
-  have hp₆ : s₆.gpr .r0 = s₆.gpr .r12 + BitVec.ofNat 32 (4 * i) := by
-    rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide)]
-    exact hp₂
-  refine wp_str (hs.off_lt (by omega)) (hs₆.ea_at hp₆ (by omega)) (hs₆.write ht) fun s₇ m₇ => ?_
-  refine wp_mov (op2_lsr (by decide)) fun s₈ u₈ => WP.block_nil ?_
-  -- The values along the way.
-  have m₂ : s₂.mem = s.mem := u₂.mem.trans u₁.mem
-  have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, m₂]
-  have r2₁ : s₁.gpr .r2 = s.gpr .r2 := u₁.other _ (by decide)
-  have r3₄ : s₄.gpr .r3 = s.gpr .r3 := by
-    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have r6₅ : s₅.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
+  have hs₅ : Scr s₅ base size := hs₁.of_rest (((u₂.rest (ws := [.r5, .r7]) (by simp)).trans
+    (u₃.rest (by simp))).trans ((u₄.rest (by simp)).trans (u₅.rest (by simp)))) (by decide)
+  have hp₅ : s₅.gpr .r0 = s₅.gpr .r12 + BitVec.ofNat 32 (4 * i) := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide)]; exact h6
-  have r7₃ : s₃.gpr .r7 = s₂.gpr .r7 := u₃.other _ (by decide)
-  have r7₄ : s₄.gpr .r7 = s₃.gpr .r7 := u₄.other _ (by decide)
-  have r5₄ : s₄.gpr .r5 = s₃.gpr .r5 + s₃.gpr .r7 := u₄.gpr
-  have r5₅ : s₅.gpr .r5 = s₄.gpr .r5 + s₄.gpr .r3 := u₅.gpr
-  have r5₆ : s₆.gpr .r5 = s₅.gpr .r5 := u₆.other _ (by decide)
-  have r7₆ : s₆.gpr .r7 = s₅.gpr .r5 &&& s₅.gpr .r6 := u₆.gpr
-  have r5₃ : s₃.gpr .r5 = s₂.mem.readW (off base (4 * i + (acc + 4 * j))) 32 := u₃.gpr
-  have r7₂ : s₂.gpr .r7 = s₁.gpr .r2 * s₁.gpr .r7 := u₂.gpr
+      u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide)]
+    exact hp₁
+  refine wp_str (hs.off_lt (by omega)) (hs₅.ea_at hp₅ (by omega)) (hs₅.write ht) fun s₆ m₆ => ?_
+  refine wp_mov (op2_lsr (by decide)) fun s₇ u₇ => WP.block_nil ?_
+  -- The values along the way.
+  have m₁ : s₁.mem = s.mem := u₁.mem
+  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
+  have r2₂ : s₂.gpr .r2 = s.gpr .r2 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  have r7₂ : s₂.gpr .r7 = BitVec.ofNat 32 (pdig s.mem base src j) := by
+    rw [u₂.other _ (by decide), u₁.gpr]
+  have r5₂ : s₂.gpr .r5 = s.mem.readW (off base (4 * i + (acc + 4 * j))) 32 := by rw [u₂.gpr, m₁]
+  have r3₃ : s₃.gpr .r3 = s.gpr .r3 := by
+    rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  have r6₄ : s₄.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+    exact h6
+  have r5₃ : s₃.gpr .r5 = s₂.gpr .r2 * s₂.gpr .r7 + s₂.gpr .r5 := u₃.gpr
+  have r5₄ : s₄.gpr .r5 = s₃.gpr .r5 + s₃.gpr .r3 := u₄.gpr
+  have r5₅ : s₅.gpr .r5 = s₄.gpr .r5 := u₅.other _ (by decide)
+  have r7₅ : s₅.gpr .r7 = s₄.gpr .r5 &&& s₄.gpr .r6 := u₅.gpr
   have hd : pdig s.mem base src j < 2 ^ 16 := hdig_lt _ _
   have hx := step_lt hu hd htd hc
-  have hr7 : (s₂.gpr .r7).toNat = (s.gpr .r2).toNat * pdig s.mem base src j := by
-    rw [r7₂, r2₁, u₁.gpr, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := pdig _ _ _ _) (by omega),
-      Nat.mod_eq_of_lt (by have := Nat.mul_le_mul (Nat.le_of_lt_succ hu) (Nat.le_of_lt_succ hd); omega)]
-  have e3 : (s₃.gpr .r5).toNat = w32 s.mem base (4 * i + (acc + 4 * j)) := by rw [r5₃, m₂]
-  have e7 : (s₃.gpr .r7).toNat = (s.gpr .r2).toNat * pdig s.mem base src j := by rw [r7₃, hr7]
-  have a1 : (s₄.gpr .r5).toNat = w32 s.mem base (4 * i + (acc + 4 * j)) +
-      (s.gpr .r2).toNat * pdig s.mem base src j := by
-    rw [r5₄, toNat_add_lt (by rw [e3, e7]; omega), e3, e7]
-  have hr5 : (s₅.gpr .r5).toNat = (s.gpr .r2).toNat * pdig s.mem base src j +
+  have hmul : (s.gpr .r2).toNat * pdig s.mem base src j < 2 ^ 32 := by
+    have := Nat.mul_le_mul (Nat.le_of_lt_succ hu) (Nat.le_of_lt_succ hd); omega
+  have hprod : (s₂.gpr .r2 * s₂.gpr .r7).toNat = (s.gpr .r2).toNat * pdig s.mem base src j := by
+    rw [r2₂, r7₂, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := pdig _ _ _ _) (by omega),
+      Nat.mod_eq_of_lt hmul]
+  have e2 : (s₂.gpr .r5).toNat = w32 s.mem base (4 * i + (acc + 4 * j)) := by rw [r5₂]
+  have a1 : (s₃.gpr .r5).toNat = (s.gpr .r2).toNat * pdig s.mem base src j +
+      w32 s.mem base (4 * i + (acc + 4 * j)) := by
+    rw [r5₃, toNat_add_lt (by rw [hprod, e2]; omega), hprod, e2]
+  have hr5 : (s₄.gpr .r5).toNat = (s.gpr .r2).toNat * pdig s.mem base src j +
       w32 s.mem base (4 * i + (acc + 4 * j)) + (s.gpr .r3).toNat := by
-    rw [r5₅, toNat_add_lt (by rw [a1, r3₄]; omega), a1, r3₄]
-    omega
+    rw [r5₄, toNat_add_lt (by rw [a1, r3₃]; omega), a1, r3₃]
   refine ⟨?_, ?_, ?_⟩
-  · rw [u₈.mem, m₇.mem, m₆, r7₆, r6₅]
+  · rw [u₇.mem, m₆.mem, m₅, r7₅, r6₄]
     congr 1
     apply BitVec.eq_of_toNat_eq
     rw [VG.Proof.X25519.Arm.toNat_and_mask16, BitVec.toNat_ofNat, hr5]
     omega
-  · rw [u₈.gpr, toNat_shr, m₇.gpr, r5₆, hr5]
+  · rw [u₇.gpr, toNat_shr, m₆.gpr, r5₅, hr5]
   · refine (((u₁.rest (ws := [.r3, .r5, .r7]) (by simp)).trans (u₂.rest (by simp))).trans
       ((u₃.rest (by simp)).trans (u₄.rest (by simp)))).trans
-      (((u₅.rest (by simp)).trans (u₆.rest (by simp))).trans ((m₇.rest _).trans (u₈.rest (by simp))))
+      ((u₅.rest (by simp)).trans ((m₆.rest _).trans (u₇.rest (by simp))))
 
 end VG.Proof.Mont.Arm

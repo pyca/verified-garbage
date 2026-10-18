@@ -37,33 +37,33 @@ theorem macD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {K 
   have hmul : (s.gpr .r2).toNat * hdig (s.gpr .r7).toNat h < 2 ^ 32 := by
     have := Nat.mul_le_mul (Nat.le_of_lt_succ hu) (Nat.le_of_lt_succ hd); omega
   simp only [macD]
-  refine wp_half hh h6 fun s₁ u₁ => wp_mul fun s₂ u₂ => ?_
-  have w₂ := (hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)
-  have e10 : s₂.gpr .r10 = s₂.gpr .r12 + BitVec.ofNat 32 K := by
-    simp only [u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h10
-  refine wp_ldr (by omega) (w₂.ea e10 (by omega)) (w₂.read (by omega)) fun s₃ u₃ => ?_
-  refine wp_dp (op2_reg _ _) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => wp_dp (op2_reg _ _) fun s₆ u₆ => ?_
-  have w₆ := (((w₂.of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)).of_upd u₆ (by decide)
-  refine wp_str (by omega) (w₆.ea (by simp only [u₆.get, u₅.get, u₄.get, u₃.get, reduceCtorEq, ↓reduceIte]; exact e10)
-    (by omega)) (w₆.write (by omega)) fun s₇ m₇ => wp_mov (op2_lsr (by decide)) fun s₈ u₈ => WP.block_nil ?_
+  refine wp_half hh h6 fun s₁ u₁ => ?_
+  have w₁ := hs.of_upd u₁ (by decide)
+  have e10 : s₁.gpr .r10 = s₁.gpr .r12 + BitVec.ofNat 32 K := by
+    simp only [u₁.get, reduceCtorEq, ↓reduceIte]; exact h10
+  refine wp_ldr (by omega) (w₁.ea e10 (by omega)) (w₁.read (by omega)) fun s₂ u₂ => wp_mla fun s₃ u₃ => ?_
+  refine wp_dp (op2_reg _ _) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
+  have w₅ := (((w₁.of_upd u₂ (by decide)).of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)
+  refine wp_str (by omega) (w₅.ea (by simp only [u₅.get, u₄.get, u₃.get, u₂.get, reduceCtorEq, ↓reduceIte]; exact e10)
+    (by omega)) (w₅.write (by omega)) fun s₆ m₆ => wp_mov (op2_lsr (by decide)) fun s₇ u₇ => WP.block_nil ?_
   have ew : w32 s.mem base (K + 4 * h) = (s.mem.readW (off base (K + 4 * h)) 32).toNat := rfl
-  have v5 : (s₅.gpr .r5).toNat =
+  have v4 : (s₄.gpr .r5).toNat =
       (s.gpr .r2).toNat * hdig (s.gpr .r7).toNat h + w32 s.mem base (K + 4 * h) + (s.gpr .r3).toNat := by
-    simp only [u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal]
-    rw [u₂.mem, u₁.mem]
+    simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal]
+    rw [u₁.mem]
     have hm : (s.gpr .r2 * BitVec.ofNat 32 (hdig (s.gpr .r7).toNat h)).toNat =
         (s.gpr .r2).toNat * hdig (s.gpr .r7).toNat h := by
       rw [BitVec.toNat_mul, toNat_ofNat_dig, Nat.mod_eq_of_lt hmul]
-    refine (toNat_add_eq (toNat_add_eq rfl hm ?_) rfl ?_).trans ?_ <;> omega
+    refine (toNat_add_eq (toNat_add_eq hm rfl ?_) rfl ?_).trans ?_ <;> omega
   refine ⟨?_, ?_, ?_⟩
-  · rw [u₈.mem, m₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₇.mem, m₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     congr 1
-    rw [u₆.gpr, dpVal, show s₅.gpr .r6 = VG.Proof.X25519.Arm.mask16 by
-      simp only [u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h6]
-    exact and_mask_ofNat v5
-  · rw [u₈.gpr, toNat_shr, m₇.gpr, u₆.other .r5 (by decide), v5]
+    rw [u₅.gpr, dpVal, show s₄.gpr .r6 = VG.Proof.X25519.Arm.mask16 by
+      simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h6]
+    exact and_mask_ofNat v4
+  · rw [u₇.gpr, toNat_shr, m₆.gpr, u₅.other .r5 (by decide), v4]
   · exact (((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))).trans
-      (((u₅.rest (by simp)).trans (u₆.rest (by simp))).trans ((m₇.rest _).trans (u₈.rest (by simp))))
+      ((u₅.rest (by simp)).trans ((m₆.rest _).trans (u₇.rest (by simp))))
 
 /-- The low digits of a number, two on. -/
 theorem pval_two (m : Mem) (base : Addr) (d j : Nat) :
