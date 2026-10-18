@@ -214,7 +214,7 @@ pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX2_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.MlKem.sampleNTT4_16Contract`. Not constant time in the seeds: timing may depend on the pointer and on `*seeds` (public in ML-KEM: the seed `ρ` of the matrix and indices), but not on anything else.
 ///
-/// As `vg_mlkem_sample_ntt4_avx2`, storing 16-bit coefficients, and calling `vg_mlkem16_sample_ntt` for a seed whose instance needs more than it squeezed of all four.
+/// The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; it then samples from the output of each in turn, eight candidates at a time in AVX2 registers (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), storing 16-bit coefficients. For a seed whose instance needs more than it squeezed of all four, it calls `vg_mlkem16_sample_ntt`.
 ///
 /// # Safety
 ///
@@ -3448,7 +3448,7 @@ pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX512_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.MlKem.sampleNTT4_16Contract`. Not constant time in the seeds: timing may depend on the pointer and on `*seeds` (public in ML-KEM: the seed `ρ` of the matrix and indices), but not on anything else.
 ///
-/// As `vg_mlkem_sample_ntt4_avx512`, storing 16-bit coefficients, and calling `vg_mlkem16_sample_ntt` for a seed whose instance needs more than it squeezed of all four.
+/// The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; it then samples from the output of each in turn, eight candidates at a time in AVX2 registers (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), storing 16-bit coefficients. For a seed whose instance needs more than it squeezed of all four, it calls `vg_mlkem16_sample_ntt`. It uses AVX-512VL quadword rotates in Keccak.
 ///
 /// # Safety
 ///
