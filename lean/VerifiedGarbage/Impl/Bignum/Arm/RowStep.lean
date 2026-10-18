@@ -39,12 +39,15 @@ def rowProduct : List Instr := rowHalves ++ rowPartials ++ addCross .r5 ++ addCr
 carry, the next carry. -/
 def addCarry : List Instr := [.adds .r3 .r3 (.reg .r11), .adc .r11 .r4 (.imm 0)]
 
-/-- Add `x * [r12] + r11` into `[r0]`, retaining the high word in `r11`.
-The row's pointers and the scalar's halves survive. The enclosing loop
-advances the pointers and handles its public counter separately. -/
-def rowStep : Prog isa :=
-  .seq (.block [.ldr .r2 .r12 0]) (.seq (.block rowProduct)
-    (.seq (.block [.ldr .r5 .r0 0])
-      (.seq (.block (addWord .r5 ++ addCarry)) (.block [.str .r3 .r0 0]))))
+/-- Add `x * [r12 + k] + r11` into `[r0 + k]`, retaining the high word in
+`r11`. The row's pointers and the scalar's halves survive. The enclosing
+loop advances the pointers and handles its public counter separately. -/
+def rowStepAt (k : Nat) : Prog isa :=
+  .seq (.block [.ldr .r2 .r12 k]) (.seq (.block rowProduct)
+    (.seq (.block [.ldr .r5 .r0 k])
+      (.seq (.block (addWord .r5 ++ addCarry)) (.block [.str .r3 .r0 k]))))
+
+/-- The step at the pointers themselves. -/
+def rowStep : Prog isa := rowStepAt 0
 
 end VG.Impl.Bignum.Arm

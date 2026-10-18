@@ -186,18 +186,18 @@ abbrev rowClobbers : List Reg := [.r2, .r3, .r4, .r5, .r6, .r7, .r8, .r11]
 /-- A row step writes exactly one accumulator word. Its high word is the
 carry for the next step; the accumulator and input addresses, and the
 scalar's halves, stay fixed. -/
-theorem rowStep_ok (s : State) (a b : Addr) (x : BitVec 32)
+theorem rowStepAt_ok (s : State) (k : Nat) (hk : k < 4096) (a b : Addr) (x : BitVec 32)
     (h1 : s.gpr .r1 = x &&& mask16) (h10 : s.gpr .r10 = x >>> 16) (h9 : s.gpr .r9 = mask16)
-    (ha : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = a)
-    (hb : State.addr (s.gpr .r12 + BitVec.ofNat 32 0) = b)
+    (ha : State.addr (s.gpr .r0 + BitVec.ofNat 32 k) = a)
+    (hb : State.addr (s.gpr .r12 + BitVec.ofNat 32 k) = b)
     (hread : InRegions (s.rd ++ s.wr) b 4) (hwrite : InRegions s.wr a 4) :
-    WP isa rowStep s fun t =>
+    WP isa (rowStepAt k) s fun t =>
       (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
         x.toNat * (s.mem.readW b 32).toNat +
           (s.mem.readW a 32).toNat + (s.gpr .r11).toNat ∧
       t.mem = s.mem.writeW a (t.gpr .r3) ∧ Rest rowClobbers s t := by
-  rw [rowStep, WP.seq_iff]
-  refine wp_ldr (by decide) hb hread fun s1 u1 => WP.block_nil ?_
+  rw [rowStepAt, WP.seq_iff]
+  refine wp_ldr hk hb hread fun s1 u1 => WP.block_nil ?_
   rw [WP.seq_iff]
   refine WP.mono (rowProduct_ok s1 x (by rw [u1.other .r1 (by decide), h1])
     (by rw [u1.other .r10 (by decide), h10]) (by rw [u1.other .r9 (by decide), h9])) ?_
@@ -205,7 +205,7 @@ theorem rowStep_ok (s : State) (a b : Addr) (x : BitVec 32)
   have ptr2 : s2.gpr .r0 = s.gpr .r0 :=
     (frame2.regs .r0 (by simp)).trans (u1.other .r0 (by decide))
   rw [WP.seq_iff]
-  refine wp_ldr (a := a) (by decide) (by rw [ptr2]; exact ha)
+  refine wp_ldr (a := a) hk (by rw [ptr2]; exact ha)
     (by
       rw [frame2.rd, frame2.wr, u1.rd, u1.wr]
       rcases hwrite with ⟨R, hR, haR⟩
@@ -228,7 +228,7 @@ theorem rowStep_ok (s : State) (a b : Addr) (x : BitVec 32)
   have ptr5 : s5.gpr .r0 = s.gpr .r0 :=
     (frame5.regs .r0 (by simp)).trans ((frame4.regs .r0 (by simp)).trans
       ((u3.other .r0 (by decide)).trans ptr2))
-  refine wp_str (a := a) (by decide) (by rw [ptr5]; exact ha)
+  refine wp_str (a := a) hk (by rw [ptr5]; exact ha)
     (by rw [frame5.wr, frame4.wr, u3.wr, frame2.wr, u1.wr]; exact hwrite) fun s6 u6 => WP.block_nil ?_
   have out6 : s6.gpr .r3 = s5.gpr .r3 := congrFun u6.gpr .r3
   have carry6 : s6.gpr .r11 = s5.gpr .r11 := congrFun u6.gpr .r11
@@ -246,5 +246,18 @@ theorem rowStep_ok (s : State) (a b : Addr) (x : BitVec 32)
         rcases h with h | h <;> simp [h]), frame5.rd, frame5.wr, frame5.sp⟩
     exact (u1.rest (by simp)).trans (r2.trans ((u3.rest (by simp)).trans (r4.trans (r5.trans
       (u6.rest _)))))
+
+/-- The step at the pointers themselves. -/
+theorem rowStep_ok (s : State) (a b : Addr) (x : BitVec 32)
+    (h1 : s.gpr .r1 = x &&& mask16) (h10 : s.gpr .r10 = x >>> 16) (h9 : s.gpr .r9 = mask16)
+    (ha : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = a)
+    (hb : State.addr (s.gpr .r12 + BitVec.ofNat 32 0) = b)
+    (hread : InRegions (s.rd ++ s.wr) b 4) (hwrite : InRegions s.wr a 4) :
+    WP isa rowStep s fun t =>
+      (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
+        x.toNat * (s.mem.readW b 32).toNat +
+          (s.mem.readW a 32).toNat + (s.gpr .r11).toNat ∧
+      t.mem = s.mem.writeW a (t.gpr .r3) ∧ Rest rowClobbers s t :=
+  rowStepAt_ok s 0 (by decide) a b x h1 h10 h9 ha hb hread hwrite
 
 end VG.Proof.Bignum.Arm

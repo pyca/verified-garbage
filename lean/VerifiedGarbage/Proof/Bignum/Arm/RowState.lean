@@ -70,9 +70,14 @@ theorem row_writable {s0 s : State} {base : BitVec 32} {size o b n d : Nat}
   have := ctx.nowrap
   omega
 
-/-- Extend the arithmetic invariant with the next stored word. -/
-theorem row_value_step {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat}
-    (ctx : RowCtx s0 base size o b n) (inv : RowLoopInv s0 x base o b n i s) (hi : i < n)
+/-- Extend the arithmetic invariant with the next stored word, from the
+invariant's memory facts alone. -/
+theorem row_value_step_of {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat}
+    (ctx : RowCtx s0 base size o b n)
+    (houtside : Outside (State.addr base) o (4 * i) s0.mem s.mem)
+    (hvalue : val32 s.mem (State.addr base) o i + 2 ^ (32 * i) * (s.gpr .r11).toNat =
+      val32 s0.mem (State.addr base) o i + x.toNat * val32 s0.mem (State.addr base) b i +
+        (s0.gpr .r11).toNat) (hi : i < n)
     (hm : t.mem = s.mem.writeW (off (State.addr base) (o + 4 * i)) (t.gpr .r3))
     (hv : (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
       x.toNat * w32 s.mem (State.addr base) (b + 4 * i) +
@@ -85,18 +90,31 @@ theorem row_value_step {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hs := ctx.separate
-  have own := inv.outside.w32 (d := o + 4 * i) (by omega) (by omega)
-  have src := inv.outside.w32 (d := b + 4 * i) (by omega) (by omega)
+  have own := houtside.w32 (d := o + 4 * i) (by omega) (by omega)
+  have src := houtside.w32 (d := b + 4 * i) (by omega) (by omega)
   rw [own, src] at hv
   have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
   rw [← hm] at wr
   have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
   have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [hm, w32_write_self]
-  refine ⟨(inv.outside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_⟩
+  refine ⟨(houtside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_⟩
   rw [val32_succ, val32_succ, val32_succ, low, top, pow32_succ]
-  have prior := inv.value
+  have prior := hvalue
   generalize 2 ^ (32 * i) = P at *
   grind
+
+/-- Extend the arithmetic invariant with the next stored word. -/
+theorem row_value_step {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat}
+    (ctx : RowCtx s0 base size o b n) (inv : RowLoopInv s0 x base o b n i s) (hi : i < n)
+    (hm : t.mem = s.mem.writeW (off (State.addr base) (o + 4 * i)) (t.gpr .r3))
+    (hv : (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
+      x.toNat * w32 s.mem (State.addr base) (b + 4 * i) +
+        w32 s.mem (State.addr base) (o + 4 * i) + (s.gpr .r11).toNat) :
+    Outside (State.addr base) o (4 * (i + 1)) s0.mem t.mem ∧
+      val32 t.mem (State.addr base) o (i + 1) + 2 ^ (32 * (i + 1)) * (t.gpr .r11).toNat =
+        val32 s0.mem (State.addr base) o (i + 1) +
+          x.toNat * val32 s0.mem (State.addr base) b (i + 1) + (s0.gpr .r11).toNat :=
+  row_value_step_of ctx inv.outside inv.value hi hm hv
 
 end VG.Proof.Bignum.Arm
