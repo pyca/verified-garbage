@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KWipe
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -43,11 +44,22 @@ abbrev SealPost (s₀ : State) (Ctx W SP D : Addr) (n R al : Nat) (H J : Block) 
     bytesAt s.mem W 16 = toBytes (ghashFrom H (ghash H (blocks (padded a (bytesAt s.mem D n))))
       [ofBytes (lensBlock al n)] ^^^ ctxCiph s₀.mem Ctx R J)
 
+/-- `kWipe` keeps `SM`. -/
+theorem kWipe_sm {s₀ s : State} {Ctx W SP A D : Addr} {R al n : Nat} {J : Block} {tl : BitVec 64}
+    (dD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (h32 : nb16 al + nb16 n < 32) (S : SM s₀ Ctx W SP A D R al n J tl s) :
+    WP isa kWipe s (SM s₀ Ctx W SP A D R al n J tl) :=
+  WP.mono (kWipe_ok s S.env.r15 S.r280 (by omega) S.env.perm.w) fun _ ⟨fK, g, rd, wr, _⟩ =>
+    S.keep dD fK (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact wk_G (o := 512) (k := 512) (by decide))
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) rd wr
+
 /-- After `front_ok`: the text, `G`'s lengths block, `GHASH` and the tag. -/
 theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32)
     (F : Front s₀ Ctx W SP A D R al n J tl (bytesAt s₀.mem A al) s) :
-    WP isa (.seq (.seq (.block textArgs) (xorText true)) (.seq sealShort.ghash' (.block (tagK 0)))) s
+    WP isa (.seq (.seq (.block textArgs) (xorText true)) (.seq sealShort.ghash' (.seq (.block (tagK 0)) kWipe))) s
       (SealPost s₀ Ctx W SP D n R al (ctxH s₀.mem Ctx) J (bytesAt s₀.mem A al)) := by
   have L := C.lay
   have dD := C.dE
@@ -116,7 +128,7 @@ theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A 
     rw [show s₄.xmm .xmm0 = s₄.zlane .xmm0 0 from rfl, z₄ _ (by decide) 0 (by decide), zz _ (by decide) 0 (by decide),
       F.z0 0 (by decide)]
   obtain ⟨s₅, run₅, tag₅, fW, g₅, rd₅, wr₅⟩ := tagK_ok (o := 0) s₄ S₄.env.r15 S₄.env.perm.w (by decide) x0
-  refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
   have S₅ := S₄.keep dD fW (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact .inl (by simpa using Region.sub_prefix (base := W) (Nat.le_refl 16)))
     (fun r _ => by rw [g₅]) rd₅ wr₅
@@ -152,8 +164,22 @@ theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A 
         W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 (16 * (b + 1)) by
       rw [add_ofNat_ofNat, add_ofNat_ofNat, show 1040 + 16 * b = 1024 + 16 * (b + 1) by omega]]
     exact Fks (b + 1) (by omega)
-  refine ⟨S₅.env, S₅.rd, S₅.wr, S₅.saved, S₅.frame, by rw [hct, hcg], ?_⟩
-  rw [hct, bytesAt_toBytes']
+  -- `K` wiped.
+  refine WP.mono (kWipe_ok s₅ S₅.env.r15 S₅.r280 (by omega) S₅.env.perm.w) fun s₆ ⟨fK₆, g₆, rd₆, wr₆, _⟩ => ?_
+  have S₆ := S₅.keep dD fK₆ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact wk_G (o := 512) (k := 512) (by decide))
+    (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact g₆ _ (by decide) (by decide)) rd₆ wr₆
+  have k₆D : bytesAt s₆.mem D n = bytesAt s₅.mem D n :=
+    bytesAt_frame fK₆ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dWD (by decide)) (by omega)
+  have k₆W : bytesAt s₆.mem W 16 = bytesAt s₅.mem W 16 :=
+    bytesAt_frame fK₆ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      simpa using Offset.disjoint W (d := 0) (n := 16) (e := 1024) (k := 512) (.inl (by decide)) (by decide) (by decide))
+      (by decide)
+  refine ⟨S₆.env, S₆.rd, S₆.wr, S₆.saved, S₆.frame, by rw [k₆D, hct, hcg], ?_⟩
+  rw [k₆W, k₆D, hct, bytesAt_toBytes']
   have T₁ : TabOk s₁.mem (W + BitVec.ofNat 64 1536) (ctxH s₀.mem Ctx) g := by rw [m₁]; exact Ftab
   have T₃ : TabOk s₃.mem (W + BitVec.ofNat 64 1536) (ctxH s₀.mem Ctx) g :=
     (T₁.keep hg8 fX fun r hr => by

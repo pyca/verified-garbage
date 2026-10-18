@@ -331,7 +331,7 @@ theorem openTail_ok {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (hn5 : n < 512)
     (h32 : nb16 al + nb16 n < 32) (O : OpenChk s₀ Ctx W SP A D R al n J t K s) :
     WP isa (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
-        (.block [.mov .rax (.mem (at_ .r15 auxO))])) s fun s' =>
+        (.seq kWipe (.block [.mov .rax (.mem (at_ .r15 auxO))]))) s fun s' =>
       SM s₀ Ctx W SP A D R al n J (BitVec.ofNat 64 t) s' ∧ s'.gpr .rax = BitVec.ofNat 64 K ∧
       bytesAt s'.mem D n = if K = 0 then bytesAt s₀.mem D n
         else gctr (ctxCiph s₀.mem Ctx R) (inc32 J) (bytesAt s₀.mem D n) := by
@@ -387,10 +387,27 @@ theorem openTail_ok {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n
       have e := bytesAt_writeBytes_self s₁₀.mem D (xb s₁₀.mem D (W + BitVec.ofNat 64 1040) n) (by rw [hxl]; omega_arith)
       rw [hxl] at e
       rw [m₁₁, e, m₁₀, xb_gctr hK₉, hD₉]
-  · obtain ⟨S₁₀, hax₁₀, hD₁₀⟩ := h₁₀
+  · obtain ⟨S₁₀a, hax₁₀a, hD₁₀a⟩ := h₁₀
+    -- `K` wiped.
+    refine WP.seq (WP.mono (kWipe_ok s₁₀ S₁₀a.env.r15 S₁₀a.r280 (by omega_arith) S₁₀a.env.perm.w)
+      fun s₁₀' ⟨fK, gK, rdK, wrK, _⟩ => ?_)
+    have S₁₀ := S₁₀a.keep dD fK (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact wk_G (o := 512) (k := 512) (by decide))
+      (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact gK _ (by decide) (by decide)) rdK wrK
+    have hax₁₀ : s₁₀'.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 K := by
+      rw [fK.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (w := 64) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint W (d := 216) (n := 8) (e := 1024) (k := 512) (.inl (by decide)) (by decide) (by decide))
+        (by decide), hax₁₀a]
+    have hD₁₀ : bytesAt s₁₀'.mem D n = if K = 0 then bytesAt s₀.mem D n
+        else gctr (ctxCiph s₀.mem Ctx R) (inc32 J) (bytesAt s₀.mem D n) := by
+      rw [bytesAt_frame fK (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact dWD (by decide)) (by omega_arith), hD₁₀a]
     have q₁₀ := S₁₀.env.perm.wR (show 216 + 8 ≤ 2560 by decide)
-    refine WP.run (Q := fun s₁₂ => s₁₂.gpr .rax = BitVec.ofNat 64 K ∧ (∀ r, r ≠ .rax → s₁₂.gpr r = s₁₀.gpr r) ∧
-        s₁₂.mem = s₁₀.mem ∧ s₁₂.rd = s₁₀.rd ∧ s₁₂.wr = s₁₀.wr)
+    refine WP.run (Q := fun s₁₂ => s₁₂.gpr .rax = BitVec.ofNat 64 K ∧ (∀ r, r ≠ .rax → s₁₂.gpr r = s₁₀'.gpr r) ∧
+        s₁₂.mem = s₁₀'.mem ∧ s₁₂.rd = s₁₀'.rd ∧ s₁₂.wr = s₁₀'.wr)
       ⟨_, by xrun [S₁₀.env.r15, q₁₀], by simp [gpr_setReg, hax₁₀], fun r hr => by simp [gpr_setReg, hr], by rfl,
         by rfl, by rfl⟩
       fun s₁₂ ⟨hax₁₂, hg₁₂, hm₁₂, hrd₁₂, hwr₁₂⟩ => ?_

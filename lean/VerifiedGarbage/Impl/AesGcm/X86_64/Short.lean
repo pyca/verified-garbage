@@ -24,7 +24,8 @@ products of each group of four blocks with their powers, lane by lane in
 512-bit registers, reducing the sum once. The keystream for the counters
 `J₀` … `J₀ + m'` is computed in the same way, four blocks at a time, into a
 buffer `K`: `K[0]` masks the tag, and `K[1 …]` the text. None of these depends
-on another but through `G`, so the CPU overlaps them. The powers are
+on another but through `G`, so the CPU overlaps them. Before returning,
+`K`'s groups that the keystream filled are zeroed (`kWipe`). The powers are
 computed first, in SSE (`vg_ghash_pclmul`'s code), before any 256- or 512-bit
 instruction, and everything after them is in VEX or EVEX forms, so that no
 SSE instruction runs with the upper halves of the registers in use.
@@ -284,6 +285,26 @@ and the length. -/
 def textArgs : List Instr :=
   gText ++ ([.mov .rsi (.mem (at_ .r15 dataO))] : List Instr) ++ ptr .rdx .r15 (kO + 16) ++ ([.mov .rcx (.mem (at_ .r15 lenO))] : List Instr)
 
+/-! ## The keystream wiped
+
+`K` holds the keystream, which the stack must not keep once the function
+returns: `kWipe` zeroes its `⌈(nc + 1) / 4⌉` groups of four blocks, those
+`keystream` wrote, with `zmm4` (zeroed by a 128-bit `vpxor`, which clears
+the whole register: Intel SDM, `PXOR`, "VEX.128 encoded version").
+-/
+
+/-- The count of `K`'s groups in `rax`, `rdx` at `K` and `zmm4` zeroed. -/
+def kWipeSetup : List Instr :=
+  [.mov .rax (.mem (at_ .r15 ncO)), .alu .add .rax (imm 4), .shift .shr .rax 2] ++ ptr .rdx .r15 kO ++
+  [.vop (.vbin .vpxor .l128 .xmm4 .xmm4 .xmm4)]
+
+/-- A group of `K` zeroed. -/
+def kWipeBody : List Instr :=
+  [.vmovdqu32Store (at_ .rdx 0) .xmm4, .alu .add .rdx (imm 64), .alu .sub .rax (imm 1)]
+
+/-- The `⌈(nc + 1) / 4⌉` groups of `K` zeroed. -/
+def kWipe : Prog isa := .seq (.block kWipeSetup) (.loop (.block kWipeBody) .ne)
+
 /-! ## `seal` and `open` -/
 
 /-- The short `seal`, with the table of powers from `pw` (`powers`, or
@@ -296,7 +317,7 @@ def sealShort (pw : Prog isa := powers) : Prog isa :=
   (.seq copyA
   (.seq keystream
   (.seq (.seq (.block textArgs) (xorText true))
-  (.seq ghash' (.block (tagK 0))))))))
+  (.seq ghash' (.seq (.block (tagK 0)) kWipe)))))))
 where ghash' : Prog isa := .seq (.block lens) ghash
 
 /-- The ciphertext copied to `G`, its tag at `W + uO`, compared with the
@@ -318,7 +339,7 @@ def openShort (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (j012 ++ sizes))
   (.seq (.seq pw (.seq (.block zeroG) (.seq copyA (.seq keystream openChk))))
   (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
-    (.block [.mov .rax (.mem (at_ .r15 auxO))])))
+    (.seq kWipe (.block [.mov .rax (.mem (at_ .r15 auxO))]))))
 
 /-! ## The end of a long `seal`
 

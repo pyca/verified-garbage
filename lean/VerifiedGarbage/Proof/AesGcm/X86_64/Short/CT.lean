@@ -171,10 +171,37 @@ theorem powers_ct (hF : ShortFacts) : PowCT powers := by
         · rw [h₁.1, h₂.1]
         · rw [h₁.2, h₂.2]) ⟨_, by taint_decide⟩
 
+/-- `kWipe` in two runs with the same count of `K`'s groups. -/
+theorem kWipe_rel {F₁ F₂ : State → Prop} {Ctx St W SP : Addr} {nc : Nat}
+    (he₁ : ∀ s, F₁ s → Env Ctx St W SP s) (he₂ : ∀ s, F₂ s → Env Ctx St W SP s)
+    (hn₁ : ∀ s, F₁ s → s.mem.readW (W + BitVec.ofNat 64 280) 64 = BitVec.ofNat 64 nc)
+    (hn₂ : ∀ s, F₂ s → s.mem.readW (W + BitVec.ofNat 64 280) 64 = BitVec.ofNat 64 nc) (hnc : nc < 32) :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) kWipe fun _ _ => True := by
+  have hw : ∀ {F : State → Prop}, (∀ s, F s → Env Ctx St W SP s) →
+      (∀ s, F s → s.mem.readW (W + BitVec.ofNat 64 280) 64 = BitVec.ofNat 64 nc) → ∀ s, F s →
+      WP isa (.block kWipeSetup) s fun t =>
+        t.gpr .rax = BitVec.ofNat 64 ((nc + 4) / 4) ∧ t.gpr .rdx = W + BitVec.ofNat 64 1024 :=
+    fun he hn s h => WP.mono (kWipeSetup_ok s (he s h).r15 (hn s h) hnc ((he s h).perm.wR (by decide)))
+      fun _ ⟨ax, dx, _⟩ => ⟨ax, dx⟩
+  exact rel_piece [.rax, .rdx] he₁ he₂ (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ (hw he₁ hn₁) (hw he₂ hn₂)
+    (fun _ _ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [h₁.1, h₂.1]
+      · rw [h₁.2, h₂.2]) ⟨_, by taint_decide⟩
+
 section
 variable {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J J' : Block} {tl tl' : BitVec 64}
   {k k' : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (C' : OneCtx s₀' k' Ctx W SP Np A D nl al n)
 include C C'
+
+/-- `kWipe` in two runs, keeping `SM`. -/
+theorem kWipeSM_rel (h32 : nb16 al + nb16 n < 32) :
+    RelCT isa (fun s₁ s₂ => SM s₀ Ctx W SP A D R al n J tl s₁ ∧ SM s₀' Ctx W SP A D R al n J' tl' s₂)
+      kWipe fun s₁ s₂ => SM s₀ Ctx W SP A D R al n J tl s₁ ∧ SM s₀' Ctx W SP A D R al n J' tl' s₂ :=
+  rel_next (kWipe_rel (fun _ h => h.env) (fun _ h => h.env) (fun _ h => h.r280) (fun _ h => h.r280) (by omega))
+    (fun _ h => kWipe_sm C.dE h32 h) (fun _ h => kWipe_sm C'.dE h32 h)
+
 
 /-- A table of powers' code `pw` in two runs. -/
 theorem pw_rel {pw : Prog isa} (hpc : PowCT pw) (hpw : PowFrom pw s₀ Ctx W SP D n)
@@ -322,6 +349,15 @@ theorem tagK_rel {s₀ s₀' : State} {Ctx W SP A D : Addr} {al n R : Nat} {J J'
     RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
       (.block (tagK 0)) fun _ _ => True :=
   rel_env_regs [] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (fun _ _ _ _ _ hr => by cases hr) ⟨_, by taint_decide⟩
+
+/-- `tagK 0` and then `kWipe`, in two runs. -/
+theorem tagW_rel {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J J' : Block}
+    {tl tl' : BitVec 64} {k k' : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n)
+    (C' : OneCtx s₀' k' Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32) :
+    RelCT isa (fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂)
+      (.seq (.block (tagK 0)) kWipe) fun _ _ => True :=
+  RelCT.seq (rel_next tagK_rel (fun _ h => tagK_sm C (.inl rfl) h) (fun _ h => tagK_sm C' (.inl rfl) h))
+    (kWipe_rel (fun _ h => h.env) (fun _ h => h.env) (fun _ h => h.r280) (fun _ h => h.r280) (by omega))
 
 /-! ## The end of a long `seal` -/
 
@@ -471,7 +507,7 @@ theorem sealShort_rel {pw : Prog isa} (hpc : PowCT pw) {s₀ s₀' : State} {Ctx
     (fun _ _ ⟨⟨tl, h₁⟩, ⟨tl', h₂⟩⟩ => ⟨(tl, tl'), h₁, h₂⟩) fun _ _ h => h)
   exact RelCT.seq (pw_rel C C' hpc hpw hpw' h32) (RelCT.seq (zeroG_rel C C') (RelCT.seq (copyA_rel C C' hal5 h32)
     (RelCT.seq (keystream_rel C C' hRr h32) (RelCT.seq (text_rel C C' true hn5 h32)
-    (RelCT.seq (RelCT.seq (lens_rel C C' hal5 hn5 h32) (ghash_rel C C' h32)) tagK_rel)))))
+    (RelCT.seq (RelCT.seq (lens_rel C C' hal5 hn5 h32) (ghash_rel C C' h32)) (tagW_rel C C' h32))))))
 
 /-! ## `open` -/
 
@@ -608,7 +644,7 @@ theorem openShort_rel (hF : ShortFacts) {pw : Prog isa} (hpc : PowCT pw) {s₀ s
   refine RelCT.seq b0 (RelCT.seq pfx (RelCT.seq (rel_ite_e (fun _ _ h => by rw [h.1.zf, h.2.zf, hk])
     (none.mono (fun _ _ h => ⟨h.1.1.sm, h.1.2.sm⟩) fun _ _ h => h)
     ((textSM_rel C C' hn5 h32).mono (fun _ _ h => ⟨h.1.1.sm, h.1.2.sm⟩) fun _ _ h => h))
-    (fin.mono (fun _ _ h => h) fun _ _ h => h.2)))
+    (RelCT.seq (kWipeSM_rel C C' h32) (fin.mono (fun _ _ h => h) fun _ _ h => h.2))))
 
 /-! ## The functions -/
 

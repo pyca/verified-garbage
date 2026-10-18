@@ -2258,6 +2258,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
 movdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -2770,6 +2771,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
 movdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -5475,6 +5477,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
 movdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -6069,6 +6072,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
 movdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -6581,6 +6585,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
 movdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -9294,6 +9299,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
 movdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -10687,6 +10693,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 jmp 25f
 24:
 vpshufb xmm11, xmm7, xmm0
@@ -11711,6 +11726,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 25:
 jmp 23f
 22:
@@ -12664,6 +12688,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 23:
 jmp 21f
 20:
@@ -13592,6 +13625,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 jmp 25f
 24:
 27:
@@ -14147,6 +14189,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 25:
 jmp 23f
 22:
@@ -14667,6 +14718,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 23:
 jmp 21f
 20:
@@ -15355,20 +15415,10 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 vmovdqu XMMWORD PTR [rsp+1064], xmm0
 vmovdqu XMMWORD PTR [rsp+1080], xmm0
-vmovdqu XMMWORD PTR [rsp+1384], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
 lea rsp, [rsp+2600]
 ret
 .p2align 6",
@@ -15879,18 +15929,8 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
-vmovdqu XMMWORD PTR [rsp+1392], xmm0
-vmovdqu XMMWORD PTR [rsp+1408], xmm0
-vmovdqu XMMWORD PTR [rsp+1424], xmm0
-vmovdqu XMMWORD PTR [rsp+1440], xmm0
-vmovdqu XMMWORD PTR [rsp+1456], xmm0
-vmovdqu XMMWORD PTR [rsp+1472], xmm0
-vmovdqu XMMWORD PTR [rsp+1488], xmm0
-vmovdqu XMMWORD PTR [rsp+1504], xmm0
-vmovdqu XMMWORD PTR [rsp+1520], xmm0
-vmovdqu XMMWORD PTR [rsp+1536], xmm0
-vmovdqu XMMWORD PTR [rsp+1552], xmm0
 lea rsp, [rsp+2608]
 ret
 .p2align 6",
@@ -16591,21 +16631,6 @@ mov r12, QWORD PTR [r15+144]
 mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
-vpxor xmm0, xmm0, xmm0
-vmovdqu XMMWORD PTR [rsp+1368], xmm0
-vmovdqu XMMWORD PTR [rsp+1384], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
-vmovdqu XMMWORD PTR [rsp+1560], xmm0
-vmovdqu XMMWORD PTR [rsp+1576], xmm0
 lea rsp, [rsp+2584]
 ret
 .p2align 6",
@@ -17022,21 +17047,6 @@ mov r12, QWORD PTR [r15+144]
 mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
-vpxor xmm0, xmm0, xmm0
-vmovdqu XMMWORD PTR [rsp+1368], xmm0
-vmovdqu XMMWORD PTR [rsp+1384], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
-vmovdqu XMMWORD PTR [rsp+1560], xmm0
-vmovdqu XMMWORD PTR [rsp+1576], xmm0
 lea rsp, [rsp+2584]
 ret
 .p2align 6",
@@ -18808,6 +18818,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 jmp 25f
 24:
 vpshufb xmm11, xmm7, xmm0
@@ -19834,6 +19853,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 25:
 jmp 23f
 22:
@@ -20789,6 +20817,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 23:
 mov rbx, QWORD PTR [r11+816]
 jmp 21f
@@ -22188,20 +22225,10 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 vmovdqu XMMWORD PTR [rsp+1080], xmm0
 vmovdqu XMMWORD PTR [rsp+1096], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
-vmovdqu XMMWORD PTR [rsp+1560], xmm0
 lea rsp, [rsp+2616]
 ret
 .p2align 6",
@@ -22852,20 +22879,10 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 vmovdqu XMMWORD PTR [rsp+1080], xmm0
 vmovdqu XMMWORD PTR [rsp+1096], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
-vmovdqu XMMWORD PTR [rsp+1560], xmm0
 lea rsp, [rsp+2616]
 ret
 .p2align 6",
@@ -24219,6 +24236,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 jmp 25f
 24:
 vpshufb xmm11, xmm7, xmm0
@@ -25243,6 +25269,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 25:
 jmp 23f
 22:
@@ -26196,6 +26231,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 23:
 jmp 21f
 20:
@@ -27161,6 +27205,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 jmp 25f
 24:
 210:
@@ -27903,6 +27956,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 25:
 jmp 23f
 22:
@@ -28592,6 +28654,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 23:
 jmp 21f
 20:
@@ -29211,20 +29282,10 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 vmovdqu XMMWORD PTR [rsp+1064], xmm0
 vmovdqu XMMWORD PTR [rsp+1080], xmm0
-vmovdqu XMMWORD PTR [rsp+1384], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
 lea rsp, [rsp+2600]
 ret
 .p2align 6",
@@ -29732,18 +29793,8 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
-vmovdqu XMMWORD PTR [rsp+1392], xmm0
-vmovdqu XMMWORD PTR [rsp+1408], xmm0
-vmovdqu XMMWORD PTR [rsp+1424], xmm0
-vmovdqu XMMWORD PTR [rsp+1440], xmm0
-vmovdqu XMMWORD PTR [rsp+1456], xmm0
-vmovdqu XMMWORD PTR [rsp+1472], xmm0
-vmovdqu XMMWORD PTR [rsp+1488], xmm0
-vmovdqu XMMWORD PTR [rsp+1504], xmm0
-vmovdqu XMMWORD PTR [rsp+1520], xmm0
-vmovdqu XMMWORD PTR [rsp+1536], xmm0
-vmovdqu XMMWORD PTR [rsp+1552], xmm0
 lea rsp, [rsp+2608]
 ret
 .p2align 6",
@@ -30157,21 +30208,6 @@ mov r12, QWORD PTR [r15+144]
 mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
-vpxor xmm0, xmm0, xmm0
-vmovdqu XMMWORD PTR [rsp+1368], xmm0
-vmovdqu XMMWORD PTR [rsp+1384], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
-vmovdqu XMMWORD PTR [rsp+1560], xmm0
-vmovdqu XMMWORD PTR [rsp+1576], xmm0
 lea rsp, [rsp+2584]
 ret
 .p2align 6",
@@ -30585,21 +30621,6 @@ mov r12, QWORD PTR [r15+144]
 mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
-vpxor xmm0, xmm0, xmm0
-vmovdqu XMMWORD PTR [rsp+1368], xmm0
-vmovdqu XMMWORD PTR [rsp+1384], xmm0
-vmovdqu XMMWORD PTR [rsp+1400], xmm0
-vmovdqu XMMWORD PTR [rsp+1416], xmm0
-vmovdqu XMMWORD PTR [rsp+1432], xmm0
-vmovdqu XMMWORD PTR [rsp+1448], xmm0
-vmovdqu XMMWORD PTR [rsp+1464], xmm0
-vmovdqu XMMWORD PTR [rsp+1480], xmm0
-vmovdqu XMMWORD PTR [rsp+1496], xmm0
-vmovdqu XMMWORD PTR [rsp+1512], xmm0
-vmovdqu XMMWORD PTR [rsp+1528], xmm0
-vmovdqu XMMWORD PTR [rsp+1544], xmm0
-vmovdqu XMMWORD PTR [rsp+1560], xmm0
-vmovdqu XMMWORD PTR [rsp+1576], xmm0
 lea rsp, [rsp+2584]
 ret
 .p2align 6",
@@ -31852,6 +31873,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 jmp 25f
 24:
 vpshufb xmm11, xmm7, xmm0
@@ -32878,6 +32908,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 25:
 jmp 23f
 22:
@@ -33833,6 +33872,15 @@ vmovdqu XMMWORD PTR [rcx], xmm2
 vzeroupper
 mov r8, QWORD PTR [r11+808]
 mov rsi, QWORD PTR [r11+800]
+vpxor xmm3, xmm3, xmm3
+vmovdqu XMMWORD PTR [r11+832], xmm3
+vmovdqu XMMWORD PTR [r11+848], xmm3
+vmovdqu XMMWORD PTR [r11+864], xmm3
+vmovdqu XMMWORD PTR [r11+880], xmm3
+vmovdqu XMMWORD PTR [r11+896], xmm3
+vmovdqu XMMWORD PTR [r11+912], xmm3
+vmovdqu XMMWORD PTR [r11+928], xmm3
+vmovdqu XMMWORD PTR [r11+944], xmm3
 23:
 mov rbx, QWORD PTR [r11+816]
 jmp 21f
@@ -35165,6 +35213,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -35677,6 +35726,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -38390,6 +38440,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -38980,6 +39031,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
 movdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -39492,6 +39544,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
 movdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -42205,6 +42258,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
 movdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -42783,6 +42837,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
 movdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -43291,6 +43346,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
 movdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -45964,6 +46020,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 pxor xmm0, xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
 movdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -46558,6 +46615,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -47070,6 +47128,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -49775,6 +49834,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -50369,6 +50429,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -50881,6 +50942,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -53594,6 +53656,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -55928,6 +55991,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -56440,6 +56504,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
 vmovdqu YMMWORD PTR [rsp+816], ymm0
 vmovdqu YMMWORD PTR [rsp+848], ymm0
@@ -60208,6 +60273,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -60679,6 +60745,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -62834,6 +62901,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -63343,6 +63411,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
 vmovdqu YMMWORD PTR [rsp+816], ymm0
 vmovdqu YMMWORD PTR [rsp+848], ymm0
@@ -69181,10 +69250,21 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
+mov rax, QWORD PTR [r15+280]
+add rax, 4
+shr rax, 2
+mov rdx, r15
+add rdx, 1024
+vpxor xmm4, xmm4, xmm4
+243:
+vmovdqu32 ZMMWORD PTR [rdx], zmm4
+add rdx, 64
+sub rax, 1
+jne 243b
 jmp 29f
 28:
 cmp rbp, 12
-je 243f
+je 244f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -69198,7 +69278,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 245f
+je 246f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -69206,12 +69286,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 246f
-245:
+jmp 247f
 246:
+247:
 mov rcx, rbp
 test rcx, rcx
-je 247f
+je 248f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -69219,12 +69299,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-249:
+250:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 249b
+jne 250b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -69235,9 +69315,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 248f
-247:
+jmp 249f
 248:
+249:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -69262,8 +69342,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 244f
-243:
+jmp 245f
+244:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -69272,7 +69352,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-244:
+245:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -69298,7 +69378,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 250f
+je 251f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -69306,12 +69386,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 251f
-250:
+jmp 252f
 251:
+252:
 mov rcx, rbp
 test rcx, rcx
-je 252f
+je 253f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -69319,12 +69399,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-254:
+255:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 254b
+jne 255b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -69335,14 +69415,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 253f
-252:
+jmp 254f
 253:
+254:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 255f
+je 256f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -69363,9 +69443,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 256f
-255:
+jmp 257f
 256:
+257:
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -69459,30 +69539,30 @@ vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 10
-je 257f
+je 258f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 12
-je 259f
+je 260f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm5, zmm5, zmm13
-jmp 260f
-259:
+jmp 261f
 260:
-jmp 258f
-257:
+261:
+jmp 259f
 258:
+259:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm5, zmm5, zmm13
 vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 vzeroupper
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 261f
+je 262f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -69496,58 +69576,44 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 263f
-265:
+je 264f
+266:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 265b
-jmp 264f
-263:
+jne 266b
+jmp 265f
 264:
+265:
 test rcx, 15
-je 266f
+je 267f
 test rcx, 12
-je 268f
+je 269f
 test rcx, 8
-je 270f
+je 271f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 mov QWORD PTR [rdi+r10*1], rax
 add r10, 8
-jmp 271f
-270:
+jmp 272f
 271:
+272:
 test rcx, 4
-je 272f
+je 273f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 mov DWORD PTR [rdi+r10*1], eax
 add r10, 4
-jmp 273f
-272:
+jmp 274f
 273:
-test rcx, 3
-je 274f
-276:
-movzx eax, BYTE PTR [rsi+r10*1]
-movzx r9d, BYTE PTR [rdx+r10*1]
-xor rax, r9
-mov BYTE PTR [rsi+r10*1], al
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 276b
-jmp 275f
 274:
-275:
-jmp 269f
-268:
+test rcx, 3
+je 275f
 277:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
@@ -69557,10 +69623,24 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 277b
+jmp 276f
+275:
+276:
+jmp 270f
 269:
-jmp 267f
-266:
+278:
+movzx eax, BYTE PTR [rsi+r10*1]
+movzx r9d, BYTE PTR [rdx+r10*1]
+xor rax, r9
+mov BYTE PTR [rsi+r10*1], al
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 278b
+270:
+jmp 268f
 267:
+268:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -69623,8 +69703,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-jmp 262f
-261:
+jmp 263f
+262:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -69673,7 +69753,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-262:
+263:
 29:
 mov rdi, QWORD PTR [rsp+24]
 mov rax, QWORD PTR [r15]
@@ -69687,15 +69767,9 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 vmovdqu32 ZMMWORD PTR [rsp+1064], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1128], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1192], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1256], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1320], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1384], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1448], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1512], zmm0
 lea rsp, [rsp+2600]
 ret
 .p2align 6",
@@ -70438,11 +70512,22 @@ jmp 256f
 jmp 251f
 250:
 251:
+mov rax, QWORD PTR [r15+280]
+add rax, 4
+shr rax, 2
+mov rdx, r15
+add rdx, 1024
+vpxor xmm4, xmm4, xmm4
+267:
+vmovdqu32 ZMMWORD PTR [rdx], zmm4
+add rdx, 64
+sub rax, 1
+jne 267b
 mov rax, QWORD PTR [r15+216]
 jmp 219f
 218:
 cmp rbp, 12
-je 267f
+je 268f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -70456,7 +70541,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 269f
+je 270f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -70464,12 +70549,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 270f
-269:
+jmp 271f
 270:
+271:
 mov rcx, rbp
 test rcx, rcx
-je 271f
+je 272f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -70477,12 +70562,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-273:
+274:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 273b
+jne 274b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -70493,9 +70578,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 272f
-271:
+jmp 273f
 272:
+273:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -70520,8 +70605,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 268f
-267:
+jmp 269f
+268:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -70530,7 +70615,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-268:
+269:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -70556,7 +70641,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 274f
+je 275f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -70564,12 +70649,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 275f
-274:
+jmp 276f
 275:
+276:
 mov rcx, rbp
 test rcx, rcx
-je 276f
+je 277f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -70577,12 +70662,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-278:
+279:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 278b
+jne 279b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -70593,14 +70678,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 277f
-276:
+jmp 278f
 277:
+278:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 279f
+je 280f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -70621,9 +70706,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 280f
-279:
+jmp 281f
 280:
+281:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -70635,7 +70720,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 281f
+je 282f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -70643,12 +70728,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 282f
-281:
+jmp 283f
 282:
+283:
 mov rcx, rbp
 test rcx, rcx
-je 283f
+je 284f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -70656,12 +70741,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-285:
+286:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 285b
+jne 286b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -70672,9 +70757,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 284f
-283:
+jmp 285f
 284:
+285:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -70721,21 +70806,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 286f
+je 287f
 mov r10d, 0
-288:
+289:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 288b
-jmp 287f
-286:
+jne 289b
+jmp 288f
+287:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-287:
+288:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -70745,21 +70830,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 289f
+je 290f
 mov r10d, 0
-291:
+292:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 291b
-jmp 290f
-289:
+jne 292b
+jmp 291f
+290:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-290:
+291:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -70770,7 +70855,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 292f
+je 293f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -70782,7 +70867,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 294f
+je 295f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -70790,11 +70875,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 295f
-294:
+jmp 296f
 295:
+296:
 test rbp, rbp
-je 296f
+je 297f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -70813,19 +70898,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-298:
+299:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 298b
-jmp 297f
-296:
+jne 299b
+jmp 298f
 297:
-jmp 293f
-292:
+298:
+jmp 294f
+293:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -70835,17 +70920,17 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 299f
+je 2100f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2100f
-299:
+jmp 2101f
 2100:
-293:
+2101:
+294:
 mov rax, QWORD PTR [r15+216]
 219:
 jmp 29f
@@ -70859,15 +70944,9 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
-vmovdqu32 ZMMWORD PTR [rsp+1072], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1136], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1200], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1264], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1328], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1392], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1456], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1520], zmm0
+vmovdqu XMMWORD PTR [rsp+1088], xmm0
 lea rsp, [rsp+2608]
 ret
 .p2align 6",
@@ -75385,10 +75464,21 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
+mov rax, QWORD PTR [r15+280]
+add rax, 4
+shr rax, 2
+mov rdx, r15
+add rdx, 1024
+vpxor xmm4, xmm4, xmm4
+254:
+vmovdqu32 ZMMWORD PTR [rdx], zmm4
+add rdx, 64
+sub rax, 1
+jne 254b
 jmp 29f
 28:
 cmp rbp, 12
-je 254f
+je 255f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -75402,7 +75492,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 256f
+je 257f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -75410,12 +75500,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 257f
-256:
+jmp 258f
 257:
+258:
 mov rcx, rbp
 test rcx, rcx
-je 258f
+je 259f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -75423,12 +75513,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-260:
+261:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 260b
+jne 261b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -75439,9 +75529,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 259f
-258:
+jmp 260f
 259:
+260:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -75466,8 +75556,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 255f
-254:
+jmp 256f
+255:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -75476,7 +75566,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-255:
+256:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -75502,7 +75592,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 261f
+je 262f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -75510,12 +75600,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 262f
-261:
+jmp 263f
 262:
+263:
 mov rcx, rbp
 test rcx, rcx
-je 263f
+je 264f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -75523,12 +75613,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-265:
+266:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 265b
+jne 266b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -75539,13 +75629,13 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 264f
-263:
+jmp 265f
 264:
+265:
 mov rax, QWORD PTR [r15+192]
 shr rax, 4
 test rax, rax
-je 266f
+je 267f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -75565,9 +75655,9 @@ call {vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512}
 pop rax
 pop rax
 pop rax
-jmp 267f
-266:
+jmp 268f
 267:
+268:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -75577,17 +75667,17 @@ add rsi, rax
 mov rdi, QWORD PTR [r15+200]
 add rdi, rax
 test rcx, rcx
-je 268f
+je 269f
 mov r10d, 0
-270:
+271:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 270b
-jmp 269f
-268:
+jne 271b
+jmp 270f
 269:
+270:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -75603,7 +75693,7 @@ mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 271f
+je 272f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -75624,9 +75714,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 272f
-271:
+jmp 273f
 272:
+273:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
 movabs rax, 579005069656919567
@@ -75722,30 +75812,30 @@ vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 10
-je 273f
+je 274f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 12
-je 275f
+je 276f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm5, zmm5, zmm13
-jmp 276f
-275:
+jmp 277f
 276:
-jmp 274f
-273:
+277:
+jmp 275f
 274:
+275:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm5, zmm5, zmm13
 vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 vzeroupper
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 277f
+je 278f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -75759,58 +75849,44 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 279f
-281:
+je 280f
+282:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 281b
-jmp 280f
-279:
+jne 282b
+jmp 281f
 280:
+281:
 test rcx, 15
-je 282f
+je 283f
 test rcx, 12
-je 284f
+je 285f
 test rcx, 8
-je 286f
+je 287f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 mov QWORD PTR [rdi+r10*1], rax
 add r10, 8
-jmp 287f
-286:
+jmp 288f
 287:
+288:
 test rcx, 4
-je 288f
+je 289f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 mov DWORD PTR [rdi+r10*1], eax
 add r10, 4
-jmp 289f
-288:
+jmp 290f
 289:
-test rcx, 3
-je 290f
-292:
-movzx eax, BYTE PTR [rsi+r10*1]
-movzx r9d, BYTE PTR [rdx+r10*1]
-xor rax, r9
-mov BYTE PTR [rsi+r10*1], al
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 292b
-jmp 291f
 290:
-291:
-jmp 285f
-284:
+test rcx, 3
+je 291f
 293:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
@@ -75820,10 +75896,24 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 293b
+jmp 292f
+291:
+292:
+jmp 286f
 285:
-jmp 283f
-282:
+294:
+movzx eax, BYTE PTR [rsi+r10*1]
+movzx r9d, BYTE PTR [rdx+r10*1]
+xor rax, r9
+mov BYTE PTR [rsi+r10*1], al
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 294b
+286:
+jmp 284f
 283:
+284:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -75886,8 +75976,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-jmp 278f
-277:
+jmp 279f
+278:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -75936,7 +76026,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-278:
+279:
 pop rax
 29:
 mov rdi, QWORD PTR [rsp+40]
@@ -75951,6 +76041,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -77469,10 +77560,21 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
+mov rax, QWORD PTR [r15+280]
+add rax, 4
+shr rax, 2
+mov rdx, r15
+add rdx, 1024
+vpxor xmm4, xmm4, xmm4
+2118:
+vmovdqu32 ZMMWORD PTR [rdx], zmm4
+add rdx, 64
+sub rax, 1
+jne 2118b
 jmp 273f
 272:
 cmp rbp, 12
-je 2118f
+je 2119f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -77486,7 +77588,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2120f
+je 2121f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -77494,12 +77596,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2121f
-2120:
+jmp 2122f
 2121:
+2122:
 mov rcx, rbp
 test rcx, rcx
-je 2122f
+je 2123f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -77507,12 +77609,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2124:
+2125:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2124b
+jne 2125b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -77523,9 +77625,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2123f
-2122:
+jmp 2124f
 2123:
+2124:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -77550,8 +77652,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2119f
-2118:
+jmp 2120f
+2119:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -77560,7 +77662,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-2119:
+2120:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -77586,7 +77688,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2125f
+je 2126f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -77594,12 +77696,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2126f
-2125:
+jmp 2127f
 2126:
+2127:
 mov rcx, rbp
 test rcx, rcx
-je 2127f
+je 2128f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -77607,12 +77709,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2129:
+2130:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2129b
+jne 2130b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -77623,13 +77725,13 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2128f
-2127:
+jmp 2129f
 2128:
+2129:
 mov rax, QWORD PTR [r15+192]
 shr rax, 4
 test rax, rax
-je 2130f
+je 2131f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -77649,9 +77751,9 @@ call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
 pop rax
 pop rax
 pop rax
-jmp 2131f
-2130:
+jmp 2132f
 2131:
+2132:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -77661,17 +77763,17 @@ add rsi, rax
 mov rdi, QWORD PTR [r15+200]
 add rdi, rax
 test rcx, rcx
-je 2132f
+je 2133f
 mov r10d, 0
-2134:
+2135:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2134b
-jmp 2133f
-2132:
+jne 2135b
+jmp 2134f
 2133:
+2134:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -77687,7 +77789,7 @@ mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 2135f
+je 2136f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -77708,9 +77810,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 2136f
-2135:
+jmp 2137f
 2136:
+2137:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
 movabs rax, 579005069656919567
@@ -77806,30 +77908,30 @@ vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 10
-je 2137f
+je 2138f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 12
-je 2139f
+je 2140f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm5, zmm5, zmm13
-jmp 2140f
-2139:
+jmp 2141f
 2140:
-jmp 2138f
-2137:
+2141:
+jmp 2139f
 2138:
+2139:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm5, zmm5, zmm13
 vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 vzeroupper
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 2141f
+je 2142f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -77843,58 +77945,44 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 2143f
-2145:
+je 2144f
+2146:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 2145b
-jmp 2144f
-2143:
+jne 2146b
+jmp 2145f
 2144:
+2145:
 test rcx, 15
-je 2146f
+je 2147f
 test rcx, 12
-je 2148f
+je 2149f
 test rcx, 8
-je 2150f
+je 2151f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 mov QWORD PTR [rdi+r10*1], rax
 add r10, 8
-jmp 2151f
-2150:
+jmp 2152f
 2151:
+2152:
 test rcx, 4
-je 2152f
+je 2153f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 mov DWORD PTR [rdi+r10*1], eax
 add r10, 4
-jmp 2153f
-2152:
+jmp 2154f
 2153:
-test rcx, 3
-je 2154f
-2156:
-movzx eax, BYTE PTR [rsi+r10*1]
-movzx r9d, BYTE PTR [rdx+r10*1]
-xor rax, r9
-mov BYTE PTR [rsi+r10*1], al
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 2156b
-jmp 2155f
 2154:
-2155:
-jmp 2149f
-2148:
+test rcx, 3
+je 2155f
 2157:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
@@ -77904,10 +77992,24 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 2157b
+jmp 2156f
+2155:
+2156:
+jmp 2150f
 2149:
-jmp 2147f
-2146:
+2158:
+movzx eax, BYTE PTR [rsi+r10*1]
+movzx r9d, BYTE PTR [rdx+r10*1]
+xor rax, r9
+mov BYTE PTR [rsi+r10*1], al
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 2158b
+2150:
+jmp 2148f
 2147:
+2148:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -77970,8 +78072,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-jmp 2142f
-2141:
+jmp 2143f
+2142:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -78020,7 +78122,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-2142:
+2143:
 pop rax
 273:
 27:
@@ -78036,6 +78138,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret
@@ -81695,10 +81798,21 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
+mov rax, QWORD PTR [r15+280]
+add rax, 4
+shr rax, 2
+mov rdx, r15
+add rdx, 1024
+vpxor xmm4, xmm4, xmm4
+237:
+vmovdqu32 ZMMWORD PTR [rdx], zmm4
+add rdx, 64
+sub rax, 1
+jne 237b
 jmp 29f
 28:
 cmp rbp, 12
-je 237f
+je 238f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -81712,7 +81826,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 239f
+je 240f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -81720,12 +81834,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 240f
-239:
+jmp 241f
 240:
+241:
 mov rcx, rbp
 test rcx, rcx
-je 241f
+je 242f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -81733,12 +81847,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-243:
+244:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 243b
+jne 244b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -81749,9 +81863,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 242f
-241:
+jmp 243f
 242:
+243:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -81776,8 +81890,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 238f
-237:
+jmp 239f
+238:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -81786,7 +81900,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-238:
+239:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -81812,7 +81926,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 244f
+je 245f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -81820,12 +81934,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 245f
-244:
+jmp 246f
 245:
+246:
 mov rcx, rbp
 test rcx, rcx
-je 246f
+je 247f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -81833,12 +81947,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-248:
+249:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 248b
+jne 249b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -81849,14 +81963,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 247f
-246:
+jmp 248f
 247:
+248:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 249f
+je 250f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -81877,9 +81991,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 250f
-249:
+jmp 251f
 250:
+251:
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -81973,30 +82087,30 @@ vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 10
-je 251f
+je 252f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 12
-je 253f
+je 254f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm5, zmm5, zmm13
-jmp 254f
-253:
+jmp 255f
 254:
-jmp 252f
-251:
+255:
+jmp 253f
 252:
+253:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm5, zmm5, zmm13
 vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 vzeroupper
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 255f
+je 256f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -82010,58 +82124,44 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 257f
-259:
+je 258f
+260:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 259b
-jmp 258f
-257:
+jne 260b
+jmp 259f
 258:
+259:
 test rcx, 15
-je 260f
+je 261f
 test rcx, 12
-je 262f
+je 263f
 test rcx, 8
-je 264f
+je 265f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 mov QWORD PTR [rdi+r10*1], rax
 add r10, 8
-jmp 265f
-264:
+jmp 266f
 265:
+266:
 test rcx, 4
-je 266f
+je 267f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 mov DWORD PTR [rdi+r10*1], eax
 add r10, 4
-jmp 267f
-266:
+jmp 268f
 267:
-test rcx, 3
-je 268f
-270:
-movzx eax, BYTE PTR [rsi+r10*1]
-movzx r9d, BYTE PTR [rdx+r10*1]
-xor rax, r9
-mov BYTE PTR [rsi+r10*1], al
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 270b
-jmp 269f
 268:
-269:
-jmp 263f
-262:
+test rcx, 3
+je 269f
 271:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
@@ -82071,10 +82171,24 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 271b
+jmp 270f
+269:
+270:
+jmp 264f
 263:
-jmp 261f
-260:
+272:
+movzx eax, BYTE PTR [rsi+r10*1]
+movzx r9d, BYTE PTR [rdx+r10*1]
+xor rax, r9
+mov BYTE PTR [rsi+r10*1], al
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 272b
+264:
+jmp 262f
 261:
+262:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -82137,8 +82251,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-jmp 256f
-255:
+jmp 257f
+256:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -82187,7 +82301,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-256:
+257:
 29:
 mov rdi, QWORD PTR [rsp+24]
 mov rax, QWORD PTR [r15]
@@ -82201,15 +82315,9 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 vmovdqu32 ZMMWORD PTR [rsp+1064], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1128], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1192], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1256], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1320], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1384], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1448], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1512], zmm0
 lea rsp, [rsp+2600]
 ret
 .p2align 6",
@@ -82750,30 +82858,41 @@ jmp 250f
 jmp 245f
 244:
 245:
+mov rax, QWORD PTR [r15+280]
+add rax, 4
+shr rax, 2
+mov rdx, r15
+add rdx, 1024
+vpxor xmm4, xmm4, xmm4
+261:
+vmovdqu32 ZMMWORD PTR [rdx], zmm4
+add rdx, 64
+sub rax, 1
+jne 261b
 mov rax, QWORD PTR [r15+216]
 jmp 219f
 218:
 mov eax, 0
 cmp rbp, 12
-jne 261f
+jne 262f
 mov rcx, QWORD PTR [r15+184]
 cmp rcx, 17
-jae 263f
+jae 264f
 mov rcx, QWORD PTR [r15+208]
 cmp rcx, 256
-jb 265f
+jb 266f
 mov eax, 1
-jmp 266f
-265:
+jmp 267f
 266:
-jmp 264f
-263:
+267:
+jmp 265f
 264:
-jmp 262f
-261:
+265:
+jmp 263f
 262:
+263:
 test rax, rax
-je 267f
+je 268f
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -82798,9 +82917,9 @@ mov QWORD PTR [r14+16], rax
 mov QWORD PTR [r14+24], rax
 mov rcx, QWORD PTR [r15+184]
 test rcx, rcx
-je 269f
+je 270f
 cmp rcx, 5
-je 271f
+je 272f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -82808,12 +82927,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, QWORD PTR [r15+232]
 mov r10d, 0
-273:
+274:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 273b
+jne 274b
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -82859,8 +82978,8 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-jmp 272f
-271:
+jmp 273f
+272:
 mov rsi, QWORD PTR [r15+232]
 mov eax, DWORD PTR [rsi]
 movzx r10d, BYTE PTR [rsi+4]
@@ -82911,15 +83030,15 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-272:
-jmp 270f
-269:
+273:
+jmp 271f
 270:
+271:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 274f
+je 275f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -82940,9 +83059,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 275f
-274:
+jmp 276f
 275:
+276:
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -82987,23 +83106,23 @@ vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 10
-je 276f
+je 277f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 12
-je 278f
+je 279f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm5, zmm5, zmm13
-jmp 279f
-278:
+jmp 280f
 279:
-jmp 277f
-276:
+280:
+jmp 278f
 277:
+278:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm5, zmm5, zmm13
 vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
@@ -83015,7 +83134,7 @@ bswap esi
 mov DWORD PTR [r14+12], esi
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 280f
+je 281f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -83025,12 +83144,12 @@ mov rdx, r15
 add rdx, 1040
 mov rcx, QWORD PTR [r15+208]
 mov r10d, 0
-282:
+283:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 282b
+jne 283b
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -83093,8 +83212,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-jmp 281f
-280:
+jmp 282f
+281:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -83143,7 +83262,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-281:
+282:
 mov rbx, QWORD PTR [r15+224]
 mov rsi, QWORD PTR [rsp+24]
 mov eax, 0
@@ -83153,21 +83272,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 283f
+je 284f
 mov r10d, 0
-285:
+286:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 285b
-jmp 284f
-283:
+jne 286b
+jmp 285f
+284:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-284:
+285:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -83177,21 +83296,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 286f
+je 287f
 mov r10d, 0
-288:
+289:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 288b
-jmp 287f
-286:
+jne 289b
+jmp 288f
+287:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-287:
+288:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -83202,7 +83321,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 289f
+je 290f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -83214,7 +83333,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 291f
+je 292f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -83222,11 +83341,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 292f
-291:
+jmp 293f
 292:
+293:
 test rbp, rbp
-je 293f
+je 294f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -83245,19 +83364,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-295:
+296:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 295b
-jmp 294f
-293:
+jne 296b
+jmp 295f
 294:
-jmp 290f
-289:
+295:
+jmp 291f
+290:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -83267,22 +83386,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 296f
+je 297f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 297f
-296:
+jmp 298f
 297:
-290:
+298:
+291:
 mov rax, QWORD PTR [r15+216]
-jmp 268f
-267:
+jmp 269f
+268:
 cmp rbp, 12
-je 298f
+je 299f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -83296,7 +83415,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2100f
+je 2101f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -83304,12 +83423,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2101f
-2100:
+jmp 2102f
 2101:
+2102:
 mov rcx, rbp
 test rcx, rcx
-je 2102f
+je 2103f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -83317,12 +83436,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2104:
+2105:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2104b
+jne 2105b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -83333,9 +83452,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2103f
-2102:
+jmp 2104f
 2103:
+2104:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -83360,8 +83479,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 299f
-298:
+jmp 2100f
+299:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -83370,7 +83489,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-299:
+2100:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -83396,7 +83515,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2105f
+je 2106f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -83404,12 +83523,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2106f
-2105:
+jmp 2107f
 2106:
+2107:
 mov rcx, rbp
 test rcx, rcx
-je 2107f
+je 2108f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -83417,12 +83536,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2109:
+2110:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2109b
+jne 2110b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -83433,14 +83552,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2108f
-2107:
+jmp 2109f
 2108:
+2109:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 2110f
+je 2111f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -83461,9 +83580,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 2111f
-2110:
+jmp 2112f
 2111:
+2112:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -83475,7 +83594,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2112f
+je 2113f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -83483,12 +83602,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2113f
-2112:
+jmp 2114f
 2113:
+2114:
 mov rcx, rbp
 test rcx, rcx
-je 2114f
+je 2115f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -83496,12 +83615,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2116:
+2117:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2116b
+jne 2117b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -83512,9 +83631,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2115f
-2114:
+jmp 2116f
 2115:
+2116:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -83561,21 +83680,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 2117f
+je 2118f
 mov r10d, 0
-2119:
+2120:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2119b
-jmp 2118f
-2117:
+jne 2120b
+jmp 2119f
+2118:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-2118:
+2119:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -83585,21 +83704,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 2120f
+je 2121f
 mov r10d, 0
-2122:
+2123:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2122b
-jmp 2121f
-2120:
+jne 2123b
+jmp 2122f
+2121:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-2121:
+2122:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -83610,7 +83729,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 2123f
+je 2124f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -83622,7 +83741,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 2125f
+je 2126f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -83630,11 +83749,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2126f
-2125:
+jmp 2127f
 2126:
+2127:
 test rbp, rbp
-je 2127f
+je 2128f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -83653,19 +83772,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-2129:
+2130:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2129b
-jmp 2128f
-2127:
+jne 2130b
+jmp 2129f
 2128:
-jmp 2124f
-2123:
+2129:
+jmp 2125f
+2124:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -83675,19 +83794,19 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 2130f
+je 2131f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2131f
-2130:
+jmp 2132f
 2131:
-2124:
+2132:
+2125:
 mov rax, QWORD PTR [r15+216]
-268:
+269:
 219:
 jmp 29f
 28:
@@ -83700,15 +83819,9 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
-vmovdqu32 ZMMWORD PTR [rsp+1072], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1136], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1200], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1264], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1328], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1392], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1456], zmm0
-vmovdqu32 ZMMWORD PTR [rsp+1520], zmm0
+vmovdqu XMMWORD PTR [rsp+1088], xmm0
 lea rsp, [rsp+2608]
 ret
 .p2align 6",
@@ -87709,6 +87822,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+72], xmm0
 vmovdqu XMMWORD PTR [rsp+120], xmm0
 lea rsp, [rsp+2600]
 ret
@@ -88221,6 +88335,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+80], xmm0
 vmovdqu XMMWORD PTR [rsp+128], xmm0
 lea rsp, [rsp+2608]
 ret
@@ -90934,6 +91049,7 @@ mov r13, QWORD PTR [r15+152]
 mov r14, QWORD PTR [r15+160]
 mov r15, QWORD PTR [r15+168]
 vpxor xmm0, xmm0, xmm0
+vmovdqu XMMWORD PTR [rsp+88], xmm0
 vmovdqu XMMWORD PTR [rsp+136], xmm0
 lea rsp, [rsp+2616]
 ret

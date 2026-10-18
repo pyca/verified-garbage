@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Wipe
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.Powers
@@ -432,7 +433,9 @@ theorem encRestI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s�
     WP.seq (WP.mono ht fun t hI => ?_))
   refine WP.seq (WP.mono hI.compare fun u ⟨hu, hcf⟩ => ?_)
   refine WP.seq (WP.mono (loopMaybe_ok hp hS hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
-  exact WP.seq (WP.mono (finalHash_ok hp hlaw hv hg) fun w hw => tail_ok hp hS (tailLaw hP) hw)
+  exact WP.seq (WP.mono (finalHash_ok hp hlaw hv hg) fun w hw =>
+    seq_block_append (tail_ok hp hS (tailLaw hP) hw) fun _ ⟨hE, h816⟩ =>
+      WP.mono (EPost.ksWipe hp hE) fun _ ⟨hE', f⟩ => ⟨hE', (ks_read f 816 8 (by decide)).trans h816⟩)
 
 /-- Encryption in place, after a setup that leaves what `setup` does. -/
 theorem encRest_ok {s₀ s : State} (hp : SPre s₀) {P : Nat → Block} (hR : Ready s₀ P s)
@@ -458,8 +461,9 @@ theorem decRest_ok {s₀ s : State} (hp : SPre s₀) {rem : Bool} (hm : rem = fa
     have ht := hu.tail_le
     have h16 := hm rfl
     simp only [tailSize, ite_true] at ht
-    exact WP.seq (WP.block_nil (tailNone_ok hp hw (by omega)))
-  | true => exact tailD_ok hp (tailLaw hP) hw
+    exact WP.seq (WP.block_nil (WP.block_append_iff.mpr
+      (WP.mono (tailNone_ok hp hw (by omega)) fun _ h => DPost.ksWipe hp h)))
+  | true => exact seq_block_append (tailD_ok hp (tailLaw hP) hw) fun _ h => DPost.ksWipe hp h
 
 /-- The setup leaves the end of the key schedule, which `dispatch` compares. -/
 theorem ready_rounds {s₀ s : State} {P : Nat → Block} (h : Ready s₀ P s) :

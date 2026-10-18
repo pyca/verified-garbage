@@ -23,7 +23,9 @@ blocks ahead of hashing; decryption hashes ciphertext before overwriting it.
 Encryption takes any number of blocks from 16 on: once the pipeline stops,
 with `t = n mod 8` blocks left, it encrypts the eight counters it prepared
 next, stores their keystream at 832–959, and adds it to the `t` blocks one at
-a time, hashing each with the power `H'ᵗ⁻ⁱ` (`StitchZH.remBody`). Decryption with a
+a time, hashing each with the power `H'ᵗ⁻ⁱ` (`StitchZH.remBody`). Both
+directions end by zeroing 832–959 (`ksWipe`), so that the stack does not
+keep that keystream once the function returns. Decryption with a
 prepared key context (`decR`) likewise takes any number of blocks from 16
 on: after its last batch, it hashes each of the `t` blocks left before
 decrypting it (`StitchZH.remBodyD`).
@@ -253,6 +255,12 @@ def tailSetup : List Instr :=
    .vmovdquLoad .l128 .xmm0 (at_ .r11 768), .vmovdquLoad .l128 .xmm1 (at_ .r11 784),
    .alu .add .r11 (.imm 64)]
 
+/-- The keystream `ksTail` stores at `scratch + 832` zeroed, through `xmm3`
+(cleared by a 128-bit `vpxor`). -/
+def ksWipe : List Instr :=
+  .vop (.vbin .vpxor .l128 .xmm3 .xmm3 .xmm3) ::
+    (List.range 8).map (fun i => .vmovdquStore .l128 (at_ .r11 (832+16*i)) .xmm3)
+
 /-- After the `t` blocks: `r11` back, their products reduced into `Y`, and
 the last round key's address back in `r10`. -/
 def tailEnd (nr : Nat) : List Instr :=
@@ -276,7 +284,7 @@ def encRest (nr : Nat) (ix : Bool := false) : Prog isa :=
     (.seq (.block [.alu .cmp .r9 (.imm 24)])
       (.seq (.ite .b (.block []) (.loop (encBody8 nr ix) .ae))
         (.seq (.block (hash8 0 ++ hash8 128))
-          (.seq (tailT nr ix) (.block finish))))))
+          (.seq (tailT nr ix) (.block (finish ++ ksWipe)))))))
 
 def decBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 0 (q8 nr))
@@ -298,7 +306,7 @@ def tailD (nr : Nat) : Prog isa :=
 `rem`, and of a multiple of 16 without it. -/
 def decRest (nr : Nat) (rem : Bool) : Prog isa :=
   .seq (.block []) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
-    (.seq (batch nr 8 0 (q8 nr)) (.seq (if rem then tailD nr else .block []) (.block finish)))))
+    (.seq (batch nr 8 0 (q8 nr)) (.seq (if rem then tailD nr else .block []) (.block (finish ++ ksWipe))))))
 
 /-- The setup `su`, which does not depend on the key size, then the complete
 loop for the key size, chosen once from the public AES round count `nr`: the

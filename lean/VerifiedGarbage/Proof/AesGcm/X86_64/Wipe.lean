@@ -62,12 +62,15 @@ theorem openCodeW_framed (z : Zero) (ss : List Slot) (hss : ∀ s ∈ ss, s.disp
 /-! ## The slots each implementation wipes
 
 Found by scanning the stack after every function, for every implementation
-and length: the last partial block's keystream at `W + 80`, in `seal`,
-`open` and `seal_split`; with the short path, its keystream `K` (`W + 1024`
-to `W + 1536`, which also holds `E(K, J₀)`), and 16 bytes of
-`seal_gather`'s; with `seal` ending without calls (`fin`), its keystream
-(`W + 1024`, `W + 1040`) and that of the blocks after the interleaved
-loops (`W + 1344` to `W + 1520`, and to `W + 1568` when streaming); and
+and length: the GHASH accumulator at `W + 32` (which, with the tag, gives
+`E(K, J₀)`) and the last partial block's keystream at `W + 80`, in `seal`,
+`open` and `seal_split`; with AVX-512, the 64 bytes at `W + 1024` that the
+end of a long `seal` writes (`Short.finKs`; the short path zeroes its
+keystream `K` itself, `Short.kWipe`), the 8 bytes of keystream the
+decryption of the bytes after the whole blocks leaves at `W + 1040` in
+`open`, and 16 bytes of `seal_gather`'s; with `seal` ending without calls (`fin`), its keystream
+(`W + 1024`, `W + 1040`; the eight-block loops zero the keystream of the
+blocks after them themselves, `StitchAvx8.ksWipe`); and
 with the other interleaved loops, the keystream of the blocks after them in
 `open` and streaming decryption (`W + 768` to `W + 1088`). -/
 
@@ -117,29 +120,28 @@ def zero (v : GcmImpl) : Zero := if v.avx then .vex else .sse
 
 /-- `seal`'s slots (and `seal_prepared`'s). -/
 def sealSlots (v : GcmImpl) : List Slot :=
-  slots16 v.avx 80 96 ++
-    if v.short then slots64 1024 1536 else if v.fin then slots16 v.avx 1024 1056 ++ slots16 v.avx 1344 1520
-    else []
+  slots16 v.avx 32 48 ++ slots16 v.avx 80 96 ++
+    if v.short then slots64 1024 1088 else if v.fin then slots16 v.avx 1024 1056 else []
 
 /-- `open`'s slots (and `open_prepared`'s). -/
 def openSlots (v : GcmImpl) : List Slot :=
-  slots16 v.avx 80 96 ++
-    if v.short then slots64 1024 1536 else if v.fin then slots16 v.avx 1344 1520
+  slots16 v.avx 32 48 ++ slots16 v.avx 80 96 ++
+    if v.short then slots16 v.avx 1040 1056 else if v.fin then []
     else if v.stitch.isSome then slots32 768 1088 else []
 
 /-- `seal_split`'s slots. -/
 def splitSlots (v : GcmImpl) : List Slot :=
-  slots16 v.avx 80 96 ++ if v.fin then slots16 v.avx 1024 1056 ++ slots16 v.avx 1344 1520 else []
+  slots16 v.avx 32 48 ++ slots16 v.avx 80 96 ++ if v.fin then slots16 v.avx 1024 1056 else []
 
 /-- `seal_gather`'s slots. -/
 def gatherSlots (v : GcmImpl) : List Slot := if v.short then slots16 v.avx 168 184 else []
 
-/-- `stream_encrypt`'s slots. -/
-def streamEncSlots (v : GcmImpl) : List Slot := if v.fin then slots16 v.avx 1344 1568 else []
+/-- `stream_encrypt`'s slots: none, since the eight-block loops zero their keystream. -/
+def streamEncSlots (_v : GcmImpl) : List Slot := []
 
 /-- `stream_decrypt`'s slots. -/
 def streamDecSlots (v : GcmImpl) : List Slot :=
-  if v.fin then slots16 v.avx 1344 1568 else if v.stitch.isSome && !v.short then slots32 768 1088 else []
+  if v.stitch.isSome && !v.short && !v.fin then slots32 768 1088 else []
 
 end GcmImpl
 
@@ -169,29 +171,29 @@ variable (v : GcmImpl)
 
 theorem sealSlots_ok : ∀ s ∈ v.sealSlots, s.disp + s.size ≤ 2560 := by
   unfold sealSlots
-  refine append_ok (slots16_ok _ (by decide)) ?_
-  split
-  · exact slots64_ok (by decide)
-  · split
-    · exact append_ok (slots16_ok _ (by decide)) (slots16_ok _ (by decide))
-    · exact nil_ok
-
-theorem openSlots_ok : ∀ s ∈ v.openSlots, s.disp + s.size ≤ 2560 := by
-  unfold openSlots
-  refine append_ok (slots16_ok _ (by decide)) ?_
+  refine append_ok (append_ok (slots16_ok _ (by decide)) (slots16_ok _ (by decide))) ?_
   split
   · exact slots64_ok (by decide)
   · split
     · exact slots16_ok _ (by decide)
+    · exact nil_ok
+
+theorem openSlots_ok : ∀ s ∈ v.openSlots, s.disp + s.size ≤ 2560 := by
+  unfold openSlots
+  refine append_ok (append_ok (slots16_ok _ (by decide)) (slots16_ok _ (by decide))) ?_
+  split
+  · exact slots16_ok _ (by decide)
+  · split
+    · exact nil_ok
     · split
       · exact slots32_ok (by decide)
       · exact nil_ok
 
 theorem splitSlots_ok : ∀ s ∈ v.splitSlots, s.disp + s.size ≤ 2560 := by
   unfold splitSlots
-  refine append_ok (slots16_ok _ (by decide)) ?_
+  refine append_ok (append_ok (slots16_ok _ (by decide)) (slots16_ok _ (by decide))) ?_
   split
-  · exact append_ok (slots16_ok _ (by decide)) (slots16_ok _ (by decide))
+  · exact slots16_ok _ (by decide)
   · exact nil_ok
 
 theorem gatherSlots_ok : ∀ s ∈ v.gatherSlots, s.disp + s.size ≤ 184 := by
@@ -203,19 +205,13 @@ theorem gatherSlots_ok : ∀ s ∈ v.gatherSlots, s.disp + s.size ≤ 184 := by
     split <;> simp only [Slot.disp, Slot.size] <;> omega
   · exact nil_ok
 
-theorem streamEncSlots_ok : ∀ s ∈ v.streamEncSlots, s.disp + s.size ≤ 2560 := by
-  unfold streamEncSlots
-  split
-  · exact slots16_ok _ (by decide)
-  · exact nil_ok
+theorem streamEncSlots_ok : ∀ s ∈ v.streamEncSlots, s.disp + s.size ≤ 2560 := nil_ok
 
 theorem streamDecSlots_ok : ∀ s ∈ v.streamDecSlots, s.disp + s.size ≤ 2560 := by
   unfold streamDecSlots
   split
-  · exact slots16_ok _ (by decide)
-  · split
-    · exact slots32_ok (by decide)
-    · exact nil_ok
+  · exact slots32_ok (by decide)
+  · exact nil_ok
 
 end GcmImpl
 
