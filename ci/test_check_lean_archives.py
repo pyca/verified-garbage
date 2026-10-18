@@ -77,6 +77,8 @@ class LeanArchiveTests(unittest.TestCase):
         write(build / "lib/lean/libNative.so.trace", "{}")  # not a module
         mathlib = self.lean / ".lake/packages/mathlib"
         write(mathlib / "Mathlib.lean", "source")
+        write(mathlib / "scripts/run.sh", "#!/bin/sh\n")
+        (mathlib / "scripts/run.sh").chmod(0o755)
         module(mathlib / ".lake/build", "Mathlib/Order")
 
     def pack(self):
@@ -107,6 +109,15 @@ class LeanArchiveTests(unittest.TestCase):
         restored = {p.relative_to(target): p.read_bytes()
                     for p in (target / ".lake").rglob("*") if p.is_file()}
         self.assertEqual(restored, original)
+        self.assertTrue(os.access(target / ".lake/packages/mathlib/scripts/run.sh", os.X_OK))
+
+    def test_unpack_fails_when_tar_does(self):
+        data, _ = self.pack()
+        target = self.root / "restored"
+        # `tar` cannot write a file where a directory (not empty) is.
+        write(target / ".lake/packages/mathlib/Mathlib.lean/file", "")
+        with tempfile.TemporaryDirectory() as tmp, self.assertRaisesRegex(SystemExit, "tar failed"):
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data))
 
     def test_pack_repacks_only_what_changed(self):
         self.pack()

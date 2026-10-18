@@ -24,10 +24,10 @@ It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 level `--level` (default 5); the toolchain's own `leantar` takes half a
 CPU-second for each module.
 
-`unpack` extracts such a tar from stdin into the Lean project. It writes
-each file that is not an archive in its place, and passes the archives to
-the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
-the next arrives. The outputs come out byte for byte as they were packed;
+`unpack` extracts such a tar from stdin into the Lean project. It passes
+the archives to the toolchain's `leantar` in batches of `--batch` bytes,
+each unpacked while the next arrives, and a copy of the stream to `tar`,
+which writes every other file in its place meanwhile. The outputs come out byte for byte as they were packed;
 the `.trace` keeps everything Lake reads (the dependency hash, the outputs'
 hashes and the build's messages, with the profile `ci/lean_profile.py`
 reads), without the record of the build's inputs that Lake writes only for
@@ -175,16 +175,39 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
         proc.stdin.close()
         return proc
 
+    # Every file but the archives (the `.hash` files, Lake's checkouts of the
+    # dependencies: most of the files, each small) is extracted by `tar`, from
+    # a copy of the stream, while the archives unpack: `tarfile` would create
+    # them one at a time, as long as `leantar` takes for all the archives.
+    # `--no-same-owner`: CI's runner user owns the archive's files, and
+    # extracting them as root (as in a container) would keep that owner. Git
+    # would then refuse the dependencies' checkouts, so Lake would clone them
+    # again and build Mathlib from source.
+    files = subprocess.Popen(["tar", "-C", str(lean), "-xf", "-", "--no-same-owner",
+                              "--no-same-permissions", "--anchored", f"--exclude={LTAR}"],
+                             stdin=subprocess.PIPE)
+    copy = Tee(stream, files.stdin)
+
     try:
         # The archives go to the staging directory, a batch at a time, and
-        # `leantar` unpacks each batch while the next arrives; every other
-        # file goes where it belongs.
+        # `leantar` unpacks each batch while the next arrives.
         records, size, n = [], 0, 0
-        with tarfile.open(fileobj=stream, mode="r|") as tar:
+
+        def flush():
+            nonlocal running, count, records, size
+            wait()
+            running = start(records)
+            count += len(records)
+            records, size = [], 0
+
+        with tarfile.open(fileobj=copy, mode="r|") as tar:
             for member in tar:
                 rel = Path(member.name)
                 if rel.parts[:2] != LTAR.parts:
-                    tar.extract(member, lean, set_attrs=True, filter=without_owner)
+                    # `pack` writes the archives first: the last batch
+                    # unpacks while `tar` writes the rest.
+                    if records:
+                        flush()
                     continue
                 if not member.isfile() or rel.suffix != ".ltar":
                     continue  # the index, and directories
@@ -196,29 +219,38 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
                 records.append({"file": str(file), "base": [str(build / "lib/lean"), str(build / "ir")]})
                 size += member.size
                 if size >= batch:
-                    wait()
-                    running = start(records)
-                    count += len(records)
-                    records, size = [], 0
+                    flush()
+        if records:
+            flush()
         wait()
         running = None
-        if records:
-            running = start(records)
-            count += len(records)
-            wait()
+        # `tarfile` stops at the end of the archive: `tar` gets the rest.
+        while copy.read(1 << 20):
+            pass
     finally:
         if running is not None:
             running.wait()
+        try:
+            files.stdin.close()
+        except BrokenPipeError:
+            pass  # `tar` failed, as its status says
+        files.wait()
         shutil.rmtree(stage)
+    if files.returncode:
+        raise SystemExit(f"tar failed ({files.returncode})")
     print(f"Unpacked {count} modules", file=sys.stderr)
 
 
-def without_owner(member, path):
-    """`tar --no-same-owner`: CI's runner user owns the archive's files, and
-    extracting them as root (as in a container) would keep that owner. Git
-    would then refuse the dependencies' checkouts, so Lake would clone them
-    again and build Mathlib from source."""
-    return tarfile.tar_filter(member, path).replace(uid=None, gid=None, uname=None, gname=None)
+class Tee:
+    """A stream that writes what is read from it to `out` too."""
+
+    def __init__(self, stream, out):
+        self.stream, self.out = stream, out
+
+    def read(self, size=-1):
+        data = self.stream.read(size)
+        self.out.write(data)
+        return data
 
 
 def tmp_dir():
