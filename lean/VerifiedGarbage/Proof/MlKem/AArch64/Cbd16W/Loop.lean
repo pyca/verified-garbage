@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Grp
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # `vg_mlkem16_cbd2` on AArch64: eight iterations of 32 coefficients -/
@@ -41,7 +41,7 @@ abbrev fR : Region := ⟨Cbd2.fP s₀, 512⟩
 /-- Coefficient `i` of the output. -/
 abbrev coef (i : Nat) : Nat := ((samplePolyCBD 2 (Cbd2.B s₀))[i]!).val
 /-- Byte `j` of the output: byte `j % 2` of coefficient `j / 2`. -/
-def L (j : Nat) : Byte := BitVec.ofNat 8 (coef s₀ (j / 2) / 256 ^ (j % 2))
+def L (j : Nat) : Byte := bytesW16 (coef s₀) j
 /-- The nibble of coefficient `32 k + i`. -/
 abbrev nib (k i : Nat) : Nat :=
   (Cbd16.nibble (BitVec.ofNat 8 (Cbd2.byte s₀ (16 * k + i / 2))) (i % 2 != 0)).toNat
@@ -71,26 +71,8 @@ theorem L_nib (s₀ : State) {k i b : Nat} (hk : k < 8) (hi : i < 32) (hb : b < 
     rw [Cbd2.G, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans (Fin.isLt _) (by decide)),
       show (32 * k + i) / 2 = 16 * k + i / 2 by omega, show (32 * k + i) % 2 = i % 2 by omega] at h
     exact h
-  rw [L, BitVec.toNat_ofNat, show (64 * k + 2 * i + b) / 2 = 32 * k + i by omega,
+  rw [L, bytesW16, BitVec.toNat_ofNat, show (64 * k + 2 * i + b) / 2 = 32 * k + i by omega,
     show (64 * k + 2 * i + b) % 2 = b by omega, hc]
-
-/-- `n` bytes `x` stored at byte `t` of the output. -/
-theorem bytes_write {m : Mem} {p : Addr} {N t n : Nat} {L old : Nat → Byte}
-    (h : BytesUpTo m p N t L old) (hN : N < 2 ^ 32) (hn : t + n ≤ N) {x : BitVec (8 * n)}
-    (hx : ∀ i < n, x.extractLsb' (8 * i) 8 = L (t + i)) :
-    BytesUpTo (m.write (p + BitVec.ofNat 64 t) n x) p N (t + n) L old := by
-  intro j hj
-  have d : ((p + BitVec.ofNat 64 j) - (p + BitVec.ofNat 64 t)).toNat =
-      if t ≤ j then j - t else 2 ^ 64 + j - t :=
-    Offset.sub_toNat' p (by omega) (by omega)
-  rw [Mem.write, d]
-  by_cases ht : t ≤ j
-  · rw [ite_eq_left ht]
-    by_cases hnj : j - t < n
-    · rw [ite_eq_left hnj, ite_eq_left (by omega), hx _ hnj]
-      congr 1; omega
-    · rw [ite_eq_right hnj, h j hj, ite_eq_right (by omega), ite_eq_right (by omega)]
-  · rw [ite_eq_right ht, ite_eq_right (by omega), h j hj, ite_eq_left (by omega), ite_eq_left (by omega)]
 
 /-- The constants of the loop. -/
 structure Consts (s : State) : Prop where
@@ -160,12 +142,12 @@ theorem half_ok {s₀ s : State} {k c off : Nat} (hk : k < 8) (hc : c < 2) (hoff
         exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
     (by rw [h1.get .v16]; exact hcs.lo) (by rw [h1.get .v17]; exact hcs.hi)
     (by rw [h1.v]; exact hv) (fun e _ => nib_le _ _ _) fun t x y g rd wr sp tv tm hx hy => ?_
-  have o1 := bytes_write (n := 16) hout (by decide) (by omega) (x := x) fun b hb => by
+  have o1 := BytesUpTo.writeN (n := 16) hout (by decide) (by omega) (x := x) fun b hb => by
     apply BitVec.eq_of_toNat_eq
     rw [show 64 * k + 32 * c + b = 64 * k + 2 * (16 * c + b / 2) + b % 2 by omega,
       L_nib s₀ hk (by omega) (Nat.mod_lt _ (by decide))]
     exact hx b hb
-  have o2 := bytes_write (n := 16) o1 (by decide) (by omega) (x := y) fun b hb => by
+  have o2 := BytesUpTo.writeN (n := 16) o1 (by decide) (by omega) (x := y) fun b hb => by
     apply BitVec.eq_of_toNat_eq
     rw [show 64 * k + 32 * c + 16 + b = 64 * k + 2 * (16 * c + (8 + b / 2)) + b % 2 by omega,
       L_nib s₀ hk (by omega) (Nat.mod_lt _ (by decide))]
