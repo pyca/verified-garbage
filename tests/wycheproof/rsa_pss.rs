@@ -179,11 +179,14 @@ fn rsa_pss_test() {
 /// the hash value's length: the signature verifies with its salt length and
 /// with any, and not with another; and two signatures with random salts
 /// differ. Every size of key, even where the other RSA tests leave out
-/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`).
+/// those of 3072 and 4096 bits (`harness::rsa_bits_signed`).
 #[test]
 fn rsa_pss_sign_test() {
     require_vectors!();
-    for bits in [2048, 3072, 4096] {
+    for bits in [2048, 3072, 4096]
+        .into_iter()
+        .filter(|&b| harness::rsa_bits_signed(b))
+    {
         let name = format!("rsa_pkcs1_{bits}_test.json");
         let file = harness::load::<CrtGroup, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {

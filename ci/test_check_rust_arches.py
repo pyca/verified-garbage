@@ -117,7 +117,7 @@ class Output(unittest.TestCase):
         self.assertTrue(all(e["tests"] for e in jobs))
         # The shards of a CPU, one entry each, with the same runs.
         icx = [e for e in full["cpu"] if e["chip"] == "icx"]
-        self.assertEqual([e["shard"] for e in icx], ["1/3", "2/3", "3/3"])
+        self.assertEqual([e["shard"] for e in icx], ["1/2", "2/2"])
         self.assertEqual(len({e["runs"] for e in icx}), 1)
         self.assertTrue(all("shards" not in e for e in full["cpu"]))
 

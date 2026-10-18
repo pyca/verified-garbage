@@ -55,8 +55,9 @@ pub const HOST_WITHOUT_IFMA_VAR: &str = "VG_TEST_HOST_WITHOUT_IFMA";
 /// Whether to test RSA keys of `bits` bits: every size, but on a CPU with
 /// AVX512_IFMA emulated on a host without it ([`HOST_WITHOUT_IFMA_VAR`]),
 /// where only `rsa_pss::rsa_pss_sign_test` tests the 3072- and 4096-bit keys
-/// (each of the other tests calls the same IFMA code with them). A CPU with
-/// AVX512_IFMA tests them all.
+/// (each of the other tests calls the same IFMA code with them), and only
+/// in one configuration ([`rsa_bits_signed`]). A CPU with AVX512_IFMA tests
+/// them all.
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
@@ -67,6 +68,20 @@ pub fn rsa_bits_tested(bits: usize) -> bool {
     #[cfg(not(target_arch = "x86_64"))]
     let ifma = false;
     !(bits == 3072 || bits == 4096) || !ifma || std::env::var_os(HOST_WITHOUT_IFMA_VAR).is_none()
+}
+
+/// Whether `rsa_pss::rsa_pss_sign_test` signs with RSA keys of `bits` bits:
+/// those [`rsa_bits_tested`] tests, and every size in the configuration
+/// without `VG_CPU_FEATURES` (`src/cpu.rs`), which an emulated CPU's lines
+/// in CI run once. Its other configurations call the same IFMA code with
+/// the 3072- and 4096-bit keys, emulated some thirty times slower than the
+/// ADX code, each for minutes of CI's time.
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
+pub fn rsa_bits_signed(bits: usize) -> bool {
+    rsa_bits_tested(bits) || std::env::var_os("VG_CPU_FEATURES").is_none_or(|v| v.is_empty())
 }
 
 /// Whether to test the RSA key with the modulus `n` (as [`rsa_bits_tested`]).
