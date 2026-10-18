@@ -1,5 +1,285 @@
 # rustls benchmarks: verified-garbage vs aws-lc-rs
 
+## Every rustls-bench test at d713a393
+
+Measured on main d713a393 (which includes the AVX-512 IFMA RSA public-key
+operation, #2705), with this branch's provider at 0032f886a, rustls 91aebe5d
+(with `bench/rustls.patch`) and aws-lc-rs 1.18.1 (aws-lc-sys 0.45.0).
+
+* **Hardware:** a 2.1 GHz Intel Xeon, 4 vCPUs (one thread per core) in a
+  KVM guest, with AVX-512 (IFMA, VAES, VPCLMULQDQ), SHA-NI and ADX; every
+  run pinned to one core (`taskset -c 2`), with `VG_CPU_FEATURES` unset.
+* **Command:** `rustls-bench --provider <p> --api buffered`: all 224 tests,
+  multiplier 1. Three rounds per provider, alternating which provider ran
+  first, and each value is the median of its three rounds.
+* **Units:** handshakes per second; bulk throughput in MiB/s (rustls-bench
+  prints "MB/s" but divides by 1024×1024). The percentage is
+  verified-garbage / aws-lc-rs − 1, so a positive number means that
+  verified-garbage is faster.
+
+Geometric means of the percentages:
+
+| Group | Tests | TLS 1.2 | TLS 1.3 | All |
+|---|---:|---:|---:|---:|
+| Full handshakes, client (RSA-2048 / P-256 / Ed25519) | 28 | +27% / +28% / +30% | +28% / +29% / +36% | +29% |
+| Full handshakes, server (RSA-2048 / P-256 / Ed25519) | 28 | +6% / +29% / +31% | +10% / +29% / +29% | +20% |
+| Resumed handshakes (session IDs and tickets) | 112 | +18% to +27% | +28% to +34% | +26% |
+| Bulk, ChaCha20-Poly1305 | 12 | +43% | +43% | |
+| Bulk, AES-128-GCM | 16 | +8% | +18% | |
+| Bulk, AES-256-GCM | 28 | +3% | +9% | |
+| Bulk, all | 56 | | | +16% |
+
+verified-garbage is faster in 214 of the 224 tests. The 10 tests where
+verified-garbage is slower are all within noise. They are TLS 1.2
+AES-256-GCM bulk with ECDSA and Ed25519, TLS 1.3 AES-128-GCM bulk with
+Ed25519 at mfs=10000, and two resumed TLS 1.2 ChaCha20-Poly1305 RSA tests.
+The full handshakes that RSA signing dominates, on the server side, are
+close to ties (+1% to +11%). The client side of RSA-2048 full handshakes
+verifies with the IFMA public-key operation, and is +34% to +58%.
+
+Noise: each test runs for well under a second at multiplier 1 on a shared
+VM, and single rounds dip by 20–40%. The spread of a test's three rounds,
+(max − min) / median, is 11% at the median and ~35% (handshakes) or ~25%
+(bulk) at the 90th percentile. † marks tests where the ranges of the two
+providers' rounds overlap: treat those as ties. In 150 tests,
+verified-garbage's slowest round beats aws-lc-rs's fastest. In no test is
+verified-garbage's fastest round slower than aws-lc-rs's slowest.
+
+<details><summary>All 224 tests</summary>
+
+| Scenario | verified-garbage | aws-lc-rs | % faster or slower |
+|---|---:|---:|---:|
+| **Handshakes (handshakes/s)** | | | |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume server-auth client | 10,583 | 7,439 | +42% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume server-auth server † | 2,496 | 2,451 | +2% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume mutual client | 2,180 | 1,999 | +9% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume mutual server | 2,270 | 2,127 | +7% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid server-auth client † | 129,787 | 127,628 | +2% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid server-auth server † | 144,482 | 145,959 | −1% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid mutual client | 130,316 | 122,487 | +6% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid mutual server | 141,354 | 135,620 | +4% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 tickets server-auth client † | 123,504 | 109,249 | +13% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 tickets server-auth server † | 125,516 | 107,192 | +17% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 tickets mutual client † | 73,061 | 76,998 | −5% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 tickets mutual server | 67,252 | 49,297 | +36% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 no-resume server-auth client † | 5,071 | 3,898 | +30% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 no-resume server-auth server † | 17,851 | 14,298 | +25% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 no-resume mutual client | 4,553 | 3,508 | +30% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 no-resume mutual server | 6,007 | 4,650 | +29% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 sessionid server-auth client | 138,754 | 113,439 | +22% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 sessionid server-auth server | 153,448 | 119,375 | +29% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 sessionid mutual client | 133,139 | 119,282 | +12% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 sessionid mutual server | 143,554 | 122,644 | +17% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 tickets server-auth client | 126,989 | 90,243 | +41% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 tickets server-auth server | 127,911 | 86,349 | +48% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 tickets mutual client | 95,841 | 80,480 | +19% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 tickets mutual server | 91,120 | 59,465 | +53% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 no-resume server-auth client | 10,809 | 6,845 | +58% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 no-resume server-auth server † | 2,512 | 2,257 | +11% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 no-resume mutual client | 2,213 | 1,969 | +12% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 no-resume mutual server | 2,335 | 2,109 | +11% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 sessionid server-auth client † | 138,746 | 128,577 | +8% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 sessionid server-auth server † | 160,104 | 147,707 | +8% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 sessionid mutual client † | 138,557 | 125,625 | +10% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 sessionid mutual server | 150,956 | 141,391 | +7% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 tickets server-auth client | 131,529 | 114,097 | +15% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 tickets server-auth server | 135,402 | 109,042 | +24% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 tickets mutual client | 83,612 | 75,319 | +11% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 tickets mutual server | 77,337 | 48,725 | +59% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 no-resume server-auth client | 9,759 | 7,076 | +38% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 no-resume server-auth server † | 2,452 | 2,429 | +1% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 no-resume mutual client † | 2,005 | 1,854 | +8% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 no-resume mutual server † | 2,099 | 1,965 | +7% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 sessionid server-auth client | 84,797 | 72,692 | +17% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 sessionid server-auth server | 91,464 | 78,355 | +17% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 sessionid mutual client | 85,319 | 66,374 | +29% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 sessionid mutual server | 90,624 | 69,784 | +30% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 tickets server-auth client † | 77,205 | 52,082 | +48% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 tickets server-auth server | 78,117 | 50,882 | +54% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 tickets mutual client | 46,268 | 32,109 | +44% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 tickets mutual server | 43,418 | 24,949 | +74% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 no-resume server-auth client | 4,645 | 3,722 | +25% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 no-resume server-auth server | 15,276 | 11,633 | +31% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 no-resume mutual client | 4,248 | 3,336 | +27% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 no-resume mutual server | 5,590 | 4,298 | +30% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 sessionid server-auth client † | 74,850 | 73,309 | +2% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 sessionid server-auth server † | 80,547 | 78,315 | +3% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 sessionid mutual client | 89,164 | 67,716 | +32% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 sessionid mutual server | 92,299 | 72,120 | +28% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 tickets server-auth client | 81,136 | 64,509 | +26% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 tickets server-auth server | 82,091 | 60,097 | +37% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 tickets mutual client † | 56,064 | 45,122 | +24% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 tickets mutual server | 54,565 | 36,489 | +50% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 no-resume server-auth client † | 1,549 | 1,304 | +19% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 no-resume server-auth server | 9,414 | 6,416 | +47% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 no-resume mutual client | 1,457 | 1,118 | +30% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 no-resume mutual server | 2,034 | 1,565 | +30% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 sessionid server-auth client † | 80,180 | 76,190 | +5% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 sessionid server-auth server † | 86,277 | 81,388 | +6% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 sessionid mutual client † | 81,081 | 77,134 | +5% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 sessionid mutual server † | 85,936 | 81,131 | +6% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 tickets server-auth client | 81,368 | 70,255 | +16% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 tickets server-auth server | 82,038 | 68,194 | +20% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 tickets mutual client † | 55,783 | 50,134 | +11% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 tickets mutual server | 52,293 | 40,750 | +28% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 no-resume server-auth client † | 7,912 | 5,749 | +38% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 no-resume server-auth server † | 19,000 | 15,652 | +21% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 no-resume mutual client | 5,981 | 4,419 | +35% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 no-resume mutual server † | 7,417 | 5,890 | +26% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 sessionid server-auth client † | 77,010 | 72,225 | +7% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 sessionid server-auth server † | 82,733 | 77,607 | +7% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 sessionid mutual client | 88,307 | 69,182 | +28% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 sessionid mutual server | 93,412 | 71,766 | +30% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 tickets server-auth client | 81,785 | 61,485 | +33% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 tickets server-auth server | 82,643 | 61,653 | +34% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 tickets mutual client | 55,712 | 46,883 | +19% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 tickets mutual server | 53,728 | 39,558 | +36% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume server-auth client | 7,174 | 5,365 | +34% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume server-auth server † | 2,309 | 2,275 | +1% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume mutual client | 2,015 | 1,723 | +17% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 no-resume mutual server † | 2,155 | 1,893 | +14% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid server-auth client | 12,616 | 9,535 | +32% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid server-auth server | 14,715 | 11,154 | +32% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid mutual client | 13,199 | 9,576 | +38% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 sessionid mutual server | 14,920 | 10,793 | +38% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 tickets server-auth client | 12,808 | 10,092 | +27% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 tickets server-auth server | 14,958 | 11,507 | +30% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 tickets mutual client | 11,187 | 9,844 | +14% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 tickets mutual server | 11,760 | 9,431 | +25% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 no-resume server-auth client | 6,775 | 4,725 | +43% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 no-resume server-auth server | 2,317 | 2,137 | +8% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 no-resume mutual client | 2,043 | 1,675 | +22% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 no-resume mutual server | 2,144 | 1,810 | +18% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 sessionid server-auth client | 10,199 | 7,739 | +32% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 sessionid server-auth server | 10,986 | 8,479 | +30% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 sessionid mutual client | 9,884 | 7,418 | +33% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 sessionid mutual server | 10,517 | 7,940 | +32% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 tickets server-auth client | 9,379 | 7,773 | +21% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 tickets server-auth server | 10,174 | 8,305 | +22% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 tickets mutual client | 7,796 | 6,709 | +16% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 tickets mutual server | 7,613 | 6,205 | +23% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 no-resume server-auth client | 3,907 | 2,650 | +47% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 no-resume server-auth server | 9,731 | 6,373 | +53% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 no-resume mutual client | 3,412 | 2,665 | +28% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 no-resume mutual server | 4,288 | 3,432 | +25% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 sessionid server-auth client | 9,841 | 6,367 | +55% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 sessionid server-auth server | 10,586 | 6,935 | +53% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 sessionid mutual client | 9,402 | 7,135 | +32% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 sessionid mutual server | 10,058 | 7,709 | +30% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 tickets server-auth client † | 9,571 | 7,601 | +26% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 tickets server-auth server † | 10,322 | 8,109 | +27% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 tickets mutual client | 9,029 | 7,129 | +27% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 tickets mutual server | 9,071 | 7,026 | +29% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 no-resume server-auth client | 5,392 | 4,011 | +34% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 no-resume server-auth server † | 10,121 | 8,206 | +23% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 no-resume mutual client | 5,214 | 3,677 | +42% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 no-resume mutual server | 6,385 | 4,562 | +40% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 sessionid server-auth client | 10,289 | 7,524 | +37% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 sessionid server-auth server | 11,043 | 8,176 | +35% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 sessionid mutual client | 9,913 | 7,470 | +33% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 sessionid mutual server | 10,577 | 8,019 | +32% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 tickets server-auth client | 10,056 | 7,247 | +39% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 tickets server-auth server | 10,872 | 7,648 | +42% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 tickets mutual client | 9,603 | 6,843 | +40% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 tickets mutual server | 9,824 | 6,808 | +44% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 no-resume server-auth client | 7,359 | 5,309 | +39% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 no-resume server-auth server † | 2,336 | 2,248 | +4% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 no-resume mutual client † | 2,096 | 1,796 | +17% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 no-resume mutual server † | 2,229 | 1,951 | +14% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 sessionid server-auth client | 12,818 | 9,504 | +35% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 sessionid server-auth server | 14,852 | 11,143 | +33% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 sessionid mutual client | 12,586 | 9,071 | +39% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 sessionid mutual server | 14,136 | 10,436 | +35% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 tickets server-auth client | 13,201 | 10,141 | +30% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 tickets server-auth server | 15,275 | 11,690 | +31% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 tickets mutual client | 12,287 | 9,695 | +27% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 tickets mutual server | 13,028 | 9,383 | +39% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 no-resume server-auth client | 4,297 | 3,062 | +40% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 no-resume server-auth server | 12,385 | 8,887 | +39% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 no-resume mutual client | 3,261 | 3,110 | +5% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 no-resume mutual server † | 4,311 | 4,130 | +4% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 sessionid server-auth client | 11,988 | 10,410 | +15% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 sessionid server-auth server | 13,520 | 12,122 | +12% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 sessionid mutual client | 12,166 | 10,161 | +20% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 sessionid mutual server | 13,839 | 11,690 | +18% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 tickets server-auth client | 12,240 | 9,498 | +29% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 tickets server-auth server | 14,225 | 10,842 | +31% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 tickets mutual client † | 11,745 | 9,769 | +20% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 tickets mutual server † | 12,704 | 10,168 | +25% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 no-resume server-auth client | 5,828 | 4,570 | +28% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 no-resume server-auth server | 12,671 | 10,998 | +15% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 no-resume mutual client | 5,808 | 4,116 | +41% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 no-resume mutual server | 7,585 | 5,400 | +40% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 sessionid server-auth client | 12,862 | 9,368 | +37% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 sessionid server-auth server | 14,847 | 10,972 | +35% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 sessionid mutual client | 12,922 | 9,542 | +35% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 sessionid mutual server | 14,690 | 10,962 | +34% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 tickets server-auth client † | 12,689 | 10,202 | +24% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 tickets server-auth server † | 14,856 | 11,530 | +29% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 tickets mutual client | 11,842 | 9,467 | +25% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 tickets mutual server | 12,866 | 10,018 | +28% |
+| **Bulk (MiB/s; rustls-bench labels it MB/s)** | | | |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=default send | 2,368 | 1,642 | +44% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=default recv | 2,300 | 1,639 | +40% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=10000 send | 2,264 | 1,656 | +37% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=10000 recv | 2,236 | 1,625 | +38% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 bulk mfs=default send | 2,466 | 1,698 | +45% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 bulk mfs=default recv | 2,417 | 1,669 | +45% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 bulk mfs=10000 send | 2,397 | 1,624 | +48% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ECDSA P-256 bulk mfs=10000 recv | 2,389 | 1,589 | +50% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 bulk mfs=default send † | 10,182 | 9,579 | +6% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 bulk mfs=default recv | 9,757 | 8,724 | +12% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 bulk mfs=10000 send † | 9,764 | 9,359 | +4% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 RSA-2048 bulk mfs=10000 recv † | 8,972 | 8,306 | +8% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 bulk mfs=default send † | 9,005 | 8,684 | +4% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 bulk mfs=default recv † | 8,422 | 7,867 | +7% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 bulk mfs=10000 send † | 8,463 | 8,254 | +3% |
+| TLS1.2 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 RSA-2048 bulk mfs=10000 recv † | 7,868 | 7,463 | +5% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=default send † | 7,917 | 8,715 | −9% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=default recv † | 7,507 | 8,081 | −7% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=10000 send † | 7,621 | 7,649 | 0% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=10000 recv † | 7,020 | 6,692 | +5% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 bulk mfs=default send | 9,233 | 8,966 | +3% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 bulk mfs=default recv † | 8,535 | 7,683 | +11% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 bulk mfs=10000 send † | 8,708 | 8,309 | +5% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ECDSA P-384 bulk mfs=10000 recv † | 8,482 | 7,052 | +20% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 bulk mfs=default send † | 8,782 | 9,001 | −2% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 bulk mfs=default recv † | 8,358 | 8,431 | −1% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 bulk mfs=10000 send † | 8,640 | 8,438 | +2% |
+| TLS1.2 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Ed25519 bulk mfs=10000 recv † | 7,940 | 7,552 | +5% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=default send | 2,454 | 1,698 | +45% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=default recv | 2,404 | 1,725 | +39% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=10000 send | 2,286 | 1,571 | +46% |
+| TLS1.3 TLS13_CHACHA20_POLY1305_SHA256 RSA-2048 bulk mfs=10000 recv | 2,233 | 1,575 | +42% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 bulk mfs=default send † | 9,369 | 8,704 | +8% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 bulk mfs=default recv † | 8,995 | 8,295 | +8% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 bulk mfs=10000 send | 8,951 | 8,420 | +6% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 RSA-2048 bulk mfs=10000 recv | 8,058 | 7,555 | +7% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=default send † | 8,959 | 8,971 | 0% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=default recv † | 8,575 | 8,423 | +2% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=10000 send | 9,124 | 7,542 | +21% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 ECDSA P-256 bulk mfs=10000 recv | 8,041 | 6,750 | +19% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 bulk mfs=default send † | 9,680 | 8,826 | +10% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 bulk mfs=default recv † | 9,331 | 8,326 | +12% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 bulk mfs=10000 send † | 9,095 | 8,324 | +9% |
+| TLS1.3 TLS13_AES_256_GCM_SHA384 Ed25519 bulk mfs=10000 recv † | 8,272 | 7,438 | +11% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 bulk mfs=default send | 10,733 | 8,040 | +33% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 bulk mfs=default recv | 10,368 | 7,279 | +42% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 bulk mfs=10000 send | 10,094 | 7,275 | +39% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 RSA-2048 bulk mfs=10000 recv | 8,845 | 6,371 | +39% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 bulk mfs=default send | 10,474 | 8,863 | +18% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 bulk mfs=default recv † | 10,040 | 8,970 | +12% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 bulk mfs=10000 send | 9,870 | 7,989 | +24% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 ECDSA P-256 bulk mfs=10000 recv | 8,777 | 7,063 | +24% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 bulk mfs=default send † | 10,462 | 10,017 | +4% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 bulk mfs=default recv † | 10,006 | 9,469 | +6% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 bulk mfs=10000 send † | 9,057 | 9,532 | −5% |
+| TLS1.3 TLS13_AES_128_GCM_SHA256 Ed25519 bulk mfs=10000 recv † | 7,909 | 8,387 | −6% |
+
+</details>
+
+## Earlier runs
+
 The run at 7c42c0e1, in detail (a native Cascade Lake run at f4f61d14 and a refresh at ecd4fc1e come first): measured with `bench/run.sh 5`
 on a 2.1 GHz Intel Xeon (Emerald Rapids) with SHA-NI, AVX-512 (IFMA, VAES,
 VPCLMULQDQ) and ADX, with rustls 91aebe5d and aws-lc-rs 1.18.1, each
