@@ -53,90 +53,166 @@ theorem expByteNext_mem (s : State) {base ep : BitVec 32} {len w c : Nat}
   rw [zeroT, zero, ← f.gpr, value, ofNat_beq_zero (by omega)]
   exact decide_eq_decide.mpr (by omega)
 
+/-- The first `j` exponent bytes are applied; the exponent buffer is where it was. -/
+structure WinByteLoop (base ep : BitVec 32) (len w M x : Nat) (eb : List Byte) (j : Nat) (s : State) : Prop where
+  state : ∃ A p, WinState base len w M x A p (8 * j % 3) s ∧ A + p = pre eb j
+  pointer : s.mem.readW (off (State.addr base) 128) 32 = ep + BitVec.ofNat 32 j
+  count : s.mem.readW (off (State.addr base) 132) 32 = BitVec.ofNat 32 (eb.length - j)
+  countFit : eb.length < 2 ^ 32
+  sourceFit : ep.toNat + eb.length ≤ 2 ^ 32
+  read : InRegions (s.rd ++ s.wr) (State.addr ep) eb.length
+  separate : Region.Disjoint ⟨State.addr ep, eb.length⟩ ⟨State.addr base, 8 * len⟩
+  bytes : ∀ i (hi : i < eb.length), s.mem (State.addr ep + BitVec.ofNat 64 i) = eb[i]
+
+theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} {eb : List Byte}
+    (h : WinByteLoop base ep len w M x eb j t) (hj : j < eb.length) :
+    WP isa (.seq expByteHead (.seq windowBits (.block expByteNext))) t fun z =>
+      WinByteLoop base ep len w M x eb (j + 1) z ∧ z.z = decide (j + 1 = eb.length) ∧
+      Frame [⟨State.addr base, 8 * len⟩] t.mem z.mem ∧ Rest roundClobbers t z := by
+  obtain ⟨⟨A, p, state, sum⟩, ptr, counter, countFit, sourceFit, read, separate, bytes⟩ := h
+  have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
+    addr_add (by omega)
+  have currentRead : InRegions (t.rd ++ t.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
+    rw [address]
+    exact CallLay.inRegions_sub read (by omega) (by omega)
+  have currentByte : t.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
+    rw [address]; exact bytes j hj
+  rw [WP.seq_iff]
+  refine WP.mono (windowByteHead_ok t state ptr currentRead) ?_
+  rintro u ⟨stateU, byteU, countU, keepsU, frameU, restU⟩
+  rw [currentByte] at byteU
+  have v256 := (eb[j]).isLt
+  rw [WP.seq_iff]
+  refine WP.mono (windowBits_ok u (E := pre eb j) (v := (eb[j]).toNat) (n := 8 * j)
+    ⟨⟨A, p, stateU, by rw [sum, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, show 2 ^ 8 = 256 from rfl,
+      Nat.div_eq_of_lt v256, Nat.add_zero]⟩, by rw [Nat.pow_zero, Nat.mul_one]; exact byteU, countU⟩ v256) ?_
+  rintro y ⟨⟨A', p', stateY, sumY⟩, keepsY, frameY, restY⟩
+  rw [show 8 * j + 8 = 8 * (j + 1) by omega] at stateY
+  have ptrY := (keepsY 128 (by simp)).trans ((keepsU 128 (by simp)).trans ptr)
+  have countY := (keepsY 132 (by simp)).trans ((keepsU 132 (by simp)).trans counter)
+  refine WP.mono (expByteNext_mem y stateY.power.ready (c := eb.length - j) (by omega) (by omega) ptrY countY) ?_
+  rintro z ⟨memZ, zero, restZ⟩
+  have ctl : CtlOnly base y.mem z.mem := by
+    rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
+  have fits := stateY.fits
+  have nowrap := stateY.power.ready.workspace.nowrap
+  obtain ⟨powerZ, frameZ⟩ := stateY.power.after_ctl ctl restZ
+    ((restZ.gpr .r0 (by simp)).trans stateY.power.ready.ptr)
+  obtain ⟨ptrZ, counterZ⟩ := two_writes y.mem base (d := 128) (e := 132)
+    (ep + BitVec.ofNat 32 j + 1) (BitVec.ofNat 32 (eb.length - j - 1)) (by decide) (by decide) (by decide)
+  rw [← memZ] at ptrZ counterZ
+  have keep (a : Nat) (ha : 136 ≤ a) (ha' : a + 4 ≤ 256) :
+      z.mem.readW (off (State.addr base) a) 32 = y.mem.readW (off (State.addr base) a) 32 := by
+    rw [memZ]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
+  have stateZ : WinState base len w M x A' p' (8 * (j + 1) % 3) z :=
+    ⟨powerZ, stateY.table.after_ctl ctl fits nowrap (by decide), fits,
+      by rw [keep 196 (by decide) (by decide)]; exact stateY.digit,
+      by rw [keep 204 (by decide) (by decide)]; exact stateY.pending, stateY.bound, stateY.short⟩
+  have prefixEq : 256 * pre eb j + (eb[j]).toNat = pre eb (j + 1) := by
+    rw [pre_succ eb hj, Nat.mul_comm]
+  rw [prefixEq] at sumY
+  have frameAll := frameU.trans (frameY.trans frameZ)
+  have restAll := restU.trans (restY.trans (rest_round restZ))
+  refine ⟨⟨⟨A', p', stateZ, sumY⟩, ?_, ?_, countFit, sourceFit, ?_, separate, ?_⟩, ?_, frameAll, restAll⟩
+  · rw [ptrZ]
+    change ep + BitVec.ofNat 32 j + BitVec.ofNat 32 1 = _
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  · rw [counterZ]; congr 1
+  · rw [restAll.rd, restAll.wr]; exact read
+  · intro i hi
+    rw [frameAll.bytes (R := ⟨State.addr ep, eb.length⟩)
+      (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact separate)
+      (by change eb.length ≤ 2 ^ 64; omega) hi]
+    exact bytes i hi
+  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+
 theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
-    (h : WinState base len w M x 0 0 0 s) (positive : 0 < eb.length) (countFit : eb.length < 2 ^ 32)
-    (sourceFit : ep.toNat + eb.length ≤ 2 ^ 32)
-    (read : InRegions (s.rd ++ s.wr) (State.addr ep) eb.length)
-    (separate : Region.Disjoint ⟨State.addr ep, eb.length⟩ ⟨State.addr base, 8 * len⟩)
-    (bytes : ∀ i (hi : i < eb.length), s.mem (State.addr ep + BitVec.ofNat 64 i) = eb[i])
-    (pointer : s.mem.readW (off (State.addr base) 128) 32 = ep)
-    (count : s.mem.readW (off (State.addr base) 132) 32 = BitVec.ofNat 32 eb.length) :
+    (h : WinByteLoop base ep len w M x eb 0 s) (positive : 0 < eb.length) :
     WP isa windowBytes s fun t =>
       (∃ A p, WinState base len w M x A p (8 * eb.length % 3) t ∧ A + p = Spec.Rsa.os2ip eb) ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  let I := fun k t => ∃ j, j + k = eb.length ∧ 0 < k ∧
-    (∃ A p, WinState base len w M x A p (8 * j % 3) t ∧ A + p = pre eb j) ∧
-    t.mem.readW (off (State.addr base) 128) 32 = ep + BitVec.ofNat 32 j ∧
-    t.mem.readW (off (State.addr base) 132) 32 = BitVec.ofNat 32 k ∧
+  let I := fun k t => ∃ j, j + k = eb.length ∧ 0 < k ∧ WinByteLoop base ep len w M x eb j t ∧
     Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
   unfold windowBytes
   refine WP.loop (M := isa) I ?_ eb.length s ?_
   · intro k t inv
-    obtain ⟨j, jk, hk, ⟨A, p, state, sum⟩, ptr, counter, frame, rest⟩ := inv
-    have hj : j < eb.length := by omega
-    have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-      addr_add (by omega)
-    have currentRead : InRegions (t.rd ++ t.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
-      rw [rest.rd, rest.wr, address]
-      exact CallLay.inRegions_sub read (by omega) (by omega)
-    have currentByte : t.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
-      rw [address, frame.bytes (R := ⟨State.addr ep, eb.length⟩)
-        (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact separate)
-        (by change eb.length ≤ 2 ^ 64; omega) hj]
-      exact bytes j hj
-    rw [WP.seq_iff]
-    refine WP.mono (windowByteHead_ok t state ptr currentRead) ?_
-    rintro u ⟨stateU, byteU, countU, keepsU, frameU, restU⟩
-    rw [currentByte] at byteU
-    have v256 := (eb[j]).isLt
-    rw [WP.seq_iff]
-    refine WP.mono (windowBits_ok u (E := pre eb j) (v := (eb[j]).toNat) (n := 8 * j)
-      ⟨⟨A, p, stateU, by rw [sum, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, show 2 ^ 8 = 256 from rfl,
-        Nat.div_eq_of_lt v256, Nat.add_zero]⟩, by rw [Nat.pow_zero, Nat.mul_one]; exact byteU, countU⟩ v256) ?_
-    rintro y ⟨⟨A', p', stateY, sumY⟩, keepsY, frameY, restY⟩
-    rw [show 8 * j + 8 = 8 * (j + 1) by omega] at stateY
-    have ptrY := (keepsY 128 (by simp)).trans ((keepsU 128 (by simp)).trans ptr)
-    have countY := (keepsY 132 (by simp)).trans ((keepsU 132 (by simp)).trans counter)
-    refine WP.mono (expByteNext_mem y stateY.power.ready hk (by omega) ptrY countY) ?_
-    rintro z ⟨memZ, zero, restZ⟩
-    have ctl : CtlOnly base y.mem z.mem := by
-      rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
-    have fits := stateY.fits
-    have nowrap := stateY.power.ready.workspace.nowrap
-    obtain ⟨powerZ, frameZ⟩ := stateY.power.after_ctl ctl restZ
-      ((restZ.gpr .r0 (by simp)).trans stateY.power.ready.ptr)
-    obtain ⟨ptrZ, counterZ⟩ := two_writes y.mem base (d := 128) (e := 132)
-      (ep + BitVec.ofNat 32 j + 1) (BitVec.ofNat 32 (k - 1)) (by decide) (by decide) (by decide)
-    rw [← memZ] at ptrZ counterZ
-    have keep (a : Nat) (ha : 136 ≤ a) (ha' : a + 4 ≤ 256) :
-        z.mem.readW (off (State.addr base) a) 32 = y.mem.readW (off (State.addr base) a) 32 := by
-      rw [memZ]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
-    have stateZ : WinState base len w M x A' p' (8 * (j + 1) % 3) z :=
-      ⟨powerZ, stateY.table.after_ctl ctl fits nowrap (by decide), fits,
-        by rw [keep 196 (by decide) (by decide)]; exact stateY.digit,
-        by rw [keep 204 (by decide) (by decide)]; exact stateY.pending, stateY.bound, stateY.short⟩
-    have prefixEq : 256 * pre eb j + (eb[j]).toNat = pre eb (j + 1) := by
-      rw [pre_succ eb hj, Nat.mul_comm]
-    rw [prefixEq] at sumY
-    have ptrNext : z.mem.readW (off (State.addr base) 128) 32 = ep + BitVec.ofNat 32 (j + 1) := by
-      rw [ptrZ]
-      change ep + BitVec.ofNat 32 j + BitVec.ofNat 32 1 = _
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    have frameAll := frame.trans (frameU.trans (frameY.trans frameZ))
-    have restAll := rest.trans (restU.trans (restY.trans (rest_round restZ)))
-    by_cases last : k = 1
+    obtain ⟨j, jk, hk, state, frame, rest⟩ := inv
+    refine WP.mono (windowByteStep_ok t state (by omega)) ?_
+    rintro z ⟨stateZ, zero, frameZ, restZ⟩
+    by_cases last : j + 1 = eb.length
     · left
-      refine ⟨?_, ⟨A', p', by rw [← show j + 1 = eb.length by omega]; exact stateZ,
-        by simpa only [show j + 1 = eb.length by omega, pre_len] using sumY⟩, frameAll, restAll⟩
+      obtain ⟨A', p', winZ, sumZ⟩ := stateZ.state
+      refine ⟨?_, ⟨A', p', by rw [← last]; exact winZ, by rw [sumZ, last, pre_len]⟩, frame.trans frameZ,
+        rest.trans restZ⟩
       change some (!z.z) = some false
       simp only [zero, last, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, ⟨A', p', stateZ, sumY⟩, ptrNext,
-        counterZ, frameAll, restAll⟩
+      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, stateZ, frame.trans frameZ, rest.trans restZ⟩
       change some (!z.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, positive, ⟨0, 0, h, by rw [pre_zero]⟩, ?_, count, Frame.refl _ _, Rest.refl _ _⟩
-    simpa only [BitVec.add_zero] using pointer
+  · exact ⟨0, by omega, positive, h, Frame.refl _ _, Rest.refl _ _⟩
+
+/-- The table built, the exponent's controls as `expInit` left them. -/
+structure WinReady (base ep : BitVec 32) (len w M x : Nat) (eb : List Byte) (s : State) : Prop where
+  power : ExpState base len w M x 0 s
+  table : TableHolds s.mem base w M x 8
+  fits : arrAt w 16 ≤ 8 * len
+  pointer : s.mem.readW (off (State.addr base) 128) 32 = ep
+  count : s.mem.readW (off (State.addr base) 132) 32 = BitVec.ofNat 32 eb.length
+  countFit : eb.length < 2 ^ 32
+  sourceFit : ep.toNat + eb.length ≤ 2 ^ 32
+  read : InRegions (s.rd ++ s.wr) (State.addr ep) eb.length
+  separate : Region.Disjoint ⟨State.addr ep, eb.length⟩ ⟨State.addr base, 8 * len⟩
+  bytes : ∀ i (hi : i < eb.length), s.mem (State.addr ep + BitVec.ofNat 64 i) = eb[i]
+
+theorem phaseTable_ok (u : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
+    (ready : ExpByteState base ep len w M x eb 0 u) (fits : arrAt w 16 ≤ 8 * len) :
+    WP isa tableBuild u fun v => WinReady base ep len w M x eb v ∧
+      Frame [⟨State.addr base, 8 * len⟩] u.mem v.mem ∧ Rest roundClobbers u v := by
+  refine WP.mono (tableBuild_ok u ready.power fits) ?_
+  rintro v ⟨powerV, tableV, keepsV, frameV, restV⟩
+  refine ⟨⟨powerV, tableV, fits, by rw [keepsV 128 (by simp), ready.pointer, BitVec.add_zero],
+    by rw [keepsV 132 (by simp), ready.count, Nat.sub_zero], ready.countFit, ready.sourceFit,
+    by rw [restV.rd, restV.wr]; exact ready.read, ready.separate, ?_⟩, frameV, restV⟩
+  intro i hi
+  rw [frameV.bytes (R := ⟨State.addr ep, eb.length⟩)
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact ready.separate)
+    (by change eb.length ≤ 2 ^ 64; have := ready.countFit; omega) hi]
+  exact ready.bytes i hi
+
+theorem phaseReset_ok (v : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
+    (h : WinReady base ep len w M x eb v) :
+    WP isa (.block windowReset) v fun z => WinByteLoop base ep len w M x eb 0 z ∧
+      Frame [⟨State.addr base, 8 * len⟩] v.mem z.mem ∧ Rest roundClobbers v z := by
+  have fits := h.fits
+  have nowrap := h.power.ready.workspace.nowrap
+  refine WP.mono (windowReset_ok v h.power.ready) ?_
+  rintro z ⟨memZ, restZ⟩
+  have ctl : CtlOnly base v.mem z.mem := by
+    rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
+  obtain ⟨powerZ, frameZ⟩ := h.power.after_ctl ctl restZ ((restZ.gpr .r0 (by simp)).trans h.power.ready.ptr)
+  obtain ⟨digitZ, pendingZ⟩ := two_writes v.mem base (d := 196) (e := 204)
+    (BitVec.ofNat 32 0) (BitVec.ofNat 32 0) (by decide) (by decide) (by decide)
+  rw [← memZ] at digitZ pendingZ
+  have keepsZ : KeepsExp base v.mem z.mem := by
+    rw [memZ]; exact KeepsExp.of_writes _ _ _ _ (Or.inr rfl) (by decide) (Or.inl (by decide)) (by decide)
+  have stateZ : WinState base len w M x 0 0 0 z :=
+    ⟨powerZ, h.table.after_ctl ctl fits nowrap (by decide), fits, digitZ, pendingZ, by decide, by decide⟩
+  refine ⟨⟨⟨0, 0, stateZ, by rw [pre_zero]⟩, by rw [keepsZ 128 (by simp), h.pointer, BitVec.add_zero],
+    by rw [keepsZ 132 (by simp), h.count, Nat.sub_zero], h.countFit, h.sourceFit,
+    by rw [restZ.rd, restZ.wr]; exact h.read, h.separate, ?_⟩, frameZ, rest_round restZ⟩
+  intro i hi
+  rw [frameZ.bytes (R := ⟨State.addr ep, eb.length⟩)
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
+    (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega) hi]
+  exact h.bytes i hi
+
+theorem pending_digit {A p L : Nat} {base : BitVec 32} {len w M x : Nat} {s : State}
+    (h : WinState base len w M x A p (8 * L % 3) s) : p < 8 := by
+  have := h.bound
+  have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 * L % 3 ≤ 2 by omega)
+  simp only [show 2 ^ 2 = 4 from rfl] at this
+  omega
 
 theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
     (h : ExpPhaseInput base ep len w M x eb s) (fits : arrAt w 16 ≤ 8 * len) :
@@ -146,47 +222,20 @@ theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {e
       numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧
       numAt t.mem (State.addr base) w 7 = 1 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have nowrap := h.ready.workspace.nowrap
   rw [windowExpPhase, WP.seq_iff]
   refine WP.mono (expPhase_init_ready s h) ?_
   rintro u ⟨ready, frameU, restU⟩
   rw [WP.seq_iff]
-  refine WP.mono (tableBuild_ok u ready.power fits) ?_
-  rintro v ⟨powerV, tableV, keepsV, frameV, restV⟩
+  refine WP.mono (phaseTable_ok u ready fits) ?_
+  rintro v ⟨readyV, frameV, restV⟩
   rw [WP.seq_iff]
-  refine WP.mono (windowReset_ok v powerV.ready) ?_
-  rintro z ⟨memZ, restZ⟩
-  have ctl : CtlOnly base v.mem z.mem := by
-    rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
-  obtain ⟨powerZ, frameZ⟩ := powerV.after_ctl ctl restZ ((restZ.gpr .r0 (by simp)).trans powerV.ready.ptr)
-  obtain ⟨digitZ, pendingZ⟩ := two_writes v.mem base (d := 196) (e := 204)
-    (BitVec.ofNat 32 0) (BitVec.ofNat 32 0) (by decide) (by decide) (by decide)
-  rw [← memZ] at digitZ pendingZ
-  have keepsZ : KeepsExp base u.mem z.mem := keepsV.trans (by
-    rw [memZ]; exact KeepsExp.of_writes _ _ _ _ (Or.inr rfl) (by decide) (Or.inl (by decide)) (by decide))
-  have stateZ : WinState base len w M x 0 0 0 z :=
-    ⟨powerZ, tableV.after_ctl ctl fits nowrap (by decide), fits, digitZ, pendingZ, by decide, by decide⟩
-  have frameUZ := frameV.trans frameZ
-  have restUZ : Rest roundClobbers u z := restV.trans (rest_round restZ)
+  refine WP.mono (phaseReset_ok v readyV) ?_
+  rintro z ⟨loopZ, frameZ, restZ⟩
   rw [WP.seq_iff]
-  refine WP.mono (windowBytes_ok z stateZ h.positive ready.countFit ready.sourceFit
-    (by rw [restUZ.rd, restUZ.wr]; exact ready.read) ready.separate
-    (by
-      intro i hi
-      rw [frameUZ.bytes (R := ⟨State.addr ep, eb.length⟩)
-        (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact ready.separate)
-        (by change eb.length ≤ 2 ^ 64; have := ready.countFit; omega) hi]
-      exact ready.bytes i hi)
-    (by rw [keepsZ 128 (by simp), ready.pointer, BitVec.add_zero])
-    (by rw [keepsZ 132 (by simp), ready.count, Nat.sub_zero])) ?_
+  refine WP.mono (windowBytes_ok z loopZ h.positive) ?_
   rintro y ⟨⟨A, p, stateY, sum⟩, frameY, restY⟩
   rw [WP.seq_iff]
-  have small : p < 8 := by
-    have := stateY.bound
-    have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 * eb.length % 3 ≤ 2 by omega)
-    simp only [show 2 ^ 2 = 4 from rfl] at this
-    omega
-  refine WP.mono (windowApply_ok y stateY.power stateY.table fits small stateY.digit) ?_
+  refine WP.mono (windowApply_ok y stateY.power stateY.table fits (pending_digit stateY) stateY.digit) ?_
   rintro r ⟨powerR, _, _, _, _, frameR, restR⟩
   rw [sum] at powerR
   refine WP.mono (exp_finish_ok r powerR) ?_
@@ -198,7 +247,8 @@ theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {e
     (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.r2
   have one := (keeps_array_num keeps fits8 (q := 7)
     (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans powerR.one
-  exact ⟨final, value, modulus, r2, one, frameU.trans (frameUZ.trans (frameY.trans (frameR.trans frameT))),
-    restU.trans (restUZ.trans (restY.trans (restR.trans restT)))⟩
+  exact ⟨final, value, modulus, r2, one,
+    frameU.trans (frameV.trans (frameZ.trans (frameY.trans (frameR.trans frameT)))),
+    restU.trans (restV.trans (restZ.trans (restY.trans (restR.trans restT))))⟩
 
 end VG.Proof.Bignum.Arm
