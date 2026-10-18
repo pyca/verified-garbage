@@ -111,9 +111,9 @@ def addD (M : Mod) (acc o a b : Nat) : Prog isa := .seq (addDigits M acc a b) (c
 /-! ## The multiplication -/
 
 /-- Digit `h` of the word in `r7`, times `r2`, plus the carry `r3`, added to
-the window's digit at `[r10 + 4h]`, its carry to `r3`. -/
+the window's digit at `[r10 + 4h]` (by `mla`), its carry to `r3`. -/
 def macD (h : Nat) : List Instr :=
-  [half .r4 .r7 h, .mul .r4 .r2 .r4, .ldr .r5 .r10 (4 * h), .dp .add .r5 .r5 (.reg .r4),
+  [half .r4 .r7 h, .ldr .r5 .r10 (4 * h), .mla .r5 .r2 .r4 .r5,
     .dp .add .r5 .r5 (.reg .r3), .dp .and .r4 .r5 (.reg .r6), .str .r4 .r10 (4 * h),
     .mov .r3 (.shifted .r5 .lsr 16)]
 
