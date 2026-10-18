@@ -667,6 +667,48 @@ mod tests {
         }
     }
 
+    // The bounded full-exponent reductions rely on checks that precede
+    // them. Exercise both failed prerequisites and padded factor lengths
+    // through the primitive, preserving the FFI's length constraints.
+    #[test]
+    fn check_key_full_exponent_bounds() {
+        for a in SIZES {
+            for swap in [false, true] {
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
+                let d = mul(ones, third);
+                let new = || PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
+                for bad_d in [n.clone(), vec![0xff; n.len()]] {
+                    let mut key = new();
+                    key.d = bad_d;
+                    assert!(!key.check_key());
+                }
+                for factor in 0..2 {
+                    for byte in [0, 1, 0xff] {
+                        let mut key = new();
+                        let value = if factor == 0 { &mut key.p } else { &mut key.q };
+                        value.fill(0);
+                        *value.last_mut().unwrap() = byte;
+                        assert!(!key.check_key());
+                    }
+                }
+                let mut key = new();
+                for value in [
+                    &mut key.p,
+                    &mut key.q,
+                    &mut key.dp,
+                    &mut key.dq,
+                    &mut key.qinv,
+                ] {
+                    let mut padded = vec![0; n.len() - 1 - value.len()];
+                    padded.extend_from_slice(value);
+                    *value = padded;
+                }
+                assert!(key.check_key());
+            }
+        }
+    }
+
     #[test]
     fn private_from_components_invalid() {
         let [n, ..] = composite(32, false);

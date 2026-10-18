@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract

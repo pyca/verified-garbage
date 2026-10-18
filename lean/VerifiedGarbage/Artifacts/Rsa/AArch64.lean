@@ -93,8 +93,9 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
         of the private key is computed whatever its outcome and and'ed into a mask, in a working space \
         of `W = 2 w + 2` words for `w`-word numbers: the comparisons by a subtraction's borrow, \
         `p q = n` by a product of the two, and each remainder (`d e mod (p - 1)` and the others, \
-        `q qInv mod p`) by bit-serial division of the product, `64 W` steps, each subtraction selected \
-        under a mask."]
+        `q qInv mod p`) by bounded bit-serial division with masked subtraction. The full-exponent \
+        checks process `64 (⌈other_factor_len / 8⌉ + 1)` bits, using `d < n = p q`; the CRT \
+        checks process 64 bits for `e dP` and `e dQ`, and `64 ⌈q_len / 8⌉` bits for `q qInv`."]
     code := Impl.Rsa.AArch64.CheckKey.code
     verified := Proof.Rsa.AArch64.ck_verified },
   Spec.Rsa.checkCrtKeyApi.artifact AArch64.target {
