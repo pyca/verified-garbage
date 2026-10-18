@@ -218,13 +218,17 @@ theorem sealCodeP_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B 
     (v.sealCodeP (v.withBlk B)).x86_64Depth ≤ 24 := by
   unfold GcmImpl.sealCodeP; split
   · exact Short.sealMP_xdepth v B
-  · exact sealCode_xdepth v B
+  · split
+    · exact Short.sealFinP_xdepth v B
+    · exact sealM_xdepth v B
 
 theorem sealCodeP_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.sealCodeP (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
   unfold GcmImpl.sealCodeP; split
   · exact Short.sealMP_mx v B
-  · exact sealCode_mx v B
+  · split
+    · exact Short.sealFinP_mx v B
+    · exact sealM_mx v B
 
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
 def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=

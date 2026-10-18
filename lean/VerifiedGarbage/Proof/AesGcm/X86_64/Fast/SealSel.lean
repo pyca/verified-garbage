@@ -26,27 +26,27 @@ namespace VG.Proof.AesGcm.X86_64.FastSeal
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts SealLongOk SealLongRel sealRunW_ok sealRunW_rel finKs_ksOk finKs_rel
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk KsRel SealLongOk SealLongRel sealRunW_ok sealRunW_rel
   rel_next condS_of)
 open VG.Proof.AesGcm.X86_64.Fast (IsFast aad_mid condE_ok)
 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
-theorem sealSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
-    (ho : SealLongOk CtxMode.prepared other) :
-    SealLongOk CtxMode.prepared (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) other) := by
+theorem sealSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {ks : Prog isa} (hks : KsOk ks)
+    {other : Prog isa} (ho : SealLongOk CtxMode.prepared other) :
+    SealLongOk CtxMode.prepared (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) other ks) := by
   intro s s₁ Ctx W SP Np A D nl al n C X E hNp hnl hal
   unfold Impl.AesGcm.X86_64.FastSeal.sel
   refine WP.seq (WP.mono (condE_ok C E hnl hal) fun s₃ ⟨hz, E₃, _⟩ => ?_)
   refine WP.ite (decide ¬IsFast nl al n) (eval_e hz) (fun _ => ho C X E₃ hNp hnl hal) fun h => ?_
   obtain ⟨h12, h17, -⟩ : IsFast nl al n := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
-  exact sealRunW_ok hF finKs_ksOk B C X hal (aad_mid hF C X E₃ hNp hnl hal (by omega))
+  exact sealRunW_ok hF hks B C X hal (aad_mid hF C X E₃ hNp hnl hal (by omega))
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem sealSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
-    (ho : SealLongRel CtxMode.prepared other) :
-    SealLongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) other) := by
+theorem sealSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {ks : Prog isa} (hks : KsOk ks)
+    (hkr : KsRel ks) {other : Prog isa} (ho : SealLongRel CtxMode.prepared other) :
+    SealLongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) other ks) := by
   intro s₀ s₀' Ctx W SP Np A D nl al n R C C' X X' hNp hnl hal hR hNp' hnl' hal' hR'
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastSeal.sel
@@ -66,7 +66,7 @@ theorem sealSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
-    exact (sealRunW_rel hF finKs_ksOk finKs_rel B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR'
+    exact (sealRunW_rel hF hks hkr B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR'
       ((Fast.aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
         (P' := fun (s₁ s₂ : State) => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂)
         (fun _ _ g => ⟨g.1.aadPre C X hNp hnl hal hR, g.2.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)

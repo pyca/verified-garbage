@@ -11,7 +11,8 @@ TLS too long for the short path: a 12-byte nonce and at most 16 bytes of
 additional data (`Fast.cond`). It is the other instances' body
 (`Short.sealLong`) with the additional data absorbed with the prepared `H'`
 (`Fast.aad`), where `oneAad` would copy it a byte at a time and call
-`vg_ghash`, which computes `H'` from `H` on every call.
+`vg_ghash`, which computes `H'` from `H` on every call; for the instances
+without the short path, `SealFin.mid` likewise, with `Short.finKsA`.
 -/
 
 @[expose] public section
@@ -23,11 +24,14 @@ open VG.Impl.AesGcm.X86_64 (Callees oneBlocks)
 
 variable (c : Callees)
 
-/-- After the entry: `Short.sealLong` with `Fast.aad`. -/
-def run : Prog isa := .seq Fast.aad (.seq (oneBlocks c.enc) Short.finish)
+/-- After the entry: `Short.sealLong` with `Fast.aad`, the keystream of `J₀`
+and of the counter block from `ks` (`Short.finKs` on 512-bit registers,
+`Short.finKsA` on 128-bit ones). -/
+def run (ks : Prog isa := Short.finKs) : Prog isa :=
+  .seq Fast.aad (.seq (oneBlocks c.enc) (Short.finishWith ks))
 
 /-- `Fast.cond`, then this path, or `other`. -/
-def sel (other : Prog isa) : Prog isa :=
-  .seq Fast.cond (.ite .e other (run c))
+def sel (other : Prog isa) (ks : Prog isa := Short.finKs) : Prog isa :=
+  .seq Fast.cond (.ite .e other (run c ks))
 
 end VG.Impl.AesGcm.X86_64.FastSeal

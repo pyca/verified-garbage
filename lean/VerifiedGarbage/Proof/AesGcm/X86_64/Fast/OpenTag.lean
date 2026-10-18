@@ -28,7 +28,7 @@ namespace VG.Proof.AesGcm.X86_64.FastOpen
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Short VG.WriteBytes
 open VG.Impl.AesGcm.X86_64.FastOpen (incJ tagP)
 open VG.Proof.AesGcm.X86_64
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts IsH1 IsH2 finTextArgs_ok finLens_ok finGh1_ok finGh2_ok finTest_ok
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk IsH1 IsH2 finTextArgs_ok finLens_ok finGh1_ok finGh2_ok finTest_ok
   tagK_ok finKs_ksOk writeW_zero128 ghash_snoc bytesAt_toBytes' add_ofNat_ofNat)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
@@ -247,8 +247,8 @@ theorem openTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (
 
 /-! ## The tag -/
 
-/-- `tagP` with a prepared key context: what `oneTag 112` does. -/
-theorem tagP_ok (hF : ShortFacts) : TagOk CtxMode.prepared tagP := by
+/-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
+theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMode.prepared (tagP ks) := by
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW hCD X
   -- `H'` and `H'²`.
   have hX : Spec.Gcm.PreparedPowersRepr s.mem Ctx := X.ok
@@ -263,7 +263,7 @@ theorem tagP_ok (hF : ShortFacts) : TagOk CtxMode.prepared tagP := by
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₁.rd o₁.wr
   have m₁ := o₁.mem
   -- The keystream of `J₀` and of the counter block.
-  refine WP.seq (WP.mono (finKs_ksOk s₁ he₁ (by rw [m₁]; exact hR.1) hR.2)
+  refine WP.seq (WP.mono (hks s₁ he₁ (by rw [m₁]; exact hR.1) hR.2)
     fun s₂ ⟨k₀, k₁, fK, g₂, rd₂, wr₂, x₂⟩ => ?_)
   have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
