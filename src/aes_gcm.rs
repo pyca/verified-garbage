@@ -1070,7 +1070,7 @@ impl AesGcm {
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if (data.len() >= POWERS_MIN_LEN || self.powers.short_ready())
+        if (data.len() >= POWERS_MIN_LEN || self.short_seal())
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
             return Ok(tag);
@@ -1229,6 +1229,13 @@ impl AesGcm {
             [a, b] if a.len() % 16 + b.len() <= 16 => (a, b),
             _ => return None,
         };
+        // A message of `POWERS_MIN_LEN` bytes or more whose first piece is
+        // shorter: the gathering's path for TLS records, which takes it
+        // whole, seals it faster (a 256-byte TLS record, of a 255-byte
+        // payload: 22% faster on Zen 3, with AES-NI and AVX).
+        if src.len() < POWERS_MIN_LEN && src.len() + rest.len() >= POWERS_MIN_LEN {
+            return None;
+        }
         let split = match self.backend {
             // On 512-bit registers from `POWERS_MIN_LEN` bytes on: the short
             // path of the gathering is faster for less.
@@ -1336,8 +1343,11 @@ impl AesGcm {
             d.write([p.as_ptr() as usize, p.len()]);
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
+        // Shorter messages, once the powers are ready, only on 512-bit
+        // registers, where the gathering's short path reads them.
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if (out.len() >= POWERS_MIN_LEN || self.powers.short_ready())
+        if (out.len() >= POWERS_MIN_LEN
+            || self.backend == Backend::VaesVpclmulAvx512 && self.powers.short_ready())
             && let Some(tag) = self.seal_gather_prepared(nonce, aad, src, plaintext.len(), out)
         {
             return Ok(tag);
@@ -1422,6 +1432,20 @@ impl AesGcm {
     feature = "alloc"
 ))]
 impl AesGcm {
+    /// Whether `encrypt_in_place` takes `seal_prepared` for a message
+    /// shorter than `POWERS_MIN_LEN`: once the powers are ready
+    /// (`Powers::short_ready`), but on the 256-bit backend, whose `_prepared`
+    /// instance of `seal` has no path for TLS records.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    #[inline(always)]
+    fn short_seal(&self) -> bool {
+        #[cfg(target_arch = "x86_64")]
+        if self.backend == Backend::VaesVpclmul {
+            return false;
+        }
+        self.powers.short_ready()
+    }
+
     /// `encrypt_in_place` with the key context with the powers, if
     /// `Powers::get` gives it.
     #[inline(never)]
