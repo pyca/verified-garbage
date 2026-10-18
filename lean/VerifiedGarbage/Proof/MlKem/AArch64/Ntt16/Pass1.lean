@@ -134,28 +134,32 @@ theorem p1_loads {s₀ : State} (hp : Pre s₀) {P : Poly} {c : Nat} (hc : c < 4
       simp only [getD_rep0, Nat.zero_add, Nat.one_mul, nttL_zero] at this
       exact this
 
-/-- After the first `n` stores of vectors `x r` at `p + base r`. -/
-structure SInv (p : Addr) (base : Nat → Nat) (x : Nat → BitVec 128) (s : State) (n : Nat) (w : State) :
-    Prop where
+/-- After the first `n` stores of vectors `x r` at `p + base r`, in a region of `len` bytes at `p`. -/
+structure SInvN (len : Nat) (p : Addr) (base : Nat → Nat) (x : Nat → BitVec 128) (s : State) (n : Nat)
+    (w : State) : Prop where
   gpr : w.gpr = s.gpr
   v : w.v = s.v
   keep : Keep [] s w
-  frame : Frame [⟨p, 1024⟩] s.mem w.mem
+  frame : Frame [⟨p, len⟩] s.mem w.mem
   st : ∀ r < n, w.mem.read (p + BitVec.ofNat 64 (base r)) 16 = x r
-  other : ∀ o k, o + k ≤ 1024 → (∀ r < n, o + k ≤ base r ∨ base r + 16 ≤ o) →
+  other : ∀ o k, o + k ≤ len → (∀ r < n, o + k ≤ base r ∨ base r + 16 ≤ o) →
     w.mem.read (p + BitVec.ofNat 64 o) k = s.mem.read (p + BitVec.ofNat 64 o) k
 
-/-- Stores of the vectors `v` into a region of 1024 bytes at `p`, at offsets `base r`, through `x`,
+/-- `SInvN` in a region of 1024 bytes. -/
+abbrev SInv := SInvN 1024
+
+/-- Stores of the vectors `v` into a region of `len` bytes at `p`, at offsets `base r`, through `x`,
 apart from each other. -/
-theorem wp_stores {s : State} {p : Addr} {xr : Reg} {vr : Nat → VReg} {off base : Nat → Nat} {N : Nat}
+theorem wp_storesN (len : Nat) (hlen : len < 2 ^ 64) {s : State} {p : Addr} {xr : Reg} {vr : Nat → VReg}
+    {off base : Nat → Nat} {N : Nat}
     (hx : ∀ r < N, s.gpr xr + BitVec.ofNat 64 (off r) = p + BitVec.ofNat 64 (base r))
-    (ho : ∀ r < N, off r % 16 = 0 ∧ off r < 4096 * 16) (hb : ∀ r < N, base r + 16 ≤ 1024)
+    (ho : ∀ r < N, off r % 16 = 0 ∧ off r < 4096 * 16) (hb : ∀ r < N, base r + 16 ≤ len)
     (hsep : ∀ r < N, ∀ r' < N, r ≠ r' → base r + 16 ≤ base r' ∨ base r' + 16 ≤ base r)
     (hin : ∀ r < N, InRegions s.wr (p + BitVec.ofNat 64 (base r)) 16)
-    (k : ∀ s', SInv p base (fun r => s.v (vr r)) s N s' → WP isa (.block rest) s' Q) :
+    (k : ∀ s', SInvN len p base (fun r => s.v (vr r)) s N s' → WP isa (.block rest) s' Q) :
     WP isa (.block (((List.range N).map fun r => Instr.strq (vr r) xr (off r)) ++ rest)) s Q := by
   rw [List.map_eq_flatMap, WP.block_append_iff]
-  refine WP.mono (wp_range_flatMap (M := isa) (SInv p base (fun r => s.v (vr r)) s) (fun r w hr h => ?_) N
+  refine WP.mono (wp_range_flatMap (M := isa) (SInvN len p base (fun r => s.v (vr r)) s) (fun r w hr h => ?_) N
     (Nat.le_refl _) s ⟨rfl, rfl, Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ _ _ _ => rfl⟩) fun s' h => k s' h
   refine wp_strq (a := p + BitVec.ofNat 64 (base r)) (ho r hr) (by rw [h.gpr]; exact hx r hr)
@@ -163,7 +167,7 @@ theorem wp_stores {s : State} {p : Addr} {xr : Reg} {vr : Nat → VReg} {off bas
   have hbr := hb r hr
   refine ⟨by rw [h₁.gpr, h.gpr], by rw [h₁.v, h.v], h.keep.trans h₁.keep |>.mono, ?_, fun r' hr' => ?_,
     fun o k ho' hs => ?_⟩
-  · rw [h₁.mem]; exact h.frame.write (List.mem_singleton_self _) _ (contains_off hbr (by decide))
+  · rw [h₁.mem]; exact h.frame.write (List.mem_singleton_self _) _ (contains_off hbr hlen)
   · rw [h₁.mem, h.v]
     by_cases e : r' = r
     · subst e; exact read_write16 _ _ _
@@ -172,6 +176,16 @@ theorem wp_stores {s : State} {p : Addr} {xr : Reg} {vr : Nat → VReg} {off bas
       exact h.st r' (by omega)
   · rw [h₁.mem, Mem.read_write_sep (sep_off _ (hs r (by omega)) (by omega) (by omega)) (by omega)]
     exact h.other o k ho' fun r' hr' => hs r' (by omega)
+
+/-- `wp_storesN` in a region of 1024 bytes. -/
+theorem wp_stores {s : State} {p : Addr} {xr : Reg} {vr : Nat → VReg} {off base : Nat → Nat} {N : Nat}
+    (hx : ∀ r < N, s.gpr xr + BitVec.ofNat 64 (off r) = p + BitVec.ofNat 64 (base r))
+    (ho : ∀ r < N, off r % 16 = 0 ∧ off r < 4096 * 16) (hb : ∀ r < N, base r + 16 ≤ 1024)
+    (hsep : ∀ r < N, ∀ r' < N, r ≠ r' → base r + 16 ≤ base r' ∨ base r' + 16 ≤ base r)
+    (hin : ∀ r < N, InRegions s.wr (p + BitVec.ofNat 64 (base r)) 16)
+    (k : ∀ s', SInv p base (fun r => s.v (vr r)) s N s' → WP isa (.block rest) s' Q) :
+    WP isa (.block (((List.range N).map fun r => Instr.strq (vr r) xr (off r)) ++ rest)) s Q :=
+  wp_storesN 1024 (by decide) hx ho hb hsep hin k
 
 end
 
