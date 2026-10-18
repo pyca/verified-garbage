@@ -20,10 +20,7 @@ each archive's module: `pack` packs only the modules that changed since,
 and removes the archives of modules that no longer exist. It then writes a
 tar of `.lake/ltar` to stdout, whose first member, `.lake/ltar/files.tar`,
 is a tar of every other file in the directories (the outputs' `.hash`
-files, native libraries, Lake's checkouts of the dependencies). The other
-files follow the archives again, each a member of its own, as in the tar
-before `files.tar`, so that an `unpack` from before it, which skips
-`files.tar`, still restores everything.
+files, native libraries, Lake's checkouts of the dependencies).
 
 It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 (`.github/actions/leantar`), which packs every module in one process at zstd
@@ -42,10 +39,9 @@ extracts `files.tar` in the background, as `restore` does: its files are
 most of the files, each small, and `tarfile` would create them one at a
 time, as long as `leantar` takes for all the archives. The archives go to
 the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
-the next arrives. It skips the copies of `files.tar`'s files after the
-archives, and writes them in their place only in a tar from before
-`files.tar`, which has no other. The outputs come out byte for byte as they
-were packed; the `.trace` keeps everything Lake reads (the dependency hash,
+the next arrives. In a tar from before `files.tar`, whose other files are
+members of their own, it writes each in its place. The outputs come out
+byte for byte as they were packed; the `.trace` keeps everything Lake reads (the dependency hash,
 the outputs' hashes and the build's messages, with the profile
 `ci/lean_profile.py` reads), without the record of the build's inputs that
 Lake writes only for people to read.
@@ -178,13 +174,10 @@ def pack(lean, roots, jobs, level, tool, out):
         out.flush()
         # The tar of the other files first, as `.lake/ltar`'s `files.tar` in
         # place of `store`'s, so that `unpack` extracts it while the archives
-        # unpack; then the archives; then the other files again, each a
-        # member of its own, for an `unpack` from before `files.tar`, which
-        # skips it.
+        # unpack; then the archives.
         subprocess.run(["tar", "-cf", "-", "-C", tmp, f"--transform=s,^{FILES}$,{LTAR / FILES},",
-                        FILES, "-C", str(lean), f"--exclude={LTAR / FILES}", str(LTAR),
-                        "--no-recursion", "--null", "-T", "-"],
-                       input="\0".join(paths).encode(), stdout=out, check=True)
+                        FILES, "-C", str(lean), f"--exclude={LTAR / FILES}", str(LTAR)],
+                       stdout=out, check=True)
 
 
 def store(lean, roots, jobs, level, tool):
@@ -266,10 +259,9 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
             for member in tar:
                 rel = Path(member.name)
                 if rel.parts[:2] != LTAR.parts:
-                    # A copy of a file of `files.tar`, or, in a tar from
-                    # before it, the only one.
-                    if files is None:
-                        tar.extract(member, lean, set_attrs=True, filter=without_owner)
+                    # The tar from before `files.tar`, until the published
+                    # cache is replaced.
+                    tar.extract(member, lean, set_attrs=True, filter=without_owner)
                     continue
                 if rel == LTAR / FILES and member.isfile() and files is None:
                     with open(stage / FILES, "wb") as f:

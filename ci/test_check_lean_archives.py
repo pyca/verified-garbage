@@ -199,9 +199,8 @@ class LeanArchiveTests(unittest.TestCase):
         # `pack`'s, of both directories, not `store`'s, of the build alone.
         self.assertIn(".lake/packages/mathlib/Mathlib.lean", inner)
         self.assertIn(".lake/build/lib/libNative.so", inner)
-        # Its files again after the archives, for an `unpack` from before it.
-        ltars = [i for i, name in enumerate(names) if name.startswith(".lake/ltar/")]
-        self.assertEqual(names[ltars[-1] + 1:], inner)
+        # Nothing but `.lake/ltar`.
+        self.assertTrue(all(name.startswith(".lake/ltar") for name in names))
 
     def test_build_of(self):
         self.assertEqual(lean_cache.build_of("build/A/B"), Path(".lake/build"))
