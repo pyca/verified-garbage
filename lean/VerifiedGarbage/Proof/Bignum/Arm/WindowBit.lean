@@ -40,7 +40,7 @@ theorem two_writes (m : Mem) (base : BitVec 32) {d e : Nat} (v u : BitVec 32)
 theorem windowBit_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
     (h : WinState base len w M x A p q s) (hv : V < 2 ^ 32)
     (byte : s.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 V) :
-    WP isa windowBit s fun t => (∃ A' p' q', WinState base len w M x A' p' q' t ∧
+    WP isa windowBit s fun t => (∃ A' p', WinState base len w M x A' p' ((q + 1) % 3) t ∧
       A' + p' = 2 * (A + p) + V / 128 % 2) ∧
       KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
@@ -76,13 +76,15 @@ theorem windowBit_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
       omega
     refine WP.mono (windowApply_ok v powerV tableV fits small digitV) ?_
     rintro t ⟨powerT, tableT, digitT, pendingT, keepsT, frameT, restT⟩
-    refine ⟨⟨_, 0, 0, ⟨powerT, tableT, fits, digitT, pendingT, by decide, by decide⟩, ?_⟩,
+    refine ⟨⟨_, 0, ⟨powerT, tableT, fits, digitT, by rw [full]; exact pendingT, by rw [full]; decide,
+      by rw [full]; decide⟩, ?_⟩,
       keepsV.trans keepsT, frameU.trans (frameV.trans frameT), restSV.trans restT⟩
     omega
   · refine WP.ite false (by simp [eval, zV, full]) (by simp) (fun _ => WP.block_nil ?_)
-    refine ⟨⟨_, _, q + 1, ⟨powerV, tableV, fits, digitV, pendingV, ?_, by omega⟩, ?_⟩,
+    have mod : (q + 1) % 3 = q + 1 := Nat.mod_eq_of_lt (by omega)
+    refine ⟨⟨_, _, ⟨powerV, tableV, fits, digitV, by rw [mod]; exact pendingV, ?_, by omega⟩, ?_⟩,
       keepsV, frameU.trans frameV, restSV⟩
-    · rw [Nat.pow_succ]; omega
+    · rw [mod, Nat.pow_succ]; omega
     · omega
 
 end VG.Proof.Bignum.Arm

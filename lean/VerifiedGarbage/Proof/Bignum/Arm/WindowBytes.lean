@@ -102,7 +102,7 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
     (h : WinState base len w M x A p q s) (hv : V < 2 ^ 32) (hc : 0 < c) (hc' : c < 2 ^ 32)
     (byte : s.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 V)
     (count : s.mem.readW (off (State.addr base) 192) 32 = BitVec.ofNat 32 c) :
-    WP isa windowRound s fun t => (∃ A' p' q', WinState base len w M x A' p' q' t ∧
+    WP isa windowRound s fun t => (∃ A' p', WinState base len w M x A' p' ((q + 1) % 3) t ∧
       A' + p' = 2 * (A + p) + V / 128 % 2) ∧
       t.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 (V + V) ∧
       t.mem.readW (off (State.addr base) 192) 32 = BitVec.ofNat 32 (c - 1) ∧
@@ -113,7 +113,7 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
   have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
   rw [windowRound, WP.seq_iff]
   refine WP.mono (windowBit_ok s h hv byte) ?_
-  rintro u ⟨⟨A', p', q', stateU, sum⟩, keepsU, frameU, restU⟩
+  rintro u ⟨⟨A', p', stateU, sum⟩, keepsU, frameU, restU⟩
   have byteU := (keepsU 200 (by simp)).trans byte
   have countU := (keepsU 192 (by simp)).trans count
   rw [WP.seq_iff]
@@ -138,7 +138,7 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
   have keep (a : Nat) (ha : a + 4 ≤ 192 ∨ 204 ≤ a) (ha' : a + 4 ≤ 256) :
       t.mem.readW (off (State.addr base) a) 32 = u.mem.readW (off (State.addr base) a) 32 := by
     rw [memT]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
-  refine ⟨⟨A', p', q', ⟨powerT, stateU.table.after_ctl ctl fits nowrap (by decide), fits, ?_, ?_,
+  refine ⟨⟨A', p', ⟨powerT, stateU.table.after_ctl ctl fits nowrap (by decide), fits, ?_, ?_,
     stateU.bound, stateU.short⟩, sum⟩, byteT, countT, flag, ?_, frameU.trans frameT, restU.trans restUT⟩
   · rw [memT, read_after_writes _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
     exact stateU.digit
@@ -151,35 +151,36 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
     · exact keep 132 (by decide) (by decide)
 
 /-- After `j` bits of the byte `v`, with `E` the earlier bytes: the bits read
-are `E 2^j + v / 2^(8 - j)`. -/
-structure WinBitState (base : BitVec 32) (len w M x E v j : Nat) (s : State) : Prop where
-  state : ∃ A p q, WinState base len w M x A p q s ∧ A + p = E * 2 ^ j + v / 2 ^ (8 - j)
+are `E 2^j + v / 2^(8 - j)`, and `n + j` of them, `n` before the byte. -/
+structure WinBitState (base : BitVec 32) (len w M x E v n j : Nat) (s : State) : Prop where
+  state : ∃ A p, WinState base len w M x A p ((n + j) % 3) s ∧ A + p = E * 2 ^ j + v / 2 ^ (8 - j)
   byte : s.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 (v * 2 ^ j)
   count : s.mem.readW (off (State.addr base) 192) 32 = BitVec.ofNat 32 (8 - j)
 
-theorem windowBits_ok (s : State) {base : BitVec 32} {len w M x E v : Nat}
-    (h : WinBitState base len w M x E v 0 s) (hv : v < 256) :
-    WP isa windowBits s fun t => (∃ A p q, WinState base len w M x A p q t ∧ A + p = 256 * E + v) ∧
+theorem windowBits_ok (s : State) {base : BitVec 32} {len w M x E v n : Nat}
+    (h : WinBitState base len w M x E v n 0 s) (hv : v < 256) :
+    WP isa windowBits s fun t => (∃ A p, WinState base len w M x A p ((n + 8) % 3) t ∧ A + p = 256 * E + v) ∧
       KeepsPtr base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  let I := fun k t => ∃ j, j + k = 8 ∧ 0 < k ∧ WinBitState base len w M x E v j t ∧
+  let I := fun k t => ∃ j, j + k = 8 ∧ 0 < k ∧ WinBitState base len w M x E v n j t ∧
     KeepsPtr base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
   unfold windowBits
   refine WP.loop (M := isa) I ?_ 8 s ?_
   · intro k t inv
-    obtain ⟨j, jk, hk, ⟨⟨A, p, q, state, sum⟩, byte, count⟩, keeps, frame, rest⟩ := inv
+    obtain ⟨j, jk, hk, ⟨⟨A, p, state, sum⟩, byte, count⟩, keeps, frame, rest⟩ := inv
     have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega : j ≤ 7)
     have valueFit : v * 2 ^ j < 2 ^ 32 := by
       have := Nat.mul_le_mul_left v hp
       omega
     refine WP.mono (windowRound_ok t state valueFit (by omega) (by omega) byte count) ?_
-    rintro u ⟨⟨A', p', q', stateU, sumU⟩, byteU, countU, zero, keepsU, frameU, restU⟩
+    rintro u ⟨⟨A', p', stateU, sumU⟩, byteU, countU, zero, keepsU, frameU, restU⟩
+    rw [Nat.mod_add_mod] at stateU
     have expEq : 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
         E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) := by
       rw [Nat.mul_add, Nat.add_assoc, bit_step (by omega), show 7 - j = 8 - (j + 1) by omega,
         Nat.pow_succ, Nat.mul_comm 2 (E * 2 ^ j), Nat.mul_assoc]
     rw [sum, expEq] at sumU
-    have next : WinBitState base len w M x E v (j + 1) u := by
-      refine ⟨⟨A', p', q', stateU, sumU⟩, ?_, ?_⟩
+    have next : WinBitState base len w M x E v n (j + 1) u := by
+      refine ⟨⟨A', p', stateU, sumU⟩, ?_, ?_⟩
       · rw [byteU, Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_two]
       · rw [countU]; congr 1
     by_cases last : j + 1 = 8
@@ -187,7 +188,7 @@ theorem windowBits_ok (s : State) {base : BitVec 32} {len w M x E v : Nat}
       refine ⟨?_, ?_, keeps.trans keepsU, frame.trans frameU, rest.trans restU⟩
       · change some (!u.z) = some false
         simp only [zero, show 8 - j = 1 by omega, decide_true, Bool.not_true]
-      · refine ⟨A', p', q', stateU, ?_⟩
+      · refine ⟨A', p', by rw [show n + 8 = n + j + 1 by omega]; exact stateU, ?_⟩
         simpa only [last, Nat.sub_self, Nat.pow_zero, Nat.div_one, show 2 ^ 8 = 256 from rfl,
           Nat.mul_comm E 256] using sumU
     · right

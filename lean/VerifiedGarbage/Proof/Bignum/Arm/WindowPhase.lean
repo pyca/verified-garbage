@@ -61,17 +61,18 @@ theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb :
     (bytes : ∀ i (hi : i < eb.length), s.mem (State.addr ep + BitVec.ofNat 64 i) = eb[i])
     (pointer : s.mem.readW (off (State.addr base) 128) 32 = ep)
     (count : s.mem.readW (off (State.addr base) 132) 32 = BitVec.ofNat 32 eb.length) :
-    WP isa windowBytes s fun t => (∃ A p q, WinState base len w M x A p q t ∧ A + p = Spec.Rsa.os2ip eb) ∧
+    WP isa windowBytes s fun t =>
+      (∃ A p, WinState base len w M x A p (8 * eb.length % 3) t ∧ A + p = Spec.Rsa.os2ip eb) ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   let I := fun k t => ∃ j, j + k = eb.length ∧ 0 < k ∧
-    (∃ A p q, WinState base len w M x A p q t ∧ A + p = pre eb j) ∧
+    (∃ A p, WinState base len w M x A p (8 * j % 3) t ∧ A + p = pre eb j) ∧
     t.mem.readW (off (State.addr base) 128) 32 = ep + BitVec.ofNat 32 j ∧
     t.mem.readW (off (State.addr base) 132) 32 = BitVec.ofNat 32 k ∧
     Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
   unfold windowBytes
   refine WP.loop (M := isa) I ?_ eb.length s ?_
   · intro k t inv
-    obtain ⟨j, jk, hk, ⟨A, p, q, state, sum⟩, ptr, counter, frame, rest⟩ := inv
+    obtain ⟨j, jk, hk, ⟨A, p, state, sum⟩, ptr, counter, frame, rest⟩ := inv
     have hj : j < eb.length := by omega
     have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
       addr_add (by omega)
@@ -89,10 +90,11 @@ theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb :
     rw [currentByte] at byteU
     have v256 := (eb[j]).isLt
     rw [WP.seq_iff]
-    refine WP.mono (windowBits_ok u (E := pre eb j) (v := (eb[j]).toNat)
-      ⟨⟨A, p, q, stateU, by rw [sum, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, show 2 ^ 8 = 256 from rfl,
+    refine WP.mono (windowBits_ok u (E := pre eb j) (v := (eb[j]).toNat) (n := 8 * j)
+      ⟨⟨A, p, stateU, by rw [sum, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, show 2 ^ 8 = 256 from rfl,
         Nat.div_eq_of_lt v256, Nat.add_zero]⟩, by rw [Nat.pow_zero, Nat.mul_one]; exact byteU, countU⟩ v256) ?_
-    rintro y ⟨⟨A', p', q', stateY, sumY⟩, keepsY, frameY, restY⟩
+    rintro y ⟨⟨A', p', stateY, sumY⟩, keepsY, frameY, restY⟩
+    rw [show 8 * j + 8 = 8 * (j + 1) by omega] at stateY
     have ptrY := (keepsY 128 (by simp)).trans ((keepsU 128 (by simp)).trans ptr)
     have countY := (keepsY 132 (by simp)).trans ((keepsU 132 (by simp)).trans counter)
     refine WP.mono (expByteNext_mem y stateY.power.ready hk (by omega) ptrY countY) ?_
@@ -109,7 +111,7 @@ theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb :
     have keep (a : Nat) (ha : 136 ≤ a) (ha' : a + 4 ≤ 256) :
         z.mem.readW (off (State.addr base) a) 32 = y.mem.readW (off (State.addr base) a) 32 := by
       rw [memZ]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
-    have stateZ : WinState base len w M x A' p' q' z :=
+    have stateZ : WinState base len w M x A' p' (8 * (j + 1) % 3) z :=
       ⟨powerZ, stateY.table.after_ctl ctl fits nowrap (by decide), fits,
         by rw [keep 196 (by decide) (by decide)]; exact stateY.digit,
         by rw [keep 204 (by decide) (by decide)]; exact stateY.pending, stateY.bound, stateY.short⟩
@@ -124,16 +126,16 @@ theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb :
     have restAll := rest.trans (restU.trans (restY.trans (rest_round restZ)))
     by_cases last : k = 1
     · left
-      refine ⟨?_, ⟨A', p', q', stateZ, by simpa only [show j + 1 = eb.length by omega, pre_len] using sumY⟩,
-        frameAll, restAll⟩
+      refine ⟨?_, ⟨A', p', by rw [← show j + 1 = eb.length by omega]; exact stateZ,
+        by simpa only [show j + 1 = eb.length by omega, pre_len] using sumY⟩, frameAll, restAll⟩
       change some (!z.z) = some false
       simp only [zero, last, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, ⟨A', p', q', stateZ, sumY⟩, ptrNext,
+      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, ⟨A', p', stateZ, sumY⟩, ptrNext,
         counterZ, frameAll, restAll⟩
       change some (!z.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, positive, ⟨0, 0, 0, h, by rw [pre_zero]⟩, ?_, count, Frame.refl _ _, Rest.refl _ _⟩
+  · refine ⟨0, by omega, positive, ⟨0, 0, h, by rw [pre_zero]⟩, ?_, count, Frame.refl _ _, Rest.refl _ _⟩
     simpa only [BitVec.add_zero] using pointer
 
 theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
@@ -177,11 +179,11 @@ theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {e
       exact ready.bytes i hi)
     (by rw [keepsZ 128 (by simp), ready.pointer, BitVec.add_zero])
     (by rw [keepsZ 132 (by simp), ready.count, Nat.sub_zero])) ?_
-  rintro y ⟨⟨A, p, q, stateY, sum⟩, frameY, restY⟩
+  rintro y ⟨⟨A, p, stateY, sum⟩, frameY, restY⟩
   rw [WP.seq_iff]
   have small : p < 8 := by
     have := stateY.bound
-    have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show q ≤ 2 by have := stateY.short; omega)
+    have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 * eb.length % 3 ≤ 2 by omega)
     simp only [show 2 ^ 2 = 4 from rfl] at this
     omega
   refine WP.mono (windowApply_ok y stateY.power stateY.table fits small stateY.digit) ?_
