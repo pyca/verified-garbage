@@ -179,13 +179,18 @@ theorem tableLoop_ok (s : State) {base : BitVec 32} {len w M x : Nat} (h : Build
       simp only [hz, he, decide_false, Bool.not_false]
   · exact ⟨2, rfl, by decide, Nat.le_refl _, h, KeepsExp.refl _ _, Frame.refl _ _, Rest.refl _ _⟩
 
-/-- The table built from the encoded input: `T[j] = x^j R mod M`. -/
-theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
+/-- Before entry `j` is built. -/
+structure TablePre (base : BitVec 32) (len w M x j : Nat) (s : State) : Prop where
+  power : ExpState base len w M x 0 s
+  table : TableHolds s.mem base w M x j
+  fits : arrAt w 16 ≤ 8 * len
+  entry : s.mem.readW (off (State.addr base) 220) 32 = base + BitVec.ofNat 32 (arrAt w (8 + j))
+  index : s.mem.readW (off (State.addr base) 228) 32 = BitVec.ofNat 32 j
+
+theorem tableStage0_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     (h : ExpState base len w M x 0 s) (fits : arrAt w 16 ≤ 8 * len) :
-    WP isa tableBuild s fun t => ExpState base len w M x 0 t ∧ TableHolds t.mem base w M x 8 ∧
-      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have nowrap := h.ready.workspace.nowrap
-  rw [tableBuild, WP.seq_iff]
+    WP isa (.block tableInit) s fun t => TablePre base len w M x 0 t ∧ KeepsExp base s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (tableInit_ok s h.ready) ?_
   rintro u ⟨memU, restU⟩
   have ctl : CtlOnly base s.mem u.mem := by
@@ -194,30 +199,29 @@ theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   obtain ⟨e220, e228⟩ := header_after_writes s.mem base (base + BitVec.ofNat 32 (arrAt w (8 + 0)))
     (BitVec.ofNat 32 0)
   rw [← memU] at e220 e228
-  -- `T[0] := R mod M`
-  have step0 := entryStep_ok u powerU (j := 0) (a := 6) (fun _ hi => absurd hi (Nat.not_lt_zero _)) fits
-    (by decide) (by decide) e220 e228 powerU.powerBound powerU.powerValue
-  rw [WP.seq_iff] at step0
-  rw [WP.seq_iff]
-  refine WP.mono step0 fun v hv => ?_
-  rw [WP.seq_iff]
-  refine WP.mono hv ?_
-  rintro v ⟨powerV, tableV, _, e220V, e228V, _, keepsV, frameV, restV⟩
-  -- `T[1] := x R`
-  have step1 := entryStep_ok v powerV (j := 1) (a := 5) tableV fits (by decide) (by decide) e220V e228V
-    powerV.inputBound (by rw [Nat.pow_one]; exact powerV.inputValue)
-  rw [WP.seq_iff] at step1
-  rw [WP.seq_iff]
-  refine WP.mono step1 fun y hy => ?_
-  rw [WP.seq_iff]
-  refine WP.mono hy ?_
-  rintro y ⟨powerY, tableY, _, e220Y, e228Y, _, keepsY, frameY, restY⟩
-  -- array 1 `:= x R`
+  refine ⟨⟨powerU, fun _ hi => absurd hi (Nat.not_lt_zero _), fits, e220, e228⟩, ?_, frameU, rest_round restU⟩
+  rw [memU]; exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide)
+
+theorem tableStageStep_ok (s : State) {base : BitVec 32} {len w M x a j : Nat}
+    (h : TablePre base len w M x j s) (ha : a < 8) (hj : j < 8)
+    (bound : numAt s.mem (State.addr base) w a < M)
+    (value : numAt s.mem (State.addr base) w a % M = x ^ j * 2 ^ (64 * w) % M) :
+    WP isa (.seq (entryCopy a) (.block entryNext)) s fun t => TablePre base len w M x (j + 1) t ∧
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t :=
+  WP.mono (entryStep_ok s h.power h.table h.fits ha hj h.entry h.index bound value)
+    fun _ ⟨power, table, _, entry, index, _, keeps, frame, rest⟩ =>
+      ⟨⟨power, table, h.fits, entry, index⟩, keeps, frame, rest⟩
+
+/-- Array 1 `:= x R`, for the loop. -/
+theorem prodInit_ok (s : State) {base : BitVec 32} {len w M x : Nat} (h : TablePre base len w M x 2 s) :
+    WP isa (.seq (.block [.mov .r11 (.imm 1)]) (selectArray 1 1 5)) s fun t => BuildInv base len w M x 2 t ∧
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have fits := h.fits
+  have nowrap := h.power.ready.workspace.nowrap
   rw [WP.seq_iff]
   refine wp_mov (op2_imm (by decide)) fun z c => WP.block_nil ?_
   have readyZ : ArithmeticReady base len w z :=
-    powerY.ready.of_mem c.mem (c.rest (ws := [.r11]) (by simp)) ((c.other .r0 (by decide)).trans powerY.ready.ptr)
-  rw [WP.seq_iff]
+    h.power.ready.of_mem c.mem (c.rest (ws := [.r11]) (by simp)) ((c.other .r0 (by decide)).trans h.power.ready.ptr)
   refine WP.mono (selectArray_ok z readyZ.workspace readyZ.layout readyZ.width readyZ.ptr
     (o := 1) (a := 1) (b := 5) (by decide) (by decide) (by decide) (by rw [c.gpr]; decide)
     readyZ.stackRead readyZ.stackSep readyZ.saved) ?_
@@ -226,28 +230,56 @@ theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   have keeps := outside_array_keeps outside (len := len) (by omega)
   have readyQ := (readyZ.after_array (by decide) keeps frameQ restQ ptrQ).1
   rw [c.mem] at keeps outside frameQ
-  have powerQ := powerY.after_other readyQ keeps (by decide) (by decide) (by decide) (by decide) (by decide)
+  have powerQ := h.power.after_other readyQ keeps (by decide) (by decide) (by decide) (by decide) (by decide)
   have sepHdr (d : Nat) (hd : d + 4 ≤ 256) : d + 4 ≤ arrAt w 1 := by
     simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
   have tableQ : TableHolds q.mem base w M x 2 := by
     intro i hi
     rw [outside_num outside fits nowrap (by omega) (by omega)]
-    exact tableY i hi
-  have inv : BuildInv base len w M x 2 q := by
-    refine ⟨powerQ, tableQ, fits, ?_, ?_, ?_, ?_⟩
-    · rw [value, c.mem]; exact powerY.inputBound
-    · rw [value, c.mem, show 2 - 1 = 1 from rfl, Nat.pow_one]; exact powerY.inputValue
-    · rw [outside_read32 outside (Or.inl (sepHdr 220 (by decide))) (by omega)]; exact e220Y
-    · rw [outside_read32 outside (Or.inl (sepHdr 228 (by decide))) (by omega)]; exact e228Y
+    exact h.table i hi
+  refine ⟨⟨powerQ, tableQ, fits, ?_, ?_, ?_, ?_⟩,
+    KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega), frameQ,
+    (rest_round (c.rest (ws := [.r11]) (by simp))).trans restQ⟩
+  · rw [value, c.mem]; exact h.power.inputBound
+  · rw [value, c.mem, show 2 - 1 = 1 from rfl, Nat.pow_one]; exact h.power.inputValue
+  · rw [outside_read32 outside (Or.inl (sepHdr 220 (by decide))) (by omega)]; exact h.entry
+  · rw [outside_read32 outside (Or.inl (sepHdr 228 (by decide))) (by omega)]; exact h.index
+
+/-- The table built from the encoded input: `T[j] = x^j R mod M`. -/
+theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
+    (h : ExpState base len w M x 0 s) (fits : arrAt w 16 ≤ 8 * len) :
+    WP isa tableBuild s fun t => ExpState base len w M x 0 t ∧ TableHolds t.mem base w M x 8 ∧
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [tableBuild, WP.seq_iff]
+  refine WP.mono (tableStage0_ok s h fits) ?_
+  rintro u ⟨preU, keepsU, frameU, restU⟩
+  have step0 := tableStageStep_ok u preU (a := 6) (by decide) (by decide) preU.power.powerBound
+    preU.power.powerValue
+  rw [WP.seq_iff] at step0
+  rw [WP.seq_iff]
+  refine WP.mono step0 fun v hv => ?_
+  rw [WP.seq_iff]
+  refine WP.mono hv ?_
+  rintro v ⟨preV, keepsV, frameV, restV⟩
+  have step1 := tableStageStep_ok v preV (a := 5) (by decide) (by decide) preV.power.inputBound
+    (by rw [Nat.pow_one]; exact preV.power.inputValue)
+  rw [WP.seq_iff] at step1
+  rw [WP.seq_iff]
+  refine WP.mono step1 fun y hy => ?_
+  rw [WP.seq_iff]
+  refine WP.mono hy ?_
+  rintro y ⟨preY, keepsY, frameY, restY⟩
+  have init := prodInit_ok y preY
+  rw [WP.seq_iff] at init
+  rw [WP.seq_iff]
+  refine WP.mono init fun z hz => ?_
+  rw [WP.seq_iff]
+  refine WP.mono hz ?_
+  rintro q ⟨inv, keepsQ, frameQ, restQ⟩
   refine WP.mono (tableLoop_ok q inv) ?_
   rintro t ⟨invT, keepsT, frameT, restT⟩
-  have keepsU : KeepsExp base s.mem u.mem := by
-    rw [memU]; exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide)
-  have keepsQ : KeepsExp base y.mem q.mem := by
-    exact KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
-  refine ⟨invT.power, invT.table, keepsU.trans (keepsV.trans (keepsY.trans (keepsQ.trans keepsT))),
+  exact ⟨invT.power, invT.table, keepsU.trans (keepsV.trans (keepsY.trans (keepsQ.trans keepsT))),
     frameU.trans (frameV.trans (frameY.trans (frameQ.trans frameT))),
-    (rest_round restU).trans (restV.trans (restY.trans ((rest_round (c.rest (ws := [.r11]) (by simp))).trans
-      (restQ.trans restT))))⟩
+    restU.trans (restV.trans (restY.trans (restQ.trans restT)))⟩
 
 end VG.Proof.Bignum.Arm
