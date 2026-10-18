@@ -86,6 +86,13 @@ with the samplers `p` and the rest of the implementation `c`. -/
 def kemKeyGen16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (gRho K.L) (.seq (mat K p) (.seq (ifOk (kgRest K c)) (.block topEpi))))
 
+open Decaps in
+/-- The decapsulation of the parameter set of `K`, with 16-bit polynomials,
+with the samplers `p` and the rest of the implementation `c`. -/
+def kemDecaps16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
+  .seq (.block pro) (.seq (K.L.kpkeDecAt (sc oM) (.rbp, 0) (.r14, 0) (sc K.oZ)) (.seq (hashes K.L)
+    (.seq (Top16.encrypt K c p (.rbp, 384 * K.L.k) (sc oCT16)) (.seq (selectAt oCT16 K.L.ctLen) (.block topEpi)))))
+
 /-- ML-KEM-768's layout: `Â` 4608 bytes from 4096, the others (at most
 3584 bytes) from 8704, and the K-PKE functions' working space (20480 bytes)
 from 12288, the end of `scratch`. -/

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
+public import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -35,6 +36,8 @@ abbrev kdW : List (Ptr × Nat) := [(sc oM, 32), (sc K.oZ, kScr)]
 structure Dc16Wf : Prop extends DcWfB K.L oCT16 where
   kd : kdChk (dcB K.L) (dcW K.L) K.L (sc oM) (.rbp, 0) (.r14, 0) (sc K.oZ) = true
   kdK : dcChk K.L (kdW K) = true
+  enc : Enc16.EncChks K (dcB K.L) (dcW K.L) (dckChk K.L) (.rbp, 384 * K.L.k)
+  tl : Enc16.tailChk K (dcB K.L) (dcW K.L) (dckChk K.L) (.rbp, 384 * K.L.k) (sc oCT16) = true
 
 variable {K}
 
