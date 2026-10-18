@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
@@ -34,7 +35,7 @@ namespace VG.Generic.MdHash.P521.AArch64.EcdsaP521Sha512
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotesWide)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) :
     List Artifact :=
   match v.sha512 with
   | none => []

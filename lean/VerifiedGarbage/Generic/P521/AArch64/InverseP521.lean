@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.InverseVerified
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
@@ -32,7 +33,7 @@ def note (mod : String) : String :=
   form, by word-by-word Montgomery multiplication with `mul` and `umulh`, its temporary area at \
   bytes 4024 to 4095; nothing depends on the numbers but through masks and `csel`."
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   C.invPApi.artifact AArch64.target {
     notes := [note "p"]
     code := p521.invFn p521.pPowI

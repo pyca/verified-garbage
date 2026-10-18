@@ -48,7 +48,7 @@ structure NafLay (K : WinCfg) (size : Nat) : Prop where
   win : WinLay K size
   al : WinA K
   n4 : K.M.n ≠ 4
-  n6 : K.M.n ≤ 6
+  n6 : K.M.n ≤ 9
   digits : 64 * K.M.n + 1 ≤ 4 * K.J
   rxy : K.R.y = K.R.x + 8 * K.M.n
   rxz : K.R.z = K.R.x + 16 * K.M.n

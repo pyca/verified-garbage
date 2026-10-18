@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
@@ -23,7 +23,7 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 
 namespace VG.Generic.P521.AArch64.EcdsaP521
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   Spec.Ecdsa.P521.signApi.artifact AArch64.target {
     notes := ["The function saves the callee-saved registers \
       `x19`–`x25` in `scratch`. Field elements and scalars are nine 64-bit words in \
@@ -64,16 +64,19 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List A
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
       `s⁻¹` modulo `n` is by the signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`, reading the entry of each \
-      digit of the public `u` directly rather than scanning its table), and `[v]Q` `vg_ecdh_p521`'s signed 4-bit windows \
-      (145 digits of `v + 8 Σ_{j<145} 16^j`, four doublings in Jacobian coordinates and a \
-      constant-time selection from a \
-      table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
-      `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
+      digit of the public `u` directly rather than scanning its table), and `[v]Q` uses the \
+      width-5 non-adjacent form of the public `v` (577 digits in `{0, ±1, ±3, …, ±15}`). \
+      Its eight odd multiples are built by co-Z arithmetic, with their `Z²` and `Z³` cached \
+      alongside the table within the existing scratch space. Each digit doubles the accumulator \
+      in Jacobian coordinates; nonzero digits directly select an odd multiple, negate its `y` \
+      if needed, and perform a complete Jacobian addition using the cached powers. The result \
+      is converted to projective coordinates and added to `[u]G` using the complete formulas of \
+      Renes, Costello and Batina for `a = -3`. The result is the conjunction of the checks (the key, \
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
-      comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
-      time only on the pointers."]
+      comb's addresses depend on `u`, from the digest and the signature, the NAF branches and \
+      addresses depend on public `v` and the key, and the remaining timing depends on pointers."]
     consts := Impl.Ecdsa.AArch64.p521.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP521
-    verified := Proof.Ecdsa.Verify.AArch64.P521.verify_verified h.law h.inv (Proof.P521.combOk7 h.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.P521.verify_verified h.law h.prime h.inv (Proof.P521.combOk7 h.law) }]
 
 end VG.Generic.P521.AArch64.EcdsaP521

@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 public import VerifiedGarbage.Impl.EcKey.P521.AArch64
 public import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
@@ -21,7 +21,7 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 
 namespace VG.Generic.P521.AArch64.EcP521
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   Spec.EcKey.P521.publicKeyApi.artifact AArch64.target {
     notes := ["The function is `vg_ecdsa_p521_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \

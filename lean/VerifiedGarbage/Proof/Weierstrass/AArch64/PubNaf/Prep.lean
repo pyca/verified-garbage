@@ -29,22 +29,26 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 /-- The constants' registers. -/
 def csts (n : Nat) : List Reg := [cst n 0, cst n 1, cst n 2, cst n 3]
 
-/-- What the recoding needs of its registers, for `1 ≤ n ≤ 6` (`regs_ok`). -/
+/-- What the recoding needs of its registers, for `1 ≤ n ≤ 9` (`regs_ok9`). -/
 structure Regs (n : Nat) : Prop where
   nodup : (limbs n ++ csts n).Nodup
   head : low n = .x5 :: (low n).tail
   avoid : ∀ r ∈ limbs n ++ csts n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x16, .x17, .x19, .x20]
   len : (low n).length = n
   pos : 1 ≤ n
-  le : n ≤ 6
+  le : n ≤ 9
 
-theorem regs_ok : ∀ n, 1 ≤ n → n ≤ 6 → Regs n := by
-  have h : ∀ n < 7, 1 ≤ n → ((limbs n ++ csts n).Nodup ∧ low n = .x5 :: (low n).tail ∧
+theorem regs_ok9 : ∀ n, 1 ≤ n → n ≤ 9 → Regs n := by
+  have h : ∀ n < 10, 1 ≤ n → ((limbs n ++ csts n).Nodup ∧ low n = .x5 :: (low n).tail ∧
       (∀ r ∈ limbs n ++ csts n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x16, .x17, .x19, .x20]) ∧
       (low n).length = n) := by decide
   intro n h1 h6
   obtain ⟨a, b, c, d⟩ := h n (by omega_arith) h1
   exact ⟨a, b, c, d, h1, h6⟩
+
+/-- The original six-word interface, retained for existing callers. -/
+theorem regs_ok (n : Nat) (h1 : 1 ≤ n) (h6 : n ≤ 6) : Regs n :=
+  regs_ok9 n h1 (by omega_arith)
 
 /-- Registers the recoding writes. -/
 def clobs (n : Nat) : List Reg := [.x1, .x2, .x3, .x19, .x20] ++ limbs n ++ csts n
@@ -392,22 +396,22 @@ theorem prepStep_ok {n : Nat} (hR : Regs n) {s : State} {base : Addr} {size bits
         exact ⟨hr.1.1.1, hr.1.1.2.1, hr.1.1.2.2.1⟩)]
   · rw [mt]; exact O.mono (by omega_arith) (by omega_arith)
 
-theorem init_facts1 : ∀ n < 7, top n ≠ cst n 0 ∧ top n ≠ cst n 1 ∧ top n ≠ cst n 2 ∧
+theorem init_facts1 : ∀ n < 10, top n ≠ cst n 0 ∧ top n ≠ cst n 1 ∧ top n ≠ cst n 2 ∧
     top n ≠ cst n 3 ∧ top n ≠ .x19 ∧ top n ≠ .x20 := by
   decide
 
-theorem init_facts1' : ∀ n < 7, cst n 0 ≠ cst n 1 ∧ cst n 0 ≠ cst n 2 ∧ cst n 0 ≠ cst n 3 ∧
+theorem init_facts1' : ∀ n < 10, cst n 0 ≠ cst n 1 ∧ cst n 0 ≠ cst n 2 ∧ cst n 0 ≠ cst n 3 ∧
     cst n 1 ≠ cst n 2 ∧ cst n 1 ≠ cst n 3 ∧ cst n 2 ≠ cst n 3 := by
   decide
 
-theorem init_facts2 : ∀ n < 7, ∀ r ∈ low n, r ≠ top n ∧ r ≠ cst n 0 ∧ r ≠ cst n 1 ∧ r ≠ cst n 2 ∧
+theorem init_facts2 : ∀ n < 10, ∀ r ∈ low n, r ≠ top n ∧ r ≠ cst n 0 ∧ r ≠ cst n 1 ∧ r ≠ cst n 2 ∧
     r ≠ cst n 3 ∧ r ≠ .x19 ∧ r ≠ .x20 := by
   decide
 
-theorem init_facts3 : ∀ n < 7, ∀ i < 4, cst n i ≠ .x19 ∧ cst n i ≠ .x20 := by
+theorem init_facts3 : ∀ n < 10, ∀ i < 4, cst n i ≠ .x19 ∧ cst n i ≠ .x20 := by
   decide
 
-theorem init_facts4 : ∀ n < 7, top n ≠ .x0 ∧ cst n 0 ≠ .x0 ∧ cst n 1 ≠ .x0 ∧ cst n 2 ≠ .x0 ∧
+theorem init_facts4 : ∀ n < 10, top n ≠ .x0 ∧ cst n 0 ≠ .x0 ∧ cst n 1 ≠ .x0 ∧ cst n 2 ≠ .x0 ∧
     cst n 3 ≠ .x0 := by
   decide
 
@@ -428,7 +432,7 @@ theorem init_ok (K : WinCfg) (hR : Regs K.M.n) {s : State} {base : Addr} {size s
     fun a ⟨va, ka, _⟩ => ?_
   have sa := hs.of_keeps ka hlx0
   -- The distinct registers written.
-  have h7 : K.M.n < 7 := by have := hR.le; omega_arith
+  have h7 : K.M.n < 10 := by have := hR.le; omega_arith
   obtain ⟨t0, t1, t2, t3, t19, t20⟩ := init_facts1 K.M.n h7
   obtain ⟨c01, c02, c03, c12, c13, c23⟩ := init_facts1' K.M.n h7
   have hlo := init_facts2 K.M.n h7
