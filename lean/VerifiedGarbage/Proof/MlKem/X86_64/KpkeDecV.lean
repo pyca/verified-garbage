@@ -72,4 +72,48 @@ theorem kpkeDec768Y_correct : ∀ s, (kpkeDecK kem768).pre s →
   KpkeDec.kpkeDec_correct ArithOk.avx2 kdCalls768 kdWf768 dmOkY (by lit_decide) (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide)
 
+/-- A state the contract permits. -/
+def kpkeDecSat (L : Kem) : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x10000 | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x2000, 384 * L.k⟩, ⟨0x3000, L.ctLen⟩]
+  wr := [⟨0x1000, 32⟩, ⟨0x10000, 16384⟩]
+
+theorem kpkeDec768_of {c : Prog isa}
+    (hc : ∀ s, (kpkeDecK kem768).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (kpkeDecK kem768).post s s')
+    (hct : ConstantTime isa (kpkeDecK kem768).pre (kpkeDecK kem768).pub c) :
+    Verified X86_64.target c (Spec.MlKem.mlKem768.kpkeDecryptContract X86_64.abi) :=
+  Verified.of_correct hc hct
+    { pre := by sig_implies_pre [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi, X86_64.argRegs, kScr, Kem.k,
+        Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
+      post := by sig_implies_post [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi, X86_64.argRegs, kScr, Kem.k,
+        Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
+      pub := by sig_implies_pub [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi, X86_64.argRegs, kScr, Kem.k,
+        Kem.ctLen, kem768, retR, Params.ctLen, mlKem768]
+      sat := by
+        refine ⟨kpkeDecSat kem768, ?_⟩
+        sig_pre [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi,
+          X86_64.argRegs]
+        and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | (intro a h₁ h₂
+             simp only [Region.Contains] at h₁ h₂
+             bv_omega) }
+
+theorem kpkeDec768Sse_verified :
+    Verified X86_64.target (kpkeDec kem768 .sse (dmInner .sse)) (mlKem768.kpkeDecryptContract X86_64.abi) :=
+  kpkeDec768_of kpkeDec768Sse_correct kpkeDec768Sse_ct
+
+theorem kpkeDec768Y_verified :
+    Verified X86_64.target (kpkeDec kem768 .avx2 dmInnerY) (mlKem768.kpkeDecryptContract X86_64.abi) :=
+  kpkeDec768_of kpkeDec768Y_correct kpkeDec768Y_ct
+
 end VG.Proof.MlKem.X86_64
