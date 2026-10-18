@@ -20,7 +20,8 @@ public import VerifiedGarbage.Impl.Mont.AArch64
 in `bRegs384` and `[a]` read through `x27`:
 
 1. `prod`: the 12-word product into `accRegs`, row by row (`row`, as the
-   word-by-word products: row `i` adds `a_i [b]` to words `i` to `i + 6`);
+   word-by-word products: row `i` adds `a_i [b]` to words `i` to `i + 6`;
+   the first sets words `0` to `6`, `rowInit`);
 2. `redConsts` and `reds`: six short reductions of the low half
    (`montreds`): with `w = d₀ (2^32 + 1) mod 2^64`, so that `d₀ + w p` is a
    multiple of `2^64`, the low six words `[d₅ … d₀]` become
@@ -58,11 +59,13 @@ def highRegs : List Reg := accRegs.drop 6
 /-- The accumulator's words `i` to `i + 6`, which row `i` adds to. -/
 def rowRegs (i : Nat) : List Reg := (accRegs.drop i).take 7
 
-/-- The product `[a] [b]` into `accRegs`: cleared, then six rows, each from
-one word of `[a]` loaded into `x1`. -/
+/-- The product `[a] [b]` into `accRegs`: six rows, each from one word of
+`[a]` loaded into `x1`, the first straight into the low seven words
+(`rowInit`), so that only the high half is cleared first. -/
 def prod : List Instr :=
-  zeros accRegs ++ (List.range 6).flatMap fun i =>
-    .ldr .x .x1 ra (8 * i) :: row ra .x1 (rowRegs i) (bRegs384.map fun r => .gen (.reg r))
+  zeros highRegs ++ (.ldr .x .x1 ra 0 :: rowInit ra .x1 (rowRegs 0) bRegs384) ++
+    (List.range 5).flatMap fun i =>
+      .ldr .x .x1 ra (8 * (1 + i)) :: row ra .x1 (rowRegs (1 + i)) (bRegs384.map fun r => .gen (.reg r))
 
 /-- `x16 = 0xffffffff00000001` and `x17 = 0x00000000ffffffff`, the low words
 of `2^384 - p`, from `x7 = 0`. -/
