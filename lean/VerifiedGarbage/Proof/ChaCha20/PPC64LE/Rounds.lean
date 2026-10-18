@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 block function on PPC64LE: the rounds

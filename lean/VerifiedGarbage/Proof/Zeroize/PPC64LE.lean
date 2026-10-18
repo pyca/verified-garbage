@@ -16,10 +16,7 @@ public import VerifiedGarbage.Spec.Zeroize.Contract
 meta import VerifiedGarbage.Spec.Zeroize.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Zeroization on PPC64LE

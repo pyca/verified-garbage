@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.ChaCha20
 public import VerifiedGarbage.TCB.PPC64LE.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20: the PPC64LE contract of the block function
