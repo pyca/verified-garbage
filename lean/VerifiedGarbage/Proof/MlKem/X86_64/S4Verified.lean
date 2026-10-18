@@ -31,7 +31,7 @@ def sample4Sat : State where
   rd := [⟨0x1000, 136⟩]
   wr := [⟨0x2000, 4096⟩, ⟨0x4000, 8192⟩]
 
-theorem sample4_post {s s' : State} (h : (sample4KW w16).post s s') :
+theorem sample4_post {s s' : State} (h : sample4K.post s s') :
     let r := (s'.gpr .rax).setWidth 32
     (r = 1 → ∀ k < 4, Spec.MlKem.Reduced s'.mem (Spec.MlKem.poly4 (s.gpr .rsi) k)) ∧
       ((r = 1 ∧ ∀ k < 4, ∃ iters, Spec.MlKem.sampleNTT iters (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) =
@@ -57,9 +57,18 @@ theorem sample4_post {s s' : State} (h : (sample4KW w16).post s s') :
     obtain ⟨k, hk, hk'⟩ := hall
     exact ⟨k, hk, Option.not_isSome_iff_eq_none.mp hk'⟩
 
+theorem sample4_correct {fast : Bool} (σ : State) (hs : sample4K.pre σ) :
+    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧
+      sample4K.post σ s' := by
+  rw [sample4K_eq] at hs ⊢; exact S4.correct (w16 := false) σ hs
+
+theorem sample4_ct {fast : Bool} :
+    ConstantTime isa sample4K.pre sample4K.pub (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) := by
+  rw [sample4K_eq]; exact S4.ct (w16 := false)
+
 theorem sample4_verified {fast : Bool} : Verified X86_64.target (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast)
     (Spec.MlKem.sampleNTT4Contract X86_64.abi 24) :=
-  Verified.of_correct (S4.correct (fast := fast)) (S4.ct (fast := fast))
+  Verified.of_correct (sample4_correct (fast := fast)) (sample4_ct (fast := fast))
     { pre := by sig_implies_pre [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
         X86_64.argRegs]
       post := by
