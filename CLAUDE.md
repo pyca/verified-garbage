@@ -110,11 +110,11 @@ Lake rebuilds your changes and anything not yet cached.
   the namespace `VG.Spec`. The emitter refuses both (`TCB/Audit.lean`).
 * Never add instructions with operand-dependent timing (e.g. `div`) to an ISA
   model.
-* On x86-64, `pmuludq`, `pmullw`, `pmulhw`, `pmaddwd`, their VEX forms,
-  `vpmadd52luq` and `vpmadd52huq` may only take
-  secret operands between Intel's MXCSR prologue and epilogue (`stmxcsr`,
-  `ldmxcsr` of `0x1FBF`, `lfence`, … `lfence`, `ldmxcsr` of the saved
-  value), which the proofs do not check: see "MCDT" in
+* On x86-64, `pmuludq`, `pmullw`, `pmulhw`, `pmaddwd`, `pmulhrsw`, their VEX
+  forms, `vpmadd52luq` and `vpmadd52huq` may only take secret operands
+  between Intel's MXCSR prologue and epilogue (`stmxcsr`, `ldmxcsr` of
+  `0x1FBF`, `lfence`, … `lfence`, `ldmxcsr` of the saved value), which the
+  proofs do not check: see "MCDT" in
   `lean/VerifiedGarbage/TCB/X86_64/Isa.lean`. `ci/check_mcdt.py` checks the
   generated code instead: every instruction on Intel's MCDT list must be
   inside that exact sequence in its function, entered only through the

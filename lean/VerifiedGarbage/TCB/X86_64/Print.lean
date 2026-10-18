@@ -89,7 +89,7 @@ def XBinOp.name : XBinOp → String
   | .punpckhwd => "punpckhwd"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast" | .aesdec => "aesdec"
   | .aesdeclast => "aesdeclast" | .aesimc => "aesimc" | .pcmpeqd => "pcmpeqd"
-  | .pmaddwd => "pmaddwd"
+  | .pmaddwd => "pmaddwd" | .pmulhrsw => "pmulhrsw" | .pcmpgtw => "pcmpgtw"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
@@ -101,6 +101,7 @@ def XOp.asm : XOp → String
   | .shift op d n => s!"{op.name} {d.name}, {n.toNat}"
   | .pshufd d r o => s!"pshufd {d.name}, {r.name}, {o.toNat}"
   | .palignr d r n => s!"palignr {d.name}, {r.name}, {n.toNat}"
+  | .pblendw d r n => s!"pblendw {d.name}, {r.name}, {n.toNat}"
   | .sha256rnds2 d r => s!"sha256rnds2 {d.name}, {r.name}, xmm0"
   | .sha1rnds4 d r n => s!"sha1rnds4 {d.name}, {r.name}, {n.toNat}"
   | .movq d r => s!"movq {d.name}, {r.name}"
@@ -117,6 +118,7 @@ def VBinOp.name : VBinOp → String
   | .vpunpckhwd => "vpunpckhwd" | .vpsubq => "vpsubq"
   | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vaesdec => "vaesdec"
   | .vaesdeclast => "vaesdeclast" | .vpcmpeqd => "vpcmpeqd" | .vpmaddwd => "vpmaddwd"
+  | .vpmulhrsw => "vpmulhrsw" | .vpcmpgtw => "vpcmpgtw"
 
 def VVarOp.name : VVarOp → String
   | .vpsllvd => "vpsllvd" | .vpsrlvd => "vpsrlvd" | .vpsllvq => "vpsllvq" | .vpsrlvq => "vpsrlvq"
@@ -129,6 +131,7 @@ def VOp.asm : VOp → String
   | .vpshufd l d r o => s!"vpshufd {d.vname l}, {r.vname l}, {o.toNat}"
   | .vpalignr l d a b n => s!"vpalignr {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
   | .vpblendd l d a b n => s!"vpblendd {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
+  | .vpblendw l d a b n => s!"vpblendw {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
   | .vvar op l d a b => s!"{op.name} {d.vname l}, {a.vname l}, {b.vname l}"
   | .vpbroadcastd l d r => s!"vpbroadcastd {d.vname l}, {r.name}"
   | .vpbroadcastq l d r => s!"vpbroadcastq {d.vname l}, {r.name}"

@@ -21,7 +21,7 @@ namespace VG.X86_64
 /-- The register a `VOp` writes, if it writes only one. -/
 def VOp.dst? : VOp → Option XReg
   | .vbin _ _ d _ _ | .vpclmulqdq _ d _ _ _ | .vmovdqa _ d _ | .vshift _ _ d _ _ | .vpshufd _ d _ _
-  | .vpalignr _ d _ _ _ | .vpblendd _ d _ _ _ | .vvar _ _ d _ _ | .vpbroadcastd _ d _ | .vpbroadcastq _ d _
+  | .vpalignr _ d _ _ _ | .vpblendd _ d _ _ _ | .vpblendw _ d _ _ _ | .vvar _ _ d _ _ | .vpbroadcastd _ d _ | .vpbroadcastq _ d _
   | .vpermq d _ _ | .vpermd d _ _ | .vperm2i128 d _ _ _ | .vinserti128 d _ _ _ | .vextracti128 d _ _
   | .vmovq d _ | .vsha512rnds2 d _ _ | .vsha512msg1 d _ | .vsha512msg2 d _ => some d
   | _ => none
