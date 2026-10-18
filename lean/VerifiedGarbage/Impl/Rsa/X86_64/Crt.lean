@@ -71,11 +71,34 @@ def entry : List Instr :=
 
 /-! ## `n`'s workspace -/
 
+/-! ## The precomputed values
+
+`vg_rsa_private_crt_precomputed` takes, at `pre` (stack argument 13), the
+values `vg_rsa_private_precompute` writes: `n` and `R² mod n` (`w` words
+each), then `R_p mod p` and `R_q mod q` (`w_p` and `w_q` words). -/
+
+/-- In the current workspace: `[j] := ` the `w` words at `pre + 8 d`, `d`
+in `rax` after `off`, zeroed unless below `[aN]` (a mask from the borrow of
+`[j] - [aN]`), so that what follows is safe whatever `pre` holds. -/
+def loadPre (j : Nat) (off : List Instr) : List (Prog isa) := [
+  .seq (.block [.mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))]) zeroAccLoop,
+  .block (off ++ ([.alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .mov .rsi (.mem (stk 13)), .alu .add .rsi (.reg .rax), .mov .r12 (.mem (hdr sW)),
+    .mov .rbx (.mem (hdr (sArr j)))] : List Instr)),
+  copyWords,
+  .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr j))), .mov .r10 (.mem (hdr (sArr aN))),
+    .mov32 .rbp (.imm 0)],
+  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
+  wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .alu .and .rax (.reg .rbp), .store (ix .rbx .r14) .rax]]
+
+/-- `R² mod n`'s offset in `pre`, in `n`'s workspace: `w`. -/
+def offN : List Instr := [.mov .rax (.mem (hdr sW))]
+
 /-- `n`, the input `c`, the mask of `c < n`, `-n⁻¹`, the number 1, `R² mod n`
 (as `vg_rsa_public_precompute` computes it, `R2Words.choice`: by word steps
 for the moduli whose top bit is set and whose length is a multiple of 4
-words) and `c R mod n`. -/
-def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
+words; or from `pre` with `pc`) and `c R mod n`. -/
+def nSetup (mul : Nat → Nat → Nat → Prog isa) (pc : Bool := false) : List (Prog isa) := [
   .block head,
   loadBE,
   .block [.mov .rsi (.mem (hdr sIn)), .mov .rcx (.mem (hdr sK)), .mov .rbx (.mem (hdr (sArr aX)))],
@@ -87,7 +110,7 @@ def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
     ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
-  R2Words.choice mul,
+  if pc then seqs (loadPre aR2 offN) else R2Words.choice mul,
   mul aXm aX aR2]
 
 /-! ## The prime workspaces -/
@@ -554,17 +577,34 @@ def expLoop5 (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (s
 
 /-! ## The primes -/
 
+/-- `R_p mod p`'s offset in `pre`, in `p`'s workspace: `2 w`. -/
+def offP : List Instr := [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sW)), .alu .add .rax (.reg .rax)]
+
+/-- `R_q mod q`'s offset in `pre`, in `q`'s workspace: `2 w + w_p`. -/
+def offQ : List Instr :=
+  offP ++ [.mov .rdx (.mem (hdr sLink)), .mov .rdx (.mem (ws .rdx sWsP)), .alu .add .rax (.mem (ws .rdx sW))]
+
+/-- The start of a prime's phase, its workspace's base in slot `sl`
+(entered by `en`): `G` into `n`'s `aY`, and `R_X mod X` into the prime's
+`aY`, as `G` reduced (`redc`) or, with `pc`, from `pre` at `off`. -/
+def unit (mul : Nat → Nat → Nat → Prog isa) (pc : Bool) (sl : Nat) (en : Instr) (off : List Instr) :
+    List (Prog isa) :=
+  gPow mul sl ++ [.block [en]] ++ (if pc then loadPre aY off else redc mul aY ++ copyArr aY aXc) ++
+    [.block [leave]]
+
 /-- `q`: `m_q = c^dQ mod q` into `q`'s `aY`, by the exponentiation `ex`
 (`expLoop mul sel` or `expLoop5 mul sel`). -/
-def qPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : List (Prog isa) :=
-  gPow mul sWsQ ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], mul aY aXm aY,
+def qPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (pc : Bool := false) :
+    List (Prog isa) :=
+  unit mul pc sWsQ enterQ offQ ++ [mul aY aXm aY,
     .block [enterQ]] ++ redc mul aY ++ ex sDq sQlen ++ [mul aY aY aOne, .block [leave]]
 
 /-- `p`: `m_p R_p` into `p`'s `aY`, `m_q R_p` into its `aXc`, their
 difference into `aT`, `qInv` again (masked) into its chunk array, and
 `h = (m_p - m_q) qInv mod p` into its `aY`. -/
-def pPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : List (Prog isa) :=
-  gPow mul sWsP ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], zeroArr aX,
+def pPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (pc : Bool := false) :
+    List (Prog isa) :=
+  unit mul pc sWsP enterP offP ++ [zeroArr aX,
     .block [.mov .rax (.mem (hdr sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))), .mov .r12 (.mem (ws .rax sW)),
       .mov .rbx (.mem (hdr (sArr aX)))],
     copyWords, mul aX aX aR2, mul aX aX aY, mul aY aXm aY, .block [enterP]] ++
@@ -589,14 +629,17 @@ def finish : List (Prog isa) := zeroAccs ++ [
   .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
 /-- The computation, once `n` is known valid. -/
-def main (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
-  seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ex ++ pPhase mul ex ++ finish)
+def main (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (pc : Bool := false) :
+    Prog isa :=
+  seqs (nSetup mul pc ++ primesSetup ++ checks ++ qPhase mul ex pc ++ pPhase mul ex pc ++ finish)
 
 /-- `vg_rsa_private_crt`, with the multiplication `mul` and the
 exponentiation `ex` (`expLoop mul tabSelect`, or `expLoop5 mul tabSelectV`
-with AVX2). -/
-def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
+with AVX2); with `pc`, `vg_rsa_private_crt_precomputed`, `R² mod n` and
+each prime's `R_X mod X` from `pre`. -/
+def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (pc : Bool := false) :
+    Prog isa :=
   .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (main mul ex))
+    (.ite .ne fail (main mul ex pc))
 
 end VG.Impl.Rsa.X86_64.Crt

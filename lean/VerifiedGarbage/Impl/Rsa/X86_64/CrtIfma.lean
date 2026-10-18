@@ -553,13 +553,15 @@ def result (p : Nat) : List (Prog isa) :=
 n` and `c R_n mod n` (`R_n = R_X²`, as `n` has twice the prime's words):
 `aY := R_X² mod X` (`redc`, which multiplies by `R_X⁻²`), `aXc := c mod X`,
 then `aXc := c R_X mod X` (through `aT`) and `aY := R_X mod X`. -/
-def prep (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog isa) :=
+def prep (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) (pc : Bool := false) (off : List Instr := []) :
+    List (Prog isa) :=
   [.block [.mov .rdi (.mem (hdr sl))]] ++ redc mul aR2 ++ copyArr aY aXc ++ redc mul aXm ++ [mul aT aY aXc] ++
-    copyArr aXc aT ++ [mul aY aY aOne, .block [leave]]
+    copyArr aXc aT ++ (if pc then loadPre aY off else [mul aY aY aOne]) ++ [.block [leave]]
 
-/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`). -/
-def pre (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  prep mul sWsQ ++ prep mul sWsP
+/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`, with
+`pc` from `pre`). -/
+def pre (mul : Nat → Nat → Nat → Prog isa) (pc : Bool := false) : List (Prog isa) :=
+  prep mul sWsQ pc offQ ++ prep mul sWsP pc offP
 
 /-- The IFMA area after `q`'s workspace, its base into both prime
 workspaces; the regions; the vector code; the results. -/
@@ -611,15 +613,15 @@ def ifmaAny : Prog isa :=
 /-- The IFMA computation for 2048-, 3072- and 4096-bit keys, the CRT one
 otherwise: `pre` and `post` do not depend on the layout, so only the vector
 code is chosen by it. -/
-def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (nSetup mul ++ primesSetup ++ checks ++
-    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul))
-      (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
+def main (mul : Nat → Nat → Nat → Prog isa) (pc : Bool := false) : Prog isa :=
+  seqs (nSetup mul pc ++ primesSetup ++ checks ++
+    [.seq anySizes (.ite .e (seqs (pre mul pc ++ [ifmaAny] ++ post mul))
+      (seqs (qPhase mul (Crt.expLoop mul tabSelect) pc ++ pPhase mul (Crt.expLoop mul tabSelect) pc)))] ++
     finish)
 
-/-- `vg_rsa_private_crt_ifma`. -/
-def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+/-- `vg_rsa_private_crt_ifma`; with `pc`, `vg_rsa_private_crt_precomputed_ifma`. -/
+def code (mul : Nat → Nat → Nat → Prog isa) (pc : Bool := false) : Prog isa :=
   .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (main mul))
+    (.ite .ne fail (main mul pc))
 
 end VG.Impl.Rsa.X86_64.CrtIfma
