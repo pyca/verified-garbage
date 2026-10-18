@@ -17,8 +17,10 @@
 ))]
 
 use serde::Deserialize;
+use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_oaep::{Error, Hash, decrypt, encrypt};
+use verified_garbage::{rsa_pkcs1_sig, rsa_pss};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
@@ -49,6 +51,20 @@ struct Case {
     msg: Hex,
     ct: Hex,
     label: Hex,
+}
+
+/// A group of the RSAES-PKCS1-v1_5 decryption vectors (`rsa_pkcs1_*_test.json`),
+/// for its CRT key.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Pkcs1Group {
+    private_key: Key,
+}
+
+/// A case of those vectors, for its message.
+#[derive(Deserialize)]
+struct MsgCase {
+    msg: Hex,
 }
 
 /// `x` without its leading zero bytes (the vectors write numbers in DER's
@@ -175,5 +191,99 @@ fn rsa_oaep_every_pair() {
         assert_eq!(decrypt(&key, &ct, h, g, b"label"), Ok(msg), "{h:?} {g:?}");
         let other = decrypt(&key, &ct, h, g, b"other");
         assert_eq!(other, Err(Error::Decryption), "{h:?} {g:?}");
+    }
+}
+
+/// With each CRT key of the RSAES-PKCS1-v1_5 decryption vectors
+/// (`rsa_pkcs1_*_test.json`), of the sizes the RSA tests run
+/// (`harness::rsa_bits_tested`): PSS and PKCS #1 v1.5 verification and OAEP
+/// encryption, which lease the public key's buffer, alternated on threads
+/// sharing the key.
+#[test]
+fn rsa_shared_key_leases() {
+    require_vectors!();
+    for bits in [2048, 3072, 4096]
+        .into_iter()
+        .filter(|&b| harness::rsa_bits_tested(b))
+    {
+        let name = format!("rsa_pkcs1_{bits}_test.json");
+        let file = harness::load::<Pkcs1Group, MsgCase>(&name);
+        harness::par_each(&file.test_groups, |group| {
+            let (private, public) = keys(&name, &group.params.private_key);
+            // Signature verification and OAEP encryption lease the same key's
+            // buffer, with different workspace lengths. Alternate them, including
+            // rejected inputs, and share the key across concurrent callers.
+            let d = Sha256::digest(&group.tests[0].case.msg.0).as_ref().to_vec();
+            let sig = rsa_pkcs1_sig::sign(&private, &d, rsa_pkcs1_sig::Hash::Sha256).unwrap();
+            let pss = rsa_pss::sign(
+                &private,
+                &d,
+                rsa_pss::Hash::Sha256,
+                rsa_pss::Hash::Sha256,
+                0,
+            )
+            .unwrap();
+            std::thread::scope(|scope| {
+                for _ in 0..4 {
+                    let (public, d, sig, pss) = (&public, &d, &sig, &pss);
+                    let private = &private;
+                    scope.spawn(move || {
+                        for _ in 0..4 {
+                            assert!(rsa_pkcs1_sig::verify(
+                                public,
+                                sig,
+                                d,
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                            assert!(!rsa_pkcs1_sig::verify(
+                                public,
+                                &sig[..sig.len() - 1],
+                                d,
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                            assert!(rsa_pss::verify(
+                                public,
+                                pss,
+                                d,
+                                rsa_pss::Hash::Sha256,
+                                rsa_pss::Hash::Sha256,
+                                rsa_pss::SaltLength::Len(0),
+                            ));
+                            assert!(!rsa_pkcs1_sig::verify(
+                                public,
+                                sig,
+                                &d[..d.len() - 1],
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                            let ciphertext = verified_garbage::rsa_oaep::encrypt(
+                                public,
+                                d,
+                                verified_garbage::rsa_oaep::Hash::Sha256,
+                                verified_garbage::rsa_oaep::Hash::Sha256,
+                                b"",
+                            )
+                            .unwrap();
+                            assert_eq!(
+                                verified_garbage::rsa_oaep::decrypt(
+                                    private,
+                                    &ciphertext,
+                                    verified_garbage::rsa_oaep::Hash::Sha256,
+                                    verified_garbage::rsa_oaep::Hash::Sha256,
+                                    b"",
+                                )
+                                .unwrap(),
+                                *d,
+                            );
+                            assert!(rsa_pkcs1_sig::verify(
+                                public,
+                                sig,
+                                d,
+                                rsa_pkcs1_sig::Hash::Sha256
+                            ));
+                        }
+                    });
+                }
+            });
+        });
     }
 }

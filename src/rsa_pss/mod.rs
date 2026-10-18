@@ -29,7 +29,7 @@
 //! memory the functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -154,7 +154,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type SignFn<const N: usize> = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -197,7 +197,7 @@ type VerifyFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`'s signature, for `N`-byte hash values.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type VerifyFn<const N: usize> = unsafe extern "C" fn(
     *const u8,
     usize,
@@ -522,7 +522,8 @@ macro_rules! pss_hash {
                     let crt = $crate::rsa::Backend::select(f);
                     $(
                         $(#[$attr])*
-                        if $backend::select(f) == $backend::$variant {
+                        {
+                            let selected = $backend::select(f) == $backend::$variant;
                             let v: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($vreq),*]),
                                 $(
@@ -532,7 +533,6 @@ macro_rules! pss_hash {
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($vireq),*]),
                                 )?
                             };
-                            assert!(f.contains(v));
                             let s: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),
                                 $(
@@ -542,7 +542,10 @@ macro_rules! pss_hash {
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
                                 )?
                             };
-                            assert!(f.contains(s));
+                            // An assertion, not an `if`: on ARMv7 every hash has
+                            // one implementation, which every set of features
+                            // selects.
+                            assert!(!selected || (f.contains(v) && f.contains(s)));
                         }
                     )*
                 }
