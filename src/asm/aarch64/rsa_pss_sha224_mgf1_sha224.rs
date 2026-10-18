@@ -226,30 +226,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 216b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 add x14, x20, #2560
 add x13, x23, #0
@@ -405,30 +387,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 228b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 ldr x9, [sp, #272]
 add x10, x24, x9
@@ -785,30 +749,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 216b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 add x14, x20, #2560
 add x13, x23, #0
@@ -964,30 +910,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 228b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 ldr x9, [sp, #272]
 add x10, x24, x9
@@ -1365,30 +1293,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 215b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 ldr x9, [sp, #272]
 add x10, x24, x9
@@ -1619,30 +1529,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 233b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 add x11, x21, #0
 add x10, x24, x25
@@ -1788,30 +1680,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 244b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 add x11, x21, #0
 add x10, x24, x25
@@ -2115,30 +1989,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 215b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 ldr x9, [sp, #272]
 add x10, x24, x9
@@ -2369,30 +2225,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 233b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 add x11, x21, #0
 add x10, x24, x25
@@ -2538,30 +2376,12 @@ ldr x9, [sp, #280]
 sub x9, x9, x27
 cbnz x9, 244b
 add x19, x20, #2240
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x19, x20, #2048
 add x11, x21, #0
 add x10, x24, x25

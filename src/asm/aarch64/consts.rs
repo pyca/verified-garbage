@@ -185935,6 +185935,22 @@ pub(crate) static VG_P521_COMB: Table<764928> = Table(*b"\
     \xbe\x00\x00\x00\x00\x00\x00\x00\
 ");
 
+/// The table of constants `VG_SHA224_H0` (`Artifact.consts`).
+pub(crate) static VG_SHA224_H0: Table<32> = Table(*b"\
+    \xd8\x9e\x05\xc1\x07\xd5\x7c\x36\
+    \x17\xdd\x70\x30\x39\x59\x0e\xf7\
+    \x31\x0b\xc0\xff\x11\x15\x58\x68\
+    \xa7\x8f\xf9\x64\xa4\x4f\xfa\xbe\
+");
+
+/// The table of constants `VG_SHA256_H0` (`Artifact.consts`).
+pub(crate) static VG_SHA256_H0: Table<32> = Table(*b"\
+    \x67\xe6\x09\x6a\x85\xae\x67\xbb\
+    \x72\xf3\x6e\x3c\x3a\xf5\x4f\xa5\
+    \x7f\x52\x0e\x51\x8c\x68\x05\x9b\
+    \xab\xd9\x83\x1f\x19\xcd\xe0\x5b\
+");
+
 /// The table of constants `VG_SHA256_K` (`Artifact.consts`).
 pub(crate) static VG_SHA256_K: Table<256> = Table(*b"\
     \x98\x2f\x8a\x42\x91\x44\x37\x71\

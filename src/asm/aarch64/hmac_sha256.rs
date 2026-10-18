@@ -498,30 +498,12 @@ movz x2, #1, lsl #0
 add x3, x20, #0
 bl {vg_sha256_compress}
 add x21, x24, #0
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x23, #160]
 ldr x20, [x23, #168]
 ldr x21, [x23, #176]
@@ -765,30 +747,12 @@ movz x2, #1, lsl #0
 add x3, x20, #0
 bl {vg_sha256_compress}
 add x21, x24, #0
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x23, #160]
 ldr x20, [x23, #168]
 ldr x21, [x23, #176]
@@ -1310,30 +1274,12 @@ movz x2, #1, lsl #0
 add x3, x20, #0
 bl {vg_sha256_compress_sha2}
 add x21, x24, #0
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x23, #160]
 ldr x20, [x23, #168]
 ldr x21, [x23, #176]
@@ -1589,30 +1535,12 @@ movz x2, #1, lsl #0
 add x3, x20, #0
 bl {vg_sha256_compress_sha2}
 add x21, x24, #0
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x23, #160]
 ldr x20, [x23, #168]
 ldr x21, [x23, #176]

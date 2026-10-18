@@ -13,32 +13,15 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r"movz w9, #40664, lsl #0
-movk w9, #49413, lsl #16
-str w9, [x0, #0]
-movz w9, #54535, lsl #0
-movk w9, #13948, lsl #16
-str w9, [x0, #4]
-movz w9, #56599, lsl #0
-movk w9, #12400, lsl #16
-str w9, [x0, #8]
-movz w9, #22841, lsl #0
-movk w9, #63246, lsl #16
-str w9, [x0, #12]
-movz w9, #2865, lsl #0
-movk w9, #65472, lsl #16
-str w9, [x0, #16]
-movz w9, #5393, lsl #0
-movk w9, #26712, lsl #16
-str w9, [x0, #20]
-movz w9, #36775, lsl #0
-movk w9, #25849, lsl #16
-str w9, [x0, #24]
-movz w9, #20388, lsl #0
-movk w9, #48890, lsl #16
-str w9, [x0, #28]
+        concat!("adrp x9, ", vg_sym_page!("{VG_SHA224_H0}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA224_H0}")),
+        r"ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+str q0, [x0, #0]
+str q1, [x0, #16]
 ret
 .p2align 6",
+        VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
     )
 }
 
@@ -2689,32 +2672,15 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r"movz w9, #58983, lsl #0
-movk w9, #27145, lsl #16
-str w9, [x0, #0]
-movz w9, #44677, lsl #0
-movk w9, #47975, lsl #16
-str w9, [x0, #4]
-movz w9, #62322, lsl #0
-movk w9, #15470, lsl #16
-str w9, [x0, #8]
-movz w9, #62778, lsl #0
-movk w9, #42319, lsl #16
-str w9, [x0, #12]
-movz w9, #21119, lsl #0
-movk w9, #20750, lsl #16
-str w9, [x0, #16]
-movz w9, #26764, lsl #0
-movk w9, #39685, lsl #16
-str w9, [x0, #20]
-movz w9, #55723, lsl #0
-movk w9, #8067, lsl #16
-str w9, [x0, #24]
-movz w9, #52505, lsl #0
-movk w9, #23520, lsl #16
-str w9, [x0, #28]
+        concat!("adrp x9, ", vg_sym_page!("{VG_SHA256_H0}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA256_H0}")),
+        r"ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+str q0, [x0, #0]
+str q1, [x0, #16]
 ret
 .p2align 6",
+        VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,
     )
 }
 
@@ -2725,7 +2691,7 @@ pub(crate) const VG_SHA256_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// Uses the AArch64 SHA-256 instructions. The state stays in AdvSIMD registers between blocks; the first block builds the sixteen round-constant vectors, each just before its rounds, in `v16`–`v31`, where the later blocks find them.
+/// Uses the AArch64 SHA-256 instructions. The state stays in AdvSIMD registers between blocks, each block copying its original state to `v30` and `v31` for the feed-forward, and is stored once, after the last block. The first block builds the round-constant vectors of the first fourteen groups of rounds, each just before its rounds, in `v16`–`v29`, where the later blocks find them; the last two groups load theirs every block.
 ///
 /// # Safety
 ///
@@ -3126,25 +3092,13 @@ stp x28, x30, [x10, #48]
 add x25, x1, #0
 add x26, x2, #0
 add x27, x0, #0
-add x0, sp, #0
-movz x9, #40664, lsl #0
-movk x9, #49413, lsl #16
-movk x9, #54535, lsl #32
-movk x9, #13948, lsl #48
-movz x10, #56599, lsl #0
-movk x10, #12400, lsl #16
-movk x10, #22841, lsl #32
-movk x10, #63246, lsl #48
-stp x9, x10, [x0, #0]
-movz x9, #2865, lsl #0
-movk x9, #65472, lsl #16
-movk x9, #5393, lsl #32
-movk x9, #26712, lsl #48
-movz x10, #36775, lsl #0
-movk x10, #25849, lsl #16
-movk x10, #20388, lsl #32
-movk x10, #48890, lsl #48
-stp x9, x10, [x0, #16]
+add x0, sp, #0",
+        concat!("adrp x9, ", vg_sym_page!("{VG_SHA224_H0}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA224_H0}")),
+        r"ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+str q0, [x0, #0]
+str q1, [x0, #16]
 lsr x28, x25, #6
 cbz x28, 20f
 add x0, sp, #0
@@ -3261,6 +3215,7 @@ add sp, sp, #272
 ret
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
     )
 }
 
@@ -3415,25 +3370,13 @@ stp x28, x30, [x10, #48]
 add x25, x1, #0
 add x26, x2, #0
 add x27, x0, #0
-add x0, sp, #0
-movz x9, #40664, lsl #0
-movk x9, #49413, lsl #16
-movk x9, #54535, lsl #32
-movk x9, #13948, lsl #48
-movz x10, #56599, lsl #0
-movk x10, #12400, lsl #16
-movk x10, #22841, lsl #32
-movk x10, #63246, lsl #48
-stp x9, x10, [x0, #0]
-movz x9, #2865, lsl #0
-movk x9, #65472, lsl #16
-movk x9, #5393, lsl #32
-movk x9, #26712, lsl #48
-movz x10, #36775, lsl #0
-movk x10, #25849, lsl #16
-movk x10, #20388, lsl #32
-movk x10, #48890, lsl #48
-stp x9, x10, [x0, #16]
+add x0, sp, #0",
+        concat!("adrp x9, ", vg_sym_page!("{VG_SHA224_H0}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA224_H0}")),
+        r"ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+str q0, [x0, #0]
+str q1, [x0, #16]
 lsr x28, x25, #6
 cbz x28, 20f
 add x0, sp, #0
@@ -3551,6 +3494,7 @@ ret
 .arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
+        VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
     )
 }
 
@@ -3806,30 +3750,12 @@ bl {vg_sha256_compress}
 movz x23, #0, lsl #0
 sub x24, x24, #1
 cbz x24, 20b
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x20, #112]
 ldr x21, [x20, #128]
 ldr x22, [x20, #136]
@@ -4095,30 +4021,12 @@ bl {vg_sha256_compress}
 movz x23, #0, lsl #0
 sub x24, x24, #1
 cbz x24, 20b
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x20, #112]
 ldr x21, [x20, #128]
 ldr x22, [x20, #136]
@@ -4154,25 +4062,13 @@ stp x28, x30, [x10, #48]
 add x25, x1, #0
 add x26, x2, #0
 add x27, x0, #0
-add x0, sp, #0
-movz x9, #58983, lsl #0
-movk x9, #27145, lsl #16
-movk x9, #44677, lsl #32
-movk x9, #47975, lsl #48
-movz x10, #62322, lsl #0
-movk x10, #15470, lsl #16
-movk x10, #62778, lsl #32
-movk x10, #42319, lsl #48
-stp x9, x10, [x0, #0]
-movz x9, #21119, lsl #0
-movk x9, #20750, lsl #16
-movk x9, #26764, lsl #32
-movk x9, #39685, lsl #48
-movz x10, #55723, lsl #0
-movk x10, #8067, lsl #16
-movk x10, #52505, lsl #32
-movk x10, #23520, lsl #48
-stp x9, x10, [x0, #16]
+add x0, sp, #0",
+        concat!("adrp x9, ", vg_sym_page!("{VG_SHA256_H0}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA256_H0}")),
+        r"ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+str q0, [x0, #0]
+str q1, [x0, #16]
 lsr x28, x25, #6
 cbz x28, 20f
 add x0, sp, #0
@@ -4251,30 +4147,12 @@ add x3, sp, #96
 bl {vg_sha256_compress}
 add x19, sp, #0
 add x21, x26, #0
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x16, sp, #0
 movz x17, #0, lsl #0
 stp x17, x17, [x16, #0]
@@ -4292,6 +4170,7 @@ add sp, sp, #272
 ret
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+        VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,
     )
 }
 
@@ -4558,30 +4437,12 @@ bl {vg_sha256_compress_sha2}
 movz x23, #0, lsl #0
 sub x24, x24, #1
 cbz x24, 20b
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x20, #112]
 ldr x21, [x20, #128]
 ldr x22, [x20, #136]
@@ -4859,30 +4720,12 @@ bl {vg_sha256_compress_sha2}
 movz x23, #0, lsl #0
 sub x24, x24, #1
 cbz x24, 20b
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 ldr x19, [x20, #112]
 ldr x21, [x20, #128]
 ldr x22, [x20, #136]
@@ -4924,25 +4767,13 @@ stp x28, x30, [x10, #48]
 add x25, x1, #0
 add x26, x2, #0
 add x27, x0, #0
-add x0, sp, #0
-movz x9, #58983, lsl #0
-movk x9, #27145, lsl #16
-movk x9, #44677, lsl #32
-movk x9, #47975, lsl #48
-movz x10, #62322, lsl #0
-movk x10, #15470, lsl #16
-movk x10, #62778, lsl #32
-movk x10, #42319, lsl #48
-stp x9, x10, [x0, #0]
-movz x9, #21119, lsl #0
-movk x9, #20750, lsl #16
-movk x9, #26764, lsl #32
-movk x9, #39685, lsl #48
-movz x10, #55723, lsl #0
-movk x10, #8067, lsl #16
-movk x10, #52505, lsl #32
-movk x10, #23520, lsl #48
-stp x9, x10, [x0, #16]
+add x0, sp, #0",
+        concat!("adrp x9, ", vg_sym_page!("{VG_SHA256_H0}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA256_H0}")),
+        r"ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+str q0, [x0, #0]
+str q1, [x0, #16]
 lsr x28, x25, #6
 cbz x28, 20f
 add x0, sp, #0
@@ -5021,30 +4852,12 @@ add x3, sp, #96
 bl {vg_sha256_compress_sha2}
 add x19, sp, #0
 add x21, x26, #0
-ldr w9, [x19, #0]
-rev w9, w9
-str w9, [x21, #0]
-ldr w9, [x19, #4]
-rev w9, w9
-str w9, [x21, #4]
-ldr w9, [x19, #8]
-rev w9, w9
-str w9, [x21, #8]
-ldr w9, [x19, #12]
-rev w9, w9
-str w9, [x21, #12]
-ldr w9, [x19, #16]
-rev w9, w9
-str w9, [x21, #16]
-ldr w9, [x19, #20]
-rev w9, w9
-str w9, [x21, #20]
-ldr w9, [x19, #24]
-rev w9, w9
-str w9, [x21, #24]
-ldr w9, [x19, #28]
-rev w9, w9
-str w9, [x21, #28]
+ldr q0, [x19, #0]
+ldr q1, [x19, #16]
+rev32 v0.16b, v0.16b
+rev32 v1.16b, v1.16b
+str q0, [x21, #0]
+str q1, [x21, #16]
 add x16, sp, #0
 movz x17, #0, lsl #0
 stp x17, x17, [x16, #0]
@@ -5063,5 +4876,6 @@ ret
 .arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
+        VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,
     )
 }
