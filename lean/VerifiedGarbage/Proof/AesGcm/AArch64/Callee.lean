@@ -415,11 +415,11 @@ variable (v : GcmImpl)
 
 def callees : Callees := ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn⟩
 
-/-- What the names of the AES-GCM functions end with: once if both
-implementations have the same suffix (`_aes`, for the one feature they
-need). -/
+/-- What the names of the AES-GCM functions end with: the suffix of `vg_ghash`'s
+implementation alone if it starts with that of AES's (`_aes`, for the one
+feature they need, or `_aes_sha3`, which needs SHA3 too). -/
 def suffix : String :=
-  if v.gh.suffix = v.ctr.suffix then v.ctr.suffix else v.ctr.suffix ++ v.gh.suffix
+  if v.ctr.suffix.isPrefixOf v.gh.suffix then v.gh.suffix else v.ctr.suffix ++ v.gh.suffix
 
 
 end GcmImpl
@@ -431,6 +431,7 @@ which the variants then need not import. -/
 inductive GhashName where
   | scalar
   | aes
+  | aesSha3
 
 /-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
 implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`

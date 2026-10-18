@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.PmullK.Ghash
 
 /-!
-# AES-GCM on AArch64: `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
+# AES-GCM on AArch64: `vg_ghash_aes`, `vg_ghash_aes_sha3` and their `_with_powers` and `_store_powers` functions
 
-Untrusted: everything here is checked by Lean. The `GhashImpl` of
-`vg_ghash_aes` and the `GhashPreparedImpl` of `vg_ghash_prepared8_aes`, from
-their proofs, apart from `Callee.lean`: only the variants
+Untrusted: everything here is checked by Lean. The `GhashImpl`s of
+`vg_ghash_aes` and `vg_ghash_aes_sha3` and the `GhashPreparedImpl` of
+`vg_ghash_prepared8_aes`, from their proofs, apart from `Callee.lean`: only the variants
 need it, and its proof imports the algebra of `Proof/Gcm/Poly.lean`, which
 the rest of the AES-GCM proofs then need not import.
 -/
@@ -42,6 +43,21 @@ def GhashStoreImpl.aes : GhashStoreImpl where
   ct := Proof.Gcm.AArch64.Pmull.ghashS_ct
   keepsV := by decide +kernel
 
+/-- `vg_ghash_with_powers_aes_sha3`, with PMULL and EOR3. -/
+def GhashWithImpl.aesSha3 : GhashWithImpl where
+  fn := ⟨"vg_ghash_with_powers_aes_sha3", Impl.Gcm.AArch64.PmullK.ghashW⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.PmullK.ghashW_correct
+  ct := Proof.Gcm.AArch64.PmullK.ghashW_ct
+  keepsV := by decide +kernel
+
+def GhashStoreImpl.aesSha3 : GhashStoreImpl where
+  fn := ⟨"vg_ghash_store_powers_aes_sha3", Impl.Gcm.AArch64.PmullK.ghashS⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.PmullK.ghashS_correct
+  ct := Proof.Gcm.AArch64.PmullK.ghashS_ct
+  keepsV := by decide +kernel
+
 namespace GhashImpl
 
 /-- `vg_ghash_aes`, with PMULL (which Rust's `aes` feature stands for, with
@@ -59,12 +75,27 @@ def aes : GhashImpl where
   withPowers := some .aes
   storePowers := some .aes
 
+/-- `vg_ghash_aes_sha3`, with PMULL and Karatsuba's products added with EOR3
+(FEAT_SHA3). -/
+def aesSha3 : GhashImpl where
+  fn := ⟨"vg_ghash_aes_sha3", Impl.Gcm.AArch64.PmullK.ghash⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.PmullK.ghash_correct
+  ct := Proof.Gcm.AArch64.PmullK.ghash_ct
+  keepsV := by decide +kernel
+  suffix := "_aes_sha3"
+  features := ["aes", "sha3"]
+  pmull := true
+  withPowers := some .aesSha3
+  storePowers := some .aesSha3
+
 end GhashImpl
 
 /-- The implementation of `vg_ghash` named `n`. -/
 def GhashName.impl : GhashName → GhashImpl
   | .scalar => .scalar
   | .aes => .aes
+  | .aesSha3 => .aesSha3
 
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl := ⟨v.ctr, v.key, v.gh.impl⟩

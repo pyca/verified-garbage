@@ -64,7 +64,10 @@
 //! (where the `_aesni_pclmul` ones make two passes); likewise on x86, where
 //! AES-NI needs no SSSE3 (and the 256-bit instances are not built); on AArch64, CPUs with the AES and PMULL extensions (which Rust's
 //! `aes` feature stands for together) run the `_aes` ones (with
-//! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
+//! `vg_aes_ctr32_aes` and `vg_ghash_aes`), and those with SHA3 too the
+//! `_aes_sha3` ones (with `vg_ghash_aes_sha3`, whose eight-block steps
+//! multiply with Karatsuba's three PMULLs per block and add the products
+//! with EOR3).
 //!
 //! On x86-64, the `_vaes_vpclmul_avx512`, `_vaes_vpclmul` and
 //! `_aesni_pclmul_avx` instances also have `_prepared` ones
@@ -82,9 +85,9 @@
 //! shorter messages sealed use it too on the `_vaes_vpclmul_avx512` backend,
 //! whose short path copies its powers from it; they never count towards it.
 //!
-//! On AArch64, the `_aes` instances of `seal` and `open` have
-//! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
-//! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
+//! On AArch64, the `_aes` and `_aes_sha3` instances of `seal` and `open`
+//! have `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
+//! `vg_ghash_with_powers_aes` (or `_aes_sha3`) loads `H¹` to `H⁸` from a 128-byte buffer of
 //! their own, next to the key context of `vg_aes_gcm_init`, instead of
 //! computing them. A key computes them in its `POWERS_AFTER`-th (2nd)
 //! message of at least `POWERS_MIN_LEN` (128) bytes, or the first one after
@@ -132,6 +135,14 @@ use crate::arch::gcm::{
     vg_aes_gcm_seal_gather_aes, vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_decrypt_aes,
     vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_init_aes,
     vg_aes_gcm_stream_verify_aes,
+};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::gcm::{
+    VG_AES_GCM_SEAL_AES_SHA3_FEATURES, vg_aes_gcm_init_aes_sha3, vg_aes_gcm_open_aes_sha3,
+    vg_aes_gcm_seal_aes_sha3, vg_aes_gcm_seal_gather_aes_sha3, vg_aes_gcm_stream_aad_aes_sha3,
+    vg_aes_gcm_stream_decrypt_aes_sha3, vg_aes_gcm_stream_encrypt_aes_sha3,
+    vg_aes_gcm_stream_finish_aes_sha3, vg_aes_gcm_stream_init_aes_sha3,
+    vg_aes_gcm_stream_verify_aes_sha3,
 };
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::gcm::{
@@ -189,6 +200,12 @@ use crate::arch::gcm::{
     VG_AES_GCM_SEAL_STORE_POWERS_AES_FEATURES, vg_aes_gcm_open_store_powers_aes,
     vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_store_powers_aes,
     vg_aes_gcm_seal_with_powers_aes,
+};
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+use crate::arch::gcm::{
+    VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES, vg_aes_gcm_open_store_powers_aes_sha3,
+    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_store_powers_aes_sha3,
+    vg_aes_gcm_seal_with_powers_aes_sha3,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -281,6 +298,11 @@ pub(crate) enum Backend {
     /// feature stands for both): the `_aes` instances.
     #[cfg(target_arch = "aarch64")]
     Aes,
+    /// The AES instructions for AES, and PMULL and EOR3 (FEAT_SHA3) for
+    /// GHASH, which multiplies with Karatsuba's three products per block:
+    /// the `_aes_sha3` instances.
+    #[cfg(target_arch = "aarch64")]
+    AesSha3,
 }
 
 /// The instance of a function for `backend`: the baseline one, then those
@@ -293,7 +315,7 @@ macro_rules! instance {
      vaes: [$vaes:ident, $vpclmul:ident, $vaes_pclmul:ident, $aesni_vpclmul:ident,
         $vaes_vpclmul:ident, $vaes_vpclmul_avx512:ident],
      avx: [$aesni_pclmul_avx:ident],
-     aarch64: [$aes:ident]) => {
+     aarch64: [$aes:ident, $aes_sha3:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -318,6 +340,8 @@ macro_rules! instance {
             Backend::AesNiPclmulAvx => $aesni_pclmul_avx,
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => $aes,
+            #[cfg(target_arch = "aarch64")]
+            Backend::AesSha3 => $aes_sha3,
         }
     };
 }
@@ -355,6 +379,8 @@ impl Backend {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         (Backend::Pclmul, Backend::Pclmul.features()),
         #[cfg(target_arch = "aarch64")]
+        (Backend::AesSha3, Backend::AesSha3.features()),
+        #[cfg(target_arch = "aarch64")]
         (Backend::Aes, Backend::Aes.features()),
         (Backend::Scalar, Backend::Scalar.features()),
     ];
@@ -369,7 +395,7 @@ impl Backend {
                 VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
             avx: [VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES],
-            aarch64: [VG_AES_GCM_SEAL_AES_FEATURES])
+            aarch64: [VG_AES_GCM_SEAL_AES_FEATURES, VG_AES_GCM_SEAL_AES_SHA3_FEATURES])
     }
 }
 
@@ -592,6 +618,15 @@ static PREPARED_AES: Prepared = Prepared {
     open: vg_aes_gcm_open_with_powers_aes,
 };
 
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+static PREPARED_AES_SHA3: Prepared = Prepared {
+    features: VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES,
+    seal_store: vg_aes_gcm_seal_store_powers_aes_sha3,
+    open_store: vg_aes_gcm_open_store_powers_aes_sha3,
+    seal: vg_aes_gcm_seal_with_powers_aes_sha3,
+    open: vg_aes_gcm_open_with_powers_aes_sha3,
+};
+
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
@@ -610,6 +645,8 @@ impl Backend {
             Backend::AesNiPclmulAvx => &PREPARED_AESNI_PCLMUL_AVX,
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => &PREPARED_AES,
+            #[cfg(target_arch = "aarch64")]
+            Backend::AesSha3 => &PREPARED_AES_SHA3,
             #[cfg(target_arch = "x86_64")]
             Backend::AesNi
             | Backend::Pclmul
@@ -982,7 +1019,7 @@ impl AesGcm {
                 vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
                 vg_aes_gcm_init_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_init_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_init_aes]);
+            aarch64: [vg_aes_gcm_init_aes, vg_aes_gcm_init_aes_sha3]);
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
@@ -1024,7 +1061,7 @@ impl AesGcm {
                 vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul,
                 vg_aes_gcm_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_seal_aes]);
+            aarch64: [vg_aes_gcm_seal_aes, vg_aes_gcm_seal_aes_sha3]);
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds (every implementation writes
@@ -1114,7 +1151,7 @@ impl AesGcm {
                 vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
                 vg_aes_gcm_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_open_aes]);
+            aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes_sha3]);
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
         // valid for reads of its length.
         let ok = unsafe {
@@ -1290,6 +1327,8 @@ impl AesGcm {
             Backend::AesNiPclmulAvx => vg_aes_gcm_seal_gather_aesni_pclmul_avx,
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => vg_aes_gcm_seal_gather_aes,
+            #[cfg(target_arch = "aarch64")]
+            Backend::AesSha3 => vg_aes_gcm_seal_gather_aes_sha3,
         };
         let mut tag: Block = [0; 16];
         // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
@@ -1647,7 +1686,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_init_vaes_vpclmul,
                 vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_init_aes]);
+            aarch64: [vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_init_aes_sha3]);
         // SAFETY: `key.ctx` is a key context (as in
         // `AesGcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
         // for reads of `nonce.len()`, and `s.state` for reads and writes of
@@ -1673,7 +1712,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_aad_vaes_vpclmul,
                 vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_aad_aes]);
+            aarch64: [vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_aad_aes_sha3]);
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
@@ -1709,7 +1748,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                     vg_aes_gcm_stream_decrypt_vaes_vpclmul,
                 vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512],
                 avx: [vg_aes_gcm_stream_decrypt_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_decrypt_aes])
+                aarch64: [vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_decrypt_aes_sha3])
         } else {
             instance!(self.key.backend, vg_aes_gcm_stream_encrypt,
                 x86_64: [vg_aes_gcm_stream_encrypt_aesni, vg_aes_gcm_stream_encrypt_pclmul,
@@ -1719,7 +1758,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                     vg_aes_gcm_stream_encrypt_vaes_vpclmul,
                 vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512],
                 avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_encrypt_aes])
+                aarch64: [vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_encrypt_aes_sha3])
         };
         // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
@@ -1788,7 +1827,7 @@ impl Stream<'_, false> {
                 vg_aes_gcm_stream_finish_vaes_vpclmul,
                 vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_finish_aes]);
+            aarch64: [vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_finish_aes_sha3]);
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
@@ -1821,7 +1860,7 @@ impl Stream<'_, true> {
                 vg_aes_gcm_stream_verify_vaes_vpclmul,
                 vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_verify_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_verify_aes]);
+            aarch64: [vg_aes_gcm_stream_verify_aes, vg_aes_gcm_stream_verify_aes_sha3]);
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
@@ -1999,7 +2038,11 @@ mod tests {
             assert_eq!(f(&["aes", "pclmulqdq"]), Backend::AesNi);
         }
         #[cfg(target_arch = "aarch64")]
-        assert_eq!(f(&["aes"]), Backend::Aes);
+        {
+            assert_eq!(f(&["aes", "sha3"]), Backend::AesSha3);
+            assert_eq!(f(&["aes"]), Backend::Aes);
+            assert_eq!(f(&["sha3"]), Backend::Scalar);
+        }
         assert_eq!(f(&[]), Backend::Scalar);
         let best = AesGcm::new(&[0; 16]).unwrap().backend;
         assert_eq!(best, select(detected()));
@@ -2329,6 +2372,8 @@ mod tests {
         Backend::AesNiPclmulAvx,
         #[cfg(target_arch = "aarch64")]
         Backend::Aes,
+        #[cfg(target_arch = "aarch64")]
+        Backend::AesSha3,
     ];
 
     impl AesGcm {

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.PmullK.Ghash
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -11,6 +12,8 @@ The PMULL implementation's suffix is `_aes`, like the AES instructions' (e.g.
 FEAT_PMULL; the Arm ARM's `ID_AA64ISAR0_EL1.AES` has no value for PMULL
 without AES). With one suffix, a function calling both, such as AES-GCM, has
 one variant for that feature, not one for each suffix and their combination.
+The `_aes_sha3` functions, which add Karatsuba's products with EOR3, need
+FEAT_SHA3 (Rust's `sha3` feature) too.
 -/
 
 @[expose] public section
@@ -43,6 +46,29 @@ def artifacts : List Artifact := [
         to `pw` after the hash."]
     code := Impl.Gcm.AArch64.Pmull.ghashS
     verified := Proof.Gcm.AArch64.Pmull.ghashS_verified
-    features := ["aes"] }]
+    features := ["aes"] },
+  Spec.Gcm.ghashApi.artifact AArch64.target {
+    suffix := "_aes_sha3"
+    notes := ["Uses PMULL and EOR3: as `vg_ghash_aes` does, but with eight, four or two blocks at a \
+        time multiplied with Karatsuba's three `pmull`s per block (`(a₀ + a₁) · (h₀ + h₁)` for the middle \
+        term, with `h₀ + h₁` computed once per call), two blocks at a time, whose products are added \
+        with `eor3`."]
+    code := Impl.Gcm.AArch64.PmullK.ghash
+    verified := Proof.Gcm.AArch64.PmullK.ghash_verified
+    features := ["aes", "sha3"] },
+  Spec.Gcm.ghashWithPowersApi.artifact AArch64.target {
+    suffix := "_aes_sha3"
+    notes := ["Uses PMULL and EOR3 as `vg_ghash_aes_sha3` does, loading `H'` to `H'⁸` \
+        (`H'ᵏ = Hᵏ · x⁻¹`) from `pw` instead of computing them."]
+    code := Impl.Gcm.AArch64.PmullK.ghashW
+    verified := Proof.Gcm.AArch64.PmullK.ghashW_verified
+    features := ["aes", "sha3"] },
+  Spec.Gcm.ghashStorePowersApi.artifact AArch64.target {
+    suffix := "_aes_sha3"
+    notes := ["Uses PMULL and EOR3 as `vg_ghash_aes_sha3` does, computing `H'` to `H'⁸` on every \
+        call and storing them to `pw` after the hash."]
+    code := Impl.Gcm.AArch64.PmullK.ghashS
+    verified := Proof.Gcm.AArch64.PmullK.ghashS_verified
+    features := ["aes", "sha3"] }]
 
 end VG.Artifacts.Gcm.AArch64
