@@ -14,10 +14,12 @@ abbrev operandValue (s : State) (base : Addr) (p : Pointer) (len : Nat) : Nat :=
   Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s p).setWidth 64) len)
 
 structure CallerBuffer (s : State) (base : Addr) (size : Nat) (p : Pointer) (len : Nat) : Prop where
+  room : Pow.Room (s.gpr .esp) base size
   fits : (pointerValue base s p).toNat + len ≤ 2 ^ 32
   read : ∀ d k, d + k ≤ len → InRegions (s.rd ++ s.wr)
     ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 d) k
   apart : Region.Disjoint ⟨(pointerValue base s p).setWidth 64, len⟩ ⟨base, size⟩
+  stack : Region.Disjoint ⟨(pointerValue base s p).setWidth 64, len⟩ (callStack (s.gpr .esp))
 
 theorem CallerBuffer.ready {s : State} {base : Addr} {size n len : Nat} {p : Pointer}
     (B : CallerBuffer s base size p len) (hn : contextBytes n ≤ size) : OperandReady s base n p len := by
@@ -40,24 +42,25 @@ theorem CallerBuffer.stream {s : State} {base : Addr} {size n len : Nat} {p : Po
   omega
 
 theorem CallerBuffer.keep {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {rs : List Reg}
-    (B : CallerBuffer s base size p len) (O : Outs base runRanges s.mem t.mem)
-    (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) : CallerBuffer t base size p len := by
+    (B : CallerBuffer s base size p len) (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem)
+    (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) (hsp : .esp ∉ rs := by decide) : CallerBuffer t base size p len := by
   have P := runFrame_pointer O K hdi hp
-  exact ⟨by rw [P]; exact B.fits, by rw [P, K.2.1, K.2.2]; exact B.read, by rw [P]; exact B.apart⟩
+  exact ⟨by rw [K.1 _ hsp]; exact B.room, by rw [P]; exact B.fits, by rw [P, K.2.1, K.2.2]; exact B.read, by rw [P]; exact B.apart, by rw [P, K.1 _ hsp]; exact B.stack⟩
 
 theorem CallerBuffer.value_keep {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {rs : List Reg}
-    (B : CallerBuffer s base size p len) (O : Outs base runRanges s.mem t.mem)
+    (B : CallerBuffer s base size p len) (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem)
     (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) (hz : usedBytes ≤ size) :
     operandValue t base p len = operandValue s base p len := by
   unfold operandValue
-  rw [runFrame_pointer O K hdi hp, runFrame_bytes O hz (by have := B.fits; omega) B.apart]
+  rw [runFrame_pointer O K hdi hp, runFrame_bytes O hz (by have := B.fits; omega) B.apart B.stack]
 
 theorem CallerBuffer.prefix {s : State} {base : Addr} {size len count : Nat} {p : Pointer}
     (B : CallerBuffer s base size p len) (hc : count ≤ len) : CallerBuffer s base size p count := by
-  refine ⟨by have := B.fits; omega, fun d k hd => B.read d k (by omega), B.apart.sub_left ?_⟩
-  intro x hx
-  change (x - (pointerValue base s p).setWidth 64).toNat + 1 ≤ count at hx
-  change (x - (pointerValue base s p).setWidth 64).toNat + 1 ≤ len
-  omega
+  refine ⟨B.room, by have := B.fits; omega, fun d k hd => B.read d k (by omega), B.apart.sub_left ?_, B.stack.sub_left ?_⟩
+  all_goals
+    intro x hx
+    change (x - (pointerValue base s p).setWidth 64).toNat + 1 ≤ count at hx
+    change (x - (pointerValue base s p).setWidth 64).toNat + 1 ≤ len
+    omega
 
 end VG.Proof.Dsa.X86

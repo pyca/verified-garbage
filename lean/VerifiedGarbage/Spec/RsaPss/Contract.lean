@@ -181,14 +181,9 @@ def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         _scratchLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-/-- `vg_rsa_pss_<H>_mgf1_<G>_verify` on every target. -/
-def verifyApi : Api where
-  module := s!"rsa_pss_{H.rust}_mgf1_{G.rust}"
-  name := s!"vg_rsa_pss_{H.rust}_mgf1_{G.rust}_verify"
-  sig := verifySig H
-  writeArgs := true
-  contracts := some fun A stack => verifyContract H G A stack
-  summary := s!"RSASSA-PSS signature verification (RFC 8017 §8.1.2) with {H.name} and MGF1 \
+/-- The summary of `verify` in the documentation of the functions built on it. -/
+def verifySummary : String :=
+  s!"RSASSA-PSS signature verification (RFC 8017 §8.1.2) with {H.name} and MGF1 \
     with {G.name}, of a signature of a {H.name} digest. With the modulus `n` (`n_len` bytes, \
     most significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
     {exponentDoc}, returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the {H.len}-byte digest \
@@ -199,7 +194,10 @@ def verifyApi : Api where
     `VG.Spec.Mgf1.{G.lean}`. Constant time but for the public key: timing may depend on the \
     pointers, the lengths, `salt_len`, `any_salt_len` and the contents of `n` and `e`, not on \
     the digest, the signature or anything computed from them but the result."
-  safety := ["`n_len` must be in 64..=1024.", "`sig_len` must be `n_len`.",
+
+/-- The `# Safety` items of `verify` but for what the signature gives. -/
+def verifySafety : List String :=
+  ["`n_len` must be in 64..=1024.", "`sig_len` must be `n_len`.",
     "`e_len` must be in 1..=`n_len`."] ++ publicScratchSafety
 
 end VG.Spec.RsaPss

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.Arm.Validate
+public import VerifiedGarbage.Impl.Dsa.Arm.PublicValidation
 
 /-! # DSA signing and verification bodies after public shape validation
 
@@ -26,7 +26,7 @@ def writeScalar (qLen input : Nat) (second : Bool) : Prog isa :=
 def result : List Instr := [.ldr .r0 .r12 (Layout.field .mask), .dp .and .r0 .r0 (.imm 1)]
 
 def signCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
-  Validate.publicKey pLen qLen,
+  PublicValidation.call pLen qLen,
   Validate.privateKey pLen qLen,
   Core.sign pLen qLen,
   .seq (Validate.zero qLen (.local r) true) (Validate.zero qLen (.local s) true)]
@@ -36,7 +36,7 @@ def signBody (pLen qLen : Nat) : Prog isa :=
     (.seq (writeScalar qLen r false) (.seq (writeScalar qLen s true) (.block result)))
 
 def verifyCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
-  Validate.publicKey pLen qLen,
+  PublicValidation.call pLen qLen,
   .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
   Core.verify pLen qLen,
   Validate.equalValues qLen (.local u) (.input .signature)]

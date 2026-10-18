@@ -35,7 +35,7 @@ def memBase : Instr → Option (List Reg)
 /-- Every instruction's addresses use only `rs`, which none writes. -/
 def blockOk (rs : List Reg) (is : List Instr) : Bool :=
   is.all fun i => (match memBase i with | some l => l.all (rs.contains ·) | none => false) &&
-    rs.all fun r => dstOf i != some r
+    rs.all fun r => !clobbers i r
 
 theorem addrs_agree {rs : List Reg} {i : Instr} {l : List Reg} (h : memBase i = some l) (hl : ∀ r ∈ l, r ∈ rs)
     {s s' : State} (hs : ∀ r ∈ rs, s.gpr r = s'.gpr r) : addrs i s = addrs i s' := by
@@ -43,8 +43,8 @@ theorem addrs_agree {rs : List Reg} {i : Instr} {l : List Reg} (h : memBase i = 
     first | rfl | simp only [addrs, hs _ (hl _ (List.mem_singleton_self _))]
 
 theorem blockOk_cons {rs : List Reg} {i : Instr} {is : List Instr} (h : blockOk rs (i :: is) = true) :
-    (∃ l, memBase i = some l ∧ ∀ r ∈ l, r ∈ rs) ∧ (∀ r ∈ rs, dstOf i ≠ some r) ∧ blockOk rs is = true := by
-  simp only [blockOk, List.all_cons, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq] at h
+    (∃ l, memBase i = some l ∧ ∀ r ∈ l, r ∈ rs) ∧ (∀ r ∈ rs, clobbers i r = false) ∧ blockOk rs is = true := by
+  simp only [blockOk, List.all_cons, Bool.and_eq_true, List.all_eq_true, Bool.not_eq_true'] at h
   obtain ⟨⟨hm, hc⟩, hr⟩ := h
   refine ⟨?_, hc, by simpa [blockOk] using hr⟩
   revert hm

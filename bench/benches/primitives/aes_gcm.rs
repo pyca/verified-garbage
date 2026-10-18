@@ -503,9 +503,14 @@ pub fn bench(c: &mut Criterion) {
 fn tls_records(c: &mut Criterion) {
     /// The payloads: a full record, a common web record, and smaller ones,
     /// each next to sizes that are not a multiple of 16 (as most records'
-    /// are), since the end of a record costs differently from its blocks.
-    const TLS_SIZES: [usize; 15] = [
-        255, 256, 257, 1023, 1024, 1025, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
+    /// are), since the end of a record costs differently from its blocks;
+    /// and records of 16, 64 and 255 bytes with their content type (alerts,
+    /// handshake messages, small requests), shorter than the messages the
+    /// library computes its keys' powers for; and a 2048-byte record, where
+    /// VAES's `seal` changes paths.
+    const TLS_SIZES: [usize; 19] = [
+        15, 63, 254, 255, 256, 257, 1023, 1024, 1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001,
+        16383, 16384, 16385,
     ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
@@ -648,6 +653,15 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             (&AES_256_GCM, OsslCipher::aes_256_gcm())
         };
         let vg_key = AesGcm::new(key).unwrap();
+        // A connection's key has sealed and opened many records before its
+        // short ones: seal more long records than the library's
+        // `POWERS_AFTER` (at most 32), so that short records find its powers
+        // ready, as they do in a connection, rather than measuring a key
+        // that has not computed them.
+        let mut warm = vec![0u8; 1024];
+        for _ in 0..64 {
+            vg_key.encrypt_in_place(&nonce, &aad, &mut warm).unwrap();
+        }
         let aws_lc_key = LessSafeKey::new(UnboundKey::new(alg, key).unwrap());
         let mut ossl = CipherCtx::new().unwrap();
         ossl.encrypt_init(Some(ossl_alg), Some(key), None).unwrap();

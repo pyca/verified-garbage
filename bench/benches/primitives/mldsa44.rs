@@ -135,6 +135,24 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     g.finish();
+    // Precomputed message representatives exclude hashing from the timing.
+    let mu = [0x5a; 64];
+    let rnd = [0x42; 32];
+    let mu_sig = key.sign_mu(&mu, &rnd).unwrap();
+    let mut g = c.benchmark_group("mldsa44_sign_mu");
+    g.bench_function(BenchmarkId::new(VG, mu_sig.len()), |b| {
+        b.iter(|| key.sign_mu(black_box(&mu), black_box(&rnd)).unwrap())
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa44_verify_mu");
+    g.bench_function(BenchmarkId::new(VG, 64), |b| {
+        b.iter(|| {
+            key.verifying_key()
+                .verify_mu(black_box(&mu), black_box(&mu_sig))
+                .unwrap()
+        })
+    });
+    g.finish();
 }
 
 #[cfg(not(any(

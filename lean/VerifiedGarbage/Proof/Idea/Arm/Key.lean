@@ -42,7 +42,7 @@ abbrev expandKept : List Reg :=
   [.r0, .r1, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr]
 
 theorem expand_kept : ∀ w < 26, ∀ r ∈ expandKept,
-    ((expandWord w).all fun i => dstOf i != some r) = true := by
+    ((expandWord w).all fun i => !clobbers i r) = true := by
   lit_decide
 
 theorem expandWord_run (w : Nat) (hw : w < 26) (s : State)

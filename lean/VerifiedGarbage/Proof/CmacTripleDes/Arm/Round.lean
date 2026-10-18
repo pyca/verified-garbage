@@ -71,7 +71,7 @@ theorem inG_lt : ∀ t < 12, ∀ p < 32, ∀ a ∈ inG t p, a < 2 ^ 7 := by lit_
 def kept : List Reg := [.r9, .r10, .r11, .r12, .lr]
 
 theorem inputs_kept :
-    (.r7 :: .r8 :: kept).all (fun r => inputs.all fun i => dstOf i != some r) = true := by
+    (.r7 :: .r8 :: kept).all (fun r => inputs.all fun i => !clobbers i r) = true := by
   lit_decide
 
 /-- The inputs of `inputs`: `R` and the round key's words. -/
@@ -134,7 +134,7 @@ theorem sbox1_check : check (rows 32 6) (sCfg 1) (fun _ => none) (sbCode 1) (sbE
   lit_decide
 
 theorem sbox_kept (h : Nat) (hh : h < 2) :
-    (.r7 :: .r8 :: kept).all (fun r => (sbCode h).all fun i => dstOf i != some r) = true := by
+    (.r7 :: .r8 :: kept).all (fun r => (sbCode h).all fun i => !clobbers i r) = true := by
   rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> lit_decide
 
 /-- The input of the box whose lane of half `h` holds bit `p`, from bit `p`
@@ -168,7 +168,7 @@ theorem sbox_ok {h : Nat} (hh : h < 2) {s : State} (hok : Ok (sCfg h) s) :
     · cases hpost
   have key : ∀ p < 32, ∃ s', runBlock isa (sbCode h) s = some s' ∧
       Post (RowRel p (boxIn h s p).toNat) (sCfg h) (fun _ => none) e' s s'
-        (fun r => ((sbCode h).all fun i => dstOf i != some r) = false) := by
+        (fun r => ((sbCode h).all fun i => !clobbers i r) = false) := by
     intro p hp
     refine run (rows_sound hp (boxIn h s p).isLt) hok
       ⟨fun r a h => by simp [sbEnv] at h, fun t a ht h' => ?_, (fun _ _ _ h => by cases h),
@@ -223,7 +223,7 @@ theorem output_check : check (lanes 32 7) oCfg (fun _ => none) output oEnv oPost
 
 theorem oG_lt : ∀ p < 32, (∀ a ∈ oG7 p, a < 2 ^ 7) ∧ ∀ a ∈ oG8 p, a < 2 ^ 7 := by lit_decide
 
-theorem output_kept : kept.all (fun r => output.all fun i => dstOf i != some r) = true := by
+theorem output_kept : kept.all (fun r => output.all fun i => !clobbers i r) = true := by
   lit_decide
 
 /-- The inputs of `output`. -/

@@ -370,16 +370,12 @@ def tagOut (src : MemOp) : List Instr :=
   [.mov .rdi (.mem src), .mov .rax (.mem (at_ .r15 0)), .mov .rdx (.mem (at_ .r15 8)), .store (at_ .rdi 0) .rax,
     .store (at_ .rdi 8) .rdx]
 
-/-- ZF is clear iff the tag length `rbx` is one §5.2.1.2 allows (4, 8 or 12 to 16). -/
+/-- ZF is clear iff the tag length `rbx` is between 4 and 16 bytes. -/
 def tagLenOk : Prog isa :=
   .seq (.block [.mov32 .rcx (imm 0), .alu .cmp .rbx (imm 4)])
-  (.seq (.ite .e (.block [.mov32 .rcx (imm 1)]) (.block []))
-  (.seq (.block [.alu .cmp .rbx (imm 8)])
-  (.seq (.ite .e (.block [.mov32 .rcx (imm 1)]) (.block []))
-  (.seq (.block [.alu .cmp .rbx (imm 12)])
   (.seq (.ite .b (.block [])
       (.seq (.block [.alu .cmp .rbx (imm 17)]) (.ite .b (.block [.mov32 .rcx (imm 1)]) (.block []))))
-    (.block [.alu .test .rcx (.reg .rcx)]))))))
+    (.block [.alu .test .rcx (.reg .rcx)]))
 
 /-! ## The functions -/
 

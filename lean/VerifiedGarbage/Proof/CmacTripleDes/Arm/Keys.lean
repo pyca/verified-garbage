@@ -54,19 +54,12 @@ def kWrites : List Reg := [.r6, .r7, .r8]
 
 /-- Every register `roundKeys` writes is one of `kWrites`: checked once
 for every instruction, rather than once for every other register. -/
-theorem roundKeys_writes : roundKeys.all (fun i => (dstOf i).all kWrites.contains) = true := by
+theorem roundKeys_writes : roundKeys.all (fun i => (dsts i).all kWrites.contains) = true := by
   rw [roundKeys_eq]; lit_decide
 
-theorem roundKeys_kept {r : Reg} (hr : r ∉ kWrites) : roundKeys.all (fun i => dstOf i != some r) = true :=
+theorem roundKeys_kept {r : Reg} (hr : r ∉ kWrites) : roundKeys.all (fun i => !clobbers i r) = true :=
   List.all_eq_true.mpr fun i hi => by
-    have h := List.all_eq_true.mp roundKeys_writes i hi
-    cases hd : dstOf i with
-    | none => rfl
-    | some d =>
-      rw [hd, Option.all_some] at h
-      have hd' : d ∈ kWrites := by simpa using h
-      have hne : d ≠ r := fun e => hr (e ▸ hd')
-      simpa using hne
+    rw [clobbers_eq_false_of_contains (List.all_eq_true.mp roundKeys_writes i hi) hr]; rfl
 
 /-- The round keys of the DES key in `r0:r1`, in `[r2 + 8 j]` and `[r2 + 8 j + 4]`. -/
 theorem roundKeys_ok {s : State} (hok : Ok kCfg s) :

@@ -93,22 +93,6 @@ def tdesInitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   tdesInitSig.contract A (pre := tdesInitPre A.ptrBits) (post := tdesInitPost A.ptrBits)
     (stack := stack)
 
-/-- `vg_cmac_triple_des_init` on every target. -/
-def tdesInitApi : Api where
-  module := "cmac_triple_des"
-  name := "vg_cmac_triple_des_init"
-  sig := tdesInitSig
-  contracts := some fun A stack => tdesInitContract A stack
-  summary := "Sets up TDEA-CMAC (NIST SP 800-38B) for a 16- or 24-byte TDEA key (FIPS 46-3; a \
-    16-byte key is `K1 ‖ K2` with `K3 = K1`, parity bits are ignored): writes the key schedule \
-    (the three DES schedules, sixteen encryption-order 48-bit round keys each, zero-extended \
-    into little-endian 64-bit slots) to the first 384 bytes of `*out`, and the CMAC subkeys \
-    `K1 ‖ K2` (§6.1) to the last 16, where `L = CIPH_K(0⁶⁴)`, `K1 = L << 1` (XORed with \
-    `R₆₄ = 0⁵⁹11011` if the leftmost bit of `L` is 1) and `K2` is `K1` doubled the same way.\n\n\
-    Contract: `VG.Spec.Cmac.tdesInitContract`. Constant time: only the pointers and `key_len` \
-    may affect timing, not the key, the key schedule or the subkeys."
-  safety := ["`key_len` must be 16 or 24."]
-
 /-- `vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize)`. -/
 def tdesUpdateSig : Sig where
   params := [("schedule", .array false .u8 384), ("state", .array true .u8 8),
@@ -120,24 +104,6 @@ def tdesUpdateSig : Sig where
 def tdesUpdatePost (pb : Nat) : tdesUpdateSig.Post pb := fun schedule state data n m m' _ =>
   let ciph := tdesWith (TripleDes.scheduleAt m schedule)
   Aes.bytesAt m' state 8 = chain ciph (Aes.bytesAt m state 8) (blocksAt m data 8 n.toNat)
-
-/-- `tdesUpdatePost`. -/
-def tdesUpdateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  tdesUpdateSig.contract A (post := tdesUpdatePost A.ptrBits) (stack := stack)
-
-/-- `vg_cmac_triple_des_update` on every target. -/
-def tdesUpdateApi : Api where
-  module := "cmac_triple_des"
-  name := "vg_cmac_triple_des_update"
-  sig := tdesUpdateSig
-  contracts := some fun A stack => tdesUpdateContract A stack
-  summary := "CMAC's chaining (NIST SP 800-38B §6.2 step 6) for TDEA, over whole blocks: replaces \
-    the block `C₀` at `*state` with `Cₙ`, where `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)` for the `n` 8-byte \
-    blocks `M₁ … Mₙ` starting at `data`. `CIPH_K` is TDEA encryption (FIPS 46-3) with the \
-    three DES schedules at `*schedule`, as `vg_cmac_triple_des_init` writes them.\n\n\
-    Contract: `VG.Spec.Cmac.tdesUpdateContract`. Constant time: only the pointers and `n` may \
-    affect timing, not the key schedule, the chaining value or the data."
-  safety := []
 
 /-- `vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize)`. -/
 def tdesFinalizeSig : Sig where
@@ -161,30 +127,6 @@ def tdesFinalizePost (pb : Nat) : tdesFinalizeSig.Post pb := fun key state last 
   ∀ msg : List Byte, msg.length % 8 = 0 → (msg = [] ∨ 0 < lastLen.toNat) →
     Aes.bytesAt m state 8 = chain ciph (zeros 8) (blocks 8 msg) →
     Aes.bytesAt m' state 8 = macFull ciph 8 (msg ++ Aes.bytesAt m last lastLen.toNat)
-
-/-- For `last_len` at most 8: `tdesFinalizePost`. -/
-def tdesFinalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  tdesFinalizeSig.contract A (pre := tdesFinalizePre A.ptrBits) (post := tdesFinalizePost A.ptrBits)
-    (stack := stack)
-
-/-- `vg_cmac_triple_des_finalize` on every target. -/
-def tdesFinalizeApi : Api where
-  module := "cmac_triple_des"
-  name := "vg_cmac_triple_des_finalize"
-  sig := tdesFinalizeSig
-  contracts := some fun A stack => tdesFinalizeContract A stack
-  summary := "Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the \
-    block at `*state` is the chaining value `Cₙ₋₁` of the message's blocks but the last (as \
-    `vg_cmac_triple_des_update` computes it from a zero block), and the `last_len` bytes at \
-    `last` are the message's last bytes `Mₙ*`, replaces it with the MAC \
-    `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if `last_len` is 8, and \
-    `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise. `*key` is the 384-byte key schedule \
-    followed by the subkeys `K1 ‖ K2`, as `vg_cmac_triple_des_init` writes them. `last_len` \
-    is 0 only for the empty message.\n\n\
-    Contract: `VG.Spec.Cmac.tdesFinalizeContract`. Constant time: only the pointers and \
-    `last_len` may affect timing, not the key schedule, the subkeys, the chaining value or the \
-    data."
-  safety := ["`last_len` must be at most 8."]
 
 /-! ## Streaming TDEA-CMAC
 

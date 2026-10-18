@@ -97,10 +97,6 @@ def prodContract {I : ISA} (A : Abi I) (r : Nat → Nat → Nat → Prop) (stack
 def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   prodContract A (fun o a b => o % P = a * b % P) stack
 
-/-- `mul2`: the result is congruent to `2 a b` modulo `P`. -/
-def mul2Contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  prodContract A (fun o a b => o % P = 2 * a * b % P) stack
-
 /-- The Rust module of the functions. -/
 def module : String := "gf25519_r64"
 
@@ -110,7 +106,7 @@ def common : String :=
     elements are at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` \
     or `b`. Every byte of `ws` but the result's and the function's own working space (bytes \
     3584 to 4095) keeps its value.\n\n\
-    Contract: `mulContract` or `mul2Contract` of `VG.Spec.X25519.Field64`. Constant time: only \
+    Contract: `mulContract` of `VG.Spec.X25519.Field64`. Constant time: only \
     the pointer and the offsets may affect timing."
 
 /-- The `# Safety` items but for what the signature gives. -/
@@ -128,16 +124,6 @@ def mulApi : Api where
   contracts := some fun A stack => mulContract A stack
   summary := "Multiplication in curve25519's field: writes an element congruent to `a b` modulo \
     `p = 2^255 - 19` to `o`. " ++ common
-  safety := safety
-
-/-- `vg_gf25519_r64_mul2` on every target. -/
-def mul2Api : Api where
-  module := module
-  name := "vg_gf25519_r64_mul2"
-  sig := sig
-  contracts := some fun A stack => mul2Contract A stack
-  summary := "Twice a product in curve25519's field: writes an element congruent to `2 a b` \
-    modulo `p = 2^255 - 19` to `o`. " ++ common
   safety := safety
 
 /-! ## Inversion -/

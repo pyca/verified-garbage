@@ -64,7 +64,7 @@ theorem StageFrame.scalar_keep {base : Addr} {size pLen qLen p q output d : Nat}
   have H := VG.Proof.Dsa.X86.Layout.scalar_bounds hd
   have low : contextBytes 48 ≤ d := by change 7048 ≤ d; omega
   exact F.local_value_keep M.scr (by have := M.lengths; omega) low
-    (Nat.le_trans (M.scalarFit hd) M.extent) (Nat.le_trans (M.scalarFit ho) M.extent)
+    (Nat.le_trans (M.scalarFit hd) M.extent) (Nat.le_trans (M.scalarFit ho) M.extent) (M.scalarFit hd)
     (scalar_separate hd ho hne (by have := M.lengths; omega))
 
 theorem StageFrame.scalar_keep_wide {base : Addr} {size pLen qLen p q output d : Nat} {s t : State}
@@ -74,7 +74,7 @@ theorem StageFrame.scalar_keep_wide {base : Addr} {size pLen qLen p q output d :
   have H := VG.Proof.Dsa.X86.Layout.scalar_bounds hd
   have low : contextBytes 48 ≤ d := by change 7048 ≤ d; omega
   exact F.local_value_keep M.scr (by have := M.lengths; omega) low
-    (Nat.le_trans (M.scalarFit hd) M.extent) (Nat.le_trans (M.wideFit ho) M.extent)
+    (Nat.le_trans (M.scalarFit hd) M.extent) (Nat.le_trans (M.wideFit ho) M.extent) (M.scalarFit hd)
     (.inl (scalar_before_wide hd ho (by have := M.lengths; omega)))
 
 theorem StageResult.scalar_value {base : Addr} {size pLen qLen p q output value : Nat} {s t : State}
@@ -96,7 +96,7 @@ theorem StageFrame.wide_keep {base : Addr} {size pLen qLen p q output d : Nat} {
   have H := VG.Proof.Dsa.X86.Layout.wide_bounds hd
   have low : contextBytes 48 ≤ d := by change 7048 ≤ d; omega
   apply F.local_value_keep M.scr (by have := M.lengths; omega) low
-    (Nat.le_trans (M.wideFit hd) M.extent) (Nat.le_trans (M.wideFit ho) M.extent)
+    (Nat.le_trans (M.wideFit hd) M.extent) (Nat.le_trans (M.wideFit ho) M.extent) (M.wideFit hd)
   have L := M.lengths
   simp only [Layout.wideValues, List.mem_cons, List.not_mem_nil, or_false] at hd ho
   rcases hd with rfl | rfl <;> rcases ho with rfl | rfl <;>

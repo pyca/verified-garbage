@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.CheckVerified
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
@@ -22,7 +23,7 @@ namespace VG.Generic.P521.AArch64.CheckPointP521
 
 open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64.P521.Check
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   C.checkApi.artifact AArch64.target {
     notes := ["The function compares `x` and `y` with `p` by chains of \
       subtractions with borrow (`subs`, `sbcs`), multiplies them by `R² mod p` by calls of the curve's Montgomery multiplication function (`Spec/Weierstrass/Mont.lean`), computes \

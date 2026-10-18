@@ -24,7 +24,7 @@ open VG.Proof.Rsa.Arm.Recover (VP Two)
 /-- A block of loads, stores and arithmetic relative to the stack pointer
 (`r12 = sp`). -/
 theorem VP.stk {F G : State → State → Prop} {code : List Instr}
-    (keep : code.all (fun i => decide (dstOf i ≠ some .r12)) = true)
+    (keep : code.all (fun i => decide (clobbers i .r12 = false)) = true)
     (leak : code.all VG.Proof.Rsa.Arm.stackInstruction = true)
     (sp : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → s₁.sp = s₂.sp)
     (wp : ∀ σ s, F σ s → WP isa (.block (.addSp .r12 0 :: code)) s (G σ)) :

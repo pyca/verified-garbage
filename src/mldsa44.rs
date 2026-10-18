@@ -24,6 +24,11 @@
 //! the seed with an approved RBG. The expanded private key is never
 //! exposed. HashML-DSA (§5.4) is not provided.
 //!
+//! Precomputed 64-byte message representatives are supported by
+//! [`SigningKey44::sign_mu`] and [`VerifyingKey44::verify_mu`]. The caller
+//! computes `μ`, including the public-key hash and message formatting,
+//! and supplies the signing randomness.
+//!
 //! The loops FIPS 204 lets an implementation bound (Appendix C) reach their
 //! bounds with probability about 2⁻²⁵⁶ or less; the operation then fails
 //! with [`Error::LoopBound`].

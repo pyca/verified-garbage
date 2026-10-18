@@ -12,7 +12,7 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm
 def StackBaseEq (s t : State) : Prop := s.sp = t.sp ∧ s.gpr .r12 = t.gpr .r12
 
 theorem stackBaseBlock_ct (code : List Instr)
-    (keep : ∀ i ∈ code, dstOf i ≠ some .r12)
+    (keep : ∀ i ∈ code, clobbers i .r12 = false)
     (leak : ∀ i ∈ code, ∀ s t : State, StackBaseEq s t → addrs i s = addrs i t) :
     RelCT isa StackBaseEq (.block code) StackBaseEq := by
   induction code with
@@ -35,7 +35,7 @@ theorem stackBaseStart_ct : RelCT isa (fun s t => s.sp = t.sp)
   exact ⟨h, by simpa only [State.setReg, ite_true] using h⟩
 
 theorem setupBlock_ct (code : List Instr)
-    (keep : ∀ i ∈ code, dstOf i ≠ some .r12)
+    (keep : ∀ i ∈ code, clobbers i .r12 = false)
     (leak : ∀ i ∈ code, ∀ s t : State, StackBaseEq s t → addrs i s = addrs i t) :
     RelCT isa (fun s t => s.sp = t.sp) (.block (.addSp .r12 0 :: code)) (fun s t => s.sp = t.sp) := by
   exact (RelCT.block_append (stackBaseStart_ct.seq (stackBaseBlock_ct code keep leak))).mono
@@ -51,7 +51,7 @@ theorem stackInstruction_leak {i : Instr} (hi : stackInstruction i = true) {s t 
   cases i <;> simp_all [stackInstruction, addrs, StackBaseEq]
 
 theorem setupChecked_ct (code : List Instr)
-    (keep : code.all (fun i => decide (dstOf i ≠ some .r12)) = true)
+    (keep : code.all (fun i => decide (clobbers i .r12 = false)) = true)
     (leak : code.all stackInstruction = true) :
     RelCT isa (fun s t => s.sp = t.sp) (.block (.addSp .r12 0 :: code)) (fun s t => s.sp = t.sp) := by
   apply setupBlock_ct

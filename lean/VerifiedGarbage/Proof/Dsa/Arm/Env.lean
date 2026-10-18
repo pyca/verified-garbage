@@ -83,7 +83,7 @@ theorem Env.saved_body {s₀ t t' : State} {base P : Addr} {size L : Nat} {field
   refine Mem.readW_congr fun j hj => B.mem _ (fun r hr => ?_) (ofs_apart hd ?_)
   · simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [ofs_off base (by omega)]
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega
   · rw [ofs_off base (by omega)]
     omega
 

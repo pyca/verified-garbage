@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 Untrusted: everything here is checked by Lean. `Fast.cond` leaves ZF clear
 iff the path applies: a 12-byte nonce, at most 16 bytes of additional data
-and at least 256 bytes of text (`cond_ok`), and takes the same branches in
-two runs with the same lengths (`cond_rel`).
+and at least 256 bytes of text, or any text with `any` (`cond_ok`), and takes
+the same branches in two runs with the same lengths (`cond_rel`).
 -/
 
 @[expose] public section
@@ -27,7 +27,7 @@ open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Short (CondS CondKeep condB1_ok eval_ne eval_ae rel_next)
 
 /-- When the path applies. -/
-abbrev IsFast (nl al n : Nat) : Prop := nl = 12 ∧ al < 17 ∧ 256 ≤ n
+abbrev IsFast (nl al n : Nat) (any : Bool := false) : Prop := nl = 12 ∧ al < 17 ∧ (any = true ∨ 256 ≤ n)
 
 /-- A length in `W` at `d` compared with `k`. -/
 theorem condLen_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s) {d v k : Nat}
@@ -51,12 +51,12 @@ theorem condLen_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s
 
 /-- `cond`: ZF clear iff the path applies, with `rbp` the nonce's length and
 the lengths of the additional data and the text in `W`. -/
-theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (hnl : nl < 2 ^ 64)
+theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} {any : Bool} (h : CondS W nl al n s) (hnl : nl < 2 ^ 64)
     (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) :
-    WP isa cond s fun s' => s'.zf = some (decide ¬IsFast nl al n) ∧ CondKeep s s' := by
+    WP isa (cond any) s fun s' => s'.zf = some (decide ¬IsFast nl al n any) ∧ CondKeep s s' := by
   refine WP.seq (WP.mono (condB1_ok h hnl) fun s₂ ⟨zf₂, ax₂, k₂⟩ => ?_)
   -- `rax := 1` iff the path applies.
-  refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .rax = BitVec.ofNat 64 (if IsFast nl al n then 1 else 0) ∧
+  refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .rax = BitVec.ofNat 64 (if IsFast nl al n any then 1 else 0) ∧
       CondKeep s s₃) (WP.ite (!decide (nl = 12)) (eval_ne zf₂) (fun h12 => ?_) (fun h12 => ?_)) fun s₃ ⟨ax₃, k₃⟩ => ?_)
   · have h12 : nl ≠ 12 := by simpa using h12
     refine WP.block_nil ⟨?_, k₂⟩
@@ -72,19 +72,28 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (
       rw [ax₄]
       simp [IsFast, h5]
     · have h5 : al < 17 := by simpa using h5
-      refine WP.seq (WP.mono (condLen_ok ((h.keep k₂).keep k₄) (.inr rfl)
-        (by rw [k₄.mem, k₂.mem]; exact h.len) hn (show 256 < 2 ^ 31 by decide)) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
-      rw [ax₄] at ax₆
-      refine WP.ite (decide (n < 256)) (eval_b cf₆) (fun h2 => ?_) (fun h2 => ?_)
-      · have h2 : n < 256 := by simpa using h2
-        exact WP.block_nil ⟨by simp [ax₆, IsFast, show ¬256 ≤ n by omega], k₂.trans (k₄.trans k₆)⟩
-      · have h2 : ¬n < 256 := by simpa using h2
-        have hs : IsFast nl al n := ⟨h12, h5, by omega⟩
+      cases any
+      · simp only [condLen, Bool.false_eq_true, ↓reduceIte]
+        refine WP.seq (WP.mono (condLen_ok ((h.keep k₂).keep k₄) (.inr rfl)
+          (by rw [k₄.mem, k₂.mem]; exact h.len) hn (show 256 < 2 ^ 31 by decide)) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
+        rw [ax₄] at ax₆
+        refine WP.ite (decide (n < 256)) (eval_b cf₆) (fun h2 => ?_) (fun h2 => ?_)
+        · have h2 : n < 256 := by simpa using h2
+          exact WP.block_nil ⟨by simp [ax₆, IsFast, show ¬256 ≤ n by omega], k₂.trans (k₄.trans k₆)⟩
+        · have h2 : ¬n < 256 := by simpa using h2
+          have hs : IsFast nl al n false := ⟨h12, h5, .inr (by omega)⟩
+          refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
+          · have e : (if IsFast nl al n false then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
+            rw [e]
+            simp [gpr_setReg]
+          · exact k₂.trans (k₄.trans (k₆.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩))
+      · simp only [condLen, ↓reduceIte]
+        have hs : IsFast nl al n true := ⟨h12, h5, .inl rfl⟩
         refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
-        · have e : (if IsFast nl al n then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
+        · have e : (if IsFast nl al n true then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
           rw [e]
           simp [gpr_setReg]
-        · exact k₂.trans (k₄.trans (k₆.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩))
+        · exact k₂.trans (k₄.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩)
   -- `test rax, rax`.
   refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
   · rw [zf_arithFlags, ax₃]
@@ -94,8 +103,8 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (
 /-- `cond` in two runs with the same lengths: the same branches. -/
 theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
     (h₁ : ∀ s, F₁ s → CondS W nl al n s) (h₂ : ∀ s, F₂ s → CondS W nl al n s)
-    (hnl : nl < 2 ^ 64) (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) :
-    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) cond fun _ _ => True := by
+    (hnl : nl < 2 ^ 64) (hal : al < 2 ^ 64) (hn : n < 2 ^ 64) {any : Bool} :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) (cond any) fun _ _ => True := by
   have w₁ : ∀ {F : State → Prop}, (∀ s, F s → CondS W nl al n s) → ∀ s, F s →
       WP isa (.block [.mov32 .rax (imm 0), .alu .cmp .rbp (imm 12)]) s fun t =>
         t.zf = some (decide (nl = 12)) ∧ CondS W nl al n t := fun hF s h =>
@@ -123,6 +132,11 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
   refine RelCT.seq (b2.mono (fun _ _ h => h.1) fun _ _ h => h)
     (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm)
       (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
+  cases any
+  case true =>
+    simp only [condLen, ↓reduceIte]
+    exact one.mono (fun _ _ _ => trivial) fun _ _ h => h
+  simp only [condLen, Bool.false_eq_true, ↓reduceIte]
   -- The text's length compared with 256.
   have w₃ : ∀ s, (s.cf = some (decide (al < 17)) ∧ CondS W nl al n s) →
       WP isa (.block [.mov .rcx (.mem (at_ .r15 lenO)), .alu .cmp .rcx (imm 256)]) s fun t =>

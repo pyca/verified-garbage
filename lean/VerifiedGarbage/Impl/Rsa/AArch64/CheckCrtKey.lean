@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKeyCore
 
 /-!
 # `RSA_check_key`'s checks of the CRT form on AArch64

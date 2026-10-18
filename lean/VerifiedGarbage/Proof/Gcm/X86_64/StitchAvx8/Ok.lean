@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Impl.Aes.X86_64.Alloc
@@ -27,7 +28,7 @@ abstract `HashLaw` and never import polynomial algebra.
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok const_ok ldrev_ok hInv_ok Only rev_eq)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok constImm_ok ldrev_ok hInvImm_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (preg setupG lows highs setupC setup ordE ordD enc dec)
 open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
@@ -72,9 +73,9 @@ theorem tree_ok {H : Q} (k a b : Nat) (hk8 : k < 8) (ha : a < k) (hb : b < k) (h
 
 /-- The SSE code of `setupG`. -/
 def setupGS : List Instr :=
-  Impl.Gcm.X86_64.Pclmul.const .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
-  Impl.Gcm.X86_64.Pclmul.const .xmm1 poly ++
-  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInv ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
+  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInvImm ++
   Impl.Gcm.X86_64.Pclmul.mul (preg 1) (preg 0) (preg 0) ++ Impl.Gcm.X86_64.Pclmul.mul (preg 2) (preg 1) (preg 0) ++
   Impl.Gcm.X86_64.Pclmul.mul (preg 3) (preg 1) (preg 1) ++ Impl.Gcm.X86_64.Pclmul.mul (preg 4) (preg 3) (preg 0) ++
   Impl.Gcm.X86_64.Pclmul.mul (preg 5) (preg 3) (preg 1) ++ Impl.Gcm.X86_64.Pclmul.mul (preg 6) (preg 3) (preg 2) ++
@@ -103,15 +104,15 @@ theorem setupGS_ok (t : State) (hin : InRegions (t.rd ++ t.wr) (t.gpr .rdi + Bit
       (∀ r, r ≠ .rax → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   simp only [setupGS, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
+  refine WP.mono (constImm_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
+  refine WP.mono (constImm_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
   have o₁₂ := o₁.trans o₂
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok .xmm7 .rdi 240 t₂ (by decide) (by rw [o₂.xmm _ (by decide), c₁, rev_eq])
     (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact hin)) fun t₃ ⟨l₃, o₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (hInv_ok t₃) fun t₄ ⟨h₄, o₄⟩ => ?_
+  refine WP.mono (hInvImm_ok t₃) fun t₄ ⟨h₄, o₄⟩ => ?_
   have o₁₄ := (o₁₂.trans o₃).trans o₄
   rw [o₁₂.mem, o₁₂.gpr _ (by decide)] at l₃
   let H := φ (blockAt t.mem (t.gpr .rdi + BitVec.ofInt 64 ((240 : Nat) : Int)))
@@ -509,7 +510,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Proof.Gcm.X86_64.Pclmul (const_ok Only rev_eq)
+open VG.Proof.Gcm.X86_64.Pclmul (constImm_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encR dec decR)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Proof.Gcm.X86_64 (revMask)
@@ -518,8 +519,8 @@ open VG.Spec.Gcm (Block blockAt hpow)
 
 /-- The SSE code of `setupGR`. -/
 def setupGRS : List Instr :=
-  Impl.Gcm.X86_64.Pclmul.const .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
-  Impl.Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
+  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
   (List.range 8).map fun i => .movdquLoad (preg i) (at_ .rdi (prepOff (i + 1)))
 
 theorem lane0_setupGR : lane0Block setupGR = some setupGRS := by decide +kernel
@@ -562,9 +563,9 @@ theorem setupGRS_ok (t : State)
       (∀ r, r ≠ .rax → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   simp only [setupGRS, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
+  refine WP.mono (constImm_ok .xmm0 _ t (by decide)) fun t₁ ⟨c₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (const_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
+  refine WP.mono (constImm_ok .xmm1 _ t₁ (by decide)) fun t₂ ⟨c₂, o₂⟩ => ?_
   have o₁₂ := o₁.trans o₂
   refine WP.mono (loadsS_ok t₂ 8 (by decide) (fun i hi => by
     rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr .rdi (by decide)]; exact hin i hi)) fun t₃ ⟨l₃, o₃⟩ => ?_
@@ -1043,3 +1044,290 @@ theorem stitchToR_ok : StitchToOkM CtxMode.prepared encToR 1 :=
   encToWith_ok CtxMode.prepared fun _ hp => setupR_ok hp.toPrepared
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
+
+/-!
+# `vg_aes_gcm_prepare` on 128-bit registers
+
+`StitchAvx8.setupG` leaves `H'`–`H'⁸` prepared in `preg 0`–`preg 7`. Each
+round stores the eight at their places in the context and multiplies each by
+`H'⁸`, which `xmm7` holds. What follows `setupG` is proven on its SSE code
+(`WP.lane0`).
+-/
+
+namespace VG.Proof.Gcm.X86_64.PrepareAvx
+
+open VG VG.X86_64 VG.Proof.Gcm.Poly
+open VG.Impl.Aes.X86_64.AesNi (at_)
+open VG.Impl.Gcm.X86_64.Pclmul (poly)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (preg prepOff)
+open VG.Impl.Gcm.X86_64.PrepareAvx (stores times8 rounds prepare)
+open VG.Proof.Gcm.X86_64.Pclmul (mul_ok Only eq_prepared)
+open VG.Proof.Gcm.X86_64.Stitch (in_sub in_sub_int)
+open VG.Proof.Gcm.X86_64.Prepare (PrepOk verified_of)
+open VG.Spec.Gcm (Block hpow)
+
+/-- The SSE code of `stores r`. -/
+def storesS (r : Nat) : List Instr :=
+  (List.range 8).map fun i => .movdquStore (at_ .rdi (prepOff (8 * r + i + 1))) (preg i)
+
+/-- The SSE code of `times8`. -/
+def timesS : List Instr :=
+  (List.range 8).flatMap fun i => Impl.Gcm.X86_64.Pclmul.mul (preg i) (preg i) .xmm7
+
+/-- The SSE code of `rounds n`. -/
+def roundsS : Nat → List Instr
+  | 0 => []
+  | n + 1 => roundsS n ++ timesS ++ storesS (n + 1)
+
+/-! ## The SSE code -/
+
+theorem lane0Block_append {a b a' b' : List Instr} (ha : lane0Block a = some a') (hb : lane0Block b = some b') :
+    lane0Block (a ++ b) = some (a' ++ b') := by
+  induction a generalizing a' with
+  | nil =>
+    simp only [lane0Block, Option.some.injEq] at ha
+    subst ha
+    simpa using hb
+  | cons i is ih =>
+    simp only [lane0Block] at ha
+    cases hi : lane0 i with
+    | none => rw [hi] at ha; cases ha
+    | some x =>
+      cases hs : lane0Block is with
+      | none => rw [hi, hs] at ha; cases ha
+      | some y =>
+        rw [hi, hs] at ha
+        cases ha
+        simp only [List.cons_append, lane0Block, hi, ih hs, List.append_assoc]
+
+theorem lane0_stores (r : Nat) : lane0Block (stores r) = some (storesS r) := by
+  unfold stores storesS
+  induction List.range 8 with
+  | nil => rfl
+  | cons i l ih => simp only [List.map_cons, lane0Block, lane0, ih, List.cons_append, List.nil_append]
+
+theorem lane0_mul : ∀ i < 8, lane0Block (Impl.Gcm.X86_64.StitchAvx8.mul (preg i) (preg i) .xmm7) =
+    some (Impl.Gcm.X86_64.Pclmul.mul (preg i) (preg i) .xmm7) := by
+  decide +kernel
+
+theorem lane0_times8 : lane0Block times8 = some timesS := by
+  unfold times8 timesS
+  suffices h : ∀ l : List Nat, (∀ i ∈ l, i < 8) →
+      lane0Block (l.flatMap fun i => Impl.Gcm.X86_64.StitchAvx8.mul (preg i) (preg i) .xmm7) =
+        some (l.flatMap fun i => Impl.Gcm.X86_64.Pclmul.mul (preg i) (preg i) .xmm7) from
+    h _ fun i hi => List.mem_range.mp hi
+  intro l hl
+  induction l with
+  | nil => rfl
+  | cons i l ih =>
+    simp only [List.flatMap_cons]
+    exact lane0Block_append (lane0_mul i (hl i List.mem_cons_self))
+      (ih fun j hj => hl j (List.mem_cons_of_mem _ hj))
+
+theorem lane0_rounds : ∀ n, lane0Block (rounds n) = some (roundsS n)
+  | 0 => rfl
+  | n + 1 => lane0Block_append (lane0Block_append (lane0_rounds n) lane0_times8) (lane0_stores (n + 1))
+
+theorem lane0_rest : lane0Block (stores 0 ++ (([.vop (.vmovdqa .l128 .xmm7 .xmm15)] : List Instr) ++ rounds 5)) =
+    some (storesS 0 ++ (([.xop (.bin .movdqa .xmm7 .xmm15)] : List Instr) ++ roundsS 5)) :=
+  lane0Block_append (lane0_stores 0) (lane0Block_append rfl (lane0_rounds 5))
+
+/-! ## The places of the powers -/
+
+theorem prepOff_bound {n : Nat} (h1 : 1 ≤ n) (h48 : n ≤ 48) : 256 ≤ prepOff n ∧ prepOff n + 16 ≤ 1024 := by
+  simp only [prepOff]; split <;> omega
+
+theorem prepOff_sep {n n' : Nat} (h : n ≠ n') : prepOff n + 16 ≤ prepOff n' ∨ prepOff n' + 16 ≤ prepOff n := by
+  simp only [prepOff]; split <;> split <;> omega
+
+theorem prepOff_pair {k l : Nat} (hl : l < 2) : prepOff (2 * k + 2 - l) = 256 + 32 * k + 16 * l := by
+  simp only [prepOff]; split <;> omega
+
+theorem readW_sep {m : Mem} {C : Addr} {n n' : Nat} {v : BitVec 128} (h1 : 1 ≤ n) (h48 : n ≤ 48)
+    (h1' : 1 ≤ n') (h48' : n' ≤ 48) (h : n ≠ n') :
+    (m.writeW (C + BitVec.ofNat 64 (prepOff n')) v).readW (C + BitVec.ofNat 64 (prepOff n)) 128 =
+      m.readW (C + BitVec.ofNat 64 (prepOff n)) 128 := by
+  have b := prepOff_bound h1 h48
+  have b' := prepOff_bound h1' h48'
+  exact Mem.readW_writeW_sep (Offset.sep C (prepOff_sep h) (by omega) (by omega)) (by decide)
+
+/-! ## The steps -/
+
+theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
+
+theorem st_ok (r : XReg) (d : Nat) (t : State)
+    (hin : InRegions t.wr (t.gpr .rdi + BitVec.ofInt 64 (d : Int)) 16) :
+    WP isa (.block [.movdquStore (at_ .rdi d) r]) t fun t' =>
+      t'.mem = t.mem.writeW (t.gpr .rdi + BitVec.ofInt 64 (d : Int)) (t.xmm r) ∧ t'.gpr = t.gpr ∧
+      t'.xmm = t.xmm ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  rw [WP.block_cons_iff]
+  refine ⟨{ t with mem := t.mem.writeW (t.gpr .rdi + BitVec.ofInt 64 (d : Int)) (t.xmm r) },
+    by simp only [isa, exec, State.store128, ea_at, hin, ite_true], WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+
+theorem mov_ok (t : State) :
+    WP isa (.block [.xop (.bin .movdqa .xmm7 .xmm15)]) t fun t' =>
+      t'.xmm .xmm7 = t.xmm .xmm15 ∧ Only [.xmm7] t t' := by
+  rw [WP.block_cons_iff]
+  refine ⟨t.setXmm .xmm7 (t.xmm .xmm15), rfl, WP.block_nil ⟨by simp [State.setXmm], ⟨fun _ _ => rfl, rfl, rfl, rfl,
+    fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; simp [State.setXmm, hr]⟩⟩⟩
+
+theorem preg_ne : ∀ i < 8, preg i ≠ .xmm1 ∧ preg i ≠ .xmm7 ∧ preg i ≠ .xmm8 ∧ preg i ≠ .xmm9 ∧
+    preg i ≠ .xmm10 ∧ preg i ≠ .xmm11 := by decide
+
+theorem preg_inj : ∀ i < 8, ∀ j < 8, preg i = preg j → i = j := by decide
+
+/-- The registers `times8` writes. -/
+def wregs : List XReg := [.xmm8, .xmm9, .xmm10, .xmm11, .xmm3, .xmm4, .xmm5, .xmm6, .xmm12, .xmm13, .xmm14, .xmm15]
+
+theorem preg_wregs : ∀ i < 8, preg i ∈ wregs := by decide
+
+/-- The stores of a round: `H'⁸ʳ⁺ⁱ⁺¹` (`i < k`), prepared, to their places,
+the powers stored before kept. -/
+theorem storesS_ok {H : Block} {C : Addr} {m₀ : Mem} {r : Nat} (hr : r < 6) (t : State) (hC : t.gpr .rdi = C)
+    (hw : InRegions t.wr C 1024) (hp : ∀ i < 8, x * φ (t.xmm (preg i)) = φ H ^ (8 * r + i + 1))
+    (hs : ∀ n, 1 ≤ n → n ≤ 8 * r →
+      t.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n))
+    (hf : Frame [⟨C + BitVec.ofNat 64 256, 768⟩] m₀ t.mem) :
+    ∀ k ≤ 8, WP isa (.block ((List.range k).map fun i => .movdquStore (at_ .rdi (prepOff (8 * r + i + 1))) (preg i)))
+      t fun t' =>
+        (∀ n, 1 ≤ n → n ≤ 8 * r + k →
+          t'.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n)) ∧
+        Frame [⟨C + BitVec.ofNat 64 256, 768⟩] m₀ t'.mem ∧ t'.gpr = t.gpr ∧ t'.xmm = t.xmm ∧ t'.rd = t.rd ∧
+        t'.wr = t.wr
+  | 0, _ => WP.block_nil ⟨fun n h1 h2 => hs n h1 (by omega), hf, rfl, rfl, rfl, rfl⟩
+  | k + 1, hk => by
+    rw [List.range_succ, List.map_append, WP.block_append_iff]
+    refine WP.mono (storesS_ok hr t hC hw hp hs hf k (by omega)) fun t₁ ⟨s₁, f₁, g₁, x₁, rd₁, wr₁⟩ => ?_
+    simp only [List.map_cons, List.map_nil]
+    have b := prepOff_bound (n := 8 * r + k + 1) (by omega) (by omega)
+    have hin : InRegions t₁.wr (t₁.gpr .rdi + BitVec.ofInt 64 ((prepOff (8 * r + k + 1) : Nat) : Int)) 16 := by
+      rw [wr₁, g₁, hC]; exact in_sub_int hw (by omega)
+    refine WP.mono (st_ok (preg k) _ t₁ hin) fun t' ⟨m', g', x', rd', wr'⟩ => ?_
+    rw [g₁, hC, x₁, BitVec.ofInt_natCast] at m'
+    refine ⟨fun n h1 h2 => ?_, ?_, g'.trans g₁, x'.trans x₁, rd'.trans rd₁, wr'.trans wr₁⟩
+    · rw [m']
+      by_cases hn : n = 8 * r + k + 1
+      · subst hn
+        rw [Mem.readW_writeW_self _ _ 16 _ (by decide)]
+        exact eq_prepared (hp k (by omega))
+      · rw [readW_sep h1 (by omega) (by omega) (by omega) hn]; exact s₁ n h1 (by omega)
+    · rw [m']
+      exact f₁.writeW (List.mem_singleton_self _) _ (Offset.contains C (by omega) (by omega) (by decide))
+
+/-- The first `k` multiplications of a round: `preg i` (`i < k`) times `H'⁸`. -/
+theorem timesS_ok {H : Block} {e : Nat} :
+    ∀ k ≤ 8, ∀ t : State, t.xmm .xmm1 = poly → x * φ (t.xmm .xmm7) = φ H ^ 8 →
+      (∀ i < 8, x * φ (t.xmm (preg i)) = φ H ^ (e + i + 1)) →
+      WP isa (.block ((List.range k).flatMap fun i => Impl.Gcm.X86_64.Pclmul.mul (preg i) (preg i) .xmm7)) t
+        fun t' => (∀ i < 8, x * φ (t'.xmm (preg i)) = φ H ^ (e + i + 1 + if i < k then 8 else 0)) ∧
+          Only wregs t t'
+  | 0, _, t, _, _, hp => WP.block_nil ⟨fun i hi => by simpa using hp i hi, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl⟩⟩
+  | k + 1, hk, t, h1, h7, hp => by
+    rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
+    refine WP.mono (timesS_ok k (by omega) t h1 h7 hp) fun t₁ ⟨p₁, o₁⟩ => ?_
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    obtain ⟨k1, k7, k8, k9, k10, k11⟩ := preg_ne k (by omega)
+    have w1 : (.xmm1 : XReg) ∉ wregs := by decide
+    have w7 : (.xmm7 : XReg) ∉ wregs := by decide
+    refine WP.mono (mul_ok (preg k) (preg k) .xmm7 t₁ k8 k9 k10 k11 (by decide) (by decide) (by decide) (by decide)
+      k8 k9 k10 k11 (by rw [o₁.xmm _ w1]; exact h1)) fun t' ⟨m, o⟩ => ⟨fun i hi => ?_, ?_⟩
+    · by_cases hik : i = k
+      · subst hik
+        rw [ite_eq_left (by omega)]
+        have e₁ := p₁ i hi
+        rw [ite_eq_right (by omega)] at e₁
+        exact StitchAvx.pow_mul_pair m e₁ (by rw [o₁.xmm _ w7]; exact h7)
+      · have hne : preg i ≠ preg k := fun h => hik (preg_inj i hi k (by omega) h)
+        obtain ⟨-, -, i8, i9, i10, i11⟩ := preg_ne i hi
+        rw [o.xmm _ (by simp [hne, i8, i9, i10, i11]), p₁ i hi]
+        congr 2
+        by_cases h : i < k
+        · rw [ite_eq_left h, ite_eq_left (by omega)]
+        · rw [ite_eq_right h, ite_eq_right (by omega)]
+    · exact (o₁.trans o).weaken fun r hr => by
+        simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with hr | rfl | rfl | rfl | rfl | rfl
+        · exact hr
+        all_goals first | decide | exact preg_wregs k (by omega)
+
+/-- The rounds: after `r` of them, `H'`–`H'⁸ʳ⁺⁸` in their places, and
+`H'⁸ʳ⁺ⁱ⁺¹` in `preg i`. -/
+theorem roundsS_ok {H : Block} {C : Addr} {m₀ : Mem} (t : State) (hC : t.gpr .rdi = C)
+    (hw : InRegions t.wr C 1024) (h1 : t.xmm .xmm1 = poly) (h7 : x * φ (t.xmm .xmm7) = φ H ^ 8)
+    (hp : ∀ i < 8, x * φ (t.xmm (preg i)) = φ H ^ (8 * 0 + i + 1))
+    (hs : ∀ n, 1 ≤ n → n ≤ 8 →
+      t.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n))
+    (hf : Frame [⟨C + BitVec.ofNat 64 256, 768⟩] m₀ t.mem) :
+    ∀ r ≤ 5, WP isa (.block (roundsS r)) t fun t' =>
+      t'.xmm .xmm1 = poly ∧ x * φ (t'.xmm .xmm7) = φ H ^ 8 ∧
+      (∀ i < 8, x * φ (t'.xmm (preg i)) = φ H ^ (8 * r + i + 1)) ∧
+      (∀ n, 1 ≤ n → n ≤ 8 * r + 8 →
+        t'.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n)) ∧
+      Frame [⟨C + BitVec.ofNat 64 256, 768⟩] m₀ t'.mem ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
+      t'.rd = t.rd ∧ t'.wr = t.wr
+  | 0, _ => WP.block_nil ⟨h1, h7, hp, fun n a b => hs n a (by omega), hf, fun _ _ => rfl, rfl, rfl⟩
+  | r + 1, hr => by
+    rw [roundsS, WP.block_append_iff, WP.block_append_iff]
+    refine WP.mono (roundsS_ok t hC hw h1 h7 hp hs hf r (by omega))
+      fun t₁ ⟨a1, a7, ap, as, af, ag, ard, awr⟩ => ?_
+    refine WP.mono (timesS_ok (e := 8 * r) 8 (Nat.le_refl _) t₁ a1 a7 ap) fun t₂ ⟨bp, bo⟩ => ?_
+    have bp' : ∀ i < 8, x * φ (t₂.xmm (preg i)) = φ H ^ (8 * (r + 1) + i + 1) := fun i hi => by
+      rw [bp i hi, ite_eq_left hi]; congr 1; omega
+    have g₂ : t₂.gpr .rdi = C := by rw [bo.gpr _ (by decide), ag _ (by decide), hC]
+    have wr₂ : t₂.wr = t.wr := by rw [bo.wr, awr]
+    refine WP.mono (storesS_ok (r := r + 1) (by omega) t₂ g₂ (by rw [wr₂]; exact hw) bp'
+      (fun n a b => by rw [bo.mem]; exact as n a (by omega)) (by rw [bo.mem]; exact af) 8 (Nat.le_refl _))
+      fun t' ⟨cs, cf, cg, cx, crd, cwr⟩ => ⟨?_, ?_, fun i hi => by rw [cx]; exact bp' i hi, cs, cf,
+        fun q hq => by rw [cg, bo.gpr q hq, ag q hq], by rw [crd, bo.rd, ard], by rw [cwr, wr₂]⟩
+    · rw [cx, bo.xmm _ (by decide)]; exact a1
+    · rw [cx, bo.xmm _ (by decide)]; exact a7
+
+/-- What follows `setupG`, on its SSE code. -/
+theorem restS_ok {H : Block} {C : Addr} (t : State) (hC : t.gpr .rdi = C) (hw : InRegions t.wr C 1024)
+    (h1 : t.xmm .xmm1 = poly) (hp : ∀ i < 8, x * φ (t.xmm (preg i)) = φ H ^ (i + 1)) :
+    WP isa (.block (storesS 0 ++ (([.xop (.bin .movdqa .xmm7 .xmm15)] : List Instr) ++ roundsS 5))) t fun t' =>
+      (∀ n, 1 ≤ n → n ≤ 48 →
+        t'.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n)) ∧
+      Frame [⟨C + BitVec.ofNat 64 256, 768⟩] t.mem t'.mem ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
+      t'.rd = t.rd ∧ t'.wr = t.wr := by
+  have hp0 : ∀ i < 8, x * φ (t.xmm (preg i)) = φ H ^ (8 * 0 + i + 1) := fun i hi => by
+    rw [Nat.mul_zero, Nat.zero_add]; exact hp i hi
+  rw [WP.block_append_iff]
+  refine WP.mono (storesS_ok (r := 0) (by decide) t hC hw hp0 (fun n a b => absurd b (by omega)) (Frame.refl _ _) 8
+    (Nat.le_refl _)) fun t₁ ⟨s₁, f₁, g₁, x₁, rd₁, wr₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mov_ok t₁) fun t₂ ⟨m₂, o₂⟩ => ?_
+  have p₂ : ∀ i < 8, x * φ (t₂.xmm (preg i)) = φ H ^ (8 * 0 + i + 1) := fun i hi => by
+    rw [o₂.xmm _ (by simp [(preg_ne i hi).2.1]), x₁]; exact hp0 i hi
+  refine WP.mono (roundsS_ok t₂ (by rw [o₂.gpr _ (by decide), g₁, hC]) (by rw [o₂.wr, wr₁]; exact hw)
+    (by rw [o₂.xmm _ (by decide), x₁]; exact h1) (by rw [m₂, x₁]; exact hp 7 (by decide)) p₂
+    (fun n a b => by rw [o₂.mem]; exact s₁ n a (by omega)) (by rw [o₂.mem]; exact f₁) 5 (by decide))
+    fun t' ⟨_, _, _, cs, cf, cg, crd, cwr⟩ => ⟨fun n a b => cs n a (by omega), cf,
+      fun q hq => by rw [cg q hq, o₂.gpr q hq, g₁], by rw [crd, o₂.rd, rd₁], by rw [cwr, o₂.wr, wr₁]⟩
+
+/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
+pairs 0–23 of the context at `C`, nothing else written. -/
+theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
+    WP isa prepare s₀ (PrepOk s₀) := by
+  have hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofNat 64 240) 16 := by
+    obtain ⟨r, hr, hc⟩ := in_sub (off := 240) (n := 16) hw (by decide)
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  simp only [prepare, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (StitchAvx8.setupG_ok s₀ hin) fun s₁ ⟨_, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (WP.lane0 lane0_rest (restS_ok (H := Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (C := s₀.gpr .rdi) (s₁.proj 0)
+    (by rw [State.proj_gpr, g₁ _ (by decide)]) (by rw [State.proj_wr, wr₁]; exact hw)
+    (by rw [State.proj_xmm]; exact l1) (fun i hi => by rw [State.proj_xmm]; exact pw i hi)))
+    fun s ⟨⟨ps, pf, pg, prd, pwr⟩, _, _⟩ => ⟨fun k hk l hl => ?_, ?_, fun r hr => ?_, ?_, ?_⟩
+  · have := ps (2 * k + 2 - l) (by omega) (by omega)
+    rw [prepOff_pair hl, State.proj_mem] at this
+    exact this
+  · rw [State.proj_mem, State.proj_mem, m₁] at pf; exact pf
+  · rw [← State.proj_gpr s 0, pg r hr, State.proj_gpr, g₁ r hr]
+  · rw [← State.proj_rd s 0, prd, State.proj_rd, rd₁]
+  · rw [← State.proj_wr s 0, pwr, State.proj_wr, wr₁]
+
+theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
+  verified_of prepare (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare.prepareAvx_ct
+
+end VG.Proof.Gcm.X86_64.PrepareAvx

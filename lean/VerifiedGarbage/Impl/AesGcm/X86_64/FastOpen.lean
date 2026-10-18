@@ -67,9 +67,9 @@ def run (ks : Prog isa := Short.finKs) : Prog isa :=
   (.seq (.ite .e (oneUndo c) (oneCrypt c))
     (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
 
-/-- `Fast.cond`, then this path, or `other`. -/
-def sel (other : Prog isa) (ks : Prog isa := Short.finKs) : Prog isa :=
-  .seq Fast.cond (.ite .e other (run c ks))
+/-- `Fast.cond any`, then this path, or `other`. -/
+def sel (other : Prog isa) (ks : Prog isa := Short.finKs) (any : Bool := false) : Prog isa :=
+  .seq (Fast.cond any) (.ite .e other (run c ks))
 
 /-- `vg_aes_gcm_open`'s frame, as `Impl.AesGcm.X86_64.open` and
 `Short.open` have it, around `lng` for an allowed tag length: for the

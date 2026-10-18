@@ -81,8 +81,8 @@ theorem ok_toBs {s : State} (hs : Scr s (s.gpr sb)) (ht : AtTail s) : Ok toBsCfg
     rw [slots_eq] at this
     exact slot_sep _ (by omega) (by rw [tailSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
 
-theorem toBs_all : (layerKeep.all fun r => ((List.range 4).flatMap toBsWord).all fun i => dstOf i != some r) =
-    true ∧ (((List.range 4).flatMap toBsWord).all fun i => dstOf i != some u7) = true := by
+theorem toBs_all : (layerKeep.all fun r => ((List.range 4).flatMap toBsWord).all fun i => !clobbers i r) =
+    true ∧ (((List.range 4).flatMap toBsWord).all fun i => !clobbers i u7) = true := by
   constructor <;> decide +kernel
 
 /-- `toBs`: the planes of the halves, from the words of the blocks. -/
@@ -122,7 +122,7 @@ theorem ok_fromBs {s : State} (hs : Scr s (s.gpr sb)) : Ok fromBsCfg s where
     rw [slots_eq] at this; omega
   sep k _ j hj := by simp [fromBsCfg] at hj
 
-theorem fromBs_all : (layerKeep.all fun r => ((List.range 4).flatMap fromBsWord).all fun i => dstOf i != some r) =
+theorem fromBs_all : (layerKeep.all fun r => ((List.range 4).flatMap fromBsWord).all fun i => !clobbers i r) =
     true ∧ (((List.range 4).flatMap fromBsWord).all (storesIn (4 * tailSlot) (4 * tailSlot + 128))) = true := by
   constructor <;> decide +kernel
 
@@ -164,8 +164,8 @@ theorem fromBs_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
 /-! ## The whitening -/
 
 theorem whiten_all (swap : Bool) :
-    (layerKeep.all fun r => (whiten swap).all fun i => dstOf i != some r) = true ∧
-      ((whiten swap).all fun i => dstOf i != some u7) = true := by
+    (layerKeep.all fun r => (whiten swap).all fun i => !clobbers i r) = true ∧
+      ((whiten swap).all fun i => !clobbers i u7) = true := by
   cases swap <;> (constructor <;> decide +kernel)
 
 /-- The whitening, with the two entries at `kp`. -/

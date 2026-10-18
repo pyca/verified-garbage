@@ -111,8 +111,8 @@ jobs:
         run: |
           # Never publish a fallback or an empty project build.
           [ "$CACHE_HIT" = true ] || { echo "::error::The checked build cache is missing"; exit 1; }
-      # The build's archives come from CI's cache (`lean-prepare`): `pack`
-      # packs only the dependencies' modules.
+      # Both sets of module archives come from CI's caches (`lean-prepare`).
+      # Reuse Mathlib's separate archive directory when packaging them together.
       - uses: ./.github/actions/leantar
         if: ${{ steps.publish.outputs.needed == 'true' }}
       # The archive goes to memory: it is uploaded, then discarded.
@@ -121,7 +121,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p /dev/shm/lean-cache-image
-          python3 ci/lean_cache.py pack lean .lake/build .lake/packages \
+          python3 ci/lean_cache.py pack lean .lake/build .lake/packages --reuse .lake/mathlib-ltar \
             | zstd -T0 -5 -o /dev/shm/lean-cache-image/lean-cache.tar.zst
       - name: Upload the cache image
         id: upload

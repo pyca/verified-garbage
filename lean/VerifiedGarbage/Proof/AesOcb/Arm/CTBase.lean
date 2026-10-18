@@ -211,8 +211,8 @@ theorem exec_of_wp {c : Prog isa} {σ : State} {F : State → Prop} (w : WP isa 
 
 /-- The environment, after code that writes none of its registers. -/
 theorem Env.exec {p : Prm} {c : Prog isa} {τ τ' : State} {t : List Leak} (E : Env p τ) (h : Exec isa c τ t τ')
-    (h9 : ∀ i ∈ instrs c, dstOf i ≠ some .r9) (h10 : ∀ i ∈ instrs c, dstOf i ≠ some .r10)
-    (h11 : ∀ i ∈ instrs c, dstOf i ≠ some .r11) : Env p τ' :=
+    (h9 : ∀ i ∈ instrs c, clobbers i .r9 = false) (h10 : ∀ i ∈ instrs c, clobbers i .r10 = false)
+    (h11 : ∀ i ∈ instrs c, clobbers i .r11 = false) : Env p τ' :=
   have ⟨rd, wr, sp⟩ := Exec.rdwr h
   ⟨by rw [Exec.gpr h9 h, E.r9], by rw [Exec.gpr h10 h, E.r10], by rw [Exec.gpr h11 h, E.r11], by rw [sp, E.sp],
     E.perm.of_eq rd wr⟩
@@ -231,7 +231,7 @@ structure Kept (p : Prm) (rs : List Reg) (τ τ' : State) : Prop where
   gpr : ∀ r ∈ rs, τ'.gpr r = τ.gpr r
 
 theorem kept_of {p : Prm} (L : Lay p) {c : Prog isa} {τ : State} (E : Env p τ) (rs : List Reg)
-    (hk : ∀ r ∈ envRegs ++ rs, ∀ i ∈ instrs c, dstOf i ≠ some r) (hn : c.noFrames = true)
+    (hk : ∀ r ∈ envRegs ++ rs, ∀ i ∈ instrs c, clobbers i r = false) (hn : c.noFrames = true)
     (hc : c.noCalls = true) : ∀ t τ', Exec isa c τ t τ' → Kept p rs τ τ' := fun _ _ h =>
   ⟨E.exec h (hk _ (by simp)) (hk _ (by simp)) (hk _ (by simp)), fun A => A.exec L E h hn,
     fun r hr => Exec.gpr (hk r (List.mem_append_right _ hr)) h (.inl hc)⟩

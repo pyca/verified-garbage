@@ -17,7 +17,7 @@ pub(crate) const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
 /// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
@@ -294,7 +294,7 @@ pub(crate) const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Fe
 /// * `nonce` must be valid for reads of `q_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
 /// * `out` and `scratch` must not overlap each other, `key`, `nonce`, `digest` or the arguments on the stack (distinct Rust objects never do).
@@ -409,6 +409,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -6960,7 +6966,7 @@ pub(crate) const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::
 /// * `signature` must be valid for reads of `signature_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
@@ -7074,6 +7080,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -13760,7 +13772,7 @@ pub(crate) const VG_DSA_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate:
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
 /// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
 /// * Caller must assure domain validity and supply fresh independent random bytes.
@@ -14022,7 +14034,7 @@ pub(crate) const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: crate::cpu::Features = cr
 ///
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
 /// * `scratch` must not overlap `params` (distinct Rust objects never do).
@@ -14136,6 +14148,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -15959,7 +15977,7 @@ pub(crate) const VG_DSA_DERIVE_KEY_ADX_FEATURES: crate::cpu::Features = crate::c
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `x` must be valid for reads of `q_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
@@ -16076,6 +16094,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -18776,7 +18800,7 @@ ret
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
 /// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
@@ -19049,7 +19073,7 @@ ret
 /// * `nonce` must be valid for reads of `q_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
 /// * `out` and `scratch` must not overlap each other, `key`, `nonce`, `digest` or the arguments on the stack (distinct Rust objects never do).
@@ -19163,6 +19187,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -25711,7 +25741,7 @@ ret
 /// * `signature` must be valid for reads of `signature_len` bytes.
 /// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + q_len; signature_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
@@ -25824,6 +25854,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -32507,7 +32543,7 @@ ret
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
 /// * scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.
 /// * Caller must assure domain validity and supply fresh independent random bytes.
@@ -32765,7 +32801,7 @@ ret
 ///
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.
 /// * `scratch` must not overlap `params` (distinct Rust objects never do).
@@ -32878,6 +32914,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10
@@ -34698,7 +34740,7 @@ ret
 /// * `params` must be valid for reads of `params_len` bytes.
 /// * `x` must be valid for reads of `q_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.
 /// * scratch_len must be at least 16*p_len words. Scratch may contain secrets on return.
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
@@ -34814,6 +34856,12 @@ sbb rax, rax
 mov r10, rax
 mov rax, r8
 xor rax, 32
+cmp rax, 1
+sbb rax, rax
+or rax, r10
+mov r10, rax
+mov rax, r8
+xor rax, 20
 cmp rax, 1
 sbb rax, rax
 or rax, r10

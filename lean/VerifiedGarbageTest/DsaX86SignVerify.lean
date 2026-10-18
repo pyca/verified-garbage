@@ -51,7 +51,8 @@ def check (x nonce digest : Nat) : Except String Unit := do
     (.out, output), (.qLen, 4), (.digestPrefixLen, 1), (.mask, 2 ^ 32 - 1)].foldl
       (fun w (f, value) => put w (base + Layout.field f) 1 value) ws
   let state : State := {
-    gpr := fun reg => if reg == .edi then BitVec.ofNat 32 base else 0
+    gpr := fun reg => if reg == .edi then BitVec.ofNat 32 base else if reg == .esp then 0x40000 else 0
+    unknowns := fun i => BitVec.ofNat 32 (0x60000 + 4 * i)
     cf := none, zf := none, sf := none, of := none
     mem := memory ws, rd := [⟨BitVec.ofNat 64 input, 37⟩],
     wr := [⟨BitVec.ofNat 64 base, 16384⟩, ⟨BitVec.ofNat 64 output, 8⟩] }

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
@@ -152,6 +153,9 @@ structure Arith where
   sub : Prog isa
   cbdN : String
   cbd : Prog isa
+  /-- `cbd` with 16-bit coefficients (`vg_mlkem16_cbd2`). -/
+  cbd16N : String
+  cbd16 : Prog isa
   dec12N : String
   dec12 : Prog isa
   enc12N : String
@@ -166,12 +170,14 @@ structure Arith where
 
 def Arith.sse : Arith :=
   ⟨"vg_mlkem_inv_ntt", X86_64.nttInv,
-    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12,
+    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem16_cbd2", cbd2_16,
+    "vg_mlkem_decode12", decode12,
     "vg_mlkem_encode12", encode12, .sse, "", .base, encryptMul .sse, decryptMul .sse⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_inv_ntt_avx2",
     nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
+    "vg_mlkem16_cbd2_avx2", cbd2_16Avx2,
     "vg_mlkem_decode12_avx2", decode12Avx2, "vg_mlkem_encode12_avx2", encode12Avx2, .avx2, "_avx2", .avx2,
     encryptMulY, decryptMulY⟩
 
@@ -351,16 +357,24 @@ structure Callee4 where
   matrix while absorbing three blocks of `ek` into `H`'s sponge
   (`Sample4.sampleH`), if the implementation has one. -/
   batchH : Option (Prog isa)
+  /-- The symbol and code of the same implementation with 16-bit
+  coefficients, if it has one. -/
+  s16 : Option (String × Prog isa)
+  /-- `batchH` with 16-bit coefficients (`Sample4.sampleH fast true`). -/
+  batchH16 : Option (Prog isa)
 
-def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none⟩
+def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none,
+  none, none⟩
 def Callee4.avx2 : Callee4 :=
   ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, (fun n k o w => prfsAvx2 n k o w), .avx2,
-    some Sample4.sampleH⟩
+    some Sample4.sampleH, some ("vg_mlkem16_sample_ntt4_avx2", Sample4.sampleNTT4Avx2 false true),
+    some (Sample4.sampleH false true)⟩
 
 /-- Four-way sampling with AVX-512VL quadword rotates. -/
 def Callee4.avx512 : Callee4 :=
   ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, (fun n k o w => prfsAvx2 n k o w true), .avx2,
-    some (Sample4.sampleH true)⟩
+    some (Sample4.sampleH true), some ("vg_mlkem16_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true true),
+    some (Sample4.sampleH true true)⟩
 
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
 `a`, with the working space `scr` (8192 bytes), and `r15 ← r15 ∧ result`. -/

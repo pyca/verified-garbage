@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
@@ -63,7 +66,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP521 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+  LaneTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

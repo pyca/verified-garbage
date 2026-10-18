@@ -42,7 +42,7 @@ theorem signBody_ok {base : Addr} {size pLen qLen p q g y x k digestLen digest :
       Spec.Rsa.bytesAt sf.mem (out.setWidth 64 + BitVec.ofNat 64 qLen) qLen =
         (if accepted then Spec.Dsa.encodeBE qLen sv else List.replicate qLen 0) ∧
       Keeps powerClob s0 sf ∧
-      OutputFrame base (out.setWidth 64) usedBytes (2 * qLen) s0.mem sf.mem ∧
+      StackOutputFrame (s0.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s0.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s0.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
   dsimp only
@@ -66,9 +66,9 @@ theorem signBody_ok {base : Addr} {size pLen qLen p q g y x k digestLen digest :
   · simpa only [Of, decide_eq_true_eq] using R2
   · simpa only [Of, decide_eq_true_eq] using S2
 
-  · intro a ha hb
+  · intro a ha hb hstack
     rw [Of, O2 a (by have C := VG.Proof.Dsa.X86.Layout.context_bound (by have := M.lengths; omega : (qLen + 7) / 8 ≤ 48); change 15712 ≤ ofs base a at ha; omega) hb]
-    apply E1.mem a
+    apply E1.mem a ?_ (.inr hstack)
     intro pair hp
     simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;>

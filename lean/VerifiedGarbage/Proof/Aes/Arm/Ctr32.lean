@@ -142,8 +142,8 @@ theorem save_ok {s : State} {b : BitVec 32} {br : Reg} {L : Nat} (hL : 4 * 41 �
     simp only [saveCfg, hb] at h
     rw [← slot_addr' hfit (by omega_arith)]
     exact h
-  · have : ((saveRegs br).all fun i => dstOf i != some r) = true := by
-      simp [saveRegs, savedRegs, dstOf]
+  · have : ((saveRegs br).all fun i => !clobbers i r) = true := by
+      simp [saveRegs, savedRegs, clobbers, dstOf]
     simp [this]
   · have := p.frame
     simpa [slotRegion, saveCfg, hb] using this

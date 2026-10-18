@@ -314,6 +314,7 @@ def step (τ : T) : Instr → Option T
   -- Words of a table of constants: secret, as every vector register the
   -- analysis does not track. Its offset in the table is observed.
   | .vmovdquTbl _ m .. => if idxPub τ m then some (noX τ) else none
+  | .movdquTbl _ m .. => if idxPub τ m then some (noX τ) else none
   | .vmovdquStore .l128 m _ => storeStep τ m 16 false
   | .vmovdquStore .l256 m _ => storeStep τ m 32 false
   | .zop _ => some (noX τ)
@@ -323,10 +324,10 @@ def step (τ : T) : Instr → Option T
   | .eop _ => some (noX τ)
   | .evLoad _ m | .evMadd52Load _ _ _ m => if memPub τ m then some (noX τ) else none
   | .evStore m _ => storeStep τ m 32 false
-  -- A masked move accesses the quadwords its mask enables, which must be
-  -- public as its address is.
-  | .kLoad k _ m => if memPub τ m && pub τ k then some (noX τ) else none
-  | .kStore m k _ => if pub τ k then storeStep τ m 64 false else none
+  -- A masked move accesses the quadwords (or bytes) its mask enables, which
+  -- must be public as its address is.
+  | .kLoad k _ m | .kLoad8 k _ m => if memPub τ m && pub τ k then some (noX τ) else none
+  | .kStore m k _ | .kStore8 m k _ => if pub τ k then storeStep τ m 64 false else none
   -- MXCSR is not tracked either: nothing moves it into a general-purpose
   -- register or the flags, and it is stored as a secret.
   | .stmxcsr m => storeStep τ m 4 false
@@ -826,11 +827,12 @@ def dstOf : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
   | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .aluTbl _ d .. => some d
-  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
+  | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .lfence
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
@@ -1387,6 +1389,15 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂
     exact ⟨congrArg (fun a => [a]) (ha.off hok), ha.withVec _ _ _ _ _ _⟩
+  | movdquTbl d m n ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ⟨congrArg (fun a => [a]) (ha.off hok), ha.withXmm _ _⟩
   | vbroadcasti128 d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1482,7 +1493,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       split at e₁ <;> [cases e₁; cases e₁]
       split at e₂ <;> [cases e₂; cases e₂]
       exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
-  | kLoad k d m =>
+  | kLoad k d m | kLoad8 k d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -1498,6 +1509,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     rename_i hok; cases hs
     obtain ⟨V₁, rfl⟩ := State.storeMasked512_eq e₁
     obtain ⟨V₂, rfl⟩ := State.storeMasked512_eq e₂
+    exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
+      ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
+  | kStore8 m k r =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hk
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    obtain ⟨V₁, rfl⟩ := State.storeMasked512B_eq e₁
+    obtain ⟨V₂, rfl⟩ := State.storeMasked512B_eq e₂
     exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
       ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
   | stmxcsr m =>
@@ -2054,6 +2075,7 @@ def stepK (τ : T) : Instr → Option T
   | .xop _ | .vop _ => some (noX τ)
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m => bif memPub τ m then some (noX τ) else none
   | .vmovdquTbl _ m .. => bif idxPub τ m then some (noX τ) else none
+  | .movdquTbl _ m .. => bif idxPub τ m then some (noX τ) else none
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some (noX τ)
@@ -2063,8 +2085,8 @@ def stepK (τ : T) : Instr → Option T
   | .eop _ => some (noX τ)
   | .evLoad _ m | .evMadd52Load _ _ _ m => bif memPub τ m then some (noX τ) else none
   | .evStore m _ => storeStepK τ m 32 false
-  | .kLoad k _ m => bif memPub τ m && pub τ k then some (noX τ) else none
-  | .kStore m k _ => bif pub τ k then storeStepK τ m 64 false else none
+  | .kLoad k _ m | .kLoad8 k _ m => bif memPub τ m && pub τ k then some (noX τ) else none
+  | .kStore m k _ | .kStore8 m k _ => bif pub τ k then storeStepK τ m 64 false else none
   | .stmxcsr m => storeStepK τ m 4 false
   | .ldmxcsr m => bif memPub τ m then some τ else none
   | .lfence => some τ
@@ -2340,6 +2362,7 @@ def stepKDFn : Instr → Step
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m =>
     ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
   | .vmovdquTbl _ m .. => ⟨fun τ => bif idxPub τ m then some (noX τ) else none⟩
+  | .movdquTbl _ m .. => ⟨fun τ => bif idxPub τ m then some (noX τ) else none⟩
   | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
   | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
   | .zop _ => ⟨fun τ => some (noX τ)⟩
@@ -2349,8 +2372,8 @@ def stepKDFn : Instr → Step
   | .eop _ => ⟨fun τ => some (noX τ)⟩
   | .evLoad _ m | .evMadd52Load _ _ _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
   | .evStore m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
-  | .kLoad k _ m => ⟨fun τ => bif memPub τ m && pub τ k then some (noX τ) else none⟩
-  | .kStore m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
+  | .kLoad k _ m | .kLoad8 k _ m => ⟨fun τ => bif memPub τ m && pub τ k then some (noX τ) else none⟩
+  | .kStore m k _ | .kStore8 m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
   | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
   | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .lfence => ⟨fun τ => some τ⟩
@@ -2432,7 +2455,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
   case vmovdqu32Store m _ => exact st m 64 _
   case evStore m _ => exact st m 32 _
-  case kStore m k _ =>
+  case kStore m k _ | kStore8 m k _ =>
     simp only [stepKD, stepKDFn, step]
     cases pub τ k
     · exact .inl ⟨rfl, rfl⟩

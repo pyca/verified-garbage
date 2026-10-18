@@ -17,10 +17,10 @@ theorem mask_or (p q : Prop) [Decidable p] [Decidable q] : mask32 p ||| mask32 q
 
 theorem supported_masks (p q : Nat) (odd : Prop) [Decidable odd] :
     ((mask32 (p = 1024) &&& mask32 (q = 160)) |||
-      ((mask32 (q = 224) ||| mask32 (q = 256)) &&& mask32 (p = 2048)) |||
+      ((mask32 (q = 224) ||| mask32 (q = 160) ||| mask32 (q = 256)) &&& mask32 (p = 2048)) |||
       (mask32 (p = 3072) &&& mask32 (q = 256))) &&& mask32 odd =
       mask32 (Spec.Dsa.supportedSizes p q ∧ odd) := by
   simp only [mask32_and, mask_or]
-  simp only [Spec.Dsa.supportedSizes, and_comm, or_assoc]
+  simp only [Spec.Dsa.supportedSizes, and_comm, or_assoc, or_comm]
 
 end VG.Proof.Dsa.X86

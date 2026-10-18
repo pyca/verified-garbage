@@ -79,7 +79,7 @@ def generationChunks (width : Nat) (bytes : List Byte) : List (List Byte) :=
   (List.range (bytes.length / width)).map fun i => (bytes.drop (i * width)).take width
 
 /-- Generated parameters use (1024,160), (2048,256), or (3072,256).
-(2048,224) remains supported only for imported parameters. -/
+(2048,160) and (2048,224) remain supported only for imported parameters. -/
 def generationLengthsValid (pLen qLen : Nat) : Prop :=
   (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ qLen = 32) ∨ (pLen = 384 ∧ qLen = 32)
 
@@ -138,7 +138,7 @@ def generateKeyApi : Api where
     draws on every return. Timing may depend on public parameters, sampling decisions, \
     consumption and success, not otherwise on x or randomness. \
     Contract: `VG.Spec.Dsa.generateKeyContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).",
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.",
     "scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.",
     "Caller must assure domain validity and supply fresh independent random bytes."]

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on x86-64 -/
@@ -46,6 +47,14 @@ def artifacts : List Artifact := [
         independent multiplications at a time, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack."]
     code := Impl.Gcm.X86_64.Prepare.prepare
     verified := Proof.Gcm.X86_64.Prepare.prepare_verified
-    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] }]
+    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"] },
+  Spec.Gcm.prepareApi.artifact X86_64.target {
+    suffix := "_pclmul_avx"
+    notes := ["Uses PCLMULQDQ on 128-bit registers: `H'`–`H'⁸` as the eight-block loops compute \
+        them, already prepared, then each times `H'⁸` five times, eight independent \
+        multiplications at a time, for `H'⁹`–`H'⁴⁸`. No calls and no stack."]
+    code := Impl.Gcm.X86_64.PrepareAvx.prepare
+    verified := Proof.Gcm.X86_64.PrepareAvx.prepare_verified
+    features := ["avx", "pclmulqdq"] }]
 
 end VG.Artifacts.Gcm.X86_64

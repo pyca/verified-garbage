@@ -29,7 +29,7 @@ def sealFn (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) : Proof.AesGcm.A
 `v`, and `gp` on the path for TLS records. -/
 def sealPreparedFn (v : GcmImpl) (gp : GhashPreparedImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Proof.AesGcm.AArch64.Gather.SealFn .prepared :=
-  .prepared ⟨Spec.Gcm.sealPrepared8Api.name ++ v.suffix,
+  .prepared ⟨"vg_aes_gcm_seal_prepared8" ++ v.suffix,
       Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.Fast.sealWith v.callees gp.fn)⟩
     (Fast.sealPrepared_framed v gp hMK) (fastSealWith_depth v gp.noFrames)
 

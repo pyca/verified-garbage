@@ -66,7 +66,7 @@ theorem rest_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (key
     (fun k _ hk s hs => encT_ok v.arith W hp (by omega) hs) s₁' h₁') fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun k => KRestT L L.k k σ) L.k 0
     (fun k _ hk s hs => encS_ok v.arith W hp (by omega) hs) s₂ (by rwa [Nat.zero_add] at h₂)) fun s₃ h₃ => ?_)
-  exact fin_ok W hp (by rwa [Nat.zero_add] at h₃)
+  exact fin_ok W hp (by rw [Nat.zero_add] at h₃; exact h₃.pre)
 
 theorem body_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
     (h : KB L (L.k * L.k) σ s) : WP isa (ifOk (rest L v.callee)) s (KEnd L σ) := by
@@ -79,7 +79,7 @@ theorem body_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (key
     exact ⟨h'.a.kc, h'.m.r15, fun h => absurd h ho⟩
 
 /-- The postcondition, from the keys. -/
-theorem post_of {L : Kem} (W : KgWf L) {σ s : State} (h : KEnd L σ s) {s' : State}
+theorem post_of {L : Kem} (W : KgWfB L) {σ s : State} (h : KEnd L σ s) {s' : State}
     (hr : (s'.gpr .rax).setWidth 32 = (s.gpr .r15).setWidth 32) (hm : s'.mem = s.mem) : (keyGenK L).post σ s' := by
   have e12 : pa s (.r12, 0) = σ.gpr .rsi := by
     rw [pa, h.kc.top.regs (.r12, .rsi) (by decide), add_ofNat_zero]
@@ -98,7 +98,7 @@ theorem post_of {L : Kem} (W : KgWf L) {σ s : State} (h : KEnd L σ s) {s' : St
     rw [KPke.keyGenInternal_eq, KPke.kpkeKeyGen_none hi hj hn]
     rfl
 
-theorem KEnd.hin {L : Kem} (W : KgWf L) {σ s : State} (hp : (keyGenK L).pre σ) (h : KEnd L σ s) :
+theorem KEnd.hin {L : Kem} (W : KgWfB L) {σ s : State} (hp : (keyGenK L).pre σ) (h : KEnd L σ s) :
     ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
   (h.kc.lay W hp).cR (W.sv k hk) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
@@ -151,7 +151,7 @@ theorem rest_tr (v : Sample4Impl) :
   refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRestT L L.k k σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
     L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encS_ok v.arith W hp (by omega) hs) (encS_tr W v.arith (by omega))) ?_
   rw [Nat.zero_add]
-  exact relInvC (fun σ s hp hs => fin_ok W hp hs) (fin_tr W)
+  exact relInvC (fun σ s hp hs => fin_ok W hp hs.pre) (fin_tr W fun h => h.kc)
 
 omit W in
 theorem r15_pub {σ₁ σ₂ x y : State} (pub : (keyGenK L).pub σ₁ σ₂) (h₁ : KB L (L.k * L.k) σ₁ x)

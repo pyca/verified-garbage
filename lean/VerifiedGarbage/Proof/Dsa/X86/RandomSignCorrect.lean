@@ -58,9 +58,9 @@ theorem freed_esp_eq {s₀ u : State} (A : RandomSignABI s₀) (h : Ready s₀ u
   rw [e, BitVec.sub_add_cancel]
 
 /-- `vg_dsa_sign_random` meets its contract. -/
-theorem randomSign_correct (F : SignFn) (s : State) (hpre : (Spec.Dsa.randomSignContract abi 144).pre s) :
+theorem randomSign_correct (F : SignFn) (s : State) (hpre : (Spec.Dsa.randomSignContract abi 156).pre s) :
     ∃ t s', Exec isa (code F.name F.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.Dsa.randomSignContract abi 144).post s s' := by
+      (Spec.Dsa.randomSignContract abi 156).post s s' := by
   have A := randomSignABI_of hpre
   obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok F A
   refine ⟨t, _, he, ⟨fun r hr => ?_, ?_⟩, ?_⟩

@@ -91,7 +91,7 @@ def callK (n m W : Nat) (base : Addr) (o a b : Nat) (mem : Mem) (pre : Nat → N
   post t t' := abiPreserved t t' ∧ Kept n base o t.mem t'.mem ∧
     (wordsVal t'.mem base o n < m ∧
       wordsVal t'.mem base o n * 2 ^ (64 * n) % m = F (wordsVal t.mem base a n) (wordsVal t.mem base b n) % m) ∧
-    t'.gpr .x0 = t.gpr .x0 ∧ ∀ d, (∀ i < 10, d ≠ (slot i).1) → t'.v d = t.v d
+    t'.gpr .x0 = t.gpr .x0 ∧ t'.v .v29 = t.v .v29
   pub _ _ := True
 
 theorem arg_of {v : BitVec 64} {x : Nat} (h : v.toNat = x) : (v.setWidth 32).toNat = x % 2 ^ 32 := by
@@ -102,7 +102,7 @@ theorem mulFn_noFrames (n m : Nat) : (mulFn n m).noFrames = true := by
 
 /-- `[o] = F [a] [b] R⁻¹ mod m` by a call of a function whose code `code`
 does that from operands with `pre`, as the inline product (`mul_ok`). -/
-theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hn : M.n = 6 ∨ M.n = 8 ∨ M.n = 9) (htmp : M.tmp = moAt M.n) {o a b : Nat}
     (ho : o + 8 * M.n ≤ own M.n) (ha : a + 8 * M.n ≤ own M.n) (hb : b + 8 * M.n ≤ own M.n)
     {f : String} {code : Prog isa} (hnf : code.noFrames = true) (pre : Nat → Nat → Prop)
@@ -114,7 +114,7 @@ theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
         wordsVal t'.mem (t.gpr .x0) (arg t .x1) M.n * 2 ^ (64 * M.n) % m =
           F (wordsVal t.mem (t.gpr .x0) (arg t .x2) M.n) (wordsVal t.mem (t.gpr .x0) (arg t .x3) M.n) % m) ∧
         t'.gpr .x0 = t.gpr .x0 ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
-        ∀ d, (∀ i < 10, d ≠ (slot i).1) → t'.v d = t.v d) :
+        t'.v .v29 = t.v .v29) :
     WP isa (callProg f code o a b) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
@@ -163,7 +163,7 @@ theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     · simp only [arg]; rw [c3, a3]
   · intro s₂ r₂ w₂ p₂ _ hpres _ _ ⟨_, K, ⟨V, C⟩, R0, Vv⟩
     simp only [State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr] at K V C R0
-    have Vv' : ∀ d, (∀ i < 10, d ≠ (slot i).1) → s₂.v d = s₁.v d := Vv
+    have Vv' : s₂.v .v29 = s₁.v .v29 := Vv
     rw [K₁.mem] at K C
     refine WP.mono (lr_ok s₂) fun s₃ ⟨l₃, k₃⟩ => ?_
     have x0₂ : s₂.gpr .x0 = s.gpr .x0 := by
@@ -171,7 +171,7 @@ theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     refine ⟨⟨fun r hr => ?_, by rw [k₃.rd, r₂, K₁.rd], by rw [k₃.wr, w₂, K₁.wr], by rw [k₃.sp, p₂, K₁.sp],
       fun x hx hx' => ?_⟩, by rw [k₃.mem]; exact V, by rw [k₃.mem]; exact C⟩
     · by_cases h30 : r = .x30
-      · subst h30; rw [l₃, Vv' _ v29_not_slot, L₁]
+      · subst h30; rw [l₃, Vv', L₁]
       rcases not_clob (.inr hn) hr with rfl | rfl | hp
       · rw [k₃.gpr _ (by decide), x0₂]
       · exact absurd rfl h30
@@ -180,6 +180,28 @@ theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
           rcases h with rfl | rfl | rfl <;> exact absurd hp (by decide))]
     · rw [k₃.mem]
       exact K x hx (by rw [← htmp]; exact hx')
+
+theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkA M size m s.mem base) (hn : M.n = 6 ∨ M.n = 8 ∨ M.n = 9) (htmp : M.tmp = moAt M.n) {o a b : Nat}
+    (ho : o + 8 * M.n ≤ own M.n) (ha : a + 8 * M.n ≤ own M.n) (hb : b + 8 * M.n ≤ own M.n)
+    {f : String} {code : Prog isa} (hnf : code.noFrames = true) (pre : Nat → Nat → Prop)
+    (F : Nat → Nat → Nat) (hpre : pre (wordsVal s.mem base a M.n) (wordsVal s.mem base b M.n))
+    (hcode : ∀ {W : Nat} {t : State}, Pre M.n W t →
+      pre (wordsVal t.mem (t.gpr .x0) (arg t .x2) M.n) (wordsVal t.mem (t.gpr .x0) (arg t .x3) M.n) →
+      WP isa code t fun t' => abiPreserved t t' ∧ Kept M.n (t.gpr .x0) (arg t .x1) t.mem t'.mem ∧
+        (wordsVal t'.mem (t.gpr .x0) (arg t .x1) M.n < m ∧
+        wordsVal t'.mem (t.gpr .x0) (arg t .x1) M.n * 2 ^ (64 * M.n) % m =
+          F (wordsVal t.mem (t.gpr .x0) (arg t .x2) M.n) (wordsVal t.mem (t.gpr .x0) (arg t .x3) M.n) % m) ∧
+        t'.gpr .x0 = t.gpr .x0 ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+        ∀ d, (∀ i < 10, d ≠ (slot i).1) → t'.v d = t.v d) :
+    WP isa (callProg f code o a b) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        F (wordsVal s.mem base a M.n) (wordsVal s.mem base b M.n) % m := by
+  apply callProgV29_ok hs hM hn htmp ho ha hb hnf pre F hpre
+  intro W t hp ha'
+  exact WP.mono (hcode hp ha') fun u ⟨hA,hK,hV,h0,hr,hw,hv⟩ =>
+    ⟨hA,hK,hV,h0,hr,hw,hv .v29 v29_not_slot⟩
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`, as the
 inline product (`mul_ok`). -/

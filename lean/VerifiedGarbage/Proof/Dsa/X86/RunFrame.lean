@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 
 /-! # Memory and pointer invariants across complete DSA arithmetic schedules -/
 
@@ -22,7 +23,7 @@ instance (p : Pointer) : Decidable (StablePointer p) := by
   cases p <;> unfold StablePointer <;> infer_instance
 
 theorem runFrame_field {s t : State} {base : Addr}
-    (O : Outs base runRanges s.mem t.mem) {f : Field} (hf : f ≠ .mask) :
+    (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem) {f : Field} (hf : f ≠ .mask) :
     t.mem.readW (off base (Layout.field f)) 32 = s.mem.readW (off base (Layout.field f)) 32 := by
   have lo := (VG.Proof.Dsa.X86.Layout.field_bounds f).1
   have hi : Layout.field f + 4 ≤ 8244 := by cases f <;> simp_all [Layout.field]
@@ -38,11 +39,11 @@ theorem runFrame_field {s t : State} {base : Addr}
         omega
       · change Layout.field f + 4 ≤ 14720 ∨ 15712 ≤ Layout.field f
         omega
-    · omega
+    · change _ ≤ 15712; omega
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem runFrame_pointer {s t : State} {base : Addr} {rs : List Reg} {p : Pointer}
-    (O : Outs base runRanges s.mem t.mem) (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) :
+    (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem) (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) :
     pointerValue base t p = pointerValue base s p := by
   cases p with
   | input f => exact runFrame_field O hp
@@ -56,7 +57,7 @@ theorem OperandReady.keep_pointer {s t : State} {base : Addr} {n len : Nat} {rs 
   ⟨⟨by rw [P]; exact R.fits, by rw [P, K.2.1, K.2.2]; exact R.reads⟩, by rw [P]; exact R.apart⟩
 
 theorem OperandReady.keep_run {s t : State} {base : Addr} {n len : Nat} {rs : List Reg} {p : Pointer}
-    (R : OperandReady s base n p len) (O : Outs base runRanges s.mem t.mem)
+    (R : OperandReady s base n p len) (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem)
     (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) : OperandReady t base n p len :=
   R.keep_pointer K (runFrame_pointer O K hdi hp)
 

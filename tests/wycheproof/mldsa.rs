@@ -6,7 +6,7 @@
 //!
 //! Signing is checked deterministic (`sign_deterministic`, for the vectors
 //! without `rnd`) and, with `μ` given, with the vector's randomness (the
-//! hidden `sign_internal`); every signature is verified. Invalid vectors
+//! public `sign_mu`); every signature is verified. Invalid vectors
 //! are seeds of the wrong length, which the types do not represent, and
 //! context strings longer than 255 bytes, which are refused.
 
@@ -89,8 +89,8 @@ macro_rules! mldsa_tests {
                         .map_or([0; 32], |r| r.0[..].try_into().unwrap());
                     // Every valid vector gives `μ`; some (`Internal`) give no message.
                     let mu: [u8; 64] = c.mu.as_ref().unwrap().0[..].try_into().unwrap();
-                    assert_eq!(key.sign_internal(&mu, &rnd), Ok(sig), "tcId {id}");
-                    assert_eq!(key.verifying_key().verify_internal(&mu, &sig), Ok(()));
+                    assert_eq!(key.sign_mu(&mu, &rnd), Ok(sig), "tcId {id}");
+                    assert_eq!(key.verifying_key().verify_mu(&mu, &sig), Ok(()));
                     if let Some(msg) = &c.msg {
                         if c.rnd.is_none() {
                             assert_eq!(key.sign_deterministic(&msg.0, ctx), Ok(sig), "tcId {id}");

@@ -27,6 +27,12 @@ def variant : Backend where
   features := []
   signVerified := signing_verified Mont.calledProductEight
   verifyVerified := verifying_verified Mont.calledProductEight
+  parametersVerified := parameters_verified Mont.calledProductEight
+  deriveVerified := derive_verified Mont.calledProductEight
+  parametersSp := by decide +kernel
+  parametersDepth := by decide +kernel
+  deriveSp := by decide +kernel
+  deriveDepth := by decide +kernel
   signSp := by decide +kernel
   signDepth := by decide +kernel
   stackBound := by decide

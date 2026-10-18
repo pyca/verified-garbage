@@ -28,29 +28,46 @@ open VG.Spec.MlKem
 open DecMul (sub_c sub_c0 sub_v in_c in_c0 in_v dis_cc cov_one sx1024 sx2048)
 open EncMul (hiR hi_dis_c hi_dis_c0 hi_dis_tab sub_hi in_vec)
 
-/-- `vg_mlkem*_keygen_mul(t = rdi, s = rsi, a = rdx, e = rcx, scratch = r8)` of rank `k`. -/
-def kgMulK (k : Nat) : Contract isa where
+/-- `vg_mlkem*_keygen_mul(t = rdi, s = rsi, a = rdx, e = rcx, scratch = r8)` of rank `k`, with
+`Â` stored at `a` in the region `aR a`, reduced as `aRed` says, as the matrix `aMat`, and `e`
+stored at `e` in the region `eR e`, reduced as `eRed` says, as the vector `eVec`. -/
+def kgMulKG (k : Nat) (aR : Addr → Region) (aRed : Mem → Addr → Prop) (aMat : Mem → Addr → List (List Poly))
+    (eR : Addr → Region) (eRed : Mem → Addr → Prop) (eVec : Mem → Addr → List Poly) : Contract isa where
   pre s :=
-    s.rd = [vR (s.gpr .rdx) (k * k), vR (s.gpr .rcx) k] ∧
+    s.rd = [aR (s.gpr .rdx), eR (s.gpr .rcx)] ∧
     s.wr = [vR (s.gpr .rdi) k, vR (s.gpr .rsi) k, cR (s.gpr .r8)] ∧
     (vR (s.gpr .rdi) k).Disjoint (vR (s.gpr .rsi) k) ∧
-    (vR (s.gpr .rdi) k).Disjoint (vR (s.gpr .rdx) (k * k)) ∧
-    (vR (s.gpr .rdi) k).Disjoint (vR (s.gpr .rcx) k) ∧
+    (vR (s.gpr .rdi) k).Disjoint (aR (s.gpr .rdx)) ∧
+    (vR (s.gpr .rdi) k).Disjoint (eR (s.gpr .rcx)) ∧
     (vR (s.gpr .rdi) k).Disjoint (cR (s.gpr .r8)) ∧
-    (vR (s.gpr .rsi) k).Disjoint (vR (s.gpr .rdx) (k * k)) ∧
-    (vR (s.gpr .rsi) k).Disjoint (vR (s.gpr .rcx) k) ∧
+    (vR (s.gpr .rsi) k).Disjoint (aR (s.gpr .rdx)) ∧
+    (vR (s.gpr .rsi) k).Disjoint (eR (s.gpr .rcx)) ∧
     (vR (s.gpr .rsi) k).Disjoint (cR (s.gpr .r8)) ∧
-    (vR (s.gpr .rdx) (k * k)).Disjoint (cR (s.gpr .r8)) ∧ (vR (s.gpr .rcx) k).Disjoint (cR (s.gpr .r8)) ∧
+    (aR (s.gpr .rdx)).Disjoint (cR (s.gpr .r8)) ∧ (eR (s.gpr .rcx)).Disjoint (cR (s.gpr .r8)) ∧
     (retR s).Disjoint (vR (s.gpr .rdi) k) ∧ (retR s).Disjoint (vR (s.gpr .rsi) k) ∧
-    (retR s).Disjoint (vR (s.gpr .rdx) (k * k)) ∧ (retR s).Disjoint (vR (s.gpr .rcx) k) ∧
+    (retR s).Disjoint (aR (s.gpr .rdx)) ∧ (retR s).Disjoint (eR (s.gpr .rcx)) ∧
     (retR s).Disjoint (cR (s.gpr .r8)) ∧
-    VecReduced s.mem (s.gpr .rsi) k ∧ VecReduced s.mem (s.gpr .rdx) (k * k) ∧ VecReduced s.mem (s.gpr .rcx) k
+    VecReduced s.mem (s.gpr .rsi) k ∧ aRed s.mem (s.gpr .rdx) ∧ eRed s.mem (s.gpr .rcx)
   post s s' :=
     VecIs s'.mem (s.gpr .rsi) k ((vecAt s.mem (s.gpr .rsi) k).map ntt) ∧
-    VecIs s'.mem (s.gpr .rdi) k (addVec (mulMatVec (matAt s.mem (s.gpr .rdx) k) ((vecAt s.mem (s.gpr .rsi) k).map ntt))
-      ((vecAt s.mem (s.gpr .rcx) k).map ntt))
+    VecIs s'.mem (s.gpr .rdi) k (addVec (mulMatVec (aMat s.mem (s.gpr .rdx)) ((vecAt s.mem (s.gpr .rsi) k).map ntt))
+      ((eVec s.mem (s.gpr .rcx)).map ntt))
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+/-- `kgMulKG` with `e` as `k` polynomials of `u32`s. -/
+abbrev kgMulKA (k : Nat) (aR : Addr → Region) (aRed : Mem → Addr → Prop) (aMat : Mem → Addr → List (List Poly)) :
+    Contract isa :=
+  kgMulKG k aR aRed aMat (fun p => vR p k) (fun m p => VecReduced m p k) (fun m p => vecAt m p k)
+
+/-- `kgMulKA` with `Â` as `k²` polynomials of `u32`s. -/
+abbrev kgMulK (k : Nat) : Contract isa :=
+  kgMulKA k (fun p => vR p (k * k)) (fun m p => VecReduced m p (k * k)) (fun m p => matAt m p k)
+
+/-- `kgMulKG` with `Â` as `k²` polynomials of `u16`s and `e` as `k`. -/
+abbrev kgMulK16 (k : Nat) : Contract isa :=
+  kgMulKG k (fun p => ⟨p, 512 * (k * k)⟩) (fun m p => VecReducedW 16 m p (k * k)) (fun m p => matAtW 16 m p k)
+    (fun p => ⟨p, 512 * k⟩) (fun m p => VecReducedW 16 m p k) (fun m p => vecAtW 16 m p k)
 
 namespace KgMul
 
@@ -68,10 +85,14 @@ abbrev eP : Addr := s₀.gpr .rcx
 abbrev cP : Addr := s₀.gpr .r8
 abbrev sv : List Poly := (vecAt s₀.mem (sP s₀) k).map ntt
 abbrev ev : List Poly := (vecAt s₀.mem (eP s₀) k).map ntt
+/-- `ê` of `e` as `u16`s. -/
+abbrev ev16 : List Poly := (vecAtW 16 s₀.mem (eP s₀) k).map ntt
 /-- Row `i` of `Â`. -/
 abbrev rowA (i : Nat) : List Poly := vecAt s₀.mem (aP s₀ + BitVec.ofNat 64 (1024 * (k * i))) k
+/-- Entry `i` of `t̂`, with the rows `rA` of `Â` and `ê = Ev`. -/
+abbrev tgtG (Ev : List Poly) (rA : Nat → List Poly) (i : Nat) : Poly := add (dot (rA i) (sv k s₀)) (Ev[i]!)
 /-- Entry `i` of `t̂`. -/
-abbrev tgt (i : Nat) : Poly := add (dot (rowA k s₀ i) (sv k s₀)) ((ev k s₀)[i]!)
+abbrev tgt (i : Nat) : Poly := tgtG k s₀ (ev k s₀) (rowA k s₀) i
 
 /-- What the loops keep. -/
 structure Base (s : State) : Prop where
@@ -82,30 +103,37 @@ structure Base (s : State) : Prop where
   frame : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem s.mem
   saved : Spill.Saved s.mem (cP s₀) s₀.gpr KpkeMul.slots
 
-/-- After `j` iterations of the first loop. -/
-structure NInv (j : Nat) (s : State) : Prop extends Base k s₀ s where
+/-- After `j` iterations of the first loop, with `ê = Ev` and `e`'s
+polynomials `se` bytes apart. -/
+structure NInv (Ev : List Poly) (se j : Nat) (s : State) : Prop extends Base k s₀ s where
   r12 : s.gpr .r12 = sP s₀ + BitVec.ofNat 64 (1024 * j)
-  r15 : s.gpr .r15 = eP s₀ + BitVec.ofNat 64 (1024 * j)
+  r15 : s.gpr .r15 = eP s₀ + BitVec.ofNat 64 (se * j)
   rbp : s.gpr .rbp = tP s₀ + BitVec.ofNat 64 (1024 * j)
   r13 : s.gpr .r13 = aP s₀
   sdone : ∀ j' < j, PolyIs s.mem (sP s₀ + BitVec.ofNat 64 (1024 * j')) ((sv k s₀)[j']!)
   srest : ∀ j', j ≤ j' → j' < k →
     PolyIs s.mem (sP s₀ + BitVec.ofNat 64 (1024 * j')) (polyAt s₀.mem (sP s₀ + BitVec.ofNat 64 (1024 * j')))
-  tdone : ∀ j' < j, PolyIs s.mem (tP s₀ + BitVec.ofNat 64 (1024 * j')) ((ev k s₀)[j']!)
+  tdone : ∀ j' < j, PolyIs s.mem (tP s₀ + BitVec.ofNat 64 (1024 * j')) (Ev[j']!)
 
-/-- After `i` iterations of the second loop. -/
-structure RInv (R : AccRep) (T : TabRep) (i : Nat) (s : State) : Prop extends Base k s₀ s where
+/-- After `i` iterations of the second loop, with `ê = Ev` and the rows `rA`
+of `Â`, `ra` bytes between their polynomials. -/
+structure RInvG (Ev : List Poly) (ra : Nat) (rA : Nat → List Poly) (R : AccRep) (T : TabRep) (i : Nat) (s : State) :
+    Prop extends Base k s₀ s where
   rbp : s.gpr .rbp = cP s₀ + BitVec.ofNat 64 1024
   r12 : s.gpr .r12 = sP s₀
-  r13 : s.gpr .r13 = aP s₀ + BitVec.ofNat 64 (1024 * (k * i))
+  r13 : s.gpr .r13 = aP s₀ + BitVec.ofNat 64 (ra * (k * i))
   r15 : s.gpr .r15 = tP s₀ + BitVec.ofNat 64 (1024 * i)
   tab : T.is s.mem (cP s₀)
   shat : ∀ j < k, PolyIs s.mem (sP s₀ + BitVec.ofNat 64 (1024 * j)) ((sv k s₀)[j]!)
-  tdone : ∀ i' < i, PolyIs s.mem (tP s₀ + BitVec.ofNat 64 (1024 * i')) (tgt k s₀ i')
-  trest : ∀ i', i ≤ i' → i' < k → PolyIs s.mem (tP s₀ + BitVec.ofNat 64 (1024 * i')) ((ev k s₀)[i']!)
+  tdone : ∀ i' < i, PolyIs s.mem (tP s₀ + BitVec.ofNat 64 (1024 * i')) (tgtG k s₀ Ev rA i')
+  trest : ∀ i', i ≤ i' → i' < k → PolyIs s.mem (tP s₀ + BitVec.ofNat 64 (1024 * i')) (Ev[i']!)
+
+/-- `RInvG` of `Â` and `e` as `u32`s. -/
+abbrev RInv (R : AccRep) (T : TabRep) (i : Nat) (s : State) : Prop := RInvG k s₀ (ev k s₀) 1024 (rowA k s₀) R T i s
 
 /-- After the products `0, …, j - 1` of row `i`, accumulated. -/
-structure PInv (R : AccRep) (T : TabRep) (i j : Nat) (c14 : BitVec 64) (s : State) : Prop extends RInv k s₀ R T i s where
+structure PInv (R : AccRep) (T : TabRep) (i j : Nat) (c14 : BitVec 64) (s : State) : Prop
+    extends RInvG k s₀ (ev k s₀) 1024 (rowA k s₀) R T i s where
   r14 : s.gpr .r14 = c14
   acc : R.is s.mem (cP s₀ + BitVec.ofNat 64 1024) (dotP (rowA k s₀ i) (sv k s₀) j)
 
@@ -114,26 +142,28 @@ end
 /-! ## Regions of the arguments -/
 
 section
-variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀)
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} {eR : Addr → Region} {eRed : Mem → Addr → Prop}
+  {eVec : Mem → Addr → List Poly} (hp : (kgMulKG k aR aRed aMat eR eRed eVec).pre s₀)
 include hp
 
 theorem dTS : (vR (tP s₀) k).Disjoint (vR (sP s₀) k) := hp.2.2.1
-theorem dTA : (vR (tP s₀) k).Disjoint (vR (aP s₀) (k * k)) := hp.2.2.2.1
-theorem dTE : (vR (tP s₀) k).Disjoint (vR (eP s₀) k) := hp.2.2.2.2.1
+theorem dTA : (vR (tP s₀) k).Disjoint (aR (aP s₀)) := hp.2.2.2.1
+theorem dTE : (vR (tP s₀) k).Disjoint (eR (eP s₀)) := hp.2.2.2.2.1
 theorem dTC : (vR (tP s₀) k).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.1
-theorem dSA : (vR (sP s₀) k).Disjoint (vR (aP s₀) (k * k)) := hp.2.2.2.2.2.2.1
-theorem dSE : (vR (sP s₀) k).Disjoint (vR (eP s₀) k) := hp.2.2.2.2.2.2.2.1
+theorem dSA : (vR (sP s₀) k).Disjoint (aR (aP s₀)) := hp.2.2.2.2.2.2.1
+theorem dSE : (vR (sP s₀) k).Disjoint (eR (eP s₀)) := hp.2.2.2.2.2.2.2.1
 theorem dSC : (vR (sP s₀) k).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.1
-theorem dAC : (vR (aP s₀) (k * k)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.1
-theorem dEC : (vR (eP s₀) k).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.1
+theorem dAC : (aR (aP s₀)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.1
+theorem dEC : (eR (eP s₀)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.1
 theorem rT : (retR s₀).Disjoint (vR (tP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rS : (retR s₀).Disjoint (vR (sP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem rA : (retR s₀).Disjoint (vR (aP s₀) (k * k)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem rE : (retR s₀).Disjoint (vR (eP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+theorem rA : (retR s₀).Disjoint (aR (aP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+theorem rE : (retR s₀).Disjoint (eR (eP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rC : (retR s₀).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem redS : VecReduced s₀.mem (sP s₀) k := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem redA : VecReduced s₀.mem (aP s₀) (k * k) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem redE : VecReduced s₀.mem (eP s₀) k := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+theorem redA : aRed s₀.mem (aP s₀) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+theorem redE : eRed s₀.mem (eP s₀) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 omit hp in
 /-- A polynomial of `a` or `e`, as at the start, in memory that differs only in `t`, `s` and `scratch`. -/
@@ -148,13 +178,26 @@ theorem ro_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s
   · exact (hS.sub_right (sub_v _ he)).symm
   · exact hC.sub_left (sub_v _ he)
 
-theorem a_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k * k) :
-    PolyIs m (aP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (aP s₀ + BitVec.ofNat 64 (1024 * e))) :=
-  ro_frame hf he (dTA hp) (dSA hp) (dAC hp) (redA hp)
+end
+
+section
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} (hp : (kgMulKA k aR aRed aMat).pre s₀)
+include hp
 
 theorem e_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k) :
     PolyIs m (eP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (eP s₀ + BitVec.ofNat 64 (1024 * e))) :=
   ro_frame hf he (dTE hp) (dSE hp) (dEC hp) (redE hp)
+
+end
+
+section
+variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀)
+include hp
+
+theorem a_frame {m : Mem} (hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k * k) :
+    PolyIs m (aP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (aP s₀ + BitVec.ofNat 64 (1024 * e))) :=
+  ro_frame hf he (dTA hp) (dSA hp) (dAC hp) (redA hp)
 
 end
 
@@ -187,8 +230,9 @@ theorem Base.step {k : Nat} {s₀ s s' : State} (hb : Base k s₀ s) {rs : List 
       have := (DecMul.slots_bound p hp').2; omega))⟩
 
 section
-variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) (hk : k ≤ 4) {B : Bodies} {R : AccRep} {T : TabRep}
-  (hB : BodiesOk B R T)
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} (hp : (kgMulKA k aR aRed aMat).pre s₀) (hk : k ≤ 4) {B : Bodies}
+  {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
 include hp hk hB
 
 omit hp hk hB in
@@ -198,15 +242,15 @@ theorem dChi {p : Addr} {n i : Nat} (h : (vR p n).Disjoint (cR (cP s₀))) (hi :
 
 set_option linter.unusedSimpArgs false in
 /-- An iteration of the first loop: `NTT(s[j])` in place, and `NTT(e[j])` to `t[j]`. -/
-theorem nttStep_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ j s) :
-    WP isa (KpkeMul.nttK B) s fun s' => NInv k s₀ (j + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
+theorem nttStep_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ (ev k s₀) 1024 j s) :
+    WP isa (KpkeMul.nttK B) s fun s' => NInv k s₀ (ev k s₀) 1024 (j + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
       s'.zf = some (s.gpr .r14 - 1 == 0) := by
-  have hsr : s.rd = [vR (aP s₀) (k * k), vR (eP s₀) k] := by rw [hI.rd, hp.1]
+  have hsr : s.rd = [aR (aP s₀), vR (eP s₀) k] := by rw [hI.rd, hp.1]
   have hsw : s.wr = [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] := by rw [hI.wr, hp.2.1]
   have cs : ∀ {rs : List Reg}, (∀ r ∈ calleeSaved, r ∉ rs) → ∀ {a b : State}, Keep rs a b → ∀ r ∈ calleeSaved,
       b.gpr r = a.gpr r := fun h _ _ kk r hr => kk.gpr (h r hr)
   have hS := hI.srest j (Nat.le_refl _) hj
-  unfold KpkeMul.nttK
+  unfold KpkeMul.nttK KpkeMul.nttKg
   -- `NTT(s[j])` in place
   refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .rdi = sP s₀ + BitVec.ofNat 64 (1024 * j) ∧
       s1.gpr .rsi = cP s₀ ∧ s1.gpr .r10 = sP s₀ + BitVec.ofNat 64 (1024 * j) ∧ s1.mem = s.mem ∧
@@ -249,7 +293,7 @@ theorem nttStep_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ j s) :
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]) fun s3 ⟨h3di, h3si, h3r10, hm3, k3⟩ => ?_)
   have hsp3 : s3.gpr .rsp = s₀.gpr .rsp := by rw [k3.gpr (by decide), hb2.rsp]
-  have hsr2 : s3.rd = [vR (aP s₀) (k * k), vR (eP s₀) k] := by rw [k3.2.1, hb2.rd, hp.1]
+  have hsr2 : s3.rd = [aR (aP s₀), vR (eP s₀) k] := by rw [k3.2.1, hb2.rd, hp.1]
   have hsw2 : s3.wr = [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] := by rw [k3.2.2, hb2.wr, hp.2.1]
   refine WP.seq (WP.inline (k := nttOK) hB.nttO (rd := [pR (eP s₀ + BitVec.ofNat 64 (1024 * j))])
     (wr := [pR (tP s₀ + BitVec.ofNat 64 (1024 * j)), pR (cP s₀)]) ?_ ?_ ?_
@@ -362,7 +406,7 @@ theorem rowA_get (m : Mem) (p : Addr) {k i j : Nat} (hj : j < k) :
   rw [vecAt_get _ _ hj, BitVec.add_assoc, ← BitVec.ofNat_add, ← Nat.mul_add]
 
 /-- `RInv`, after writes to `wrP`. -/
-theorem RInv.step {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) {R : AccRep} {T : TabRep} {i : Nat}
+theorem RInvG.step {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) {R : AccRep} {T : TabRep} {i : Nat}
     (hik : i ≤ k) {s s' : State} (hI : RInv k s₀ R T i s) (hf : Frame (wrP (cP s₀)) s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hcs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) : RInv k s₀ R T i s' :=
   ⟨hI.toBase.step hf wrP_sub (wrP_hi _) hrd hwr hcs, by rw [hcs .rbp (by decide), hI.rbp],
@@ -430,7 +474,7 @@ theorem prodStep_ok {i j : Nat} {c14 : BitVec 64} (hi : i < k) (hj : j < k) {s :
   rw [hA.2, hS.2, ← rowA_get _ _ hj, ← dotP_succ (by rw [vecAt_length]; exact hj)
     (by rw [List.length_map, vecAt_length]; exact hj)] at hP
   have g2 : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => by rw [habi2.1 r hr, cs (by decide) k1 r hr]
-  exact ⟨hI.toRInv.step hp (by omega) hf2 (by rw [hrd2, k1.2.1]) (by rw [hwr2, k1.2.2]) g2,
+  exact ⟨hI.toRInvG.step hp (by omega) hf2 (by rw [hrd2, k1.2.1]) (by rw [hwr2, k1.2.2]) g2,
     by rw [g2 .r14 (by decide), hI.r14], hP⟩
 
 /-- Term `0` of row `i`, stored to the accumulator. -/
@@ -609,8 +653,17 @@ theorem RowOk.ofAcc {B : Bodies} {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
 /-! ## The whole function -/
 
 /-- The code inside the MXCSR region. -/
-abbrev inner (B : Bodies) (k : Nat) : Prog isa :=
-  .seq (.loop (KpkeMul.nttK B) .ne) (.seq (.block (KpkeMul.midK B k)) (.loop (KpkeMul.rowOf B k) .ne))
+abbrev innerG (term row : Prog isa) (B : Bodies) (k : Nat) : Prog isa :=
+  .seq (.loop term .ne) (.seq (.block (KpkeMul.midK B k)) (.loop row .ne))
+
+/-- The code inside the MXCSR region of `keygenMul B k`. -/
+abbrev inner (B : Bodies) (k : Nat) : Prog isa := innerG (KpkeMul.nttK B) (KpkeMul.rowOf B k) B k
+
+theorem tgt_eqG (M : List (List Poly)) {k i : Nat} (hi : i < k) (hM : M.length = k) (v w : List Poly)
+    (hw : w.length = k) : (addVec (mulMatVec M v) w).getD i zero = add (dot (M.getD i []) v) (w[i]!) := by
+  rw [getElem!_pos w i (by omega)]
+  simp [addVec, mulMatVec, List.getD_eq_getElem?_getD, List.getElem?_zipWith, List.getElem?_map,
+    List.getElem?_eq_getElem (show i < M.length by omega), List.getElem?_eq_getElem (show i < w.length by omega)]
 
 theorem tgt_eq (m : Mem) (aP : Addr) {k i : Nat} (hi : i < k) (v w : List Poly) (hw : w.length = k) :
     (addVec (mulMatVec (matAt m aP k) v) w).getD i zero =
@@ -620,14 +673,17 @@ theorem tgt_eq (m : Mem) (aP : Addr) {k i : Nat} (hi : i < k) (v w : List Poly) 
     List.getElem?_range hi, List.getElem?_eq_getElem (show i < w.length by omega)]
 
 section
-variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) (hk : k ≤ 4) {B : Bodies} {R : AccRep} {T : TabRep}
-  (hB : BodiesOk B R T)
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} {eR : Addr → Region} {eRed : Mem → Addr → Prop}
+  {eVec : Mem → Addr → List Poly} (hp : (kgMulKG k aR aRed aMat eR eRed eVec).pre s₀) (hk : k ≤ 4) {B : Bodies}
+  {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
 include hp hk hB
 
 set_option linter.unusedSimpArgs false in
 /-- Between the loops: `ŝ` and `t` again, the accumulator's address, the table. -/
-theorem mid_ok {s : State} (hI : NInv k s₀ k s) :
-    WP isa (.block (KpkeMul.midK B k)) s fun s' => RInv k s₀ R T 0 s' ∧ s'.gpr .r14 = BitVec.ofNat 64 k := by
+theorem mid_ok {Ev : List Poly} {se ra : Nat} {rA : Nat → List Poly} {s : State} (hI : NInv k s₀ Ev se k s) :
+    WP isa (.block (KpkeMul.midK B k)) s fun s' => RInvG k s₀ Ev ra rA R T 0 s' ∧
+      s'.gpr .r14 = BitVec.ofNat 64 k := by
   have hk31 : 1024 * k < 2 ^ 31 := by omega
   have hsw : s.wr = [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] := by rw [hI.wr, hp.2.1]
   unfold KpkeMul.midK
@@ -685,15 +741,29 @@ theorem getD_get (l : List Poly) {i : Nat} (h : i < l.length) : l.getD i zero = 
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some, getElem!_pos l i h]
 
 section
-variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) (hk : k ≤ 4) {B : Bodies} {R : AccRep} {T : TabRep}
-  (hB : BodiesOk B R T)
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} {eR : Addr → Region} {eRed : Mem → Addr → Prop}
+  {eVec : Mem → Addr → List Poly} (hp : (kgMulKG k aR aRed aMat eR eRed eVec).pre s₀) (hk : k ≤ 4) {B : Bodies}
+  {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
 include hp hk hB
 
-theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (inner B k) = true) :
-    WP isa (keygenMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (kgMulK k).post s₀ s' := by
+/-- `keygenMulg term row B k`, given that `term` computes the `NTT`s of `s` and
+`e` and `row` the rows of `Â` (`rA`, `ra` bytes between their polynomials). -/
+theorem wp_allg (hk0 : 0 < k) {term row : Prog isa} {se ra : Nat} {rA : Nat → List Poly}
+    (hEl : (eVec s₀.mem (eP s₀)).length = k)
+    (hterm : ∀ j < k, ∀ s, NInv k s₀ ((eVec s₀.mem (eP s₀)).map ntt) se j s → WP isa term s fun s' =>
+      NInv k s₀ ((eVec s₀.mem (eP s₀)).map ntt) se (j + 1) s' ∧ s'.gpr .r14 = s.gpr .r14 - 1 ∧
+        s'.zf = some (s.gpr .r14 - 1 == 0))
+    (hM : (aMat s₀.mem (aP s₀)).length = k) (hrA : ∀ i < k, (aMat s₀.mem (aP s₀)).getD i [] = rA i)
+    (hrow : ∀ i < k, ∀ s, RInvG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) ra rA R T i s → WP isa row s fun s' =>
+      RInvG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) ra rA R T (i + 1) s' ∧
+      s'.gpr .r14 = s.gpr .r14 - 1 ∧ s'.zf = some (s.gpr .r14 - 1 == 0))
+    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
+      (innerG term row B k) = true) :
+    WP isa (keygenMulg term row B k) s₀ fun s' => gprPreserved s₀ s' ∧
+      (kgMulKG k aR aRed aMat eR eRed eVec).post s₀ s' := by
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
-  unfold keygenMul
+  unfold keygenMulg
   refine WP.seq ?_
   rw [EncMul.saveE_eq]
   refine Spill.save_then .r8 KpkeMul.slots (fun p hp' => ⟨_, hcw, in_c (by
@@ -721,7 +791,7 @@ theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
     simp only [List.mem_singleton] at hr; subst hr; exact vc_dis h hi (by decide)
   refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
     (Q := fun s' => Base k s₀ s' ∧ (∀ j < k, PolyIs s'.mem (sP s₀ + BitVec.ofNat 64 (1024 * j)) ((sv k s₀)[j]!)) ∧
-      ∀ i < k, PolyIs s'.mem (tP s₀ + BitVec.ofNat 64 (1024 * i)) (tgt k s₀ i))
+      ∀ i < k, PolyIs s'.mem (tP s₀ + BitVec.ofNat 64 (1024 * i)) (tgtG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) rA i))
     (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, ⟨hb4, hs4, ht4⟩, hf5, k5⟩ => ?_)
   · -- the loops
     have hfC2 : Frame [cR (cP s₀)] s₀.mem s2.mem :=
@@ -732,8 +802,8 @@ theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
       hfC2.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inr (.inr hr), fun _ h => h⟩,
       hsv.frame f2 fun p hp' r hr => (hmx r hr).sub_left (sub_hi (DecMul.slots_bound p hp').1
         (by have := (DecMul.slots_bound p hp').2; omega))⟩
-    refine WP.seq (wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (NInv k s₀)
-      (fun j hj u hI _ => nttStep_ok hp hk hB hj hI) (fun u hN => ?_)
+    refine WP.seq (wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (NInv k s₀ ((eVec s₀.mem (eP s₀)).map ntt) se)
+      (fun j hj u hI _ => hterm j hj u hI) (fun u hN => ?_)
       ⟨hb2, by rw [k2.gpr (by decide), h112, Nat.mul_zero, add_ofNat_zero],
         by rw [k2.gpr (by decide), h115, Nat.mul_zero, add_ofNat_zero],
         by rw [k2.gpr (by decide), h1bp, Nat.mul_zero, add_ofNat_zero], by rw [k2.gpr (by decide), h113],
@@ -743,9 +813,9 @@ theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
           ⟨redS hp j' hj', rfl⟩,
         fun _ h => absurd h (Nat.not_lt_zero _)⟩
       (by rw [k2.gpr (by decide), h114]))
-    refine WP.seq (WP.mono (mid_ok hp hk hB (R := R) (T := T) hN) fun u2 ⟨hR0, h14⟩ => ?_)
-    exact wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (RInv k s₀ R T)
-      (fun i hi u hR _ => hrow hp hk hi hR) (fun u hR => ⟨hR.toBase, hR.shat, hR.tdone⟩) hR0 h14
+    refine WP.seq (WP.mono (mid_ok hp hk hB (R := R) (T := T) (ra := ra) (rA := rA) hN) fun u2 ⟨hR0, h14⟩ => ?_)
+    exact wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (RInvG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) ra rA R T)
+      (fun i hi u hR _ => hrow i hi u hR) (fun u hR => ⟨hR.toBase, hR.shat, hR.tdone⟩) hR0 h14
   · -- the epilogue
     have h5bx : s5.gpr .rbx = cP s₀ := by rw [k5.gpr (by decide), hb4.rbx]
     have hf : Frame [vR (tP s₀) k, vR (sP s₀) k, cR (cP s₀)] s₀.mem s5.mem :=
@@ -768,10 +838,25 @@ theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
       exacts [rT hp, rS hp, rC hp]
     · rw [hm', getD_get _ (by rw [List.length_map, vecAt_length]; exact hj)]
       exact polyIs_frame hf5 (hmxv (dSC hp) hj) (hs4 j hj)
-    · simp [addVec, mulMatVec, matAt, vecAt]
-    · rw [hm', tgt_eq _ _ hi _ _ (by rw [List.length_map, vecAt_length])]
+    · simp [addVec, mulMatVec, hM, hEl]
+    · rw [hm', tgt_eqG _ hi hM _ _ (by rw [List.length_map, hEl]), hrA i hi]
       exact polyIs_frame hf5 (hmxv (dTC hp) hi) (ht4 i hi)
 
+
+end
+
+section
+variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) (hk : k ≤ 4) {B : Bodies} {R : AccRep} {T : TabRep}
+  (hB : BodiesOk B R T)
+include hp hk hB
+
+theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
+    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (inner B k) = true) :
+    WP isa (keygenMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (kgMulK k).post s₀ s' :=
+  wp_allg hp hk hB hk0 (term := KpkeMul.nttK B) (row := KpkeMul.rowOf B k) (ra := 1024) (rA := rowA k s₀)
+    (vecAt_length _ _ _) (fun _ hj _ hI => nttStep_ok hp hk hB hj hI) (by simp [matAt])
+    (fun i hi => by simp [matAt, List.getD_eq_getElem?_getD, List.getElem?_range hi])
+    (fun _ hi _ hR => hrow hp hk hi hR) hwo
 end
 
 end KgMul

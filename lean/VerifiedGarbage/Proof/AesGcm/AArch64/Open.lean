@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 # AES-GCM on AArch64: `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. The entry also keeps
-`tag_len` at `W + 248`; if §5.2.1.2 does not allow it, `open` returns 0.
+`tag_len` at `W + 248`; if `tagLenOk` does not allow it, `open` returns 0.
 Otherwise `tagIn` copies the received tag to `W`, `front_ok` starts the
 state and absorbs the additional data,
 `decAbs` absorbs the ciphertext, `finBody 112` writes the tag at `W + 112`,

@@ -167,8 +167,10 @@ open VG.Impl.MlKem.X86_64.KeyGen
 
 variable (L : Kem)
 
-/-- What every piece of key generation needs of the layout, evaluated for each parameter set. -/
-structure KgWf : Prop extends KemWf L where
+/-- What the pieces of key generation that do not depend on how it stores
+its polynomials need of the layout (`G(d ‖ k)`, the keys' last pieces and
+the end), evaluated for each parameter set. -/
+structure KgWfB : Prop extends KemWf L where
   scr : 888 ≤ L.scr ∧ L.scr < 2 ^ 32
   small : ∀ b ∈ kgB L, b.2 < 2 ^ 32
   -- `G(d ‖ k)`
@@ -180,25 +182,13 @@ structure KgWf : Prop extends KemWf L where
   gCK : kcChk L [(sc oSB, 32)] = true
   gG : keepB (kgB L) [(sc oSB, 32)] (sc oG) 32 = true
   gS : keepB (kgB L) [(sc oSB, 32)] sigP 32 = true
-  -- the matrix
-  kq : ∀ q < L.k * L.k / 4, kqChk L (4 * q) = true
-  kb : ∀ e < L.k * L.k, 4 * (L.k * L.k / 4) ≤ e → kbChk L e = true
   flag : kcChk L [] = true
   flagG : keepB (kgB L) [] (sc oG) 32 = true
   flagS : keepB (kgB L) [] sigP 32 = true
   flagB : keepB (kgB L) [] (sc oSB) 32 = true
-  flagA : ∀ e < L.k * L.k, keepB (kgB L) [] (pS (L.pA + e)) 1024 = true
-  -- the keys
-  prfs : prfsKChk L = true
-  se : ∀ N < 2 * L.k, seChk L N = true
-  km : kmChk (kgB L) (kgW L) L.k (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ) = true
-  kmK : kcChk L (kmW L) = true
-  kmG : keepB (kgB L) (kmW L) (sc oG) 32 = true
-  encT : ∀ i < L.k, encTChk L i = true
-  encS : ∀ j < L.k, encSChk L j = true
   f₁ : copyChk (kgB L) (kgW L) (.r12, 384 * L.k) (sc oG) 32 = true
   f₁K : kcChk L (finW₁ L) = true
-  f₁E : ∀ i < L.k, keepB (kgB L) (finW₁ L) (.r12, 384 * i) 384 = true
+  f₁E : keepB (kgB L) (finW₁ L) (.r12, 0) (384 * L.k) = true
   f₂ : copyChk (kgB L) (kgW L) (.r13, 384 * L.k) (.r12, 0) L.ekLen = true
   f₂K : kcChk L (finW₂ L) = true
   f₂E : keepB (kgB L) (finW₂ L) (.r12, 0) L.ekLen = true
@@ -208,7 +198,7 @@ structure KgWf : Prop extends KemWf L where
   f₄ : copyChk (kgB L) (kgW L) (.r13, 384 * L.k + L.ekLen + 32) (.rbp, 32) 32 = true
   f₄K : kcChk L (finW₄ L) = true
   f₄E : keepB (kgB L) (finW₄ L) (.r12, 0) L.ekLen = true
-  dkS : ∀ j < L.k, keepB (kgB L) (finW₁ L ++ finW₂ L ++ finW₃ L ++ finW₄ L) (.r13, 384 * j) 384 = true
+  dkS : keepB (kgB L) (finW₁ L ++ finW₂ L ++ finW₃ L ++ finW₄ L) (.r13, 0) (384 * L.k) = true
   dkE : keepB (kgB L) (finW₃ L ++ finW₄ L) (.r13, 384 * L.k) L.ekLen = true
   dkH : keepB (kgB L) (finW₄ L) (.r13, 384 * L.k + L.ekLen) 32 = true
   -- the end
@@ -223,8 +213,26 @@ structure KgWf : Prop extends KemWf L where
   finT₄ : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13])
     (copy (.r13, 384 * L.k + L.ekLen + 32) (.rbp, 32) 32) h).isSome = true
 
+/-- What every piece of key generation with polynomials of `u32`s needs of
+the layout, evaluated for each parameter set. -/
+structure KgWf : Prop extends KgWfB L where
+  -- the matrix
+  kq : ∀ q < L.k * L.k / 4, kqChk L (4 * q) = true
+  kb : ∀ e < L.k * L.k, 4 * (L.k * L.k / 4) ≤ e → kbChk L e = true
+  flagA : ∀ e < L.k * L.k, keepB (kgB L) [] (pS (L.pA + e)) 1024 = true
+  -- the keys
+  prfs : prfsKChk L = true
+  se : ∀ N < 2 * L.k, seChk L N = true
+  km : kmChk (kgB L) (kgW L) L.k (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ) = true
+  kmK : kcChk L (kmW L) = true
+  kmG : keepB (kgB L) (kmW L) (sc oG) 32 = true
+  encT : ∀ i < L.k, encTChk L i = true
+  encS : ∀ j < L.k, encSChk L j = true
+
+instance : CoeOut (KgWf L) (KgWfB L) := ⟨KgWf.toKgWfB⟩
+
 section
-variable {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ)
+variable {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ)
 include W hp
 
 theorem kgLay {s : State} (h : Top kgM σ s) : Lay kgR (kgW L) s := by
@@ -262,7 +270,7 @@ structure KC (σ s : State) : Prop where
   z : bytesAt s.mem (pa s (.rbp, 32)) 32 = kgZ σ
 
 section
-variable {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ)
+variable {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ)
 include W hp
 
 theorem KC.lay {s : State} (h : KC σ s) : Lay kgR (kgW L) s := kgLay W hp h.top
@@ -280,7 +288,7 @@ theorem pro_eq : pro = [.store (at_ .rcx 840) .rbx, .store (at_ .rcx 848) .rbp, 
     .store (at_ .rcx 864) .r13, .store (at_ .rcx 872) .r14, .store (at_ .rcx 880) .r15, .mov .rbx (.reg .rcx),
     .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx), .mov32 .r15 (.imm 1)] := rfl
 
-theorem pro_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) :
+theorem pro_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) :
     WP isa (.block pro) σ fun s => KC σ s ∧ s.gpr .r15 = 1 := by
   have hp' := hp
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, r1, r2, r3, r4, k1, k2, k3, k4, n1, n2, n3, n4⟩ := hp'
@@ -329,6 +337,7 @@ macro_rules
   | `(tactic| kem_wf) =>
     `(tactic| constructor <;> first | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
   | `(tactic| kem_wf $w) =>
-    `(tactic| constructor <;> first | exact $w | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
+    `(tactic| constructor <;> first | exact $w | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel |
+      kem_wf $w)
 
 end VG.Proof.MlKem.X86_64

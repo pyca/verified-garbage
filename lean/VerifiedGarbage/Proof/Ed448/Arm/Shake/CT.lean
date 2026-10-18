@@ -44,7 +44,7 @@ variable {E scr : BitVec 32} {n : Nat} {val : Nat → BitVec 32} {ins outs : Lis
   {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 /-- Instructions that address memory only through `r12`, and leave it alone. -/
-theorem r12_ct (is : List Instr) (hd : ∀ i ∈ is, dstOf i ≠ some .r12)
+theorem r12_ct (is : List Instr) (hd : ∀ i ∈ is, clobbers i .r12 = false)
     (ha : ∀ i ∈ is, ∀ a b : State, a.gpr .r12 = b.gpr .r12 → addrs i a = addrs i b) :
     RelCT isa (fun a b => a.sp = b.sp ∧ a.gpr .r12 = b.gpr .r12) (.block is)
       (fun a b => a.sp = b.sp ∧ a.gpr .r12 = b.gpr .r12) := by

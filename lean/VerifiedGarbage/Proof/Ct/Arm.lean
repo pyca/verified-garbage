@@ -175,7 +175,7 @@ theorem correct (s : State) (hp : contract.pre s) :
       exact Mem.readW_writeW_self32 _ _ _
     · rw [popped_gpr h4]
       have hc : ∀ r ∈ preserved, r ≠ .r4 →
-          body.allInstrs (fun i => dstOf i != some r) = true := by decide +kernel
+          body.allInstrs (fun i => !clobbers i r) = true := by decide +kernel
       have hkeep := hc r hr h4
       rw [Code.allInstrs_eq] at hkeep
       apply Exec.gpr (fun i hi => ?_) he

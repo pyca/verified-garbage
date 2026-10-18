@@ -104,7 +104,7 @@ def randomSignApi : Api where
     Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, \
     sampling decisions, signing success bits and consumption, not otherwise on secrets. \
     Contract: `VG.Spec.Dsa.randomSignContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).",
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.",
     "scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.",
     "Caller must assure domain validity and provide fresh independent random octets; \

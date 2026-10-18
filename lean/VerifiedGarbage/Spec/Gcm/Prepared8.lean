@@ -60,36 +60,6 @@ def derivePrepared8Post (pb : Nat) : derivePrepared8Sig.Post pb := fun src dst m
 def derivePrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   derivePrepared8Sig.contract A (post := derivePrepared8Post A.ptrBits) (stack := stack)
 
-/-- Writes the 384-byte prepared key context on any target. -/
-def derivePrepared8Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_derive_prepared8"
-  sig := derivePrepared8Sig
-  contracts := some fun A stack => derivePrepared8Contract A stack
-  summary := "Writes a 384-byte AES-GCM key context from the 256-byte key context at `src` \
-    (from `vg_aes_gcm_init`). Copies its 256 bytes, the key schedule and hash subkey `H`, to \
-    the first 256 bytes of `*dst`. At byte `256 + 32*k`, for `k` from 0 to 3, stores \
-    `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
-    128-bit words. This is the layout of the first 384 bytes of `vg_aes_gcm_init_prepared`'s \
-    context. The encoding is `VG.Spec.Gcm.preparedPower`; `*dst` satisfies \
-    `PreparedPowers8Repr`. Use only the `*_prepared8` APIs, or APIs that read the first 256 \
-    bytes, with this format. Only the pointers are public. Contract: \
-    `VG.Spec.Gcm.derivePrepared8Contract`."
-  safety := []
-
-/-- Prepared8-context validity, in addition to each API's existing safety requirements. -/
-def prepared8Safety : String :=
-  "`*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a \
-    1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`)."
-
-/-- Common documentation for the prepared8 APIs. -/
-def prepared8Summary (name contract : String) : String :=
-  "`" ++ name ++ "` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. " ++
-  "Computes the same result, using the AES key schedule and hash subkey in its first " ++
-  "256 bytes, and may read the 8 prepared powers. The powers remain secret; all " ++
-  "other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm." ++
-  contract ++ "`."
-
 /-! ## One-shot -/
 
 /-- `vg_aes_gcm_seal_prepared8(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`:
@@ -110,16 +80,6 @@ def sealPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
   sealPrepared8Sig.contract A (pre := sealPrepared8Pre A.ptrBits)
     (post := sealPost A.ptrBits)
     (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_prepared8` on every target. -/
-def sealPrepared8Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_prepared8"
-  sig := sealPrepared8Sig
-  writeArgs := true
-  contracts := some fun A stack => sealPrepared8Contract A stack
-  summary := prepared8Summary "vg_aes_gcm_seal" "sealPrepared8Contract"
-  safety := sealApi.safety ++ [prepared8Safety]
 
 /-- `vg_aes_gcm_open_prepared8(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`:
 `openSig` with the 384-byte key context. -/
@@ -142,16 +102,6 @@ def openPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
     (post := openPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openLeak A.ptrBits))
 
-/-- `vg_aes_gcm_open_prepared8` on every target. -/
-def openPrepared8Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_open_prepared8"
-  sig := openPrepared8Sig
-  writeArgs := true
-  contracts := some fun A stack => openPrepared8Contract A stack
-  summary := prepared8Summary "vg_aes_gcm_open" "openPrepared8Contract"
-  safety := openApi.safety ++ [prepared8Safety]
-
 /-- `vg_aes_gcm_seal_gather_prepared8(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`:
 `sealGatherSig` with the 384-byte key context. -/
 def sealGatherPrepared8Sig : Sig where
@@ -172,16 +122,6 @@ def sealGatherPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
     (post := sealGatherPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_gcm_seal_gather_prepared8` on every target. -/
-def sealGatherPrepared8Api : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_gather_prepared8"
-  sig := sealGatherPrepared8Sig
-  writeArgs := true
-  contracts := some fun A stack => sealGatherPrepared8Contract A stack
-  summary := prepared8Summary "vg_aes_gcm_seal_gather" "sealGatherPrepared8Contract"
-  safety := sealGatherApi.safety ++ [prepared8Safety]
-
 /-! ## GHASH -/
 
 /-- `vg_ghash_prepared8(h: *const [u8; 144], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32])`:
@@ -201,22 +141,5 @@ def ghashPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
     (post := fun h y data n _scratch m m' _ =>
       blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
     (stack := stack)
-
-/-- `vg_ghash_prepared8` on every target. -/
-def ghashPrepared8Api : Api where
-  module := "gcm"
-  name := "vg_ghash_prepared8"
-  sig := ghashPrepared8Sig
-  contracts := some fun A stack => ghashPrepared8Contract A stack
-  summary := "`vg_ghash` with `h` at byte 240 of a 384-byte context from \
-    `vg_aes_gcm_derive_prepared8`: the hash subkey `H` is the block at `h`, followed by the 8 \
-    prepared powers, which it may read. Replaces the block `Y` at `*y` with `Yₙ`, where \
-    `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at \
-    `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.\n\n\
-    Contract: `VG.Spec.Gcm.ghashPrepared8Contract`. Constant time: only the pointers and `n` \
-    may affect timing."
-  safety := ["`h` must point at byte 240 of a key context with the 384-byte format written \
-      by `vg_aes_gcm_derive_prepared8`.",
-    "The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Gcm

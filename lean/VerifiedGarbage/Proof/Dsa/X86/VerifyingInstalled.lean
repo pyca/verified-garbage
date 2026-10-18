@@ -18,17 +18,20 @@ theorem verifyingInstalled_spec {s t : State} (A : VerifyingABI s)
         (Spec.Rsa.bytesAt s.mem (argumentPointer s 0) (arg s 1).toNat)
         (Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat)
         (Spec.Rsa.bytesAt s.mem (argumentPointer s 6) (arg s 7).toNat) then 1 else 0) ∧
-      Keeps powerClob t sf ∧ Outside (argumentPointer s 8) 0 usedBytes t.mem sf.mem ∧
+      Keeps powerClob t sf ∧ StackOutside (t.gpr .esp) (argumentPointer s 8) usedBytes t.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 8)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 8)) regs Entry.savedRegisters := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
     have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
   obtain ⟨Key, KeyBytes⟩ := I.input (by decide : (0, .p) ∈ Entry.verifyArguments) A.keyBound
-    (by rw [A.rd, A.wr]; simp) A.keyScratch
+    (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Sig, SigBytes⟩ := I.input (by decide : (4, .signature) ∈ Entry.verifyArguments) A.signatureBound
-    (by rw [A.rd, A.wr]; simp) A.signatureScratch
+    (by rw [A.rd, A.wr]; simp) A.signatureScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowSignature.symm)
   obtain ⟨D, DigestBytes⟩ := I.input (by decide : (6, .digest) ∈ Entry.verifyArguments) A.digestBound
-    (by rw [A.rd, A.wr]; simp) A.digestScratch
+    (by rw [A.rd, A.wr]; simp) A.digestScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowDigest.symm)
   obtain ⟨Qptr, Gptr, Yptr, _⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Y, KeyValue⟩ := publicKey_buffers Key L.1 L.2 (by have := A.keyLength; omega) KeyBytes Qptr Gptr Yptr
   have qPtr := I.arguments (3, .qLen) (by decide)

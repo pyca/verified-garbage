@@ -21,6 +21,8 @@ permute all four states, the fourth no longer the sponge's.
 
 namespace VG.Proof.MlKem.X86_64.SH
 
+variable {w16 : Bool}
+
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Proof.MlKem.X86_64.S4
 open VG.Spec.MlKem
@@ -50,31 +52,31 @@ theorem tab_hs (σ : State) : (tabR σ).Disjoint (hsR σ) :=
   Offset.disjoint (scr σ) (.inl (by simp only [oTab, oHS]; omega)) (by simp only [oTab]; omega)
     (by simp only [oHS]; omega)
 
-theorem poly_hs {σ : State} (hp : Pre σ) {K : Nat} (hK : K < 4) : (pR (poly4 (aP σ) K)).Disjoint (hsR σ) :=
+theorem poly_hs {σ : State} (hp : PreW w16 σ) {K : Nat} (hK : K < 4) : (cRegion w16 (poly4W w16 (aP σ) K)).Disjoint (hsR σ) :=
   (scr_poly hp hK (a := oHS) (n := 200) (by simp only [oHS]; omega)).symm
 
 /-- After the first 168 iterations on the seeds before `K`. -/
-structure Q1 (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop where
-  sq : SqY σ Y 0 3 s
+structure Q1 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop where
+  sq : SqY w16 σ Y 0 3 s
   tab : TabOK σ s.mem
   j : ∀ k < K, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
-  st : ∀ k < K, Stored s.mem (poly4 (aP σ) k) (Lt σ k 168)
+  st : ∀ k < K, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
   hs : HS σ Hf s.mem
 
 /-- After the 112 more iterations on the seeds before `K`. -/
-structure Q2 (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop where
-  sq : SqY σ (iterF 2 Y) 3 2 s
+structure Q2 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop where
+  sq : SqY w16 σ (iterF 2 Y) 3 2 s
   tab : TabOK σ s.mem
   j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 =
     BitVec.ofNat 64 (Lt σ k (if k < K then 280 else 168)).length
-  st : ∀ k < 3, Stored s.mem (poly4 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
+  st : ∀ k < 3, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
   hs : HS σ Hf s.mem
 
 /-- The coefficients of each of the three seeds after 280 iterations, and whether they are 256. -/
-structure Done3 (σ : State) (Hf : Spec.Sha3.State) (s : State) : Prop where
-  env : Env σ s
+structure Done3 (w16 : Bool) (σ : State) (Hf : Spec.Sha3.State) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ 3)
-  st : ∀ k < 3, Stored s.mem (poly4 (aP σ) k) (Lt σ k 280)
+  st : ∀ k < 3, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 280)
   hs : HS σ Hf s.mem
 
 /-- Whether each of the three seeds has 256 coefficients after `t` iterations. -/
@@ -87,14 +89,14 @@ theorem okN_full3 (σ : State) : okN σ 3 = if allFull3 σ 280 then 1 else 0 := 
   rw [e]
 
 section
-variable {σ : State} (hp : Pre σ)
+variable {σ : State} (hp : PreW w16 σ)
 include hp
 
 /-! ## The first runs -/
 
 /-- The table, after the squeezes, which it keeps. -/
-theorem tabY_ok {Y Hf : Spec.Sha3.State} {s : State} (h : SqY σ Y 0 3 s) (hs : HS σ Hf s.mem) :
-    WP isa (.block tabBuild) s (Q1 σ Y Hf 0) := by
+theorem tabY_ok {Y Hf : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s) (hs : HS σ Hf s.mem) :
+    WP isa (.block tabBuild) s (Q1 w16 σ Y Hf 0) := by
   refine WP.mono (tab_ok hp h.env) fun s' h' => ⟨h.apart (by decide) h'.frame (fun r hr => ?_) (fun r hr => ?_)
     (fun r hr => ?_) h'.keep.2.1 h'.keep.2.2 fun r hr => h'.keep.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
@@ -107,13 +109,13 @@ theorem tabY_ok {Y Hf : Spec.Sha3.State} {s : State} (h : SqY σ Y 0 3 s) (hs : 
   · exact ⟨scrR σ, by simp, sub_scr (by simp only [oTab]; omega)⟩
 
 omit hp in
-theorem lbY1 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q1 σ Y Hf K s) : LB σ s K 0 s :=
+theorem lbY1 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q1 w16 σ Y Hf K s) : LBW w16 σ s K 0 s :=
   ⟨h.sq.env, rfl, h.tab, fun p hp' _ => by simpa using h.sq.buf K hK p (by omega), Frame.refl _ _⟩
 
 /-- The count of seed `K` kept, after its first 168 iterations. -/
-theorem run1EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : State} (h : Q1 σ Y Hf K s)
-    (h₂ : LAt σ s K 0 168 s₂) :
-    WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (Q1 σ Y Hf (K + 1)) := by
+theorem run1EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : State} (h : Q1 w16 σ Y Hf K s)
+    (h₂ : LAtW w16 σ s K 0 168 s₂) :
+    WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (Q1 w16 σ Y Hf (K + 1)) := by
   refine WP.mono (keepCnt_ok hp (by omega) h₂) fun s₃ ⟨hm, k⟩ => ?_
   have hf₃ : Frame [cntR σ] s₂.mem s₃.mem := by rw [hm]; exact cnt_write (by omega) _
   have g₂ := env_regs h.sq.env h₂.lb.env h₂.lb.r14
@@ -140,8 +142,8 @@ theorem run1EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : St
     · exact st_poly (by omega) (by omega) e h₂.lb.fr (h.st k (by omega)) (hL _ _)
 
 /-- The first 168 iterations on seed `K`, and its count kept. -/
-theorem run1Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q1 σ Y Hf K s) :
-    WP isa (run1 K) s (Q1 σ Y Hf (K + 1)) := by
+theorem run1Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q1 w16 σ Y Hf K s) :
+    WP isa (run1 K w16) s (Q1 w16 σ Y Hf (K + 1)) := by
   unfold run1
   exact WP.seq (WP.mono (setup_ok hp (by omega) (lbY1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
     WP.seq (WP.mono (loop_ok hp (by omega) (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
@@ -150,12 +152,12 @@ theorem run1Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h 
 /-! ## The check -/
 
 /-- After the counts' check. -/
-structure Checked3 (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
-  prior : ∃ s₀, Q1 σ Y Hf 3 s₀ ∧ s.mem = s₀.mem ∧ Keep [.rax, .r14] s₀ s
+structure Checked3 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
+  prior : ∃ s₀, Q1 w16 σ Y Hf 3 s₀ ∧ s.mem = s₀.mem ∧ Keep [.rax, .r14] s₀ s
   r14 : s.gpr .r14 = if allFull3 σ 168 then 1 else 0
   zf : s.zf = some (!allFull3 σ 168)
 
-theorem cntFlags3_ok {t : Nat} {s : State} (env : Env σ s)
+theorem cntFlags3_ok {t : Nat} {s : State} (env : EnvW w16 σ s)
     (j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k t).length) :
     WP isa (.block cntFlags3) s fun s' =>
       (s'.gpr .r14 = (if allFull3 σ t then 1 else 0) ∧ s'.mem = s.mem) ∧ Keep [.rax, .r14] s s' := by
@@ -176,8 +178,8 @@ theorem cntFlags3_ok {t : Nat} {s : State} (env : Env σ s)
   cases (Lt σ 0 t).length == 256 <;> cases (Lt σ 1 t).length == 256 <;> cases (Lt σ 2 t).length == 256 <;> rfl
 
 /-- The counts' check, after the first runs. -/
-theorem check3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q1 σ Y Hf 3 s) :
-    WP isa (.block (cntFlags3 ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr))) s (Checked3 σ Y Hf) := by
+theorem check3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q1 w16 σ Y Hf 3 s) :
+    WP isa (.block (cntFlags3 ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr))) s (Checked3 w16 σ Y Hf) := by
   apply WP.block_append
   refine WP.mono (cntFlags3_ok hp h.sq.env h.j) fun s₁ ⟨⟨hr, hm⟩, hk⟩ => ?_
   refine WP.mono (WP.keep [.r14] (Q := fun s₂ => s₂.mem = s₁.mem ∧ s₂.gpr .r14 = s₁.gpr .r14 ∧
@@ -188,8 +190,8 @@ theorem check3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q1 σ Y Hf 3 s) :
 
 omit hp in
 /-- Each of the three seeds has 256 coefficients after the first runs. -/
-theorem Done3.of_full {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 σ Y Hf s) (hf : allFull3 σ 168 = true) :
-    Done3 σ Hf s := by
+theorem Done3.of_full {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf s) (hf : allFull3 σ 168 = true) :
+    Done3 w16 σ Hf s := by
   obtain ⟨s₀, h₀, hm, hk⟩ := h.prior
   have hfull : ∀ k < 3, (Lt σ k 168).length = 256 := by
     simpa only [allFull3, List.all_eq_true, List.mem_range, beq_iff_eq] using hf
@@ -205,17 +207,17 @@ theorem Done3.of_full {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 σ Y Hf
 /-! ## The second runs -/
 
 /-- Before the two more squeezes: the counts and coefficients of the first runs. -/
-structure M3 (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
-  sq : SqY σ Y 3 0 s
+structure M3 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
+  sq : SqY w16 σ Y 3 0 s
   tab : TabOK σ s.mem
   j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
-  st : ∀ k < 3, Stored s.mem (poly4 (aP σ) k) (Lt σ k 168)
+  st : ∀ k < 3, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
   hs : HS σ Hf s.mem
 
 omit hp in
 /-- `r14 ← 1`, after the check. -/
-theorem reset3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 σ Y Hf s) :
-    WP isa (.block [.mov32 .r14 (.imm 1)]) s (M3 σ Y Hf) := by
+theorem reset3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf s) :
+    WP isa (.block [.mov32 .r14 (.imm 1)]) s (M3 w16 σ Y Hf) := by
   obtain ⟨s₀, h₀, hm₀, hk₀⟩ := h.prior
   refine WP.mono (WP.keep [.r14] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r14 = 1)
     (by xrun) (by decide)) fun s₁ ⟨⟨hm, hr⟩, hk⟩ => ?_
@@ -226,8 +228,8 @@ theorem reset3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 σ Y Hf s) 
     by rw [hm₁]; exact h₀.st, by unfold HS; rw [hm₁]; exact h₀.hs⟩
 
 /-- The two more squeezes. -/
-theorem sqM3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : M3 σ Y Hf s) :
-    WP isa (squeezes 0 2 fast) s (Q2 σ Y Hf 0) := by
+theorem sqM3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : M3 w16 σ Y Hf s) :
+    WP isa (squeezes 0 2 fast) s (Q2 w16 σ Y Hf 0) := by
   refine WP.mono (sqYs_ok (fast := fast) hp (by decide) (by decide) h.sq) fun s₂ ⟨q₂, hf⟩ =>
     ⟨q₂, tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_tab.symm) hf h.tab,
       fun k hk => ?_, fun k hk => ?_, h.hs.frame hf fun r hr => by rw [List.mem_singleton.mp hr]; exact (low_hs σ).symm⟩
@@ -240,14 +242,14 @@ theorem sqM3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : M3 σ Y 
       (Lt_le σ k _) (h.st k hk)
 
 omit hp in
-theorem lbY2 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q2 σ Y Hf K s) : LB σ s K 168 s :=
+theorem lbY2 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q2 w16 σ Y Hf K s) : LBW w16 σ s K 168 s :=
   ⟨h.sq.env, rfl, h.tab, fun p hp' hb => by
     rw [h.sq.buf K hK p (by omega)], Frame.refl _ _⟩
 
 /-- The count of seed `K` kept, after its 112 more iterations. -/
-theorem run2EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : State} (h : Q2 σ Y Hf K s)
-    (h₂ : LAt σ s K 168 112 s₂) :
-    WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (Q2 σ Y Hf (K + 1)) := by
+theorem run2EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : State} (h : Q2 w16 σ Y Hf K s)
+    (h₂ : LAtW w16 σ s K 168 112 s₂) :
+    WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (Q2 w16 σ Y Hf (K + 1)) := by
   refine WP.mono (keepCnt_ok hp (by omega) h₂) fun s₃ ⟨hm, k⟩ => ?_
   have hf₃ : Frame [cntR σ] s₂.mem s₃.mem := by rw [hm]; exact cnt_write (by omega) _
   have g₂ := env_regs h.sq.env h₂.lb.env h₂.lb.r14
@@ -280,11 +282,11 @@ theorem run2EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : St
       · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega)]
 
 /-- 112 more iterations on seed `K`, and its count kept. -/
-theorem run2Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q2 σ Y Hf K s) :
-    WP isa (run2 K) s (Q2 σ Y Hf (K + 1)) := by
+theorem run2Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q2 w16 σ Y Hf K s) :
+    WP isa (run2 K w16) s (Q2 w16 σ Y Hf (K + 1)) := by
   have hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length := by
     rw [h.j K hK, ite_eq_right (by omega)]
-  have hst : Stored s.mem (poly4 (aP σ) K) (Lt σ K 168) := by
+  have hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168) := by
     have := h.st K hK; rwa [ite_eq_right (by omega)] at this
   unfold run2
   exact WP.seq (WP.mono (contSetup_ok hp (by omega) (lbY2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
@@ -292,7 +294,7 @@ theorem run2Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h 
       run2EndY_ok hp hK h h₂))
 
 /-- The counts' AND, after the second runs. -/
-theorem last3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q2 σ Y Hf 3 s) : WP isa (.block cntFlags3) s (Done3 σ Hf) := by
+theorem last3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q2 w16 σ Y Hf 3 s) : WP isa (.block cntFlags3) s (Done3 w16 σ Hf) := by
   have hj : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 280).length :=
     fun k hk => by simpa only [ite_eq_left hk] using h.j k hk
   refine WP.mono (cntFlags3_ok hp h.sq.env hj) fun s' ⟨⟨hr, hm⟩, hk⟩ =>
@@ -301,8 +303,8 @@ theorem last3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q2 σ Y Hf 3 s) : WP 
   rw [hm]; simpa only [ite_eq_left hk'] using h.st k hk'
 
 /-- The two more squeezes and the second runs, after the check. -/
-theorem more3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 σ Y Hf s) :
-    WP isa (more3 fast) s (Done3 σ Hf) := by
+theorem more3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf s) :
+    WP isa (more3 fast w16) s (Done3 w16 σ Hf) := by
   unfold more3
   exact WP.seq (WP.mono (reset3_ok h) fun _ m => WP.seq (WP.mono (sqM3_ok hp m) fun _ q₀ =>
     WP.seq (WP.mono (run2Y_ok hp (by decide) q₀) fun _ q₁ =>
@@ -310,8 +312,8 @@ theorem more3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked
       WP.seq (WP.mono (run2Y_ok hp (by decide) q₂) fun _ q₃ => last3_ok hp q₃)))))
 
 /-- The branch on the check. -/
-theorem branch3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 σ Y Hf s) :
-    WP isa (.ite .e (more3 fast) (.block [])) s (Done3 σ Hf) := by
+theorem branch3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf s) :
+    WP isa (.ite .e (more3 fast w16) (.block [])) s (Done3 w16 σ Hf) := by
   cases hf : allFull3 σ 168 with
   | false =>
     have hz : s.zf = some true := by rw [h.zf, hf]; rfl

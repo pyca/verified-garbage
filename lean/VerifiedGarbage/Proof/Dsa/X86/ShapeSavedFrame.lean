@@ -33,20 +33,20 @@ theorem shapeFrame_saved {base : Addr} {m m' : Mem} {regs : Reg → BitVec 32}
   exact V.trans (S pair hp)
 
 theorem execution_outside {base : Addr} {s t : State} (E : Execution base s t) :
-    Outside base 0 VG.Impl.Dsa.Layout.usedBytes s.mem t.mem := by
-  intro a ha
-  apply E.mem a
+    StackOutside (s.gpr .esp) base VG.Impl.Dsa.Layout.usedBytes s.mem t.mem := by
+  intro a ha hstack
+  apply E.mem a ?_ (.inr hstack)
   intro pair hp
   simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl
   · change ofs base a < 0 ∨ 0 + 7048 ≤ ofs base a
-    change ofs base a < 0 ∨ 0 + 15712 ≤ ofs base a at ha
+    change 15712 ≤ ofs base a at ha
     omega
   · change ofs base a < 8244 ∨ 8244 + 4 ≤ ofs base a
-    change ofs base a < 0 ∨ 0 + 15712 ≤ ofs base a at ha
+    change 15712 ≤ ofs base a at ha
     omega
   · change ofs base a < 14720 ∨ 14720 + (15712 - 14720) ≤ ofs base a
-    change ofs base a < 0 ∨ 0 + 15712 ≤ ofs base a at ha
+    change 15712 ≤ ofs base a at ha
     omega
 
 end VG.Proof.Dsa.X86

@@ -382,16 +382,11 @@ def tagIn : Prog isa :=
 def tagOut : List Instr :=
   [.ldr .x .x9 .x19 0, .str .x .x9 .x28 0, .ldr .x .x9 .x19 8, .str .x .x9 .x28 8]
 
-/-- `x9 := 1` if `x28` is `k`. -/
-def tlTest (k : Nat) : Prog isa :=
-  .seq (.block [.subImm .x .x10 .x28 k]) (.ite (.zero .x .x10) (.block [imm .x9 1]) (.block []))
-
-/-- `x9` is 1 if the tag length `x28` is one §5.2.1.2 allows (4, 8 or 12 to
-16), and 0 if not. -/
+/-- `x9` is 1 iff the tag length `x28` is between 4 and 16 bytes.
+The unsigned comparison rejects the wraparound when `x28 < 4`. -/
 def tagLenOk : Prog isa :=
-  .seq (.block [imm .x9 0])
-    (.seq (tlTest 4) (.seq (tlTest 8) (.seq (tlTest 12) (.seq (tlTest 13) (.seq (tlTest 14)
-      (.seq (tlTest 15) (tlTest 16)))))))
+  .block [.subImm .x .x10 .x28 4, imm .x9 13, .subs .x .x10 .x10 .x9,
+    imm .x9 0, imm .x10 1, .csel .x .x9 .x9 .x10]
 
 /-! ## The functions -/
 

@@ -19,7 +19,7 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa (Entry.operation false) s tr sf) (F : Exec isa (Entry.operation false) t ur tf) : tr = ur := by
   let L := verifyLayout s A
-  have LayoutEq := verifyLayout_eq A B args P Q
+  have LayoutEq := verifyLayout_eq A B args SP P Q
   have Size := args 9 (by decide)
   have Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 8 (by decide))
   have PL := args 2 (by decide)
@@ -52,7 +52,7 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
     intro u v H
     refine ⟨verifyingInstalled_ready A H.1, ?_⟩
     simpa only [L, LayoutEq, DL] using verifyingInstalled_ready B H.2
-  have Dispatch := widthDispatch_relCT false [(128, 20), (256, 28), (256, 32), (384, 32)]
+  have Dispatch := widthDispatch_relCT false [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
     L.pLen L.qLen L.base L.size R (VG.X86.Taint.Agree (workspaceTaint false)) Invariant L.saved
     (supportedWidths_member A.lengths) (by decide) hp hq Sized
   have Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))

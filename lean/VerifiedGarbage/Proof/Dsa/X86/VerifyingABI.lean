@@ -14,7 +14,7 @@ open VG VG.X86
 abbrev argumentPointer (s : State) (i : Nat) : Addr := (arg s i).setWidth 64
 
 structure VerifyingABI (s : State) : Prop where
-  stackLow : 20 ≤ (s.gpr .esp).toNat
+  stackLow : 32 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 44 ≤ 2 ^ 32
   rd : s.rd = [⟨argumentPointer s 0, (arg s 1).toNat⟩,
     ⟨argumentPointer s 4, (arg s 5).toNat⟩, ⟨argumentPointer s 6, (arg s 7).toNat⟩]
@@ -28,8 +28,14 @@ structure VerifyingABI (s : State) : Prop where
   scratchArgs : (⟨argumentPointer s 8, (arg s 9).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 40⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint
     ⟨argumentPointer s 8, (arg s 9).toNat * 8⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ : Region).Disjoint
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
     ⟨argumentPointer s 8, (arg s 9).toNat * 8⟩
+  belowKey : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+    ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  belowSignature : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+    ⟨argumentPointer s 4, (arg s 5).toNat⟩
+  belowDigest : (⟨(s.gpr .esp).setWidth 64 - 32#64, 32⟩ : Region).Disjoint
+    ⟨argumentPointer s 6, (arg s 7).toNat⟩
   keyBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
   signatureBound : (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32
   digestBound : (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32
@@ -39,7 +45,7 @@ structure VerifyingABI (s : State) : Prop where
   signatureLength : (arg s 5).toNat = 2 * (arg s 3).toNat
   scratchLength : Spec.Dsa.scratchWords (arg s 2).toNat ≤ (arg s 9).toNat
 
-theorem verifyingABI_of {s : State} (h : (Spec.Dsa.verifyContract abi 20).pre s) : VerifyingABI s := by
+theorem verifyingABI_of {s : State} (h : (Spec.Dsa.verifyContract abi 32).pre s) : VerifyingABI s := by
   sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption

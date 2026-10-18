@@ -13,8 +13,10 @@ theorem inputBuffer {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {
     (K : Keeps regs s t) (hp : pointerValue base t p = ptr)
     (hf : ptr.toNat + len ≤ 2 ^ 32)
     (hr : ∀ d k, d + k ≤ len → InRegions (s.rd ++ s.wr) (ptr.setWidth 64 + BitVec.ofNat 64 d) k)
-    (ha : Region.Disjoint ⟨ptr.setWidth 64, len⟩ ⟨base, size⟩) : CallerBuffer t base size p len := by
-  refine ⟨by rw [hp]; exact hf, ?_, by rw [hp]; exact ha⟩
+    (ha : Region.Disjoint ⟨ptr.setWidth 64, len⟩ ⟨base, size⟩)
+    (room : Pow.Room (t.gpr .esp) base size)
+    (stack : Region.Disjoint ⟨ptr.setWidth 64, len⟩ (callStack (t.gpr .esp))) : CallerBuffer t base size p len := by
+  refine ⟨room, by rw [hp]; exact hf, ?_, by rw [hp]; exact ha, by rw [hp]; exact stack⟩
   intro d k hd
   rw [hp, K.2.1, K.2.2]
   exact hr d k hd

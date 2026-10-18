@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 # AES-GCM on x86-64: checking a received tag (`tagLenOk`, `recv`, `cmp o`)
 
 Untrusted: everything here is checked by Lean. `tagLenOk` clears ZF iff
-§5.2.1.2 allows a tag of `rbx` bytes (`tagLenOk_ok`); `recv` pads the `rbx`
+`tagLenOk` allows a tag of `rbx` bytes (`tagLenOk_ok`); `recv` pads the `rbx`
 bytes of the received tag at `rsi` with zeros at `W + 256` (`recv_ok`); `cmp o`
 pads the first `rbx` bytes of the tag at `W + o` at `W + 240` and leaves 1 in
 `rax` if they are the received ones, 0 if not (`cmp_ok`).
@@ -75,50 +75,31 @@ theorem tagLenOk_ok (s : State) {t : Nat} (h : s.gpr .rbx = BitVec.ofNat 64 t) (
     WP isa tagLenOk s fun s' => s'.zf = some (!Spec.Gcm.tagLenOk t) ∧ Keeps s s' := by
   obtain ⟨s₁, run₁, hcx₁, hg₁, -, -, hm₁, hrd₁, hwr₁⟩ := setRcx_ok s 0 (by decide)
   have hbx₁ : s₁.gpr .rbx = BitVec.ofNat 64 t := by rw [hg₁ _ (by decide), h]
-  obtain ⟨s₂, run₂, hz₂, -, hg₂, hm₂, hrd₂, hwr₂⟩ := cmpImm_ok s₁ .rbx hbx₁ ht (show 4 < 2 ^ 31 by decide)
+  obtain ⟨s₂, run₂, -, hc₂, hg₂, hm₂, hrd₂, hwr₂⟩ := cmpImm_ok s₁ .rbx hbx₁ ht (show 4 < 2 ^ 31 by decide)
   have k₂ : Keeps s s₂ := ⟨fun r hr => by rw [hg₂, hg₁ r hr], hm₂.trans hm₁, hrd₂.trans hrd₁, hwr₂.trans hwr₁⟩
   refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
-  refine WP.seq (WP.mono (setIf_ok (eval_e hz₂) (by rw [hg₂, hcx₁]) (k := 0) (by decide)) fun s₃ ⟨k₃, hcx₃⟩ => ?_)
-  have hbx₃ : s₃.gpr .rbx = BitVec.ofNat 64 t := by rw [k₃.gpr _ (by decide), hg₂, hbx₁]
-  obtain ⟨s₄, run₄, hz₄, -, hg₄, hm₄, hrd₄, hwr₄⟩ := cmpImm_ok s₃ .rbx hbx₃ ht (show 8 < 2 ^ 31 by decide)
-  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
-  refine WP.seq (WP.mono (setIf_ok (eval_e hz₄) (k := if decide (t = 4) then 1 else 0) (by rw [hg₄, hcx₃])
-    (by split <;> decide)) fun s₅ ⟨k₅, hcx₅⟩ => ?_)
-  have hbx₅ : s₅.gpr .rbx = BitVec.ofNat 64 t := by rw [k₅.gpr _ (by decide), hg₄, hbx₃]
-  obtain ⟨s₆, run₆, -, hc₆, hg₆, hm₆, hrd₆, hwr₆⟩ := cmpImm_ok s₅ .rbx hbx₅ ht (show 12 < 2 ^ 31 by decide)
-  refine WP.seq (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-  have k₆ : Keeps s s₆ := ((k₂.trans k₃).trans ⟨fun r _ => by rw [hg₄], hm₄, hrd₄, hwr₄⟩).trans k₅ |>.trans
-    ⟨fun r _ => by rw [hg₆], hm₆, hrd₆, hwr₆⟩
-  generalize hk : (if decide (t = 8) then 1 else if decide (t = 4) then 1 else 0) = k at hcx₅
-  have hk1 : k ≤ 1 := by rw [← hk]; split <;> (try split) <;> decide
-  have hcx₆ : s₆.gpr .rcx = BitVec.ofNat 64 k := by rw [hg₆, hcx₅]
+  have hcx₂ : s₂.gpr .rcx = BitVec.ofNat 64 0 := by rw [hg₂, hcx₁]
   have hite : WP isa (.ite .b (.block [])
-      (.seq (.block [.alu .cmp .rbx (imm 17)]) (.ite .b (.block [.mov32 .rcx (imm 1)]) (.block [])))) s₆
-      (fun s₇ => Keeps s s₇ ∧ s₇.gpr .rcx = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk t then 1 else 0)) := by
-    refine WP.ite (decide (t < 12)) (eval_b hc₆) (fun hlt => ?_) (fun hge => ?_)
-    · refine WP.block_nil ⟨k₆, ?_⟩
-      rw [hcx₆, ← hk]
-      have : t < 12 := by simpa using hlt
-      simp only [Spec.Gcm.tagLenOk]
-      rcases (show t = 4 ∨ t = 8 ∨ (t ≠ 4 ∧ t ≠ 8) by omega) with rfl | rfl | ⟨h4, h8⟩
-      · rfl
-      · rfl
-      · simp [h4, h8, show ¬ 12 ≤ t by omega]
-    · have hbx₆ : s₆.gpr .rbx = BitVec.ofNat 64 t := by rw [hg₆, hbx₅]
-      obtain ⟨s₇, run₇, -, hc₇, hg₇, hm₇, hrd₇, hwr₇⟩ := cmpImm_ok s₆ .rbx hbx₆ ht (show 17 < 2 ^ 31 by decide)
-      refine WP.seq (WP.of_runBlock ⟨s₇, run₇, ?_⟩)
-      refine WP.mono (setIf_ok (eval_b hc₇) (by rw [hg₇, hcx₆]) hk1) fun s₈ ⟨k₈, hcx₈⟩ =>
-        ⟨k₆.trans ⟨fun r _ => by rw [hg₇], hm₇, hrd₇, hwr₇⟩ |>.trans k₈, ?_⟩
-      rw [hcx₈, ← hk]
-      have : 12 ≤ t := by simpa using hge
-      simp only [Spec.Gcm.tagLenOk]
+      (.seq (.block [.alu .cmp .rbx (imm 17)]) (.ite .b (.block [.mov32 .rcx (imm 1)]) (.block [])))) s₂
+      (fun s₃ => Keeps s s₃ ∧ s₃.gpr .rcx = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk t then 1 else 0)) := by
+    refine WP.ite (decide (t < 4)) (eval_b hc₂) (fun hlt => ?_) (fun hge => ?_)
+    · refine WP.block_nil ⟨k₂, ?_⟩
+      have : t < 4 := by simpa using hlt
+      simp [hcx₂, Spec.Gcm.tagLenOk, show ¬ 4 ≤ t by omega]
+    · have hbx₂ : s₂.gpr .rbx = BitVec.ofNat 64 t := by rw [hg₂, hbx₁]
+      obtain ⟨s₃, run₃, -, hc₃, hg₃, hm₃, hrd₃, hwr₃⟩ := cmpImm_ok s₂ .rbx hbx₂ ht (show 17 < 2 ^ 31 by decide)
+      refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
+      refine WP.mono (setIf_ok (eval_b hc₃) (k := 0) (by rw [hg₃, hcx₂]) (by decide)) fun s₄ ⟨k₄, hcx₄⟩ =>
+        ⟨k₂.trans ⟨fun r _ => by rw [hg₃], hm₃, hrd₃, hwr₃⟩ |>.trans k₄, ?_⟩
+      have : 4 ≤ t := by simpa using hge
+      rw [hcx₄]
       by_cases h17 : t < 17
-      · simp [h17, show t ≠ 4 by omega, show t ≠ 8 by omega, this, show t ≤ 16 by omega]
-      · simp [h17, show t ≠ 4 by omega, show t ≠ 8 by omega, show ¬ t ≤ 16 by omega]
-  refine WP.seq (WP.mono hite fun s₇ ⟨k₇, hcx₇⟩ => ?_)
-  obtain ⟨s₈, run₈, hz₈, hg₈, hm₈, hrd₈, hwr₈⟩ := test_ok s₇ .rcx hcx₇ (by split <;> decide)
-  refine WP.of_runBlock ⟨s₈, run₈, ?_, k₇.trans ⟨fun r _ => by rw [hg₈], hm₈, hrd₈, hwr₈⟩⟩
-  rw [hz₈]; cases Spec.Gcm.tagLenOk t <;> rfl
+      · simp [h17, Spec.Gcm.tagLenOk, this, show t ≤ 16 by omega]
+      · simp [h17, Spec.Gcm.tagLenOk, show ¬ t ≤ 16 by omega]
+  refine WP.seq (WP.mono hite fun s₃ ⟨k₃, hcx₃⟩ => ?_)
+  obtain ⟨s₄, run₄, hz₄, hg₄, hm₄, hrd₄, hwr₄⟩ := test_ok s₃ .rcx hcx₃ (by split <;> decide)
+  refine WP.of_runBlock ⟨s₄, run₄, ?_, k₃.trans ⟨fun r _ => by rw [hg₄], hm₄, hrd₄, hwr₄⟩⟩
+  rw [hz₄]; cases Spec.Gcm.tagLenOk t <;> rfl
 
 /-! ## Padded tags -/
 

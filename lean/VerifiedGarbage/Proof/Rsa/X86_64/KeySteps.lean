@@ -112,4 +112,8 @@ theorem reduceXRK (h : KCtx s t B Z w minv N) :
 
 end
 
+theorem wsa {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ []) {s : State} {Q : State → Prop}
+    (h : WP isa (seqs a) s fun t => WP isa (seqs b) t Q) : WP isa (seqs (a ++ b)) s Q :=
+  wp_seqs_append ha hb h
+
 end VG.Proof.Rsa.X86_64.Key

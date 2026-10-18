@@ -4,6 +4,10 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 public import VerifiedGarbage.Proof.Gcm.Poly
 meta import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Proof.Gcm.Powers
+meta import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
@@ -268,6 +272,26 @@ theorem x_φ_hInv (h : BitVec 128) :
   · rw [x_φ_xInv, hb]; simp only [bit, ↓reduceIte, map_one]
   · rw [φ_zero, Bool.not_eq_true] at *; rw [hb]; simp only [mul_zero, add_zero, bit, Bool.false_eq_true, ↓reduceIte, map_zero]
 
+/-- The prepared form of `Hⁿ` (`Spec.Gcm.preparedPower`) is `Hⁿ · x⁻¹`. -/
+theorem x_φ_prepared (H : Spec.Gcm.Block) (n : Nat) :
+    x * φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H n)) = φ H ^ n := by
+  have e := x_φ_hInv (Spec.Gcm.hpow H n)
+  rw [φ_hpow] at e
+  exact e
+
+/-- `x` cancels: a block `v` with `x · v = Hⁿ` is `Hⁿ · x⁻¹`, prepared. -/
+theorem eq_prepared {v H : Spec.Gcm.Block} {n : Nat} (h : x * φ v = φ H ^ n) :
+    v = Spec.Gcm.preparedPower (Spec.Gcm.hpow H n) := by
+  apply φ_inj
+  have u := x_φ_prepared H 0
+  rw [pow_zero] at u
+  have e := h.trans (x_φ_prepared H n).symm
+  calc φ v = φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H 0)) * (x * φ v) := by
+        rw [← mul_assoc, mul_comm _ x, u, one_mul]
+    _ = φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H 0)) * (x * φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H n))) := by
+        rw [e]
+    _ = φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H n)) := by rw [← mul_assoc, mul_comm _ x, u, one_mul]
+
 end VG.Proof.Gcm.X86_64.Pclmul
 
 end
@@ -303,16 +327,16 @@ theorem mul_ok (d a b : XReg) (s : State) (ha8 : a ≠ .xmm8) (ha9 : a ≠ .xmm9
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with (h | h | h) | (h | h | h | h) | (h | h | h | h | h) <;> simp [h]
 
-/-- `H' = H · x⁻¹` into `xmm3`, from `H` in `xmm7`. -/
-theorem hInv_ok (s : State) :
-    WP isa (.block Impl.Gcm.X86_64.Pclmul.hInv) s fun s' =>
+/-- `hInv` after its constant: `H' = H · x⁻¹` into `xmm3`, from `H` in
+`xmm7` and `x⁻¹` in `xmm13`. -/
+theorem hInvRest_ok (s : State) (h13 : s.xmm .xmm13 = xInv) :
+    WP isa (.block Impl.Gcm.X86_64.Pclmul.hInvRest) s fun s' =>
       x * φ (s'.xmm .xmm3) = φ (s.xmm .xmm7) ∧
-      Only [.xmm3, .xmm11, .xmm12, .xmm13, .xmm14] s s' := by
+      Only [.xmm3, .xmm11, .xmm14] s s' := by
   apply WP.of_runBlock
-  simp only [Impl.Gcm.X86_64.Pclmul.hInv, Impl.Gcm.X86_64.Pclmul.const, List.cons_append,
-    List.nil_append]
+  simp only [Impl.Gcm.X86_64.Pclmul.hInvRest]
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, State.setReg, ite_true, ite_false, movq_const, eval_movdqa, eval_pxor,
+    isa, State.setXmm, State.setReg, ite_true, ite_false, eval_movdqa, eval_pxor, h13,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => by simp only [hr, ↓reduceIte], rfl, rfl, rfl, fun r hr => ?_⟩
   · rw [show XBinOp.eval .por (XShiftOp.eval .psllq (s.xmm .xmm7) 1)
@@ -321,7 +345,31 @@ theorem hInv_ok (s : State) :
           XShiftOp.eval .pslldq (XShiftOp.eval .psrlq (s.xmm .xmm7) 63) 8 from rfl,
       shl1, mask_eq, x_φ_hInv]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+    simp only [hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- `H' = H · x⁻¹` into `xmm3`, from `H` in `xmm7`. -/
+theorem hInv_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86_64.Pclmul.hInv) s fun s' =>
+      x * φ (s'.xmm .xmm3) = φ (s.xmm .xmm7) ∧
+      Only [.xmm3, .xmm11, .xmm12, .xmm13, .xmm14] s s' := by
+  rw [Impl.Gcm.X86_64.Pclmul.hInv, WP.block_append_iff]
+  refine WP.mono (const_ok .xmm13 xInv s (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
+  refine WP.mono (hInvRest_ok s₁ c₁) fun s' ⟨h, o⟩ => ⟨by rw [h, o₁.xmm _ (by decide)], ?_⟩
+  exact (o₁.trans o).weaken fun r hr => by
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with (h | h) | (h | h | h) <;> simp [h]
+
+/-- `hInvImm`: `hInv`, with `x⁻¹` from immediates. -/
+theorem hInvImm_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86_64.Pclmul.hInvImm) s fun s' =>
+      x * φ (s'.xmm .xmm3) = φ (s.xmm .xmm7) ∧
+      Only [.xmm3, .xmm11, .xmm12, .xmm13, .xmm14] s s' := by
+  rw [Impl.Gcm.X86_64.Pclmul.hInvImm, WP.block_append_iff]
+  refine WP.mono (constImm_ok .xmm13 xInv s (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
+  refine WP.mono (hInvRest_ok s₁ c₁) fun s' ⟨h, o⟩ => ⟨by rw [h, o₁.xmm _ (by decide)], ?_⟩
+  exact (o₁.trans o).weaken fun r hr => by
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with (h | h) | (h | h | h) <;> simp [h]
 
 /-- `H'²`, then `H'³` and `H'⁴` from it, into `xmm4`–`xmm6`, for any hash
 subkey `H` whose `H'` is in `xmm3`. -/

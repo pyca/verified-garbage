@@ -110,7 +110,7 @@ theorem fixedPermutation_ok {m n : Nat} (positions : Vector Nat m)
       s'.gpr dstHi = ((Spec.TripleDes.permute positions
         (packedInput n split (s.gpr srcLo) (s.gpr srcHi)) >>> dstSplit).setWidth (m - dstSplit)).setWidth 32 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, (is.all fun op => dstOf op != some r) = true → s'.gpr r = s.gpr r) := by
+      (∀ r, (is.all fun op => !clobbers op r) = true → s'.gpr r = s.gpr r) := by
   let W : Nat → BitVec 32 := fun i => if i = 0 then s.gpr srcLo else s.gpr srcHi
   obtain ⟨s', hs', out, rd, wr, sp, keep, frame⟩ :=
     linear_ok hchk (permutationCfg_ok s) W (fun r i h => by

@@ -195,7 +195,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
           ⟨hpre, hp, by rw [← openRes_eq hp]; exact hres⟩, by rw [hzf, hok]⟩) ?_
   refine Pc.seq (Q := fun s₀ s => OEnv q.1 s₀ s ∧ IX q s₀ ∧ PostO q.1 s₀ s)
     (Pc.ite (!ok) (fun _ _ h => h.2.2.2) (fun hb => ?_) (fun hb => ?_)) ?_
-  -- A tag length §5.2.1.2 does not allow.
+  -- A tag length `tagLenOk` does not allow.
   · have hf : ok = false := by simpa using hb
     refine Pc.taint [.ebp] (fun s₀ s ⟨h, _, hx, _⟩ => WP.of_runBlock ⟨_, by xrun [], ?_⟩)
       (fun _ _ s₁ s₂ ⟨h₁, _⟩ ⟨h₂, _⟩ r hr => by
@@ -209,7 +209,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   have hT' : Spec.Gcm.tagLenOk (q.1.2 9).toNat = true := by rw [hok, hT]
   have ht' : 1 ≤ (q.1.2 9).toNat ∧ (q.1.2 9).toNat ≤ 16 := by
     have := hT'
-    simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at this
+    simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at this
     omega
   obtain ⟨t1, t16⟩ := ht'
   -- `J₀` and the additional data; the tag of the ciphertext.

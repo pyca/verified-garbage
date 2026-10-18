@@ -573,12 +573,6 @@ theorem decodeDecompress1024Y_ct :
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
 
-theorem decodeDecompress1024Y_verified :
-    Verified X86_64.target decodeDecompress1024Avx2 (Spec.MlKem1024.decodeDecompressContract X86_64.abi) :=
-  Verified.of_correct DDW.correct decodeDecompress1024Y_ct (by
-    mlkem_implies [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
-      decodeDecompress1024K, X86_64.abi, X86_64.argRegs] [decodeDecompress1024Sat] using decodeDecompress1024Sat)
-
 /-- `vg_mlkem1024_decode_decompress_avx2`, for the calls of the top-level functions. -/
 theorem ddImpl1024Y : DDImpl "vg_mlkem1024_decode_decompress_avx2" decodeDecompress1024Avx2
     Spec.MlKem1024.compressWidths :=

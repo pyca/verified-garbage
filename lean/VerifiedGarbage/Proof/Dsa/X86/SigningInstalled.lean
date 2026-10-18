@@ -22,18 +22,21 @@ theorem signingInstalled_spec {s t : State} (A : SigningABI s)
       Spec.Rsa.bytesAt sf.mem (argumentPointer s 0) (2 * (arg s 6).toNat) =
         result.getD (List.replicate (2 * (arg s 6).toNat) 0) ∧
       Keeps powerClob t sf ∧
-      OutputFrame (argumentPointer s 9) (argumentPointer s 0) usedBytes (2 * (arg s 6).toNat) t.mem sf.mem ∧
+      StackOutputFrame (t.gpr .esp) (argumentPointer s 9) (argumentPointer s 0) usedBytes (2 * (arg s 6).toNat) t.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 9)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 9)) regs Entry.savedRegisters := by
   dsimp only
   have L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
     have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
   obtain ⟨Key, KeyBytes⟩ := I.input (by decide : (2, .p) ∈ Entry.signArguments) A.keyBound
-    (by rw [A.rd, A.wr]; simp) A.keyScratch
+    (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Nonce, NonceBytes⟩ := I.input (by decide : (5, .nonce) ∈ Entry.signArguments) A.nonceBound
-    (by rw [A.rd, A.wr]; simp) A.nonceScratch
+    (by rw [A.rd, A.wr]; simp) A.nonceScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowNonce.symm)
   obtain ⟨D, DigestBytes⟩ := I.input (by decide : (7, .digest) ∈ Entry.signArguments) A.digestBound
-    (by rw [A.rd, A.wr]; simp) A.digestScratch
+    (by rw [A.rd, A.wr]; simp) A.digestScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowDigest.symm)
   obtain ⟨Qptr, Gptr, Yptr, Xptr⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Y, X, KeyValue⟩ := privateKey_buffers Key L.1 L.2
     (by have := A.keyLength; omega) KeyBytes Qptr Gptr Yptr Xptr

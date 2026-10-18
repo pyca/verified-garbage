@@ -21,6 +21,8 @@ holds the first `168 (n + 1)` bytes of the seed's XOF output (`sq_ok`);
 
 namespace VG.Proof.MlKem.X86_64.S4
 
+variable {w16 : Bool}
+
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (keccakF RC)
@@ -37,9 +39,9 @@ theorem B_length (σ : State) (k : Nat) : (B σ k).length = 34 := VG.Proof.Sha3.
 /-! ## `Env` after writes -/
 
 /-- `Env` after writes below the saved registers. -/
-theorem Env.low {σ s s' : State} (he : Env σ s) {rs : List Region} (hrs : ∀ r ∈ rs, Region.Sub r ⟨scr σ, oSave⟩)
+theorem EnvW.low {σ s s' : State} (he : EnvW w16 σ s) {rs : List Region} (hrs : ∀ r ∈ rs, Region.Sub r ⟨scr σ, oSave⟩)
     (hf : Frame rs s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : Env σ s' := by
+    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : EnvW w16 σ s' := by
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, by rw [hg .rbx (by simp), he.rbx], by rw [hg .r12 (by simp), he.r12],
     by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
     fun i hi => ?_, ?_⟩
@@ -51,9 +53,9 @@ theorem Env.low {σ s s' : State} (he : Env σ s) {rs : List Region} (hrs : ∀ 
       (n := oSave) (k := 8192) (by simp only [oSave]; omega) x (by rw [BitVec.add_zero]; exact hrs r hr x hx)⟩)
 
 /-- `Env` after code that writes no memory and keeps its registers. -/
-theorem Env.keep {σ s s' : State} (he : Env σ s) (hm : s'.mem = s.mem) {rs : List Reg} (hk : Keep rs s s')
-    (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], r ∉ rs) : Env σ s' :=
-  Env.low he (rs := []) (by simp) (by rw [hm]; exact Frame.refl _ _) hk.2.1 hk.2.2 fun r hr => hk.gpr (hrs r hr)
+theorem EnvW.keep {σ s s' : State} (he : EnvW w16 σ s) (hm : s'.mem = s.mem) {rs : List Reg} (hk : Keep rs s s')
+    (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], r ∉ rs) : EnvW w16 σ s' :=
+  EnvW.low he (rs := []) (by simp) (by rw [hm]; exact Frame.refl _ _) hk.2.1 hk.2.2 fun r hr => hk.gpr (hrs r hr)
 
 /-! ## Loops of blocks -/
 
@@ -132,12 +134,15 @@ theorem blocks_ok {start step b n : Nat} {body : Prog isa} {P : Nat → State �
 /-! ## The squeezes -/
 
 /-- After `n` squeezes. -/
-structure SqInv (σ : State) (n : Nat) (s : State) : Prop where
-  env : Env σ s
+structure SqInvW (w16 : Bool) (σ : State) (n : Nat) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
   lanes : Lanes4 s.mem (scr σ) fun k => iterF n (A0 (B σ k))
   buf : ∀ k < 4, ∀ p < 168 * n, s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p
+
+/-- `SqInvW` with 32-bit coefficients. -/
+abbrev SqInv := SqInvW false
 
 theorem lanes_A0 {σ : State} {m : Mem} (h : SB σ m (PF σ)) : Lanes4 m (scr σ) fun k => iterF 0 (A0 (B σ k)) :=
   lanes4_of_bytes fun k hk q hq => by
@@ -152,7 +157,7 @@ theorem sx800 : BitVec.signExtend 64 (BitVec.ofNat 32 oTmp) = BitVec.ofNat 64 80
 theorem sx1600 : BitVec.signExtend 64 (BitVec.ofNat 32 oRc) = BitVec.ofNat 64 1600 := by decide
 theorem sx2368 : BitVec.signExtend 64 (BitVec.ofNat 32 oBuf) = BitVec.ofNat 64 2368 := by decide
 
-theorem args_ok {σ s : State} (he : Env σ s) :
+theorem args_ok {σ s : State} (he : EnvW w16 σ s) :
     WP isa (.block permArgs) s fun s' => (s'.mem = s.mem ∧ s'.gpr .rdi = scr σ ∧ s'.gpr .rsi = at' σ 800 ∧
       s'.gpr .rdx = at' σ 1600 ∧ s'.gpr .rcx = at' σ 2368) ∧ Keep [.rdi, .rsi, .rdx, .rcx] s s' := by
   refine WP.keep _ ?_ (by decide)
@@ -160,7 +165,7 @@ theorem args_ok {σ s : State} (he : Env σ s) :
   xrun [he.rbx, sx800, sx1600, sx2368]
 
 /-- The permutation's precondition, in the scratch space. -/
-theorem pre4 {σ : State} (hp : Pre σ) {s : State} (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr)
+theorem pre4 {σ : State} (hp : PreW w16 σ) {s : State} (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr)
     (hrc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) :
     Pre4 s (scr σ) (at' σ 800) (at' σ 1600) :=
   ⟨fun i _ => in_scr hp hwr (a := 32 * i) (by omega),
@@ -179,8 +184,8 @@ theorem buf_frame {σ : State} {m m' : Mem} {rs : List Region}
   simpa only [at', Offset.add_add, Nat.add_assoc] using this
 
 /-- The permutation, after `n` squeezes. -/
-theorem perm_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInv σ n s)
-    {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', Env σ s' ∧ s'.gpr .r14 = 1 ∧
+theorem perm_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInvW w16 σ n s)
+    {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', EnvW w16 σ s' ∧ s'.gpr .r14 = 1 ∧
       (∀ r < 24, ∀ k < 4, s'.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) ∧
       Lanes4 s'.mem (scr σ) (fun k => iterF (n + 1) (A0 (B σ k))) ∧
       (∀ k < 4, ∀ p < 168 * n, s'.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p) ∧
@@ -198,7 +203,7 @@ theorem perm_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) 
     rcases hr with rfl | rfl
     · exact Region.sub_prefix (by simp only [oSave]; omega)
     · exact Offset.sub_base _ (by simp only [oSave]; omega)
-  refine ⟨Env.low (h.env.keep hm k₁ (by decide)) hsub hf hrd₂ hwr₂ fun r hr => hg r
+  refine ⟨EnvW.low (h.env.keep hm k₁ (by decide)) hsub hf hrd₂ hwr₂ fun r hr => hg r
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
     by rw [hg _ (by decide) (by decide), k₁.gpr (by decide), h.r14], fun r hr k hk => ?_, ?_, fun k hk p hp' => ?_,
@@ -221,8 +226,8 @@ theorem perm_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) 
 
 /-- During the copy of block `n`: the first `I` lanes of state `K` copied,
 and all of the states before it. -/
-structure EXI (σ : State) (n K I : Nat) (s : State) : Prop where
-  env : Env σ s
+structure EXIW (w16 : Bool) (σ : State) (n K I : Nat) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
   lanes : Lanes4 s.mem (scr σ) (fun k => iterF (n + 1) (A0 (B σ k)))
@@ -230,11 +235,14 @@ structure EXI (σ : State) (n K I : Nat) (s : State) : Prop where
     s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p
   rbp : s.gpr .rbp = at' σ (oBuf + 168 * n)
 
+/-- `EXIW` with 32-bit coefficients. -/
+abbrev EXI := EXIW false
+
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
-theorem ext_step {σ : State} (hp : Pre σ) {n K I : Nat} (hn : n < 3) (hK : K < 4) (hI : I < 21) {s : State}
-    (h : EXI σ n K I s) :
+theorem ext_step {σ : State} (hp : PreW w16 σ) {n K I : Nat} (hn : n < 3) (hK : K < 4) (hI : I < 21) {s : State}
+    (h : EXIW w16 σ n K I s) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))),
-      .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXI σ n K (I + 1)) := by
+      .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXIW w16 σ n K (I + 1)) := by
   refine wp_movm (a := at' σ (32 * I + 8 * K)) (by rw [ea_at, h.env.rbx])
     (in_scr' hp h.env.rd h.env.wr (by omega)) fun s₁ u₁ => wp_store (a := at' σ (oBuf + 504 * K + 168 * n + 8 * I))
       (by rw [ea_at, u₁.other _ (by decide), h.rbp, at', at', Offset.add_add,
@@ -245,7 +253,7 @@ theorem ext_step {σ : State} (hp : Pre σ) {n K I : Nat} (hn : n < 3) (hK : K <
     rw [m₂, u₁.mem, u₁.gpr]
   have hf : Frame [⟨at' σ (oBuf + 504 * K + 168 * n + 8 * I), 8⟩] s.mem s₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨Env.low h.env (fun r hr => by
+  refine ⟨EnvW.low h.env (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.sub_base _ (by simp only [oBuf, oSave]; omega)) hf (r₂.trans u₁.rd) (w₂.trans u₁.wr)
       fun r hr => by
@@ -277,19 +285,19 @@ theorem extract_eq : extract = (List.range 4).flatMap fun K => (List.range 21).f
     [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))), .store (at_ .rbp (504 * K + 8 * I)) .rax] := rfl
 
 /-- Block `n` of each state's output. -/
-theorem extract_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : EXI σ n 0 0 s) :
-    WP isa (.block extract) s (SqInv σ (n + 1)) := by
+theorem extract_ok {σ : State} (hp : PreW w16 σ) {n : Nat} (hn : n < 3) {s : State} (h : EXIW w16 σ n 0 0 s) :
+    WP isa (.block extract) s (SqInvW w16 σ (n + 1)) := by
   rw [extract_eq]
-  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXI σ n K 0 s) (fun K s hK h => ?_) 4 (Nat.le_refl _) s h)
+  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXIW w16 σ n K 0 s) (fun K s hK h => ?_) 4 (Nat.le_refl _) s h)
     fun s' h' => ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' => h'.buf k hk p (by omega) (by omega)⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXI σ n K I s) (fun I s hI h => ext_step hp hn hK hI h)
+  refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXIW w16 σ n K I s) (fun I s hI h => ext_step hp hn hK hI h)
     21 (Nat.le_refl _) s h) fun s' h' =>
       ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega), h'.rbp⟩
 
 /-- `squeeze`, to block `n`: after `n + 1` squeezes, with `rbp` and `r10` kept. -/
-theorem sq_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInv σ n s)
+theorem sq_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInvW w16 σ n s)
     (hbp : s.gpr .rbp = at' σ (oBuf + 168 * n)) :
-    WP isa (squeeze fast) s fun s' => SqInv σ (n + 1) s' ∧ s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
+    WP isa (squeeze fast) s fun s' => SqInvW w16 σ (n + 1) s' ∧ s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
   unfold squeeze
   exact perm_ok (fast := fast) hp hn h fun s' ⟨he, h14, hrc, hl, hb, h₁, h₂⟩ =>
     WP.mono (WP.keep [.rax] (extract_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega),
@@ -297,16 +305,16 @@ theorem sq_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s
         ⟨h', by rw [k.gpr (by decide), h₁], by rw [k.gpr (by decide), h₂]⟩
 
 /-- `SqInv` does not depend on `rbp`, `r10` or the flags. -/
-theorem SqInv.frame {σ : State} {n : Nat} {s s' : State} (h : SqInv σ n s) (hm : s'.mem = s.mem)
+theorem SqInvW.frame {σ : State} {n : Nat} {s s' : State} (h : SqInvW w16 σ n s) (hm : s'.mem = s.mem)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hg : ∀ r, r ≠ .rbp → r ≠ .r10 → s'.gpr r = s.gpr r) :
-    SqInv σ n s' := by
+    SqInvW w16 σ n s' := by
   have k : Keep [.rbp, .r10] s s' := ⟨fun r hr => hg r (fun e => hr (by simp [e])) (fun e => hr (by simp [e])), hrd, hwr⟩
   exact ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14], by rw [hm]; exact h.rc,
     by rw [hm]; exact h.lanes, by rw [hm]; exact h.buf⟩
 
 /-- `squeezes b n`: after `b + n` squeezes. -/
-theorem sqs_ok {fast : Bool} {σ : State} (hp : Pre σ) {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State}
-    (h : SqInv σ b s) : WP isa (squeezes b n fast) s (SqInv σ (b + n)) := by
+theorem sqs_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State}
+    (h : SqInvW w16 σ b s) : WP isa (squeezes b n fast) s (SqInvW w16 σ (b + n)) := by
   unfold squeezes
   refine blocks_ok hn (by omega) (by simp only [oBuf]; omega) (by decide) (fun _ _ _ h => h.frame)
     (fun i t hb hi hi' hbp => sq_ok hp (by omega) hi' ?_) h

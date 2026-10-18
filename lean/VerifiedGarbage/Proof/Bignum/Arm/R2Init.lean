@@ -15,7 +15,7 @@ open VG.Proof.X25519.Arm (Rest)
 
 theorem r2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
     (h : ArithmeticReady base len w s) :
-    WP isa r2Init s fun t => DoubleLoopReady base len w (128 * w) t ∧
+    WP isa r2Init s fun t => DoubleLoopReady base len w (65 * w) t ∧
       numAt t.mem (State.addr base) w 4 = 1 ∧
       numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by

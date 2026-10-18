@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
@@ -23,7 +23,7 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 
 namespace VG.Generic.P521.AArch64.EcdsaP521
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   Spec.Ecdsa.P521.signApi.artifact AArch64.target {
     notes := ["The function saves the callee-saved registers \
       `x19`–`x25` in `scratch`. Field elements and scalars are nine 64-bit words in \
@@ -52,28 +52,22 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List A
     code := Impl.Ecdsa.AArch64.signP521
     verified := Proof.Ecdsa.AArch64.P521.sign_verified h.law h.inv (Proof.P521.combOk7 h.law) },
   Spec.Ecdsa.P521.verifyApi.artifact AArch64.target {
-    notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
-      field arithmetic, comb and inversions, with `vg_ecdh_p521`'s checks of the public key: it \
-      saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
-      scalars are nine 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
-      multiplication (CIOS, with `mul` and `umulh`, four of the multiplicand's words in registers \
-      and the other five loaded for each word of the multiplier; each reduction step multiplies \
-      the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adds that multiple of the modulus) with a \
-      final conditional subtraction. The key is checked without branches \
-      (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
-      computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
-      `s⁻¹` modulo `n` is by the signature's divsteps; `[u]G` is the \
-      signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`, reading the entry of each \
-      digit of the public `u` directly rather than scanning its table), and `[v]Q` `vg_ecdh_p521`'s signed 4-bit windows \
-      (145 digits of `v + 8 Σ_{j<145} 16^j`, four doublings in Jacobian coordinates and a \
-      constant-time selection from a \
-      table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
-      `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
-      `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
-      comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
-      time only on the pointers."]
+    notes := ["The function validates the public key and signature and computes \
+      `[u]G + [v]Q` with one interleaved Jacobian doubling chain. Public width-seven NAF \
+      digits select affine generator multiples from the first row of `VG_P521_COMB`; \
+      public width-five NAF digits select eight odd peer multiples built with co-Z \
+      arithmetic, with cached `Z²` and `Z³` packed into the existing scratch space. \
+      Both recodings cover 577 positions. Nonzero generator digits use mixed Jacobian \
+      addition; peer digits use the cached Jacobian addition, including exceptional cases. \
+      Nine-word field products use Montgomery multiplication, and field squares use the \
+      dedicated symmetric P-521 square with Mersenne reduction. The scalar inverse uses \
+      fixed-count divsteps. Invalid keys are replaced with the generator for arithmetic, \
+      while the final mask retains all original validity checks. Projective comparisons \
+      test `X = rZ` and, when applicable, `X = (r+n)Z` without a final inversion. \
+      The function preserves the original verification contract and scratch size; \
+      branches and table addresses depend only on the public key, digest and signature."]
     consts := Impl.Ecdsa.AArch64.p521.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP521
-    verified := Proof.Ecdsa.Verify.AArch64.P521.verify_verified h.law h.inv (Proof.P521.combOk7 h.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.P521.verify_verified h.law h.prime h.inv (Proof.P521.combOk7 h.law) }]
 
 end VG.Generic.P521.AArch64.EcdsaP521

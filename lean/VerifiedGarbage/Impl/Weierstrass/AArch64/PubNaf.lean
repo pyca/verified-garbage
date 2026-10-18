@@ -31,8 +31,8 @@ open Jacobian
 /-! ## The recoding -/
 
 /-- The registers of the scalar's `n` words (`low`) and its top word (`top`),
-then of the constants `2^5 - 1`, `2^4`, `0` and `1` (`cst`), for `n ≤ 6`. -/
-def regs : List Reg := [.x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15]
+then of the constants `2^5 - 1`, `2^4`, `0` and `1` (`cst`), for `n ≤ 9`. -/
+def regs : List Reg := [.x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x21, .x22, .x23]
 
 def low (n : Nat) : List Reg := regs.take n
 def top (n : Nat) : Reg := regs.getD n .x15

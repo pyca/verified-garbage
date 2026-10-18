@@ -33,6 +33,12 @@ restores it runs `restore`, which extracts `files.tar` and unpacks every
 archive, keeping them, so that the build's next `store` packs only what
 changed.
 
+`store` and `restore` accept `--archive-dir` to keep Mathlib's Actions cache
+in `.lake/mathlib-ltar`, independently of the project's `.lake/ltar` (each
+has its own index and `files.tar`). `pack --reuse .lake/mathlib-ltar` copies
+matching module archives into the published cache, repacking missing or
+changed modules. The published format stays `.lake/ltar`.
+
 `unpack` extracts such a tar from stdin into the Lean project. `tar`
 extracts `files.tar` in the background, as `restore` does: its files are
 most of the files, each small, and `tarfile` would create them one at a
@@ -103,11 +109,14 @@ def key(trace):
     return json.dumps([t["depHash"], t["outputs"]], sort_keys=True)
 
 
-def update(lean, roots, jobs, level, tool):
-    """Brings the archives of `.lake/ltar` up to date with the builds under
+def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
+    """Brings the archives of `archive_dir` up to date with the builds under
     `roots`, and returns the files they hold."""
-    ltars = lean / LTAR
+    ltars = lean / archive_dir
     old = json.loads((ltars / INDEX).read_text()) if (ltars / INDEX).is_file() else {}
+    reused = {}
+    if reuse is not None and (lean / reuse / INDEX).is_file():
+        reused = json.loads((lean / reuse / INDEX).read_text())
     builds = list(build_dirs(lean, roots))
     # Entries of builds not packed now stay.
     index = {rel: k for rel, k in old.items()
@@ -118,7 +127,7 @@ def update(lean, roots, jobs, level, tool):
     for build in builds:
         for name, trace, outputs in modules(lean, build):
             rel = str(build.relative_to(".lake") / name)
-            ltar = LTAR / (rel + ".ltar")
+            ltar = archive_dir / (rel + ".ltar")
             index[rel] = key(trace)
             # The outputs' `.hash` files stay: without them Lake would read
             # every output again to hash it.
@@ -128,6 +137,12 @@ def update(lean, roots, jobs, level, tool):
                 kept += 1
                 continue
             (lean / ltar).parent.mkdir(parents=True, exist_ok=True)
+            # The publisher can reuse the independently cached Mathlib
+            # archives. Missing or changed entries are packed normally.
+            if reused.get(rel) == index[rel] and (lean / reuse / (rel + ".ltar")).is_file():
+                shutil.copyfile(lean / reuse / (rel + ".ltar"), lean / ltar)
+                kept += 1
+                continue
             # Without `-s`, the archive keeps the trace's dependency hash, so
             # unpacking needs nothing but the archive.
             files = []
@@ -146,6 +161,7 @@ def update(lean, roots, jobs, level, tool):
         if str(ltar.relative_to(ltars))[:-len(".ltar")] not in index:
             ltar.unlink()
             removed += 1
+    ltars.mkdir(parents=True, exist_ok=True)
     (ltars / INDEX).write_text(json.dumps(index, sort_keys=True))
     print(f"Packed {len(tasks)} modules, kept {kept}, removed {removed}", file=sys.stderr)
     return packed
@@ -165,8 +181,8 @@ def other_files(lean, roots, packed):
     return paths
 
 
-def pack(lean, roots, jobs, level, tool, out):
-    store(lean, roots, jobs, level, tool)
+def pack(lean, roots, jobs, level, tool, out, reuse=None):
+    store(lean, roots, jobs, level, tool, reuse=reuse)
     out.flush()
     # `files.tar` first, so that `unpack` extracts it while the archives
     # unpack.
@@ -174,14 +190,14 @@ def pack(lean, roots, jobs, level, tool, out):
                     str(LTAR)], stdout=out, check=True)
 
 
-def store(lean, roots, jobs, level, tool):
-    paths = other_files(lean, roots, update(lean, roots, jobs, level, tool))
-    subprocess.run(["tar", "-C", str(lean), "-cf", str(lean / LTAR / FILES), "--no-recursion",
+def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
+    paths = other_files(lean, roots, update(lean, roots, jobs, level, tool, archive_dir, reuse))
+    subprocess.run(["tar", "-C", str(lean), "-cf", str(lean / archive_dir / FILES), "--no-recursion",
                     "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
 
 
-def restore(lean, jobs, tool):
-    ltars = lean / LTAR
+def restore(lean, jobs, tool, archive_dir=LTAR):
+    ltars = lean / archive_dir
     files = extract(lean, ltars / FILES) if (ltars / FILES).is_file() else None
     try:
         records = []
@@ -308,6 +324,8 @@ def main(argv=None):
     p = sub.add_parser("pack", help="write a tar of the directories to stdout")
     p.add_argument("lean", type=Path, help="the Lean project (lean/)")
     p.add_argument("roots", nargs="+", type=Path, help="directories to pack, relative to it")
+    p.add_argument("--reuse", type=Path,
+                   help="reuse matching module archives from this directory, relative to lean")
     st = sub.add_parser("store", help="update `.lake/ltar`, with a tar of the other files in it")
     st.add_argument("lean", type=Path, help="the Lean project (lean/)")
     st.add_argument("roots", nargs="+", type=Path, help="directories to store, relative to it")
@@ -321,6 +339,9 @@ def main(argv=None):
     u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
     u.add_argument("--tmp", default=tmp_dir(),
                    help="where to stage the archives (default: /dev/shm, if there is one)")
+    for q in (st, r):
+        q.add_argument("--archive-dir", type=Path, default=LTAR,
+                       help="archive directory relative to lean (default: .lake/ltar)")
     for q in (p, st):
         q.add_argument("--level", type=int, default=5, help="zstd level (default: 5)")
         q.add_argument("--leantar", default="leantar-batch",
@@ -329,11 +350,11 @@ def main(argv=None):
         q.add_argument("--jobs", type=int, default=os.cpu_count())
     args = parser.parse_args(argv)
     if args.command == "pack":
-        pack(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, sys.stdout.buffer)
+        pack(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, sys.stdout.buffer, args.reuse)
     elif args.command == "store":
-        store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar)
+        store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, args.archive_dir)
     elif args.command == "restore":
-        restore(args.lean.resolve(), args.jobs, args.leantar)
+        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir)
     else:
         unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer)
 

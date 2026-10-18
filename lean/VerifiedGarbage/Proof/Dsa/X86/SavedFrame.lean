@@ -28,7 +28,7 @@ theorem Execution.saved {s t : State} {base : Addr} {g : Reg → BitVec 32}
       · change p.2 + 4 ≤ 0 ∨ 7048 ≤ p.2; omega
       · change p.2 + 4 ≤ 8244 ∨ 8248 ≤ p.2; omega
       · change p.2 + 4 ≤ 14720 ∨ 15712 ≤ p.2; omega
-    · omega
+    · change p.2 + 4 * 1 ≤ 15712; omega
   have V : t.mem.readW (off base p.2) 32 = s.mem.readW (off base p.2) 32 := by
     apply BitVec.eq_of_toNat_eq
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using H

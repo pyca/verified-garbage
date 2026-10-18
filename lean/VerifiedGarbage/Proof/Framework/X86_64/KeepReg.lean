@@ -27,9 +27,10 @@ structure Abs where
 
 /-- Whether an instruction may write a vector register. -/
 def writesVec : Instr → Bool
-  | .movdquLoad .. | .xop _ | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .movdquLoad .. | .movdquTbl .. | .xop _ | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
+  | .zop _
   | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
-  | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. => true
+  | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. | .kLoad8 .. => true
   | _ => false
 
 /-- What is known of `r` after an instruction. -/
@@ -148,6 +149,7 @@ theorem exec_xmm {i : Instr} (hw : writesVec i = false) {s s' : State} (h : exec
       | (simp only [exec, reduceCtorEq] at h; done)
       | (simp only [exec, Option.some.injEq] at h; subst h; rfl)
       | (obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl)
+      | (obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl)
       | (simp only [exec, State.store64, State.store32, State.store8, State.store16, State.store128, State.store512,
           State.store256] at h
          split at h <;> cases h; rfl)

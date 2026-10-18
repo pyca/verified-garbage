@@ -84,7 +84,7 @@ def widthDispatch (signing : Bool) : List (Nat × Nat) → Prog isa
 
 def operation (signing : Bool) : Prog isa := Core.sequence [
   .block (if signing then signEntry else verifyEntry),
-  widthDispatch signing [(128, 20), (256, 28), (256, 32), (384, 32)],
+  widthDispatch signing [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
   .block restore]
 
 end VG.Impl.Dsa.Arm.Entry

@@ -2,21 +2,82 @@
 //! `[1, q)` by rejection, then `y = g^x mod p`, for a domain the caller
 //! assures is prime.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::{vec, vec::Vec};
 
 use super::{Backend, Error, PrivateKey, PublicKey, Secret};
-use crate::arch::dsa::{vg_dsa_generate_key, vg_dsa_generate_key_adx};
+use crate::arch::dsa::vg_dsa_generate_key;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::dsa::vg_dsa_generate_key_adx;
 use crate::cpu::detected;
 
 impl PrivateKey {
+    /// Import big-endian `p`, `q`, `g` and `x`, deriving `y = g^x mod p`.
+    /// This accepts private components from PKCS#8, which omits `y`.
+    /// `g` must have `p`'s width and `x` must have `q`'s width.
+    /// Checks the domain's algebraic consistency and `0 < x < q`;
+    /// callers must assure domain primality separately.
+    /// Available on x86-64 and AArch64.
+    pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
+        if !matches!(
+            (p.len(), q.len()),
+            (128, 20) | (256, 20 | 28 | 32) | (384, 32)
+        ) || g.len() != p.len()
+            || x.len() != q.len()
+        {
+            return Err(Error::Length);
+        }
+        let (p_len, q_len) = (p.len(), q.len());
+        let mut params = Vec::with_capacity(2 * p_len + q_len);
+        for component in [p, q, g] {
+            params.extend_from_slice(component);
+        }
+        let backend = Backend::select(detected());
+        let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
+        let mut scratch = Secret(vec![0u64; 16 * p_len]);
+        let derive = match backend {
+            Backend::Baseline => crate::arch::dsa::vg_dsa_derive_key,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => crate::arch::dsa::vg_dsa_derive_key_adx,
+        };
+        // SAFETY: the checks establish the supported widths and buffer sizes.
+        // Output and scratch are separate allocations, disjoint from all inputs.
+        // Backend selection establishes the required CPU features. Both secret
+        // allocations are wiped on drop, including on failure.
+        let status = unsafe {
+            derive(
+                output.0.as_mut_ptr(),
+                output.0.len(),
+                params.as_ptr(),
+                params.len(),
+                p_len,
+                x.as_ptr(),
+                q_len,
+                scratch.0.as_mut_ptr(),
+                scratch.0.len(),
+            )
+        };
+        if status != 1 {
+            return Err(Error::InvalidKeyOrNonce);
+        }
+        Ok(Self {
+            public: PublicKey {
+                packed: output.0[..3 * p_len + q_len].to_vec(),
+                p_len,
+                q_len,
+                backend,
+            },
+            packed: output,
+        })
+    }
+
     /// Generate a key for the big-endian domain `p`, `q` and `g`, sampling
     /// `x` uniformly from `[1, q)` with the operating system's random number
     /// generator and computing `y = g^x mod p`. `g` must have `p`'s width.
     ///
-    /// The domain's algebraic consistency is checked before any randomness is
-    /// drawn; callers must assure its primality separately. At most 128 draws
+    /// The domain's algebraic consistency is checked before the assembly consumes
+    /// the random tape; callers must assure its primality separately. At most 128 draws
     /// are made, so an invalid `q` returns an error instead of retrying
     /// indefinitely.
     pub fn generate(p: &[u8], q: &[u8], g: &[u8]) -> Result<Self, Error> {
@@ -31,8 +92,10 @@ impl PrivateKey {
         g: &[u8],
         mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {
-        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
-            || g.len() != p.len()
+        if !matches!(
+            (p.len(), q.len()),
+            (128, 20) | (256, 20 | 28 | 32) | (384, 32)
+        ) || g.len() != p.len()
         {
             return Err(Error::Length);
         }
@@ -76,6 +139,7 @@ impl PrivateKey {
             }
             let status = match backend {
                 Backend::Baseline => generate!(vg_dsa_generate_key),
+                #[cfg(target_arch = "x86_64")]
                 Backend::Adx => generate!(vg_dsa_generate_key_adx),
             };
             match status {

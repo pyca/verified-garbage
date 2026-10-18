@@ -73,10 +73,10 @@ def digitAt (rb : Reg) (src j : Nat) : List Instr := [.ldr .r7 rb (src + 4 * (j 
 
 /-- `[r0 + acc + 4j] += r2 · d_j + r3`, its digit kept and its carry to `r3`,
 for digit `j` of the number at `[rb + src]` (a multiply-accumulate step,
-which never overflows). -/
+which never overflows; `mla` adds the product to the window's digit). -/
 def mulStep (acc : Nat) (rb : Reg) (src j : Nat) : List Instr :=
   digitAt rb src j ++
-  ([.mul .r7 .r2 .r7, .ldr .r5 .r0 (acc + 4 * j), .dp .add .r5 .r5 (.reg .r7), .dp .add .r5 .r5 (.reg .r3),
+  ([.ldr .r5 .r0 (acc + 4 * j), .mla .r5 .r2 .r7 .r5, .dp .add .r5 .r5 (.reg .r3),
     .dp .and .r7 .r5 (.reg .r6), .str .r7 .r0 (acc + 4 * j), .mov .r3 (.shifted .r5 .lsr 16)] : List Instr)
 
 /-- The carry `r3` added into the window's digits `D` and `D + 1`. -/

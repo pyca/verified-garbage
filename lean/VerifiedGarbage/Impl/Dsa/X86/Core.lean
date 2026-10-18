@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86.Layout
 public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
 public import VerifiedGarbage.Impl.Dsa.X86.Bytes
 public import VerifiedGarbage.Impl.Dsa.X86.Stream
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
 
 /-! # DSA arithmetic composition on x86
 
@@ -40,9 +41,9 @@ def store (len output : Nat) : Prog isa :=
 
 def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
-  .seq (setup len modulus)
+  .seq (load n len (slot n 0) (.input modulus))
   (.seq (.seq (load n len (slot n 5) a) (load n expLen (slot n 8) e))
-  (.seq (exponentiate n ((expLen + 3) / 4)) (store len output)))
+  (.seq (Pow.call n ((expLen + 3) / 4)) (store len output)))
 
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8

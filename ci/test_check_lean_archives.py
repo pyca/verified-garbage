@@ -3,6 +3,7 @@
 import io
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tarfile
@@ -176,6 +177,64 @@ class LeanArchiveTests(unittest.TestCase):
         self.log.write_text("")
         lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
         self.assertEqual(self.log.read_text(), "")
+
+    def test_independent_package_cache_and_publication(self):
+        packages = Path(".lake/mathlib-ltar")
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        project = self.lean / lean_cache.LTAR
+        before = {p.relative_to(project): p.read_bytes() for p in project.rglob("*") if p.is_file()}
+        lean_cache.main(["store", str(self.lean), ".lake/packages", "--archive-dir", str(packages),
+                         "--leantar", str(self.stub), "--jobs", "2"])
+        self.assertEqual(before, {p.relative_to(project): p.read_bytes()
+                                  for p in project.rglob("*") if p.is_file()})
+        # Restore the independent caches into an otherwise empty project.
+        target = self.root / "restored-caches"
+        shutil.copytree(self.lean / ".lake/ltar", target / ".lake/ltar")
+        shutil.copytree(self.lean / packages, target / packages)
+        lean_cache.restore(target, 2, str(self.stub))
+        lean_cache.main(["restore", str(target), "--archive-dir", str(packages),
+                         "--leantar", str(self.stub), "--jobs", "2"])
+        self.assertEqual((target / ".lake/build/lib/lean/C.olean").read_bytes(),
+                         (self.lean / ".lake/build/lib/lean/C.olean").read_bytes())
+        self.assertEqual((target / ".lake/packages/mathlib/Mathlib.lean").read_text(), "source")
+        self.assertTrue(os.access(target / ".lake/packages/mathlib/scripts/run.sh", os.X_OK))
+        # The publisher reuses both caches, regenerates files.tar for both
+        # roots, and leaves the independently saved Mathlib cache untouched.
+        package_before = {p.relative_to(self.lean / packages): p.read_bytes()
+                          for p in (self.lean / packages).rglob("*") if p.is_file()}
+        self.log.write_text("")
+        with tempfile.TemporaryFile() as f:
+            lean_cache.pack(self.lean, [Path(".lake/build"), Path(".lake/packages")],
+                            2, 5, str(self.stub), f, reuse=packages)
+            f.seek(0)
+            data = f.read()
+        self.assertEqual(self.log.read_text(), "")
+        self.assertEqual(package_before, {p.relative_to(self.lean / packages): p.read_bytes()
+                                         for p in (self.lean / packages).rglob("*") if p.is_file()})
+        # Exclude the independent cache from check_unpack's original tree.
+        shutil.rmtree(self.lean / packages)
+        self.check_unpack(data)
+
+    def test_reuse_repacks_missing_or_changed_archives(self):
+        packages = Path(".lake/mathlib-ltar")
+        lean_cache.store(self.lean, [Path(".lake/packages")], 2, 5, str(self.stub), packages)
+        archive = self.lean / packages / "packages/mathlib/.lake/build/Mathlib/Order.ltar"
+        archive.unlink()
+        self.log.write_text("")
+        lean_cache.update(self.lean, [Path(".lake/packages")], 2, 5, str(self.stub), reuse=packages)
+        self.assertEqual(len(self.log.read_text().splitlines()), 1)
+        shutil.rmtree(self.lean / lean_cache.LTAR)
+        lean_cache.store(self.lean, [Path(".lake/packages")], 2, 5, str(self.stub), packages)
+        module(self.lean / ".lake/packages/mathlib/.lake/build", "Mathlib/Order", dep="2", body="new")
+        self.log.write_text("")
+        lean_cache.update(self.lean, [Path(".lake/packages")], 2, 5, str(self.stub), reuse=packages)
+        self.assertEqual(len(self.log.read_text().splitlines()), 1)
+        # No Mathlib cache at all (e.g. a transition miss) also packs normally.
+        shutil.rmtree(self.lean / lean_cache.LTAR)
+        shutil.rmtree(self.lean / packages)
+        self.log.write_text("")
+        lean_cache.update(self.lean, [Path(".lake/packages")], 2, 5, str(self.stub), reuse=packages)
+        self.assertEqual(len(self.log.read_text().splitlines()), 1)
 
     def test_restore_fails_when_tar_does(self):
         lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))

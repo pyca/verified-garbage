@@ -184,13 +184,19 @@ def startE (B : Bodies) (k : Nat) : Prog isa :=
 
 /-! ### `vg_mlkem*_keygen_mul` -/
 
-/-- `NTT(s[j])` in place (at `r12`) and `NTT(e[j])` (at `r15`) to `t[j]` (at
-`rbp`); then the next `j`. -/
-def nttK (B : Bodies) : Prog isa :=
+/-- `NTT(s[j])` in place (at `r12`) and `NTT(e[j])` (at `r15`, by `nttE`,
+`se` bytes apart) to `t[j]` (at `rbp`); then the next `j`. -/
+def nttKg (B : Bodies) (nttE : Prog isa) (se : BitVec 32) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r12), .mov .rsi (.reg .rbx), .mov .r10 (.reg .r12)])
     (.seq B.nttO (.seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .rbx), .mov .r10 (.reg .rbp)])
-      (.seq B.nttO (.block [.alu .add .r12 (.imm 1024), .alu .add .r15 (.imm 1024), .alu .add .rbp (.imm 1024),
+      (.seq nttE (.block [.alu .add .r12 (.imm 1024), .alu .add .r15 (.imm se), .alu .add .rbp (.imm 1024),
         .alu .sub .r14 (.imm 1)]))))
+
+/-- `nttKg` of `e` as `u32`s. -/
+def nttK (B : Bodies) : Prog isa := nttKg B B.nttO 1024
+
+/-- `nttKg` with AVX2, of `e` as `u16`s. -/
+def nttK16 : Prog isa := nttKg Bodies.avx2 (nttR16 NttR.passBsR10) 512
 
 /-- Term `j` of row `i`: `Â[i, j] ×_T ŝ[j]`, with row `i` of `Â` at `r13` and
 `ŝ` at `r12`, added to the accumulator at `rbp`. -/
@@ -217,13 +223,16 @@ def rowK (B : Bodies) (k : Nat) : Prog isa :=
       (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
         .alu .sub .r14 (.imm 1)])))
 
+/-- `rowKR` with the polynomials of a row of `Â` `ra` bytes apart. -/
+def rowKRs (r : Nat → Prog isa) (k ra : Nat) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .r13), .mov .rdx (.reg .r12), .mov .rcx (.reg .rbx)])
+    (.seq (r k) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (ra * k))), .alu .add .r15 (.imm 1024),
+      .alu .sub .r14 (.imm 1)]))
+
 /-- Row `i` with the backend's own row `r`: `t[i]` (at `r15`) plus the
 products of row `i` of `Â` (at `r13`) and `ŝ` (at `r12`); then the next
 `i`. -/
-def rowKR (r : Nat → Prog isa) (k : Nat) : Prog isa :=
-  .seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .r13), .mov .rdx (.reg .r12), .mov .rcx (.reg .rbx)])
-    (.seq (r k) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
-      .alu .sub .r14 (.imm 1)]))
+def rowKR (r : Nat → Prog isa) (k : Nat) : Prog isa := rowKRs r k 1024
 
 /-- Row `i` of `keygen_mul`: the backend's own row, or through the
 accumulator. -/
@@ -245,11 +254,20 @@ def midK (B : Bodies) (k : Nat) : List Instr :=
 `rsi + oS`. -/
 def nttAccY : Prog isa := nttR NttR.passBsAccR10
 
-/-- `NTT` of the next polynomial (at `r13`) to the next accumulator (at
-`r9`). -/
-def nttTermY : Prog isa :=
+/-- `nttAccY` of the polynomial of `u16`s at `rdi`. -/
+def nttAccY16 : Prog isa := nttR16 NttR.passBsAccR10
+
+/-- `NTT` (the code `ntt`) of the next polynomial (at `r13`, `sy` bytes
+apart) to the next accumulator (at `r9`). -/
+def nttTermYg (ntt : Prog isa) (sy : BitVec 32) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbx), .mov .r10 (.reg .r9)])
-    (.seq nttAccY (.block [.alu .add .r13 (.imm 1024), .alu .add .r9 (.imm 512), .alu .sub .r14 (.imm 1)]))
+    (.seq ntt (.block [.alu .add .r13 (.imm sy), .alu .add .r9 (.imm 512), .alu .sub .r14 (.imm 1)]))
+
+/-- `nttTermYg` of polynomials of `u32`s. -/
+def nttTermY : Prog isa := nttTermYg nttAccY 1024
+
+/-- `nttTermYg` of polynomials of `u16`s. -/
+def nttTermY16 : Prog isa := nttTermYg nttAccY16 512
 
 /-- The table of the products, and `r9` at the first accumulator, at
 `scratch + 1024`. -/
@@ -259,30 +277,50 @@ def startY : List Instr :=
 /-- The polynomial at `rbp`: `NTT⁻¹` of the `k` products of the polynomials
 from `f` (`fs`), `o` bytes apart, and the accumulators from
 `scratch + 1024`. -/
-def rowInvY (fs : List Instr) (o k : Nat) : Prog isa :=
+def rowInvYg (fs : List Instr) (row : Prog isa) : Prog isa :=
   .seq (.block ([.mov .rdi (.reg .rbp)] ++ fs ++ [.mov .rdx (.reg .rbx), .alu .add .rdx (.imm 1024),
       .mov .rcx (.reg .rbx)]))
-    (.seq (rowEY o k) (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) nttInvAccY))
+    (.seq row (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) nttInvAccY))
 
-/-- Row `i < k` of `encrypt_mul`: `u[i]` (at `rbp`) from column `i` of `Â`
-(at `r12`); then the next `i`. -/
-def rowAY (k : Nat) : Prog isa :=
-  .seq (rowInvY [.mov .rsi (.reg .r12)] (1024 * k) k)
-    (.block [.alu .add .rbp (.imm 1024), .alu .add .r12 (.imm 1024), .alu .sub .r14 (.imm 1)])
+/-- `rowInvYg` of the polynomials of `u32`s from `f`, `o` bytes apart. -/
+def rowInvY (fs : List Instr) (o k : Nat) : Prog isa := rowInvYg fs (rowEY o k)
+
+/-- Row `i < k` of `encrypt_mul` with the row of products `row`: `u[i]` (at
+`rbp`) from column `i` of `Â` (at `r12`, whose columns are `sa` bytes
+apart); then the next `i`. -/
+def rowAYg (row : Prog isa) (sa : BitVec 32) : Prog isa :=
+  .seq (rowInvYg [.mov .rsi (.reg .r12)] row)
+    (.block [.alu .add .rbp (.imm 1024), .alu .add .r12 (.imm sa), .alu .sub .r14 (.imm 1)])
+
+/-- `rowAYg` of `Â` as `u32`s. -/
+def rowAY (k : Nat) : Prog isa := rowAYg (rowEY (1024 * k) k) 1024
+
+/-- `rowAYg` of `Â` as `u16`s. -/
+def rowAY16 (k : Nat) : Prog isa := rowAYg (rowEY16 (512 * k) k) 512
 
 end KpkeMul
+
+open KpkeMul in
+/-- `encryptMulY` with the `NTT`s of `y` computed by `term` and the rows of
+`Â` by `rowA`. -/
+def encryptMulYg (term rowA : Prog isa) (k : Nat) : Prog isa :=
+  .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
+      .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
+    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop term .ne)
+      (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop rowA .ne)
+        (rowInvY [.mov .rsi (.reg .r15)] 1024 k))))))
+    (.block restore))
 
 open KpkeMul in
 /-- `vg_mlkem*_encrypt_mul` of rank `k` with AVX2: `ŷ[j] = NTT(y[j])` to the
 accumulators at `scratch + 1024 + 512 j`, then each `u[i]`, and `v`, from
 them in one row of products (`rowEY`) and `NTT⁻¹`. -/
-def encryptMulY (k : Nat) : Prog isa :=
-  .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
-      .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop nttTermY .ne)
-      (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop (rowAY k) .ne)
-        (rowInvY [.mov .rsi (.reg .r15)] 1024 k))))))
-    (.block restore))
+def encryptMulY (k : Nat) : Prog isa := encryptMulYg nttTermY (rowAY k) k
+
+open KpkeMul in
+/-- `encryptMulY` reading `Â` as `k²` polynomials of `u16`s (`rowEY16`) and
+`y` as `k` of `u16`s (`nttTermY16`). -/
+def encryptMul16Y (k : Nat) : Prog isa := encryptMulYg nttTermY16 (rowAY16 k) k
 
 open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k` with AVX2: `û[j] = NTT(u'[j])` to
@@ -296,12 +334,22 @@ def decryptMulY (k : Nat) : Prog isa :=
     (.block restore))
 
 open KpkeMul in
-/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/
-def keygenMul (B : Bodies) (k : Nat) : Prog isa :=
+/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`, the `NTT`s of
+`s` and `e` by `term` and the rows `row`. -/
+def keygenMulg (term row : Prog isa) (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov .r15 (.reg .rcx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop (rowOf B k) .ne))))
+    (.seq (withMxcsr .rbx oMx (.seq (.loop term .ne) (.seq (.block (midK B k)) (.loop row .ne))))
     (.block restore))
+
+open KpkeMul in
+/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/
+def keygenMul (B : Bodies) (k : Nat) : Prog isa := keygenMulg (nttK B) (rowOf B k) B k
+
+open KpkeMul in
+/-- `keygenMul` with AVX2, reading `Â` as `k²` polynomials of `u16`s (`rowY16`)
+and `e` as `k` (`nttK16`). -/
+def keygenMul16Y (k : Nat) : Prog isa := keygenMulg nttK16 (rowKRs rowY16 k 512) Bodies.avx2 k
 
 open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k`, with the code of `B`. -/

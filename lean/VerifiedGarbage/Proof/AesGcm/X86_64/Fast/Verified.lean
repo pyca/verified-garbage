@@ -31,11 +31,12 @@ open VG.Proof.AesGcm.X86_64.Fast (fastCond_mx fastCond_spSafe fastCond_xdepth fa
   fastAad_xdepth)
 
 /-- `seal_split`'s code after the entry for the implementations `v` and a
-prepared key context: the path for TLS records first if `v` has `seal`'s
-short path. -/
+prepared key context: the path for TLS records first, from 256 bytes if `v`
+has `seal`'s short path, which is faster for less, and otherwise at every
+length (`any`). -/
 def _root_.VG.Proof.AesGcm.X86_64.GcmImpl.splitMidR (v : GcmImpl) (c : Callees) (fTo : Fn) : Prog isa :=
   if v.short then Fast.sel c fTo Short.finKs v.splitFin (v.splitMid c fTo)
-  else Fast.sel c fTo Short.finKsA v.splitFin (v.splitMid c fTo)
+  else Fast.sel c fTo Short.finKsA v.splitFin (v.splitMid c fTo) true
 
 theorem fastTail_mx : (Fast.tail Short.finKs : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
   decide +kernel

@@ -45,14 +45,14 @@ structure DCK (L : Kem) (σ s : State) : Prop where
   k : bytesAt s.mem (pa s (sc oG)) 32 = (dcG L σ).1
   kb : bytesAt s.mem (pa s (sc oKB)) 32 = dcKb L σ
 
-theorem DCK.step (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {s s' : State} (h : DCK L σ s)
+theorem DCK.step {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre σ) {s s' : State} (h : DCK L σ s)
     {ws : List (Ptr × Nat)} (hP : PPostB s s' ws) (hc : dckChk L ws = true) : DCK L σ s' := by
   simp only [dckChk, Bool.and_eq_true] at hc
   have L₀ := h.dc.lay W hp
   exact ⟨h.dc.step W hp hP hc.1.1, by rw [L₀.keepBytes hP hc.1.2]; exact h.k, by rw [L₀.keepBytes hP hc.2]; exact h.kb⟩
 
 /-- The context of `K-PKE.Encrypt` in a run from `σ`. -/
-def dcX (W : DcWf L) (σ : State) : Ctx (dcR L) (dcW L) where
+def dcX {oc : Nat} (W : DcWfB L oc) (σ : State) : Ctx (dcR L) (dcW L) where
   Out s := (decapsK L).pre σ ∧ DCK L σ s
   chk := dckChk L
   bs := dcB_bases L
@@ -60,7 +60,7 @@ def dcX (W : DcWf L) (σ : State) : Ctx (dcR L) (dcW L) where
   step h hP hc := ⟨h.1, h.2.step W h.1 hP hc⟩
 
 /-- The context of `K-PKE.Encrypt` in any run. -/
-def dcXA (W : DcWf L) : Ctx (dcR L) (dcW L) where
+def dcXA {oc : Nat} (W : DcWfB L oc) : Ctx (dcR L) (dcW L) where
   Out s := ∃ σ, (decapsK L).pre σ ∧ DCK L σ s
   chk := dckChk L
   bs := dcB_bases L
@@ -72,10 +72,10 @@ def dcXA (W : DcWf L) : Ctx (dcR L) (dcW L) where
 theorem shakeSuffix31 : BitVec.ofNat 8 0x1f = Spec.Sha3.shakeSuffix := by decide
 
 /-- The inputs of `K-PKE.Encrypt`, and `r15 = 1`. -/
-abbrev EncI (W : DcWf L) (σ s : State) : Prop :=
+abbrev EncI {oc : Nat} (W : DcWfB L oc) (σ s : State) : Prop :=
   Enc.EIn L (dcX W σ) (.rbp, 384 * L.k) (dcEk L σ) (dcM' L σ) (dcG L σ).2 s ∧ s.gpr .r15 = 1
 
-theorem hashes_ok (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {s : State} (h : DM L σ s) :
+theorem hashes_ok {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre σ) {s : State} (h : DM L σ s) :
     WP isa (hashes L) s (EncI W σ) := by
   have L₀ := h.dc.lay W hp
   have hdk : 768 * L.k + 96 = L.dkLen := rfl
@@ -112,7 +112,7 @@ theorem hashes_ok (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {s : State
 
 /-- The end of `K-PKE.Encrypt`. -/
 abbrev EncO (W : DcWf L) (σ s : State) : Prop :=
-  Enc.EOut L (dcX W σ) (.rbp, 384 * L.k) (dcEk L σ) (dcM' L σ) (dcG L σ).2 s
+  Enc.EOut L (dcX W.toDcWfB σ) (.rbp, 384 * L.k) (dcEk L σ) (dcM' L σ) (dcG L σ).2 s
 
 /-- At the end: `r15` as `allOk`, and the key if it is 1. -/
 structure DEnd (L : Kem) (σ s : State) : Prop where
@@ -122,9 +122,22 @@ structure DEnd (L : Kem) (σ s : State) : Prop where
     if dcC L σ = KPke.ct L.p (aHat (Enc.rhoE L (dcEk L σ))) (dcEk L σ) (dcM' L σ) (dcG L σ).2 then (dcG L σ).1
     else dcKb L σ
 
-theorem select_okD (W : DcWf L) {σ : State} {s : State} (h : EncO W σ s) : WP isa (select L) s (DEnd L σ) := by
-  have hp := h.out.1
-  have k := h.out.2
+/-- Before the choice of the key: what `K-PKE.Encrypt` keeps, `r15` as
+`allOk`, and `c'` at `scratch + oc` if it is 1. -/
+structure SelIn (L : Kem) (oc : Nat) (σ s : State) : Prop where
+  pre : (decapsK L).pre σ
+  k : DCK L σ s
+  r15 : s.gpr .r15 = if allOk L.k (Enc.rhoE L (dcEk L σ)) (L.k * L.k) then 1 else 0
+  ct : allOk L.k (Enc.rhoE L (dcEk L σ)) (L.k * L.k) → bytesAt s.mem (pa s (sc oc)) L.ctLen =
+    KPke.ct L.p (aHat (Enc.rhoE L (dcEk L σ))) (dcEk L σ) (dcM' L σ) (dcG L σ).2
+
+theorem EncO.sel {W : DcWf L} {σ s : State} (h : EncO W σ s) : SelIn L L.oCT σ s :=
+  ⟨h.out.1, h.out.2, h.r15, h.ct⟩
+
+theorem select_okD {oc : Nat} (W : DcWfB L oc) {σ : State} {s : State} (h : SelIn L oc σ s) :
+    WP isa (selectAt oc L.ctLen) s (DEnd L σ) := by
+  have hp := h.pre
+  have k := h.k
   have L₀ := k.dc.lay W hp
   have cR : ∀ {p : Ptr} {l : Nat}, inB (dcB L) p l = true → InRegions (s.rd ++ s.wr) (pa s p) l := fun hi =>
     L₀.cR hi _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
@@ -136,12 +149,12 @@ theorem select_okD (W : DcWf L) {σ : State} {s : State} (h : EncO W σ s) : WP 
   rw [hP.pa KeyGen.r12_cs, hb]
   exact ite_congr (propext (by rw [k.dc.c, h.ct ho])) (fun _ => k.k) (fun _ => k.kb)
 
-theorem DEnd.hin (W : DcWf L) {σ s : State} (hp : (decapsK L).pre σ) (h : DEnd L σ s) :
+theorem DEnd.hin {oc : Nat} (W : DcWfB L oc) {σ s : State} (hp : (decapsK L).pre σ) (h : DEnd L σ s) :
     ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
   (h.dc.lay W hp).cR (W.sv k hk) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 /-- The postcondition, from the key. -/
-theorem post_of (W : DcWf L) {σ s : State} (h : DEnd L σ s) {s' : State}
+theorem post_of {oc : Nat} (W : DcWfB L oc) {σ s : State} (h : DEnd L σ s) {s' : State}
     (hr : (s'.gpr .rax).setWidth 32 = (s.gpr .r15).setWidth 32) (hm : s'.mem = s.mem) : (decapsK L).post σ s' := by
   have e12 : pa s (.r12, 0) = σ.gpr .rdx := by
     rw [pa, h.dc.top.regs (.r12, .rdx) (by decide), add_ofNat_zero]
@@ -174,13 +187,13 @@ open Decaps in
 theorem kemDecaps_correct (v : Sample4Impl) {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd)
     (hctl : ctlOk (kemDecaps L v.callee) = true) (σ : State) (hp : (decapsK L).pre σ) :
     ∃ t s', Exec isa (kemDecaps L v.callee) σ t s' ∧ abiPreserved σ s' ∧ (decapsK L).post σ s' := by
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W hp) fun s₁ ⟨h₁, h15⟩ =>
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W.toDcWfB hp) fun s₁ ⟨h₁, h15⟩ =>
     WP.seq (WP.mono (decrypt_ok v.arith W K hp h₁ h15) fun s₂ h₂ =>
-      WP.seq (WP.mono (hashes_ok W hp h₂) fun s₃ h₃ =>
-        WP.seq (WP.mono (Enc.encrypt_ok v K W.toKemWf (C := dcX W σ) W.enc h₃.1 h₃.2) fun s₄ h₄ =>
-          WP.seq (WP.mono (select_okD W h₄) fun s₅ h₅ =>
-            WP.mono (topEpi_ok h₅.dc.top (h₅.hin W hp)) fun s₆ ⟨hr, hg, hm⟩ =>
-              (⟨hg, post_of W h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (decapsK L).post σ s₆))))))
+      WP.seq (WP.mono (hashes_ok W.toDcWfB hp h₂) fun s₃ h₃ =>
+        WP.seq (WP.mono (Enc.encrypt_ok v K W.toKemWf (C := dcX W.toDcWfB σ) W.enc h₃.1 h₃.2) fun s₄ h₄ =>
+          WP.seq (WP.mono (select_okD W.toDcWfB (EncO.sel (W := W) h₄)) fun s₅ h₅ =>
+            WP.mono (topEpi_ok h₅.dc.top (h₅.hin W.toDcWfB hp)) fun s₆ ⟨hr, hg, hm⟩ =>
+              (⟨hg, post_of W.toDcWfB h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (decapsK L).post σ s₆))))))
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hF.1, hF.2⟩
 
 /-! ## Constant time -/
@@ -207,7 +220,7 @@ theorem decrypt_tr {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} 
   rw [Nat.zero_add]
   exact tail_tr hA W K
 
-theorem hashes_trL (W : DcWf L) : RelCT isa (LRel (dcR L) (dcW L)) (hashes L) fun _ _ => True := by
+theorem hashes_trL {oc : Nat} (W : DcWfB L oc) : RelCT isa (LRel (dcR L) (dcW L)) (hashes L) fun _ _ => True := by
   unfold hashes
   exact RelCT.seq (LRel.step (dcB_bases L) (hash_tr (dcB_bases L) (ps := [(sc oM, 32), ((.rbp, 768 * L.k + 32), 32)])
       (rate := 72) (out := sc oG) (len := 64) W.h₁ (show 6 < 256 by decide)) fun x Lx =>
@@ -216,32 +229,33 @@ theorem hashes_trL (W : DcWf L) : RelCT isa (LRel (dcR L) (dcW L)) (hashes L) fu
     (hash_tr (dcB_bases L) (ps := [((.rbp, 768 * L.k + 64), 32), ((.r14, 0), L.ctLen)]) (rate := 136) (out := sc oKB)
       (len := 32) W.h₂ (show 0x1f < 256 by decide))
 
-theorem hashes_tr (W : DcWf L) : RelCT isa (R L (DM L)) (hashes L) fun _ _ => True :=
+theorem hashes_tr {oc : Nat} (W : DcWfB L oc) : RelCT isa (R L (DM L)) (hashes L) fun _ _ => True :=
   rel2_of (hashes_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.dc h₂.dc
 
-theorem EIn.any {W : DcWf L} {σ : State} {E : Ptr} {ek m r : List Byte} {s : State}
+theorem EIn.any {oc : Nat} {W : DcWfB L oc} {σ : State} {E : Ptr} {ek m r : List Byte} {s : State}
     (h : Enc.EIn L (dcX W σ) E ek m r s) : Enc.EIn L (dcXA W) E ek m r s :=
   ⟨⟨σ, h.out⟩, h.ek, h.m, h.r⟩
 
 theorem encrypt_tr (v : Sample4Impl) (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) :
-    RelCT isa (R L (EncI W)) (encrypt L v.callee (.rbp, 384 * L.k)) fun _ _ => True := by
+    RelCT isa (R L (EncI W.toDcWfB)) (encrypt L v.callee (.rbp, 384 * L.k)) fun _ _ => True := by
   obtain ⟨_, rhoT⟩ := W.rhoT
   refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => LRel (dcR L) (dcW L) x y ∧
-      Enc.EIρ L (dcXA W) (.rbp, 384 * L.k) ρ x ∧ Enc.EIρ L (dcXA W) (.rbp, 384 * L.k) ρ y) (Q := fun _ _ => True)
-      fun ρ => RelCT.mono (Enc.encrypt_tr v K W.toKemWf (C := dcXA W) W.enc rhoT (ρ := ρ)) (fun _ _ h => h)
+      Enc.EIρ L (dcXA W.toDcWfB) (.rbp, 384 * L.k) ρ x ∧ Enc.EIρ L (dcXA W.toDcWfB) (.rbp, 384 * L.k) ρ y) (Q := fun _ _ => True)
+      fun ρ => RelCT.mono (Enc.encrypt_tr v K W.toKemWf (C := dcXA W.toDcWfB) W.enc rhoT (ρ := ρ)) (fun _ _ h => h)
         fun _ _ _ => trivial) ?_ fun _ _ _ => trivial
   rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
-  have i₁ : Enc.EIρ L (dcXA W) (.rbp, 384 * L.k) (Enc.rhoE L (dcEk L σ₁)) x := ⟨_, _, _, rfl, EIn.any h₁.1, h₁.2⟩
-  have i₂ : Enc.EIρ L (dcXA W) (.rbp, 384 * L.k) (Enc.rhoE L (dcEk L σ₁)) y :=
+  have i₁ : Enc.EIρ L (dcXA W.toDcWfB) (.rbp, 384 * L.k) (Enc.rhoE L (dcEk L σ₁)) x := ⟨_, _, _, rfl, EIn.any h₁.1, h₁.2⟩
+  have i₂ : Enc.EIρ L (dcXA W.toDcWfB) (.rbp, 384 * L.k) (Enc.rhoE L (dcEk L σ₁)) y :=
     ⟨_, _, _, (rho_pub pub).symm, EIn.any h₂.1, h₂.2⟩
-  exact ⟨Enc.rhoE L (dcEk L σ₁), dc_lrel W p₁ p₂ pub h₁.1.out.2.dc h₂.1.out.2.dc, i₁, i₂⟩
+  exact ⟨Enc.rhoE L (dcEk L σ₁), dc_lrel W.toDcWfB p₁ p₂ pub h₁.1.out.2.dc h₂.1.out.2.dc, i₁, i₂⟩
 
-theorem select_tr (W : DcWf L) : RelCT isa (R L (EncO W)) (select L) fun _ _ => True := by
+theorem select_tr {oc : Nat} (W : DcWfB L oc) :
+    RelCT isa (R L (SelIn L oc)) (selectAt oc L.ctLen) fun _ _ => True := by
   obtain ⟨_, selT⟩ := W.selT
   exact rel2_of (Q := LRel (dcR L) (dcW L)) (taintRel [.rbx, .r12, .r14] (fun _ _ h =>
     fa3 (h.eq (p := sc 0) (l := 1) W.inBs.1) (h.eq (p := (.r12, 0)) (l := 1) W.inBs.2.1)
       (h.eq (p := (.r14, 0)) (l := 1) W.inBs.2.2)) selT)
-    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.out.2.dc h₂.out.2.dc
+    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.k.dc h₂.k.dc
 
 theorem pro_tr : RelCT isa (R L fun σ s => s = σ) (.block pro) fun _ _ => True :=
   taintRel [.rcx, .rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ => by
@@ -262,13 +276,15 @@ theorem kemDecaps_ct (v : Sample4Impl) {L : Kem} (W : DcWf L) {wc wd : List Nat}
   refine relStart (Q := fun _ _ => True) ?_
   unfold kemDecaps
   refine RelCT.seq (relInv (I' := fun σ s => DC L σ s ∧ s.gpr .r15 = 1)
-    (fun σ s hp hs => by subst hs; exact pro_ok W hp) pro_tr) ?_
+    (fun σ s hp hs => by subst hs; exact pro_ok W.toDcWfB hp) pro_tr) ?_
   refine RelCT.seq (relInv (I' := DM L) (fun σ s hp hs => decrypt_ok v.arith W K hp hs.1 hs.2)
     (decrypt_tr v.arith W K)) ?_
-  refine RelCT.seq (relInv (I' := EncI W) (fun σ s hp hs => hashes_ok W hp hs) (hashes_tr W)) ?_
-  refine RelCT.seq (relInv (I' := EncO W) (fun σ s _ hs => Enc.encrypt_ok v K W.toKemWf (C := dcX W σ) W.enc hs.1 hs.2)
+  refine RelCT.seq (relInv (I' := EncI W.toDcWfB) (fun σ s hp hs => hashes_ok W.toDcWfB hp hs) (hashes_tr W.toDcWfB)) ?_
+  refine RelCT.seq (relInv (I' := EncO W) (fun σ s _ hs => Enc.encrypt_ok v K W.toKemWf (C := dcX W.toDcWfB σ) W.enc hs.1 hs.2)
     (encrypt_tr v W K)) ?_
-  refine RelCT.seq (relInv (I' := DEnd L) (fun σ s _ hs => select_okD W hs) (select_tr W)) ?_
+  refine RelCT.seq (relInv (I' := DEnd L) (fun σ s _ hs => select_okD W hs.sel)
+    (RelCT.mono (select_tr W.toDcWfB) (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.sel, h₂.sel⟩)
+      fun _ _ h => h)) ?_
   exact RelCT.mono epi_tr (fun _ _ h => h) fun _ _ _ => trivial
 
 end VG.Proof.MlKem.X86_64

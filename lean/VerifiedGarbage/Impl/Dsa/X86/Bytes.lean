@@ -13,13 +13,18 @@ last word down, byte-reversed. `esi` points to the component.
 namespace VG.Impl.Dsa.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic
 
+/-- Keep short padding inline; clear longer padding with the shared word loop. -/
+def zeroPad (out k : Nat) : Prog isa :=
+  if k ≤ 4 then .block ((List.range k).flatMap fun j =>
+    [.mov .eax (.imm 0), .store (sc (out + 4 * j)) .eax])
+  else zerosW out k
+
 /-- `[out]` (`2 n` words) = the big-endian `len` bytes at `esi`. -/
 def loadComponent (len n out : Nat) : Prog isa :=
   .seq (.block [.mov .ebx (.reg .esi), .alu .add .ebx (.imm (BitVec.ofNat 32 (len - 4)))]) <|
   .seq (wordLoop (len / 4) [.mov .eax (.mem (at_ .ebx 0)), .bswap .eax,
     .store (at_ .ebp out) .eax, .alu .sub .ebx (.imm 4)])
-    (.block ((List.range (2 * n - len / 4)).flatMap fun j =>
-      [.mov .eax (.imm 0), .store (sc (out + 4 * (len / 4 + j))) .eax]))
+    (zeroPad (out + 4 * (len / 4)) (2 * n - len / 4))
 
 /-- The big-endian `len` bytes at `esi` = `[input]` masked with `ecx`. -/
 def storeComponent (len input : Nat) : Prog isa :=

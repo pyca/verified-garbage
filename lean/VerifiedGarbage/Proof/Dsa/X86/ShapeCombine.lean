@@ -17,7 +17,7 @@ theorem shapeCombine_ok {s : State} {base : Addr} {size : Nat}
     WP isa (.block Shape.combine) s fun t =>
       shapeWord t base (Layout.field .mask) =
         ((shapeWord s base 32 &&& shapeWord s base 44) |||
-          ((shapeWord s base 48 ||| shapeWord s base 52) &&& shapeWord s base 36) |||
+          ((shapeWord s base 48 ||| shapeWord s base 44 ||| shapeWord s base 52) &&& shapeWord s base 36) |||
           (shapeWord s base 40 &&& shapeWord s base 52)) &&& shapeWord s base 56 ∧
       Keeps [.eax, .ebx] s t ∧ Outside base (Layout.field .mask) 4 s.mem t.mem := by
   unfold Shape.combine
@@ -27,8 +27,10 @@ theorem shapeCombine_ok {s : State} {base : Addr} {size : Nat}
   have hs2 := hs1.of_keeps u2.keeps (by decide)
   refine wp_movS (readSrc_sc hs2 (d := 48) (by omega)) fun s3 u3 _ => ?_
   have hs3 := hs2.of_keeps u3.keeps (by decide)
-  refine wp_orS (readSrc_sc hs3 (d := 52) (by omega)) fun s4 u4 => ?_
-  have hs4 := hs3.of_keeps u4.keeps (by decide)
+  refine wp_orS (readSrc_sc hs3 (d := 44) (by omega)) fun s3a u3a => ?_
+  have hs3a := hs3.of_keeps u3a.keeps (by decide)
+  refine wp_orS (readSrc_sc hs3a (d := 52) (by omega)) fun s4 u4 => ?_
+  have hs4 := hs3a.of_keeps u4.keeps (by decide)
   refine wp_logicS (.inl rfl) (readSrc_sc hs4 (d := 36) (by omega)) fun s5 u5 => ?_
   have hs5 := hs4.of_keeps u5.keeps (by decide)
   refine wp_orS rfl fun s6 u6 => ?_
@@ -45,12 +47,12 @@ theorem shapeCombine_ok {s : State} {base : Addr} {size : Nat}
     (hs10.write (d := Layout.field .mask) (n := 4) (by change 8248 ≤ size; omega)) fun t mt => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [shapeWord, mt.mem, Mem.readW_writeW_self32, u10.gpr, u9.gpr,
       u8.other .eax (by decide), u7.other .eax (by decide), u6.gpr,
-      u5.other .eax (by decide), u4.other .eax (by decide), u3.other .eax (by decide),
-      u2.gpr, u1.gpr, u5.gpr, u4.gpr, u3.gpr, u8.gpr, u7.gpr]
-    simp only [ite_true, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, shapeWord]
-  · exact ((((((((((u1.keeps.mono (by decide)).widen u2.keeps).widen u3.keeps).widen u4.keeps).widen
+      u5.other .eax (by decide), u4.other .eax (by decide), u3a.other .eax (by decide), u3.other .eax (by decide),
+      u2.gpr, u1.gpr, u5.gpr, u4.gpr, u3a.gpr, u3.gpr, u8.gpr, u7.gpr]
+    simp only [ite_true, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3a.mem, u3.mem, u2.mem, u1.mem, shapeWord]
+  · exact (((((((((((u1.keeps.mono (by decide)).widen u2.keeps).widen u3.keeps).widen u3a.keeps).widen u4.keeps).widen
       u5.keeps).widen u6.keeps).widen u7.keeps).widen u8.keeps).widen u9.keeps).widen u10.keeps).trans (mt.keeps _)
-  · rw [mt.mem, u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  · rw [mt.mem, u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3a.mem, u3.mem, u2.mem, u1.mem]
     exact writeW32_outside _ _ _ (by change 8248 ≤ 2 ^ 64; decide)
 
 end VG.Proof.Dsa.X86

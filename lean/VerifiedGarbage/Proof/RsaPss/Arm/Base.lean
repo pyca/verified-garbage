@@ -171,17 +171,17 @@ theorem stkInstr_leak {i : Instr} (hi : stkInstr i = true) {s t : State}
 /-- `stkInstr` and no write of `r12`, for every instruction of a block, by
 evaluation (the immediates may be parameters). -/
 theorem blkOk {code : List Instr}
-    (h : code.all (fun i => stkInstr i && !(dstOf i == some .r12)) = true) :
-    ∀ i ∈ code, stkInstr i = true ∧ dstOf i ≠ some .r12 := by
+    (h : code.all (fun i => stkInstr i && !(clobbers i .r12)) = true) :
+    ∀ i ∈ code, stkInstr i = true ∧ clobbers i .r12 = false := by
   intro i hi
   have := List.all_eq_true.mp h i hi
-  simp only [Bool.and_eq_true, Bool.not_eq_true', beq_eq_false_iff_ne] at this
+  simp only [Bool.and_eq_true, Bool.not_eq_true'] at this
   exact this
 
 /-- A block of such instructions after `r12 := sp`, never writing `r12`, is
 constant time when the stack pointer is the same. -/
 theorem VP.blk {F G : State → State → Prop} {code : List Instr}
-    (ok : ∀ i ∈ code, stkInstr i = true ∧ dstOf i ≠ some .r12)
+    (ok : ∀ i ∈ code, stkInstr i = true ∧ clobbers i .r12 = false)
     (sp : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → s₁.sp = s₂.sp)
     (wp : ∀ σ s, F σ s → WP isa (.block (.addSp .r12 0 :: code)) s (G σ)) :
     VP F (.block (.addSp .r12 0 :: code)) G :=

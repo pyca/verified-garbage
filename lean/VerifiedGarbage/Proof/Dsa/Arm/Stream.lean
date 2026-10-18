@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.Arm.Stream
+public import VerifiedGarbage.Proof.Dsa.Arm.Doubling
 public import VerifiedGarbage.Proof.Dsa.Arm.Checks
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
 public import VerifiedGarbage.Proof.Dsa.StreamBytes
@@ -64,20 +64,6 @@ theorem streamRanges_inside (n : Nat) : ∀ r ∈ streamRanges n, 0 ≤ r.1 ∧ 
 
 /-! ## Doublings and a byte -/
 
-theorem doubles_ok {n size m : Nat} {base : Addr} : ∀ (k : Nat) {s : State}, Context n m base size s →
-    val32 s.mem base (slot n 9) (2 * n) < m →
-    WP isa (doubles n k) s fun t => Context n m base size t ∧ OpKeep n base 9 s t ∧
-      val32 t.mem base (slot n 9) (2 * n) = 2 ^ k * val32 s.mem base (slot n 9) (2 * n) % m
-  | 0, s, h, hv => WP.block_nil ⟨h, OpKeep.refl _ _ _ _, by rw [Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt hv]⟩
-  | k + 1, s, h, hv => by
-    have m1 := h.gt_one
-    rw [doubles]
-    refine WP.seq (WP.mono (context_add_ok h (o := 9) (a := 9) (b := 9) (by decide) (by decide) (by decide) hv hv)
-      fun u ⟨cu, Ku, Vu⟩ => ?_)
-    refine WP.mono (doubles_ok k cu (by rw [Vu]; exact Nat.mod_lt _ (by omega))) fun t ⟨ct, Kt, Vt⟩ =>
-      ⟨ct, Ku.trans Kt, ?_⟩
-    rw [Vt, Vu, Nat.mul_mod_mod, Nat.pow_succ, Nat.mul_assoc, Nat.two_mul (val32 s.mem base (slot n 9) (2 * n))]
-
 theorem reduceStep_ok {n size m : Nat} {base : Addr} {s : State} (h : Context n m base size s)
     (hv : val32 s.mem base (slot n 9) (2 * n) < m) (hb : val32 s.mem base (slot n 10) (2 * n) < m) :
     WP isa (reduceStep n) s fun t => Context n m base size t ∧ OpKeep n base 9 s t ∧
@@ -86,7 +72,7 @@ theorem reduceStep_ok {n size m : Nat} {base : Addr} {s : State} (h : Context n 
   have m1 := h.gt_one
   have nw : base.toNat + contextBytes n ≤ 2 ^ 32 := by have := h.ws.nowrap; have := h.size_le; omega
   unfold reduceStep
-  refine WP.seq (WP.mono (doubles_ok 8 h hv) fun u ⟨cu, Ku, Vu⟩ => ?_)
+  refine WP.seq (WP.mono (doubles_ok 8 h hv (by decide)) fun u ⟨cu, Ku, Vu⟩ => ?_)
   have Bu := Ku.val32 (i := 10) (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw
   refine WP.mono (context_add_ok cu (o := 9) (a := 9) (b := 10) (by decide) (by decide) (by decide)
     (by rw [Vu]; exact Nat.mod_lt _ (by omega)) (by rw [Bu]; exact hb)) fun t ⟨ct, Kt, Vt⟩ =>

@@ -249,3 +249,42 @@ fn safe_prime_parameter_generation() {
         );
     }
 }
+
+#[test]
+fn imported_private_components() {
+    for v in cases(include_str!(
+        "../../vectors/cryptography-ffdh/RFC5114/RFC5114.txt"
+    )) {
+        let (p, q, g, x, y) = (
+            hex(&v["P"]),
+            hex(&v["Q"]),
+            hex(&v["G"]),
+            hex(&v["XstatIUT"]),
+            hex(&v["YstatIUT"]),
+        );
+        for q in [Some(q.as_slice()), None] {
+            let params = Parameters::from_components(&p, &g, q).unwrap();
+            let expected = PrivateKey::from_components(&params, &y, &x).unwrap();
+            let peer = PublicKey::from_components(&params, &hex(&v["YstatCAVS"])).unwrap();
+            for padding in [0, 1, p.len()] {
+                let padded = [vec![0; padding], x.clone()].concat();
+                let key = PrivateKey::from_private_components(&params, &padded).unwrap();
+                assert_eq!(key.public_key(), expected.public_key());
+                assert_eq!(key.private_component(), expected.private_component());
+                assert_eq!(key.exchange(&peer).unwrap(), hex(&v["Z"]));
+            }
+            for bad in [vec![], vec![0], p.clone(), vec![1; p.len() + 1]] {
+                assert_eq!(
+                    PrivateKey::from_private_components(&params, &bad).unwrap_err(),
+                    Error::InvalidKey
+                );
+            }
+            if let Some(q) = q {
+                assert_eq!(
+                    PrivateKey::from_private_components(&params, q).unwrap_err(),
+                    Error::InvalidKey
+                );
+            }
+        }
+    }
+}

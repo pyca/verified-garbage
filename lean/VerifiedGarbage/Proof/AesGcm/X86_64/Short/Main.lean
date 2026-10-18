@@ -205,7 +205,7 @@ theorem openMW_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
     (fun _ => hlng C X E₂ hNp hnl hal hTa hTar hTr oT oA htl hok) fun h => ?_
   have h' := Decidable.not_not.mp (of_decide_eq_false h)
   have hb : 1 ≤ t ∧ t ≤ 16 := by
-    simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
+    simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
     omega
   refine WP.mono (openShort_ok hF C (hpw X).choose_spec E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 htl hb.1 hb.2 hTa hTar hTr oT oA)
     fun s' ⟨he, hsv, f, hax, hD⟩ => ⟨he, hsv, ?_, ?_⟩

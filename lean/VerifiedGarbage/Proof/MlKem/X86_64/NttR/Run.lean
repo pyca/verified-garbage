@@ -44,8 +44,9 @@ def initA : St :=
   ⟨(List.range 16).map (fun r => if r = 15 then List.replicate 16 (.c qN) else List.replicate 16 .junk),
    [junks 16, inTerms]⟩
 
-/-- The registers and `S` after pass A, the output not yet written. -/
-def toB (σ : St) : St := ⟨σ.regs, [σ.mem.getD 0 [], junks 32]⟩
+/-- The registers and `S` after pass A, the output not yet written, and
+`ymm3` forgotten (pass A of `u32`s packs through it, that of `u16`s does not). -/
+def toB (σ : St) : St := ⟨(σ.set .xmm3 (List.replicate 16 .junk)).regs, [σ.mem.getD 0 [], junks 32]⟩
 
 /-- The output's words are the reduced coefficients, in the low words of their `u32`s. -/
 def outOk (σ : St) : Bool :=
@@ -67,8 +68,9 @@ def check (pb : List Instr) (d : Reg) : Bool :=
 /-- The regions of pass B storing to the accumulator at `d` (256 words). -/
 def rsBA (d : Reg) : List Rg := [(.rsi, oS, 256, true), (d, 0, 256, true)]
 
-/-- The registers and `S` after pass A, the accumulator not yet written. -/
-def toBA (σ : St) : St := ⟨σ.regs, [σ.mem.getD 0 [], junks 16]⟩
+/-- The registers and `S` after pass A, the accumulator not yet written, and
+`ymm3` forgotten (pass A of `u32`s packs through it, that of `u16`s does not). -/
+def toBA (σ : St) : St := ⟨(σ.set .xmm3 (List.replicate 16 .junk)).regs, [σ.mem.getD 0 [], junks 16]⟩
 
 /-- The accumulator's words are the reduced coefficients, coefficient
 `accIdx w` in word `w`. -/

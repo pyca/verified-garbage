@@ -6,8 +6,9 @@
 //! primality: callers must obtain domain parameters from a trusted source
 //! or validate them separately. FIPS 186-5 retains DSA for legacy verification.
 //!
-//! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 28)`,
-//! `(256, 32)` and `(384, 32)` bytes. Leading-zero padding is accepted;
+//! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
+//! `(256, 32)` and `(384, 32)` bytes. The 2048/160 pair is a legacy
+//! interoperability extension to the FIPS 186-4 sizes. Leading-zero padding is accepted;
 //! the actual domain must have one of the supported bit lengths. Digests
 //! may have any length and are truncated to the subgroup's actual bit length.
 //! Keys own their components, so each operation's buffers are disjoint.
@@ -104,8 +105,10 @@ impl PublicKey {
     /// Import big-endian `p`, `q`, `g` and `y`. `g` and `y` must have the
     /// same width as `p`, including any leading-zero padding.
     pub fn from_components(p: &[u8], q: &[u8], g: &[u8], y: &[u8]) -> Result<Self, Error> {
-        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
-            || g.len() != p.len()
+        if !matches!(
+            (p.len(), q.len()),
+            (128, 20) | (256, 20 | 28 | 32) | (384, 32)
+        ) || g.len() != p.len()
             || y.len() != p.len()
         {
             return Err(Error::Length);

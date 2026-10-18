@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
 public import VerifiedGarbage.Proof.Rsa.Octets
 import Mathlib.Tactic.Set

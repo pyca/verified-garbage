@@ -102,17 +102,16 @@ def sizes : List Instr :=
 def zeroG : List Instr :=
   .zop (.zbin .vpxord .xmm2 .xmm2 .xmm2) :: (List.range 8).map fun i => .vmovdqu32Store (at_ .r15 (gO + 64 * i)) .xmm2
 
-/-- The `rcx` bytes at `rsi` copied to `rdi`: 16 at a time (to `r8 = 16 ⌊rcx / 16⌋`, through
-`xmm4`), then one at a time, from `r10 = 0`. -/
+/-- The `rcx` bytes at `rsi` copied to `rdi`: 64 at a time (to `r8 = 64 ⌊rcx / 64⌋`, through
+`zmm4`, from `r10 = 0`), then the `rcx mod 64` left in one masked move, with the mask
+`2 ^ (rcx mod 64) - 1` in `rax` (`shl` takes the count modulo 64). -/
 def copyBytes : Prog isa :=
-  .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r8 (imm 0)])
+  .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 6, .shift .shl .r8 6, .alu .cmp .r8 (imm 0)])
   (.seq (.ite .e (.block [])
-      (.loop (.block [.vmovdquLoad .l128 .xmm4 srcB, .vmovdquStore .l128 dstB .xmm4, .alu .add .r10 (imm 16),
+      (.loop (.block [.vmovdqu32Load .xmm4 srcB, .vmovdqu32Store dstB .xmm4, .alu .add .r10 (imm 64),
         .alu .cmp .r10 (.reg .r8)]) .ne))
-  (.seq (.block [.alu .cmp .r10 (.reg .rcx)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax srcB, .store8 dstB .rax, .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)])
-        .ne))))
+    (.block [.mov32 .rax (imm 1), .shiftCl .shl .rax, .alu .sub .rax (imm 1), .kLoad8 .rax .xmm4 srcB,
+      .kStore8 dstB .rax .xmm4]))
 
 /-- The additional data copied to `G`, after the zero blocks. -/
 def copyA : Prog isa :=
