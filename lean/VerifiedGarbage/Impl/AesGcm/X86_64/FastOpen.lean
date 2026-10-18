@@ -32,16 +32,25 @@ def incJ : List Instr :=
   [.mov32 .rsi (.mem (at_ .r14 12)), .bswap32 .rsi, .alu32 .add .rsi (imm 1), .bswap32 .rsi,
     .store32 (at_ .r14 12) .rsi]
 
+/-- `rax` the number of bytes left, and `test rax, rax`. -/
+def lenTest : List Instr :=
+  [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)]
+
 /-- The tag of the ciphertext at `W + uO`, without calls, with `J₀`
 incremented once its keystream is computed, by `ks` (`Short.finKs` on
-512-bit registers, `Short.finKsA` on 128-bit ones). -/
+512-bit registers, `Short.finKsA` on 128-bit ones). The blocks `GHASH` reads
+from memory, the bytes left copied to `G[0]` and the lengths block, are
+stored before the keystream, so that they have reached the cache when they
+are loaded back: a load of a block written in smaller stores waits for them. -/
 def tagP (ks : Prog isa := Short.finKs) : Prog isa :=
   .seq (.block Short.finPowP)
+  (.seq (.block lenTest)
+  (.seq (.ite .e (.block Short.finLens)
+      (.seq (.block Short.finTextArgs) (.seq copyLoop (.block Short.finLens))))
   (.seq ks
   (.seq (.block incJ)
-  (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
-  (.ite .e (.block (Short.finLens ++ Short.finGh1 ++ Short.tagK uO))
-      (.seq (.block Short.finTextArgs) (.seq copyLoop (.block (Short.finLens ++ Short.finGh2 ++ Short.tagK uO))))))))
+  (.seq (.block lenTest)
+  (.ite .e (.block (Short.finGh1 ++ Short.tagK uO)) (.block (Short.finGh2 ++ Short.tagK uO))))))))
 
 variable (c : Callees)
 

@@ -62,11 +62,11 @@ abbrev ArgR (SP T : Addr) (s : State) : Prop :=
 `oneTag_rel` gives for `oneTag 112`. -/
 def TagRel (M : Gcm.X86_64.Stitch.CtxMode) (tg : Prog isa) : Prop :=
   ∀ {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
-    ∀ {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat}, (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ →
+    ∀ {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat}, (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ → n < 16 →
     RelCT isa (OneS₂ M Ctx W SP R A al D n (some N)) tg fun _ _ => True
 
 theorem tagRel_oneTag (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} : TagRel M (oneTag v.callees uO) :=
-  fun {_ _ _} L {_ _ _ _ _ _} hDW => oneTag_rel v L (.inr rfl) hDW
+  fun {_ _ _} L {_ _ _ _ _ _} hDW _ => oneTag_rel v L (.inr rfl) hDW
 
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
@@ -289,7 +289,7 @@ theorem openPreW_rel {aadP tg : Prog isa} (htr : TagRel M tg) (htg : TagOk M tg)
       (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) (fun _ _ h => h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
-  have b := rel_wp ((htr L hDW' (N := n)).mono (P' := fun (s₁ s₂ : State) =>
+  have b := rel_wp ((htr L hDW' (N := n) (by omega)).mono (P' := fun (s₁ s₂ : State) =>
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₁) ∧
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
