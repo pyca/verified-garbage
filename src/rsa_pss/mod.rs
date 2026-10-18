@@ -444,7 +444,7 @@ fn call_verify<const N: usize>(
 /// its compression function (a variant of its streaming backend), `verify`
 /// and `sign` calling the selected public- and private-key operations
 /// (`crate::rsa::Backend`), with the CPU features each needs. The functions
-/// calling the x86-64 RSA backends (`verify_adx`, `adx`, `ifma`) are given for
+/// calling the x86-64 RSA backends (`verify_adx`, `verify_ifma`, `adx`, `ifma`) are given for
 /// the variants that have them, and used on x86-64 only.
 macro_rules! pss_hash {
     (
@@ -455,6 +455,7 @@ macro_rules! pss_hash {
                     sign: $sign:path [$($sreq:path),*]
                     $(,
                         verify_adx: $verify_adx:path [$($vareq:path),*],
+                        verify_ifma: $verify_ifma:path [$($vireq:path),*],
                         adx: $adx:path [$($areq:path),*],
                         ifma: $ifma:path [$($ireq:path),*]
                     )? $(,)?
@@ -471,7 +472,7 @@ macro_rules! pss_hash {
             const _: &[$crate::cpu::Features] = &[$($vreq,)* $($sreq,)*];
             $(
                 #[cfg(target_arch = "x86_64")]
-                const _: &[$crate::cpu::Features] = &[$($vareq,)* $($areq,)* $($ireq,)*];
+                const _: &[$crate::cpu::Features] = &[$($vareq,)* $($vireq,)* $($areq,)* $($ireq,)*];
             )?
         )*
 
@@ -496,7 +497,9 @@ macro_rules! pss_hash {
                             $crate::rsa::Backend::Baseline => $verify,
                             $(
                                 #[cfg(target_arch = "x86_64")]
-                                $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => $verify_adx,
+                                $crate::rsa::Backend::Adx => $verify_adx,
+                                #[cfg(target_arch = "x86_64")]
+                                $crate::rsa::Backend::Ifma => $verify_ifma,
                             )?
                         },
                     ),
@@ -524,7 +527,9 @@ macro_rules! pss_hash {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($vreq),*]),
                                 $(
                                     #[cfg(target_arch = "x86_64")]
-                                    $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => Features::all(&[$($vareq),*]),
+                                    $crate::rsa::Backend::Adx => Features::all(&[$($vareq),*]),
+                                    #[cfg(target_arch = "x86_64")]
+                                    $crate::rsa::Backend::Ifma => Features::all(&[$($vireq),*]),
                                 )?
                             };
                             assert!(f.contains(v));

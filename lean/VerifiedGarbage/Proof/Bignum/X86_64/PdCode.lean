@@ -208,6 +208,8 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
     (f₂ : Frm (stackArg s 2) (pdLoadRanges (((s.gpr .rsi).toNat + 7) / 8)) t₁.mem t₂.mem) (k₂ : Keep mmRegs t₁ t₂)
     (hodd : wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8) % 2 = 1)
     (hN1 : 1 < wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
+    (hbig : 2 ^ (64 * (((s.gpr .rsi).toNat + 7) / 8 - 1)) ≤
+      wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
     (hRN : wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aR2) (((s.gpr .rsi).toNat + 7) / 8) <
       wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
     (hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) = true) :
@@ -230,7 +232,7 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
       hO := by rw [x₂ sOut (by decide)]; exact hO, hK := by rw [x₂ sK (by decide), hK, ofNat_toNat64],
       hE := by rw [x₂ sE (by decide)]; exact hE, hL := by rw [x₂ sElen (by decide), hL, ofNat_toNat64],
       hIn := by rw [x₂ sIn (by decide)]; exact hIn, hW := hW₂, hb := hb₂, n := rfl, r := rfl, odd := hodd,
-      n1 := hN1, rlt := hRN, x := c.hxb.congrK i₂ kk, e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
+      n1 := hN1, big := hbig, rlt := hRN, x := c.hxb.congrK i₂ kk, e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
       el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2, out := fun j hj => by rw [kk.2.2]; exact c.hout j hj,
       outSep := c.houts,
       inSpan := by rw [kk.2.1, kk.2.2]; exact c.inSpan,

@@ -78,7 +78,7 @@ theorem arr52_ok (hl : LayOk l) {s : State} {W A Aj : Addr} {p j o : Nat} (hdi :
       · exact hj
       · exact congrArg (· + BitVec.ofNat 64 (l.D * p + o)) hA
       all_goals rfl) rfl) fun t ⟨⟨si, r11, r12, me, mx⟩, k⟩ => ?_
-  refine WP.mono (to52_ok hl si r11 r12 (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi)
+  refine WP.mono (to52_ok hl.amm si r11 r12 (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi)
     (fun i hi => by rw [k.2.2]; exact hwr i hi) hsep) fun s' ⟨v, o', k', x'⟩ => ?_
   rw [me] at v o'
   exact ⟨v, o', (k.trans k').mono (by decide), by rw [k'.gpr (by decide)]; exact r12, x'.trans mx⟩

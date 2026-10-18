@@ -373,8 +373,8 @@ fn decrypt_with(
 /// encryption and decryption calling RSA's baseline code, each with the
 /// generated constants of the CPU features it needs (none for the baseline
 /// ISA's), and, for the arms that have them, used on x86-64 only, those
-/// calling its other RSA backends: `encrypt_adx` (for `Adx` and `Ifma`,
-/// whose public-key operation is `Adx`'s), `decrypt_adx` and `decrypt_ifma`.
+/// calling its other RSA backends: `encrypt_adx`, `encrypt_ifma`,
+/// `decrypt_adx` and `decrypt_ifma`.
 /// With MGF1 over another hash function, the arms after `never` are the
 /// pairs of implementations no CPU chooses: they are there for the match to
 /// be exhaustive, and the test checks that no set of features chooses them.
@@ -428,6 +428,7 @@ macro_rules! oaep_pair {
         decrypt: $dec:path [$($dreq:path),*]
         $(,
             encrypt_adx: $enc_adx:path [$($eareq:path),*],
+            encrypt_ifma: $enc_ifma:path [$($eireq:path),*],
             decrypt_adx: $dec_adx:path [$($dareq:path),*],
             decrypt_ifma: $dec_ifma:path [$($direq:path),*]
         )? $(,)?
@@ -437,7 +438,9 @@ macro_rules! oaep_pair {
                 $crate::rsa::Backend::Baseline => $enc,
                 $(
                     #[cfg(target_arch = "x86_64")]
-                    $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => $enc_adx,
+                    $crate::rsa::Backend::Adx => $enc_adx,
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Ifma => $enc_ifma,
                 )?
             },
             match $rsa {
@@ -456,6 +459,7 @@ macro_rules! oaep_pair {
         decrypt: $dec:path [$($dreq:path),*]
         $(,
             encrypt_adx: $enc_adx:path [$($eareq:path),*],
+            encrypt_ifma: $enc_ifma:path [$($eireq:path),*],
             decrypt_adx: $dec_adx:path [$($dareq:path),*],
             decrypt_ifma: $dec_ifma:path [$($direq:path),*]
         )? $(,)?
@@ -465,9 +469,9 @@ macro_rules! oaep_pair {
                 $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($ereq),*]),
                 $(
                     #[cfg(target_arch = "x86_64")]
-                    $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => {
-                        $crate::cpu::Features::all(&[$($eareq),*])
-                    }
+                    $crate::rsa::Backend::Adx => $crate::cpu::Features::all(&[$($eareq),*]),
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($eireq),*]),
                 )?
             },
             match $rsa {

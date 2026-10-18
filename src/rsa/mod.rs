@@ -16,7 +16,10 @@
 //! the input. On a CPU with BMI2, ADX and AVX2 (as for the private-key
 //! operation below), `vg_rsa_public_precompute_adx` and
 //! `vg_rsa_public_precomputed_checked_adx`, with the same contracts, do the
-//! same with a faster Montgomery multiplication.
+//! same with a faster Montgomery multiplication; on one with AVX512_IFMA and
+//! AVX512VL too, `vg_rsa_public_precomputed_checked_ifma` computes
+//! `input^65537 mod n` for a 2048-, 3072- or 4096-bit modulus with
+//! AVX512_IFMA's multiplications, and does as the `_adx` function otherwise.
 //!
 //! The private-key operation, with a key in the Chinese remainder form
 //! `(p, q, dP, dQ, qInv)` (§3.2) and its public exponent `e`, is the verified
@@ -79,7 +82,8 @@ use crate::arch::rsa::vg_rsa_public_precomputed_checked;
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_RECOVER_PRIMES_ADX_FEATURES, vg_rsa_public_precomputed_checked_adx,
+    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
+    vg_rsa_public_precomputed_checked_adx, vg_rsa_public_precomputed_checked_ifma,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
@@ -100,8 +104,9 @@ pub(crate) enum Backend {
     /// `adox`, and the private-key operation's table read with AVX2.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// `Adx`, and for the private-key operation, AVX512_IFMA's
-    /// multiplications for 2048-, 3072- and 4096-bit keys.
+    /// `Adx`, and AVX512_IFMA's multiplications for 2048-, 3072- and
+    /// 4096-bit keys: for the private-key operation, and for the public-key
+    /// operation with `e = 65537`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -118,6 +123,7 @@ impl Backend {
             && f.contains(VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES);
         if adx
             && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
+            && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES)
             && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
         {
             Backend::Ifma
@@ -275,7 +281,9 @@ impl PublicKey {
             Backend::Baseline => vg_rsa_public_precomputed_checked,
             // `select` chose it because the CPU has the features it needs.
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx | Backend::Ifma => vg_rsa_public_precomputed_checked_adx,
+            Backend::Adx => vg_rsa_public_precomputed_checked_adx,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_rsa_public_precomputed_checked_ifma,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they

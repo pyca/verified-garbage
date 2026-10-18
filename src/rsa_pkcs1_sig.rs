@@ -41,8 +41,9 @@ use crate::arch::rsa_pkcs1_sig::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma,
-    vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_recover_precomputed_ifma,
+    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_verify_precomputed_ifma,
 };
 use crate::cpu::detected;
 use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
@@ -192,7 +193,9 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_adx,
+        Backend::Adx => vg_rsa_pkcs1_verify_precomputed_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_ifma,
     };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
@@ -232,7 +235,9 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
         Backend::Baseline => vg_rsa_pkcs1_recover_precomputed,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_adx,
+        Backend::Adx => vg_rsa_pkcs1_recover_precomputed_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_ifma,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
