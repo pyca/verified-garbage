@@ -510,24 +510,53 @@ theorem openWithSX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
           t.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := fun ku kt =>
       ⟨by rw [kt _ (by simp), ku _ (by simp)], by rw [kt _ (by simp), ku _ (by simp), ofNat_toNat'],
         by rw [kt _ (by simp), ku _ (by simp)], by rw [kt _ (by simp), ku _ (by simp), ofNat_toNat']⟩
-    unfold Impl.AesGcm.AArch64.Stitch.openFastS
-    refine openRestWith_rel v₁ v₂ y12₁ y12₂
-      (fun o' hT hok hx => have e := regs kk₁ hx
-        WP.mono (openRunWithS_postX v cl hMK gh (I := fun _ => True) o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok
-          (hexW p₁) (hexD p₁) (hexC p₁) (fun _ _ => trivial)
-          (fun s' _ _ _ _ c sY sS hr hw hsp hf hd =>
-            WP.mono (hgh p₁ c sY sS hr hw hsp hf hd) fun _ g => ⟨g, trivial⟩) (htb p₁)) fun _ q => q.1)
-      (fun o' hT hok hx => have e := regs kk₂ hx
-        WP.mono (openRunWithS_postX v cl hMK gh (I := fun _ => True) o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok
-          (hexW p₁) (hexD p₁) (hexC p₁) (fun _ _ => trivial)
-          (fun s' _ _ _ _ c sY sS hr hw hsp hf hd =>
-            WP.mono (hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd) fun _ g => ⟨g, trivial⟩) htb₂) fun _ q => q.1)
-      fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWithS_relX v cl hMK gh (hexW p₁) (hexD p₁) (hexC p₁) p₁' p₂' hc.2
-        (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 rt₁ rt₂ hok hb
-        (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
-        (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
-        (fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd)
-        (htb p₁) htb₂ (fun v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => htbrel p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂)
+    -- `thr`, on the length, which is public.
+    refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
+        (by agree_tac [kk₁ .x7 (by simp), kk₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)
+      (Stitch.thr_ok u₁) (Stitch.thr_ok u₂) fun z₁ z₂ ⟨x9₁, t₁⟩ ⟨x9₂, t₂⟩ => ?_
+    have e9 : z₂.gpr .x9 = BitVec.ofNat 64 (z₁.gpr .x9).toNat := by
+      rw [ofNat_toNat', x9₁, x9₂, kk₁ .x7 (by simp), kk₂ .x7 (by simp)]
+    have v₁ := v₁.of_regs t₁
+    have v₂ := v₂.of_regs t₂
+    have y12₁ : z₁.gpr .x12 = stackArg σ₁ 0 := by rw [t₁.others _ (by decide), y12₁]
+    have y12₂ : z₂.gpr .x12 = stackArg σ₁ 0 := by rw [t₂.others _ (by decide), y12₂]
+    have kk₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₁.gpr r = σ₁.gpr r := fun r hr => by
+      rw [t₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₁ r hr]
+    have kk₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], z₂.gpr r = σ₁.gpr r := fun r hr => by
+      rw [t₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), kk₂ r hr]
+    refine rel_ite (eval_zero (a := (z₁.gpr .x9).toNat) (by rw [ofNat_toNat']) (z₁.gpr .x9).isLt)
+      (eval_zero e9 (z₁.gpr .x9).isLt) (fun _ => ?_) (fun _ => ?_)
+    · unfold Impl.AesGcm.AArch64.Fast.openFastP
+      refine openRestWith_rel v₁ v₂ y12₁ y12₂
+        (fun o' hT hok hx => have e := regs kk₁ hx
+          openRunWith_postE cl v hMK o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok (hexW p₁) (hexD p₁) (hexC p₁)
+            fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
+        (fun o' hT hok hx => have e := regs kk₂ hx
+          openRunWith_postE cl v hMK o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok (hexW p₁) (hexD p₁) (hexC p₁)
+            fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
+        fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWith_relX v cl hMK (hexW p₁) (hexD p₁) (hexC p₁) p₁' p₂' hc.2
+          (regs kk₁ hx₁) (regs kk₂ hx₂)
+          hc.1 rt₁ rt₂ hok hb (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
+          (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
+          fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
+    · unfold Impl.AesGcm.AArch64.Stitch.openFastS
+      refine openRestWith_rel v₁ v₂ y12₁ y12₂
+        (fun o' hT hok hx => have e := regs kk₁ hx
+          WP.mono (openRunWithS_postX v cl hMK gh (I := fun _ => True) o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok
+            (hexW p₁) (hexD p₁) (hexC p₁) (fun _ _ => trivial)
+            (fun s' _ _ _ _ c sY sS hr hw hsp hf hd =>
+              WP.mono (hgh p₁ c sY sS hr hw hsp hf hd) fun _ g => ⟨g, trivial⟩) (htb p₁)) fun _ q => q.1)
+        (fun o' hT hok hx => have e := regs kk₂ hx
+          WP.mono (openRunWithS_postX v cl hMK gh (I := fun _ => True) o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok
+            (hexW p₁) (hexD p₁) (hexC p₁) (fun _ _ => trivial)
+            (fun s' _ _ _ _ c sY sS hr hw hsp hf hd =>
+              WP.mono (hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd) fun _ g => ⟨g, trivial⟩) htb₂) fun _ q => q.1)
+        fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWithS_relX v cl hMK gh (hexW p₁) (hexD p₁) (hexC p₁) p₁' p₂' hc.2
+          (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 rt₁ rt₂ hok hb
+          (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
+          (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
+          (fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd)
+          (htb p₁) htb₂ (fun v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => htbrel p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂)
   · exact openRestWith_rel v₁ v₂ y12₁ y12₂ (fun o' hT hok _ => openMain_post v o' hT hok)
       (fun o' hT hok _ => openMain_post v o' hT hok) fun p₁' p₂' rt₁ rt₂ hok _ _ =>
         openMain_rel v p₁' p₂' rt₁ rt₂ hok hb

@@ -18,6 +18,11 @@ text encrypted (or decrypted) and hashed by the interleaved loops of
   (`powTbl`, for `_store_powers`), or loaded from `pw` (`pwTbl`, for
   `_with_powers`). Plain `seal` and `open`, which would compute the powers
   on every call, keep `Fast.lean`'s path.
+* Only a text of at least `minLen` bytes takes the loops (`thr`); a shorter
+  one takes `Fast.lean`'s path, as the `_aes` functions do. Writing the
+  table and the loops' first and last steps cost about as much as 3.4 to 6.2
+  of the loops' 128-byte steps save (measured on Neoverse N2: 600-byte texts
+  slower, 1023-byte ones faster; pyca/verified-garbage#2758).
 * `open` decrypts the first bytes before it knows whether the tag is right:
   it keeps the first counter block at `W + cbO`, and if the tag is wrong
   encrypts those bytes again from it, which leaves them as they were.
@@ -50,6 +55,13 @@ def powTbl : List Instr := hReload ++ powers ++ tbl
 /-- The table, from the powers in `pw`, the stack argument at `sp + k`. -/
 def pwTbl (k : Nat) : List Instr :=
   ([.ldrSp .x5 k] : List Instr) ++ (List.range 8).flatMap (fun k => loadPw (k + 1)) ++ tbl
+
+/-- The shortest text the loops take, in bytes: six of their steps. -/
+def minLen : Nat := 768
+
+/-- `x9 = ⌊(x7 + 256) / 1024⌋`, zero exactly when the text's length `x7` is
+less than `minLen`. -/
+def thr : List Instr := [.addImm .x .x9 .x7 (1024 - minLen), .lsr .x .x9 .x9 10]
 
 /-- `x9 = 128 ⌊x26 / 128⌋`, the bytes the loops take. -/
 def whole : List Instr := [.lsr .x .x9 .x26 7, .lsl .x .x9 .x9 7]
@@ -104,15 +116,21 @@ def openFastS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWithS c tb cl)))
     (.block restore))
 
-/-- `vg_aes_gcm_seal`, with `work` at `sp + k`. -/
+/-- `vg_aes_gcm_seal`, with `work` at `sp + k`: below `minLen` bytes,
+`Fast.lean`'s path. -/
 def sealWithS (k : Nat) (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq (.block (oneEntry k ++ stashArg 0))
-    (.seq cond (.ite (.zero .x .x10) (runWithS c tb cl) (sealRest c)))
+    (.seq cond (.ite (.zero .x .x10)
+      (.seq (.block thr) (.ite (.zero .x .x9) (runWithP c cl) (runWithS c tb cl)))
+      (sealRest c)))
 
-/-- `vg_aes_gcm_open`, with `work` at `sp + k`. -/
+/-- `vg_aes_gcm_open`, with `work` at `sp + k`: below `minLen` bytes,
+`Fast.lean`'s path. -/
 def openWithS (k : Nat) (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq (.block (oneEntry k ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
-    (.seq cond (.ite (.zero .x .x10) (openFastS c tb cl) (openRest c)))
+    (.seq cond (.ite (.zero .x .x10)
+      (.seq (.block thr) (.ite (.zero .x .x9) (openFastP c cl) (openFastS c tb cl)))
+      (openRest c)))
 
 /-- `vg_aes_gcm_seal_with_powers`, hashing the rest by `gh`. -/
 def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwCall 8 gh)

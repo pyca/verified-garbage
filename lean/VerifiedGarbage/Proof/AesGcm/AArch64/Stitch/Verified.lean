@@ -30,6 +30,7 @@ theorem stitchSealWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {
   simp only [Code.allInstrs] at htb
   rcases hk with rfl | rfl <;>
   simp only [Impl.AesGcm.AArch64.Stitch.sealWithS, Impl.AesGcm.AArch64.Stitch.runWithS,
+    Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Fast.runWithP,
     Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
     Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail, sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo,
     textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
@@ -42,6 +43,7 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) 
   simp only [Code.allInstrs] at htb
   rcases hk with rfl | rfl <;>
   simp only [Impl.AesGcm.AArch64.Stitch.openWithS, Impl.AesGcm.AArch64.Stitch.openFastS,
+    Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Fast.openFastP, Impl.AesGcm.AArch64.Fast.openRunWithP,
     Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front,
     Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, openRest, openMain, oneCrypt, cryptAl, crArgs,
     tagLenOk, tlTest, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,

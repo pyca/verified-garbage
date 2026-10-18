@@ -84,7 +84,14 @@ theorem sealWithSX_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmu
   have hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx r hr]
   refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-  exact runWithSX_ok' v cl hMK gh hs hexW hexD hexC hI hgh htb h₂ hx₂ hc.2 hc.1
+  refine WP.seq (WP.mono (Stitch.thr_ok s₂) fun s₃ ⟨_, r₃⟩ => ?_)
+  have h₃ := SealEntry.of_regs h₂ r₃
+  have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
+    rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
+  refine WP.ite _ (eval_zero (a := (s₃.gpr .x9).toNat) (by rw [ofNat_toNat']) (s₃.gpr .x9).isLt)
+    (fun _ => ?_) (fun _ => ?_)
+  · exact runWithPX_ok v cl hMK hs hexW hexD hexC hI hgh h₃ hx₃ hc.2 hc.1
+  · exact runWithSX_ok' v cl hMK gh hs hexW hexD hexC hI hgh htb h₃ hx₃ hc.2 hc.1
 
 /-- `sealWithE_wp` for `sealWithS`. -/
 theorem sealWithS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
@@ -107,9 +114,16 @@ theorem sealWithS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmul
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx r hr]
   by_cases hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12
   · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-    exact WP.mono (runWithSX_ok' v cl hMK gh (ex := []) (I := fun _ => True) hs (by simp) (by simp) (by simp)
-      (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>
-        WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) htb h₂ hx₂ hc.2 hc.1) fun _ q => q.1
+    refine WP.seq (WP.mono (Stitch.thr_ok s₂) fun s₃ ⟨_, r₃⟩ => ?_)
+    have h₃ := SealEntry.of_regs h₂ r₃
+    have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
+      rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
+    refine WP.ite _ (eval_zero (a := (s₃.gpr .x9).toNat) (by rw [ofNat_toNat']) (s₃.gpr .x9).isLt)
+      (fun _ => ?_) (fun _ => ?_)
+    · exact runWithP_ok v cl hMK hs hgh h₃ hx₃ hc.2 hc.1
+    · exact WP.mono (runWithSX_ok' v cl hMK gh (ex := []) (I := fun _ => True) hs (by simp) (by simp) (by simp)
+        (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>
+          WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) htb h₃ hx₃ hc.2 hc.1) fun _ q => q.1
   · refine WP.ite false (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun h => by cases h) (fun _ => ?_)
     exact sealRest_ok v hs h₂
 

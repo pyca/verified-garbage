@@ -79,4 +79,12 @@ theorem pwTbl_ok {Ctx St W SP : Addr} {H : Block} {pw : Addr} {k : Nat} (hk : k 
   exact WP.mono (tbl_ok hI₂ hw) fun t hT => tbl_post (by rw [g₂, g₁ _ (by decide), he.x19]) hT
     (fun r hr => by rw [g₂, g₁ r hr]) (by rw [m₂, m₁]) (by rw [sp₂, sp₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
 
+/-- `thr` writes only `x9`, as `cond` writes only `x9` and `x10`: a value of
+`x7` alone. -/
+theorem thr_ok (s : State) :
+    WP isa (.block Impl.AesGcm.AArch64.Stitch.thr) s fun s' =>
+      s'.gpr .x9 = (s.gpr .x7 + BitVec.ofNat 64 256) >>> 10 ∧ Regs [.x9, .x10] s s' := by
+  refine WP.of_runBlock ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Stitch.minLen], ?_⟩
+  exact ⟨by simp [gpr_write], by others_tac, rfl, rfl, rfl, rfl⟩
+
 end VG.Proof.AesGcm.AArch64.Stitch

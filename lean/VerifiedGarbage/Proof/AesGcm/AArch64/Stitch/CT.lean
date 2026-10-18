@@ -528,6 +528,23 @@ theorem sealWithSX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
     (fun _ => sealRest_rel v h₁ h₂ hq₀ b₁ b₂)
   have hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 := by
     by_contra hc; simp [hc] at ht
+  have gu₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
+    rw [r₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₁ r hr]
+  have gu₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r := fun r hr => by
+    rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₂ r hr]
+    simp at hr; rcases hr with rfl | rfl | rfl | rfl
+    · exact q4.symm
+    · exact q5.symm
+    · exact q6.symm
+    · exact q7.symm
+  -- `thr`, on the length, which is public.
+  refine rel_seq (rel_taint [.x7] (by rw [r₁.sp, r₂.sp, a₁.1.sp, a₂.1.sp, qsp])
+      (by agree_tac [gu₁ .x7 (by simp), gu₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)
+    (Stitch.thr_ok u₁) (Stitch.thr_ok u₂) fun v₁ v₂ ⟨x9₁, t₁⟩ ⟨x9₂, t₂⟩ => ?_
+  have e9 : v₂.gpr .x9 = BitVec.ofNat 64 (v₁.gpr .x9).toNat := by
+    rw [ofNat_toNat', x9₁, x9₂, gu₁ .x7 (by simp), gu₂ .x7 (by simp)]
+  have b₁ := SealEntered.of_regs b₁ t₁
+  have b₂ := SealEntered.of_regs b₂ t₂
   have i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl b₁
   have i₂ := frontIn_of f₂ q3.symm q2.symm q4.symm q5.symm q6.symm q7.symm b₂
   rw [← qsp] at i₂
@@ -535,15 +552,10 @@ theorem sealWithSX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   have ol := f₁.ol
   have sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
   have hn := (σ₁.gpr .x7).isLt
-  have g₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
-    rw [r₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₁ r hr]
-  have g₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r := fun r hr => by
-    rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₂ r hr]
-    simp at hr; rcases hr with rfl | rfl | rfl | rfl
-    · exact q4.symm
-    · exact q5.symm
-    · exact q6.symm
-    · exact q7.symm
+  have g₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], v₁.gpr r = σ₁.gpr r := fun r hr => by
+    rw [t₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), gu₁ r hr]
+  have g₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], v₂.gpr r = σ₁.gpr r := fun r hr => by
+    rw [t₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), gu₂ r hr]
   have mkD : ∀ {σ u : State}, OneFacts σ σ₁ (w + 1) w → u.wr = σ.wr →
       DataW (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) u (σ₁.gpr .x6) (σ₁.gpr .x7).toNat :=
     fun f wr => ⟨⟨covers_left (by rw [wr]; exact f.dataW), hn, ol.dw, ol.data.sub_right sub16, ol.data⟩,
@@ -560,33 +572,50 @@ theorem sealWithSX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   have e₂ := b₂
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, bf₁, -, brd₁, bwr₁⟩ := e₁
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, bf₂, -, brd₂, bwr₂⟩ := e₂
-  have hH₁ : blockAt u₁.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH σ₁.mem (σ₁.gpr .x0) :=
+  have hH₁ : blockAt v₁.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH σ₁.mem (σ₁.gpr .x0) :=
     blockAt_frame bf₁ (keep_of_sub (entryR_work _) (ol.ctx.sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))))
-  have hH₂ : blockAt u₂.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH σ₂.mem (σ₁.gpr .x0) :=
+  have hH₂ : blockAt v₂.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH σ₂.mem (σ₁.gpr .x0) :=
     blockAt_frame bf₂ (keep_of_sub (entryR_work _) (ol.ctx.sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))))
-  refine runWithSX_rel L v cl hMK gh (Tg := stackArg σ₁ 0) (R := (σ₁.gpr .x1).toNat) (hexW p₁) (hexC p₁)
-    ⟨i₁.env, i₁.kept, i₁.x23, i₁.x24, i₁.x26, i₁.x27, i₁.non, rfl⟩
-    ⟨i₂.env, i₂.kept, i₂.x23, i₂.x24, i₂.x26, i₂.x27, i₂.non, rfl⟩ i₁.aad i₂.aad hc.1
-    ⟨g₁ .x4 (by simp), by rw [g₁ .x5 (by simp), ofNat_toNat'], g₁ .x6 (by simp), by rw [g₁ .x7 (by simp), ofNat_toNat']⟩
-    ⟨g₂ .x4 (by simp), by rw [g₂ .x5 (by simp), ofNat_toNat'], g₂ .x6 (by simp), by rw [g₂ .x7 (by simp), ofNat_toNat']⟩
-    (mkD f₁ b₁.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2) (mkD f₂ b₂.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2)
-    (by rw [b₁.2.1, ofNat_toNat']) (by rw [b₂.2.1, ← q1, ofNat_toNat']) ol.rounds b₁.2.2.2.2.2.2.1 b₂.2.2.2.2.2.2.1
-    (hf bf₁) brd₁ bwr₁ (hf bf₂) brd₂ bwr₂ ?_ ?_ ?_ ?_ ?_ ?_
-  · intro s Y Dd S nb c y z r w' sp f hd
-    exact hgh p₁ c y z r w' sp f hd
-  · intro s Y Dd S nb c y z r w' sp f hd
-    rw [← exq]
-    exact hgh₂ p₂ c y z r w' (sp.trans qsp) f hd
-  · intro s₁ s₂ Y Dd S nb c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
-    exact hrel p₁ p₂ hq₀ c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
-  · intro u he hrd hwr hf' key
-    rw [hH₁] at key ⊢
-    exact htb p₁ u he hrd hwr hf' key
-  · intro u he hrd hwr hf' key
-    rw [hH₂] at key ⊢
-    exact htb₂ u he hrd hwr hf' key
-  · intro v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
-    exact htbrel p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
+  refine rel_ite (eval_zero (a := (v₁.gpr .x9).toNat) (by rw [ofNat_toNat']) (v₁.gpr .x9).isLt)
+    (eval_zero e9 (v₁.gpr .x9).isLt) (fun _ => ?_) (fun _ => ?_)
+  · refine runWithPX_rel L v cl hMK (Tg := stackArg σ₁ 0) (R := (σ₁.gpr .x1).toNat) (hexW p₁) (hexC p₁)
+      ⟨i₁.env, i₁.kept, i₁.x23, i₁.x24, i₁.x26, i₁.x27, i₁.non, rfl⟩
+      ⟨i₂.env, i₂.kept, i₂.x23, i₂.x24, i₂.x26, i₂.x27, i₂.non, rfl⟩ i₁.aad i₂.aad hc.1
+      ⟨g₁ .x4 (by simp), by rw [g₁ .x5 (by simp), ofNat_toNat'], g₁ .x6 (by simp), by rw [g₁ .x7 (by simp), ofNat_toNat']⟩
+      ⟨g₂ .x4 (by simp), by rw [g₂ .x5 (by simp), ofNat_toNat'], g₂ .x6 (by simp), by rw [g₂ .x7 (by simp), ofNat_toNat']⟩
+      (mkD f₁ b₁.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2) (mkD f₂ b₂.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2)
+      (by rw [b₁.2.1, ofNat_toNat']) (by rw [b₂.2.1, ← q1, ofNat_toNat']) ol.rounds b₁.2.2.2.2.2.2.1 b₂.2.2.2.2.2.2.1
+      (hf bf₁) brd₁ bwr₁ (hf bf₂) brd₂ bwr₂ ?_ ?_ ?_
+    · intro s Y Dd S nb c y z r w' sp f hd
+      exact hgh p₁ c y z r w' sp f hd
+    · intro s Y Dd S nb c y z r w' sp f hd
+      rw [← exq]
+      exact hgh₂ p₂ c y z r w' (sp.trans qsp) f hd
+    · intro s₁ s₂ Y Dd S nb c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
+      exact hrel p₁ p₂ hq₀ c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
+  · refine runWithSX_rel L v cl hMK gh (Tg := stackArg σ₁ 0) (R := (σ₁.gpr .x1).toNat) (hexW p₁) (hexC p₁)
+      ⟨i₁.env, i₁.kept, i₁.x23, i₁.x24, i₁.x26, i₁.x27, i₁.non, rfl⟩
+      ⟨i₂.env, i₂.kept, i₂.x23, i₂.x24, i₂.x26, i₂.x27, i₂.non, rfl⟩ i₁.aad i₂.aad hc.1
+      ⟨g₁ .x4 (by simp), by rw [g₁ .x5 (by simp), ofNat_toNat'], g₁ .x6 (by simp), by rw [g₁ .x7 (by simp), ofNat_toNat']⟩
+      ⟨g₂ .x4 (by simp), by rw [g₂ .x5 (by simp), ofNat_toNat'], g₂ .x6 (by simp), by rw [g₂ .x7 (by simp), ofNat_toNat']⟩
+      (mkD f₁ b₁.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2) (mkD f₂ b₂.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2)
+      (by rw [b₁.2.1, ofNat_toNat']) (by rw [b₂.2.1, ← q1, ofNat_toNat']) ol.rounds b₁.2.2.2.2.2.2.1 b₂.2.2.2.2.2.2.1
+      (hf bf₁) brd₁ bwr₁ (hf bf₂) brd₂ bwr₂ ?_ ?_ ?_ ?_ ?_ ?_
+    · intro s Y Dd S nb c y z r w' sp f hd
+      exact hgh p₁ c y z r w' sp f hd
+    · intro s Y Dd S nb c y z r w' sp f hd
+      rw [← exq]
+      exact hgh₂ p₂ c y z r w' (sp.trans qsp) f hd
+    · intro s₁ s₂ Y Dd S nb c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
+      exact hrel p₁ p₂ hq₀ c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
+    · intro u he hrd hwr hf' key
+      rw [hH₁] at key ⊢
+      exact htb p₁ u he hrd hwr hf' key
+    · intro u he hrd hwr hf' key
+      rw [hH₂] at key ⊢
+      exact htb₂ u he hrd hwr hf' key
+    · intro v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
+      exact htbrel p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂
 
 /-- `sealWithEX_ct`, for a call that writes only what `vg_ghash` does. -/
 theorem sealWithS_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
