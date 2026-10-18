@@ -8,7 +8,8 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
 `vg_aes_gcm_seal_split` with a prepared key context
 (`VG.Spec.Gcm.PreparedPowersRepr`) takes a path of its own for the records of
 TLS: a 12-byte nonce, at most 16 bytes of additional data and at least 256
-bytes of text (`cond`). It is `SealSplit.run` with the additional data
+bytes of text, or any text where the path is faster than the others at every
+length (`cond`, with `any`). It is `SealSplit.run` with the additional data
 absorbed without a call (`aad`): `J₀` and the first counter block (`j012`,
 `initState`), then the additional data padded with zeros in `T` (`aadPad`)
 and multiplied by `H'` (`aadMul`), the prepared power `H` at `ctx + 272`,
@@ -25,17 +26,26 @@ open VG.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr Fn Callees j012 initState copyLoop alenO lenO aadO tO)
 open VG.Impl.Gcm.X86_64.Pclmul (revMask poly)
 
+/-- After the nonce and the additional data: `rax = 1` if the text is long
+enough, with `any` at any length, and otherwise at 256 bytes or more, which
+reach the interleaved loop. -/
+def condLen (any : Bool) : Prog isa :=
+  if any then .block [.mov32 .rax (imm 1)]
+  else
+    .seq (.block [.mov .rcx (.mem (at_ .r15 lenO)), .alu .cmp .rcx (imm 256)])
+      (.ite .b (.block []) (.block [.mov32 .rax (imm 1)]))
+
 /-- `rax = 1` if the path applies (a 12-byte nonce in `rbp`, at most 16
-bytes of additional data and at least 256 bytes, which reach the interleaved
-loop), `0` otherwise; then `test rax, rax`. Each branch falls through while
-the path may still apply. -/
-def cond : Prog isa :=
+bytes of additional data and the text `condLen any` takes), `0` otherwise;
+then `test rax, rax`. Each branch falls through while the path may still
+apply. On 512-bit registers the short path is faster for less text, and
+`any` is false; on 128- and 256-bit ones, which have no short path, the
+path is faster at every length, and `any` is true. -/
+def cond (any : Bool := false) : Prog isa :=
   .seq (.block [.mov32 .rax (imm 0), .alu .cmp .rbp (imm 12)])
   (.seq (.ite .ne (.block [])
       (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .cmp .rcx (imm 17)])
-        (.ite .ae (.block [])
-          (.seq (.block [.mov .rcx (.mem (at_ .r15 lenO)), .alu .cmp .rcx (imm 256)])
-            (.ite .b (.block []) (.block [.mov32 .rax (imm 1)]))))))
+        (.ite .ae (.block []) (condLen any))))
     (.block [.alu .test .rax (.reg .rax)]))
 
 /-- The additional data, `rcx` bytes (1 to 16), padded with zeros in `T`. -/
@@ -103,8 +113,8 @@ def run (c : Callees) (fTo : Fn) (ks fin : Prog isa) : Prog isa :=
     (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
       (.ite .b (tail ks) (SealSplit.body c fin))))
 
-/-- `cond`, then this path, or `other`. -/
-def sel (c : Callees) (fTo : Fn) (ks fin : Prog isa) (other : Prog isa) : Prog isa :=
-  .seq cond (.ite .e other (run c fTo ks fin))
+/-- `cond any`, then this path, or `other`. -/
+def sel (c : Callees) (fTo : Fn) (ks fin : Prog isa) (other : Prog isa) (any : Bool := false) : Prog isa :=
+  .seq (cond any) (.ite .e other (run c fTo ks fin))
 
 end VG.Impl.AesGcm.X86_64.Fast

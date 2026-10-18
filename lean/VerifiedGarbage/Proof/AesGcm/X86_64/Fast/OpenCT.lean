@@ -43,6 +43,8 @@ open VG.Proof.AesGcm.X86_64.Fast (IsFast)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxH ctxCiph)
 
+variable {any : Bool}
+
 /-- `incJ` keeps what `FinI` says. -/
 theorem incJ_finI {Ctx W SP D : Addr} {R r : Nat} (s : State) (h : FinI Ctx W SP D R r s) :
     WP isa (.block incJ) s (FinI Ctx W SP D R r) := by
@@ -200,13 +202,13 @@ theorem tagRel_tagP {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) : TagRel Ct
 branches. -/
 theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {ks : Prog isa} (hks : KsOk ks)
     (hkr : KsRel ks) {other : Prog isa} (ho : LongRel CtxMode.prepared other) :
-    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks) := by
+    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks any) := by
   intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
   have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
       (s₀.gpr .r9).toNat = al → ∀ s, OpenIn s₀ Ctx W SP A D n t s →
-      WP isa Impl.AesGcm.X86_64.Fast.cond s fun u => u.zf = some (decide ¬IsFast nl al n) ∧
+      WP isa (Impl.AesGcm.X86_64.Fast.cond any) s fun u => u.zf = some (decide ¬IsFast nl al n any) ∧
         OpenIn s₀ Ctx W SP A D n t u :=
     fun C hnl hal s h => WP.mono (Fast.condE_ok C h.1 hnl hal) fun _ ⟨z, E, K⟩ =>
       ⟨z, E, by rw [K.gpr _ (by decide) (by decide) (by decide), h.2.1], by rw [K.mem]; exact h.2.2⟩
@@ -217,7 +219,7 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
   refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     ((ho C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
-  by_cases hs : IsFast nl al n
+  by_cases hs : IsFast nl al n any
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
