@@ -16,7 +16,7 @@ each entry copied under a mask that is set for the digit's alone, so that no
 address or branch depends on the digit. The pending bits of a last, shorter
 window are applied by one more product at the end (by `T[0] = R mod M` when
 there are none). Every bit costs a square and a third of a product, where
-`secretExpPhase` costs a square and a product.
+reading the exponent a bit at a time costs a square and a product.
 
 Header bytes: 192 the bits left in the byte and 200 the byte, shifted
 (`Exp.lean`'s); 196 the pending digit, 204 the count of pending bits; 220 the
