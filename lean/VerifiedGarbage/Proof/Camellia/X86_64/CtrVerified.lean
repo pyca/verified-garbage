@@ -100,6 +100,7 @@ theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
         · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_, hctr⟩
   swap
   · rw [cipher_eq] at hdata; exact hdata
+  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl

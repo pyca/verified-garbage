@@ -94,6 +94,7 @@ structure GPre (c : Core) (s₀ : State) (B D : Addr) (n : Nat) (L : Nat := 16) 
   dat : (⟨D, L * n⟩ : Region) ∈ s₀.wr
   sep : Region.Disjoint ⟨D, L * n⟩ ⟨B, 8 * c.ctrSlots⟩
   fitD : D.toNat + L * n ≤ 2 ^ 64
+  stk : StkOk c s₀
 
 /-- The data loop, before group `g`, from the counter block `V` with the key
 `k`. -/
@@ -109,7 +110,7 @@ structure GInv (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.K
   hi : s.mem.readW (wordAddr B c.hiSlot) 64 = hiOf (V + c.G * g)
   lo : s.mem.readW (wordAddr B c.loSlot) 64 = loOf (V + c.G * g)
   data : DInv 16 s₀.mem s.mem D n (c.G * g) (ctrOut (cs.cipher k) s₀.mem D V)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -120,7 +121,7 @@ structure GDone (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
   rsp : s.gpr .rsp = s₀.gpr .rsp
   saved : ∀ i < 6, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
   data : DInv 16 s₀.mem s.mem D n n (ctrOut (cs.cipher k) s₀.mem D V)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -158,10 +159,12 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have subS : ∀ {d l : Nat}, d + l ≤ 8 * c.ctrSlots → Region.Sub ⟨B + BitVec.ofNat 64 d, l⟩ ⟨B, 8 * c.ctrSlots⟩ :=
     fun h => VG.Offset.sub_base B h
   have subCore : Region.Sub (coreRegion c B) ⟨B, 8 * c.ctrSlots⟩ := Region.sub_prefix (by simp only [Core.ctrSlots]; omega_using [hroom])
-  have mSlot : ∀ j, c.slots ≤ j → j < c.ctrSlots → ∀ r ∈ [coreRegion c B],
-      Region.Disjoint ⟨wordAddr B j, 8⟩ r := fun j h1 h2 r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.disjoint_base B (by omega_using [h1]) (by omega_using [hN, h2])
+  have stkS : ∀ {R : Region}, Region.Sub R ⟨B, 8 * c.ctrSlots⟩ → ∀ r ∈ stkList c (s₀.gpr .rsp),
+      Region.Disjoint R r := fun h => hp.stk.disj ⟨_, hp.scr.wr, h⟩
+  have mSlot : ∀ j, c.slots ≤ j → j < c.ctrSlots → ∀ r ∈ coreFrame c B (s₀.gpr .rsp),
+      Region.Disjoint ⟨wordAddr B j, 8⟩ r := fun j h1 h2 =>
+    coreFrame_disj (VG.Offset.disjoint_base B (by omega_using [h1]) (by omega_using [hN, h2]))
+      (stkS (VG.Offset.sub_base B (by omega_using [h2])))
   have inT : ∀ t, t < 2 * c.G → InRegions s.wr (T + BitVec.ofNat 64 (8 * t)) 8 := by
     intro t ht
     refine ⟨_, hwS, ?_⟩
@@ -193,6 +196,8 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   -- The keystream.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hwS, hfit⟩ ready₁)
     fun s₂ ⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩ => ?_)
+  have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [o₁ _ (by decide) (by decide) (by decide), hi.rsp]
+  rw [rsp₁] at f₂
   have keep₂ : ∀ j, c.slots ≤ j → j < c.ctrSlots →
       s₂.mem.readW (wordAddr B j) 64 = s₁.mem.readW (wordAddr B j) 64 := fun j h1 h2 =>
     f₂.readW (Region.contains_self _ _) (mSlot j h1 h2) (by decide)
@@ -262,8 +267,8 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   -- The data.
   have hdS : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨B, 8 * c.ctrSlots⟩) →
       ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r := fun h r hr => hp.sep.sub_right (h r hr)
-  have dCore : ∀ r ∈ [coreRegion c B], Region.Disjoint ⟨D, 16 * n⟩ r := hdS fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact subCore
+  have dCore : ∀ r ∈ coreFrame c B (s₀.gpr .rsp), Region.Disjoint ⟨D, 16 * n⟩ r :=
+    coreFrame_disj (hp.sep.sub_right subCore) (hp.stk.disj ⟨_, hp.dat, fun _ h => h⟩)
   have hn64 : 16 * n ≤ 2 ^ 64 := by omega_using [hfitD]
   have via₁₂ : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) := fun i hin => by
     rw [f₂.bytes (R := ⟨D, 16 * n⟩) dCore hn64 hin, f₁.bytes (R := ⟨D, 16 * n⟩) (hdS subBC) hn64 hin]
@@ -305,14 +310,13 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
     have h2 : j < c.ctrSlots := by
       rcases hj with rfl | rfl <;> simp only [Core.hiSlot, Core.loSlot, Core.ctrSlots] <;> omega_using [hroom]
     rw [m₆, keep₅ j h2, keep₂ j h1 h2]
-  have fr₆ : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] s.mem s₆.mem := by
+  have fr₆ : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] ++ stkList c (s₀.gpr .rsp)) s.mem s₆.mem := by
     rw [m₆]
     refine ((f₁.sub fun r hr => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, subBC r hr⟩).trans
-      (f₂.sub fun r hr => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact subCore⟩)).trans (f₅.sub fun r hr => ?_)
+      (f₂.sub (coreFrame_sub ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, subCore⟩))).trans (f₅.sub fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨D, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, VG.Offset.sub_base D (by omega_using [hkc])⟩
-  have fr : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] s₀.mem s₆.mem := hi.frame.trans fr₆
+  have fr : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 16 * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s₆.mem := hi.frame.trans fr₆
   have base₆ : s₆.gpr sb = B := by rw [o₆ _ (Ne.symm dsb) (Ne.symm lsb), base₅]
   have rsp₆ : s₆.gpr .rsp = s₀.gpr .rsp := by rw [o₆ _ (Ne.symm dsp) (Ne.symm lsp), rsp₅]
   have rd₆' : s₆.rd = s₀.rd := by rw [rd₆, rd₅', hi.rd]

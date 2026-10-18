@@ -140,7 +140,7 @@ structure FInv (cs : BlockSpec c) (mo : FbMode) (s₀ : State) (m₀ : Mem) (B D
   data : ∀ q < n, ∀ r < 8 * c.bw, s.mem (D + BitVec.ofNat 64 (8 * c.bw * q + r)) =
     if q < j then (fbOut mo (8 * c.bw) (cs.cipher k) m₀ D iv q).getD r 0
     else m₀ (D + BitVec.ofNat 64 (8 * c.bw * q + r))
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
@@ -154,7 +154,7 @@ structure FDone (cs : BlockSpec c) (mo : FbMode) (s₀ : State) (m₀ : Mem) (B 
   buf : ∀ u < 8 * c.bw, s.mem (B + BitVec.ofNat 64 (8 * c.buf) + BitVec.ofNat 64 u) =
     (fbIn mo (8 * c.bw) (cs.cipher k) m₀ D iv n).getD u 0
   data : DInv (8 * c.bw) m₀ s.mem D n n (fbOut mo (8 * c.bw) (cs.cipher k) m₀ D iv)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
@@ -211,6 +211,7 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
   unfold Core.fbBlock
   refine WP.seq (WP.mono (WP.keepIv hsc (by rw [hi.xmm]; exact hz) (cs.crypt_wp hi.base ⟨hwS, hfit⟩ hi.ready))
     fun s₂ ⟨⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩, x₂⟩ => ?_)
+  rw [hi.rsp] at f₂
   have eT : blkAddr c B 0 = T := by simp only [blkAddr, T, Nat.mul_zero, Nat.add_zero]
   have hin : bytesAt s.mem T (8 * c.bw) = fbIn mo (8 * c.bw) ciph m₀ D iv j := by
     apply List.ext_getElem (by
@@ -223,8 +224,7 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
     fun u hu => by rw [← bytesAt_getD s₂.mem T hu, ← eT, ks₂ 0 hG0, eT, hin]
   have D₂ : ∀ q < n, ∀ r < 8 * c.bw, s₂.mem (D + BitVec.ofNat 64 (8 * c.bw * q + r)) =
       s.mem (D + BitVec.ofNat 64 (8 * c.bw * q + r)) := fun q hq r hr =>
-    f₂.bytes (R := ⟨D, 8 * c.bw * n⟩) (fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx; exact dDS subCore) hn64 (hqr hq hr)
+    f₂.bytes (R := ⟨D, 8 * c.bw * n⟩) (hp.stk.coreFrame_disj (dDS subCore) ⟨_, hp.dat, fun _ h => h⟩) hn64 (hqr hq hr)
   -- The step after `crypt`.
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, hi.dataR]
   refine WP.block_append (WP.mono_syms (WP.vecKeep (fbOp_scal c mo) (fbOp_wp mo data₂ (by rw [base₂]) da
@@ -275,11 +275,11 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
       rcases hr with rfl | rfl
       · exact slotOut i hi7 (.inl subA)
       · exact slotOut i hi7 (.inr (.inl rfl))) (by decide)).trans ?_
-    exact f₂.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact slotOut i hi7 (.inr (.inr rfl))) (by decide)
-  have fr₃ : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s₃.mem :=
-    hi.frame.trans ((f₂.sub fun r hr => ⟨_, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact subCore⟩).trans
+    exact f₂.readW (Region.contains_self _ _) (hp.stk.coreFrame_disj (slotOut i hi7 (.inr (.inr rfl)))
+      ⟨_, hp.scr.wr, VG.Offset.sub_base B (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by
+        simp only [Core.ctrSlots]; omega)⟩) (by decide)
+  have fr₃ : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s₃.mem :=
+    hi.frame.trans ((f₂.sub (coreFrame_sub ⟨_, List.mem_cons_self, subCore⟩)).trans
       (f₃.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
