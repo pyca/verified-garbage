@@ -86,6 +86,14 @@ with the samplers `p` and the rest of the implementation `c`. -/
 def kemKeyGen16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (gRho K.L) (.seq (mat K p) (.seq (ifOk (kgRest K c)) (.block topEpi))))
 
+open EncapsH in
+/-- The encapsulation of the parameter set of `K` with `H(ek)` given, with
+16-bit polynomials, with the samplers `p` and the rest of the implementation
+`c`: the ciphertext straight to `ct`. -/
+def kemEncapsH16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
+  .seq (.block pro) (.seq hCopy (.seq hashes (.seq (Top16.encrypt K c p (.r14, 0) (.r13, 0))
+    (.seq (copy (.r12, 0) (sc oG) 32) (.block topEpi)))))
+
 open Decaps in
 /-- The decapsulation of the parameter set of `K`, with 16-bit polynomials,
 with the samplers `p` and the rest of the implementation `c`. -/
