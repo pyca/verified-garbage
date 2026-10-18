@@ -88,6 +88,13 @@ theorem store8_widen (hc : Covers s.wr wr) {a : Addr} {v : Byte} (h : s.store8 a
   cases h
   simp only [State.store8, State.withRegions_wr, hc _ _ hi, ite_true]; rfl
 
+theorem store16_widen (hc : Covers s.wr wr) {a : Addr} {v : BitVec 16} (h : s.store16 a v = some s') :
+    (s.withRegions rd wr).store16 a v = some (s'.withRegions rd wr) := by
+  simp only [State.store16] at h
+  split at h <;> [rename_i hi; cases h]
+  cases h
+  simp only [State.store16, State.withRegions_wr, hc _ _ hi, ite_true]; rfl
+
 theorem load128_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) {a : Addr} {v : BitVec 128}
     (h : s.load128 a = some v) : (s.withRegions rd wr).load128 a = some v := by
   simp only [State.load128] at h
@@ -157,6 +164,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
   | store m r => exact store64_widen hw h
   | store32 m r => exact store32_widen hw h
   | store8 m r => exact store8_widen hw h
+  | store16 m r => exact store16_widen hw h
   | alu op d src =>
     simp only [exec, Taint.execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
     obtain ⟨b, hb, out, ho, rfl⟩ := h
@@ -371,6 +379,8 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     simp only [exec, State.store32] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | store8 m r =>
     simp only [exec, State.store8] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+  | store16 m r =>
+    simp only [exec, State.store16] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | movdquStore m r =>
     simp only [exec, State.store128] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | movdquLoad d m =>
@@ -430,6 +440,9 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | store8 m r =>
     simp only [exec, State.store8] at h; split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
+  | store16 m r =>
+    simp only [exec, State.store16] at h; split at h <;> cases h
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | movdquStore m r =>
     simp only [exec, State.store128] at h; split at h <;> cases h
@@ -643,6 +656,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · simp only [exec, State.store64] at h; split at h <;> cases h; rfl
     · simp only [exec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [exec, State.store8] at h; split at h <;> cases h; rfl
+    · simp only [exec, State.store16] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · simp only [exec, State.store128] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.some.injEq] at h; subst h; rename_i op; cases op <;> rfl

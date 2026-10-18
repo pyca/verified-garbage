@@ -47,6 +47,7 @@ def Instr.erase : Instr → Instr
   | .store m r => .store m.erase r
   | .store32 m r => .store32 m.erase r
   | .store8 m r => .store8 m.erase r
+  | .store16 m r => .store16 m.erase r
   | .alu op d s => .alu op d s.erase
   | .alu32 op d s => .alu32 op d s.erase
   | .movzx8 d m => .movzx8 d m.erase
@@ -121,6 +122,7 @@ theorem stepKD_erase (h : τ.bases = []) (i : Instr) : stepKD τ i.erase = stepK
   | store m r => simp only [Instr.erase, stepKD, stepKDFn, storeStepKD_erase h]
   | store32 m r => simp only [Instr.erase, stepKD, stepKDFn, storeStepKD_erase h]
   | store8 m r => simp only [Instr.erase, stepKD, stepKDFn, storeStepKD_erase h]
+  | store16 m r => simp only [Instr.erase, stepKD, stepKDFn, storeStepKD_erase h]
   | alu op d s => simp only [Instr.erase, stepKD, stepKDFn, aluStepK_erase h]
   | alu32 op d s => simp only [Instr.erase, stepKD, stepKDFn, aluStepK_erase h]
   | movzx8 d m => rfl
@@ -160,6 +162,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | store m r => exact storeStepKD_nil h hs
   | store32 m r => exact storeStepKD_nil h hs
   | store8 m r => exact storeStepKD_nil h hs
+  | store16 m r => exact storeStepKD_nil h hs
   | alu op d s => obtain ⟨-, rfl⟩ := some_cond hs; exact aluBasesK_nil h ..
   | alu32 op d s => obtain ⟨-, rfl⟩ := some_cond hs; exact aluBasesK_nil h ..
   | shift32 _ d _ => cases hs; exact k d

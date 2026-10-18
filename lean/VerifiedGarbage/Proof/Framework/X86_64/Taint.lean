@@ -264,6 +264,7 @@ def step (τ : T) : Instr → Option T
   | .store m r => storeStep τ m 8 (pub τ r)
   | .store32 m r => storeStep τ m 4 (pub τ r)
   | .store8 m r => storeStep τ m 1 (pub τ r)
+  | .store16 m r => storeStep τ m 2 (pub τ r)
   | .alu op d src => aluStep τ op d src true
   | .alu32 op d src => aluStep τ op d src false
   -- The result is a function of the old value of `d`, and so are the
@@ -825,7 +826,7 @@ def dstOf : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
   | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .aluTbl _ d .. => some d
-  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
@@ -1313,6 +1314,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 1) hok (by decide) fun hp => by rw [ha.reg hp]⟩
+  | store16 m r =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec, State.store16] at e₁ e₂
+    split at e₁ <;> [cases e₁; cases e₁]
+    split at e₂ <;> [cases e₂; cases e₂]
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 2) hok (by decide) fun hp => by rw [ha.reg hp]⟩
   | movdquLoad d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -2011,6 +2020,7 @@ def stepK (τ : T) : Instr → Option T
   | .store m r => storeStepK τ m 8 (pub τ r)
   | .store32 m r => storeStepK τ m 4 (pub τ r)
   | .store8 m r => storeStepK τ m 1 (pub τ r)
+  | .store16 m r => storeStepK τ m 2 (pub τ r)
   | .alu op d src => aluStepK τ op d src true
   | .alu32 op d src => aluStepK τ op d src false
   | .shift32 _ d _ | .shift _ d _ =>
@@ -2278,6 +2288,7 @@ def stepKDFn : Instr → Step
   | .store m r => ⟨fun τ => storeStepKD τ m 8 (pub τ r)⟩
   | .store32 m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r)⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r)⟩
+  | .store16 m r => ⟨fun τ => storeStepKD τ m 2 (pub τ r)⟩
   | .alu op d src => ⟨fun τ => aluStepK τ op d src true⟩
   | .alu32 op d src => ⟨fun τ => aluStepK τ op d src false⟩
   | .shift32 _ d _ | .shift _ d _ => ⟨fun τ =>
@@ -2416,6 +2427,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case store m r => exact st m 8 _
   case store32 m r => exact st m 4 _
   case store8 m r => exact st m 1 _
+  case store16 m r => exact st m 2 _
   case movdquStore m _ => exact st m 16 _
   case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
   case vmovdqu32Store m _ => exact st m 64 _

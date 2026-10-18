@@ -444,6 +444,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | store m r => exact h.store m (by decide) (hw.pubM) hs
   | store32 m r => exact h.store m (by decide) (hw.pubM) hs
   | store8 m r => exact h.store m (by decide) (hw.pubM) hs
+  | store16 m r => exact h.store m (by decide) (hw.pubM) hs
   | alu op d src | alu32 op d src =>
     simp only [step, aluStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
@@ -860,7 +861,7 @@ theorem ne_of_clobbers {i : Instr} {d : Reg} {j : Nat} (hd : clobbers i d = true
 theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat} (hc : NoWrite i j)
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
-  case store | store32 | store8 | movdquStore | vmovdqu32Store | stmxcsr | evStore =>
+  case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore =>
     rw [storeStep_regs hs]; exact hr
   case kStore =>
     simp only [step] at hs

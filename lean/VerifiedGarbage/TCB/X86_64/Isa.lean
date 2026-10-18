@@ -244,6 +244,8 @@ inductive Instr
   | movzx8 (dst : Reg) (src : MemOp)
   /-- `mov BYTE PTR [dst], r8`: the low byte of `src`. -/
   | store8 (dst : MemOp) (src : Reg)
+  /-- `mov WORD PTR [dst], r16`: the low 16 bits of `src`. -/
+  | store16 (dst : MemOp) (src : Reg)
   /-- `bswap r64` -/
   | bswap (dst : Reg)
   /-- `op r64, count` (64-bit) with an immediate count. Only counts `1 ≤ count ≤ 63`
@@ -541,6 +543,11 @@ def exec : Instr → State → Option State
   | .andn d a b, s => some (execAndn d a b s)
   | .movzx8 d m, s => (s.load8 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
   | .store8 m r, s => s.store8 (s.ea m) ((s.gpr r).setWidth 8)
+  -- SDM Vol. 2, "MOV—Move", `MOV r/m16, r16` (66 89 /r): `DEST := SRC`,
+  -- the source the register's low 16 bits (AX, CX, …, R8W–R15W; SDM Vol. 1
+  -- §3.4.1.1), the destination the 2 bytes at the address, little-endian
+  -- (SDM Vol. 1 §1.3.1); no alignment is required and no flags are affected.
+  | .store16 m r, s => s.store16 (s.ea m) ((s.gpr r).setWidth 16)
   | .bswap d, s => some (s.setReg d (bswap64 (s.gpr d)))
   | .shift op d n, s => execShift op d n s
   | .shiftCl op d, s => some (execShiftCl op d s)
@@ -711,6 +718,7 @@ def addrs : Instr → State → List Addr
   | .andn .., _ => []
   | .movzx8 _ m, s => [s.ea m]
   | .store8 m _, s => [s.ea m]
+  | .store16 m _, s => [s.ea m]
   | .bswap _, _ => []
   | .shift .., _ => []
   | .shiftCl .., _ => []
@@ -854,7 +862,7 @@ def Instr.dst : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
-  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..

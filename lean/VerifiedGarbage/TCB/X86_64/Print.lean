@@ -27,6 +27,13 @@ def Reg.name32 : Reg → String
   | .r8 => "r8d" | .r9 => "r9d" | .r10 => "r10d" | .r11 => "r11d"
   | .r12 => "r12d" | .r13 => "r13d" | .r14 => "r14d" | .r15 => "r15d"
 
+/-- The 16-bit name of a register (its low 16 bits). -/
+def Reg.name16 : Reg → String
+  | .rax => "ax" | .rcx => "cx" | .rdx => "dx" | .rbx => "bx"
+  | .rsp => "sp" | .rbp => "bp" | .rsi => "si" | .rdi => "di"
+  | .r8 => "r8w" | .r9 => "r9w" | .r10 => "r10w" | .r11 => "r11w"
+  | .r12 => "r12w" | .r13 => "r13w" | .r14 => "r14w" | .r15 => "r15w"
+
 /-- The 8-bit name of a register (its low byte). -/
 def Reg.name8 : Reg → String
   | .rax => "al" | .rcx => "cl" | .rdx => "dl" | .rbx => "bl"
@@ -47,6 +54,8 @@ def MemOp.str (m : MemOp) : String := s!"QWORD PTR {m.addr}"
 def MemOp.str32 (m : MemOp) : String := s!"DWORD PTR {m.addr}"
 
 def MemOp.str8 (m : MemOp) : String := s!"BYTE PTR {m.addr}"
+
+def MemOp.str16 (m : MemOp) : String := s!"WORD PTR {m.addr}"
 
 def MemOp.str128 (m : MemOp) : String := s!"XMMWORD PTR {m.addr}"
 
@@ -267,6 +276,7 @@ def Instr.asm : Instr → List String
   | .andn d a b => [s!"andn {d.name}, {a.name}, {b.name}"]
   | .movzx8 d m => [s!"movzx {d.name32}, {m.str8}"]
   | .store8 m r => [s!"mov {m.str8}, {r.name8}"]
+  | .store16 m r => [s!"mov {m.str16}, {r.name16}"]
   | .bswap d => [s!"bswap {d.name}"]
   | .shift op d n => [s!"{op.name} {d.name}, {n}"]
   | .shiftCl op d => [s!"{op.name} {d.name}, cl"]
@@ -335,7 +345,7 @@ def Instr.memOps : Instr → List MemOp
   | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s
   | .cmov _ _ s => s.memOps
   | .aluTbl _ _ m .. => [m]
-  | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
+  | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .store16 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vmovdquTbl _ m .. | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _

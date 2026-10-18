@@ -22,7 +22,7 @@ namespace VG.X86_64
 def scalarI : Instr → Bool
   | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movImm64 .. | .leaSym .. | .mul ..
   | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. | .bswap ..
-  | .store32 .. | .bswap32 .. => true
+  | .store32 .. | .store16 .. | .bswap32 .. => true
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :
@@ -77,7 +77,7 @@ theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s
     | exact ⟨(execCmov_vec h).1, (execCmov_vec h).2.1⟩
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl⟩)
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
-    | (simp only [State.store64, State.store8, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
+    | (simp only [State.store64, State.store8, State.store16, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
     | (unfold execAlu at h
        simp only [Option.bind_eq_some_iff] at h
        obtain ⟨b, -, h⟩ := h

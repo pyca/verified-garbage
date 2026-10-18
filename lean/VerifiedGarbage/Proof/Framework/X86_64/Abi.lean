@@ -55,6 +55,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | store m r => simp only [exec, State.store64] at h; split at h <;> cases h; rfl
   | store32 m r => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
   | store8 m r => simp only [exec, State.store8] at h; split at h <;> cases h; rfl
+  | store16 m r => simp only [exec, State.store16] at h; split at h <;> cases h; rfl
   | movdquStore m r => simp only [exec, State.store128] at h; split at h <;> cases h; rfl
   | stmxcsr m => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
   | vmovdqu32Store m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
