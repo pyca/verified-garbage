@@ -48,7 +48,7 @@ namespace VG
 
 /-- Element types of arrays and slices. -/
 inductive Elem
-  | u8 | u32 | u64
+  | u8 | u16 | u32 | u64
   /-- `[e; n]` -/
   | array (e : Elem) (n : Nat)
   deriving DecidableEq, Repr
@@ -56,12 +56,14 @@ inductive Elem
 /-- The size in bytes. -/
 def Elem.size : Elem → Nat
   | .u8 => 1
+  | .u16 => 2
   | .u32 => 4
   | .u64 => 8
   | .array e n => n * e.size
 
 def Elem.rust : Elem → String
   | .u8 => "u8"
+  | .u16 => "u16"
   | .u32 => "u32"
   | .u64 => "u64"
   | .array e n => s!"[{e.rust}; {n}]"
