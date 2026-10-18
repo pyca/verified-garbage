@@ -87,7 +87,7 @@ theorem KeygenState.of_frame {extra : Nat} {s t u : State} {h : GenerateKeyABI e
 theorem keygen_head {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     WP isa (.block (GenerateKey.entry ++ GenerateKey.checkArgs)) (allocState Random.frameBytes s) fun t =>
       KeygenState h 0 t ∧ word t.mem (randomBase s) Random.oStatus = 0 ∧
-      t.gpr .rdi = s.gpr .rcx ∧ t.gpr .rsi = s.gpr .r8 ∧ t.gpr .rdx = s.gpr .r9 ∧
+      word t.mem (randomBase s) Random.oQ = s.gpr .rcx + s.gpr .r9 ∧ t.gpr .rdi = s.gpr .rcx ∧ t.gpr .rsi = s.gpr .r8 ∧ t.gpr .rdx = s.gpr .r9 ∧
       t.gpr .rcx = stackArg s 0 ∧ t.gpr .r8 = stackArg s 3 ∧ t.gpr .r9 = stackArg s 4 := by
   have hsp : (allocState Random.frameBytes s).gpr .rsp = randomBase s := by
     simp only [allocState, State.setReg, ite_true]; rfl
@@ -115,6 +115,7 @@ theorem keygen_head {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
       rw [hkv.gpr (random_saved_not_volatile hr)]
       simp only [allocState, State.setReg, ite_eq_right hne],
     by rw [hmxt, hmxu]; rfl⟩,
-    by rw [htm]; exact hv (192, 0) (by simp [keygenEntryValues]), h1, h2, h3, h4, h5, h6⟩
+    by rw [htm]; exact hv (192, 0) (by simp [keygenEntryValues]),
+    by rw [htm]; exact hv (168, _) (by simp [keygenEntryValues, allocState, State.setReg]), h1, h2, h3, h4, h5, h6⟩
 
 end VG.Proof.Dsa.X86_64
