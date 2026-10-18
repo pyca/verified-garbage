@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
 
 `nttAccY` (`Impl/MlKem/X86_64/KpkeMul.lean`) is `vg_mlkem_ntt_avx2`'s code
 storing `NTT` of the polynomial at `rdi` to the accumulator at `r10`, in
-`vbase`'s order (`Acc16`), which the rows of `encryptMulY` and `decryptMulY`
+`vbase`'s order (`Acc16`), which the rows of `encryptMulYg` and `Kpke16.dmInnerY`
 read as it is; it meets `nttAccK` (`NttR.nttRAcc_ok`). `nttAccY16` reads the
 polynomial as `u16`s, and meets `nttAcc16K` (`NttR.nttRAcc16_ok`).
 -/

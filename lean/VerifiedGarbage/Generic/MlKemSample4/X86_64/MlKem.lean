@@ -52,9 +52,7 @@ K-PKE function `kpke` with 16-bit polynomials, and how it computes `H(ek)`. -/
 def encapsNotes (v : Sample4Impl) (kpke : String) : List String :=
   match v.callee.s16, v.callee.batchH16 with
   | some (n, _), some _ => notes16 v [kpke] ++ [hashNote n]
-  | _, _ => notes v ++ [match v.callee.batchH with
-    | none => "It computes `H(ek)` with the sponge functions of SHA3-256 first."
-    | some _ => hashNote v.callee.name]
+  | _, _ => notes v ++ ["It computes `H(ek)` with the sponge functions of SHA3-256 first."]
 
 def artifacts (v : Sample4Impl) : List Artifact := [
   Spec.MlKem.keyGenApi.artifact X86_64.target {

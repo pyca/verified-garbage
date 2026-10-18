@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFused
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFused
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero

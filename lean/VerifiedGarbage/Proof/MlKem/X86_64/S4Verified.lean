@@ -8,9 +8,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, verified
+# ML-KEM on x86-64: `vg_mlkem_sample_ntt4`'s contract
 
-The contract of the proof (`sample4K`) implies the shared one of `Spec/`.
+What the proofs of `vg_mlkem_sample_ntt4` share in showing that the contract
+they are written against (`sample4K`) implies the shared one of `Spec/`: its
+postcondition (`sample4_post`), and a state it permits (`sample4Sat`).
 -/
 
 @[expose] public section
@@ -56,37 +58,5 @@ theorem sample4_post {s s' : State} (h : sample4K.post s s') :
     simp only [List.all_eq_true, List.mem_range, Classical.not_forall] at hall
     obtain ⟨k, hk, hk'⟩ := hall
     exact ⟨k, hk, Option.not_isSome_iff_eq_none.mp hk'⟩
-
-theorem sample4_correct {fast : Bool} (σ : State) (hs : sample4K.pre σ) :
-    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧
-      sample4K.post σ s' := by
-  rw [sample4K_eq] at hs ⊢; exact S4.correct (w16 := false) σ hs
-
-theorem sample4_ct {fast : Bool} :
-    ConstantTime isa sample4K.pre sample4K.pub (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) := by
-  rw [sample4K_eq]; exact S4.ct (w16 := false)
-
-theorem sample4_verified {fast : Bool} : Verified X86_64.target (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast)
-    (Spec.MlKem.sampleNTT4Contract X86_64.abi 24) :=
-  Verified.of_correct (sample4_correct (fast := fast)) (sample4_ct (fast := fast))
-    { pre := by sig_implies_pre [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
-        X86_64.argRegs]
-      post := by
-        intro s s' _ h
-        sig_post [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
-        exact sample4_post h
-      pub := by
-        intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs] at h
-        sig_split h
-        sig_reduce [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
-        sig_simp [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi, X86_64.argRegs]
-          [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
-        sig_and_intros
-        sig_close
-        all_goals first | with_reducible assumption | exact map_toNat_inj ‹_›
-      sat := by
-        sig_implies_sat [Spec.MlKem.sampleNTT4Contract, Spec.MlKem.sampleNTT4Sig, sample4K, X86_64.abi,
-          X86_64.argRegs] [sample4Sat] using sample4Sat }
 
 end VG.Proof.MlKem.X86_64

@@ -48,19 +48,6 @@ theorem kg16Wf768 : KeyGen16.Kg16Wf kem768w := by kem_wf kemWf768
 theorem ec16Wf768 : Encaps16.Ec16Wf kem768w := by kem_wf kemWf768
 theorem dc16Wf768 : Decaps16.Dc16Wf kem768w := by kem_wf kemWf768
 theorem ekWf768 : Ek.EkWf kem768 := by kem_wf ecWf768
-theorem ekfWf768 : EkF.EkFWf kem768 := by kem_wf ecWf768
-theorem ekhWf768 : EkF.EkHWf kem768 := by kem_wf ekfWf768
-
-/-- The taint checks of the fused encapsulation's pieces. -/
-theorem ektWf768 : EkF.EkTWf kem768 where
-  rT := ⟨_, by taint_decide⟩
-  zT := ⟨_, by taint_decide⟩
-  hT := by
-    intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768 = 3 by decide] at hi; omega
-    rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  hcT := ⟨_, by taint_decide⟩
-  ij := by decide +kernel
 
 theorem ek16FWf768 : EkF16.Ek16FWf kem768w := by kem_wf ec16Wf768.toEcWfB
 theorem ek16HWf768 : EkF16.Ek16HWf kem768w := by kem_wf ek16FWf768
@@ -144,12 +131,7 @@ theorem encapsH_verified (v : Sample4Impl) :
     (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 theorem encaps_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem768 v.callee) = true := by
-  unfold kemEncaps
-  split
-  · s4_ctl v
-  · rename_i b hb
-    have hB := v.batchH b hb
-    ek_ctl v b hB
+  s4_ctl v
 
 /-- The shared contract of `encaps`, from the contract its proofs are written against. -/
 theorem encapsImp768 : (encK kem768).Implies (Spec.MlKem.encapsContract X86_64.abi 32) :=
@@ -165,7 +147,7 @@ theorem encapsImp768 : (encK kem768).Implies (Spec.MlKem.encapsContract X86_64.a
 
 theorem encaps_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.encaps v.callee) (Spec.MlKem.encapsContract X86_64.abi 32) :=
-  encapsSel_verified kpke768 v ek16HWf768 ekt16Wf768 ekWf768 ekhWf768 ektWf768 calls768 encapsImp768
+  encapsSel_verified kpke768 v ek16HWf768 ekt16Wf768 ekWf768 calls768 encapsImp768
     (fun _ c b S B => by ek16_ctl v c b S B kpke768) (encaps_ctl v)
 
 /-- The shared contract of `decaps`, from the contract its proofs are written against. -/

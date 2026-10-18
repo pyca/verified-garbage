@@ -65,18 +65,19 @@ def epi : List Instr :=
     .mov .rbp (.mem (at_ .rbx (oKS + 8))), .mov .rbx (.mem (at_ .rbx oKS))]
 
 /-- The code of `vg_mlkem*_decrypt_mul` of rank `k`, with `inner` in its
-MXCSR region (`decryptMulY`), but for the restore of the
+MXCSR region, but for the restore of the
 registers it saves. -/
 def dmBody (inner : Nat → Prog isa) (k : Nat) : Prog isa :=
   .seq (.block (KpkeMul.save ++ [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi),
       .mov .r13 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
     (withMxcsr .rbx oMx (inner k))
 
-/-- The code `decryptMulY` runs in its MXCSR region. -/
+/-- `ŝᵀ ∘ NTT(u)` with AVX2, in the MXCSR region: each `NTT(u[j])` to an
+accumulator, then the row of products and `NTT⁻¹`. -/
 def dmInnerY (k : Nat) : Prog isa :=
   .seq (.block KpkeMul.startY) (.seq (.loop KpkeMul.nttTermY .ne) (KpkeMul.rowInvY [.mov .rsi (.reg .r12)] 1024 k))
 
-variable (L : Kem) (A : Arith) (inner : Nat → Prog isa)
+variable (L : Kem) (A : Prims) (inner : Nat → Prog isa)
 
 /-- `Decompress_d(ByteDecode_d(b))` to `f`, inline, for `d = d_u` or `d_v`. -/
 def ddIn (b : Ptr) (d : Nat) (f : Ptr) : Prog isa :=
@@ -213,18 +214,18 @@ end Kpke16
 open Kpke16 in
 /-- `vg_mlkem*_kpke_decrypt` of the parameter set `L`, with the arithmetic of `A`
 and the code `inner` of its products. -/
-def kpkeDec (L : Kem) (A : Arith) (inner : Nat → Prog isa) : Prog isa :=
+def kpkeDec (L : Kem) (A : Prims) (inner : Nat → Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (decBody L A inner) (.block epi))
 
 open Kpke16 in
 /-- `vg_mlkem*_kpke_encrypt` of the parameter set `L`, with the arithmetic of
 `A` and the code `mul` of `vg_mlkem*_encrypt_mul` (reading `Â` as `u16`s). -/
-def kpkeEnc (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeEncPre L A mul) (kpkeEncPost L A)
+def kpkeEnc (L : Kem) (A : Prims) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeEncPre L A mul) (kpkeEncPost L A)
 
 open Kpke16 in
 /-- `vg_mlkem*_kpke_keygen` of the parameter set `L`, with the arithmetic of
 `A` and the code `mul` of `vg_mlkem*_keygen_mul` (reading `Â` as `u16`s). -/
-def kpkeKg (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeKgPre L mul) (kpkeKgPost L A)
+def kpkeKg (L : Kem) (A : Prims) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeKgPre L mul) (kpkeKgPost L A)
 
 /-! ## Calls of the K-PKE functions -/
 

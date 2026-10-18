@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 meta import Mathlib.Tactic.Conv
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_decode12_avx2`
+# ML-KEM on x86-64: `ByteDecode₁₂` with AVX2, which the K-PKE functions inline
 
 The eight values of a group of 12 bytes are the candidates of
 `vg_mlkem_sample_ntt4_avx2` (`S4.cand_dword`; for the last group, loaded 4
@@ -476,11 +476,5 @@ theorem decode12Y_ct : ConstantTime isa decode12K.pre decode12K.pub decode12Avx2
       rcases hr with rfl | rfl | rfl
       exacts [hp.1, hp.2.1, hp.2.2])
     (by taint_decide)
-
-theorem decode12Y_verified :
-    Verified X86_64.target decode12Avx2 (Spec.MlKem.decode12Contract X86_64.abi) :=
-  Verified.of_correct decode12Y_correct decode12Y_ct (by
-    mlkem_implies [Spec.MlKem.decode12Contract, Spec.MlKem.decode12Sig, decode12K, X86_64.abi,
-      X86_64.argRegs] [decode12Sat] using decode12Sat)
 
 end VG.Proof.MlKem.X86_64

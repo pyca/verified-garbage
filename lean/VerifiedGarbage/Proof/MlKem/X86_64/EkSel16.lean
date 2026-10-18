@@ -38,7 +38,7 @@ tactic_template "ek16_sp " v:ident c:ident b:ident S:ident B:ident hK:ident : ta
     | (code_whnf; with_reducible apply all_seq) | (code_whnf; with_reducible apply all_ite) | rfl))
 
 theorem encapsSel_verified {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (F16 : EkF16.Ek16HWf K)
-    (T16 : EkF16.EkT16Wf K) (W : Ek.EkWf K.L) (F : EkF.EkHWf K.L) (T : EkF.EkTWf K.L) {wc wd : List Nat}
+    (T16 : EkF16.EkT16Wf K) (W : Ek.EkWf K.L) {wc wd : List Nat}
     (C : KemCalls K.L wc wd) {k : Contract isa} (hk : (encK K.L).Implies k)
     (hctl16 : ∀ n c b, S16Ok c → BatchHOk16 b → ctlOk (kemEncaps16 K v.callee (n, c) b) = true)
     (hctl : ctlOk (kemEncaps K.L v.callee) = true) :
@@ -50,7 +50,7 @@ theorem encapsSel_verified {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (F16 
     exact Verified.of_correct
       (kemEncaps16_correct hK v F16 hs hb (hctl16 n c b (v.s16 n c hs) (v.batchH16 b hb)))
       (kemEncaps16_ct hK v F16 T16 hs hb) hk
-  · exact Verified.of_correct (kemEncaps_correct v W F C hctl) (kemEncaps_ct v W F T C) hk
+  · exact Verified.of_correct (kemEncaps_correct v W C hctl) (kemEncaps_ct v W C) hk
 
 /-- No instruction of `kemEncapsSel K c` writes the stack pointer, if neither
 of the functions it may run does. -/

@@ -13,14 +13,14 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key with the sponge functions
 
-`kemEncaps L v.callee` for an implementation `v` without a fragment
-(`v.callee.batchH = none`, the baseline): the prologue, `H(ek)` to `H` with
+`kemEncaps L v.callee` for any implementation `v` of `vg_mlkem_sample_ntt4`:
+the prologue, `H(ek)` to `H` with
 the sponge functions (`hashEk_ok`), and `kemEncapsH`'s rest (`EcTop.lean`),
 in the context of `encK` (`EkBase.lean`): it returns 1 with
 `ML-KEM.Encaps_internal(ek, m)` in `key` and `ct` if every `SampleNTT`
-succeeded within 280 iterations, and 0 otherwise (`kemEncapsS_correct`); it
-leaks only the pointers and `ρ` (`kemEncapsS_ct`). The out and the end
-(`out_ok`, `post_of`) serve the other implementations too.
+succeeded within 280 iterations, and 0 otherwise (`kemEncaps_correct`); it
+leaks only the pointers and `ρ` (`kemEncaps_ct`). The out and the end
+(`out_ok`, `post_of`) serve the encapsulation with 16-bit polynomials too.
 -/
 
 @[expose] public section
@@ -122,13 +122,11 @@ theorem post_of (W : EcWfB L) {σ s : State} (h : EKEnd L σ s) {s' : State}
 end Ek
 
 open Ek in
-theorem kemEncapsS_correct (v : Sample4Impl) {L : Kem} (W : EkWf L) {wc wd : List Nat}
-    (K : KemCalls L wc wd) (hb : v.callee.batchH = none)
-    (hctl : ctlOk (kemEncaps L v.callee) = true) (σ : State) (hp : (encK L).pre σ) :
+theorem kemEncaps_correct (v : Sample4Impl) {L : Kem} (W : EkWf L) {wc wd : List Nat}
+    (K : KemCalls L wc wd) (hctl : ctlOk (kemEncaps L v.callee) = true) (σ : State) (hp : (encK L).pre σ) :
     ∃ t s', Exec isa (kemEncaps L v.callee) σ t s' ∧ abiPreserved σ s' ∧ (encK L).post σ s' := by
   have W₀ := W.toEcWf
   unfold kemEncaps at hctl ⊢
-  rw [hb] at hctl ⊢
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W₀.toEcWfB hp) fun s₁ h₁ =>
     WP.seq (WP.mono (hashEk_ok W hp h₁) fun s₂ ⟨h₂, hH, h15⟩ =>
       WP.seq (WP.mono (hashes_ok W₀.toEcWfB hp h₂ hH h15) fun s₃ h₃ =>
@@ -224,13 +222,12 @@ theorem hashEk_tr (W : EkWf L) :
 end Ek
 
 open Ek in
-theorem kemEncapsS_ct (v : Sample4Impl) {L : Kem} (W : EkWf L) {wc wd : List Nat}
-    (K : KemCalls L wc wd) (hb : v.callee.batchH = none) :
+theorem kemEncaps_ct (v : Sample4Impl) {L : Kem} (W : EkWf L) {wc wd : List Nat}
+    (K : KemCalls L wc wd) :
     ConstantTime isa (encK L).pre (encK L).pub (kemEncaps L v.callee) := by
   have W₀ := W.toEcWf
   refine relStart (Q := fun _ _ => True) ?_
   unfold kemEncaps
-  rw [hb]
   refine RelCT.seq (relInv (I' := ProOut L) (fun σ s hp hs => by subst hs; exact pro_ok W₀.toEcWfB hp) pro_tr) ?_
   refine RelCT.seq (relInv (I' := fun σ s => EK L σ s ∧ bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ) ∧
     s.gpr .r15 = 1) (fun σ s hp hs => hashEk_ok W hp hs) (hashEk_tr W)) ?_

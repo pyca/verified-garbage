@@ -64,19 +64,6 @@ theorem kg16Wf1024 : KeyGen16.Kg16Wf kem1024w := by kem_wf kemWf1024
 theorem ec16Wf1024 : Encaps16.Ec16Wf kem1024w := by kem_wf kemWf1024
 theorem dc16Wf1024 : Decaps16.Dc16Wf kem1024w := by kem_wf kemWf1024
 theorem ekWf1024 : Ek.EkWf kem1024 := by kem_wf ecWf1024
-theorem ekfWf1024 : EkF.EkFWf kem1024 := by kem_wf ecWf1024
-theorem ekhWf1024 : EkF.EkHWf kem1024 := by kem_wf ekfWf1024
-
-/-- The taint checks of the fused encapsulation's pieces. -/
-theorem ektWf1024 : EkF.EkTWf kem1024 where
-  rT := ⟨_, by taint_decide⟩
-  zT := ⟨_, by taint_decide⟩
-  hT := by
-    intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb kem1024 = 4 by decide] at hi; omega
-    rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  hcT := ⟨_, by taint_decide⟩
-  ij := by decide +kernel
 
 theorem ek16FWf1024 : EkF16.Ek16FWf kem1024w := by kem_wf ec16Wf1024.toEcWfB
 theorem ek16HWf1024 : EkF16.Ek16HWf kem1024w := by kem_wf ek16FWf1024
@@ -175,14 +162,8 @@ theorem encapsH1024_verified (v : Sample4Impl) :
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
 theorem encaps1024_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem1024 v.callee) = true := by
-  unfold kemEncaps
-  split
-  · s4_ctl v
-    all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _
-  · rename_i b hb
-    have hB := v.batchH b hb
-    ek_ctl v b hB
-    all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _
+  s4_ctl v
+  all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _
 
 /-- The shared contract of `encaps1024`, from the contract its proofs are written against. -/
 theorem encapsImp1024 : (encK kem1024).Implies (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
@@ -198,7 +179,7 @@ theorem encapsImp1024 : (encK kem1024).Implies (Spec.MlKem1024.encapsContract X8
 
 theorem encaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (encaps1024 v.callee) (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
-  encapsSel_verified kpke1024 v ek16HWf1024 ekt16Wf1024 ekWf1024 ekhWf1024 ektWf1024 calls1024 encapsImp1024
+  encapsSel_verified kpke1024 v ek16HWf1024 ekt16Wf1024 ekWf1024 calls1024 encapsImp1024
     (fun _ c b S B => by ek16_ctl v c b S B kpke1024) (encaps1024_ctl v)
 
 /-- The shared contract of `decaps1024`, from the contract its proofs are written against. -/

@@ -33,7 +33,7 @@ theorem kpkeDec1024Y_ct :
 
 theorem kpkeDec1024Y_correct : ∀ s, (kpkeDecK kem1024).pre s →
     ∃ t s', Exec isa (kpkeDec kem1024 .avx2 dmInnerY) s t s' ∧ abiPreserved s s' ∧ (kpkeDecK kem1024).post s s' :=
-  KpkeDec.kpkeDec_correct ArithOk.avx2 calls1024 kdWf1024 dmOkY (by lit_decide) (by lit_decide)
+  KpkeDec.kpkeDec_correct PrimsOk.avx2 calls1024 kdWf1024 dmOkY (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide) (by lit_decide)
 
 theorem kpkeDec1024_of {c : Prog isa}

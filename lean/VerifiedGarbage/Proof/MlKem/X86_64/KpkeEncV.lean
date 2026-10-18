@@ -65,15 +65,15 @@ theorem kpkeEnc768Y_ct :
   · refine ((RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
       (fun x y h => kpkeEnc_agree kem768 x y h.1 h.2.1 h.2.2) [] (by taint_decide)).wpDep
       (F := fun σ s => KpkeEnc.EU kem768 σ 0 s) fun s₁ s₂ h =>
-        ⟨KpkeEnc.pre_wp ArithOk.avx2 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide) h.1,
-          KpkeEnc.pre_wp ArithOk.avx2 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide) h.2.1⟩).mono
+        ⟨KpkeEnc.pre_wp PrimsOk.avx2 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide) h.1,
+          KpkeEnc.pre_wp PrimsOk.avx2 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide) h.2.1⟩).mono
       (fun _ _ h => h) fun s₁ s₂ ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, e₁, e₂⟩ => kpkeEnc_mid hp e₁ e₂
   · exact RelCT.mono (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (fun x y h => X86_64.Taint.agree_ofRegs h) [] (by taint_decide)) (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem kpkeEnc768Y_correct : ∀ s, (kpkeEncK kem768).pre s →
     ∃ t s', Exec isa (kpkeEnc kem768 .avx2 encryptMul16Y) s t s' ∧ abiPreserved s s' ∧ (kpkeEncK kem768).post s s' :=
-  KpkeEnc.kpkeEnc_correct ArithOk.avx2 kdCalls768 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide)
+  KpkeEnc.kpkeEnc_correct PrimsOk.avx2 kdCalls768 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
 
 /-- A state the contract permits. -/

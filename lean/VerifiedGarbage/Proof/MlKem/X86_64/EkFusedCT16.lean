@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes

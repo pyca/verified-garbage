@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkInline
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
+public import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 import all Init.Data.Nat.Bitwise.Basic

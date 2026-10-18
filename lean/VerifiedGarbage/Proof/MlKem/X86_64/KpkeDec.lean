@@ -294,7 +294,7 @@ theorem inC' {s : State} (h : KT L σ s) {o n : Nat} (ho : o + n ≤ kScr) :
   obtain ⟨r, hr, hc⟩ := inC hp h ho
   exact ⟨r, List.mem_append_right _ hr, hc⟩
 
-theorem u_ok {A : Arith} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KdWf L)
+theorem u_ok {A : Prims} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KdWf L)
     (hn : (L.dd A.codecs).noCalls = true) {i : Nat} (hi : i < L.k) {s : State} (h : DR L σ i 0 s) :
     WP isa (uHat L A i) s (DR L σ (i + 1) 0) := by
   obtain ⟨_, _, _, _, _, _, d5, _, _, r3, r4, _, _, _, _⟩ := id hp
@@ -325,7 +325,7 @@ theorem u_ok {A : Arith} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KdWf L)
   · rw [e1, ← bytesAt_slice _ _ bnd, hkt.bT] at hq
     exact hq
 
-theorem s_ok {A : Arith} (hA : ArithOk A) (W : KdWf L) (hn : A.dec12.noCalls = true) {i : Nat} (hi : i < L.k)
+theorem s_ok {A : Prims} (hA : PrimsOk A) (W : KdWf L) (hn : A.dec12.noCalls = true) {i : Nat} (hi : i < L.k)
     {s : State} (h : DR L σ L.k i s) : WP isa (sHat L A i) s (DR L σ L.k (i + 1)) := by
   obtain ⟨_, _, _, _, _, d4, _, _, r2, _, r4, _, _, _, _⟩ := id hp
   have hkt := h.kt
@@ -410,10 +410,10 @@ variable {L : Kem} {σ : State} (hp : (kpkeDecK L).pre σ)
 include hp
 
 /-- The rest of the function: `v'`, the product, `w` and `m`. -/
-abbrev tail (L : Kem) (A : Arith) (inner : Nat → Prog isa) : Prog isa :=
+abbrev tail (L : Kem) (A : Prims) (inner : Nat → Prog isa) : Prog isa :=
   .seq (vHat L A) (.seq (prod L inner) (.seq (wSub L A) (mOut L A)))
 
-theorem tail_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KdWf L)
+theorem tail_ok {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KdWf L)
     {inner : Nat → Prog isa} (D : DmOk inner) (hnD : (L.dd A.codecs).noCalls = true) (hnS : A.sub.noCalls = true)
     (hnC : A.codecs.ce.noCalls = true) {s : State} (h : DR L σ L.k L.k s) :
     WP isa (tail L A inner) s fun s' => KT L σ s' ∧
@@ -578,7 +578,7 @@ end
 
 /-! ## The function -/
 
-theorem kpkeDec_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem kpkeDec_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KdWf L) {inner : Nat → Prog isa} (D : DmOk inner) (hnD : (L.dd A.codecs).noCalls = true)
     (hn12 : A.dec12.noCalls = true) (hnS : A.sub.noCalls = true) (hnC : A.codecs.ce.noCalls = true)
     {σ : State} (hp : (kpkeDecK L).pre σ) :
@@ -598,7 +598,7 @@ theorem kpkeDec_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K 
   exact WP.mono (tail_ok hp hA K W D hnD hnS hnC h₃) fun s₄ ⟨kt₄, hm₄⟩ =>
     WP.mono (epi_ok hp kt₄) fun s₅ ⟨hg, hm⟩ => ⟨hg, by show bytesAt _ _ _ = _; rw [hm]; exact hm₄⟩
 
-theorem kpkeDec_correct {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem kpkeDec_correct {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KdWf L) {inner : Nat → Prog isa} (D : DmOk inner) (hnD : (L.dd A.codecs).noCalls = true)
     (hn12 : A.dec12.noCalls = true) (hnS : A.sub.noCalls = true) (hnC : A.codecs.ce.noCalls = true)
     (hctl : ctlOk (kpkeDec L A inner) = true) (σ : State) (hp : (kpkeDecK L).pre σ) :

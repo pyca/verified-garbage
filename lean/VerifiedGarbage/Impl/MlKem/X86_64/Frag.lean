@@ -138,48 +138,66 @@ def Codecs.dd : Codecs → Prog isa
   | .avx2 => decodeDecompressAvx2
 
 /-- The implementations (symbols and code) of the polynomial primitives that
-a top-level function calls: `vg_mlkem_inv_ntt`, `vg_mlkem_add`,
-`vg_mlkem_sub`, `vg_mlkem_cbd2`, `vg_mlkem_decode12` and `vg_mlkem_encode12`;
-the baseline ones (`sse`), or those with AVX2 (`avx2`); the code the products
-of K-PKE inline (`bodies`); the compression and decompression that go
-with them; and the products of encryption and decryption (`encMul`,
-`decMul`). -/
-structure Arith where
-  nttInvN : String
-  nttInv : Prog isa
+both the top-level functions and the K-PKE functions use: `vg_mlkem_add`,
+`vg_mlkem_sub`, `vg_mlkem_decode12` and `vg_mlkem_encode12`, and the
+compression and decompression that go with them; the baseline ones (`sse`),
+or those with AVX2 (`avx2`), which the K-PKE functions inline. -/
+structure Prims where
   addN : String
   add : Prog isa
   subN : String
   sub : Prog isa
+  dec12N : String
+  dec12 : Prog isa
+  enc12N : String
+  enc12 : Prog isa
+  codecs : Codecs
+
+def Prims.sse : Prims :=
+  ⟨"vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_decode12", decode12,
+    "vg_mlkem_encode12", encode12, .base⟩
+
+def Prims.avx2 : Prims :=
+  ⟨"vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_decode12_avx2", decode12Avx2,
+    "vg_mlkem_encode12_avx2", encode12Avx2, .avx2⟩
+
+/-- The polynomial arithmetic a top-level function with polynomials of `u32`s
+calls: its primitives, `vg_mlkem_inv_ntt`, `vg_mlkem_cbd2`, the code the
+products of K-PKE inline (`bodies`), and the products of encryption and
+decryption (`encMul`, `decMul`); and `vg_mlkem16_cbd2`, which a top-level
+function with 16-bit polynomials calls. -/
+structure Arith extends Prims where
+  nttInvN : String
+  nttInv : Prog isa
   cbdN : String
   cbd : Prog isa
   /-- `cbd` with 16-bit coefficients (`vg_mlkem16_cbd2`). -/
   cbd16N : String
   cbd16 : Prog isa
-  dec12N : String
-  dec12 : Prog isa
-  enc12N : String
-  enc12 : Prog isa
   /-- The code `vg_mlkem*_{keygen,encrypt,decrypt}_mul` inline, and the suffix of their names. -/
   bodies : Bodies
   sfx : String
-  codecs : Codecs
   /-- `vg_mlkem*_encrypt_mul` and `vg_mlkem*_decrypt_mul` of rank `k`. -/
   encMul : Nat → Prog isa
   decMul : Nat → Prog isa
 
-def Arith.sse : Arith :=
-  ⟨"vg_mlkem_inv_ntt", X86_64.nttInv,
-    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem16_cbd2", cbd2_16,
-    "vg_mlkem_decode12", decode12,
-    "vg_mlkem_encode12", encode12, .sse, "", .base, encryptMul .sse, decryptMul .sse⟩
+/-- The baseline: SSE2. -/
+def Arith.sse : Arith where
+  toPrims := .sse
+  nttInvN := "vg_mlkem_inv_ntt"
+  nttInv := X86_64.nttInv
+  cbdN := "vg_mlkem_cbd2"
+  cbd := cbd2
+  cbd16N := "vg_mlkem16_cbd2"
+  cbd16 := cbd2_16
+  bodies := .sse
+  sfx := ""
+  encMul := encryptMul .sse
+  decMul := decryptMul .sse
 
-def Arith.avx2 : Arith :=
-  ⟨"vg_mlkem_inv_ntt_avx2",
-    nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
-    "vg_mlkem16_cbd2_avx2", cbd2_16Avx2,
-    "vg_mlkem_decode12_avx2", decode12Avx2, "vg_mlkem_encode12_avx2", encode12Avx2, .avx2, "_avx2", .avx2,
-    encryptMulY, decryptMulY⟩
+/-- The baseline, but for `vg_mlkem16_cbd2_avx2`: what the implementations
+with AVX2 call, whose top-level functions run with 16-bit polynomials. -/
+def Arith.sse16 : Arith := { Arith.sse with cbd16N := "vg_mlkem16_cbd2_avx2", cbd16 := cbd2_16Avx2 }
 
 def nttInvAt (A : Arith) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttInvN A.nttInv)
@@ -353,27 +371,28 @@ structure Callee4 where
   prfs : Nat → Nat → Nat → Nat → Prog isa
   /-- The polynomial arithmetic that goes with it. -/
   arith : Arith
-  /-- The fragment encapsulation inlines to sample three entries of the
-  matrix while absorbing three blocks of `ek` into `H`'s sponge
-  (`Sample4.sampleH`), if the implementation has one. -/
-  batchH : Option (Prog isa)
   /-- The symbol and code of the same implementation with 16-bit
   coefficients, if it has one. -/
   s16 : Option (String × Prog isa)
-  /-- `batchH` with 16-bit coefficients (`Sample4.sampleH fast true`). -/
+  /-- The fragment encapsulation inlines to sample three entries of the
+  matrix with 16-bit coefficients while absorbing three blocks of `ek`
+  into `H`'s sponge (`Sample4.sampleH fast true`), if the implementation
+  has one. -/
   batchH16 : Option (Prog isa)
 
 def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none,
-  none, none⟩
+  none⟩
+/-- Four-way sampling with AVX2, with 16-bit coefficients; the functions of
+`u32`s, which callers run only without `s16`, are the baseline's sampler. -/
 def Callee4.avx2 : Callee4 :=
-  ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, (fun n k o w => prfsAvx2 n k o w), .avx2,
-    some Sample4.sampleH, some ("vg_mlkem16_sample_ntt4_avx2", Sample4.sampleNTT4Avx2 false true),
+  ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, (fun n k o w => prfsAvx2 n k o w), .sse16,
+    some ("vg_mlkem16_sample_ntt4_avx2", Sample4.sampleNTT4Avx2 false true),
     some (Sample4.sampleH false true)⟩
 
 /-- Four-way sampling with AVX-512VL quadword rotates. -/
 def Callee4.avx512 : Callee4 :=
-  ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, (fun n k o w => prfsAvx2 n k o w true), .avx2,
-    some (Sample4.sampleH true), some ("vg_mlkem16_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true true),
+  ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, (fun n k o w => prfsAvx2 n k o w true), .sse16,
+    some ("vg_mlkem16_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true true),
     some (Sample4.sampleH true true)⟩
 
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
