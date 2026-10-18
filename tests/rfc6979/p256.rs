@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.5: P-256, with SHA-256 and SHA-384.
+//! RFC 6979 §A.2.5: P-256, with SHA-256 and SHA-384, and on x86-64 the
+//! section's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -140,4 +141,59 @@ fn p256_keys() {
         assert!(key.public_key().is_ok());
     }
     assert_eq!(Error::InvalidKey.to_string(), "invalid ECDSA private key");
+}
+
+/// On x86-64, the signatures with SHA-1 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p256_sha1() {
+    super::other_hash::<P256, verified_garbage::hashes::sha1::Sha1, 32, 65, 64>(
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// On x86-64, the signatures with SHA-224 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p256_sha224() {
+    super::other_hash::<P256, verified_garbage::hashes::sha224::Sha224, 32, 65, 64>(
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// On x86-64, the signatures with SHA-512 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p256_sha512() {
+    super::other_hash::<P256, verified_garbage::hashes::sha512::Sha512, 32, 65, 64>(
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        "SHA-512",
+    );
+}
+
+/// On x86-64, the hash functions RFC 6979 has no signatures with
+/// (SHA-512/224 and SHA-512/256): a signature verifies, and not for another
+/// message.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p256_sha512_t() {
+    use verified_garbage::hashes::sha512_224::Sha512_224;
+    use verified_garbage::hashes::sha512_256::Sha512_256;
+    let (_, x, u, _) = p256();
+    let signing = SigningKey::<P256>::from_bytes(&x);
+    let verifying = VerifyingKey::<P256>::from_bytes(&u);
+    let rs = signing.sign::<Sha512_224>(b"sample").unwrap();
+    assert_eq!(verifying.verify::<Sha512_224>(b"sample", &rs), Ok(()));
+    assert_eq!(
+        verifying.verify::<Sha512_224>(b"other", &rs),
+        Err(Error::InvalidSignature)
+    );
+    let rs = signing.sign::<Sha512_256>(b"sample").unwrap();
+    assert_eq!(verifying.verify::<Sha512_256>(b"sample", &rs), Ok(()));
+    assert_eq!(
+        verifying.verify::<Sha512_256>(b"other", &rs),
+        Err(Error::InvalidSignature)
+    );
 }

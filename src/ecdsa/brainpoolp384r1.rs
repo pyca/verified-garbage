@@ -9,17 +9,9 @@
     target_arch = "arm"
 ))]
 
-use super::{BrainpoolP384r1, Error, SignatureHash, SigningKey, sealed};
+use super::{BrainpoolP384r1, Error, SigningKey};
 use crate::arch::ec_brainpoolp384r1::vg_ec_brainpoolp384r1_public_key;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
-use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_sha3;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_brainpoolp384r1_sha384::{
-    vg_ecdsa_brainpoolp384r1_sha384_sign_avx2, vg_ecdsa_brainpoolp384r1_sha384_sign_shani,
-};
-use crate::hashes::sha384::{Sha384, Sha384Backend};
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP384r1> {
@@ -47,49 +39,23 @@ impl SigningKey<BrainpoolP384r1> {
     }
 }
 
-impl sealed::Functions<BrainpoolP384r1> for Sha384 {
-    fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
-        let sign = match Sha384Backend::select(crate::cpu::detected()) {
-            Sha384Backend::Scalar => vg_ecdsa_brainpoolp384r1_sha384_sign,
-            #[cfg(target_arch = "aarch64")]
-            Sha384Backend::Sha3 => vg_ecdsa_brainpoolp384r1_sha384_sign_sha3,
-            #[cfg(target_arch = "x86_64")]
-            Sha384Backend::ShaNi => vg_ecdsa_brainpoolp384r1_sha384_sign_shani,
-            #[cfg(target_arch = "x86_64")]
-            Sha384Backend::Avx2 => vg_ecdsa_brainpoolp384r1_sha384_sign_avx2,
-        };
-        let mut out = [0; 96];
-        let mut scratch = [0u64; 1024];
-        // SAFETY: `out` is valid for reads and writes of 96 bytes, `d` and
-        // `digest` for reads of 48 and `scratch` for reads and writes of
-        // 8192; `out` and `scratch` are distinct objects from each other and
-        // the others, so none overlaps another or the call's stack frame,
-        // and, as Rust objects, none wraps around the address space. `sign`
-        // needs no CPU feature that the implementation of SHA-384 selected
-        // for this CPU does not.
-        let ok = unsafe { sign(&mut out, d, digest, &mut scratch) };
-        zeroize(&mut scratch);
-        if ok == 1 {
-            Ok(out)
-        } else {
-            Err(Error::InvalidKey)
-        }
-    }
-
-    fn verify(q: &[u8; 97], digest: &[u8; 48], signature: &[u8; 96]) -> Result<(), Error> {
-        let mut scratch = [0u64; 1024];
-        // SAFETY: `q` is valid for reads of 97 bytes, `digest` of 48,
-        // `signature` of 96 and `scratch` for reads and writes of 8192;
-        // `scratch` is a distinct object from the others, so it overlaps
-        // neither them nor the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        let ok = unsafe { vg_ecdsa_brainpoolp384r1_verify(q, digest, signature, &mut scratch) };
-        if ok == 1 {
-            Ok(())
-        } else {
-            Err(Error::InvalidSignature)
-        }
+/// Whether `signature` verifies with `q` for the hash whose leftmost bits
+/// are `digest`, as `vg_ecdsa_brainpoolp384r1_verify` takes them (FIPS 186-5 §6.4.2).
+pub(super) fn verify_with(
+    q: &[u8; 97],
+    digest: &[u8; 48],
+    signature: &[u8; 96],
+) -> Result<(), Error> {
+    let mut scratch = [0u64; 1024];
+    // SAFETY: `q` is valid for reads of 97 bytes, `digest` of 48,
+    // `signature` of 96 and `scratch` for reads and writes of 8192;
+    // `scratch` is a distinct object from the others, so it overlaps
+    // neither them nor the call's stack frame, and, as Rust objects,
+    // none wraps around the address space.
+    let ok = unsafe { vg_ecdsa_brainpoolp384r1_verify(q, digest, signature, &mut scratch) };
+    if ok == 1 {
+        Ok(())
+    } else {
+        Err(Error::InvalidSignature)
     }
 }
-
-impl SignatureHash<BrainpoolP384r1> for Sha384 {}

@@ -1,7 +1,9 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
 //! §A.2.3 (P-192), §A.2.4 (P-224), §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
 //! key, its public key, and its signatures of "sample" and "test" with the
-//! hash functions the curve signs with here.
+//! hash functions the curve signs with here: on x86-64, every one of the
+//! section's (SHA-1 and the SHA-2 functions, `other_hash`), elsewhere the
+//! curve's own.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -93,4 +95,37 @@ fn add<const N: usize>(x: &[u8; N], delta: i16) -> [u8; N] {
         carry = v.div_euclid(256);
     }
     out
+}
+
+/// On x86-64, the signatures with the hash function `H` (`name`) in the
+/// section `title`, of each message and of its hash, and that they verify,
+/// and not for another message.
+#[cfg(target_arch = "x86_64")]
+fn other_hash<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, name: &'static str)
+where
+    C: verified_garbage::ecdsa::Curve<
+            PrivateKey = [u8; Q],
+            PublicKey = [u8; U],
+            Signature = [u8; S],
+        >,
+    H: verified_garbage::ecdsa::SignatureHash<C>,
+{
+    use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};
+    let (_, x, u, signatures) = section::<Q, U, S>(title, &[name]);
+    let signing = SigningKey::<C>::from_bytes(&x);
+    let verifying = VerifyingKey::<C>::from_bytes(&u);
+    for (_, message, rs) in &signatures {
+        let m = message.as_bytes();
+        assert_eq!(signing.sign::<H>(m), Ok(*rs), "{name} {message}");
+        assert_eq!(
+            signing.sign_prehashed::<H>(&H::digest(m)),
+            Ok(*rs),
+            "{name} {message}"
+        );
+        assert_eq!(verifying.verify::<H>(m, rs), Ok(()), "{name} {message}");
+        assert_eq!(
+            verifying.verify::<H>(b"other", rs),
+            Err(Error::InvalidSignature)
+        );
+    }
 }

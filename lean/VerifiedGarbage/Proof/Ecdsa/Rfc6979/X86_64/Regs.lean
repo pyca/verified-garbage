@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Framework.X86_64.Funs
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 
 /-!
@@ -97,6 +98,19 @@ theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e 
     Region.Disjoint ⟨L.B, 24⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
 
+/-- The state after `c` names the same addresses of statics, and has the
+same functions, as before. -/
+theorem WP.mono_sf {c : Prog isa} {s : State} {Q R : State → Prop} (h : WP isa c s Q)
+    (k : ∀ s', Q s' → s'.syms = s.syms ∧ s'.funs = s.funs → R s') : WP isa c s R := by
+  obtain ⟨t, s', he, hq⟩ := h
+  exact ⟨t, s', he, k s' hq ⟨Exec.syms he, Exec.funs he⟩⟩
+
+/-- `Q` of the state after `c`, which may assume it names the same addresses
+of statics, and has the same functions, as before. -/
+theorem WP.of_sf {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa c s fun s' => s'.syms = s.syms ∧ s'.funs = s.funs → Q s') : WP isa c s Q :=
+  WP.mono_sf h fun _ hq sy => hq sy
+
 /-- Code that writes no callee-saved register keeps them (`hc` is checked
 by evaluating the code). -/
 theorem WP.keepCs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
@@ -115,7 +129,7 @@ theorem Ctx.of_keep {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
     (hk : (instrs (.block is : Prog isa)).all (fun i => calleeSaved.all fun r => !Taint.clobbers i r) = true)
     (hs : ∀ r ∈ ws, Safe L r) :
     WP isa (.block is) t fun t' => Ctx L g m₀ t' ∧ Frame ws t.mem t'.mem ∧ Q t' :=
-  WP.mono_syms (WP.keepCs h hk) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hcs⟩ hsy =>
+  WP.mono_sf (WP.keepCs h hk) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hcs⟩ hsy =>
     ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf hs hsy, hf, hq⟩
 
 /-! ## Code that sets one register -/
@@ -132,7 +146,7 @@ structure Upd {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (u : 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
 
 theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved)
-    (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hsy : u'.syms = u.syms)
+    (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hsy : u'.syms = u.syms ∧ u'.funs = u.funs)
     (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) : Ctx L g m₀ u' :=
   hc.regs hL hrd hwr hm hsy fun r hr => hk r (ne_cs hr hd)
 
@@ -146,7 +160,7 @@ theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d �
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, h192, ite_true, Option.map_some,
     Option.bind_some, RegUpd.gpr_setReg_self, hc.pScr, sx32 ha, Option.some.injEq, exists_eq_left']
-  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  refine ⟨hc.set hL hd rfl rfl rfl ⟨rfl, rfl⟩ fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
 
@@ -158,7 +172,7 @@ theorem fr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d �
   simp only [Cfg.fr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     Option.map_some, Option.bind_some, RegUpd.gpr_setReg_self, hc.rsp, sx32 ho, Offset.add_add,
     Option.some.injEq, exists_eq_left']
-  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  refine ⟨hc.set hL hd rfl rfl rfl ⟨rfl, rfl⟩ fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
 
@@ -169,7 +183,7 @@ theorem mov32_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
     Option.map_some, zx32 hn, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
+  exact ⟨hc.set hL hd rfl rfl rfl ⟨rfl, rfl⟩ fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
     fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr⟩
 
 /-- Two pieces of code, each setting one register. -/

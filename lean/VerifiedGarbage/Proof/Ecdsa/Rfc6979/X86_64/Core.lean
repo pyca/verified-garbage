@@ -22,7 +22,10 @@ open VG VG.X86_64 VG.Impl.Ecdsa.Rfc6979.X86_64
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
 
-theorem core_nosp (P : RfcHash) : NoSp P.R.coreC := Proof.Pbkdf2.Md.X86_64.nosp_of P.R.coreNs
+theorem core_nosp (P : RfcHash) : NoSp P.R.coreC := by
+  have h := P.R.coreNs
+  rw [Code.allInstrs_eq] at h
+  exact fun i hi => by simpa using List.all_eq_true.mp h i hi
 
 /-- The signature `core` computes, or none. -/
 abbrev coreSig (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : Option (Nat × Nat) :=
@@ -37,7 +40,7 @@ abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨L.out, 
 candidate, the digest has `Q` bytes; if they do, the frame has the words
 above its pointers; and the tables are the comb's. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ (P.R.wide = false → P.Q ≤ dn) ∧ L.e = P.e ∧ L.cs = P.R.E.combConsts
+  L.q = P.Q ∧ (P.wide = false → P.Q ≤ dn) ∧ L.e = P.e ∧ L.cs = P.R.E.combConsts ∧ L.T = P.T
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the return address of a call from the frame. -/
@@ -45,7 +48,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L 
     (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
   have hQ := P.sizes
-  cases hw : P.R.wide
+  cases hw : P.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hn := hk.2.1 hw
     simp only [dgArg, kArg, hw, Bool.false_eq_true, ite_false] at hx
@@ -55,8 +58,8 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L 
           (Region.sub_prefix hn))⟩
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ8, h6])⟩, (hL.stk_OUT (by omega_using [hQ8, h6])),
         hL.stk_SCR (by omega_using [hQ8, h6]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ8, h6]) (by omega_using [])⟩
-  · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
-    have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
+  · have hQ66 : P.Q ≤ 66 := hQ.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    have he : L.e = 21 := L.he
     simp only [dgArg, kArg, hw, ite_true] at hx
     rcases hx with rfl | rfl
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ66, he])⟩, (hL.stk_OUT (by omega_using [hQ66, he])),
@@ -90,12 +93,12 @@ theorem ce_bytesAt {t : State} (hc : Ctx L g m₀ t) {p : Addr} {n : Nat}
 /-- The comb's tables, at the addresses the state gives their statics. -/
 theorem Ctx.tbls (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Abi.constRegions (fun n => t.syms n) P.R.E.combConsts = L.TBLs := by
-  rw [Lay.TBLs, ← hk.2.2.2]; exact constRegions_congr hc.sy
+  rw [Lay.TBLs, ← hk.2.2.2.1]; exact constRegions_congr hc.sy
 
 /-- The comb's tables, as on entry, on entry to a call from the frame. -/
 theorem tbl_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Abi.constsHeld t.callEntry.mem (fun n => t.syms n) P.R.E.combConsts := fun c hc' i hi => by
-  have hcs : c ∈ L.cs := by rw [hk.2.2.2]; exact hc'
+  have hcs : c ∈ L.cs := by rw [hk.2.2.2.1]; exact hc'
   show t.callEntry.mem.readW (t.syms c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
   rw [hc.sy c hcs]
   obtain ⟨hn, tO, tS, tK⟩ := hL.tbl ⟨L.sy c.1, 8 * c.2.length⟩
@@ -218,7 +221,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
       exact sub_refl _
   have eW : coreWr P L = [L.OUT, L.SCR] := by
     simp only [coreWr, Lay.OUT, hq]
-  refine WP.of_syms (WP.call (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2) (core_nosp P)
+  refine WP.of_sf (WP.call (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2) (core_nosp P)
     (by omega_using [hD]) ⟨core_pre hL hk hc hdi hsi hdx hcx h8, core_clear hL hk hc⟩
     (core_covers hk hL hc) (core_coversW hq hc) fun t' hrd hwr hcs hf _ ⟨s₂, hm, hg₂, hpost⟩ hsy => ?_)
   rw [eW] at hf

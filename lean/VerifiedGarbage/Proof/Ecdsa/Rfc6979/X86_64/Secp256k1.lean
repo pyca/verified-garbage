@@ -48,7 +48,7 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
   E := Impl.Ecdsa.X86_64.secp256k1
   inst := Spec.Ecdsa.Secp256k1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, Proof.Ecdsa.X86_64.Secp256k1.secp256k1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0

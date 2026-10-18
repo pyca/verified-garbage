@@ -94,7 +94,7 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
       Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false, ite_true,
       Option.some.injEq, exists_eq_left', xor_self_zx]
-    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl ⟨rfl, rfl⟩ (by cs_tac), by triv, by triv, by triv, by triv, by triv⟩
   refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha, hb⟩ => WP.mono (kvN_ok hL hcu ha hb 8 (by omega))
     fun u' ⟨hrd', hwr', _, hf, hv⟩ => ⟨hrd'.trans hrd, hwr'.trans hwr, hm ▸ hf, fun n hn => ?_, fun n hn => ?_⟩
   · rw [bytesAt_take _ _ (k := 64) hn, show (88 : Nat) = 88 + 0 from rfl,
@@ -118,7 +118,7 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
   apply WP.of_runBlock
-  simp only [Cfg.initCnt, cfgOf, fCnt, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
+  simp only [Cfg.initCnt, cfgOf_tries, fCnt, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
     State.store64, ea_stk, Option.map_some, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg, reduceCtorEq, ite_false,
     RegUpd.wr_setReg, RegUpd.rd_setReg, RegUpd.mem_setReg, hc.rsp, Offset.add_add, Nat.reduceAdd, w, ite_true,
     Option.some.injEq, exists_eq_left']
@@ -131,9 +131,9 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-- The digest and `k` `core` reads: the digest and `V`, or, if two `V`s
 make a candidate, the digest for `core` and the candidate above the pointers. -/
 abbrev dgArg (P : RfcHash) {dn : Nat} (L : Lay dn) : Addr :=
-  if P.R.wide then L.B + BitVec.ofNat 64 240 else L.dg
+  if P.wide then L.B + BitVec.ofNat 64 264 else L.dg
 abbrev kArg (P : RfcHash) {dn : Nat} (L : Lay dn) : Addr :=
-  if P.R.wide then L.B + BitVec.ofNat 64 312 else L.B + BitVec.ofNat 64 88
+  if P.wide then L.B + BitVec.ofNat 64 336 else L.B + BitVec.ofNat 64 88
 
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .rdi = L.out ∧
@@ -143,24 +143,24 @@ theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   have p2 := hc.inFr (d := 216) (by omega) (by omega)
   have p3 := hc.inFr (d := 208) (by omega) (by omega)
   apply WP.of_runBlock
-  simp only [dgArg, kArg]
-  cases hw : P.R.wide
-  · simp only [Cfg.coreArgs, cfgOf, hw, Bool.false_eq_true, ite_false, Cfg.fr, fOut, fD, fDigest, fV, fScratch,
+  rw [dgArg, kArg, ← cfgOf_wide P, Cfg.coreArgs]
+  cases hw : (cfgOf P).wide
+  · simp only [Bool.false_eq_true, ite_false, Cfg.fr, fOut, fD, fDigest, fV, fScratch,
       List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.load64, ea_stk, RegUpd.gpr_setReg,
       RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
       RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some, reduceCtorEq,
       ite_true, hc.rsp, Offset.add_add, Nat.reduceAdd, p0, p1, p2, p3, hc.pOut, hc.pD, hc.pDg, hc.pScr, sx32,
       Nat.reducePow, Nat.reduceLT, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
-  · simp only [Cfg.coreArgs, cfgOf, hw, ite_true, Cfg.fr, fOut, fD, fX, fKb, fScratch,
+    exact ⟨hc.regs hL rfl rfl rfl ⟨rfl, rfl⟩ (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
+  · simp only [ite_true, Cfg.fr, fOut, fD, fX, fKb, fScratch,
       List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.load64, ea_stk, RegUpd.gpr_setReg,
       RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
       RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some, reduceCtorEq, ite_false,
       hc.rsp, Offset.add_add, Nat.reduceAdd, p0, p1, p3, hc.pOut, hc.pD, hc.pScr, sx32,
       Nat.reducePow, Nat.reduceLT, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl ⟨rfl, rfl⟩ (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
 
 /-! ## Whether to go on -/
 
@@ -217,7 +217,7 @@ theorem again_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   simp only [Cfg.again, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.setReg32,
     RegUpd.gpr_setReg, RegUpd.zf_arithFlags, ite_true,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), rfl, by decide⟩
+  exact ⟨hc.regs hL rfl rfl rfl ⟨rfl, rfl⟩ (by cs_tac), rfl, by decide⟩
 
 /-- `ZF` set. -/
 theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
@@ -226,7 +226,7 @@ theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   apply WP.of_runBlock
   simp only [Cfg.stop, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
     Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), rfl, by simp, RegUpd.gpr_setReg_of_ne _ _ (by decide)⟩
+  exact ⟨hc.regs hL rfl rfl rfl ⟨rfl, rfl⟩ (by cs_tac), rfl, by simp, RegUpd.gpr_setReg_of_ne _ _ (by decide)⟩
 
 /-! ## Wiping the frame -/
 
@@ -244,53 +244,50 @@ theorem zeroN_ok {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 22,
     exact ⟨hrd, trivial, trivial, hf.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by omega) (by omega) (by omega)))⟩
 
-theorem zeroH_ok {t : State} (hc : Ctx L g m₀ t) {K : Nat} (hK : K ≤ L.e) : ∀ k ≤ K, ∀ u : State,
+theorem zeroH_ok {t : State} (hc : Ctx L g m₀ t) {K : Nat} (hK : K ≤ 18) : ∀ k ≤ K, ∀ u : State,
     u.wr = t.wr → u.gpr .rsp = t.gpr .rsp →
     WP isa (.block ((List.range k).map fun j => .store (stk (fX + 8 * j)) .rcx)) u fun u' =>
-      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 240, 8 * K⟩] u.mem u'.mem
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 264, 8 * K⟩] u.mem u'.mem
   | 0, _, u, _, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | k + 1, hk, u, hwu, hsu => by
     have he := L.he
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
     refine WP.mono (zeroH_ok hc hK k (by omega) u hwu hsu) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
-    have w := hc.inFrW (d := 240 + 8 * k) (n := 8) (by omega) (by omega)
+    have w := hc.inFrW (d := 264 + 8 * k) (n := 8) (by omega) (by omega)
     rw [← hwu, ← hwr] at w
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_stk, hg, hsu, hc.rsp, fX,
-      Offset.add_add, show 24 + (216 + 8 * k) = 240 + 8 * k by omega, w, ite_true, Option.some.injEq,
+      Offset.add_add, show 24 + (240 + 8 * k) = 264 + 8 * k by omega, w, ite_true, Option.some.injEq,
       exists_eq_left']
     exact ⟨hrd, hwr, trivial, hf.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by omega) (by omega) (by omega)))⟩
 
-/-- `K`, `V`, `h` and the count cleared, and the words above the pointers,
-keeping `rax`. -/
-theorem wipe_ok (hL : L.Ok) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (cfgOf P).wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .rax = t.gpr .rax ∧
-      Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 8 * L.e⟩] t.mem t'.mem := by
-  have hx : (cfgOf P).extra = L.e := by rw [hLe]; rfl
-  have h := Ctx.of_keep (Q := fun t' => t'.gpr .rax = t.gpr .rax) hL hc (is := (cfgOf P).wipe)
-    (ws := [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 8 * L.e⟩]) ?_ ?_ fun r hr => by
+/-- `K`, `V`, `h` and the count cleared, and the words above the streaming
+functions' addresses, keeping `rax`. -/
+theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block Cfg.wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .rax = t.gpr .rax ∧
+      Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 264, 144⟩] t.mem t'.mem := by
+  have h := Ctx.of_keep (Q := fun t' => t'.gpr .rax = t.gpr .rax) hL hc (is := Cfg.wipe)
+    (ws := [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 264, 144⟩]) ?_ (by rfl) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact safe_low L (by omega)
-      · exact safe_high L (by omega) (by omega)
+      · exact safe_high L (by omega) (by have := L.he; omega)
   · exact WP.mono h fun _ ⟨hc', hf, ha⟩ => ⟨hc', ha, hf⟩
-  · rw [Cfg.wipe, WP.block_append_iff, WP.block_append_iff, hx]
+  · rw [Cfg.wipe, WP.block_append_iff, WP.block_append_iff]
     have h₁ : WP isa (.block [.alu32 .xor .rcx (.reg .rcx)]) t fun u => Ctx L g m₀ u ∧ u.rd = t.rd ∧
         u.wr = t.wr ∧ u.mem = t.mem ∧ u.gpr .rax = t.gpr .rax := by
       apply WP.of_runBlock
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
         Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false,
         Option.some.injEq, exists_eq_left']
-      exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv⟩
+      exact ⟨hc.regs hL rfl rfl rfl ⟨rfl, rfl⟩ (by cs_tac), by triv, by triv, by triv, by triv⟩
     refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha⟩ => WP.mono (zeroN_ok hcu 22 (by omega))
-      fun u' ⟨hrd', hwr', hg, hf⟩ => WP.mono (zeroH_ok hcu (Nat.le_refl _) L.e (Nat.le_refl _) u' hwr'
+      fun u' ⟨hrd', hwr', hg, hf⟩ => WP.mono (zeroH_ok hcu (K := 18) (Nat.le_refl _) Cfg.extra (by decide) u' hwr'
         (by rw [hg]))
         fun u'' ⟨hrd'', hwr'', hg'', hf''⟩ => ⟨hrd''.trans (hrd'.trans hrd), hwr''.trans (hwr'.trans hwr), ?_,
           by rw [hg'', hg, ha]⟩
     rw [← hm]
     exact (hf.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩).trans (hf''.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩)
-  · cases hw : P.R.wide <;> cases hh : P.R.hHigh <;>
-      simp only [Cfg.wipe, Cfg.extra, cfgOf, hw, hh, Bool.false_eq_true, ite_true, ite_false] <;> rfl
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

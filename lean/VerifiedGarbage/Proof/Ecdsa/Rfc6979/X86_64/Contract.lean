@@ -32,8 +32,8 @@ def TblsOk (cs : List (String × List (BitVec 64))) (s : State) (wr : List Regio
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (S : Nat) :
-    Contract X86_64.isa where
+def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (S : Nat)
+    (X : List Region := []) : Contract X86_64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .rdi, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨s.gpr .rsi, I.ecdsa.curve.len⟩
@@ -41,7 +41,7 @@ def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.I
     let scratch : Region := ⟨s.gpr .rcx, 8192⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 S, S⟩
-    S ≤ (s.gpr .rsp).toNat ∧ s.rd = [d, digest] ++ Abi.constRegions (fun n => s.syms n) cs ∧
+    S ≤ (s.gpr .rsp).toNat ∧ s.rd = [d, digest] ++ X ++ Abi.constRegions (fun n => s.syms n) cs ∧
       s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧

@@ -40,7 +40,7 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   E := Impl.Ecdsa.X86_64.p521x
   inst := Spec.Ecdsa.P521.inst
   curve := rfl
-  wide := true
+  big := true
   sizes := ⟨rfl, rfl, Proof.Ecdsa.X86_64.P521.p521_nBits⟩
   n_lt := by decide +kernel
   sh := 7

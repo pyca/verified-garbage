@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 # Deterministic ECDSA on x86-64: P-521
 
 P-521 as the proof's curve (`p521`): scalars of 9 words and 66 bytes, longer
-than any hash function's output (`wide`), the order `n` of 521 bits, so that
+than any hash function's output (`big`), the order `n` of 521 bits, so that
 the signature drops 7 bits of a 66-byte digest, and `vg_ecdsa_p521_sign`,
 proven correct (given the group law and the comb's tables) and constant time
 against its contract (`coreK` at P-521's sizes, which is
@@ -44,7 +44,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   E := Impl.Ecdsa.X86_64.p521
   inst := Spec.Ecdsa.P521.inst
   curve := rfl
-  wide := true
+  big := true
   sizes := ⟨rfl, rfl, Proof.Ecdsa.X86_64.P521.p521_nBits⟩
   n_lt := by decide +kernel
   sh := 7

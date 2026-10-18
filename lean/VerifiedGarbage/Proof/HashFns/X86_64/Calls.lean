@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.HashFns
 public import VerifiedGarbage.Proof.Framework.X86_64.CallMeets
+public import VerifiedGarbage.Proof.Framework.X86_64.CallMeetsC
 public import VerifiedGarbage.Proof.Framework.X86_64.WithConsts
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -18,7 +19,9 @@ function's streaming `init`, `update` and `finalize` (`Spec.HashFns`), as
 code: from the registers holding their arguments, the call returns in a
 state that keeps what the call does not write (`Calls.After`) and `World`,
 with the streaming state's new representation. `init_irel`, `upd_irel` and
-`fin_irel` are their constant time.
+`fin_irel` are their constant time. `C.init_icall`, … are those of a
+caller under `abi.withConsts cs₀`, whose tables the functions are passed too
+(`CallC.wp_icall`); the plain ones are the case `cs₀ = []`.
 -/
 
 @[expose] public section
@@ -28,6 +31,22 @@ namespace VG.Proof.HashFns.X86_64
 open VG.X86_64 VG.X86_64.WithConsts
 open Spec.HashFns (Streaming)
 open Proof.Pbkdf2.Md.X86_64.Calls (After)
+open VG.X86_64.CallC (ConstsAt PassesC TwoRunsC constsAt_nil passesC_nil twoRunsC_nil)
+
+/-- The streaming functions `T`, at the addresses `fi`, `fu` and `ff`, as
+`FnMeets` says of them in the entry `e` of a function whose calls and frames
+use `stack` bytes of stack. -/
+structure Fns (stack : Nat) (e : State) (T : Streaming) (fi fu ff : Addr) : Prop where
+  init : FnMeets abi (fun A n => Spec.HashFns.initContract T A n) 8 stack e fi
+  upd : FnMeets abi (fun A n => Spec.HashFns.updateContract T A n) 8 stack e fu
+  fin : FnMeets abi (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e ff
+
+/-- `Fns`, as the contract of a caller under `abi.withConsts cs₀` states it. -/
+structure C.Fns (cs₀ : List (String × List (BitVec 64))) (stack : Nat) (e : State) (T : Streaming)
+    (fi fu ff : Addr) : Prop where
+  init : FnMeets (abi.withConsts cs₀) (fun A n => Spec.HashFns.initContract T A n) 8 stack e fi
+  upd : FnMeets (abi.withConsts cs₀) (fun A n => Spec.HashFns.updateContract T A n) 8 stack e fu
+  fin : FnMeets (abi.withConsts cs₀) (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e ff
 
 theorem callEntry_mem_of {s : State} {x : Addr} (h : ¬ (⟨s.gpr .rsp - 8, 8⟩ : Region).Contains x 1) :
     s.callEntry.mem x = s.mem x := by
@@ -82,6 +101,26 @@ theorem init_pre {s : State} {st : Addr} (hdi : s.gpr .rdi = st)
   · rw [hdi, Nat.mul_one]; exact hb
   · trivial
 
+/-- `init_icall`, for a caller under `abi.withConsts cs₀`. -/
+theorem C.init_icall {stack : Nat} {e s : State} {cs₀ : List (String × List (BitVec 64))}
+    (h₀ : ConstsAt stack e cs₀)
+    (hm : FnMeets (abi.withConsts cs₀) (fun A n => Spec.HashFns.initContract T A n) 8 stack e (s.gpr .r11))
+    (hW : World stack e s) {st : Addr} (hdi : s.gpr .rdi = st)
+    (hp : PassesC cs₀ stack 8 e s [] [⟨st, T.S.stateBytes⟩])
+    (hb : st.toNat + T.S.stateBytes ≤ 2 ^ 64) (hsp : 16 ≤ (s.gpr .rsp).toNat)
+    (hstk : (below (s.gpr .rsp) 16).Disjoint ⟨st, T.S.stateBytes⟩) {Q : State → Prop}
+    (hQ : ∀ s', After s [⟨st, T.S.stateBytes⟩] s' → World stack e s' → T.S.Repr s'.mem st [] → Q s') :
+    WP isa (.icall 8) s Q := by
+  refine CallC.wp_icall h₀ hm hW hp (fun held hreg => ?_) fun s' h₁ h₂ h₃ h₄ hW' ⟨s₂, hm₂, _, hpost⟩ => ?_
+  · exact withConsts_pre (sig := Spec.HashFns.initSig T) (pre := fun pb => Curry.const (fun _ => True) _)
+      (post := Spec.HashFns.initPost T) (rd₀ := []) rfl (held_callEntry held fun t ht => ⟨(hreg t ht).1,
+        (hreg t ht).2.2⟩) (fun t ht => hreg t ht) (init_pre T hdi hb hsp hstk)
+  · refine hQ s' ⟨h₁, h₂, h₃, h₄⟩ hW' ?_
+    have hp' := withConsts_post (sig := Spec.HashFns.initSig T) (pre := fun pb => Curry.const (fun _ => True) _)
+      (post := Spec.HashFns.initPost T) hpost
+    sig_reduce [Spec.HashFns.initSig, Spec.HashFns.initPost, abi, argRegs] at hp'
+    rw [← hm₂, ← hdi]; exact hp'
+
 /-- A call of `init` through `r11`, as `FnMeets` says of it in the entry
 `e`, of the `S`-byte streaming state at `rdi`. -/
 theorem init_icall {stack : Nat} {e s : State}
@@ -91,16 +130,8 @@ theorem init_icall {stack : Nat} {e s : State}
     (hb : st.toNat + T.S.stateBytes ≤ 2 ^ 64) (hsp : 16 ≤ (s.gpr .rsp).toNat)
     (hstk : (below (s.gpr .rsp) 16).Disjoint ⟨st, T.S.stateBytes⟩) {Q : State → Prop}
     (hQ : ∀ s', After s [⟨st, T.S.stateBytes⟩] s' → World stack e s' → T.S.Repr s'.mem st [] → Q s') :
-    WP isa (.icall 8) s Q := by
-  refine WP.icallMeets hm hW hp (fun held hreg => ?_) fun s' h₁ h₂ h₃ h₄ hW' ⟨s₂, hm₂, _, hpost⟩ => ?_
-  · exact withConsts_pre (sig := Spec.HashFns.initSig T) (pre := fun pb => Curry.const (fun _ => True) _)
-      (post := Spec.HashFns.initPost T) (rd₀ := []) rfl (held_callEntry held fun t ht => ⟨(hreg t ht).1,
-        (hreg t ht).2.2⟩) (fun t ht => hreg t ht) (init_pre T hdi hb hsp hstk)
-  · refine hQ s' ⟨h₁, h₂, h₃, h₄⟩ hW' ?_
-    have hp' := withConsts_post (sig := Spec.HashFns.initSig T) (pre := fun pb => Curry.const (fun _ => True) _)
-      (post := Spec.HashFns.initPost T) hpost
-    sig_reduce [Spec.HashFns.initSig, Spec.HashFns.initPost, abi, argRegs] at hp'
-    rw [← hm₂, ← hdi]; exact hp'
+    WP isa (.icall 8) s Q :=
+  C.init_icall T (constsAt_nil _ _) hm hW hdi (passesC_nil hp) hb hsp hstk hQ
 
 /-- The arguments and regions of a call of `update`: the state at `st`, the
 `len` bytes at `d` and the working space at `sc`, apart from each other and
@@ -131,19 +162,18 @@ theorem upd_pre {s : State} {st d sc : Addr} {len : Nat} (h : UArgs T s st d sc 
   exacts [sp8 h.sp, h.d_st.symm, h.st_sc, h.d_sc, ret_disj h.stk_st, ret_disj h.stk_d, ret_disj h.stk_sc,
     stk_disj h.stk_st, stk_disj h.stk_d, stk_disj h.stk_sc, h.bst, h.bd, h.bsc]
 
-/-- A call of `update` through `r11`, as `FnMeets` says of it in the entry
-`e`, of the state at `st` with the `len` bytes at `d` (`UArgs`), after `rsi`
-bytes. -/
-theorem upd_icall {stack : Nat} {e s : State}
-    (hm : FnMeets abi (fun A n => Spec.HashFns.updateContract T A n) 8 stack e (s.gpr .r11))
+/-- `upd_icall`, for a caller under `abi.withConsts cs₀`. -/
+theorem C.upd_icall {stack : Nat} {e s : State} {cs₀ : List (String × List (BitVec 64))}
+    (h₀ : ConstsAt stack e cs₀)
+    (hm : FnMeets (abi.withConsts cs₀) (fun A n => Spec.HashFns.updateContract T A n) 8 stack e (s.gpr .r11))
     (hW : World stack e s) (hR : Proof.Hmac.ReprLocal T.S) {st d sc : Addr} {len : Nat}
-    (h : UArgs T s st d sc len) (hp : Passes stack 8 e s [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩])
+    (h : UArgs T s st d sc len) (hp : PassesC cs₀ stack 8 e s [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩])
     {Q : State → Prop}
     (hQ : ∀ s', After s [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] s' → World stack e s' →
       (∀ m, T.S.Repr s.mem st m → s.gpr .rsi = BitVec.ofNat 64 m.length →
         T.S.Repr s'.mem st (m ++ Spec.Sha256.bytesAt s.mem d len)) → Q s') :
     WP isa (.icall 8) s Q := by
-  refine WP.icallMeets hm hW hp (fun held hreg => ?_) fun s' h₁ h₂ h₃ h₄ hW' ⟨s₂, hm₂, _, hpost⟩ => ?_
+  refine CallC.wp_icall h₀ hm hW hp (fun held hreg => ?_) fun s' h₁ h₂ h₃ h₄ hW' ⟨s₂, hm₂, _, hpost⟩ => ?_
   · exact withConsts_pre (sig := Spec.HashFns.updateSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.updatePost T) (rd₀ := [⟨d, len⟩]) rfl (held_callEntry held fun t ht =>
         ⟨(hreg t ht).1, (hreg t ht).2.2⟩) (fun t ht => hreg t ht) (upd_pre T h)
@@ -160,6 +190,20 @@ theorem upd_icall {stack : Nat} {e s : State}
         (by have := h.bst; omega) hi) (h.rdi ▸ hr)) (by rw [BitVec.setWidth_eq]; exact hc)
     simp only [BitVec.setWidth_eq, h.rdi, h.rdx, h.rcx, ← State.callEntry_mem, e, hm₂] at this
     exact this
+
+/-- A call of `update` through `r11`, as `FnMeets` says of it in the entry
+`e`, of the state at `st` with the `len` bytes at `d` (`UArgs`), after `rsi`
+bytes. -/
+theorem upd_icall {stack : Nat} {e s : State}
+    (hm : FnMeets abi (fun A n => Spec.HashFns.updateContract T A n) 8 stack e (s.gpr .r11))
+    (hW : World stack e s) (hR : Proof.Hmac.ReprLocal T.S) {st d sc : Addr} {len : Nat}
+    (h : UArgs T s st d sc len) (hp : Passes stack 8 e s [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩])
+    {Q : State → Prop}
+    (hQ : ∀ s', After s [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] s' → World stack e s' →
+      (∀ m, T.S.Repr s.mem st m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+        T.S.Repr s'.mem st (m ++ Spec.Sha256.bytesAt s.mem d len)) → Q s') :
+    WP isa (.icall 8) s Q :=
+  C.upd_icall T (constsAt_nil _ _) hm hW hR h (passesC_nil hp) hQ
 
 /-- The arguments and regions of a call of `finalize`: the state at `st`, the
 `F` bytes at `o` and the working space at `sc`, apart from each other and
@@ -189,18 +233,18 @@ theorem fin_pre {s : State} {st o sc : Addr} (h : FArgs T s st o sc) :
   exacts [sp8 h.sp, h.st_o, h.st_sc, h.o_sc, ret_disj h.stk_st, ret_disj h.stk_o, ret_disj h.stk_sc,
     stk_disj h.stk_st, stk_disj h.stk_o, stk_disj h.stk_sc, h.bst, h.bo, h.bsc]
 
-/-- A call of `finalize` through `r11`, as `FnMeets` says of it in the entry
-`e`, of the state at `st` of a message of `rsi` bytes, to `o` (`FArgs`). -/
-theorem fin_icall {stack : Nat} {e s : State}
-    (hm : FnMeets abi (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e (s.gpr .r11))
+/-- `fin_icall`, for a caller under `abi.withConsts cs₀`. -/
+theorem C.fin_icall {stack : Nat} {e s : State} {cs₀ : List (String × List (BitVec 64))}
+    (h₀ : ConstsAt stack e cs₀)
+    (hm : FnMeets (abi.withConsts cs₀) (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e (s.gpr .r11))
     (hW : World stack e s) (hR : Proof.Hmac.ReprLocal T.S) {st o sc : Addr} (h : FArgs T s st o sc)
-    (hp : Passes stack 8 e s [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩])
+    (hp : PassesC cs₀ stack 8 e s [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩])
     {Q : State → Prop}
     (hQ : ∀ s', After s [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] s' → World stack e s' →
       (∀ m, T.S.Repr s.mem st m → m.length < 2 ^ 64 → s.gpr .rsi = BitVec.ofNat 64 m.length →
         (Spec.Sha256.bytesAt s'.mem o T.outBytes).take T.S.digestBytes = T.S.H.hash m) → Q s') :
     WP isa (.icall 8) s Q := by
-  refine WP.icallMeets hm hW hp (fun held hreg => ?_) fun s' h₁ h₂ h₃ h₄ hW' ⟨s₂, hm₂, _, hpost⟩ => ?_
+  refine CallC.wp_icall h₀ hm hW hp (fun held hreg => ?_) fun s' h₁ h₂ h₃ h₄ hW' ⟨s₂, hm₂, _, hpost⟩ => ?_
   · exact withConsts_pre (sig := Spec.HashFns.finalizeSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.finalizePost T) (rd₀ := []) rfl (held_callEntry held fun t ht =>
         ⟨(hreg t ht).1, (hreg t ht).2.2⟩) (fun t ht => hreg t ht) (fin_pre T h)
@@ -214,10 +258,30 @@ theorem fin_icall {stack : Nat} {e s : State}
     simp only [h.rdx, hm₂] at this
     exact this
 
+/-- A call of `finalize` through `r11`, as `FnMeets` says of it in the entry
+`e`, of the state at `st` of a message of `rsi` bytes, to `o` (`FArgs`). -/
+theorem fin_icall {stack : Nat} {e s : State}
+    (hm : FnMeets abi (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e (s.gpr .r11))
+    (hW : World stack e s) (hR : Proof.Hmac.ReprLocal T.S) {st o sc : Addr} (h : FArgs T s st o sc)
+    (hp : Passes stack 8 e s [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩])
+    {Q : State → Prop}
+    (hQ : ∀ s', After s [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] s' → World stack e s' →
+      (∀ m, T.S.Repr s.mem st m → m.length < 2 ^ 64 → s.gpr .rsi = BitVec.ofNat 64 m.length →
+        (Spec.Sha256.bytesAt s'.mem o T.outBytes).take T.S.digestBytes = T.S.H.hash m) → Q s') :
+    WP isa (.icall 8) s Q :=
+  C.fin_icall T (constsAt_nil _ _) hm hW hR h (passesC_nil hp) hQ
+
 /-! ## The calls in two runs -/
 
 theorem syms_two {K : Abi isa → Nat → Contract isa} {n stack : Nat} {e₁ e₂ s₁ s₂ : State}
     (tw : TwoRuns K n stack e₁ e₂ s₁ s₂) : s₁.syms = s₂.syms := by
+  have := tw.same.2.2
+  simp only [abi, Option.elim] at this
+  rw [tw.w₁.syms, tw.w₂.syms]
+  exact (funext fun x => congrFun this x).symm
+
+theorem C.syms_two {cs₀ : List (String × List (BitVec 64))} {K : Abi isa → Nat → Contract isa} {n stack : Nat} {e₁ e₂ s₁ s₂ : State}
+    (tw : TwoRunsC cs₀ K n stack e₁ e₂ s₁ s₂) : s₁.syms = s₂.syms := by
   have := tw.same.2.2
   simp only [abi, Option.elim] at this
   rw [tw.w₁.syms, tw.w₂.syms]
@@ -253,18 +317,17 @@ theorem fin_pub {s₁ s₂ : State} {st o sc : Addr} (a₁ : FArgs T s₁ st o s
   sig_and_intros
   all_goals simp only [a₁.rdi, a₂.rdi, a₁.rdx, a₂.rdx, a₁.rcx, a₂.rcx, si, sp]
 
-/-- `init`'s call in two runs, each as `init_icall` calls it, of the state
-at the same address. -/
-theorem init_irel {stack : Nat} {P : State → State → Prop} {st : Addr}
+/-- `init_irel`, for a caller under `abi.withConsts cs₀`. -/
+theorem C.init_irel {cs₀ : List (String × List (BitVec 64))} {stack : Nat} {P : State → State → Prop} {st : Addr}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ e₁ e₂,
-      TwoRuns (fun A n => Spec.HashFns.initContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
-      Passes stack 8 e₁ s₁ [] [⟨st, T.S.stateBytes⟩] ∧ Passes stack 8 e₂ s₂ [] [⟨st, T.S.stateBytes⟩] ∧
+      TwoRunsC cs₀ (fun A n => Spec.HashFns.initContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
+      PassesC cs₀ stack 8 e₁ s₁ [] [⟨st, T.S.stateBytes⟩] ∧ PassesC cs₀ stack 8 e₂ s₂ [] [⟨st, T.S.stateBytes⟩] ∧
       s₁.gpr .rdi = st ∧ s₂.gpr .rdi = st ∧ st.toNat + T.S.stateBytes ≤ 2 ^ 64 ∧
       16 ≤ (s₁.gpr .rsp).toNat ∧ (below (s₁.gpr .rsp) 16).Disjoint ⟨st, T.S.stateBytes⟩) :
     RelCT isa P (.icall 8) fun _ _ => True := by
-  refine RelCT.icallMeets (K := fun A n => Spec.HashFns.initContract T A n) (stack := stack) fun s₁ s₂ hp => ?_
+  refine CallC.relCT_icall (cs₀ := cs₀) (K := fun A n => Spec.HashFns.initContract T A n) (stack := stack) fun s₁ s₂ hp => ?_
   obtain ⟨e₁, e₂, tw, p₁, p₂, d₁, d₂, hb, hsp, hstk⟩ := h s₁ s₂ hp
-  have hsy : s₁.syms = s₂.syms := syms_two tw
+  have hsy : s₁.syms = s₂.syms := C.syms_two tw
   have hsp₂ : 16 ≤ (s₂.gpr .rsp).toNat := by rw [tw.rsp]; exact hsp
   have hstk₂ : (below (s₂.gpr .rsp) 16).Disjoint ⟨st, T.S.stateBytes⟩ := by rw [tw.rsp]; exact hstk
   refine ⟨e₁, e₂, _, _, _, _, tw, p₁, p₂, fun held₁ held₂ hreg₁ hreg₂ => ⟨?_, ?_, ?_⟩⟩
@@ -277,18 +340,30 @@ theorem init_irel {stack : Nat} {P : State → State → Prop} {st : Addr}
   · exact withConsts_pub' (sig := Spec.HashFns.initSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.initPost T) hsy (init_pub T d₁ d₂ tw.rsp.symm _ _ _ _)
 
-/-- `update`'s call in two runs, each as `upd_icall` calls it, with the same
-arguments. -/
-theorem upd_irel {stack : Nat} {P : State → State → Prop} {st d sc : Addr} {len : Nat}
+/-- `init`'s call in two runs, each as `init_icall` calls it, of the state
+at the same address. -/
+theorem init_irel {stack : Nat} {P : State → State → Prop} {st : Addr}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ e₁ e₂,
-      TwoRuns (fun A n => Spec.HashFns.updateContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
-      Passes stack 8 e₁ s₁ [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
-      Passes stack 8 e₂ s₂ [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      TwoRuns (fun A n => Spec.HashFns.initContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
+      Passes stack 8 e₁ s₁ [] [⟨st, T.S.stateBytes⟩] ∧ Passes stack 8 e₂ s₂ [] [⟨st, T.S.stateBytes⟩] ∧
+      s₁.gpr .rdi = st ∧ s₂.gpr .rdi = st ∧ st.toNat + T.S.stateBytes ≤ 2 ^ 64 ∧
+      16 ≤ (s₁.gpr .rsp).toNat ∧ (below (s₁.gpr .rsp) 16).Disjoint ⟨st, T.S.stateBytes⟩) :
+    RelCT isa P (.icall 8) fun _ _ => True :=
+  C.init_irel T (cs₀ := []) fun s₁ s₂ hp => by
+    obtain ⟨e₁, e₂, tw, p₁, p₂, r⟩ := h s₁ s₂ hp
+    exact ⟨e₁, e₂, twoRunsC_nil tw, passesC_nil p₁, passesC_nil p₂, r⟩
+
+/-- `upd_irel`, for a caller under `abi.withConsts cs₀`. -/
+theorem C.upd_irel {cs₀ : List (String × List (BitVec 64))} {stack : Nat} {P : State → State → Prop} {st d sc : Addr} {len : Nat}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ e₁ e₂,
+      TwoRunsC cs₀ (fun A n => Spec.HashFns.updateContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
+      PassesC cs₀ stack 8 e₁ s₁ [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      PassesC cs₀ stack 8 e₂ s₂ [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
       UArgs T s₁ st d sc len ∧ UArgs T s₂ st d sc len ∧ s₁.gpr .rsi = s₂.gpr .rsi) :
     RelCT isa P (.icall 8) fun _ _ => True := by
-  refine RelCT.icallMeets (K := fun A n => Spec.HashFns.updateContract T A n) (stack := stack) fun s₁ s₂ hp => ?_
+  refine CallC.relCT_icall (cs₀ := cs₀) (K := fun A n => Spec.HashFns.updateContract T A n) (stack := stack) fun s₁ s₂ hp => ?_
   obtain ⟨e₁, e₂, tw, p₁, p₂, a₁, a₂, si⟩ := h s₁ s₂ hp
-  have hsy : s₁.syms = s₂.syms := syms_two tw
+  have hsy : s₁.syms = s₂.syms := C.syms_two tw
   refine ⟨e₁, e₂, _, _, _, _, tw, p₁, p₂, fun held₁ held₂ hreg₁ hreg₂ => ⟨?_, ?_, ?_⟩⟩
   · exact withConsts_pre (sig := Spec.HashFns.updateSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.updatePost T) (rd₀ := [⟨d, len⟩]) rfl (held_callEntry held₁ fun t ht =>
@@ -299,18 +374,30 @@ theorem upd_irel {stack : Nat} {P : State → State → Prop} {st d sc : Addr} {
   · exact withConsts_pub' (sig := Spec.HashFns.updateSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.updatePost T) hsy (upd_pub T a₁ a₂ si tw.rsp.symm _ _ _ _)
 
-/-- `finalize`'s call in two runs, each as `fin_icall` calls it, with the same
+/-- `update`'s call in two runs, each as `upd_icall` calls it, with the same
 arguments. -/
-theorem fin_irel {stack : Nat} {P : State → State → Prop} {st o sc : Addr}
+theorem upd_irel {stack : Nat} {P : State → State → Prop} {st d sc : Addr} {len : Nat}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ e₁ e₂,
-      TwoRuns (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
-      Passes stack 8 e₁ s₁ [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
-      Passes stack 8 e₂ s₂ [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      TwoRuns (fun A n => Spec.HashFns.updateContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
+      Passes stack 8 e₁ s₁ [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      Passes stack 8 e₂ s₂ [⟨d, len⟩] [⟨st, T.S.stateBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      UArgs T s₁ st d sc len ∧ UArgs T s₂ st d sc len ∧ s₁.gpr .rsi = s₂.gpr .rsi) :
+    RelCT isa P (.icall 8) fun _ _ => True :=
+  C.upd_irel T (cs₀ := []) fun s₁ s₂ hp => by
+    obtain ⟨e₁, e₂, tw, p₁, p₂, r⟩ := h s₁ s₂ hp
+    exact ⟨e₁, e₂, twoRunsC_nil tw, passesC_nil p₁, passesC_nil p₂, r⟩
+
+/-- `fin_irel`, for a caller under `abi.withConsts cs₀`. -/
+theorem C.fin_irel {cs₀ : List (String × List (BitVec 64))} {stack : Nat} {P : State → State → Prop} {st o sc : Addr}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ e₁ e₂,
+      TwoRunsC cs₀ (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
+      PassesC cs₀ stack 8 e₁ s₁ [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      PassesC cs₀ stack 8 e₂ s₂ [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
       FArgs T s₁ st o sc ∧ FArgs T s₂ st o sc ∧ s₁.gpr .rsi = s₂.gpr .rsi) :
     RelCT isa P (.icall 8) fun _ _ => True := by
-  refine RelCT.icallMeets (K := fun A n => Spec.HashFns.finalizeContract T A n) (stack := stack) fun s₁ s₂ hp => ?_
+  refine CallC.relCT_icall (cs₀ := cs₀) (K := fun A n => Spec.HashFns.finalizeContract T A n) (stack := stack) fun s₁ s₂ hp => ?_
   obtain ⟨e₁, e₂, tw, p₁, p₂, a₁, a₂, si⟩ := h s₁ s₂ hp
-  have hsy : s₁.syms = s₂.syms := syms_two tw
+  have hsy : s₁.syms = s₂.syms := C.syms_two tw
   refine ⟨e₁, e₂, _, _, _, _, tw, p₁, p₂, fun held₁ held₂ hreg₁ hreg₂ => ⟨?_, ?_, ?_⟩⟩
   · exact withConsts_pre (sig := Spec.HashFns.finalizeSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.finalizePost T) (rd₀ := []) rfl (held_callEntry held₁ fun t ht =>
@@ -320,5 +407,18 @@ theorem fin_irel {stack : Nat} {P : State → State → Prop} {st o sc : Addr}
         ⟨(hreg₂ t ht).1, (hreg₂ t ht).2.2⟩) (fun t ht => hreg₂ t ht) (fin_pre T a₂)
   · exact withConsts_pub' (sig := Spec.HashFns.finalizeSig T) (pre := fun pb => Curry.const (fun _ => True) _)
       (post := Spec.HashFns.finalizePost T) hsy (fin_pub T a₁ a₂ si tw.rsp.symm _ _ _ _)
+
+/-- `finalize`'s call in two runs, each as `fin_icall` calls it, with the same
+arguments. -/
+theorem fin_irel {stack : Nat} {P : State → State → Prop} {st o sc : Addr}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ e₁ e₂,
+      TwoRuns (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e₁ e₂ s₁ s₂ ∧
+      Passes stack 8 e₁ s₁ [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      Passes stack 8 e₂ s₂ [] [⟨st, T.S.stateBytes⟩, ⟨o, T.outBytes⟩, ⟨sc, 8 * T.scratch⟩] ∧
+      FArgs T s₁ st o sc ∧ FArgs T s₂ st o sc ∧ s₁.gpr .rsi = s₂.gpr .rsi) :
+    RelCT isa P (.icall 8) fun _ _ => True :=
+  C.fin_irel T (cs₀ := []) fun s₁ s₂ hp => by
+    obtain ⟨e₁, e₂, tw, p₁, p₂, r⟩ := h s₁ s₂ hp
+    exact ⟨e₁, e₂, twoRunsC_nil tw, passesC_nil p₁, passesC_nil p₂, r⟩
 
 end VG.Proof.HashFns.X86_64

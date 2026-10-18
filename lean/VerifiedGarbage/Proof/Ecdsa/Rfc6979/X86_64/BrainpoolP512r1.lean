@@ -48,7 +48,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
   E := Impl.Ecdsa.X86_64.brainpoolp512r1
   inst := Spec.Ecdsa.BrainpoolP512r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inr rfl), .inl rfl, Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   hHigh := true

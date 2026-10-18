@@ -57,7 +57,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   E := Impl.Ecdsa.X86_64.p256
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0

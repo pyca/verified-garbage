@@ -65,7 +65,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   E := Impl.Ecdsa.X86_64.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0

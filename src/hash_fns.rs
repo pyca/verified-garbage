@@ -8,13 +8,15 @@
 //! `vg_<hash>_finalize_scratch` (SHA-224's `update` and `finalize` are
 //! SHA-256's, and the SHA-512 family's SHA-512's), whose contracts imply
 //! `VG.Spec.HashFns.initContract`, `updateContract` and `finalizeContract`
-//! with `VG.Spec.HashFns.fnStack` bytes of stack. [`table`] chooses the
+//! with `VG.Spec.HashFns.fnStack` bytes of stack. [`table`] (and the
+//! function of each hash function, e.g. [`sha256`]) chooses the
 //! implementations of their compression functions this CPU runs best, as
 //! each hash function's streaming backend does, so the caller has one copy
 //! for every hash function and every implementation of it.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(target_arch = "x86_64")]
 
+#[cfg(feature = "alloc")]
 use crate::arch::md5::{vg_md5_finalize_scratch, vg_md5_init, vg_md5_update_scratch};
 use crate::arch::sha1::{
     VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES, VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES,
@@ -36,6 +38,7 @@ use crate::arch::sha512::{
     vg_sha512_update_scratch, vg_sha512_update_scratch_avx2, vg_sha512_update_scratch_shani,
 };
 use crate::cpu::Features;
+#[cfg(feature = "alloc")]
 use crate::hashes::md5::Md5Backend;
 use crate::hashes::sha1::Sha1Backend;
 use crate::hashes::sha224::Sha224Backend;
@@ -44,13 +47,15 @@ use crate::hashes::sha384::Sha384Backend;
 use crate::hashes::sha512::Sha512Backend;
 use crate::hashes::sha512_224::Sha512_224Backend;
 use crate::hashes::sha512_256::Sha512_256Backend;
+#[cfg(feature = "alloc")]
 use crate::rsa_pkcs1_sig::Hash;
 
 /// A hash function as the verified functions take it: its number
 /// (`VG.Spec.HashId`) and the table of its streaming functions.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Table {
-    /// The hash function's number, `hash` (`Hash as usize`).
+    /// The hash function's number, `hash` (`VG.Spec.HashId`, as
+    /// `rsa_pkcs1_sig::Hash` numbers them).
     pub(crate) id: usize,
     /// The addresses of its `init`, `update` and `finalize`.
     pub(crate) fns: [u64; 3],
@@ -136,56 +141,110 @@ macro_rules! sha512_family {
     };
 }
 
+/// The table of the hash function numbered `id`, of the functions `fns`
+/// needing the CPU features `features`, which `f` has.
+fn table_of(id: usize, (fns, features): ([u64; 3], Features), f: Features) -> Table {
+    debug_assert!(f.contains(features), "{id}");
+    Table { id, fns }
+}
+
+/// MD5's table, for the implementations a CPU with the features `f` runs
+/// best.
+#[cfg(feature = "alloc")]
+pub(crate) fn md5(f: Features) -> Table {
+    let e = match Md5Backend::select(f) {
+        Md5Backend::Scalar => entry!(
+            vg_md5_init,
+            vg_md5_update_scratch,
+            vg_md5_finalize_scratch,
+            []
+        ),
+    };
+    table_of(0, e, f)
+}
+
+/// SHA-1's table, for the implementations a CPU with the features `f` runs
+/// best.
+pub(crate) fn sha1(f: Features) -> Table {
+    let e = match Sha1Backend::select(f) {
+        Sha1Backend::Scalar => entry!(
+            vg_sha1_init,
+            vg_sha1_update_scratch,
+            vg_sha1_finalize_scratch,
+            []
+        ),
+        Sha1Backend::ShaNi => entry!(
+            vg_sha1_init,
+            vg_sha1_update_scratch_shani,
+            vg_sha1_finalize_scratch_shani,
+            [
+                VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES,
+                VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES
+            ]
+        ),
+    };
+    table_of(1, e, f)
+}
+
+/// SHA-224's table, as [`sha1`]'s.
+pub(crate) fn sha224(f: Features) -> Table {
+    table_of(2, sha256_family!(Sha224Backend, f, vg_sha224_init), f)
+}
+
+/// SHA-256's table, as [`sha1`]'s.
+pub(crate) fn sha256(f: Features) -> Table {
+    table_of(3, sha256_family!(Sha256Backend, f, vg_sha256_init), f)
+}
+
+/// SHA-384's table, as [`sha1`]'s.
+pub(crate) fn sha384(f: Features) -> Table {
+    table_of(4, sha512_family!(Sha384Backend, f, vg_sha384_init), f)
+}
+
+/// SHA-512's table, as [`sha1`]'s.
+pub(crate) fn sha512(f: Features) -> Table {
+    table_of(5, sha512_family!(Sha512Backend, f, vg_sha512_init), f)
+}
+
+/// SHA-512/224's table, as [`sha1`]'s.
+pub(crate) fn sha512_224(f: Features) -> Table {
+    table_of(
+        6,
+        sha512_family!(Sha512_224Backend, f, vg_sha512_224_init),
+        f,
+    )
+}
+
+/// SHA-512/256's table, as [`sha1`]'s.
+pub(crate) fn sha512_256(f: Features) -> Table {
+    table_of(
+        7,
+        sha512_family!(Sha512_256Backend, f, vg_sha512_256_init),
+        f,
+    )
+}
+
 /// The table of `hash`'s streaming functions for the implementations a CPU
 /// with the features `f` runs best, or `None` for a hash function with no
 /// such functions (SHA-3). The functions need no CPU feature their backend
 /// was not chosen for (checked here, on every set of features in the
 /// tests).
+#[cfg(feature = "alloc")]
 pub(crate) fn table(hash: Hash, f: Features) -> Option<Table> {
-    let (fns, features) = match hash {
-        Hash::Md5 => match Md5Backend::select(f) {
-            Md5Backend::Scalar => entry!(
-                vg_md5_init,
-                vg_md5_update_scratch,
-                vg_md5_finalize_scratch,
-                []
-            ),
-        },
-        Hash::Sha1 => match Sha1Backend::select(f) {
-            Sha1Backend::Scalar => {
-                entry!(
-                    vg_sha1_init,
-                    vg_sha1_update_scratch,
-                    vg_sha1_finalize_scratch,
-                    []
-                )
-            }
-            Sha1Backend::ShaNi => entry!(
-                vg_sha1_init,
-                vg_sha1_update_scratch_shani,
-                vg_sha1_finalize_scratch_shani,
-                [
-                    VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES,
-                    VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES
-                ]
-            ),
-        },
-        Hash::Sha224 => sha256_family!(Sha224Backend, f, vg_sha224_init),
-        Hash::Sha256 => sha256_family!(Sha256Backend, f, vg_sha256_init),
-        Hash::Sha384 => sha512_family!(Sha384Backend, f, vg_sha384_init),
-        Hash::Sha512 => sha512_family!(Sha512Backend, f, vg_sha512_init),
-        Hash::Sha512_224 => sha512_family!(Sha512_224Backend, f, vg_sha512_224_init),
-        Hash::Sha512_256 => sha512_family!(Sha512_256Backend, f, vg_sha512_256_init),
+    Some(match hash {
+        Hash::Md5 => md5(f),
+        Hash::Sha1 => sha1(f),
+        Hash::Sha224 => sha224(f),
+        Hash::Sha256 => sha256(f),
+        Hash::Sha384 => sha384(f),
+        Hash::Sha512 => sha512(f),
+        Hash::Sha512_224 => sha512_224(f),
+        Hash::Sha512_256 => sha512_256(f),
         Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512 => return None,
-    };
-    debug_assert!(f.contains(features), "{hash:?}");
-    Some(Table {
-        id: hash as usize,
-        fns,
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::*;
 

@@ -88,13 +88,7 @@ theorem keep_cs {t t' : State} (h : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) :
 
 /-! ## The functions and the state they are called from -/
 
-/-- The streaming functions `T`, at the addresses `fi`, `fu` and `ff`, as
-`FnMeets` says of them in the entry `e` of a function whose calls and frames
-use `stack` bytes of stack. -/
-structure Fns (stack : Nat) (e : State) (T : Spec.HashFns.Streaming) (fi fu ff : Addr) : Prop where
-  init : FnMeets abi (fun A n => Spec.HashFns.initContract T A n) 8 stack e fi
-  upd : FnMeets abi (fun A n => Spec.HashFns.updateContract T A n) 8 stack e fu
-  fin : FnMeets abi (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack e ff
+export VG.Proof.HashFns.X86_64 (Fns)
 
 /-- What a state `t` of a run from the entry `e`, in the frame `F` with the
 working space `S`, keeps of `e` for the calls: `World`; what it may write is

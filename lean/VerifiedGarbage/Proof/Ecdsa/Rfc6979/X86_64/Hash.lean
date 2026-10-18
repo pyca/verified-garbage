@@ -1,18 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.HashFns.Streaming
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 public import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
-public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 
 /-!
 # Deterministic ECDSA on x86-64: the hash function
@@ -20,15 +16,14 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 What the proof needs of the hash function, for any one of them (`RfcHash`):
 the curve (`RfcCurve`, with what is proven of `vg_ecdsa_<curve>_sign`,
 which each candidate calls), the instance of the contract it implements (the
-curve's, the hash function's HMAC, its output length, 8 candidates), its
-code (`Hash`), what PBKDF2's proofs know of it (`HashOK`, `CoreOK`,
-`Callees`, so that HMAC's `init`, `update` and `finalize` are verified), and
-the sizes the frame and `scratch` are laid out for: the output and block
-sizes of SHA-224, SHA-256, SHA-384 or SHA-512, no shorter than the curve's scalars
-(so that one `V` makes a candidate) or, for a `wide` curve, SHA-512's (so
-that two do, and `bits2octets` is the digest after two zero bytes), and
-states and working space no larger than SHA-512's. Each hash function's file
-builds one for each implementation of its compression function.
+curve's, the hash function's HMAC, its output length, the candidates), and
+the hash function's number `k` and its streaming functions `T`
+(`Spec.HashFns.streaming k`), which the code calls through the table. The
+sizes the frame and `scratch` are laid out for are those of SHA-1 and the
+SHA-2 functions (`sizes`): outputs of 20 to 64 bytes, a multiple of 4, blocks
+of 64 or 128 bytes, and states and working space no larger than SHA-512's.
+Whether the hash is shorter than the scalars (`wide`) decides how
+`bits2octets`, the candidate and the digest for `core` are made.
 -/
 
 @[expose] public section
@@ -36,9 +31,7 @@ builds one for each implementation of its compression function.
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
 open VG VG.X86_64 VG.Impl.Ecdsa.Rfc6979.X86_64
-open VG.Proof.Pbkdf2.Md.X86_64 (HashOK CoreOK Callees core hmacInit_ok hmacFin_ok core_hmacInit core_hmacFin
-  core_hmacInit_depth core_hmacFin_depth nosp_of)
-open VG.Proof.Pbkdf2.Md.X86_64.Calls (initG finG)
+open VG.Proof.HashFns (StreamingOK streaming_ok)
 
 /-- A curve and a hash function, for RFC 6979 on x86-64. -/
 structure RfcHash where
@@ -46,51 +39,30 @@ structure RfcHash where
   R : RfcCurve
   /-- The instance of the contract. -/
   I : Spec.Ecdsa.Rfc6979.Instance
-  /-- The hash function's code. -/
-  H : Impl.Pbkdf2.Md.X86_64.Hash
-  ok : HashOK H
-  C : CoreOK (core H)
-  K : Callees H
-  satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W X86_64.abi 16).pre s
-  satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W X86_64.abi 16).pre s
+  /-- The hash function's number and its streaming functions. -/
+  k : Nat
+  T : Spec.HashFns.Streaming
+  hT : Spec.HashFns.streaming k = some T
+  hk : k ∈ hashIds
   /-- The instance is of the curve, with this hash function's HMAC and its
   output length, and tries at least one candidate, as many as a 32-bit
   immediate holds. -/
   ecdsa : I.ecdsa = R.inst
-  hash : I.hash = ok.SH.H
-  len : I.hashLen = H.D
+  hash : I.hash = T.S.H
+  len : I.hashLen = T.S.digestBytes
   tries_pos : 0 < I.tries
   tries_lt : I.tries < 2 ^ 32
-  /-- The sizes the frame and `scratch` hold: the output and block sizes of
-  SHA-256, SHA-384, SHA-512 or SHA-224. -/
-  hDB : (H.D = 32 ∧ H.P.B = 64) ∨ (H.D = 48 ∧ H.P.B = 128) ∨ (H.D = 64 ∧ H.P.B = 128) ∨
-    (H.D = 28 ∧ H.P.B = 64)
-  hS : H.S ≤ 192
-  hW : 8 * H.W ≤ 1872
-  hWb : ok.stream.Wb ≤ 1872
-  /-- The hash is no shorter than the scalars, or, for a `wide` curve, SHA-512's. -/
-  hQ : if R.wide then H.D = 64 ∧ H.P.B = 128 else R.E.C.len ≤ H.D
-  /-- The streaming `update`'s own code writes `rsp` only by its calls' pushes and pops. -/
-  updSp : (core H).updC.allInstrs (fun i => !isa.writesSp i) = true
 
 namespace RfcHash
 
 variable (P : RfcHash)
 
 /-- HMAC with the hash function. -/
-abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.ok.SH.H K text
+abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.T.S.H K text
 
-theorem hI : Verified X86_64.target P.H.hmacInit (initG P.ok.SH P.H.W) := hmacInit_ok P.ok P.C P.K P.satI
-
-theorem hIsp : NoSp P.H.hmacInit := nosp_of (core_hmacInit P.K.cNs P.K.iNs P.C.hinitNs)
-
-theorem hId : P.H.hmacInit.depth ≤ 2 := core_hmacInit_depth P.K.cD P.K.iD P.C.hinitD
-
-theorem hF : Verified X86_64.target P.H.hmacFin (finG P.ok.SH P.H.W) := hmacFin_ok P.ok P.C P.K P.satF
-
-theorem hFsp : NoSp P.H.hmacFin := nosp_of (core_hmacFin P.K.cNs P.C.hfinNs)
-
-theorem hFd : P.H.hmacFin.depth ≤ 2 := core_hmacFin_depth P.K.cD P.C.hfinD
+/-- The bytes of the hash function's output and of its block. -/
+abbrev D : Nat := P.T.S.digestBytes
+abbrev B : Nat := P.T.S.H.blockSize
 
 /-- The words of the curve's scalars. -/
 abbrev w : Nat := P.R.E.n
@@ -98,63 +70,112 @@ abbrev w : Nat := P.R.E.n
 /-- The bytes of the curve's scalars. -/
 abbrev Q : Nat := P.R.E.C.len
 
-/-- The words above the frame's pointers: the digest for `core` and the
-candidate, if two `V`s make a candidate, or `h`, for 64-byte scalars. -/
-abbrev e : Nat := if P.R.wide then 18 else if P.R.hHigh then 8 else 0
+/-- Whether the hash is shorter than the scalars. -/
+abbrev wide : Bool := decide (P.D < P.Q)
+
+/-- The words above the frame's pointers: the streaming functions'
+addresses, and 18 more. -/
+abbrev e (_P : RfcHash) : Nat := 21
 
 /-- Where `h` is, from the stack's lowest byte: in the frame below its
-pointers, or above them for 64-byte scalars. -/
-abbrev hB : Nat := if P.R.hHigh then 240 else 152
+pointers, or above the streaming functions' addresses for scalars of 8
+words. -/
+abbrev hB : Nat := if P.R.hHigh then 264 else 152
+
+/-- The sizes of the hash function the number `k` names, as the code has them. -/
+theorem sizesOf_of {k : Nat} {T : Spec.HashFns.Streaming} (hT : Spec.HashFns.streaming k = some T)
+    (hk : k ∈ hashIds) : sizesOf k = (T.S.digestBytes, T.S.H.blockSize) := by
+  simp only [hashIds, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with h | h | h | h | h | h | h <;> subst h <;>
+    simp only [Spec.HashFns.streaming, Option.some.injEq] at hT <;> subst hT <;> rfl
+
+/-- The hash function's sizes, as the code has them. -/
+theorem sizesOf_eq : sizesOf P.k = (P.D, P.B) := sizesOf_of P.hT P.hk
+
+/-- What the proofs of the streaming functions' calls need of them. -/
+theorem ok : ∃ H, Spec.HashId.mgf1 P.k = some H ∧ StreamingOK P.T H := streaming_ok P.hT
+
+/-- The sizes of SHA-1's and the SHA-2 functions' output, block, state and
+working space. -/
+theorem hDB_of {k : Nat} {T : Spec.HashFns.Streaming} (hT : Spec.HashFns.streaming k = some T)
+    (hk : k ∈ hashIds) :
+    T.S.stateBytes ≤ 192 ∧ T.outBytes ≤ 64 ∧ 8 * T.scratch ≤ 1376 ∧ T.S.digestBytes ≤ T.outBytes ∧
+      ((T.S.digestBytes = 20 ∧ T.S.H.blockSize = 64) ∨ (T.S.digestBytes = 28 ∧ T.S.H.blockSize = 64) ∨
+        (T.S.digestBytes = 32 ∧ T.S.H.blockSize = 64) ∨ (T.S.digestBytes = 48 ∧ T.S.H.blockSize = 128) ∨
+        (T.S.digestBytes = 64 ∧ T.S.H.blockSize = 128) ∨ (T.S.digestBytes = 28 ∧ T.S.H.blockSize = 128) ∨
+        (T.S.digestBytes = 32 ∧ T.S.H.blockSize = 128)) := by
+  simp only [hashIds, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with h | h | h | h | h | h | h <;> subst h <;>
+    simp only [Spec.HashFns.streaming, Option.some.injEq] at hT <;> subst hT <;> decide
+
+theorem hDB : P.T.S.stateBytes ≤ 192 ∧ P.T.outBytes ≤ 64 ∧ 8 * P.T.scratch ≤ 1376 ∧ P.D ≤ P.T.outBytes ∧
+    ((P.D = 20 ∧ P.B = 64) ∨ (P.D = 28 ∧ P.B = 64) ∨ (P.D = 32 ∧ P.B = 64) ∨ (P.D = 48 ∧ P.B = 128) ∨
+      (P.D = 64 ∧ P.B = 128) ∨ (P.D = 28 ∧ P.B = 128) ∨ (P.D = 32 ∧ P.B = 128)) := hDB_of P.hT P.hk
 
 /-- The sizes, as the proofs use them. -/
-theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 1872 ∧ P.ok.stream.Wb ≤ 1872 ∧
-    P.H.stream.S ≤ 192 ∧ P.H.stream.D = P.H.D ∧ 28 ≤ P.H.D ∧ P.H.D ≤ 64 ∧ P.H.D % 4 = 0 ∧
-    P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 ∧ 4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ P.H.D + 8 ∧
-    P.Q ≤ 8 * P.w ∧ 8 * P.w ≤ P.Q + 8 ∧ P.e ≤ 18 := by
-  have hDL := P.ok.hDL
+theorem sizes : P.T.S.stateBytes ≤ 192 ∧ P.T.outBytes ≤ 64 ∧ 8 * P.T.scratch ≤ 1376 ∧ P.D ≤ P.T.outBytes ∧
+    20 ≤ P.D ∧ P.D ≤ 64 ∧ P.D % 4 = 0 ∧ P.D < P.B ∧ P.B ≤ 128 ∧ P.B % 8 = 0 ∧
+    4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ 8 * P.w ∧ 8 * P.w ≤ P.Q + 8 ∧ P.Q ≤ 66 := by
+  obtain ⟨h₁, h₂, h₃, h₄, h⟩ := P.hDB
   have hw : 8 ≤ P.Q ∧ 8 * P.w ≤ P.Q + 8 ∧ P.Q ≤ 8 * P.w := P.R.len_words
-  have hQD : P.Q ≤ P.H.D + 8 := by
-    have hQ := P.hQ
-    cases hW : P.R.wide
-    · have := P.R.sizesA hW; rw [hW] at hQ; simp only [Bool.false_eq_true, ite_false] at hQ
-      show P.R.E.C.len ≤ _; omega
-    · have := P.R.sizesW hW; rw [hW] at hQ; simp only [ite_true] at hQ
-      show P.R.E.C.len ≤ _; omega
-  refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, by omega, ?_, P.R.n4, P.R.n9, hw.1, hQD, hw.2.2, hw.2.1,
-    by simp only [e]; split <;> (try split) <;> omega⟩ <;>
-    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
+  have hn9 := P.R.n9
+  have hn4 := P.R.n4
+  have hQ66 : P.Q ≤ 66 := by
+    cases hb : P.R.big
+    · have := P.R.sizesA hb
+      rcases this.1 with h' | h' | h' <;> simp only [Q] <;> omega
+    · have := P.R.sizesW hb; simp only [Q]; omega
+  refine ⟨h₁, h₂, h₃, h₄, ?_⟩
+  have hD : 20 ≤ P.D ∧ P.D ≤ 64 ∧ P.D % 4 = 0 ∧ P.D < P.B ∧ P.B ≤ 128 ∧ P.B % 8 = 0 := by
+    rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
+  simp only [w, Q] at hw hQ66 ⊢
+  omega
 
-/-- Unless `wide`, the scalars are `8 w` bytes (or 24 or 28 in 4 words), at most 8
-words, and no longer than the digest. -/
-theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧ P.w ≤ 8 ∧ P.Q ≤ P.H.D := by
-  have hQ := P.hQ
-  have := P.R.sizesA h
-  rw [h] at hQ
-  simp only [Bool.false_eq_true, ite_false] at hQ
-  rcases this.1 with h' | h' | h' <;> simp only [Q, w] <;> omega
+/-- Unless the hash is shorter than the scalars, the curve's scalars are no
+longer than any hash function's output. -/
+theorem big_false (h : P.wide = false) : P.R.big = false := by
+  have hQD : P.Q ≤ P.D := by simpa [wide] using h
+  have hz := P.sizes
+  cases hb : P.R.big
+  · rfl
+  · have := P.R.sizesW hb
+    have := hz.2.2.2.2.2.1
+    simp only [Q, D] at hQD this; omega
 
-/-- Unless `wide`, the scalars are 32, 48, 64 or 28 bytes. -/
-theorem sizesQ (h : P.R.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 64 ∨ P.Q = 28 ∨ P.Q = 24 := by
-  have := P.R.sizesA h
+/-- Unless the hash is shorter than the scalars, the scalars are `8 w` bytes
+(or 24 or 28 in 4 words), at most 8 words, and no longer than the digest,
+whose order `n` has exactly `8 Q` bits, with `2^(8 Q) < 2 n`. -/
+theorem sizesA (h : P.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧
+    P.w ≤ 8 ∧ P.Q ≤ P.D := by
+  have hQD : P.Q ≤ P.D := by simpa [wide] using h
+  obtain ⟨hn, hl, -, -⟩ := P.R.sizesA (P.big_false h)
+  exact ⟨hl, by simp only [w]; omega, hQD⟩
+
+/-- Unless the hash is shorter than the scalars, the scalars are 32, 48, 64,
+28 or 24 bytes. -/
+theorem sizesQ (h : P.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 64 ∨ P.Q = 28 ∨ P.Q = 24 := by
+  have := P.R.sizesA (P.big_false h)
   rcases this.1 with hn | hn | hn <;> simp only [Q] <;> omega
 
-/-- `h` fits its place: 48 bytes below the frame's pointers, or, for 64-byte
-scalars (in 8 words), the 64 above them. -/
-theorem hFits (h : P.R.wide = false) : (P.w = 8 → P.Q = 64) ∧ (P.w ≠ 8 → P.Q ≤ 48) := by
-  have := P.R.sizesA h
+/-- `h` fits its place, unless the hash is shorter than the scalars: 48
+bytes below the frame's pointers, or, for scalars of 8 words (64 bytes),
+the 64 above the streaming functions' addresses. -/
+theorem hFits (h : P.wide = false) : (P.w = 8 → P.Q = 64) ∧ (P.w ≠ 8 → P.Q ≤ 48) := by
+  have := P.R.sizesA (P.big_false h)
   rcases this.1 with hn | hn | hn <;> simp only [Q, w] <;> omega
 
-/-- If `wide`, P-521's sizes and SHA-512's. -/
-theorem sizesW (h : P.R.wide = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D = 64 ∧ P.H.P.B = 128 := by
-  have hQ := P.hQ
-  have := P.R.sizesW h
-  rw [h] at hQ
-  simp only [ite_true] at hQ
-  exact ⟨this.1, this.2.1, hQ⟩
+/-- `h` is above the streaming functions' addresses for scalars of 64
+bytes, which are those of 8 words. -/
+theorem hHigh_eq : P.R.hHigh = decide (P.Q = 64) := by
+  rw [P.R.hHigh_eq]
+  cases hb : P.R.big
+  · have := P.R.sizesA hb
+    rcases this.1 with hn | hn | hn <;> simp only [Q] <;> rcases this.2.1 with h | ⟨h, h'⟩ <;> simp <;> omega
+  · have := P.R.sizesW hb
+    simp only [Q]; simp; omega
 
-/-- The digest is at least 28 bytes. -/
-theorem len28 : 28 ≤ P.I.hashLen := by
-  rw [P.len]; rcases P.hDB with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+/-- The digest is at least 20 bytes. -/
+theorem len20 : 20 ≤ P.I.hashLen := by rw [P.len]; exact P.sizes.2.2.2.2.1
 
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]
@@ -164,14 +185,18 @@ end RfcHash
 /-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
 space, block and output, and the arithmetic they decide. -/
 macro "nums" : tactic => `(tactic| first | omega |
-  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›; omega))
+  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›; omega))
 
-/-- The code, with the hash function `P`. -/
+/-- The code, with the hash function `P`: the configuration
+`Cfg.ofCurve` makes for the curve and the hash function's number
+(`cfgOf_eq`). -/
 def cfgOf (P : RfcHash) : Cfg where
-  H := P.H
+  D := P.D
+  B := P.B
   w := P.R.E.n
   len := P.R.E.C.len
-  wide := P.R.wide
+  wide := P.wide
+  blocks := (Spec.Ecdsa.nBits P.R.E.C + 8 * P.D - 1) / (8 * P.D)
   sh := P.R.sh
   hHigh := P.R.hHigh
   n := P.R.E.C.n
@@ -179,25 +204,27 @@ def cfgOf (P : RfcHash) : Cfg where
   coreN := P.R.coreN
   coreC := P.R.coreC
 
-/-- Unless two `V`s make a candidate, `h` is above the frame's pointers just
-for 64-byte scalars. -/
-theorem hHigh_q (P : RfcHash) (hw : P.R.wide = false) : P.R.hHigh = decide (P.Q = 64) := by
-  have hF := P.hFits hw
-  rw [P.R.hHigh_eq]
-  by_cases h8 : P.R.E.n = 8
-  · simp only [h8, decide_true, show P.Q = 64 from hF.1 h8]
-  · have := hF.2 h8
-    simp only [h8, decide_false, show P.Q ≠ 64 by omega]
+theorem cfgOf_eq (P : RfcHash) : cfgOf P = Cfg.ofCurve (P.R.cc P.I.tries) P.k := by
+  simp only [cfgOf, Cfg.ofCurve, P.sizesOf_eq, RfcCurve.cc]
+  rw [P.hHigh_eq]
+  rfl
+
+theorem cfgOf_D (P : RfcHash) : (cfgOf P).D = P.D := rfl
+theorem cfgOf_B (P : RfcHash) : (cfgOf P).B = P.B := rfl
+theorem cfgOf_wide (P : RfcHash) : (cfgOf P).wide = P.wide := rfl
+theorem cfgOf_len (P : RfcHash) : (cfgOf P).len = P.Q := rfl
+theorem cfgOf_w (P : RfcHash) : (cfgOf P).w = P.w := rfl
+theorem cfgOf_sh (P : RfcHash) : (cfgOf P).sh = P.R.sh := rfl
+theorem cfgOf_n (P : RfcHash) : (cfgOf P).n = P.R.E.C.n := rfl
+theorem cfgOf_tries (P : RfcHash) : (cfgOf P).tries = P.I.tries := rfl
+theorem cfgOf_coreC (P : RfcHash) : (cfgOf P).coreC = P.R.coreC := rfl
+theorem cfgOf_coreN (P : RfcHash) : (cfgOf P).coreN = P.R.coreN := rfl
+theorem cfgOf_hHigh (P : RfcHash) : (cfgOf P).hHigh = P.R.hHigh := rfl
+theorem cfgOf_blocks (P : RfcHash) :
+    (cfgOf P).blocks = (Spec.Ecdsa.nBits P.R.E.C + 8 * P.D - 1) / (8 * P.D) := rfl
 
 /-- `h`'s place in the frame, from `rsp`: `hB` less the 24 bytes below the frame. -/
 theorem fHo_eq (P : RfcHash) : (cfgOf P).fHo = P.hB - 24 := by
   cases h : P.R.hHigh <;> simp [Cfg.fHo, cfgOf, RfcHash.hB, h, fX, fH]
-
-/-- If two `V`s make a candidate, `h`'s place is the one below the pointers,
-which the code does not use. -/
-theorem fHo_wide (P : RfcHash) (hw : P.R.wide = true) : (cfgOf P).fHo = 128 := by
-  have hh := P.R.hHigh_eq
-  simp only [show P.R.E.n = 9 from (P.R.sizesW hw).1, Nat.reduceEqDiff, decide_false] at hh
-  simp only [Cfg.fHo, cfgOf, hh, Bool.false_eq_true, ite_false, fH]
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

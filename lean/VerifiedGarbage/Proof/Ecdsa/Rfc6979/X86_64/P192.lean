@@ -48,7 +48,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   E := Impl.Ecdsa.X86_64.p192
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inr ⟨rfl, .inr rfl⟩, Proof.Ecdsa.X86_64.P192.p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0

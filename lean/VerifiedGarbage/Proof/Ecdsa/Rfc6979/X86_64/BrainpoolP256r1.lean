@@ -48,7 +48,7 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve)
   E := Impl.Ecdsa.X86_64.brainpoolp256r1
   inst := Spec.Ecdsa.BrainpoolP256r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, Proof.Ecdsa.X86_64.BrainpoolP256r1.brainpoolp256r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0

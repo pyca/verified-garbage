@@ -9,17 +9,9 @@
     target_arch = "arm"
 ))]
 
-use super::{Error, Secp256k1, SignatureHash, SigningKey, sealed};
+use super::{Error, Secp256k1, SigningKey};
 use crate::arch::ec_secp256k1::vg_ec_secp256k1_public_key;
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_verify;
-use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_avx2;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_shani;
-use crate::hashes::sha256::{Sha256, Sha256Backend};
 use crate::zeroize::zeroize;
 
 impl SigningKey<Secp256k1> {
@@ -47,49 +39,23 @@ impl SigningKey<Secp256k1> {
     }
 }
 
-impl sealed::Functions<Secp256k1> for Sha256 {
-    fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
-        let sign = match Sha256Backend::select(crate::cpu::detected()) {
-            Sha256Backend::Scalar => vg_ecdsa_secp256k1_sha256_sign,
-            #[cfg(target_arch = "aarch64")]
-            Sha256Backend::Sha2 => vg_ecdsa_secp256k1_sha256_sign_sha2,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Sha256Backend::ShaNi => vg_ecdsa_secp256k1_sha256_sign_shani,
-            #[cfg(target_arch = "x86_64")]
-            Sha256Backend::Avx2 => vg_ecdsa_secp256k1_sha256_sign_avx2,
-        };
-        let mut out = [0; 64];
-        let mut scratch = [0u64; 1024];
-        // SAFETY: `out` is valid for reads and writes of 64 bytes, `d` and
-        // `digest` for reads of 32 and `scratch` for reads and writes of
-        // 8192; `out` and `scratch` are distinct objects from each other and
-        // the others, so none overlaps another or the call's stack frame,
-        // and, as Rust objects, none wraps around the address space. `sign`
-        // needs no CPU feature that the implementation of SHA-256 selected
-        // for this CPU does not.
-        let ok = unsafe { sign(&mut out, d, digest, &mut scratch) };
-        zeroize(&mut scratch);
-        if ok == 1 {
-            Ok(out)
-        } else {
-            Err(Error::InvalidKey)
-        }
-    }
-
-    fn verify(q: &[u8; 65], digest: &[u8; 32], signature: &[u8; 64]) -> Result<(), Error> {
-        let mut scratch = [0u64; 1024];
-        // SAFETY: `q` is valid for reads of 65 bytes, `digest` of 32,
-        // `signature` of 64 and `scratch` for reads and writes of 8192;
-        // `scratch` is a distinct object from the others, so it overlaps
-        // neither them nor the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        let ok = unsafe { vg_ecdsa_secp256k1_verify(q, digest, signature, &mut scratch) };
-        if ok == 1 {
-            Ok(())
-        } else {
-            Err(Error::InvalidSignature)
-        }
+/// Whether `signature` verifies with `q` for the hash whose leftmost bits
+/// are `digest`, as `vg_ecdsa_secp256k1_verify` takes them (FIPS 186-5 §6.4.2).
+pub(super) fn verify_with(
+    q: &[u8; 65],
+    digest: &[u8; 32],
+    signature: &[u8; 64],
+) -> Result<(), Error> {
+    let mut scratch = [0u64; 1024];
+    // SAFETY: `q` is valid for reads of 65 bytes, `digest` of 32,
+    // `signature` of 64 and `scratch` for reads and writes of 8192;
+    // `scratch` is a distinct object from the others, so it overlaps
+    // neither them nor the call's stack frame, and, as Rust objects,
+    // none wraps around the address space.
+    let ok = unsafe { vg_ecdsa_secp256k1_verify(q, digest, signature, &mut scratch) };
+    if ok == 1 {
+        Ok(())
+    } else {
+        Err(Error::InvalidSignature)
     }
 }
-
-impl SignatureHash<Secp256k1> for Sha256 {}

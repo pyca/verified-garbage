@@ -77,9 +77,11 @@ def initMem (a : Arch) : Mem := writeState a.mem (a.gpr .rdi) Spec.Sha1.H0
 
 def sha1Init : IcallFn := memFn initMem
 
-theorem init_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha1Init) :
-    FnMeets abi (fun A n => Spec.HashFns.initContract T A n) 8 stack s a := by
-  refine meets_of h fun s₁ hp => ?_
+/-- What `init` does, from an entry its contract holds of. -/
+theorem init_run : ∀ s₁ : State, (Spec.HashFns.initContract T abi 8).pre s₁ → Frame s₁.wr s₁.mem (initMem s₁.arch) ∧
+    (∀ r ∈ s₁.wr, r.Disjoint ⟨s₁.gpr .rsp, 8⟩) ∧
+      (Spec.HashFns.initContract T abi 8).post s₁ (s₁.withArch { s₁.arch with mem := initMem s₁.arch }) := by
+  intro s₁ hp
   sig_pre [Spec.HashFns.initContract, Spec.HashFns.initSig, abi, argRegs, stackBelow] at hp
   obtain ⟨-, -, hwr, hd, -, -⟩ := hp
   refine ⟨by rw [hwr]; exact frame_writeState _ _ _ (by decide), fun r hr => ?_, ?_⟩
@@ -87,6 +89,10 @@ theorem init_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha
   · unfold Spec.HashFns.initContract
     sig_reduce [Spec.HashFns.initSig, Spec.HashFns.initPost, abi, argRegs]
     exact Proof.Sha1.Stream.repr_nil (stateAt_writeState _ _ _)
+
+theorem init_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha1Init) :
+    FnMeets abi (fun A n => Spec.HashFns.initContract T A n) 8 stack s a :=
+  meets_of h init_run
 
 /-! ## Appending to a streaming state -/
 
@@ -139,9 +145,11 @@ def updMem (a : Arch) : Mem :=
 
 def sha1Update : IcallFn := memFn updMem
 
-theorem update_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha1Update) :
-    FnMeets abi (fun A n => Spec.HashFns.updateContract T A n) 8 stack s a := by
-  refine meets_of h fun s₁ hp => ?_
+/-- What `update` does, from an entry its contract holds of. -/
+theorem update_run : ∀ s₁ : State, (Spec.HashFns.updateContract T abi 8).pre s₁ → Frame s₁.wr s₁.mem (updMem s₁.arch) ∧
+    (∀ r ∈ s₁.wr, r.Disjoint ⟨s₁.gpr .rsp, 8⟩) ∧
+      (Spec.HashFns.updateContract T abi 8).post s₁ (s₁.withArch { s₁.arch with mem := updMem s₁.arch }) := by
+  intro s₁ hp
   sig_pre [Spec.HashFns.updateContract, Spec.HashFns.updateSig, abi, argRegs, stackBelow] at hp
   obtain ⟨-, -, hwr, -, -, -, dR, -, dRs, -, -, -, bs, -, -⟩ := hp
   have hxl : ∀ x : List Byte, (x.drop (64 * (x.length / 64))).length < 64 := fun x => by
@@ -183,6 +191,10 @@ theorem update_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some s
       rw [e]
       exact bytesAt_writeBytes_self _ _ _ (by omega)
 
+theorem update_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha1Update) :
+    FnMeets abi (fun A n => Spec.HashFns.updateContract T A n) 8 stack s a :=
+  meets_of h update_run
+
 /-! ## `finalize` -/
 
 /-- The digest of the message of `cnt` bytes whose state is at `st`: its
@@ -199,9 +211,11 @@ def finMem (a : Arch) : Mem := writeBytes a.mem (a.gpr .rdx) (finDigest a.mem (a
 
 def sha1Finalize : IcallFn := memFn finMem
 
-theorem finalize_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha1Finalize) :
-    FnMeets abi (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack s a := by
-  refine meets_of h fun s₁ hp => ?_
+/-- What `finalize` does, from an entry its contract holds of. -/
+theorem finalize_run : ∀ s₁ : State, (Spec.HashFns.finalizeContract T abi 8).pre s₁ → Frame s₁.wr s₁.mem (finMem s₁.arch) ∧
+    (∀ r ∈ s₁.wr, r.Disjoint ⟨s₁.gpr .rsp, 8⟩) ∧
+      (Spec.HashFns.finalizeContract T abi 8).post s₁ (s₁.withArch { s₁.arch with mem := finMem s₁.arch }) := by
+  intro s₁ hp
   sig_pre [Spec.HashFns.finalizeContract, Spec.HashFns.finalizeSig, abi, argRegs, stackBelow] at hp
   obtain ⟨-, -, hwr, -, -, -, dR, dRo, dRs, -, -, -, -, -, -⟩ := hp
   have hdl : ∀ m st c, (finDigest m st c).length = 20 := fun _ _ _ => md.digest_length _
@@ -230,6 +244,10 @@ theorem finalize_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some
         (by decide) (by omega)]
     simp only [finDigest]
     rw [hc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl, md.lenOf_eq _ trivial, hr'.2, ← hr'.1]
+
+theorem finalize_meets {stack : Nat} {s : State} {a : Addr} (h : s.funs a = some sha1Finalize) :
+    FnMeets abi (fun A n => Spec.HashFns.finalizeContract T A n) 8 stack s a :=
+  meets_of h finalize_run
 
 /-! ## Tables -/
 

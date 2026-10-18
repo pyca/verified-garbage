@@ -12,8 +12,10 @@
 ))]
 
 use serde::Deserialize;
-use verified_garbage::ecdsa::{Error, P384, VerifyingKey};
+use verified_garbage::ecdsa::{Error, P384, SignatureHash, VerifyingKey};
 use verified_garbage::hashes::sha384::Sha384;
+#[cfg(target_arch = "x86_64")]
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
@@ -37,14 +39,14 @@ struct Case {
     sig: Hex,
 }
 
-#[test]
-fn ecdsa_secp384r1_sha384_p1363_test() {
+/// The vectors of `file`, of the hash function `H` (`sha`).
+fn check<H: SignatureHash<P384>>(file: &str, sha: &str) {
     require_vectors!();
-    let file = harness::load::<Group, Case>("ecdsa_secp384r1_sha384_p1363_test.json");
+    let file = harness::load::<Group, Case>(file);
     let (verified, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "secp384r1");
-        assert_eq!(group.params.sha, "SHA-384");
+        assert_eq!(group.params.sha, sha);
         let q: [u8; 97] = group.params.public_key.uncompressed.0[..]
             .try_into()
             .unwrap();
@@ -53,7 +55,7 @@ fn ecdsa_secp384r1_sha384_p1363_test() {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;
         };
-        let result = key.verify::<Sha384>(&test.case.msg.0, &sig);
+        let result = key.verify::<H>(&test.case.msg.0, &sig);
         match test.result {
             Expectation::Valid => {
                 assert_eq!(result, Ok(()), "tcId {}", test.tc_id);
@@ -66,4 +68,16 @@ fn ecdsa_secp384r1_sha384_p1363_test() {
         }
     });
     assert!(verified.get() > 0 && refused.get() > 0);
+}
+
+#[test]
+fn ecdsa_secp384r1_sha384_p1363_test() {
+    check::<Sha384>("ecdsa_secp384r1_sha384_p1363_test.json", "SHA-384");
+}
+
+/// On x86-64, which signs and verifies with every hash function.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn ecdsa_secp384r1_sha512_p1363_test() {
+    check::<Sha512>("ecdsa_secp384r1_sha512_p1363_test.json", "SHA-512");
 }

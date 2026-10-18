@@ -325,10 +325,9 @@ def sha384OK (v : Compress) : HashOK (sha384H v) :=
 
 
 
-/-- SHA-384 with the implementation `v` of the compression function, which it
-carries for the functions built on SHA-384 alone (`MdHash.sha384`). -/
+/-- SHA-384 with the implementation `v` of the compression function. -/
 def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  { MdHash.of (sha384OK v) sha384_coreOK (sha384K v) ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
+  MdHash.of (sha384OK v) sha384_coreOK (sha384K v) ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
       sha384_satI sha384_satF sha384_satT sha384_satP (by decide)
       sha384_anyOK sha384_satA (by decide) Proof.Hmac.sha384_local
       (by
@@ -343,8 +342,7 @@ def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
         exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel)
           (by rw [Curry.apply_const]; trivial))
       (by decide) sha384_satPF
-      v.suffix v.features stream with
-    sha384 := some v }
+      v.suffix v.features stream
 
 /-! ## SHA-512 -/
 

@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.6: P-384, with SHA-384.
+//! RFC 6979 §A.2.6: P-384, with SHA-384, and on x86-64 the
+//! section's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -91,4 +92,44 @@ fn p384_keys() {
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }
+}
+
+/// On x86-64, the signatures with SHA-1 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p384_sha1() {
+    super::other_hash::<P384, verified_garbage::hashes::sha1::Sha1, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// On x86-64, the signatures with SHA-224 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p384_sha224() {
+    super::other_hash::<P384, verified_garbage::hashes::sha224::Sha224, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// On x86-64, the signatures with SHA-256 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p384_sha256() {
+    super::other_hash::<P384, verified_garbage::hashes::sha256::Sha256, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-256",
+    );
+}
+
+/// On x86-64, the signatures with SHA-512 (`super::other_hash`).
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p384_sha512() {
+    super::other_hash::<P384, verified_garbage::hashes::sha512::Sha512, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-512",
+    );
 }
