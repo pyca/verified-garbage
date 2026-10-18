@@ -226,25 +226,26 @@ theorem LI2.read {s₀ : State} (hp : Pre s₀) {mB : Mem} {c : Nat} {s : State}
 section
 variable {rest : List Instr} {Q : State → Prop}
 
-/-- The eight rows of chunk `c` from `scratch`. -/
-theorem i2_loads {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} (st : St s₀ s)
-    (hx2 : s.gpr .x2 = sP s₀ + BitVec.ofNat 64 (16 * c))
-    (hscr : ∀ r < 8, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
-      (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * c + e]!) (2 * 3329))
+/-- The eight rows of chunk `c` of the polynomial `P` after pass 1, in a buffer at `sP`. -/
+theorem i2_loadsOf {P : Poly} {sP : Addr} {c : Nat} {s : State}
+    (hx2 : s.gpr .x2 = sP + BitVec.ofNat 64 (16 * c))
+    (hin : ∀ r < 8, InRegions (s.rd ++ s.wr) (sP + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
+    (hscr : ∀ r < 8, Rep (s.mem.read (sP + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
+      (fun e => (nttInvL 4 P)[32 * r + 8 * c + e]!) (2 * 3329))
     (k : ∀ s', VChg bfRegs s s' →
-      RowsI (P₀ s₀) c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s' →
+      RowsI P c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s' →
       WP isa (.block rest) s' Q) :
     WP isa (.block (((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++ rest)) s Q := by
   rw [List.map_eq_flatMap, WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa)
     (fun n w => VChg bfRegs s w ∧ ∀ r < n, Rep (w.v (row r))
-      (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * c + e]!) (2 * 3329))
+      (fun e => (nttInvL 4 P)[32 * r + 8 * c + e]!) (2 * 3329))
     (fun r w hr ⟨cw, hw⟩ => ?_) 8 (Nat.le_refl _) s
     ⟨VChg.refl _ _, fun r hr => absurd hr (Nat.not_lt_zero r)⟩)
     fun s' ⟨c', h'⟩ => k s' c' fun r hr => by
       rw [getD_rep_lt hr, getD_rep_lt hr]; exact h' r hr
-  refine wp_ldrq (a := sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c)) (by omega)
-    (by rw [cw.gpr, hx2, ptr_add]; congr 2; omega) (inS' hp (st.vchg cw) (by omega))
+  refine wp_ldrq (a := sP + BitVec.ofNat 64 (64 * r + 16 * c)) (by omega)
+    (by rw [cw.gpr, hx2, ptr_add]; congr 2; omega) (by rw [cw.rd, cw.wr]; exact hin r hr)
     fun w₁ h₁ => wp_nil ⟨(cw.trans h₁.chg).mono fun x hx => ?_, fun r' hr' => ?_⟩
   · simp only [List.mem_append, List.mem_singleton] at hx
     rcases hx with hx | rfl
@@ -255,6 +256,17 @@ theorem i2_loads {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : Stat
       rw [h₁.v, cw.mem]; exact hscr r' hr
     · rw [h₁.get _ (fun h => e (row_inj r' (by omega) r hr h))]
       exact hw r' (by omega)
+
+/-- The eight rows of chunk `c` from `scratch`. -/
+theorem i2_loads {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} (st : St s₀ s)
+    (hx2 : s.gpr .x2 = sP s₀ + BitVec.ofNat 64 (16 * c))
+    (hscr : ∀ r < 8, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
+      (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * c + e]!) (2 * 3329))
+    (k : ∀ s', VChg bfRegs s s' →
+      RowsI (P₀ s₀) c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s' →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++ rest)) s Q := by
+  exact i2_loadsOf hx2 (fun r _ => inS' hp st (by omega)) hscr k
 
 /-- Each row reduced to less than `q` in absolute value. -/
 theorem rowsI_reduce {P : Poly} {c : Nat} {lay bnd : List Nat} {s : State} (h : RowsI P c lay bnd 8 s)
