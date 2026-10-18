@@ -26,13 +26,6 @@ open VG.Spec.MlKem
 
 /-! ## A product of a block -/
 
-/-- The address of the `t`-th load of `f` in a product at `d` bytes. -/
-theorem addrO (p : Addr) (b d t : Nat) :
-    coeffAddr p (32 * b) + BitVec.ofNat 64 (d + 32 * t) =
-      coeffAddr (p + BitVec.ofNat 64 d) (32 * b) + BitVec.ofNat 64 (32 * t) := by
-  simp only [coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact congrArg (p + ·) (congrArg _ (by omega))
-
 /-- The address of lane `l` of half `h` of block `b` of accumulator `j`. -/
 theorem addrG (p : Addr) (b j h l : Nat) :
     wAddr p (32 * b) + BitVec.ofNat 64 (512 * j + 32 * h) + BitVec.ofNat 64 (16 * l) =
@@ -44,79 +37,6 @@ theorem addrBG (p : Addr) (b j h : Nat) :
     wAddr p (32 * b) + BitVec.ofNat 64 (512 * j + 32 * h) = p + BitVec.ofNat 64 (512 * j) + BitVec.ofNat 64 (64 * b + 32 * h) := by
   simp only [wAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
   exact congrArg (p + ·) (congrArg _ (by omega))
-
-theorem addrBF (p : Addr) (b d t : Nat) :
-    coeffAddr p (32 * b) + BitVec.ofNat 64 (d + 32 * t) = p + BitVec.ofNat 64 d + BitVec.ofNat 64 (128 * b + 32 * t) := by
-  simp only [coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact congrArg (p + ·) (congrArg _ (by omega))
-
-/-- How the polynomials `f` of a row are stored, `o` bytes apart: their
-predicate `Is` (with the frame it keeps, of `sz` bytes), the code `ld j` that
-loads the 32 coefficients of a block of polynomial `j` from `rsi + o j` as
-`rowLdY` does, and the bytes `st` (`stv`) of a block, which `rsi` moves on. -/
-structure FRep (o : Nat) where
-  ld : Nat → List Instr
-  stv : BitVec 32
-  st : Nat
-  sz : Nat
-  Is : Mem → Addr → Poly → Prop
-  hst : BitVec.signExtend 64 stv = BitVec.ofNat 64 st
-  frame : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' → ∀ {p : Addr} {F : Poly},
-    (∀ r ∈ rs, Region.Disjoint ⟨p, sz⟩ r) → Is m p F → Is m' p F
-  ok : ∀ {fB : Addr} {F : Poly} {b j : Nat} {s : State}, b < 8 →
-    s.gpr .rsi = fB + BitVec.ofNat 64 (st * b) → Is s.mem (fB + BitVec.ofNat 64 (o * j)) F →
-    InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) sz →
-    WP isa (.block (ld j)) s fun s' =>
-      (∀ l < 2, Lanes (s'.lane .xmm0 l) (fun e => F[2 * pairY b l e]!) ∧
-        Lanes (s'.lane .xmm4 l) (fun e => F[2 * pairY b l e + 1]!)) ∧
-      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] s s'
-
-/-- `rowLdY`: the even and the odd coefficients of block `b` of `F`
-(`u32`s at `fB + o j`), in `vbase`'s order. -/
-theorem ld32_ok {o : Nat} {fB : Addr} {F : Poly} {b j : Nat} {s : State} (hb : b < 8)
-    (hrsi : s.gpr .rsi = fB + BitVec.ofNat 64 (128 * b)) (hF : PolyIs s.mem (fB + BitVec.ofNat 64 (o * j)) F)
-    (rF : InRegions (s.rd ++ s.wr) (fB + BitVec.ofNat 64 (o * j)) 1024) :
-    WP isa (.block (rowLdY o j)) s fun s' =>
-      (∀ l < 2, Lanes (s'.lane .xmm0 l) (fun e => F[2 * pairY b l e]!) ∧
-        Lanes (s'.lane .xmm4 l) (fun e => F[2 * pairY b l e + 1]!)) ∧
-      YOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] s s' := by
-  have hj : 32 * b + 32 ≤ 256 := by omega
-  have hrsi' : s.gpr .rsi = coeffAddr fB (32 * b) := by
-    rw [hrsi, coeffAddr]; exact congrArg (fB + ·) (congrArg _ (by omega))
-  have rF' : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (o * j + 32 * t)) 32 := fun t ht => by
-    rw [hrsi', addrBF]; exact CallLay.inRegions_sub rF (by omega) (by omega)
-  simp only [rowLdY]
-  rw [WP.block_append_iff]
-  refine WP.mono (yload4o_ok (p := .rsi) (a := .xmm0) (b := .xmm1) (c := .xmm2) (d := .xmm3) (by decide) rF')
-    fun s1 ⟨A1, o1⟩ => ?_
-  refine WP.mono (ylanes lane_deintS0 (P := fun l t =>
-      t.xmm .xmm0 = deE (s1.lane .xmm0 l) (s1.lane .xmm1 l) (s1.lane .xmm2 l) (s1.lane .xmm3 l) ∧
-      t.xmm .xmm4 = deO (s1.lane .xmm0 l) (s1.lane .xmm1 l) (s1.lane .xmm2 l) (s1.lane .xmm3 l))
-    fun l _ => deintS_ok0 (s1.proj l)) fun s2 ⟨D2, o2⟩ => ⟨fun l hl => ?_, (o1.trans o2).mono (by simp)⟩
-  have idx : ∀ e < 8, 32 * b + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY b l e ∧
-      32 * b + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY b l e + 1 := fun e _ => by
-    unfold pairY; omega
-  have ad : ∀ (p : Addr) (t l : Nat), coeffAddr p (32 * b) + BitVec.ofNat 64 (o * j + 32 * t) +
-      BitVec.ofNat 64 (16 * l) = coeffAddr (p + BitVec.ofNat 64 (o * j)) (32 * b) + BitVec.ofNat 64 (32 * t) +
-        BitVec.ofNat 64 (16 * l) := fun p t l => by rw [addrO]
-  have d := deintY_of hF hj hl _ rfl
-  have e0 : s2.lane .xmm0 l = _ := (D2 l hl).1
-  have e4 : s2.lane .xmm4 l = _ := (D2 l hl).2
-  rw [e0, e4, (A1 l hl).1, (A1 l hl).2.1, (A1 l hl).2.2.1, (A1 l hl).2.2.2, hrsi', ad, ad, ad, ad]
-  refine ⟨fun e he => ?_, fun e he => ?_⟩
-  · rw [d.1 e he, (idx e he).1]
-  · rw [d.2 e he, (idx e he).2]
-
-/-- The polynomials of `u32`s (`PolyIs`), `o` bytes apart. -/
-def FRep.u32 (o : Nat) : FRep o where
-  ld := rowLdY o
-  stv := 128
-  st := 128
-  sz := 1024
-  Is := PolyIs
-  hst := by decide
-  frame := fun hf _ _ hd h => polyIs_frame hf hd h
-  ok := fun hb hrsi hF rF => ld32_ok hb hrsi hF rF
 
 /-- Product `j` of block `b`, of `F` (stored as `R` says at `fB + o j`) and
 `G` (the accumulator at `gB + 512 j`), in `ymm1` and `ymm2`, within `2q`. -/

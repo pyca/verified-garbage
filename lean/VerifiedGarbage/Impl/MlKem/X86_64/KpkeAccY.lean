@@ -128,48 +128,6 @@ def yload4o (p : Reg) (o : Nat) (a b c d : XReg) : List Instr :=
   [.vmovdquLoad .l256 a (at_ p o), .vmovdquLoad .l256 b (at_ p (o + 32)), .vmovdquLoad .l256 c (at_ p (o + 64)),
     .vmovdquLoad .l256 d (at_ p (o + 96))]
 
-/-- Product `j` of a block, in `ymm1` and `ymm2` (`vbaseL`): of the 32
-coefficients of `f = rsi + 1024 j` and of `g = rdx + 1024 j`. -/
-def rowMulY (j : Nat) : List Instr :=
-  yload4o .rsi (1024 * j) .xmm0 .xmm1 .xmm2 .xmm3 ++ toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5) ++
-    yload4o .rdx (1024 * j) .xmm6 .xmm7 .xmm8 .xmm9 ++ toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) ++
-    toY vbaseL
-
-/-- Product `j` of a block (`mul j`), stored to (`j = 0`) or added to the
-sums in `ymm11` and `ymm12`. -/
-def rowSum (mul : Nat → List Instr) (j : Nat) : List Instr :=
-  mul j ++
-    (if j = 0 then [.vop (.vmovdqa .l256 .xmm11 .xmm1), .vop (.vmovdqa .l256 .xmm12 .xmm2)]
-     else [yb .vpaddw .xmm11 .xmm11 .xmm1, yb .vpaddw .xmm12 .xmm12 .xmm2])
-
-/-- The products `0, …, n - 1` of a block (`mul`). -/
-def rowSums (mul : Nat → List Instr) : Nat → List Instr
-  | 0 => []
-  | n + 1 => rowSums mul n ++ rowSum mul n
-
-def rowProdY (j : Nat) : List Instr := rowSum rowMulY j
-
-def rowProdsY (n : Nat) : List Instr := rowSums rowMulY n
-
-/-- A block of row `k`: its `k` products summed in `ymm11` and `ymm12`, the
-sums reduced once (`R² mod q`, then `vcadd`), and added to the `u32`s at
-`rdi` as `finAccBodyY` does; the constants of the products back. -/
-def rowBodyY (k : Nat) : List Instr :=
-  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0)] ++ rowProdsY k ++ yconst .xmm13 0x05490549 ++
-    toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++
-    yconst .xmm15 3329 ++ [yb .vpxor .xmm14 .xmm14 .xmm14, yb .vpunpcklwd .xmm10 .xmm11 .xmm12,
-      yb .vpunpckhwd .xmm9 .xmm11 .xmm12] ++
-    finQ .xmm10 .vpunpcklwd 0 ++ finQ .xmm10 .vpunpckhwd 32 ++ finQ .xmm9 .vpunpcklwd 64 ++
-    finQ .xmm9 .vpunpckhwd 96 ++ yconsts ++
-    [.alu .add .rsi (.imm 128), .alu .add .rdx (.imm 128), .alu .add .rdi (.imm 128), .alu .add .r8 (.imm 32)]
-
-/-- `t = rdi` plus the row `f = rsi` (`k` polynomials, 1024 bytes apart) times
-`g = rdx`, with the table of `tabAccY` at `rcx + 3328`. -/
-def rowY (k : Nat) : Prog isa :=
-  .seq (.block (yconsts ++ leaR .r8 .rcx oTabY)) (.seq (rcxLoop 8 (rowBodyY k)) (.block [.vop .vzeroupper]))
-
-/-! ### A row of products to an accumulator -/
-
 /-- The 32 coefficients of block `b` of the `u32`s at `rsi + o j`, the even
 ones as the words of `ymm0` and the odd ones as those of `ymm4`, in
 `vbase`'s order. -/
@@ -189,6 +147,55 @@ holding the quadwords `vpermq` with `0xD8` brings it, then `de16Y`. -/
 def rowLdY16 (o j : Nat) : List Instr :=
   [.vmovdquLoad .l256 .xmm0 (at_ .rsi (o * j)), .vmovdquLoad .l256 .xmm1 (at_ .rsi (o * j + 32)),
     .vop (.vpermq .xmm0 .xmm0 0xD8), .vop (.vpermq .xmm1 .xmm1 0xD8)] ++ de16Y
+
+/-- Product `j` of a block, in `ymm1` and `ymm2` (`vbaseL`): of the 32
+coefficients `ld j` loads and of `g = rdx + 1024 j`. -/
+def rowMulYg (ld : Nat → List Instr) (j : Nat) : List Instr :=
+  ld j ++ yload4o .rdx (1024 * j) .xmm6 .xmm7 .xmm8 .xmm9 ++ toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) ++
+    toY vbaseL
+
+
+/-- Product `j` of a block (`mul j`), stored to (`j = 0`) or added to the
+sums in `ymm11` and `ymm12`. -/
+def rowSum (mul : Nat → List Instr) (j : Nat) : List Instr :=
+  mul j ++
+    (if j = 0 then [.vop (.vmovdqa .l256 .xmm11 .xmm1), .vop (.vmovdqa .l256 .xmm12 .xmm2)]
+     else [yb .vpaddw .xmm11 .xmm11 .xmm1, yb .vpaddw .xmm12 .xmm12 .xmm2])
+
+/-- The products `0, …, n - 1` of a block (`mul`). -/
+def rowSums (mul : Nat → List Instr) : Nat → List Instr
+  | 0 => []
+  | n + 1 => rowSums mul n ++ rowSum mul n
+
+
+
+/-- A block of row `k`: its `k` products (`rowMulYg ld`) summed in `ymm11`
+and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and added to
+the `u32`s at `rdi` as `finAccBodyY` does; the constants of the products
+back, and `rsi` on by `sv`, the bytes of a block of `f`. -/
+def rowBodyYg (ld : Nat → List Instr) (sv : BitVec 32) (k : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0)] ++ rowSums (rowMulYg ld) k ++ yconst .xmm13 0x05490549 ++
+    toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++
+    yconst .xmm15 3329 ++ [yb .vpxor .xmm14 .xmm14 .xmm14, yb .vpunpcklwd .xmm10 .xmm11 .xmm12,
+      yb .vpunpckhwd .xmm9 .xmm11 .xmm12] ++
+    finQ .xmm10 .vpunpcklwd 0 ++ finQ .xmm10 .vpunpckhwd 32 ++ finQ .xmm9 .vpunpcklwd 64 ++
+    finQ .xmm9 .vpunpckhwd 96 ++ yconsts ++
+    [.alu .add .rsi (.imm sv), .alu .add .rdx (.imm 128), .alu .add .rdi (.imm 128), .alu .add .r8 (.imm 32)]
+
+
+/-- `t = rdi` plus the row `f = rsi` (`k` polynomials, loaded by `ld`, with
+`sv` bytes to a block) times `g = rdx`, with the table of `tabAccY` at
+`rcx + 3328`. -/
+def rowYg (ld : Nat → List Instr) (sv : BitVec 32) (k : Nat) : Prog isa :=
+  .seq (.block (yconsts ++ leaR .r8 .rcx oTabY)) (.seq (rcxLoop 8 (rowBodyYg ld sv k)) (.block [.vop .vzeroupper]))
+
+/-- `rowYg` of `k` polynomials of `u32`s, 1024 bytes apart. -/
+def rowY (k : Nat) : Prog isa := rowYg (rowLdY 1024) 128 k
+
+/-- `rowYg` of `k` polynomials of `u16`s, 512 bytes apart. -/
+def rowY16 (k : Nat) : Prog isa := rowYg (rowLdY16 512) 64 k
+
+/-! ### A row of products to an accumulator -/
 
 /-- Product `j` of a block: of the 32 coefficients `ld j` loads and of
 block of the accumulator `g = rdx + 512 j`, whose words are already in
