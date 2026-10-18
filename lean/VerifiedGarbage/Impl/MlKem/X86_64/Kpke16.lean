@@ -178,6 +178,35 @@ def kpkeEncPre (mul : Nat → Prog isa) : Prog isa :=
 /-- `u`, `v` and the epilogue. -/
 def kpkeEncPost : Prog isa := .seq (seqR (uE L A) 0 L.k) (.seq (vE L A) (.block epiE))
 
+/-! ## `vg_mlkem*_kpke_keygen` -/
+
+/-- Save `kRegs` at `scratch + oKSE`, and move the arguments to them: `ek`
+to `r15`, `dk` to `rbp`, `a` to `r12` and `se` to `r13`. -/
+def proG : List Instr :=
+  (List.range 6).map (fun i => .store (at_ .r8 (oKSE + 8 * i)) (kRegs.getD i .rbx)) ++
+    [.mov .rbx (.reg .r8), .mov .r15 (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
+      .mov .r13 (.reg .rcx)]
+
+/-- `ŝ = NTT(s)` in place and `t̂ = Â ∘ ŝ + NTT(e)` to the `k` polynomials from
+`2k`: the code of `vg_mlkem*_keygen_mul` (`mul`), from `a`. -/
+def prodG (mul : Nat → Prog isa) : Prog isa :=
+  .seq (.block (lea .rdi (qP (2 * L.k)) ++ lea .rsi (qP 0) ++ lea .rdx (.r12, 0) ++ lea .rcx (qP L.k) ++
+    lea .r8 (.rbx, 0))) (mul L.k)
+
+/-- `ByteEncode₁₂(t̂[i])` to `ek`. -/
+def ekOut (i : Nat) : Prog isa := .seq (.block (lea .rdi (qP (2 * L.k + i)) ++ lea .rsi (.r15, 384 * i))) A.enc12
+
+/-- `ByteEncode₁₂(ŝ[j])` to `dk`. -/
+def dkOut (j : Nat) : Prog isa := .seq (.block (lea .rdi (qP j) ++ lea .rsi (.rbp, 384 * j))) A.enc12
+
+/-- The prologue, `s` and `e` as `u32`s (polynomials `0, …, 2k - 1`), and the
+products, with the code `mul` of `vg_mlkem*_keygen_mul`. -/
+def kpkeKgPre (mul : Nat → Prog isa) : Prog isa :=
+  .seq (.block proG) (.seq (seqR yE 0 (2 * L.k)) (prodG L mul))
+
+/-- `ek`, `dk` and the epilogue. -/
+def kpkeKgPost : Prog isa := .seq (seqR (ekOut L A) 0 L.k) (.seq (seqR (dkOut A) 0 L.k) (.block epiE))
+
 end Kpke16
 
 open Kpke16 in
@@ -190,5 +219,10 @@ open Kpke16 in
 /-- `vg_mlkem*_kpke_encrypt` of the parameter set `L`, with the arithmetic of
 `A` and the code `mul` of `vg_mlkem*_encrypt_mul` (reading `Â` as `u16`s). -/
 def kpkeEnc (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeEncPre L A mul) (kpkeEncPost L A)
+
+open Kpke16 in
+/-- `vg_mlkem*_kpke_keygen` of the parameter set `L`, with the arithmetic of
+`A` and the code `mul` of `vg_mlkem*_keygen_mul` (reading `Â` as `u16`s). -/
+def kpkeKg (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeKgPre L mul) (kpkeKgPost L A)
 
 end VG.Impl.MlKem.X86_64
