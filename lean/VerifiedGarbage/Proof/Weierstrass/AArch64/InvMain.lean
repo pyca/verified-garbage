@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchS
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 import VerifiedGarbage.Proof.Divstep.Iter
