@@ -10,10 +10,7 @@ public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
 public import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Spec.Sha512.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Sha512 on PPC64LE: the shared contracts
