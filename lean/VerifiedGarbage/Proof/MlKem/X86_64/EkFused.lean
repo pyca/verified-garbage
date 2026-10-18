@@ -193,8 +193,8 @@ theorem kemEncapsF_correct (v : Sample4Impl) {L : Kem} (F : EkHWf L) {wc wd : Li
       WP.seq (WP.mono (hashesF_ok F hp h₂) fun s₃ h₃ =>
         WP.seq (WP.mono (ifRest_ok v F K h₃) fun s₄ h₄ =>
           WP.seq (WP.mono (out_ok W₀ h₄) fun s₅ h₅ =>
-            WP.mono (topEpi_ok h₅.ec.top (h₅.hin W₀ hp)) fun s₆ ⟨hr, hg, hm⟩ =>
-              (⟨hg, post_of W₀ h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encK L).post σ s₆))))))
+            WP.mono (topEpi_ok h₅.ec.top (h₅.hin W₀.toEcWfB hp)) fun s₆ ⟨hr, hg, hm⟩ =>
+              (⟨hg, post_of W₀.toEcWfB h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encK L).post σ s₆))))))
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hF.1, hF.2⟩
 
 end VG.Proof.MlKem.X86_64

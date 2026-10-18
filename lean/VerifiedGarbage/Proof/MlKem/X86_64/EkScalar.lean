@@ -93,13 +93,14 @@ theorem out_ok {σ : State} {s : State} (h : EncO W σ s) : WP isa (out L) s (EK
   · rw [L₁.keepBytes hP₂.b W.o₂G, hP₁.pa (by decide), hb₁]; exact h.out.2.k
   · rw [hP₂.pa (by decide), hb₂, L₀.keepBytes hP₁.b W.o₁C]; exact h.ct ho
 
-theorem EKEnd.hin {σ s : State} (hp : (encK L).pre σ) (h : EKEnd L σ s) :
+omit W in
+theorem EKEnd.hin (W : EcWfB L) {σ s : State} (hp : (encK L).pre σ) (h : EKEnd L σ s) :
     ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
   (h.ec.lay W hp).cR (W.sv k hk) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 omit W in
 /-- The postcondition, from the outputs. -/
-theorem post_of (W : EcWf L) {σ s : State} (h : EKEnd L σ s) {s' : State}
+theorem post_of (W : EcWfB L) {σ s : State} (h : EKEnd L σ s) {s' : State}
     (hr : (s'.gpr .rax).setWidth 32 = (s.gpr .r15).setWidth 32) (hm : s'.mem = s.mem) :
     (encK L).post σ s' := by
   have e12 : pa s (.r12, 0) = σ.gpr .rdx := by
@@ -133,8 +134,8 @@ theorem kemEncapsS_correct (v : Sample4Impl) {L : Kem} (W : EkWf L) {wc wd : Lis
       WP.seq (WP.mono (hashes_ok W₀.toEcWfB hp h₂ hH h15) fun s₃ h₃ =>
         WP.seq (WP.mono (Enc.encrypt_ok v K W₀.toKemWf (C := ekC W₀.toEcWfB σ) W₀.enc h₃.1 h₃.2) fun s₄ h₄ =>
           WP.seq (WP.mono (out_ok W₀ h₄) fun s₅ h₅ =>
-            WP.mono (topEpi_ok h₅.ec.top (h₅.hin W₀ hp)) fun s₆ ⟨hr, hg, hm⟩ =>
-              (⟨hg, post_of W₀ h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encK L).post σ s₆))))))
+            WP.mono (topEpi_ok h₅.ec.top (h₅.hin W₀.toEcWfB hp)) fun s₆ ⟨hr, hg, hm⟩ =>
+              (⟨hg, post_of W₀.toEcWfB h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encK L).post σ s₆))))))
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hF.1, hF.2⟩
 
 /-! ## Constant time -/
