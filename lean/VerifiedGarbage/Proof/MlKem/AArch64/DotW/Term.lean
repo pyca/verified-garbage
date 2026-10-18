@@ -125,3 +125,95 @@ theorem accumulateW_ok {s : State} {lo hi : Nat → Sums} {FE FO GE GO : Nat →
 end
 
 end VG.Proof.MlKem.AArch64.DotW
+
+namespace VG.Proof.MlKem.AArch64.DotW
+
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem
+open VG.Proof.MlKem.AArch64.Dot
+
+/-- What a term needs: sixteen coefficients of each polynomial, at `x28` plus its offset
+plus `x12`. -/
+structure TermInputW (s : State) (fg : Nat × Nat) (F G : Nat → Nat) : Prop where
+  offF : fg.1 < 65536
+  offG : fg.2 < 65536
+  boundF : ∀ e < 16, F e < 3329
+  boundG : ∀ e < 16, G e < 3329
+  valueF : ∀ e < 16, (coeffAtW 16 s.mem (s.gpr .x28 + BitVec.ofNat 64 fg.1 + s.gpr .x12) e).toNat = F e
+  valueG : ∀ e < 16, (coeffAtW 16 s.mem (s.gpr .x28 + BitVec.ofNat 64 fg.2 + s.gpr .x12) e).toNat = G e
+  readF : ∀ i < 2, InRegions (s.rd ++ s.wr)
+    (s.gpr .x28 + BitVec.ofNat 64 fg.1 + s.gpr .x12 + BitVec.ofNat 64 (16 * i)) 16
+  readG : ∀ i < 2, InRegions (s.rd ++ s.wr)
+    (s.gpr .x28 + BitVec.ofNat 64 fg.2 + s.gpr .x12 + BitVec.ofNat 64 (16 * i)) 16
+
+theorem TermInputW.keep {s s' : State} {fg : Nat × Nat} {F G : Nat → Nat}
+    (h : TermInputW s fg F G) (hk : Only [.x1, .x2] s s') : TermInputW s' fg F G := by
+  refine ⟨h.offF, h.offG, h.boundF, h.boundG, ?_, ?_, ?_, ?_⟩
+  · rw [hk.mem, hk.get .x28, hk.get .x12]; exact h.valueF
+  · rw [hk.mem, hk.get .x28, hk.get .x12]; exact h.valueG
+  · rw [hk.rd, hk.wr, hk.get .x28, hk.get .x12]; exact h.readF
+  · rw [hk.rd, hk.wr, hk.get .x28, hk.get .x12]; exact h.readG
+
+/-- The coefficients `8 … 15`. -/
+abbrev upper (F : Nat → Nat) : Nat → Nat := fun i => F (8 + i)
+
+theorem fullTermW_ok {s : State} {fg : Nat × Nat} {lo hi : Nat → Sums} {F G : Nat → Nat} {n : Nat}
+    (h : TermInputW s fg F G) (hc : VConsts s) (ha : AccumW s lo hi)
+    (hlo : ∀ e < 4, (lo e).Bounded n) (hhi : ∀ e < 4, (hi e).Bounded n) (hn : n < 4) :
+    WP isa (.block (Impl.MlKem.AArch64.DotW.termW fg)) s fun s' =>
+      Only [.x1, .x2] s s' ∧ VConsts s' ∧
+        AccumW s' (advance lo F G) (advance hi (upper F) (upper G)) := by
+  rw [termW_partition, WP.block_append_iff]
+  refine WP.mono (pointers_ok h.offF h.offG) fun s₁ ⟨h₁, v₁, e₁, e₂⟩ => ?_
+  have hc₁ : VConsts s₁ := ⟨by rw [v₁]; exact hc.q, by rw [v₁]; exact hc.m⟩
+  have ha₁ : AccumW s₁ lo hi := by simpa only [AccumW, Accum, v₁] using ha
+  have nlo : ∀ e < 4, (advance lo F G e).Bounded (n + 1) := fun e he =>
+    (hlo e he).next (h.boundF _ (by omega)) (h.boundF _ (by omega)) (h.boundG _ (by omega))
+      (h.boundG _ (by omega))
+  have nhi : ∀ e < 4, (advance hi (upper F) (upper G) e).Bounded (n + 1) := fun e he =>
+    (hhi e he).next (h.boundF _ (by omega)) (h.boundF _ (by omega)) (h.boundG _ (by omega))
+      (h.boundG _ (by omega))
+  rw [List.append_assoc, ← List.append_nil accumulateW]
+  refine loads_ok (fun i hi => by rw [h₁.rd, h₁.wr, e₁]; exact h.readF i hi)
+    (fun i hi => by rw [h₁.rd, h₁.wr, e₂]; exact h.readG i hi) fun s₂ c₂ l0 l1 l4 l5 => ?_
+  have f0 : HLanes (s₂.v .v0) F := by
+    rw [l0, e₁, h₁.mem, ← BitVec.add_zero (s.gpr .x28 + BitVec.ofNat 64 fg.1 + s.gpr .x12),
+      show (0#64 : BitVec 64) = BitVec.ofNat 64 (2 * 0) from rfl]
+    exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueF e (by omega)
+  have f1 : HLanes (s₂.v .v1) (upper F) := by
+    rw [l1, e₁, h₁.mem, show BitVec.ofNat 64 16 = BitVec.ofNat 64 (2 * 8) from rfl]
+    exact hlanes_coeffs _ _ 8 fun e he => h.valueF (8 + e) (by omega)
+  have g0 : HLanes (s₂.v .v4) G := by
+    rw [l4, e₂, h₁.mem, ← BitVec.add_zero (s.gpr .x28 + BitVec.ofNat 64 fg.2 + s.gpr .x12),
+      show (0#64 : BitVec 64) = BitVec.ofNat 64 (2 * 0) from rfl]
+    exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueG e (by omega)
+  have g1 : HLanes (s₂.v .v5) (upper G) := by
+    rw [l5, e₂, h₁.mem, show BitVec.ofNat 64 16 = BitVec.ofNat 64 (2 * 8) from rfl]
+    exact hlanes_coeffs _ _ 8 fun e he => h.valueG (8 + e) (by omega)
+  refine gatherW_ok f0 f1 g0 g1 fun s₃ c₃ fe fo ge go => ?_
+  have ha₃ : AccumW s₃ lo hi := by
+    obtain ⟨⟨a1, a2, a3⟩, a5, a6, a7⟩ := ha₁
+    exact ⟨⟨by rw [c₃.get .v21, c₂.get .v21]; exact a1, by rw [c₃.get .v22, c₂.get .v22]; exact a2,
+      by rw [c₃.get .v23, c₂.get .v23]; exact a3⟩, by rw [c₃.get .v25, c₂.get .v25]; exact a5,
+      by rw [c₃.get .v26, c₂.get .v26]; exact a6, by rw [c₃.get .v27, c₂.get .v27]; exact a7⟩
+  have wl : ∀ e < 4, ∀ {x : Sums}, x.Bounded (n + 1) → x.even < 2 ^ 32 ∧ x.odd < 2 ^ 32 ∧ x.cross < 2 ^ 32 :=
+    fun e _ x hx => by
+      have := hx.noWrap (by omega)
+      exact ⟨by omega, by omega, by omega⟩
+  refine accumulateW_ok ha₃ fe fo ge go (fun e he => wl e he (nlo e he))
+    (fun e he => wl e he (by
+      have := nhi e he
+      simp only [advance, upper] at this
+      rw [show 8 + 2 * e = 2 * (4 + e) by omega, show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega] at this
+      exact this)) fun s₄ c₄ a₄ => wp_nil ?_
+  have eqhi : (fun e => (hi e).next (F (2 * (4 + e))) (F (2 * (4 + e) + 1)) (G (2 * (4 + e)))
+      (G (2 * (4 + e) + 1))) = advance hi (upper F) (upper G) := by
+    funext e
+    simp only [advance, upper]
+    rw [show 8 + 2 * e = 2 * (4 + e) by omega, show 8 + (2 * e + 1) = 2 * (4 + e) + 1 by omega]
+  rw [eqhi] at a₄
+  have C := (c₂.trans c₃).trans c₄
+  refine ⟨?_, hc₁.chg C, a₄⟩
+  exact ⟨fun r hr => by rw [C.gpr]; exact h₁.gpr r hr, C.mem.trans h₁.mem, C.rd.trans h₁.rd,
+    C.wr.trans h₁.wr, C.sp.trans h₁.sp, fun r hr => by rw [C.v r (by revert r hr; decide +kernel)]; exact h₁.vcs r hr⟩
+
+end VG.Proof.MlKem.AArch64.DotW
