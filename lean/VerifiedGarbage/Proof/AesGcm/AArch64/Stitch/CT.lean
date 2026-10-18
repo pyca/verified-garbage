@@ -10,7 +10,7 @@ meta import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 meta import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_seal` is constant time
+# AES-GCM on AArch64, interleaved: `sealWithS` is constant time
 
 Untrusted: everything here is checked by Lean. As `Fast/CT.lean` does for
 `runWithP`: `front` and the code between the calls by the taint analysis, the
@@ -622,14 +622,5 @@ theorem sealWithS_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
     (fun p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ _ => hrel p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂)
     htb htbrel
 
-
-/-- `vg_aes_gcm_seal` with the interleaved path for TLS records is constant time. -/
-theorem sealS_ct (v : GcmImpl) (hMK : MulKey) (hP : PrepPow) (gh : Gh8Ok) :
-    ConstantTime isa sealAArch64.pre sealAArch64.pub (Impl.AesGcm.AArch64.Stitch.«seal» v.callees) :=
-  sealWithS_ct (w := 1) v _ hMK gh (.inl rfl) (fun _ h => sealPreX_W (extra := []) h)
-    (fun _ hc _ _ _ _ _ _ => gh_call v.gh hc)
-    (fun _ _ _ c₁ c₂ _ _ sp₁ sp₂ _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ (sp₁.trans sp₂.symm))
-    (fun {σ} _ => powTbl_for hP 1 σ)
-    fun _ _ _ _ _ sp₁ sp₂ hr _ _ _ _ _ _ => powTblEnc_rel (sp₁.trans sp₂.symm) hr
 
 end VG.Proof.AesGcm.AArch64.Fast

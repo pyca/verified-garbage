@@ -6,15 +6,18 @@ public import VerifiedGarbage.Impl.Gcm.AArch64.Stitch
 /-!
 # AES-GCM on AArch64: the path for TLS records, interleaved
 
-`seal`'s and `open`'s path for TLS records (`Fast.lean`) for CPUs with
-FEAT_AES, FEAT_PMULL and FEAT_SHA3: the first `128 ⌊len / 128⌋` bytes of the
+The path for TLS records (`Fast.lean`) of the functions with the powers
+(`_with_powers`, `_store_powers`), for CPUs with FEAT_AES, FEAT_PMULL and
+FEAT_SHA3: the first `128 ⌊len / 128⌋` bytes of the
 text encrypted (or decrypted) and hashed by the interleaved loops of
 `Impl.Gcm.AArch64.Stitch`, then the rest as `Fast.lean` does.
 
 * The loops read the table of keys at `W + 512` (`Stitch.tbl`), which
   `tbl` writes from `H'` to `H'⁸` in `tReg`/`sReg`
   (`Impl.Gcm.AArch64.Pmull`): computed as `vg_ghash_aes` computes them
-  (`powTbl`), or loaded from `pw` (`pwTbl`).
+  (`powTbl`, for `_store_powers`), or loaded from `pw` (`pwTbl`, for
+  `_with_powers`). Plain `seal` and `open`, which would compute the powers
+  on every call, keep `Fast.lean`'s path.
 * `open` decrypts the first bytes before it knows whether the tag is right:
   it keeps the first counter block at `W + cbO`, and if the tag is wrong
   encrypts those bytes again from it, which leaves them as they were.
@@ -110,12 +113,6 @@ def sealWithS (k : Nat) (tb : List Instr) (cl : Prog isa) : Prog isa :=
 def openWithS (k : Nat) (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq (.block (oneEntry k ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
     (.seq cond (.ite (.zero .x .x10) (openFastS c tb cl) (openRest c)))
-
-/-- `vg_aes_gcm_seal`. -/
-def «seal» : Prog isa := sealWithS c 8 powTbl (.call c.gh.name c.gh.code)
-
-/-- `vg_aes_gcm_open`. -/
-def «open» : Prog isa := openWithS c 16 powTbl (.call c.gh.name c.gh.code)
 
 /-- `vg_aes_gcm_seal_with_powers`, hashing the rest by `gh`. -/
 def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwCall 8 gh)

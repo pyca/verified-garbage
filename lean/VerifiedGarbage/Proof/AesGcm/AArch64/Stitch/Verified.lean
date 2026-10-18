@@ -9,12 +9,12 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 import VerifiedGarbage.Spec.Gcm.Contract
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_seal` and `vg_aes_gcm_open`
+# AES-GCM on AArch64, interleaved: what `Verified` needs of `sealWithS` and `openWithS`
 
-Untrusted: everything here is checked by Lean. The functions with the
-interleaved path for TLS records (`Impl/AesGcm/AArch64/Stitch.lean`) are
-`Verified` against `seal`'s and `open`'s contracts, for any `mul` of prepared
-powers that is one (`PrepPow`) and any `ghPart` that is GHASH (`Gh8Ok`).
+Untrusted: everything here is checked by Lean. `sealWithS` and `openWithS`
+(`Impl/AesGcm/AArch64/Stitch.lean`) keep `v8`–`v15` (`keepsV`), for any table
+code and call that do; the functions with the powers (`SealPw.lean`,
+`OpenPw.lean`) are `Verified` from it.
 -/
 
 @[expose] public section
@@ -55,36 +55,5 @@ theorem powTbl_keepsV : (Code.block Impl.AesGcm.AArch64.Stitch.powTbl : Prog isa
 theorem pwTbl_keepsV {k : Nat} (hk : k = 8 ∨ k = 16) :
     (Code.block (Impl.AesGcm.AArch64.Stitch.pwTbl k) : Prog isa).allInstrs keepsV = true := by
   rcases hk with rfl | rfl <;> decide +kernel
-
-theorem stitchSeal_keepsV (v : GcmImpl) :
-    (Impl.AesGcm.AArch64.Stitch.«seal» v.callees).allInstrs keepsV = true :=
-  stitchSealWithS_keepsV v (.inl rfl) powTbl_keepsV (by simp only [Code.allInstrs, GcmImpl.callees, v.gh.keepsV])
-
-theorem stitchOpen_keepsV (v : GcmImpl) :
-    (Impl.AesGcm.AArch64.Stitch.«open» v.callees).allInstrs keepsV = true :=
-  stitchOpenWithS_keepsV v (.inl rfl) powTbl_keepsV (by simp only [Code.allInstrs, GcmImpl.callees, v.gh.keepsV])
-
-theorem stitchSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-    (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok) :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.«seal» v.callees)
-      (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (fun s hs => WP.withPreservedV (Fast.sealS_wp v hMK hP gh hs) (stitchSeal_keepsV v))
-    (Fast.sealS_ct v hMK hP gh) (by
-    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
-      AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
-
-theorem stitchOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-    (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok) :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.«open» v.callees)
-      (Proof.AesGcm.openScratchContract AArch64.abi) :=
-  Verified.of_correct (fun s hs => WP.withPreservedV (Fast.openS_wp v hMK hP gh hs) (stitchOpen_keepsV v))
-    (Fast.openS_ct v hMK hP gh) (by
-    sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes,
-      openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD,
-      List.range, List.range.loop]
-      [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
 
 end VG.Proof.AesGcm.AArch64

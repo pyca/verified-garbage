@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tables
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_seal`
+# AES-GCM on AArch64, interleaved: `seal`'s code with the interleaved loops (`sealWithS`)
 
 Untrusted: everything here is checked by Lean. `sealWithS` is `sealWithE`
 (`Fast/Seal.lean`) with `runWithS` on the path for TLS records: after the
@@ -112,12 +112,5 @@ theorem sealWithS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmul
         WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) htb h₂ hx₂ hc.2 hc.1) fun _ q => q.1
   · refine WP.ite false (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun h => by cases h) (fun _ => ?_)
     exact sealRest_ok v hs h₂
-
-/-- `vg_aes_gcm_seal` with the interleaved path for TLS records. -/
-theorem sealS_wp (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (hP : Proof.Gcm.AArch64.Pmull.PrepPow)
-    (gh : Gh8Ok) {s : State} (hs : sealAArch64.pre s) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.«seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
-  sealWithS_wp (w := 1) v _ hMK gh (.inl rfl) (sealPreX_W (extra := []) hs)
-    (fun _ _ _ _ _ hc _ _ _ _ _ _ => gh_call v.gh hc) (powTbl_for hP 1 s)
 
 end VG.Proof.AesGcm.AArch64.Fast

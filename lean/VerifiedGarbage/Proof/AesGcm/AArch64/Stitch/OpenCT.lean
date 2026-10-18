@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 meta import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_open` is constant time
+# AES-GCM on AArch64, interleaved: `openWithS` is constant time
 
 Untrusted: everything here is checked by Lean. As `Fast/OpenCT.lean` does
 for `openRunWithP`: the code between the calls by the taint analysis, the
@@ -571,14 +571,5 @@ theorem openWithS_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
 theorem powTblDec_rel {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) :
     RelCT isa (Eq2 v₁ v₂) (.seq (.block Impl.AesGcm.AArch64.Stitch.powTbl) Impl.Gcm.AArch64.Stitch.dec) TT :=
   rel_taint stRegs hsp hr ⟨_, by taint_decide⟩
-
-/-- `vg_aes_gcm_open` with the interleaved path for TLS records is constant time. -/
-theorem openS_ct (v : GcmImpl) (hMK : MulKey) (hP : PrepPow) (gh : Gh8Ok) :
-    ConstantTime isa openAArch64.pre openAArch64.pub (Impl.AesGcm.AArch64.Stitch.«open» v.callees) :=
-  openWithS_ct (w := 2) v _ hMK gh (.inl rfl) (fun _ h => openPreX_W (extra := []) h)
-    (fun _ hc _ _ _ _ _ _ => gh_call v.gh hc)
-    (fun _ _ _ c₁ c₂ _ _ sp₁ sp₂ _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ (sp₁.trans sp₂.symm))
-    (fun {σ} _ => powTbl_forO hP _ _ _ _ _ σ)
-    fun _ _ _ _ _ sp₁ sp₂ hr _ _ _ _ _ _ => powTblDec_rel (sp₁.trans sp₂.symm) hr
 
 end VG.Proof.AesGcm.AArch64.Fast

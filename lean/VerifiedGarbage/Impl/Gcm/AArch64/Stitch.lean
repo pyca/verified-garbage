@@ -143,6 +143,17 @@ def ghPart : List Instr :=
 
 /-! ## The loops -/
 
+/-- The groups the weave keeps together: each `aese` with the `aesmc` after
+it, which Neoverse cores fuse into one operation only when adjacent. -/
+def fuse : List Instr → List (List Instr)
+  | .vop (.aese d k) :: .vop (.aesmc d' s) :: r => [.vop (.aese d k), .vop (.aesmc d' s)] :: fuse r
+  | x :: r => [x] :: fuse r
+  | [] => []
+
+/-- `aesPart nr o` woven with `ghPart`, each `aese` next to its `aesmc`. -/
+def parts (nr o : Nat) : List Instr :=
+  VG.Impl.Weave.weaveG (fuse (aesPart nr o)) (ghPart.map fun x => [x])
+
 /-- Store `v0`–`v7` to the eight blocks at `x9 + o`. -/
 def stores (o : Nat) : List Instr := (List.range 8).flatMap fun j => [.strq (breg j) .x9 (o + 16 * j)]
 
@@ -159,7 +170,7 @@ def finish : List Instr :=
 /-- One iteration of `seal`'s loop: batch `i + 1` (at `x9 + 128`) encrypted
 while batch `i` (at `x9`) is hashed. -/
 def encBody (nr : Nat) : List Instr :=
-  VG.Impl.Weave.weave (aesPart nr 128) ghPart ++ stores 128 ++
+  parts nr 128 ++ stores 128 ++
     ([.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1] : List Instr)
 
 /-- `seal`'s loop over `x11 ≥ 1` batches: the first encrypted, then each
@@ -171,7 +182,7 @@ def encLoop (nr : Nat) : Prog isa :=
 
 /-- One iteration of `open`'s loop: the batch at `x9` decrypted and hashed. -/
 def decBody (nr : Nat) : List Instr :=
-  VG.Impl.Weave.weave (aesPart nr 0) ghPart ++ stores 0 ++
+  parts nr 0 ++ stores 0 ++
     ([.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1] : List Instr)
 
 /-- `open`'s loop over `x11 ≥ 1` batches. -/

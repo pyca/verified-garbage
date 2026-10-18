@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.CallLay
 
 Untrusted: everything here is checked by Lean. One iteration (`body_ok`):
 batch `c` encrypted (or decrypted) while batch `h` is hashed, woven
-(`Interleave.WP.weave`, the parts independent by `Weave.lean`), then stored;
+(`parts_ok`, the parts independent by `Weave.lean`), then stored;
 `seal`'s (`c = h + 1`) hashes the ciphertext the previous iteration stored,
 `open`'s (`c = h`) the batch as it was. The setup (`setup_ok`), the loops for
 any number of rounds (`encLoop_ok`, `decLoop_ok`) and the end (`finish_ok`)
@@ -59,12 +59,12 @@ theorem body_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) {hb : Nat → Block
     (hc : c < nb s₀) (hh : h < nb s₀) (hho : 128 * h + o = 128 * c) (ho : o = 0 ∨ o = 128)
     {s : State} (hI : LInv s₀ hb c h s)
     (hhb : ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = hb (8 * h + j)) :
-    WP isa (.block (VG.Impl.Weave.weave (aesPart (rounds s₀) o) ghPart ++ stores o ++
+    WP isa (.block (parts (rounds s₀) o ++ stores o ++
       ([.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1] : List Instr))) s (LInv s₀ hb (c + 1) (h + 1)) := by
   have ho' : o ≤ 128 := by omega
   have ho16 : o % 16 = 0 := by omega
   rw [List.append_assoc, WP.block_append_iff]
-  refine VG.Interleave.WP.weave (parts_indeps hp.rounds ho) trivial ?_
+  refine parts_ok hp.rounds ho ?_
   refine WP.mono (aesStep hp hI hc hho ho' ho16) fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
   refine WP.mono (ghStep hp gh (hb := hb) (t := t) (by rw [frt.v _ (by decide), hI.y])

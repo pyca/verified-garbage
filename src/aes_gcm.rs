@@ -135,7 +135,7 @@ use crate::arch::gcm::{
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_AES_SHA3_FEATURES, vg_aes_gcm_init_aes_sha3, vg_aes_gcm_open_aes_sha3,
+    VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES, vg_aes_gcm_init_aes_sha3, vg_aes_gcm_open_aes_sha3,
     vg_aes_gcm_seal_aes_sha3, vg_aes_gcm_seal_gather_aes_sha3, vg_aes_gcm_stream_aad_aes_sha3,
     vg_aes_gcm_stream_decrypt_aes_sha3, vg_aes_gcm_stream_encrypt_aes_sha3,
     vg_aes_gcm_stream_finish_aes_sha3, vg_aes_gcm_stream_init_aes_sha3,
@@ -200,7 +200,7 @@ use crate::arch::gcm::{
 };
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES, vg_aes_gcm_open_store_powers_aes_sha3,
+    vg_aes_gcm_open_store_powers_aes_sha3,
     vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_store_powers_aes_sha3,
     vg_aes_gcm_seal_with_powers_aes_sha3,
 };
@@ -296,8 +296,9 @@ pub(crate) enum Backend {
     #[cfg(target_arch = "aarch64")]
     Aes,
     /// Both, with FEAT_SHA3's `eor3`: the `_aes_sha3` instances, whose
-    /// `seal` and `open` interleave counter mode and GHASH eight blocks at
-    /// a time on the records of TLS.
+    /// `_with_powers` and `_store_powers` functions interleave counter mode
+    /// and GHASH eight blocks at a time on the records of TLS (the others
+    /// are the `_aes` code).
     #[cfg(target_arch = "aarch64")]
     AesSha3,
 }
@@ -383,7 +384,8 @@ impl Backend {
     ];
 
     /// The CPU features its instances need: `seal`'s, which include every
-    /// other function's (see the tests).
+    /// other function's (see the tests); for `AesSha3`, whose `seal` is
+    /// `Aes`'s, `seal_store_powers`'s.
     const fn features(self) -> Features {
         instance!(self, BASELINE,
             x86_64: [VG_AES_GCM_SEAL_AESNI_FEATURES, VG_AES_GCM_SEAL_PCLMUL_FEATURES,
@@ -392,7 +394,7 @@ impl Backend {
                 VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
             avx: [VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES],
-            aarch64: [VG_AES_GCM_SEAL_AES_FEATURES, VG_AES_GCM_SEAL_AES_SHA3_FEATURES])
+            aarch64: [VG_AES_GCM_SEAL_AES_FEATURES, VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES])
     }
 }
 
@@ -2293,8 +2295,12 @@ mod tests {
                 VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES,
+                VG_AES_GCM_SEAL_AES_SHA3_FEATURES,
+                VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES,
+                VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES,
+                VG_AES_GCM_OPEN_STORE_POWERS_AES_SHA3_FEATURES,
             ] {
-                assert!(VG_AES_GCM_SEAL_AES_SHA3_FEATURES.contains(other));
+                assert!(VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES.contains(other));
             }
         }
     }

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tables
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_open`
+# AES-GCM on AArch64, interleaved: `open`'s code with the interleaved loops (`openWithS`)
 
 Untrusted: everything here is checked by Lean. `openRunWithS` is `openRunAS`
 then `omBS` (`openRunWithS_split`), which together leave `OpenPost`, as
@@ -168,12 +168,5 @@ theorem openWithS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmul
 theorem powTbl_forO (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (Ctx W SP D : Addr) (n : Nat) (s : State) :
     TbForO Impl.AesGcm.AArch64.Stitch.powTbl Ctx W SP D n s :=
   fun _ he _ _ _ key => Stitch.powTbl_ok hP he key
-
-/-- `vg_aes_gcm_open` with the interleaved path for TLS records. -/
-theorem openS_wp (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (hP : Proof.Gcm.AArch64.Pmull.PrepPow)
-    (gh : Gh8Ok) {s : State} (hs : openAArch64.pre s) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.«open» v.callees) s fun s' => GprAbi s s' ∧ openAArch64.post s s' :=
-  openWithS_wp (w := 2) v _ hMK gh (.inl rfl) (openPreX_W (extra := []) hs)
-    (fun _ _ _ _ _ hc _ _ _ _ _ _ => gh_call v.gh hc) (powTbl_forO hP _ _ _ _ _ s)
 
 end VG.Proof.AesGcm.AArch64.Fast
