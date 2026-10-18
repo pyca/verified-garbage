@@ -63,20 +63,10 @@ theorem cc3_stagePc {p : CCPubPc} {t : State} (h : CC3 CCRelPc CCPubPc.c p t ∧
     wsWords
   omega
 
-variable (M : Mont) (E : CrtExpL M)
-
-/-- `vg_rsa_private_crt_precomputed` leaks the same in runs that agree on the
-public data, given that `main`'s parts do. -/
-theorem crtPcCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhasePcCT M E) (hP : PPhasePcCT M E) :
-    RelCT isa (Two CCRelPc) (Crt.code M.mm E.code true) fun _ _ => True :=
-  crtFront_ct CCRelPc CCPubPc.c ccRelPc_ctx ((crtMainPc_ct M E hS hC hQ hP).mono (fun _ _ h => two_bind
-    (fun p _ _ h₁ h₂ => ⟨⟨p.c.m, p.P, p.W, p.c.rsp⟩, cc3_stagePc h₁, cc3_stagePc h₂⟩) h) fun _ _ h => h)
-
-/-- `vg_rsa_private_crt_precomputed` is constant time but for `n`, given that
-`main`'s parts are. -/
-theorem crtPcCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhasePcCT M E) (hP : PPhasePcCT M E) :
-    ConstantTime isa crtPcContract.pre crtPcContract.pub (Crt.code M.mm E.code true) := by
-  refine RelCT.constantTime ((crtPcCode_ct M E hS hC hQ hP).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ =>
+/-- Code constant time from `CCRelPc` is constant time for the contract. -/
+theorem ccRelPc_constantTime {c : Prog isa} (h : RelCT isa (Two CCRelPc) c fun _ _ => True) :
+    ConstantTime isa crtPcContract.pre crtPcContract.pub c := by
+  refine RelCT.constantTime (h.mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ =>
     ⟨⟨ccPubOf s₁, stackArg s₁ 12, (stackArg s₁ 13).toNat⟩, ?_, ?_⟩) fun _ _ h => h)
   · exact ⟨h₁, ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl, rfl⟩
   · obtain ⟨hr, a0, a1, a2, a3, a4, -, a6, -, a8, -, a10, a11, a12, a13, hn, -⟩ := hp
@@ -84,5 +74,27 @@ theorem crtPcCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhasePcC
     exact ⟨h₂, ⟨r .rsp (by decide), a10.symm, by rw [← a11]; rfl, by rw [r .rcx (by decide)]; rfl,
       r .rdi (by decide), r .rdx (by decide), r .r8 (by decide), a0.symm, a2.symm, a4.symm, a6.symm, a8.symm,
       by rw [← a1]; rfl, by rw [← a3]; rfl, hn.symm⟩, a12.symm, by rw [← a13]⟩
+
+/-- `main` with `pre` constant time from its stage makes the code constant
+time from `CCRelPc`. -/
+theorem crtFrontPc_ct {main : Prog isa} (h : RelCT isa (Two (StagePc R0)) main fun _ _ => True) :
+    RelCT isa (Two CCRelPc) (.seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] :
+      List Instr) ++ invalid)) (.ite .ne fail main)) fun _ _ => True :=
+  crtFront_ct CCRelPc CCPubPc.c ccRelPc_ctx (h.mono (fun _ _ h => two_bind
+    (fun p _ _ h₁ h₂ => ⟨⟨p.c.m, p.P, p.W, p.c.rsp⟩, cc3_stagePc h₁, cc3_stagePc h₂⟩) h) fun _ _ h => h)
+
+variable (M : Mont) (E : CrtExpL M)
+
+/-- `vg_rsa_private_crt_precomputed` leaks the same in runs that agree on the
+public data, given that `main`'s parts do. -/
+theorem crtPcCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhasePcCT M E) (hP : PPhasePcCT M E) :
+    RelCT isa (Two CCRelPc) (Crt.code M.mm E.code true) fun _ _ => True :=
+  crtFrontPc_ct (crtMainPc_ct M E hS hC hQ hP)
+
+/-- `vg_rsa_private_crt_precomputed` is constant time but for `n`, given that
+`main`'s parts are. -/
+theorem crtPcCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhasePcCT M E) (hP : PPhasePcCT M E) :
+    ConstantTime isa crtPcContract.pre crtPcContract.pub (Crt.code M.mm E.code true) :=
+  ccRelPc_constantTime (crtPcCode_ct M E hS hC hQ hP)
 
 end VG.Proof.Bignum.X86_64
