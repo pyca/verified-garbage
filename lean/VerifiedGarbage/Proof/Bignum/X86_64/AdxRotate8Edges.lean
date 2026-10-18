@@ -30,12 +30,6 @@ structure RedcInv (s₀ : State) (B : Addr) (Z w : Nat) (i : Nat) (t : State) : 
       2 ^ (64 * w) * (t.gpr .r10).toNat) =
       wv s₀.mem B (slot w aAcc + 16) (2 * w) + q * wv s₀.mem B (slot w aN) w
 
-/-- A new radix digit extends the accumulated cancellation multiplier. -/
-theorem digit_bound {q P u : Nat} (hq : q < P) (hu : u < 2 ^ 64) : q + P * u < P * 2 ^ 64 := by
-  have h := Nat.mul_le_mul_left P (show u ≤ 2 ^ 64 - 1 by omega_using [hu])
-  rw [Nat.mul_sub, Nat.mul_one] at h
-  omega_using [hq, h]
-
 theorem redcStep_ok {s₀ t : State} {B : Addr} {Z w i : Nat} {minv : BitVec 64}
     (hdi : s₀.gpr .rdi = B) (hH : Hdr s₀.mem B w minv) (hZ : slot w 8 ≤ Z)
     (h9 : s₀.gpr .r9 = off B (slot w aN)) (hbp : s₀.gpr .rbp = BitVec.ofNat 64 w)
@@ -114,24 +108,6 @@ theorem redcSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   xrun [State.ea, hdr, hdi, hdrOff, hl (sArr aAcc) (by decide), hl (sArr aN) (by decide), hl sW (by decide),
     hH.harr aAcc (by decide), hH.harr aN (by decide), hH.hw, off_add16]
 
-theorem redcFinish_ok {s : State} {B : Addr} {Z e w : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B e) (hbp : s.gpr .rbp = BitVec.ofNat 64 w) (hZ : e + 8 * (w + 2) ≤ Z) :
-    WP isa (.block AdxSquare.redcFinish) s fun t =>
-      wv t.mem B e (w + 2) = wv s.mem B e w + 2 ^ (64 * w) * (s.gpr .r10).toNat ∧
-      Outside B (e + 8 * w) 16 s.mem t.mem ∧ Keep [.rax] s t := by
-  have hn := hs.nowrap
-  refine WP.mono (WP.keep [.rax] (Q := fun t =>
-      t.mem = (s.mem.writeW (off B (e + 8 * w)) (s.gpr .r10)).writeW (off B (e + 8 * w + 8)) (0 : BitVec 64)) ?_ rfl)
-    fun t ⟨hm, kt⟩ => ?_
-  · unfold AdxSquare.redcFinish
-    xrun [State.ea, ix, addr0 h8 hbp, addr8 h8 hbp,
-      hs.st (show e + 8 * w + 8 ≤ Z by omega_using [hZ]), hs.st (show e + 8 * w + 8 + 8 ≤ Z by omega_using [hZ])]
-    rfl
-  · obtain ⟨hv, ho⟩ := write2 s.mem B (e + 8 * w) (s.gpr .r10) 0 (by omega_using [hZ, hn])
-    rw [← hm] at hv ho
-    refine ⟨?_, ho, kt⟩
-    rw [wv_add, hv, ho.wv (by omega_using []) (by omega_using [hZ, hn])]
-    simp
 
 /-- REDC's exact relation: the result times the Montgomery radix is the
 input plus a multiple `q < R` of the modulus. -/
