@@ -17,7 +17,7 @@ open VG.Impl.Mgf1.X86_64 (sp)
 open VG.Proof.Pbkdf2.Md.X86_64
 
 /-- The hash helper's exact byte result, retaining its frame and scratch facts. -/
-theorem hash_bytes {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
+theorem hash_bytes_frame {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x)
     (hsize : ∀ bytes, (Hs.hash bytes).length = G.D) {s : State} {F S rp : Addr} {len : Nat}
     (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -25,11 +25,12 @@ theorem hash_bytes {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     WP isa (hashLabel G oDig) s fun t =>
       Lay t F S ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
+      Frame [⟨S, oRsa⟩, retR F] s.mem t.mem ∧
       ∃ V', Rep t.mem F S V' W ∧ (∀ x, ¬ inR (labR oDig) x → V' x = V x) ∧
         Spec.Rsa.bytesAt t.mem (off S oDig) G.D = Hs.hash (Spec.Rsa.bytesAt s.mem rp len) := by
-  refine WP.mono (hashLabel_ok hG hHh L R A (Or.inl rfl))
-    fun t ⟨Lt, hrd, hwr, hcs, V', Rt, hf, hb⟩ => ?_
-  refine ⟨Lt, hrd, hwr, hcs, V', Rt, hf, ?_⟩
+  refine WP.mono (hashLabel_frame_ok hG hHh L R A (Or.inl rfl))
+    fun t ⟨Lt, hrd, hwr, hcs, hframe, V', Rt, hf, hb⟩ => ?_
+  refine ⟨Lt, hrd, hwr, hcs, hframe, V', Rt, hf, ?_⟩
   have hd : G.D ≤ 64 := by
     have hh := hG.hDF
     have hh' := hG.hF
@@ -44,6 +45,19 @@ theorem hash_bytes {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       Rt.scr _ (by unfold oDig oRsa; omega), hb i hiD]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi', Option.getD_some]
     rfl
+
+theorem hash_bytes {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
+    {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x)
+    (hsize : ∀ bytes, (Hs.hash bytes).length = G.D) {s : State} {F S rp : Addr} {len : Nat}
+    (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep s.mem F S V W) (A : LabAt s F S W rp len) :
+    WP isa (hashLabel G oDig) s fun t =>
+      Lay t F S ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
+      ∃ V', Rep t.mem F S V' W ∧ (∀ x, ¬ inR (labR oDig) x → V' x = V x) ∧
+        Spec.Rsa.bytesAt t.mem (off S oDig) G.D = Hs.hash (Spec.Rsa.bytesAt s.mem rp len) := by
+  exact WP.mono (hash_bytes_frame hG hHh hsize L R A)
+    fun _ ⟨Lt, rd, wr, cs, _, rest⟩ => ⟨Lt, rd, wr, cs, rest⟩
 
 /-- Dispatch is determined by the public seed width. -/
 theorem hashTest_ok {s : State} {F S : Addr} (L : Lay s F S)
