@@ -133,14 +133,6 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_init_aes,
     vg_aes_gcm_stream_verify_aes,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES, vg_aes_gcm_init_aes_sha3, vg_aes_gcm_open_aes_sha3,
-    vg_aes_gcm_seal_aes_sha3, vg_aes_gcm_seal_gather_aes_sha3, vg_aes_gcm_stream_aad_aes_sha3,
-    vg_aes_gcm_stream_decrypt_aes_sha3, vg_aes_gcm_stream_encrypt_aes_sha3,
-    vg_aes_gcm_stream_finish_aes_sha3, vg_aes_gcm_stream_init_aes_sha3,
-    vg_aes_gcm_stream_verify_aes_sha3,
-};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AESNI_FEATURES, VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
@@ -198,11 +190,13 @@ use crate::arch::gcm::{
     vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_store_powers_aes,
     vg_aes_gcm_seal_with_powers_aes,
 };
-#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+#[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_store_powers_aes_sha3,
-    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_store_powers_aes_sha3,
-    vg_aes_gcm_seal_with_powers_aes_sha3,
+    VG_AES_GCM_SEAL_STORE_POWERS_AES_SHA3_FEATURES, vg_aes_gcm_init_aes_sha3,
+    vg_aes_gcm_open_aes_sha3, vg_aes_gcm_seal_aes_sha3, vg_aes_gcm_seal_gather_aes_sha3,
+    vg_aes_gcm_stream_aad_aes_sha3, vg_aes_gcm_stream_decrypt_aes_sha3,
+    vg_aes_gcm_stream_encrypt_aes_sha3, vg_aes_gcm_stream_finish_aes_sha3,
+    vg_aes_gcm_stream_init_aes_sha3, vg_aes_gcm_stream_verify_aes_sha3,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -216,6 +210,11 @@ use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
     vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
+};
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+use crate::arch::gcm::{
+    vg_aes_gcm_open_store_powers_aes_sha3, vg_aes_gcm_open_with_powers_aes_sha3,
+    vg_aes_gcm_seal_store_powers_aes_sha3, vg_aes_gcm_seal_with_powers_aes_sha3,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
