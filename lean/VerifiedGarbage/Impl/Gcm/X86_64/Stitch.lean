@@ -36,7 +36,7 @@ namespace VG.Impl.Gcm.X86_64.Stitch
 open VG.X86_64
 open VG.Impl.Aes.X86_64.Vaes (keyOpK roundK aesK ctrsK xorDataK)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ revMask poly hInv mul)
-open VG.Impl.Gcm.X86_64.Vpclmul (preg16 powers powers16 zero ld reduce combine)
+open VG.Impl.Gcm.X86_64.Vpclmul (preg16 powersY powers16 zero ld reduce combine)
 
 def aregs : List XReg := [.xmm3, .xmm4, .xmm5, .xmm6]
 
@@ -52,12 +52,13 @@ def storesK (base : Reg) : List XReg → Nat → List Instr
 /-- The registers of the powers, in the order of the loads of a body. -/
 def pregs : List XReg := [.xmm3, .xmm4, .xmm5, .xmm6, .xmm15, .xmm14, .xmm13, .xmm12]
 
-/-- `H'`–`H'¹⁶` from the hash subkey at `ctx + 240`, as `vg_ghash_vpclmul`
-computes them, in `ymm3`–`ymm6` and `ymm12`–`ymm15`. -/
+/-- `H'`–`H'¹⁶` from the hash subkey at `ctx + 240`, in `ymm3`–`ymm6` and
+`ymm12`–`ymm15`, as `vg_ghash_vpclmul` leaves them: `H'²` on 128-bit
+registers, the rest two at a time (`powersY`, `powers16`). -/
 def setupG : List Instr :=
   Pclmul.const .xmm0 revMask ++ Pclmul.const .xmm1 poly ++
   ([.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ hInv ++
-  Pclmul.pows ++ powers ++ powers16
+  Pclmul.mul .xmm4 .xmm3 .xmm3 ++ powersY ++ powers16
 
 /-- `Y`, the counter pair, the increment, the last round key's address, and
 the pointers of the loop. -/

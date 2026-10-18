@@ -44,7 +44,7 @@ open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce φ_reduce Only prod zero_ok acc_ok 
   mul_ok Pre Inv pre_of nb hA dp blkAddr H₀ Y₀ tail_ok prologue_ok ghashX86_64 ea_at ofInt_natCast
   toNat_ofNat_lt addr_add ofNat_sub_ofNat add_ofNat_ofNat satState cmp_ok withPows_ok)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
-open VG.Impl.Gcm.X86_64.Vpclmul (preg preg16 powers zero acc reduce ld load load16 combine next body8
+open VG.Impl.Gcm.X86_64.Vpclmul (preg preg16 powers powersY zero acc reduce ld load load16 combine next body8
   mulPair powers16 next16 body16 restore wide ghash)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom mul)
 
@@ -685,6 +685,110 @@ theorem powers16P_ok {H : Block} {s : State} (h1 : ∀ l < 2, s.lane .xmm1 l = p
     rw [F.lane _ (by decide) l hl, show 16 - 2 * 6 - l = 8 - 2 * 2 - l by omega]; exact hpw 2 (by decide) l hl
   · show x * φ (s₅.lane .xmm12 l) = _
     rw [F.lane _ (by decide) l hl, show 16 - 2 * 7 - l = 8 - 2 * 3 - l by omega]; exact hpw 3 (by decide) l hl
+
+/-- `vinserti128 ymm7, ymm{r}, xmm{r}, 1`: the low lane of `r` into both
+lanes of `ymm7`. -/
+theorem vinsB_ok (r : XReg) (s : State) :
+    WP isa (.block [.vop (.vinserti128 .xmm7 r r 1)]) s fun s' =>
+      (∀ l < 2, s'.lane .xmm7 l = s.lane r 0) ∧ YFrame [.xmm7] s s' := by
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, fun q hq l hl => ?_⟩⟩
+  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+      simp [VOp.exec, State.setV, State.lane]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+      simp [hq, VOp.exec, State.setV, State.lane]
+
+/-- The first instructions of `powersY`: the upper lanes of the mask, the
+reduction constant and `Y`, `[H'², H']` into `ymm12` and `H'²` into both
+lanes of `ymm7`. -/
+theorem insY_ok (s : State) :
+    WP isa (.block [.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1),
+        .vop (.vmovdqa .l128 .xmm2 .xmm2), .vop (.vinserti128 .xmm12 .xmm4 .xmm3 1),
+        .vop (.vinserti128 .xmm7 .xmm4 .xmm4 1)]) s fun s' =>
+      s'.lane .xmm12 0 = s.xmm .xmm4 ∧ s'.lane .xmm12 1 = s.xmm .xmm3 ∧
+      s'.lane .xmm7 0 = s.xmm .xmm4 ∧ s'.lane .xmm7 1 = s.xmm .xmm4 ∧
+      s'.lane .xmm0 1 = s.xmm .xmm0 ∧ s'.lane .xmm1 1 = s.xmm .xmm1 ∧ s'.lane .xmm2 1 = 0 ∧
+      (∀ r, r ≠ .xmm7 → r ≠ .xmm12 → s'.xmm r = s.xmm r) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, getLsbD_one8, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, isa,
+    State.setV, State.lane, Option.some.injEq, exists_eq_left', and_self]
+  refine ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, fun r h7 h12 => ?_, trivial⟩
+  by_cases h0 : r = .xmm0
+  · subst h0; rfl
+  by_cases h1 : r = .xmm1
+  · subst h1; rfl
+  by_cases h2 : r = .xmm2
+  · subst h2; rfl
+  simp [h0, h1, h2, h7, h12]
+
+/-- `powersY`: `H'³`–`H'⁸` from `H'` and `H'²` in `xmm3` and `xmm4`, and the
+eight powers in the lanes of `ymm12`–`ymm15`, as `powersP_ok` leaves them. -/
+theorem powersYP_ok {H : Block} {s : State} (h0 : s.xmm .xmm0 = revMask) (h1 : s.xmm .xmm1 = poly)
+    (H1 : x * φ (s.xmm .xmm3) = φ H) (H2 : x * φ (s.xmm .xmm4) = φ H ^ 2) :
+    WP isa (.block powersY) s fun s' =>
+      (∀ l < 2, s'.lane .xmm0 l = revMask) ∧ (∀ l < 2, s'.lane .xmm1 l = poly) ∧ s'.lane .xmm2 1 = 0 ∧
+      (∀ k < 4, ∀ l < 2, x * φ (s'.lane (preg k) l) = φ H ^ (8 - 2 * k - l)) ∧
+      (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  simp only [powersY, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (insY_ok s) fun s₁ ⟨p12, q12, p7, q7, p0, p1, p2, kx, g₁, m₁, rd₁, wr₁⟩ => ?_
+  have L0 : ∀ l < 2, s₁.lane .xmm0 l = revMask := fun l hl => by
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · show s₁.xmm .xmm0 = _; rw [kx _ (by decide) (by decide), h0]
+    · rw [p0, h0]
+  have L1 : ∀ l < 2, s₁.lane .xmm1 l = poly := fun l hl => by
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · show s₁.xmm .xmm1 = _; rw [kx _ (by decide) (by decide), h1]
+    · rw [p1, h1]
+  have A12 : ∀ l < 2, x * φ (s₁.lane .xmm12 l) = φ H ^ (2 - l) := fun l hl => by
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · rw [p12, H2]
+    · rw [q12, H1, pow_one]
+  have A7 : ∀ l < 2, x * φ (s₁.lane .xmm7 l) = φ H ^ 2 := fun l hl => by
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · rw [p7, H2]
+    · rw [q7, H2]
+  rw [WP.block_append_iff]
+  refine WP.mono (mulPair_ok .xmm13 .xmm12 rfl (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) s₁ L1) fun s₂ ⟨m₂, f₂⟩ => ?_
+  have A13 : ∀ l < 2, x * φ (s₂.lane .xmm13 l) = φ H ^ (4 - l) := fun l hl => by
+    rw [show 4 - l = (2 - l) + 2 by omega]; exact pow_mul_pair (m₂ l hl) (A12 l hl) (A7 l hl)
+  rw [WP.block_append_iff]
+  refine WP.mono (vinsB_ok .xmm13 s₂) fun s₃ ⟨b₃, f₃⟩ => ?_
+  have A7' : ∀ l < 2, x * φ (s₃.lane .xmm7 l) = φ H ^ 4 := fun l hl => by
+    rw [b₃ l hl]; exact A13 0 (by decide)
+  have L1₃ : ∀ l < 2, s₃.lane .xmm1 l = poly := fun l hl => by
+    rw [f₃.lane _ (by decide) l hl, f₂.lane _ (by decide) l hl]; exact L1 l hl
+  rw [WP.block_append_iff]
+  refine WP.mono (mulPair_ok .xmm14 .xmm12 rfl (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) s₃ L1₃) fun s₄ ⟨m₄, f₄⟩ => ?_
+  refine WP.mono (mulPair_ok .xmm15 .xmm13 rfl (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) s₄ (fun l hl => by rw [f₄.lane _ (by decide) l hl]; exact L1₃ l hl))
+    fun s' ⟨m₅, f₅⟩ => ?_
+  have F := f₂.comp (f₃.comp (f₄.comp f₅))
+  have F₃ := f₃.comp (f₄.comp f₅)
+  have F₄ := f₄.comp f₅
+  have A12' : ∀ l < 2, x * φ (s₃.lane .xmm12 l) = φ H ^ (2 - l) := fun l hl => by
+    rw [f₃.lane _ (by decide) l hl, f₂.lane _ (by decide) l hl]; exact A12 l hl
+  have A13' : ∀ l < 2, x * φ (s₄.lane .xmm13 l) = φ H ^ (4 - l) := fun l hl => by
+    rw [f₄.lane _ (by decide) l hl, f₃.lane _ (by decide) l hl]; exact A13 l hl
+  have A7'' : ∀ l < 2, x * φ (s₄.lane .xmm7 l) = φ H ^ 4 := fun l hl => by
+    rw [f₄.lane _ (by decide) l hl]; exact A7' l hl
+  refine ⟨fun l hl => by rw [F.lane _ (by decide) l hl]; exact L0 l hl,
+    fun l hl => by rw [F.lane _ (by decide) l hl]; exact L1 l hl,
+    by rw [F.lane _ (by decide) 1 (by decide)]; exact p2, fun k hk l hl => ?_,
+    fun r _ => by rw [F.gpr, g₁], by rw [F.mem, m₁], by rw [F.rd, rd₁], by rw [F.wr, wr₁]⟩
+  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  · show x * φ (s'.lane .xmm15 l) = _
+    rw [show 8 - 2 * 0 - l = (4 - l) + 4 by omega]; exact pow_mul_pair (m₅ l hl) (A13' l hl) (A7'' l hl)
+  · show x * φ (s'.lane .xmm14 l) = _
+    rw [f₅.lane _ (by decide) l hl, show 8 - 2 * 1 - l = (2 - l) + 4 by omega]
+    exact pow_mul_pair (m₄ l hl) (A12' l hl) (A7' l hl)
+  · show x * φ (s'.lane .xmm13 l) = _
+    rw [F₃.lane _ (by decide) l hl, show 8 - 2 * 2 - l = 4 - l by omega]; exact A13 l hl
+  · show x * φ (s'.lane .xmm12 l) = _
+    rw [F.lane _ (by decide) l hl, show 8 - 2 * 3 - l = 2 - l by omega]; exact A12 l hl
 
 /-- `H'⁹`–`H'¹⁶` in the lanes of `ymm3`–`ymm6`. -/
 theorem powers16_ok {s₀ : State} {i : Nat} {s : State} (hI : Inv8 s₀ i s) :
