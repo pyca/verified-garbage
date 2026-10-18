@@ -23,7 +23,7 @@ def randomSignSatState : State where
   rd := [⟨0x2000, 424⟩, ⟨0x5000, 0⟩, ⟨0x6000, 0⟩]
   wr := [⟨0x1000, 40⟩, ⟨0x7000, 8⟩, ⟨0x8000, 16896⟩, ⟨0x20004, 52⟩]
 
-theorem randomSign_satisfiable : ∃ s, (Spec.Dsa.randomSignContract abi 144).pre s := by
+theorem randomSign_satisfiable : ∃ s, (Spec.Dsa.randomSignContract abi 156).pre s := by
   have a0 : arg randomSignSatState 0 = 0x1000 := by decide
   have a1 : arg randomSignSatState 1 = 40 := by decide
   have a2 : arg randomSignSatState 2 = 0x7000 := by decide
@@ -44,7 +44,7 @@ theorem randomSign_satisfiable : ∃ s, (Spec.Dsa.randomSignContract abi 144).pr
     using randomSignSatState
 
 theorem randomSign_verified (F : SignFn) :
-    Verified target (code F.name F.code) (Spec.Dsa.randomSignContract abi 144) :=
+    Verified target (code F.name F.code) (Spec.Dsa.randomSignContract abi 156) :=
   ⟨randomSign_correct F, randomSign_constantTime F, randomSign_satisfiable⟩
 
 end VG.Proof.Dsa.X86

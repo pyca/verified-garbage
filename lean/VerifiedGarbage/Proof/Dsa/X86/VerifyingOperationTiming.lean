@@ -19,7 +19,7 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa (Entry.operation false) s tr sf) (F : Exec isa (Entry.operation false) t ur tf) : tr = ur := by
   let L := verifyLayout s A
-  have LayoutEq := verifyLayout_eq A B args P Q
+  have LayoutEq := verifyLayout_eq A B args SP P Q
   have Size := args 9 (by decide)
   have Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 8 (by decide))
   have PL := args 2 (by decide)

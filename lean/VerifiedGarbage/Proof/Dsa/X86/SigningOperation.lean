@@ -20,7 +20,7 @@ theorem signingOperation_spec {s : State} (A : SigningABI s) :
       Spec.Rsa.bytesAt sf.mem (argumentPointer s 0) (arg s 1).toNat =
         result.getD (List.replicate (arg s 1).toNat 0) ∧
       abiPreserved s sf ∧
-      OutputFrame (argumentPointer s 9) (argumentPointer s 0) ((arg s 10).toNat * 8) (arg s 1).toNat s.mem sf.mem ∧
+      StackOutputFrame (s.gpr .esp) (argumentPointer s 9) (argumentPointer s 0) ((arg s 10).toNat * 8) (arg s 1).toNat s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
   dsimp only
   have sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
@@ -34,15 +34,15 @@ theorem signingOperation_spec {s : State} (A : SigningABI s) :
   intro u Ku Ou
   have J := I.compare Ku Ou
   refine WP.mono (signingInstalled_spec A J) fun v ⟨Value, Bytes, K, O, Saved⟩ => ?_
-  have Ov : OutputFrame (argumentPointer s 9) (argumentPointer s 0)
+  have Ov : StackOutputFrame (s.gpr .esp) (argumentPointer s 9) (argumentPointer s 0)
       ((arg s 10).toNat * 8) (arg s 1).toNat s.mem v.mem := by
-    intro a hb ho
+    intro a hb ho hstack
     have H := A.used
-    exact (O a (by omega) (by rw [← A.outLength]; exact ho)).trans (J.outside a (.inr (by omega)))
+    exact (O a (by omega) (by rw [← A.outLength]; exact ho) (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans (J.outside a (.inr (by omega)))
   have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))
   refine WP.seq (WP.mono (entryRestore_ok (J.scr.of_keeps K (by decide)) sz (Saved s.gpr J.saved))
     fun sf R => WP.block_nil ?_)
-  refine ⟨?_, ?_, restored_abi R Esp (outputFrame_return Ov A.retScratch A.retOut), ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, restored_abi R Esp (outputFrame_return Ov A.retScratch A.retOut A.stackLow), ?_, ?_, ?_⟩
   · rw [R.other .eax (by decide)]; exact Value
   · rw [R.mem, A.outLength]; exact Bytes
   · rw [R.mem]; exact Ov

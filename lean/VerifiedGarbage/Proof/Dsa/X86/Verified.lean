@@ -20,7 +20,7 @@ def signingSatState : State where
   rd := [⟨0x2000, 424⟩, ⟨0x4000, 20⟩, ⟨0x5000, 0⟩]
   wr := [⟨0x1000, 40⟩, ⟨0x8000, 16384⟩, ⟨0x20004, 44⟩]
 
-theorem signingSatisfiable : ∃ s, (Spec.Dsa.signContract abi 20).pre s := by
+theorem signingSatisfiable : ∃ s, (Spec.Dsa.signContract abi 32).pre s := by
   have a0 : arg signingSatState 0 = 4096 := by decide
   have a1 : arg signingSatState 1 = 40 := by decide
   have a2 : arg signingSatState 2 = 8192 := by decide
@@ -37,7 +37,7 @@ theorem signingSatisfiable : ∃ s, (Spec.Dsa.signContract abi 20).pre s := by
   sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp, signingSatState] using signingSatState
 
-theorem signing_verified : Verified target (Entry.operation true) (Spec.Dsa.signContract abi 20) :=
+theorem signing_verified : Verified target (Entry.operation true) (Spec.Dsa.signContract abi 32) :=
   ⟨signingCorrect, signingConstantTime, signingSatisfiable⟩
 
 /-- A disjoint 1024/160 call; its zero-valued key is rejected at runtime. -/
@@ -51,7 +51,7 @@ def verifyingSatState : State where
   rd := [⟨0x2000, 404⟩, ⟨0x4000, 40⟩, ⟨0x5000, 0⟩]
   wr := [⟨0x8000, 16384⟩, ⟨0x20004, 40⟩]
 
-theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi 20).pre s := by
+theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi 32).pre s := by
   have a0 : arg verifyingSatState 0 = 8192 := by decide
   have a1 : arg verifyingSatState 1 = 404 := by decide
   have a2 : arg verifyingSatState 2 = 128 := by decide
@@ -67,7 +67,7 @@ theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi 20).pre s := 
   sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp, verifyingSatState] using verifyingSatState
 
-theorem verifying_verified : Verified target (Entry.operation false) (Spec.Dsa.verifyContract abi 20) :=
+theorem verifying_verified : Verified target (Entry.operation false) (Spec.Dsa.verifyContract abi 32) :=
   ⟨verifyingCorrect, verifyingConstantTime, verifyingSatisfiable⟩
 
 end VG.Proof.Dsa.X86

@@ -12,6 +12,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86
 
 structure ShapeCallReady (L : CallLayout) (digestLen : Nat) (s : State) : Prop where
+  sp : s.gpr .esp = L.sp
   scr : Scr s L.base L.size
   buffers : ∀ input ∈ L.inputs, CallerBuffer s L.base L.size input.1 input.2
   pointers : ∀ input ∈ L.inputs, pointerValue L.base s input.1 = L.pointers input.1
@@ -26,7 +27,7 @@ structure ShapedCall (L : CallLayout) (digestLen : Nat) (s : State) : Prop where
 
 theorem CallReady.compare {L : CallLayout} {s t : State} (R : CallReady L s)
     (K : Keeps [.eax] s t) (O : t.mem = s.mem) : CallReady L t := by
-  exact R.keep ⟨K.mono (by decide), by rw [O]; exact Outs.refl _ _ _⟩
+  exact R.keep ⟨K.mono (by decide), by rw [O]; exact StackOuts.refl _ _ _ _⟩
 
 theorem ShapedCall.compare {L : CallLayout} {digestLen : Nat} {s t : State} (R : ShapedCall L digestLen s)
     (K : Keeps [.eax] s t) (O : t.mem = s.mem) : ShapedCall L digestLen t :=
@@ -54,7 +55,7 @@ theorem shapeCall_ok {L : CallLayout} {digestLen : Nat} {s : State}
   obtain ⟨Mt, D⟩ := M valid
   have Pre : (pointerValue L.base t (.input .digestPrefixLen)).toNat = min digestLen (Spec.Dsa.bitLength L.q / 8) := by
     simpa only [R.digest] using D
-  refine ⟨⟨Mt, ?_, ?_, ?_⟩, ?_, Pre⟩
+  refine ⟨⟨(K.1 .esp (by decide)).trans R.sp, Mt, ?_, ?_, ?_⟩, ?_, Pre⟩
   · intro input hi
     exact (R.buffers input hi).keep_shape O K (by decide) (stable input hi)
   · intro input hi

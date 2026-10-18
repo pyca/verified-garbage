@@ -43,7 +43,7 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       (sf.gpr .eax).toNat = Spec.Dsa.signStatus (Spec.Dsa.signBytes pLen qLen key nonce digest) ∧
       Spec.Rsa.bytesAt sf.mem (out.setWidth 64) (2 * qLen) =
         (Spec.Dsa.signBytes pLen qLen key nonce digest).getD (List.replicate (2 * qLen) 0) ∧
-      Keeps powerClob s sf ∧ OutputFrame base (out.setWidth 64) usedBytes (2 * qLen) s.mem sf.mem ∧
+      Keeps powerClob s sf ∧ StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
   have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
@@ -61,7 +61,7 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       fun a _ hb => Of a (.inr (by omega))
     refine ⟨by rw [V, rejected]; rfl, by rw [rejected]; exact B,
       (K.mono (by decide)).trans (Kf.mono (by decide)), ?_, ?_⟩
-    · intro a hbase hout
+    · intro a hbase hout hstack
       exact (F a (by omega) hout).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
     · intro regs saved
       exact F.saved ha (by decide) sz (by have := scr.nowrap; omega) (shapeFrame_saved O saved)
@@ -94,7 +94,7 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       valid keyLen nonceLen keyValue nonceValue (shape_digest_width valid).1)
       fun sf ⟨V, B, Kf, F, Saved⟩ => ?_
     refine ⟨V, B, (K.mono (by decide)).trans Kf, ?_, fun regs saved => Saved regs (shapeFrame_saved O saved)⟩
-    intro a hbase hout
-    exact (F a hbase hout).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
+    intro a hbase hout hstack
+    exact (F a hbase hout (by rw [K.1 .esp (by decide)]; exact hstack)).trans (shapeFrame_outside O a (.inr (by change 15712 ≤ ofs base a at hbase; omega)))
 
 end VG.Proof.Dsa.X86

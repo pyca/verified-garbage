@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.SigningABI
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 
@@ -54,9 +55,29 @@ theorem SigningABI.stackArgument {s : State} (A : SigningABI s) {i : Nat} (hi : 
   · rw [A.rd, A.wr]; simp
   · exact A.scratchArgs.symm
 
+theorem room_of {sp : BitVec 32} {base : Addr} {size : Nat} (hsp : 32 ≤ sp.toNat)
+    (hs : 0 < size)
+    (hd : Region.Disjoint ⟨sp.setWidth 64 - 32#64, 32⟩ ⟨base, size⟩) : Pow.Room sp base size := by
+  refine ⟨hsp, ?_⟩
+  by_contra h
+  simp only [not_or, Nat.not_le] at h
+  have hb := sp.isLt
+  by_cases hc : base.toNat + 32 ≤ sp.toNat
+  · refine hd (sp.setWidth 64 - 32#64) ?_ ?_
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    · simp only [Region.Contains]; bv_omega
+  · refine hd base ?_ ?_
+    · simp only [Region.Contains]; bv_omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+
+theorem callStack_eq {sp : BitVec 32} (h : 32 ≤ sp.toNat) :
+    callStack sp = ⟨sp.setWidth 64 - 32#64, 32⟩ := by
+  unfold callStack
+  rw [VG.X86.Taint.sub_setWidth h]
+
 theorem VerifyingABI.stack {s : State} (A : VerifyingABI s) :
     StkOk (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8) := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl 20) A.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 32) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 8).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
   · have H : 15712 ≤ (arg s 9).toNat * 8 := A.used; omega
@@ -64,9 +85,21 @@ theorem VerifyingABI.stack {s : State} (A : VerifyingABI s) :
 
 theorem SigningABI.stack {s : State} (A : SigningABI s) :
     StkOk (s.gpr .esp) (argumentPointer s 9) ((arg s 10).toNat * 8) := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl 20) A.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 32) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 9).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
+  · have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
+  · exact A.belowScratch
+
+theorem VerifyingABI.room {s : State} (A : VerifyingABI s) :
+    Pow.Room (s.gpr .esp) (argumentPointer s 8) ((arg s 9).toNat * 8) := by
+  apply room_of A.stackLow
+  · have H : 15712 ≤ (arg s 9).toNat * 8 := A.used; omega
+  · exact A.belowScratch
+
+theorem SigningABI.room {s : State} (A : SigningABI s) :
+    Pow.Room (s.gpr .esp) (argumentPointer s 9) ((arg s 10).toNat * 8) := by
+  apply room_of A.stackLow
   · have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
   · exact A.belowScratch
 

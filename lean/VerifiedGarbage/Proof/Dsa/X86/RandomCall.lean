@@ -22,7 +22,7 @@ open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random
 structure SignFn where
   name : String
   code : Prog isa
-  verified : Verified X86.target code (Spec.Dsa.signContract X86.abi 20)
+  verified : Verified X86.target code (Spec.Dsa.signContract X86.abi 32)
   noSp : NoSp code
   depth : stackUse code ≤ 20
 

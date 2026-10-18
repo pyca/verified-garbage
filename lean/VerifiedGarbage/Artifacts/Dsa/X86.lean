@@ -17,7 +17,7 @@ def artifacts : List Artifact := [
       the entire output. Callee-saved registers and the loop's state reside in a stack frame."]
     code := Impl.Dsa.X86.RandomSign.code Proof.Dsa.X86.signFn.name Proof.Dsa.X86.signFn.code
     verified := Proof.Dsa.X86.randomSigning_verified
-    stack := 144 },
+    stack := 156 },
   Spec.Dsa.signApi.artifact X86.target {
     notes := ["Each supported (p, q) width has its own code, chosen by the public lengths. \
       Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`; \
@@ -27,7 +27,7 @@ def artifacts : List Artifact := [
       registers reside in `scratch`."]
     code := Impl.Dsa.X86.Entry.operation true
     verified := Proof.Dsa.X86.signing_verified
-    stack := 20 },
+    stack := 32 },
   Spec.Dsa.verifyApi.artifact X86.target {
     notes := ["Each supported (p, q) width has its own code, chosen by the public lengths. \
       Arithmetic loops over the words of a runtime-modulus Montgomery workspace in `scratch`. \
@@ -35,6 +35,6 @@ def artifacts : List Artifact := [
       registers reside in `scratch`."]
     code := Impl.Dsa.X86.Entry.operation false
     verified := Proof.Dsa.X86.verifying_verified
-    stack := 20 }]
+    stack := 32 }]
 
 end VG.Artifacts.Dsa.X86

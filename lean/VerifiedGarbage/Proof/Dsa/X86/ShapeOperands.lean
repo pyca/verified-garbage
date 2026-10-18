@@ -51,9 +51,11 @@ theorem shapeFrame_pointer {s t : State} {base : Addr} {p : Pointer} {regs : Lis
 
 theorem CallerBuffer.keep_shape {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {regs : List Reg}
     (B : CallerBuffer s base size p len) (O : Outs base shapeRanges s.mem t.mem)
-    (K : Keeps regs s t) (hd : .edi ∉ regs) (hp : ShapePointer p) : CallerBuffer t base size p len := by
+    (K : Keeps regs s t) (hd : .edi ∉ regs) (hp : ShapePointer p) (hsp : .esp ∉ regs := by decide) : CallerBuffer t base size p len := by
   have P := shapeFrame_pointer O K hd hp
-  exact ⟨by rw [P]; exact B.fits, by rw [P, K.2.1, K.2.2]; exact B.read, by rw [P]; exact B.apart⟩
+  exact ⟨by rw [K.1 _ hsp]; exact B.room, by rw [P]; exact B.fits,
+    by rw [P, K.2.1, K.2.2]; exact B.read, by rw [P]; exact B.apart,
+    by rw [P, K.1 _ hsp]; exact B.stack⟩
 
 theorem CallerBuffer.value_keep_shape {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {regs : List Reg}
     (B : CallerBuffer s base size p len) (O : Outs base shapeRanges s.mem t.mem)

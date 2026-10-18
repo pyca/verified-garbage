@@ -30,12 +30,15 @@ theorem loadComponent_relCT (len n out : Nat) :
       (VG.Taint.hintOf taint cursorTaint (Code.erase (VG.Impl.Mont.X86.Dynamic.wordLoop 1
         [.mov .eax (.mem (at_ .ebx 0)), .bswap .eax, .store (at_ .ebp 0) .eax, .alu .sub .ebx (.imm 4)])))
       rfl rfl rfl rfl
-  · apply blockFlatMap_relCT
-    intro j
-    apply checkedBlockInvariant (τ' := zeroTaint true) ?_ rfl
-    rw [← VG.X86.Taint.checkBlock_erase _ _ rfl]
-    change taint.checkBlock (workspaceTaint true) [.mov .eax (.imm 0), .store (sc 0) .eax] = _
-    rfl
+  · unfold zeroPad
+    split
+    · apply blockFlatMap_relCT
+      intro j
+      apply checkedBlockInvariant (τ' := zeroTaint true) ?_ rfl
+      rw [← VG.X86.Taint.checkBlock_erase _ _ rfl]
+      change taint.checkBlock (workspaceTaint true) [.mov .eax (.imm 0), .store (sc 0) .eax] = _
+      rfl
+    · exact checkedProgramChange (zeros_check true _ _) rfl
 
 theorem storeComponent_relCT (len input : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint true)) (storeComponent len input)

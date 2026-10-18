@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 
 /-! # Restoring the cdecl registers and protecting the return address -/
 
@@ -10,20 +11,28 @@ public import VerifiedGarbage.TCB.X86.Target
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.X86
 
+theorem return_stack_disjoint {sp : BitVec 32} (h : 32 ≤ sp.toNat) :
+    Region.Disjoint ⟨sp.setWidth 64, 4⟩ (callStack sp) := by
+  rw [callStack_eq h]
+  intro x hx hc
+  have hs := sp.isLt
+  simp only [Region.Contains] at hx hc
+  bv_omega
+
 theorem outside_return {s t : State} {base : Addr} {size : Nat}
-    (O : Outside base 0 size s.mem t.mem)
-    (apart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨base, size⟩) :
+    (O : StackOutside (s.gpr .esp) base size s.mem t.mem)
+    (apart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨base, size⟩) (hsp : 32 ≤ (s.gpr .esp).toNat) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
   apply Mem.readW_congr
   intro i hi
   have H := apart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega) (by omega))
   change ¬ (ofs base ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ size) at H
-  exact O _ (.inr (by omega))
+  exact O _ (by omega) (return_stack_disjoint hsp _ (Offset.contains_base _ (by omega) (by omega)))
 
 theorem outputFrame_return {s t : State} {base out : Addr} {size len : Nat}
-    (O : OutputFrame base out size len s.mem t.mem)
+    (O : StackOutputFrame (s.gpr .esp) base out size len s.mem t.mem)
     (scratchApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨base, size⟩)
-    (outApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨out, len⟩) :
+    (outApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨out, len⟩) (hsp : 32 ≤ (s.gpr .esp).toNat) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
   apply Mem.readW_congr
   intro i hi
@@ -31,7 +40,7 @@ theorem outputFrame_return {s t : State} {base out : Addr} {size len : Nat}
   have B := outApart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega) (by omega))
   change ¬ (ofs base ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ size) at W
   change ¬ (ofs out ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ len) at B
-  exact O _ (by omega) (by omega)
+  exact O _ (by omega) (by omega) (return_stack_disjoint hsp _ (Offset.contains_base _ (by omega) (by omega)))
 
 theorem restored_abi {s t u : State} (R : Restored t u s.gpr Entry.savedRegisters)
     (sp : t.gpr .esp = s.gpr .esp)

@@ -11,6 +11,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
 
 structure CallLayout where
+  sp : BitVec 32
   base : Addr
   size : Nat
   pLen : Nat
@@ -42,6 +43,7 @@ theorem CallLayout.saved (L : CallLayout) : Layout.saved ≤ L.size := by
   omega
 
 structure CallReady (L : CallLayout) (s : State) : Prop where
+  sp : s.gpr .esp = L.sp
   moduli : Moduli L.base L.size L.pLen L.qLen L.p L.q s
   buffers : ∀ input ∈ L.inputs, CallerBuffer s L.base L.size input.1 input.2
   pointers : ∀ input ∈ L.inputs, pointerValue L.base s input.1 = L.pointers input.1
@@ -51,7 +53,7 @@ def CallPair (L : CallLayout) (s t : State) : Prop := CallReady L s ∧ CallRead
 
 theorem CallReady.keep {L : CallLayout} {s t : State} (R : CallReady L s) (E : Execution L.base s t) :
     CallReady L t := by
-  refine ⟨R.moduli.keep E.mem E.keeps (by decide) (by decide), ?_, ?_, ?_⟩
+  refine ⟨(E.keeps.1 .esp (by decide)).trans R.sp, R.moduli.keep E.mem E.keeps (by decide) (by decide), ?_, ?_, ?_⟩
   · intro input hi
     exact E.buffer (R.buffers input hi) (L.stable input hi)
   · intro input hi
