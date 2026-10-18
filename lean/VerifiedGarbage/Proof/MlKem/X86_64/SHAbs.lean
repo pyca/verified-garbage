@@ -146,7 +146,7 @@ theorem startF_ok {σ : State} (hp : Pre σ) :
       fun s => SqInv σ 0 s ∧ HR σ s.mem := by
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (proF_ok hp) fun s₁ ⟨h₁, f₁⟩ => WP.mono (rc_ok hp h₁.env) fun s₂ h₂ => ?_
-  have he₂ : Env σ s₂ := Env.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
+  have he₂ : Env σ s₂ := EnvW.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega))
     h₂.frame h₂.keep.2.1 h₂.keep.2.2 fun r hr => h₂.keep.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -193,7 +193,7 @@ theorem hload_step {σ : State} (hp : Pre σ) {i : Nat} (hi : i < 25) {s : State
   have hsub : Region.Sub ⟨at' σ (32 * i + 24), 8⟩ (lowR σ) := Offset.sub_base _ (by simp only [oSave]; omega)
   have hf : Frame [⟨at' σ (32 * i + 24), 8⟩] s.mem s₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨Env.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
+  refine ⟨EnvW.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
       (r₂.trans u₁.rd) (w₂.trans u₁.wr) fun r hr => by
         rw [g₂, u₁.other r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -271,7 +271,7 @@ theorem hxor_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {i J : Nat} (
   have hf : Frame [⟨at' σ (32 * J + 24), 8⟩] s.mem s₃.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hg : ∀ r, r ≠ .rax → s₃.gpr r = s.gpr r := fun r hr => by rw [g₃, u₂.other r hr, u₁.other r hr]
-  refine ⟨Env.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
+  refine ⟨EnvW.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
       (r₃.trans (u₂.rd.trans u₁.rd)) (w₃.trans (u₂.wr.trans u₁.wr)) fun r hr => hg r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),

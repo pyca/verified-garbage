@@ -36,6 +36,9 @@ structure SqTW (w16 : Bool) (σ : State) (t n : Nat) (s : State) : Prop where
   lanes : Lanes4 s.mem (scr σ) fun k => iterF (t + n) (A0 (B σ k))
   buf : ∀ k < 4, ∀ p < 168 * n, s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (168 * t + p)
 
+/-- `SqTW` with 32-bit coefficients. -/
+abbrev SqT := SqTW false
+
 theorem sqT_of {σ s : State} (h : SqInvW w16 σ 0 s) : SqTW w16 σ 0 0 s :=
   ⟨h.env, h.r14, h.rc, h.lanes, fun _ _ p hp => absurd hp (by omega)⟩
 
@@ -92,6 +95,9 @@ structure EXTW (w16 : Bool) (σ : State) (m₀ : Mem) (t n K I : Nat) (s : State
     s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (168 * t + p)
   fr : Frame [lowR σ] m₀ s.mem
   rbp : s.gpr .rbp = at' σ (oBuf + 168 * n)
+
+/-- `EXTW` with 32-bit coefficients. -/
+abbrev EXT := EXTW false
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
 theorem extT_step {σ : State} (hp : PreW w16 σ) {m₀ : Mem} {t n K I : Nat} (hn : n < 3) (hK : K < 4) (hI : I < 21)

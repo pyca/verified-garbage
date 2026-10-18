@@ -141,6 +141,9 @@ structure SqInvW (w16 : Bool) (σ : State) (n : Nat) (s : State) : Prop where
   lanes : Lanes4 s.mem (scr σ) fun k => iterF n (A0 (B σ k))
   buf : ∀ k < 4, ∀ p < 168 * n, s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p
 
+/-- `SqInvW` with 32-bit coefficients. -/
+abbrev SqInv := SqInvW false
+
 theorem lanes_A0 {σ : State} {m : Mem} (h : SB σ m (PF σ)) : Lanes4 m (scr σ) fun k => iterF 0 (A0 (B σ k)) :=
   lanes4_of_bytes fun k hk q hq => by
     rw [h k hk q hq, show iterF 0 (A0 (B σ k)) = A0 (B σ k) from rfl, byteOf_A0 (B_length σ k) hq, PF]
@@ -231,6 +234,9 @@ structure EXIW (w16 : Bool) (σ : State) (n K I : Nat) (s : State) : Prop where
   buf : ∀ k < 4, ∀ p < 504, (p < 168 * n ∨ (168 * n ≤ p ∧ p < 168 * n + 168 ∧ (k < K ∨ (k = K ∧ p < 168 * n + 8 * I)))) →
     s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p
   rbp : s.gpr .rbp = at' σ (oBuf + 168 * n)
+
+/-- `EXIW` with 32-bit coefficients. -/
+abbrev EXI := EXIW false
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
 theorem ext_step {σ : State} (hp : PreW w16 σ) {n K I : Nat} (hn : n < 3) (hK : K < 4) (hI : I < 21) {s : State}

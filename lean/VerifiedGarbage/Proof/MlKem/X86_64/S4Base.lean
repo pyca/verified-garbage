@@ -187,6 +187,9 @@ structure I0W (w16 : Bool) (σ s : State) : Prop where
   env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
 
+/-- `I0W` with 32-bit coefficients. -/
+abbrev I0 := I0W false
+
 theorem pro_ok {σ : State} (hp : PreW w16 σ) : WP isa (.block pro) σ (I0W w16 σ) := by
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .r12, .r13, .r14] (Q := fun s =>

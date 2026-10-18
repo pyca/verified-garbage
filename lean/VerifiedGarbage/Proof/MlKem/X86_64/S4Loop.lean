@@ -91,6 +91,9 @@ structure LVW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop wh
   lat : LAtW w16 σ s₀ K b t s
   vc : (Lt σ K (b + t)).length < 249 → VC s
 
+/-- `LVW` with 32-bit coefficients. -/
+abbrev LV := LVW false
+
 theorem setup_eq (K : Nat) (w16 : Bool) : setup K w16 = [.mov .rsi (.reg .rbx),
     .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * K))), .mov32 .rdi (.imm 0), .mov .rbp (.reg .r13),
     .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * K))), .mov32 .r10 (.imm 21)] := rfl
@@ -222,6 +225,9 @@ structure VIW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop wh
   vc : VC s
   rax : s.gpr .rax = BitVec.ofNat 64 (bsum (fun k => decide (cand4 (xofByte (B σ K)) (3 * (b + t)) k < 3329)) 8)
   cand : ∀ l < 2, s.lane .xmm0 l = candV (s.mem.readW (s.gpr .rsi) 128) l
+
+/-- `VIW` with 32-bit coefficients. -/
+abbrev VI := VIW false
 
 /-- The candidates of the four iterations and their mask. -/
 theorem vec1_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) (hbt : b + t + 4 ≤ 280) {s : State}

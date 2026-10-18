@@ -108,7 +108,7 @@ end
 
 theorem correct {fast : Bool} (σ : State) (hs : sampleHK.pre σ) :
     ∃ t s', Exec isa (sampleH fast) σ t s' ∧ abiPreserved σ s' ∧ sampleHK.post σ s' := by
-  have hp := pre_of hs
+  have hp := pre_of (w16 := false) hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (startF_ok hp) fun s₁ ⟨h₁, r₁⟩ =>
     WP.seq (WP.mono (hload_ok hp h₁ r₁) fun s₂ ⟨h₂, r₂⟩ =>
       WP.seq (WP.mono (squeezesH_ok (fast := fast) hp h₂ r₂) fun s₃ ⟨h₃, _⟩ =>

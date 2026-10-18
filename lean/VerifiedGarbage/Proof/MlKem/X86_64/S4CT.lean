@@ -49,8 +49,11 @@ open VG.Spec.Sha3 (bytesAt)
 /-- Two runs related by `I`, from entry states that agree on what is public. -/
 abbrev R4W (w16 : Bool) (I : State → State → Prop) : State → State → Prop := Rel2 (sample4KW w16).pre (sample4KW w16).pub I
 
+/-- `R4W` with 32-bit coefficients. -/
+abbrev R4 := R4W false
+
 section
-variable {σ₁ σ₂ : State} (hq : (sample4KW w16).pub σ₁ σ₂)
+variable {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂)
 include hq
 
 theorem pub_scr : scr σ₁ = scr σ₂ := hq.2.2.1
@@ -82,7 +85,7 @@ theorem start_ct : RelCT isa (R4W w16 fun σ s => s = σ)
       exacts [hq.1, hq.2.1, hq.2.2.1]) (by taint_decide))
 
 
-theorem env_rbx {σ₁ σ₂ s₁ s₂ : State} (hq : (sample4KW w16).pub σ₁ σ₂) (e₁ : EnvW w16 σ₁ s₁) (e₂ : EnvW w16 σ₂ s₂) :
+theorem env_rbx {σ₁ σ₂ s₁ s₂ : State} (hq : sample4K.pub σ₁ σ₂) (e₁ : EnvW w16 σ₁ s₁) (e₂ : EnvW w16 σ₂ s₂) :
     s₁.gpr .rbx = s₂.gpr .rbx := by rw [e₁.rbx, e₂.rbx, pub_scr hq]
 
 /-- Squeezes, after `t` blocks, given their taint analysis. -/
@@ -105,12 +108,15 @@ theorem sq_ct {fast : Bool} :
 
 /-! ## The groups of four iterations -/
 
-theorem pub_Lt {σ₁ σ₂ : State} (hq : (sample4KW w16).pub σ₁ σ₂) {K : Nat} (hK : K < 4) (t : Nat) :
+theorem pub_Lt {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {K : Nat} (hK : K < 4) (t : Nat) :
     Lt σ₁ K t = Lt σ₂ K t := by simp only [Lt, pub_B hq hK]
 
 /-- Two runs related by `I`, each from a state with `X`. -/
 abbrev RXW (w16 : Bool) (X : State → State → Prop) (I : State → State → State → Prop) : State → State → Prop :=
   R4W w16 fun σ s => ∃ s₀, X σ s₀ ∧ I σ s₀ s
+
+/-- `RXW` with 32-bit coefficients. -/
+abbrev RX := RXW false
 
 theorem relInvX {X : State → State → Prop} {I I' : State → State → State → Prop} {c : Prog isa}
     (hw : ∀ σ s₀ s, (sample4KW w16).pre σ → X σ s₀ → I σ s₀ s → WP isa c s (I' σ s₀))
@@ -135,6 +141,9 @@ def GIW (w16 : Bool) (X : State → State → Prop) (K b t : Nat) (c : BitVec 64
     X σ₁ s₀₁ ∧ X σ₂ s₀₂ ∧ LAtW w16 σ₁ s₀₁ K b (t + u) s₁ ∧ LAtW w16 σ₂ s₀₂ K b (t + u) s₂ ∧
     s₁.gpr .rcx = BitVec.ofNat 64 (4 - u) ∧ s₂.gpr .rcx = BitVec.ofNat 64 (4 - u) ∧ s₁.gpr .r10 = c ∧
     s₂.gpr .r10 = c ∧ ¬ (Lt σ₁ K (b + t)).length < 249 ∧ ¬ (Lt σ₂ K (b + t)).length < 249
+
+/-- `GIW` with 32-bit coefficients. -/
+abbrev GI := GIW false
 
 theorem gi_brel {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} {n : Nat} (hK : K < 4) (ht : t + 4 ≤ 168)
     (hbt : b + t + 4 ≤ 280) {s₁ s₂ : State} (h : GIW w16 X K b t c n s₁ s₂) : BRel w16 s₁ s₂ := by
@@ -183,6 +192,9 @@ theorem iloop_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (h
 fewer than 249 coefficients, and `r10 = c`. -/
 abbrev RVW (w16 : Bool) (X : State → State → Prop) (K b t : Nat) (c : BitVec 64) : State → State → Prop :=
   RXW w16 X fun σ s₀ s => LVW w16 σ s₀ K b t s ∧ s.gpr .r10 = c
+
+/-- `RVW` with 32-bit coefficients. -/
+abbrev RV := RVW false
 
 theorem cmpG_ok {σ s₀ : State} {K b t : Nat} {c : BitVec 64} {s : State} (h : LVW w16 σ s₀ K b t s ∧ s.gpr .r10 = c) :
     WP isa (.block [.alu .cmp .rdi (.imm 249)]) s fun s' => (LVW w16 σ s₀ K b t s' ∧ s'.gpr .r10 = c) ∧
@@ -407,7 +419,7 @@ theorem tab_ct : RelCT isa (R4W w16 fun σ s => SqTW w16 σ 0 3 s) (.block tabBu
 
 /-! ## The check and the second runs -/
 
-theorem pub_allFull {σ₁ σ₂ : State} (hq : (sample4KW w16).pub σ₁ σ₂) (t : Nat) : allFull σ₁ t = allFull σ₂ t := by
+theorem pub_allFull {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) (t : Nat) : allFull σ₁ t = allFull σ₂ t := by
   simp only [allFull, List.range_succ, List.range_zero, List.all_append, List.all_cons, List.all_nil,
     Bool.and_true, Bool.true_and]
   rw [pub_Lt hq (K := 0) (by decide), pub_Lt hq (K := 1) (by decide), pub_Lt hq (K := 2) (by decide),

@@ -52,6 +52,9 @@ structure PCW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : State)
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ K)
   polys : ∀ k < K, ∀ f, sampleNTT minIterations (B σ k) = some f → PolyIsW (cw w16) s.mem (poly4W w16 (aP σ) k) f
 
+/-- `PCW` with 32-bit coefficients. -/
+abbrev PC := PCW false
+
 /-- The coefficients of seed `K` after `t` iterations. -/
 abbrev Lt (σ : State) (K t : Nat) : List Zq := sampleAfter [] (xofByte (B σ K)) t
 
@@ -64,6 +67,9 @@ structure LBW (w16 : Bool) (σ s₀ : State) (K b : Nat) (s : State) : Prop wher
   out : ∀ p < 504, 3 * b + p < 840 → s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (3 * b + p)
   fr : Frame [cRegion w16 (poly4W w16 (aP σ) K)] s₀.mem s.mem
 
+/-- `LBW` with 32-bit coefficients. -/
+abbrev LB := LBW false
+
 /-- At iteration `b + t` of the loop on seed `K`, at byte `3 t` of its buffer. -/
 structure LAtW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop where
   lb : LBW w16 σ s₀ K b s
@@ -71,6 +77,9 @@ structure LAtW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop w
   rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K (b + t)).length
   rbp : s.gpr .rbp = poly4W w16 (aP σ) K
   stored : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K (b + t))
+
+/-- `LAtW` with 32-bit coefficients. -/
+abbrev LAt := LAtW false
 
 /-- A byte apart from the regions of a frame. -/
 theorem byte_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region} (hd : ∀ r ∈ rs, R.Disjoint r)
@@ -309,6 +318,9 @@ structure ArgIW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : Stat
   rsi : s.gpr .rsi = poly4W w16 (aP σ) K
   rdx : s.gpr .rdx = at' σ oScalar
 
+/-- `ArgIW` with 32-bit coefficients. -/
+abbrev ArgI := ArgIW false
+
 omit hp in
 theorem argsK_ok {X : Mem → Prop} {K : Nat} (hK : K < 4) {s : State} (h : PCW w16 X σ K s) :
     WP isa (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * K))),
@@ -346,6 +358,9 @@ structure CallIW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : Sta
   pinv : PCW w16 X σ K s
   rax : (s.gpr .rax).setWidth 32 = if (sampleNTT minIterations (B σ K)).isSome then 1 else 0
   poly : ∀ f, sampleNTT minIterations (B σ K) = some f → PolyIsW (cw w16) s.mem (poly4W w16 (aP σ) K) f
+
+/-- `CallIW` with 32-bit coefficients. -/
+abbrev CallI := CallIW false
 
 theorem callK_ok {X : Mem → Prop} {K : Nat} (hK : K < 4)
     (hX : ∀ m m', Frame (cWr w16 σ K ++ [stkR σ]) m m' → X m → X m') {s : State} (h : ArgIW w16 X σ K s) :

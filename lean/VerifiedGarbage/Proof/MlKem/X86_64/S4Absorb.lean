@@ -62,6 +62,9 @@ structure RcInvW (w16 : Bool) (σ s₀ : State) (n : Nat) (s : State) : Prop whe
   frame : Frame [⟨at' σ oRc, 768⟩] s₀.mem s.mem
   rc : ∀ r < n, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = Spec.Sha3.RC r
 
+/-- `RcInvW` with 32-bit coefficients. -/
+abbrev RcInv := RcInvW false
+
 theorem rc_step {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ s₀) {r : Nat} (hr : r < 24) {s : State}
     (h : RcInvW w16 σ s₀ r s) :
     WP isa (.block [.movImm64 .rax (Spec.Sha3.RC r), .vop (.vmovq .xmm0 .rax),
@@ -131,6 +134,9 @@ structure AIW (w16 : Bool) (σ : State) (m₁ : Mem) (s : State) : Prop where
   r14 : s.gpr .r14 = 1
   frame : Frame [⟨scr σ, 800⟩] m₁ s.mem
 
+/-- `AIW` with 32-bit coefficients. -/
+abbrev AI := AIW false
+
 theorem AIW.write {σ : State} {m₁ : Mem} {s s' : State} (h : AIW w16 σ m₁ s) {e n : Nat} (hn : e + n ≤ 800)
     (hm : ∃ v : BitVec (8 * n), s'.mem = s.mem.writeW (at' σ e) v) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) : AIW w16 σ m₁ s' := by
@@ -152,6 +158,9 @@ structure ZInvW (w16 : Bool) (σ : State) (m₁ : Mem) (n : Nat) (s : State) : P
   ai : AIW w16 σ m₁ s
   x0 : ∀ k < 4, q4 s .xmm0 k = 0
   bytes : ∀ k < 4, ∀ q < 200, q / 8 < n → s.mem (ba (scr σ) k q) = 0
+
+/-- `ZInvW` with 32-bit coefficients. -/
+abbrev ZInv := ZInvW false
 
 theorem zero_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {i : Nat} (hi : i < 25) {s : State} (h : ZInvW w16 σ m₁ i s) :
     WP isa (.block [Impl.Sha3.X86_64.X4.st .rbx i .xmm0]) s (ZInvW w16 σ m₁ (i + 1)) := by

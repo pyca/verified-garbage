@@ -132,8 +132,8 @@ theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = tru
 /-- The baseline implementation, `vg_mlkem_sample_ntt4`, which calls `vg_mlkem_sample_ntt`. -/
 def scalar : Sample4Impl where
   callee := .scalar
-  ok := S4.correct_scalar
-  ct := S4.ct_scalar
+  ok := sample4_scalar_correct
+  ct := sample4_scalar_ct
   nosp := (codeChecks_spec scalar_checks).1
   depth_le := (codeChecks_spec scalar_checks).2.1
   mxcsr := (codeChecks_spec scalar_checks).2.2.1
@@ -153,8 +153,8 @@ theorem avx2_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx2).code = true :=
 /-- The AVX2 implementation, `vg_mlkem_sample_ntt4_avx2`. -/
 def avx2 : Sample4Impl where
   callee := .avx2
-  ok := S4.correct
-  ct := S4.ct
+  ok := sample4_correct (fast := false)
+  ct := sample4_ct (fast := false)
   nosp := (codeChecks_spec avx2_checks).1
   depth_le := (codeChecks_spec avx2_checks).2.1
   mxcsr := (codeChecks_spec avx2_checks).2.2.1
@@ -174,8 +174,8 @@ theorem avx512_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx512).code = tru
 /-- The AVX-512VL implementation, `vg_mlkem_sample_ntt4_avx512`. -/
 def avx512 : Sample4Impl where
   callee := .avx512
-  ok := S4.correct
-  ct := S4.ct
+  ok := sample4_correct (fast := true)
+  ct := sample4_ct (fast := true)
   nosp := (codeChecks_spec avx512_checks).1
   depth_le := (codeChecks_spec avx512_checks).2.1
   mxcsr := (codeChecks_spec avx512_checks).2.2.1

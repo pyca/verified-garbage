@@ -39,6 +39,9 @@ structure P1W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
   j : ∀ k < K, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < K, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
 
+/-- `P1W` with 32-bit coefficients. -/
+abbrev P1 := P1W false
+
 /-- After the 112 more iterations on the seeds before `K`. -/
 structure P2W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
   sq : SqTW w16 σ 3 2 s
@@ -47,11 +50,17 @@ structure P2W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
     BitVec.ofNat 64 (Lt σ k (if k < K then 280 else 168)).length
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
 
+/-- `P2W` with 32-bit coefficients. -/
+abbrev P2 := P2W false
+
 /-- The coefficients of each seed after 280 iterations, and whether they are 256. -/
 structure DoneW (w16 : Bool) (σ s : State) : Prop where
   env : EnvW w16 σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ 4)
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 280)
+
+/-- `DoneW` with 32-bit coefficients. -/
+abbrev Done := DoneW false
 
 /-- Whether every seed has 256 coefficients after `t` iterations. -/
 def allFull (σ : State) (t : Nat) : Bool := (List.range 4).all fun k => (Lt σ k t).length == 256
@@ -242,6 +251,9 @@ structure CheckedW (w16 : Bool) (σ s : State) : Prop where
   r14 : s.gpr .r14 = if allFull σ 168 then 1 else 0
   zf : s.zf = some (!allFull σ 168)
 
+/-- `CheckedW` with 32-bit coefficients. -/
+abbrev Checked := CheckedW false
+
 theorem cntFlags_ok {t : Nat} {s : State} (env : EnvW w16 σ s)
     (j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k t).length) :
     WP isa (.block cntFlags) s fun s' =>
@@ -300,6 +312,9 @@ structure M2W (w16 : Bool) (σ : State) (s : State) : Prop where
   tab : TabOK σ s.mem
   j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
+
+/-- `M2W` with 32-bit coefficients. -/
+abbrev M2 := M2W false
 
 omit hp in
 /-- `r14 ← 1`, after the check. -/

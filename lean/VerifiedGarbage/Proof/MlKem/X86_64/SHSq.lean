@@ -73,7 +73,7 @@ theorem permY_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} 
     rcases hr with rfl | rfl
     · exact Region.sub_prefix (by simp only [oSave]; omega)
     · exact Offset.sub_base _ (by simp only [oSave]; omega)
-  refine ⟨Env.low (h.env.keep hm k₁ (by decide)) hsub hf hrd₂ hwr₂ fun r hr => hg r
+  refine ⟨EnvW.low (h.env.keep hm k₁ (by decide)) hsub hf hrd₂ hwr₂ fun r hr => hg r
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
     by rw [hg _ (by decide) (by decide), k₁.gpr (by decide), h.r14], fun r hr k hk => ?_, ?_, fun k hk p hp' => ?_,
@@ -122,7 +122,7 @@ theorem extY_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {m₀ : Mem} 
     Offset.sub_base _ (by simp only [oBuf, oSave]; omega)
   have hf : Frame [⟨at' σ (oBuf + 504 * K + 168 * n + 8 * I), 8⟩] s.mem s₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨Env.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
+  refine ⟨EnvW.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
       (r₂.trans u₁.rd) (w₂.trans u₁.wr)
       fun r hr => by
         rw [g₂, u₁.other r (by
@@ -206,7 +206,7 @@ theorem sqYs_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {
 theorem SqY.apart {σ : State} {Y : Spec.Sha3.State} {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : SqY σ Y t n s)
     {rs : List Region} (hf : Frame rs s.mem s'.mem) (hlow : ∀ r ∈ rs, (lowR σ).Disjoint r)
     (hsv : ∀ r ∈ rs, (⟨at' σ oSave, 40⟩ : Region).Disjoint r)
-    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR false σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : SqY σ Y t n s' := by
   refine ⟨h.env.apart hf hsv hsub hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),

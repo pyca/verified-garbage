@@ -58,7 +58,7 @@ structure Q1 (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop 
   sq : SqY σ Y 0 3 s
   tab : TabOK σ s.mem
   j : ∀ k < K, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
-  st : ∀ k < K, Stored s.mem (poly4 (aP σ) k) (Lt σ k 168)
+  st : ∀ k < K, Stored false s.mem (poly4 (aP σ) k) (Lt σ k 168)
   hs : HS σ Hf s.mem
 
 /-- After the 112 more iterations on the seeds before `K`. -/
@@ -67,14 +67,14 @@ structure Q2 (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop 
   tab : TabOK σ s.mem
   j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 =
     BitVec.ofNat 64 (Lt σ k (if k < K then 280 else 168)).length
-  st : ∀ k < 3, Stored s.mem (poly4 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
+  st : ∀ k < 3, Stored false s.mem (poly4 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
   hs : HS σ Hf s.mem
 
 /-- The coefficients of each of the three seeds after 280 iterations, and whether they are 256. -/
 structure Done3 (σ : State) (Hf : Spec.Sha3.State) (s : State) : Prop where
   env : Env σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ 3)
-  st : ∀ k < 3, Stored s.mem (poly4 (aP σ) k) (Lt σ k 280)
+  st : ∀ k < 3, Stored false s.mem (poly4 (aP σ) k) (Lt σ k 280)
   hs : HS σ Hf s.mem
 
 /-- Whether each of the three seeds has 256 coefficients after `t` iterations. -/
@@ -209,7 +209,7 @@ structure M3 (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
   sq : SqY σ Y 3 0 s
   tab : TabOK σ s.mem
   j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
-  st : ∀ k < 3, Stored s.mem (poly4 (aP σ) k) (Lt σ k 168)
+  st : ∀ k < 3, Stored false s.mem (poly4 (aP σ) k) (Lt σ k 168)
   hs : HS σ Hf s.mem
 
 omit hp in
@@ -284,7 +284,7 @@ theorem run2Y_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h 
     WP isa (run2 K) s (Q2 σ Y Hf (K + 1)) := by
   have hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length := by
     rw [h.j K hK, ite_eq_right (by omega)]
-  have hst : Stored s.mem (poly4 (aP σ) K) (Lt σ K 168) := by
+  have hst : Stored false s.mem (poly4 (aP σ) K) (Lt σ K 168) := by
     have := h.st K hK; rwa [ite_eq_right (by omega)] at this
   unfold run2
   exact WP.seq (WP.mono (contSetup_ok hp (by omega) (lbY2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>

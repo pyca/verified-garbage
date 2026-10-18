@@ -32,6 +32,9 @@ structure TabInvW (w16 : Bool) (σ s₀ : State) (n : Nat) (s : State) : Prop wh
   frame : Frame [tabR σ] s₀.mem s.mem
   tab : ∀ i < n, s.mem.readW (at' σ (oTab + 8 * i)) 64 = tabQ i
 
+/-- `TabInvW` with 32-bit coefficients. -/
+abbrev TabInv := TabInvW false
+
 theorem tab_step {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ s₀) {i : Nat} (hi : i < 280) {s : State}
     (h : TabInvW w16 σ s₀ i s) :
     WP isa (.block [.movImm64 .rax (tabQ i), .store (at_ .rbx (oTab + 8 * i)) .rax]) s (TabInvW w16 σ s₀ (i + 1)) := by
