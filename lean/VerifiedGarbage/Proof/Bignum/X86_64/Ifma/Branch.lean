@@ -55,10 +55,11 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (_hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
-    (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z)
+    (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z) {okp okq : Prop}
+    (hY : ok → Mk = true → okp ∧ okq)
     (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
       (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
-      (Spec.Rsa.os2ip xb) ok) :
+      (Spec.Rsa.os2ip xb) ok okp okq) :
     WP isa (seqs (ifma l)) s₁ fun t =>
       IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
         (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
@@ -124,10 +125,10 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
       by rw [hf₁ _ (by decide) (by decide), h.dpl]; exact h.hPl, by rw [hf₁ _ (by decide) (by decide)]; exact h.hDq,
       by rw [hf₁ _ (by decide) (by decide), h.dql]; exact h.hQl⟩
   -- `ifma`.
-  refine WP.mono (ifma_ok hl (K := ok ∧ (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := l.W) hg₁.scr hg₁.rdi
+  refine WP.mono (ifma_ok hl (K := ok ∧ Mk = true ∧ (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := l.W) hg₁.scr hg₁.rdi
     ip (le_refl _) (by rw [hoq, hop]) rfl (by omega_using [hZa]) rfl hP'.2 hQ'.2 rp.ylt rq.ylt rp.clt rq.clt
-    (fun hK => rp.cv hK.1 hK.2.1) (fun hK => rq.cv hK.1 hK.2.2) (fun hK => rp.yv hK.1 hK.2.1)
-    (fun hK => rq.yv hK.1 hK.2.2)
+    (fun hK => rp.cv (hY hK.1 hK.2.1).1 hK.2.2.1) (fun hK => rq.cv (hY hK.1 hK.2.1).2 hK.2.2.2)
+    (fun hK => rp.yv (hY hK.1 hK.2.1).1 hK.2.2.1) (fun hK => rq.yv (hY hK.1 hK.2.1).2 hK.2.2.2)
     (h.dp.congrK (hr.iscr.trans i₀₁) kk₁) (h.dq.congrK (hr.iscr.trans i₀₁) kk₁) (by rw [h.dpl]; exact hpl1)
     (by rw [h.dpl]; exact hpl') (by rw [h.dql]; exact hql1) (by rw [h.dql]; exact hql'))
     fun t ⟨m₂, qlt, qv, plt, pv, f₂, d₂, k₂, mx₂⟩ => ?_
@@ -165,8 +166,8 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
     fun i hi hf => by rw [hb₂ _ (by have := hdr_lt_slot ((k + 7) / 8) 8 hi; omega_using [hop, this]), hf₁ i hi hf],
     (hr.iscr.trans i₀₁).trans (InScr.of_frm f₂ hlZ), (kk₁.trans k₂).mono (by decide)⟩,
     mx₂⟩
-  · have := qv ⟨hok, hMK hm⟩; simp only [hm, ↓reduceIte] at this; exact this
-  · have := pv ⟨hok, hMK hm⟩; simp only [hm, ↓reduceIte] at this; exact this
+  · have := qv ⟨hok, hm, hMK hm⟩; simp only [hm, ↓reduceIte] at this; exact this
+  · have := pv ⟨hok, hm, hMK hm⟩; simp only [hm, ↓reduceIte] at this; exact this
 
 
 /-- `pre`, from the checks, for the layout `l` of the key's sizes. -/
@@ -183,7 +184,7 @@ theorem branchA1_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
     WP isa (seqs (CrtIfma.pre M.mm)) t₀ fun s₁ =>
       APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
         (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
-        (Spec.Rsa.os2ip xb) ok ∧ s₁.mxcsr = t₀.mxcsr := by
+        (Spec.Rsa.os2ip xb) ok ok ok ∧ s₁.mxcsr = t₀.mxcsr := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
   have hpl1 := h.pl1

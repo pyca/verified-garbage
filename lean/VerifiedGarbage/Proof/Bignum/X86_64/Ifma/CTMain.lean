@@ -104,7 +104,7 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
     (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z)
     (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
       (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
-      (Spec.Rsa.os2ip xb) True) :
+      (Spec.Rsa.os2ip xb) True True True) :
     IfPre l ⟨B, Z, (k + 7) / 8, offP ((k + 7) / 8), offQ ((k + 7) / 8) pl,
       offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W, dpp, dqp, pl, ql⟩ s₁ := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
@@ -215,7 +215,7 @@ theorem pre_apost (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : N
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W) :
     WP isa (seqs (CrtIfma.pre M.mm)) t₀ fun t => APost t₀ t B Z ((k + 7) / 8) (offP ((k + 7) / 8))
       (offQ ((k + 7) / 8) pl) l.W minv mp mq (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3)
-      (if Mk then Spec.Rsa.os2ip qb else 3) (Spec.Rsa.os2ip xb) True := by
+      (if Mk then Spec.Rsa.os2ip qb else 3) (Spec.Rsa.os2ip xb) True True True := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
   have hZq := h.z
@@ -253,7 +253,7 @@ def RAp (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb _ _
     (p.mask xb pb qb qib) True ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W ∧
   APost t₀ t p.B p.Z p.w (offP p.w) (offQ p.w p.pl) l.W minv mp mq p.N
     (if p.mask xb pb qb qib then Spec.Rsa.os2ip pb else 3) (if p.mask xb pb qb qib then Spec.Rsa.os2ip qb else 3)
-    (Spec.Rsa.os2ip xb) True
+    (Spec.Rsa.os2ip xb) True True True
 
 /-- After `ifma`. -/
 def RID (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
@@ -276,7 +276,7 @@ theorem ifmaS_ct (hl : LayOk l) : RelCT isa (Two (Stage (RAp l))) (seqs (ifma l)
     (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, _, hr, hw, hp, hq, hA⟩ =>
       ⟨minv, hA.2.1, ifPre_of hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) hA⟩) h) fun _ _ h => h)
     fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, _, hr, hw, hp, hq, hA⟩ =>
-      WP.mono (branchA2_ok hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) hA) fun _ ⟨hd, _⟩ =>
+      WP.mono (branchA2_ok hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) (fun _ _ => ⟨trivial, trivial⟩) hA) fun _ ⟨hd, _⟩ =>
         ⟨minv, mp, mq, hd, hw, hp, hq⟩
 
 theorem postS_ct (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : LoadCT aChunk sQinv sPlen)

@@ -92,8 +92,8 @@ theorem above_nsafe {w L : Nat} {rs : List (Nat × Nat)} (hL : slot w 8 ≤ L) (
     NSafe w rs := fun r h => .inr (.inr (by have := hr r h; omega))
 
 /-- What `pre` leaves (`pre_ok`), from `s`. -/
-def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) (ok : Prop) : Prop :=
-  Good t B Z w minv ∧ NVals t B w minv N ok ∧ PrimeRdy t B op wp mp N P C ok ∧ PrimeRdy t B oq wp mq N Q C ok ∧
+def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) (ok okp okq : Prop) : Prop :=
+  Good t B Z w minv ∧ NVals t B w minv N ok ∧ PrimeRdy t B op wp mp N P C okp ∧ PrimeRdy t B oq wp mq N Q C okq ∧
     Frm B (preRanges w op wp oq wp) s.mem t.mem ∧ Keep mmRegs s t ∧
     word t.mem (off B op) (8 * sMaskX) = word s.mem (off B op) (8 * sMaskX)
 
