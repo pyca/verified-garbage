@@ -205,8 +205,8 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evStore m _ => exact storeStepKD_nil h hs
-  | kLoad _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | kStore m k _ =>
+  | kLoad _ _ m | kLoad8 _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | kStore m k _ | kStore8 m k _ =>
     simp only [stepKD, stepKDFn] at hs
     cases hk : pub τ k <;> rw [hk] at hs
     · cases hs

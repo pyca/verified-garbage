@@ -13,7 +13,7 @@ namespace VG.X86_64
 def Instr.keepsH : Instr → Bool
   | .vop _ | .zop _ | .mov .. | .mov32 .. | .alu .. | .shift ..
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdqu32Load .. | .vmovdqu32Store ..
-  | .vbroadcasti128 .. | .vbroadcasti32x4 .. | .kLoad .. => true
+  | .vbroadcasti128 .. | .vbroadcasti32x4 .. | .kLoad .. | .kLoad8 .. => true
   | _ => false
 
 theorem HKeep.of_map {α : Type} {x : Option α} {f : α → State} {s t : State}
@@ -69,7 +69,7 @@ theorem HKeep.instr {i : Instr} (hi : i.keepsH = true) {s t : State}
     exact ⟨rfl, rfl⟩
   case vbroadcasti128 d m => exact HKeep.of_map he (fun _ => ⟨rfl, rfl⟩)
   case vbroadcasti32x4 d m => exact HKeep.of_map he (fun _ => ⟨rfl, rfl⟩)
-  case kLoad k d m => exact HKeep.of_map he (fun _ => ⟨rfl, rfl⟩)
+  case kLoad k d m | kLoad8 k d m => exact HKeep.of_map he (fun _ => ⟨rfl, rfl⟩)
 
 theorem HKeep.block : ∀ {is : List Instr} {s t : State}, is.all Instr.keepsH = true →
     runBlock isa is s = some t → HKeep s t

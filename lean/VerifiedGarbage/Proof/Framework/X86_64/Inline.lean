@@ -313,6 +313,18 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
       show (s.withRegions rd wr).zmm r = s.zmm r from rfl,
       State.storeMasked512_mono (t := s.withRegions rd wr) hw rfl h]
     obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
+  | kLoad8 k d m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [exec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, State.withRegions_gpr,
+      State.loadMasked512B_mono (t := s.withRegions rd wr) hc rfl hv]; rfl
+  | kStore8 m k r =>
+    simp only [exec] at h ⊢
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, State.withRegions_gpr,
+      show (s.withRegions rd wr).zmm r = s.zmm r from rfl,
+      State.storeMasked512B_mono (t := s.withRegions rd wr) hw rfl h]
+    obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
   | vmovdqu32Load d m =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨v, hv, rfl⟩ := h
@@ -419,9 +431,10 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact ⟨rfl, rfl⟩
   | evStore m r =>
     simp only [exec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | kLoad k d m =>
+  | kLoad k d m | kLoad8 k d m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; exact ⟨rfl, rfl⟩
+  | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; exact ⟨rfl, rfl⟩
   | vmovdqu32Load d m | vbroadcasti32x4 d m | zbcst _ d _ m | vpmadd52Load _ d _ m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
   | vbroadcasti32x4H d m =>
@@ -487,9 +500,10 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
   | evStore m r =>
     simp only [exec, State.store256] at h; split at h <;> cases h
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
-  | kLoad k d m =>
+  | kLoad k d m | kLoad8 k d m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact Frame.refl _ _
   | kStore m k r => exact State.storeMasked512_frame h
+  | kStore8 m k r => exact State.storeMasked512B_frame h
   | vmovdqu32Load d m | vbroadcasti32x4 d m | zbcst _ d _ m | vpmadd52Load _ d _ m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact Frame.refl _ _
   | vbroadcasti32x4H d m =>
@@ -702,6 +716,8 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
       rw [Taint.setVy_eq]
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
+    · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
+    · obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
     · simp only [exec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
       split at h <;> cases h; rfl

@@ -209,6 +209,41 @@ theorem storeMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) (v : Bi
     rw [foldl_qwrites_patch hc _ _ hi]
   · rw [ite_eq_right hi, ite_eq_right hi]; rfl
 
+theorem loadMasked512B_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
+    (s.patch H hv u).loadMasked512B a k = s.loadMasked512B a k := by
+  unfold State.loadMasked512B
+  rw [show (s.patch H hv u).rd = s.rd from rfl, show (s.patch H hv u).wr = s.wr from rfl]
+  by_cases hi : ∀ j ∈ State.bOn k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 j) 1
+  · rw [ite_eq_left hi, ite_eq_left hi]
+    refine congrArg some (Mem.readW_congr fun j hj => ?_)
+    rw [Mem.sub_ofNat_toNat a (by omega)]
+    by_cases hk : k.getLsbD j
+    · simp only [hk, ite_true, State.patch, overlay]
+      rw [ite_eq_right (hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr (by omega), hk⟩))
+        (show (a + BitVec.ofNat 64 j - (a + BitVec.ofNat 64 j)).toNat < 1 by simp))]
+    · simp only [hk, Bool.false_eq_true, ↓reduceIte]
+  · rw [ite_eq_right hi, ite_eq_right hi]
+
+theorem foldl_bwrites_patch (hc : Clear H s) {a : Addr} (f : Nat → BitVec 8) :
+    ∀ (l : List Nat), (∀ j ∈ l, InRegions s.wr (a + BitVec.ofNat 64 j) 1) → ∀ m : Mem,
+      l.foldl (fun m j => m.writeW (a + BitVec.ofNat 64 j) (f j)) (overlay H hv m) =
+        overlay H hv (l.foldl (fun m j => m.writeW (a + BitVec.ofNat 64 j) (f j)) m)
+  | [], _, _ => rfl
+  | j :: l, hl, m => by
+    simp only [List.foldl_cons]
+    rw [overlay_writeW fun x hx => hc.miss wr_mem (hl j List.mem_cons_self) hx]
+    exact foldl_bwrites_patch hc f l (fun j h => hl j (List.mem_cons_of_mem _ h)) _
+
+theorem storeMasked512B_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) (v : BitVec 512) :
+    (s.patch H hv u).storeMasked512B a k v = (s.storeMasked512B a k v).map (State.patch H hv u) := by
+  unfold State.storeMasked512B
+  rw [show (s.patch H hv u).wr = s.wr from rfl]
+  by_cases hi : ∀ j ∈ State.bOn k, InRegions s.wr (a + BitVec.ofNat 64 j) 1
+  · rw [ite_eq_left hi, ite_eq_left hi, Option.map_some]
+    simp only [State.patch]
+    rw [foldl_bwrites_patch hc _ _ hi]
+  · rw [ite_eq_right hi, ite_eq_right hi]; rfl
+
 theorem readSrc_patch (hc : Clear H s) (src : Src) : readSrc (s.patch H hv u) src = readSrc s src := by
   cases src with
   | mem m => exact load64_patch hc _
@@ -290,6 +325,11 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
       loadMasked512_patch hc]; rfl
   | kStore m k r => exact storeMasked512_patch hc _ _ _
+  | kLoad8 k d m =>
+    simp only [exec, Option.map_map]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
+      loadMasked512B_patch hc]; rfl
+  | kStore8 m k r => exact storeMasked512B_patch hc _ _ _
   | evMadd52Load hi d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
