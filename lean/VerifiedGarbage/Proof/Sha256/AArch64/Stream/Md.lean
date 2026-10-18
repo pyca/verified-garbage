@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Out
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Out
 public import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -47,7 +49,7 @@ theorem shape : Shape (P := params) md where
   outKeepsV := by decide +kernel
   len _ hout := len64_ok (d := params.N + params.B - params.L) (be := true) (by decide) hout
   out _ hin hout hd := by
-    refine (out32_ok (n := 8) true (by decide) hin hout hd).mono fun s' ⟨g, rd, wr, sp, m⟩ =>
+    refine (out256_ok hin hout).mono fun s' ⟨g, rd, wr, sp, m⟩ =>
       ⟨g, rd, wr, sp, ?_⟩
     rw [m, digest_eq]
 

@@ -29,7 +29,7 @@ open VG.Impl.MdStream.AArch64
 def oneShotWith (o : List Instr) (iv : Spec.Sha256.HashValue) (name : String) (code : Prog isa) :
     Prog isa :=
   Impl.MdStream.AArch64.OneShot.digest { Stream.params with out := o }
-    (Impl.Sha256.AArch64.Stream.initPairs iv) name code
+    (Impl.Sha256.AArch64.Stream.initQ iv) name code
 
 /-- The one-shot digest is constant time. -/
 abbrev OneShotCT (o : List Instr) (D : Nat) (iv : Spec.Sha256.HashValue) (name : String) (code : Prog isa) :
@@ -66,7 +66,7 @@ structure Compress where
     untouched.all fun r => !clobbers i r) = true
   finalize224Depth : (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code).aarch64Depth = 0
   /-- The one-shot digests of SHA-256 and SHA-224. -/
-  oneShot256 : OneShotCT (out32 8 true) 32 Spec.Sha256.H0 name code
+  oneShot256 : OneShotCT Impl.Sha256.AArch64.Stream.out256 32 Spec.Sha256.H0 name code
   oneShot224 : OneShotCT (out32 7 true) 28 Spec.Sha256.H0_224 name code
 
 /-! ## The one-shot digests' common facts -/
@@ -83,17 +83,17 @@ theorem fits (o : List Instr) : Fits { Stream.params with out := o } := ⟨by rw
 
 theorem init_ok (iv : Spec.Sha256.HashValue) :
     ∀ s, (initK (P := Stream.params) md iv).pre s → ∃ t s',
-      Exec isa (Impl.Sha256.AArch64.Stream.initPairs iv) s t s' ∧ abiPreserved s s' ∧
+      Exec isa (Impl.Sha256.AArch64.Stream.initQ iv) s t s' ∧ abiPreserved s s' ∧
         (initK (P := Stream.params) md iv).post s s' :=
-  Stream.initPairs_ok iv
+  Stream.initQ_ok iv
 
 theorem init_writes (iv : Spec.Sha256.HashValue) :
-    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (Impl.Sha256.AArch64.Stream.initPairs iv), clobbers i r = false :=
-  Stream.initPairs_writes iv
+    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (Impl.Sha256.AArch64.Stream.initQ iv), clobbers i r = false :=
+  Stream.initQ_writes iv
 
 theorem init_keepsV (iv : Spec.Sha256.HashValue) :
-    (Impl.Sha256.AArch64.Stream.initPairs iv).allInstrs VG.AArch64.keepsV = true :=
-  Stream.initPairs_keepsV iv
+    (Impl.Sha256.AArch64.Stream.initQ iv).allInstrs VG.AArch64.keepsV = true :=
+  Stream.initQ_keepsV iv
 
 /-- A state satisfying the precondition: an empty message at `0x1000`, the
 digest at `0x2000` and the stack pointer at `0x10000`. -/
