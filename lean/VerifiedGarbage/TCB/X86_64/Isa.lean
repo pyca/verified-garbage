@@ -70,7 +70,7 @@ Modelling choices:
   RIP-relative operand, resolved by the linker) puts in a register. No
   instruction changes `syms`: a static's address is fixed for the run of
   the program.
-* A table of constants an instruction carries (`aluTbl` and `vmovdquTbl`,
+* A table of constants an instruction carries (`aluTbl`, `movdquTbl` and `vmovdquTbl`,
   its name and its words) is the `static` of that name the emitter writes from it
   (`TCB/Rust.lean`), so that for the whole run of the program it is mapped
   readable at `State.syms name` and holds exactly those words, 8 bytes each,
@@ -270,6 +270,11 @@ inductive Instr
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- `movdqu XMMWORD PTR [dst], xmm` (`F3 0F 7F /r`) -/
   | movdquStore (dst : MemOp) (src : XReg)
+  /-- `movdqu xmm, XMMWORD PTR [m]` (`F3 0F 6F /r`), whose base register
+  holds the address of the `static` `name`, whose words are `words`: the
+  emitter writes that static from this instruction (`TCB/Rust.lean`), as for
+  `aluTbl` and `vmovdquTbl`. -/
+  | movdquTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- `movq r64, xmm` (`66 REX.W 0F 7E /r`, SSE2): the low quadword of `src`. -/
   | movqR (dst : Reg) (src : XReg)
   /-- An SSE instruction that writes only an SSE register. -/
@@ -573,6 +578,21 @@ def exec : Instr → State → Option State
   -- and no flags are affected.
   | .movdquLoad d m, s => (s.load128 (s.ea m)).map fun v => s.setXmm d v
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
+  -- `movdquTbl`: SDM Vol. 2, "MOVDQU": `DEST[127:0] := SRC[127:0]`, as
+  -- `movdquLoad d m` (SSE2, F3 0F 6F /r; no alignment is required and no
+  -- flags are affected), its source the 16 bytes at `m`,
+  -- little-endian: when `m`'s base register holds the static's address and
+  -- `m` is `off` bytes past it, a multiple of 8 with two words of the table
+  -- from there, words `off / 8` and `off / 8 + 1` of the static `name` (bits
+  -- 63:0 the first); otherwise it faults. As for `aluTbl`, the static is the
+  -- immutable object of these words the emitter writes, so the bytes there
+  -- are always these.
+  | .movdquTbl d m name ws, s =>
+    let off := (s.ea m - s.gpr m.base).toNat
+    let w := fun j => ws.getD (off / 8 + j) 0
+    if s.gpr m.base = s.syms name ∧ off % 8 = 0 ∧ off / 8 + 2 ≤ ws.length then
+      some (s.setXmm d (w 1 ++ w 0))
+    else none
   -- SDM Vol. 2, "MOVQ—Move Quadword", `MOVQ r/m64, xmm` (66 REX.W 0F 7E /r),
   -- "MOVQ instruction when destination operand is r/m64": `DEST[63:0] :=
   -- SRC[63:0]`; "Flags Affected: None".
@@ -717,6 +737,7 @@ def addrs : Instr → State → List Addr
   -- data (see the module docs).
   | .aluTbl _ _ m .., s => [s.ea m - s.gpr m.base]
   | .vmovdquTbl _ m .., s => [s.ea m - s.gpr m.base]
+  | .movdquTbl _ m .., s => [s.ea m - s.gpr m.base]
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
   | .movqR .., _ => []
@@ -850,7 +871,7 @@ def Instr.dst : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
-  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
+  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..

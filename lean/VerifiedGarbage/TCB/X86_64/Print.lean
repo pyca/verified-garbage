@@ -278,6 +278,7 @@ def Instr.asm : Instr → List String
   | .vop op => [op.asm]
   | .vmovdquLoad l d m => [s!"vmovdqu {d.vname l}, {m.strV l}"]
   | .vmovdquTbl d m .. => [s!"vmovdqu {d.vname .l256}, {m.strV .l256}"]
+  | .movdquTbl d m .. => [s!"movdqu {d.name}, {m.str128}"]
   | .vmovdquStore l m r => [s!"vmovdqu {m.strV l}, {r.vname l}"]
   | .vbroadcasti128 d m => [s!"vbroadcasti128 {d.yname}, {m.str128}"]
   | .vbinLoad op l d a m => [s!"{op.name} {d.vname l}, {a.vname l}, {m.strV l}"]
@@ -332,7 +333,7 @@ def Instr.memOps : Instr → List MemOp
   | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s
   | .cmov _ _ s => s.memOps
   | .aluTbl _ _ m .. => [m]
-  | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
+  | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _ | .movdquTbl _ m ..
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vmovdquTbl _ m .. | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
@@ -357,6 +358,7 @@ def printer : Printer isa where
   tables
     | .aluTbl _ _ _ name ws => [(name, ws)]
     | .vmovdquTbl _ _ name ws => [(name, ws)]
+    | .movdquTbl _ _ name ws => [(name, ws)]
     | _ => []
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
