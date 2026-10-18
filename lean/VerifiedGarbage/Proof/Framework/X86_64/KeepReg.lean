@@ -27,7 +27,8 @@ structure Abs where
 
 /-- Whether an instruction may write a vector register. -/
 def writesVec : Instr → Bool
-  | .movdquLoad .. | .xop _ | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .movdquLoad .. | .movdquTbl .. | .xop _ | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
+  | .zop _
   | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. => true
   | _ => false

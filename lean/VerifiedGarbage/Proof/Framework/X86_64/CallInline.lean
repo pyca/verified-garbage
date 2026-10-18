@@ -303,7 +303,7 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     split
     · cases op <;> first | rfl | (simp only [execAluW, Option.map_map]; rfl)
     · rfl
-  | vmovdquTbl d m n ws =>
+  | vmovdquTbl d m n ws | movdquTbl d m n ws =>
     simp only [exec]
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).syms = s.syms from rfl,
       show (s.patch H hv u).gpr = s.gpr from rfl]
