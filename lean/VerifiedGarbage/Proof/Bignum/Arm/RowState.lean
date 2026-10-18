@@ -35,6 +35,24 @@ structure RowInv (s0 : State) (base : BitVec 32) (o b n i : Nat) (s : State) : P
       (s0.gpr .r11).toNat
   rest : Rest loopClobbers s0 s
 
+/-- What one step of the row's loop may change: the scalar's halves in `r1`
+and `r10`, and the mask in `r9`, stay for the whole loop. -/
+abbrev stepClobbers : List Reg := [.r0, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r11, .r12, .lr]
+
+/-- `RowInv` inside the loop, from the state `s0` after the scalar `x` is
+split: the same pointers, counter and value, `x` for the scalar. -/
+structure RowLoopInv (s0 : State) (x : BitVec 32) (base : BitVec 32) (o b n i : Nat) (s : State) :
+    Prop where
+  index : i ≤ n
+  outPtr : s.gpr .r0 = base + BitVec.ofNat 32 (o + 4 * i)
+  inPtr : s.gpr .r12 = base + BitVec.ofNat 32 (b + 4 * i)
+  count : s.gpr .lr = BitVec.ofNat 32 (n - i)
+  outside : Outside (State.addr base) o (4 * i) s0.mem s.mem
+  value : val32 s.mem (State.addr base) o i + 2 ^ (32 * i) * (s.gpr .r11).toNat =
+    val32 s0.mem (State.addr base) o i + x.toNat * val32 s0.mem (State.addr base) b i +
+      (s0.gpr .r11).toNat
+  rest : Rest stepClobbers s0 s
+
 /-- Form the effective address of a word anywhere in the workspace. -/
 theorem row_addr {s0 s : State} {base : BitVec 32} {size o b n d : Nat}
     (ctx : RowCtx s0 base size o b n) {r : Reg}
@@ -53,24 +71,23 @@ theorem row_writable {s0 s : State} {base : BitVec 32} {size o b n d : Nat}
   omega
 
 /-- Extend the arithmetic invariant with the next stored word. -/
-theorem row_value_step {s0 s t : State} {base : BitVec 32} {size o b n i : Nat}
-    (ctx : RowCtx s0 base size o b n) (inv : RowInv s0 base o b n i s) (hi : i < n)
+theorem row_value_step {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat}
+    (ctx : RowCtx s0 base size o b n) (inv : RowLoopInv s0 x base o b n i s) (hi : i < n)
     (hm : t.mem = s.mem.writeW (off (State.addr base) (o + 4 * i)) (t.gpr .r3))
     (hv : (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
-      (s.gpr .r1).toNat * w32 s.mem (State.addr base) (b + 4 * i) +
+      x.toNat * w32 s.mem (State.addr base) (b + 4 * i) +
         w32 s.mem (State.addr base) (o + 4 * i) + (s.gpr .r11).toNat) :
     Outside (State.addr base) o (4 * (i + 1)) s0.mem t.mem ∧
       val32 t.mem (State.addr base) o (i + 1) + 2 ^ (32 * (i + 1)) * (t.gpr .r11).toNat =
         val32 s0.mem (State.addr base) o (i + 1) +
-          (s0.gpr .r1).toNat * val32 s0.mem (State.addr base) b (i + 1) + (s0.gpr .r11).toNat := by
+          x.toNat * val32 s0.mem (State.addr base) b (i + 1) + (s0.gpr .r11).toNat := by
   have hn := ctx.nowrap
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hs := ctx.separate
   have own := inv.outside.w32 (d := o + 4 * i) (by omega) (by omega)
   have src := inv.outside.w32 (d := b + 4 * i) (by omega) (by omega)
-  have scalar := inv.rest.gpr .r1 (by simp [loopClobbers])
-  rw [own, src, scalar] at hv
+  rw [own, src] at hv
   have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
   rw [← hm] at wr
   have low := wr.val32 (d := o) (k := i) (by omega) (by omega)

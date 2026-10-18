@@ -8,11 +8,12 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RowState
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
-open VG.Proof.X25519.Arm (Rest ofNat_beq_zero)
+open VG.Proof.X25519.Arm (Rest mask16 ofNat_beq_zero)
 
-theorem rowBody_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
-    (ctx : RowCtx s0 base size o b n) (inv : RowInv s0 base o b n i s) (hi : i < n) :
-    WP isa rowBody s fun t => RowInv s0 base o b n (i + 1) t ∧ t.z = decide (i + 1 = n) := by
+theorem rowBody_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
+    (ctx : RowCtx s0 base size o b n) (inv : RowLoopInv s0 x base o b n i s) (hi : i < n)
+    (h1 : s0.gpr .r1 = x &&& mask16) (h10 : s0.gpr .r10 = x >>> 16) (h9 : s0.gpr .r9 = mask16) :
+    WP isa rowBody s fun t => RowLoopInv s0 x base o b n (i + 1) t ∧ t.z = decide (i + 1 = n) := by
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hn := ctx.nowrap
@@ -21,7 +22,8 @@ theorem rowBody_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
     rcases readB with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   rw [rowBody, WP.seq_iff]
-  refine WP.mono (rowStep_ok s _ _ (row_addr ctx inv.outPtr (by omega))
+  refine WP.mono (rowStep_ok s _ _ x (by rw [inv.rest.gpr .r1 (by simp), h1])
+    (by rw [inv.rest.gpr .r10 (by simp), h10]) (by rw [inv.rest.gpr .r9 (by simp), h9]) (row_addr ctx inv.outPtr (by omega))
     (row_addr ctx inv.inPtr (by omega)) readB'
     (row_writable ctx inv.rest.wr (by omega))) ?_
   rintro s1 ⟨v1, m1, k1⟩
@@ -47,7 +49,7 @@ theorem rowBody_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
   · rw [mem]; exact outside
   · rw [mem, k2.gpr .r11 (by simp)]; exact value
   · refine inv.rest.trans ((k1.mono ?_).trans (k2.mono ?_))
-    all_goals intro r hr; cases r <;> simp_all [rowClobbers, loopClobbers]
+    all_goals intro r hr; cases r <;> simp_all [rowClobbers, stepClobbers]
   · rw [zero, count1]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
