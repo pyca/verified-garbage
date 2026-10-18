@@ -34,7 +34,7 @@ macro "reg_ct" rs:term : tactic => `(tactic|
 /-- The window method's slots, which the public NAF uses. -/
 abbrev Kq := winQ p384
 
-theorem add_checks : JacAddChecks Kq Kq.D Kq.E Kq.R := {
+theorem add_checks : AddCChecks Kq Kq.D Kq.E Kq.R := {
     zero := by
       intro a ha
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
@@ -75,6 +75,7 @@ theorem window_checks : PubNaf.WindowChecks Kq where
     bump := by reg_ct [.x0, .x19, .x20]
     keepD := dblu_keep
     keep := zaddu_keep }
+  cache := by reg_ct [.x0]
   infinity := by reg_ct [.x0]
   counter := by reg_ct [.x0]
   step := {

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 public import VerifiedGarbage.Impl.Weierstrass.CoZ
+public import VerifiedGarbage.Impl.Weierstrass.CachedJac
 
 /-!
 # Public width-five NAF multiplication of any word count
@@ -13,7 +14,9 @@ fields whose products may be calls (`Mont.callOf`): the signed digits of `k`
 table's entry for each nonzero digit (`window`). The table holds no operand
 of a product: `2P` is kept in `E` while the table is built, and an entry is
 copied to `E` before it is added, so the table may lie above the products'
-offsets. The table is built by co-Z arithmetic, for a `P` whose `z` is one.
+offsets. The table is built by co-Z arithmetic, for a `P` whose `z` is one,
+and each entry's `Z²` and `Z³` are kept after it (`cache`), so that an
+addition of an entry does not compute them (`addC`).
 The loop alternates between `R` and `D` rather than copying the
 result of each doubling and addition back. Every branch and address depends
 on the digits of `k` and on the points, so only on public values.
@@ -112,10 +115,31 @@ def table (K : WinCfg) : Prog isa :=
 
 /-! ## The multiplication -/
 
-/-- Entry `x2` (`1 … 8`, of `[2 x2 - 1]P`), into `E`. -/
+/-- Entry `a`'s `Z²` and `Z³`, after the table. -/
+def cacheAt (K : WinCfg) (a : Nat) : Nat := K.tbl + 8 * stride K + 16 * K.M.n * (a - 1)
+
+/-- Entry `a`'s `Z²` and `Z³` into the cache, from its `z` copied to `t2`
+(products read no slot of the table) and through `t0` and `t1`. -/
+def cacheOne (K : WinCfg) (a : Nat) : Prog isa :=
+  .seq (.block (copy K.M.n K.S.t2 (K.tblPt a).z)) <|
+  .seq (fprogB K.M [.mul K.S.t0 K.S.t2 K.S.t2, .mul K.S.t1 K.S.t2 K.S.t0]) <|
+    .block (copy K.M.n (cacheAt K a) K.S.t0 ++ copy K.M.n (cacheAt K a + 8 * K.M.n) K.S.t1)
+
+/-- The cache of entries `1 … a`. -/
+def cacheTo (K : WinCfg) : Nat → Prog isa
+  | 0 => .block []
+  | a + 1 => .seq (cacheTo K a) (cacheOne K (a + 1))
+
+/-- The cache of the eight entries. -/
+def cache (K : WinCfg) : Prog isa := cacheTo K 8
+
+/-- Entry `x2` (`1 … 8`, of `[2 x2 - 1]P`), into `E`, and first its `Z²` and
+`Z³` into `R.y` and `R.z`, which the addition writes only after reading them. -/
 def entry (K : WinCfg) : List Instr :=
-  [.subImm .x .x2 .x2 1, .movz .x .x17 (BitVec.ofNat 16 (stride K)) 0, .mul .x .x2 .x2 .x17,
-   .add .x .x16 .x0 .x2] ++
+  [.subImm .x .x2 .x2 1, .movz .x .x17 (BitVec.ofNat 16 (16 * K.M.n)) 0, .mul .x .x17 .x2 .x17,
+   .add .x .x16 .x0 .x17] ++
+  ((List.range (2 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x16 (cacheAt K 1 + 8 * i), st .x4 (K.R.y + 8 * i)]) ++
+  [.movz .x .x17 (BitVec.ofNat 16 (stride K)) 0, .mul .x .x2 .x2 .x17, .add .x .x16 .x0 .x2] ++
   ((List.range (3 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x16 (K.tbl + 8 * i), st .x4 (K.E.x + 8 * i)])
 
 /-- The entry of the digit `x2`'s magnitude, negated for a negative digit. -/
@@ -124,10 +148,23 @@ def signedEntry (K : WinCfg) : Prog isa :=
     .seq (.block (Naf.signRead K)) <|
       .ite (.nonzero .x .x3) (.block (Mont.AArch64.sub K.M K.E.y K.zero K.E.y)) (.block [])
 
+/-- `o = p + q`, as `jacAdd`, with `q`'s `Z²` and `Z³` in `o.y` and `o.z`. -/
+def addC (K : WinCfg) (p q o : Pt) : Prog isa :=
+  .seq (.block (zeroMask K.M.n p.z)) <|
+  .ite (.nonzero .x .x2) (.block (copyPt K.M.n o q)) <|
+  .seq (.block (zeroMask K.M.n q.z)) <|
+  .ite (.nonzero .x .x2) (.block (copyPt K.M.n o p)) <|
+  .seq (fprogB K.M (CachedJac.headAt K.S p q o.y o.z)) <|
+  .seq (.block (zeroMask K.M.n K.S.t3)) <|
+  .ite (.nonzero .x .x2)
+    (.seq (.block (zeroMask K.M.n K.S.t5)) <|
+      .ite (.nonzero .x .x2) (VG.Impl.P256.VerifyDouble.double K.M K.S p o) (.block (infinity K o)))
+    (fprogB K.M (jacTail K.S p q o))
+
 /-- `R = D + [d]P` for the digit `d` at `x19`. -/
 def digit (K : WinCfg) : Prog isa :=
   .seq (.block (Naf.digitRead K)) <|
-    .ite (.nonzero .x .x2) (.seq (signedEntry K) (jacAdd K K.D K.E K.R)) (.block (copyPt K.M.n K.R K.D))
+    .ite (.nonzero .x .x2) (.seq (signedEntry K) (addC K K.D K.E K.R)) (.block (copyPt K.M.n K.R K.D))
 
 /-- `D = 2R`, then `R = D + [d]P` for the next digit. -/
 def step (K : WinCfg) : Prog isa :=
@@ -142,6 +179,7 @@ def finish (K : WinCfg) : Prog isa :=
 /-- `[k]P` into `R`, projective, from the digits at `K.bits`. -/
 def window (K : WinCfg) : Prog isa :=
   .seq (table K) <|
+  .seq (cache K) <|
   .seq (.block (infinity K K.D ++ [.movz .x .x19 (BitVec.ofNat 16 (64 * K.M.n)) 0])) <|
   .seq (digit K) <|
   .seq (.loop (step K) (.nonzero .x .x19)) (finish K)

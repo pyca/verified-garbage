@@ -3643,7 +3643,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function is `vg_ecdsa_p384_sign`'s setup, field arithmetic, comb and inversions, with `vg_ecdh_p384`'s checks of the public key: it saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and scalars are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, four of the multiplicand's words in registers and the other two loaded for each word of the multiplier; each reduction step multiplies the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adds that multiple of the modulus) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is computed for the key's point if it is valid, else `G`, so always on a point of the curve. `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`, reading the entry of each digit of the public `u` directly rather than scanning its table), and `[v]Q` the width-5 non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q` built by co-Z arithmetic (a doubling of the affine `Q` giving `2Q` and `Q` at one `Z`, then seven additions of `2Q` sharing each sum's `Z`, never `±2Q` itself since the curve's order is prime), and for each digit from the top a doubling in Jacobian coordinates and, for a digit other than 0, a complete Jacobian addition of the entry it selects, read directly, with its `y` negated for a negative digit; the products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`), converted to projective coordinates and added to `[u]G` by the complete formulas of Renes, Costello and Batina for `a = -3`. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the comb's addresses depend on `u`, from the digest and the signature, the non-adjacent form's branches and addresses on `v`, from the signature, and on the key, and the rest of the time only on the pointers.
+/// The function is `vg_ecdsa_p384_sign`'s setup, field arithmetic, comb and inversions, with `vg_ecdh_p384`'s checks of the public key: it saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and scalars are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, four of the multiplicand's words in registers and the other two loaded for each word of the multiplier; each reduction step multiplies the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adds that multiple of the modulus) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is computed for the key's point if it is valid, else `G`, so always on a point of the curve. `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`, reading the entry of each digit of the public `u` directly rather than scanning its table), and `[v]Q` the width-5 non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q` built by co-Z arithmetic (a doubling of the affine `Q` giving `2Q` and `Q` at one `Z`, then seven additions of `2Q` sharing each sum's `Z`, never `±2Q` itself since the curve's order is prime), each entry's `Z²` and `Z³` kept next to the table, and for each digit from the top a doubling in Jacobian coordinates and, for a digit other than 0, a complete Jacobian addition of the entry it selects, read directly, with its `y` negated for a negative digit and its `Z²` and `Z³` read rather than computed; the products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`), converted to projective coordinates and added to `[u]G` by the complete formulas of Renes, Costello and Batina for `a = -3`. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the comb's addresses depend on `u`, from the digest and the signature, the non-adjacent form's branches and addresses on `v`, from the signature, and on the key, and the rest of the time only on the pointers.
 ///
 /// # Safety
 ///
@@ -7461,6 +7461,390 @@ str x4, [x20, #4376]
 add x20, x20, #144
 sub x19, x19, #1
 cbnz x19, 26b
+ldr x1, [x0, #4336]
+str x1, [x0, #1264]
+ldr x1, [x0, #4344]
+str x1, [x0, #1272]
+ldr x1, [x0, #4352]
+str x1, [x0, #1280]
+ldr x1, [x0, #4360]
+str x1, [x0, #1288]
+ldr x1, [x0, #4368]
+str x1, [x0, #1296]
+ldr x1, [x0, #4376]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5392]
+ldr x1, [x0, #1176]
+str x1, [x0, #5400]
+ldr x1, [x0, #1184]
+str x1, [x0, #5408]
+ldr x1, [x0, #1192]
+str x1, [x0, #5416]
+ldr x1, [x0, #1200]
+str x1, [x0, #5424]
+ldr x1, [x0, #1208]
+str x1, [x0, #5432]
+ldr x1, [x0, #1216]
+str x1, [x0, #5440]
+ldr x1, [x0, #1224]
+str x1, [x0, #5448]
+ldr x1, [x0, #1232]
+str x1, [x0, #5456]
+ldr x1, [x0, #1240]
+str x1, [x0, #5464]
+ldr x1, [x0, #1248]
+str x1, [x0, #5472]
+ldr x1, [x0, #1256]
+str x1, [x0, #5480]
+ldr x1, [x0, #4480]
+str x1, [x0, #1264]
+ldr x1, [x0, #4488]
+str x1, [x0, #1272]
+ldr x1, [x0, #4496]
+str x1, [x0, #1280]
+ldr x1, [x0, #4504]
+str x1, [x0, #1288]
+ldr x1, [x0, #4512]
+str x1, [x0, #1296]
+ldr x1, [x0, #4520]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5488]
+ldr x1, [x0, #1176]
+str x1, [x0, #5496]
+ldr x1, [x0, #1184]
+str x1, [x0, #5504]
+ldr x1, [x0, #1192]
+str x1, [x0, #5512]
+ldr x1, [x0, #1200]
+str x1, [x0, #5520]
+ldr x1, [x0, #1208]
+str x1, [x0, #5528]
+ldr x1, [x0, #1216]
+str x1, [x0, #5536]
+ldr x1, [x0, #1224]
+str x1, [x0, #5544]
+ldr x1, [x0, #1232]
+str x1, [x0, #5552]
+ldr x1, [x0, #1240]
+str x1, [x0, #5560]
+ldr x1, [x0, #1248]
+str x1, [x0, #5568]
+ldr x1, [x0, #1256]
+str x1, [x0, #5576]
+ldr x1, [x0, #4624]
+str x1, [x0, #1264]
+ldr x1, [x0, #4632]
+str x1, [x0, #1272]
+ldr x1, [x0, #4640]
+str x1, [x0, #1280]
+ldr x1, [x0, #4648]
+str x1, [x0, #1288]
+ldr x1, [x0, #4656]
+str x1, [x0, #1296]
+ldr x1, [x0, #4664]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5584]
+ldr x1, [x0, #1176]
+str x1, [x0, #5592]
+ldr x1, [x0, #1184]
+str x1, [x0, #5600]
+ldr x1, [x0, #1192]
+str x1, [x0, #5608]
+ldr x1, [x0, #1200]
+str x1, [x0, #5616]
+ldr x1, [x0, #1208]
+str x1, [x0, #5624]
+ldr x1, [x0, #1216]
+str x1, [x0, #5632]
+ldr x1, [x0, #1224]
+str x1, [x0, #5640]
+ldr x1, [x0, #1232]
+str x1, [x0, #5648]
+ldr x1, [x0, #1240]
+str x1, [x0, #5656]
+ldr x1, [x0, #1248]
+str x1, [x0, #5664]
+ldr x1, [x0, #1256]
+str x1, [x0, #5672]
+ldr x1, [x0, #4768]
+str x1, [x0, #1264]
+ldr x1, [x0, #4776]
+str x1, [x0, #1272]
+ldr x1, [x0, #4784]
+str x1, [x0, #1280]
+ldr x1, [x0, #4792]
+str x1, [x0, #1288]
+ldr x1, [x0, #4800]
+str x1, [x0, #1296]
+ldr x1, [x0, #4808]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5680]
+ldr x1, [x0, #1176]
+str x1, [x0, #5688]
+ldr x1, [x0, #1184]
+str x1, [x0, #5696]
+ldr x1, [x0, #1192]
+str x1, [x0, #5704]
+ldr x1, [x0, #1200]
+str x1, [x0, #5712]
+ldr x1, [x0, #1208]
+str x1, [x0, #5720]
+ldr x1, [x0, #1216]
+str x1, [x0, #5728]
+ldr x1, [x0, #1224]
+str x1, [x0, #5736]
+ldr x1, [x0, #1232]
+str x1, [x0, #5744]
+ldr x1, [x0, #1240]
+str x1, [x0, #5752]
+ldr x1, [x0, #1248]
+str x1, [x0, #5760]
+ldr x1, [x0, #1256]
+str x1, [x0, #5768]
+ldr x1, [x0, #4912]
+str x1, [x0, #1264]
+ldr x1, [x0, #4920]
+str x1, [x0, #1272]
+ldr x1, [x0, #4928]
+str x1, [x0, #1280]
+ldr x1, [x0, #4936]
+str x1, [x0, #1288]
+ldr x1, [x0, #4944]
+str x1, [x0, #1296]
+ldr x1, [x0, #4952]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5776]
+ldr x1, [x0, #1176]
+str x1, [x0, #5784]
+ldr x1, [x0, #1184]
+str x1, [x0, #5792]
+ldr x1, [x0, #1192]
+str x1, [x0, #5800]
+ldr x1, [x0, #1200]
+str x1, [x0, #5808]
+ldr x1, [x0, #1208]
+str x1, [x0, #5816]
+ldr x1, [x0, #1216]
+str x1, [x0, #5824]
+ldr x1, [x0, #1224]
+str x1, [x0, #5832]
+ldr x1, [x0, #1232]
+str x1, [x0, #5840]
+ldr x1, [x0, #1240]
+str x1, [x0, #5848]
+ldr x1, [x0, #1248]
+str x1, [x0, #5856]
+ldr x1, [x0, #1256]
+str x1, [x0, #5864]
+ldr x1, [x0, #5056]
+str x1, [x0, #1264]
+ldr x1, [x0, #5064]
+str x1, [x0, #1272]
+ldr x1, [x0, #5072]
+str x1, [x0, #1280]
+ldr x1, [x0, #5080]
+str x1, [x0, #1288]
+ldr x1, [x0, #5088]
+str x1, [x0, #1296]
+ldr x1, [x0, #5096]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5872]
+ldr x1, [x0, #1176]
+str x1, [x0, #5880]
+ldr x1, [x0, #1184]
+str x1, [x0, #5888]
+ldr x1, [x0, #1192]
+str x1, [x0, #5896]
+ldr x1, [x0, #1200]
+str x1, [x0, #5904]
+ldr x1, [x0, #1208]
+str x1, [x0, #5912]
+ldr x1, [x0, #1216]
+str x1, [x0, #5920]
+ldr x1, [x0, #1224]
+str x1, [x0, #5928]
+ldr x1, [x0, #1232]
+str x1, [x0, #5936]
+ldr x1, [x0, #1240]
+str x1, [x0, #5944]
+ldr x1, [x0, #1248]
+str x1, [x0, #5952]
+ldr x1, [x0, #1256]
+str x1, [x0, #5960]
+ldr x1, [x0, #5200]
+str x1, [x0, #1264]
+ldr x1, [x0, #5208]
+str x1, [x0, #1272]
+ldr x1, [x0, #5216]
+str x1, [x0, #1280]
+ldr x1, [x0, #5224]
+str x1, [x0, #1288]
+ldr x1, [x0, #5232]
+str x1, [x0, #1296]
+ldr x1, [x0, #5240]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #5968]
+ldr x1, [x0, #1176]
+str x1, [x0, #5976]
+ldr x1, [x0, #1184]
+str x1, [x0, #5984]
+ldr x1, [x0, #1192]
+str x1, [x0, #5992]
+ldr x1, [x0, #1200]
+str x1, [x0, #6000]
+ldr x1, [x0, #1208]
+str x1, [x0, #6008]
+ldr x1, [x0, #1216]
+str x1, [x0, #6016]
+ldr x1, [x0, #1224]
+str x1, [x0, #6024]
+ldr x1, [x0, #1232]
+str x1, [x0, #6032]
+ldr x1, [x0, #1240]
+str x1, [x0, #6040]
+ldr x1, [x0, #1248]
+str x1, [x0, #6048]
+ldr x1, [x0, #1256]
+str x1, [x0, #6056]
+ldr x1, [x0, #5344]
+str x1, [x0, #1264]
+ldr x1, [x0, #5352]
+str x1, [x0, #1272]
+ldr x1, [x0, #5360]
+str x1, [x0, #1280]
+ldr x1, [x0, #5368]
+str x1, [x0, #1288]
+ldr x1, [x0, #5376]
+str x1, [x0, #1296]
+ldr x1, [x0, #5384]
+str x1, [x0, #1304]
+mov v29.d[0], x30
+movz x1, #1168, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1264, lsl #0
+bl {vg_p384_sqr_mod_p}
+umov x30, v29.d[0]
+mov v29.d[0], x30
+movz x1, #1216, lsl #0
+movz x2, #1264, lsl #0
+movz x3, #1168, lsl #0
+bl {vg_p384_mul_mod_p}
+umov x30, v29.d[0]
+ldr x1, [x0, #1168]
+str x1, [x0, #6064]
+ldr x1, [x0, #1176]
+str x1, [x0, #6072]
+ldr x1, [x0, #1184]
+str x1, [x0, #6080]
+ldr x1, [x0, #1192]
+str x1, [x0, #6088]
+ldr x1, [x0, #1200]
+str x1, [x0, #6096]
+ldr x1, [x0, #1208]
+str x1, [x0, #6104]
+ldr x1, [x0, #1216]
+str x1, [x0, #6112]
+ldr x1, [x0, #1224]
+str x1, [x0, #6120]
+ldr x1, [x0, #1232]
+str x1, [x0, #6128]
+ldr x1, [x0, #1240]
+str x1, [x0, #6136]
+ldr x1, [x0, #1248]
+str x1, [x0, #6144]
+ldr x1, [x0, #1256]
+str x1, [x0, #6152]
 movz x1, #0, lsl #0
 movk x1, #0, lsl #16
 movk x1, #0, lsl #32
@@ -7603,6 +7987,33 @@ sub x2, x2, x3
 add x2, x2, #1
 lsr x2, x2, #1
 sub x2, x2, #1
+movz x17, #96, lsl #0
+mul x17, x2, x17
+add x16, x0, x17
+ldr x4, [x16, #5392]
+str x4, [x0, #784]
+ldr x4, [x16, #5400]
+str x4, [x0, #792]
+ldr x4, [x16, #5408]
+str x4, [x0, #800]
+ldr x4, [x16, #5416]
+str x4, [x0, #808]
+ldr x4, [x16, #5424]
+str x4, [x0, #816]
+ldr x4, [x16, #5432]
+str x4, [x0, #824]
+ldr x4, [x16, #5440]
+str x4, [x0, #832]
+ldr x4, [x16, #5448]
+str x4, [x0, #840]
+ldr x4, [x16, #5456]
+str x4, [x0, #848]
+ldr x4, [x16, #5464]
+str x4, [x0, #856]
+ldr x4, [x16, #5472]
+str x4, [x0, #864]
+ldr x4, [x16, #5480]
+str x4, [x0, #872]
 movz x17, #144, lsl #0
 mul x2, x2, x17
 add x16, x0, x2
@@ -7732,15 +8143,9 @@ movz x3, #976, lsl #0
 bl {vg_p384_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
-movz x1, #1216, lsl #0
-movz x2, #1120, lsl #0
-movz x3, #1120, lsl #0
-bl {vg_p384_sqr_mod_p}
-umov x30, v29.d[0]
-mov v29.d[0], x30
 movz x1, #1264, lsl #0
 movz x2, #880, lsl #0
-movz x3, #1216, lsl #0
+movz x3, #784, lsl #0
 bl {vg_p384_mul_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
@@ -7752,13 +8157,7 @@ umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1360, lsl #0
 movz x2, #928, lsl #0
-movz x3, #1120, lsl #0
-bl {vg_p384_mul_mod_p}
-umov x30, v29.d[0]
-mov v29.d[0], x30
-movz x1, #1360, lsl #0
-movz x2, #1360, lsl #0
-movz x3, #1216, lsl #0
+movz x3, #832, lsl #0
 bl {vg_p384_mul_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
@@ -9733,6 +10132,33 @@ sub x2, x2, x3
 add x2, x2, #1
 lsr x2, x2, #1
 sub x2, x2, #1
+movz x17, #96, lsl #0
+mul x17, x2, x17
+add x16, x0, x17
+ldr x4, [x16, #5392]
+str x4, [x0, #784]
+ldr x4, [x16, #5400]
+str x4, [x0, #792]
+ldr x4, [x16, #5408]
+str x4, [x0, #800]
+ldr x4, [x16, #5416]
+str x4, [x0, #808]
+ldr x4, [x16, #5424]
+str x4, [x0, #816]
+ldr x4, [x16, #5432]
+str x4, [x0, #824]
+ldr x4, [x16, #5440]
+str x4, [x0, #832]
+ldr x4, [x16, #5448]
+str x4, [x0, #840]
+ldr x4, [x16, #5456]
+str x4, [x0, #848]
+ldr x4, [x16, #5464]
+str x4, [x0, #856]
+ldr x4, [x16, #5472]
+str x4, [x0, #864]
+ldr x4, [x16, #5480]
+str x4, [x0, #872]
 movz x17, #144, lsl #0
 mul x2, x2, x17
 add x16, x0, x2
@@ -9862,15 +10288,9 @@ movz x3, #976, lsl #0
 bl {vg_p384_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
-movz x1, #1216, lsl #0
-movz x2, #1120, lsl #0
-movz x3, #1120, lsl #0
-bl {vg_p384_sqr_mod_p}
-umov x30, v29.d[0]
-mov v29.d[0], x30
 movz x1, #1264, lsl #0
 movz x2, #880, lsl #0
-movz x3, #1216, lsl #0
+movz x3, #784, lsl #0
 bl {vg_p384_mul_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
@@ -9882,13 +10302,7 @@ umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1360, lsl #0
 movz x2, #928, lsl #0
-movz x3, #1120, lsl #0
-bl {vg_p384_mul_mod_p}
-umov x30, v29.d[0]
-mov v29.d[0], x30
-movz x1, #1360, lsl #0
-movz x2, #1360, lsl #0
-movz x3, #1216, lsl #0
+movz x3, #832, lsl #0
 bl {vg_p384_mul_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30

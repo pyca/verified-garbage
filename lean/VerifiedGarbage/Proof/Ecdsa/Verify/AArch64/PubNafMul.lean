@@ -28,8 +28,63 @@ open VG.Impl.Ecdsa.Verify.AArch64 (V)
 
 variable {c : Cfg}
 
+/-- The cache follows the window method's table: slot `111` on. -/
+theorem cacheAt_q (c : Cfg) : PubNaf.cacheAt (winQ c) 1 = 64 + 8 * c.n * 111 := by
+  show c.sl WT + 8 * (24 * c.n) + 16 * c.n * (1 - 1) = _
+  rw [sl_eq c WT]; unfold WT; omega
+
+theorem cacheW_q (c : Cfg) : PubNaf.cacheW (winQ c) = [(64 + 8 * c.n * 111, 128 * c.n)] := by
+  rw [PubNaf.cacheW, cacheAt_q]; rfl
+
+/-- Slot `i` below the cache: every slot the verifier has. -/
+theorem sl_below_cache (hc : CfgOk c) (hn6 : c.n ≤ 6) {i : Nat} (hi : i ≤ 110) :
+    c.sl i + 8 * c.n ≤ 64 + 8 * c.n * 111 := by
+  have h0 := hc.n0
+  by_cases ht : i = TMP
+  · subst ht
+    by_cases hm : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
+    · rw [sl_tmp c hm]; simp only [Mont.moAt]; omega
+    · rw [sl_aff c hm]; unfold TMP; omega
+  · rw [sl_eq c i ht]
+    have := Nat.mul_le_mul_left (8 * c.n) hi
+    omega
+
+/-- The cache's place. -/
+theorem cacheLayQ (hc : CfgOk c) (hn6 : c.n ≤ 6) : PubNaf.CacheLay (winQ c) size where
+  slots := by
+    intro x hx
+    rw [winSlots_eq] at hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    rw [cacheAt_q]
+    exact sl_below_cache hc hn6 ((show ∀ i ∈ roI ++ otherI ++ tblI, i ≤ 110 by decide) i hi)
+  tmp := by rw [cacheAt_q]; exact sl_below_cache hc hn6 (i := TMP) (by decide)
+  mo := by rw [cacheAt_q]; exact sl_below_cache hc hn6 (i := MP) (by decide)
+  bits := by
+    rw [cacheAt_q]
+    show c.sl WB + 4 * (16 * c.n + 1) ≤ _
+    have := hc.n0
+    rw [sl_eq c WB]; unfold WB; omega
+  top := by rw [cacheAt_q]; show 64 + 8 * c.n * 111 + 128 * c.n ≤ 8192; omega
+  al := by rw [cacheAt_q]; omega
+
+theorem fixedOk_cacheQ (hc : CfgOk c) (hn6 : c.n ≤ 6) : FixedOk c (PubNaf.cacheW (winQ c)) := by
+  intro w hw
+  rw [cacheW_q, List.mem_singleton] at hw
+  subst hw
+  right
+  have := sl_below_cache hc hn6 (i := 12) (by decide)
+  simp only; omega
+
+theorem apart_cacheQ (hc : CfgOk c) (hn6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
+    ∀ w ∈ PubNaf.cacheW (winQ c), c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  intro w hw
+  rw [cacheW_q, List.mem_singleton] at hw
+  subst hw
+  exact Or.inl (sl_below_cache hc hn6 (by omega))
+
 theorem nafLayQ (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) :
     PubNaf.NafLay (winQ c) size where
+  cache := cacheLayQ hc hn6
   win := winLayQ hc
   al := winAQ hc
   n4 := hn4
@@ -59,7 +114,7 @@ structure NafMulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : S
   scr : Scr s' base size
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  unch : Unch base (winX c ++ slW c (otherI ++ tblI ++ [TMP])) s.mem s'.mem
+  unch : Unch base (winX c ++ slW c (otherI ++ tblI ++ [TMP]) ++ PubNaf.cacheW (winQ c)) s.mem s'.mem
   mod : ModOkA c.MP' size c.C.p s'.mem base
   lt : ∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p
   q : Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -155,9 +210,8 @@ theorem pubNafMul_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : La
     hC hc.am3 hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hO hn17 hP hs₂ hM₂ hF₂
     z₂ hk)
-    fun s₃ ⟨S₃, L₃, R₃⟩ => h s₃ ?_)
-  have U₃ := S₃.unch
+    fun s₃ ⟨sc₃, k₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [winW_eq] at U₃
-  exact ⟨S₃.scr, S₃.keep.rd.trans rd₂, S₃.keep.wr.trans wr₂, U₂.trans U₃, S₃.mod, L₃, R₃⟩
+  exact ⟨sc₃, k₃.rd.trans rd₂, k₃.wr.trans wr₂, by rw [List.append_assoc]; exact U₂.trans U₃, M₃, L₃, R₃⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64
