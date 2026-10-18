@@ -54,7 +54,8 @@ theorem se_k {k : Nat} (hk : OK k) :
     BitVec.signExtend 64 (BitVec.ofNat 32 (16 * k)) = BitVec.ofNat 64 (16 * k) := by
   rcases hk with rfl | rfl | rfl <;> decide
 
-theorem storeTO_ok {k : Nat} (hk : OK k) {c : Addr} {s : State} (hrcx : s.gpr .rcx = bfA c)
+theorem storeTO_ok {k : Nat} (sk : BitVec.signExtend 64 (BitVec.ofNat 32 (16 * k)) = BitVec.ofNat 64 (16 * k))
+    {c : Addr} {s : State} (hrcx : s.gpr .rcx = bfA c)
     (hw : psR c ∈ s.wr) :
     WP isa (.block (storeTO k)) s fun s' =>
       s'.mem = accMem s.mem c (s.gpr .r11) (s.gpr .rbx) (s.gpr .rbp) ∧
@@ -73,7 +74,6 @@ theorem storeTO_ok {k : Nat} (hk : OK k) {c : Addr} {s : State} (hrcx : s.gpr .r
   have o2 := o 464 (by decide) (by decide)
   have i0 := i 544 (by decide) (by decide); have i1 := i 520 (by decide) (by decide)
   have i2 := i 528 (by decide) (by decide); have i3 := i 536 (by decide) (by decide)
-  have sk := se_k hk
   apply WP.of_runBlock
   have se128 : BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 128 := by decide
   simp only [storeTO, runBlock_cons, runStep_some, runBlock_nil, exec, VG.Proof.ChaCha20.X86_64.ea_at,
@@ -120,7 +120,7 @@ theorem tailBO_ok (two : Bool) {k : Nat} (hk : OK k) {S : Nat} (hS : S = if two 
   rw [tailBO_eq]
   refine WP.block_append (WP.mono (WP.vecKeep scal_reduce (Proof.Poly1305.X86_64.reduce_ok s))
     fun s₁ ⟨⟨red, k₁⟩, x₁, y₁⟩ => ?_)
-  refine WP.block_append (WP.mono (WP.vecKeep (scal_storeTO hk) (storeTO_ok hk (c := c) (s := s₁)
+  refine WP.block_append (WP.mono (WP.vecKeep (scal_storeTO hk) (storeTO_ok (se_k hk) (c := c) (s := s₁)
     (by rw [k₁.gpr', hrcx]) (by rw [k₁.2.2.2]; exact hps)))
     fun s₂ ⟨⟨m₂, rbx₂, rbp₂, r12₂, r13₂, r14₂, r15₂, g₂, rd₂, wr₂⟩, x₂, y₂⟩ => ?_)
   refine WP.block_append (WP.mono (movR_ok .r9 .rcx) fun s₃ ⟨r9₃, g₃, m₃, rd₃, wr₃, x₃, y₃⟩ => ?_)

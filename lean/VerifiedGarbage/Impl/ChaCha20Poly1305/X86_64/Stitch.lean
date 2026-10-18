@@ -565,7 +565,9 @@ its own 512 bytes during its rounds, before the kernel's `finish` XORs the
 keystream into them: no chunk is special. `bulkO` runs them while at least
 512 bytes remain; `leaveO` leaves `rbx`, `rbp` and `rsi`, `rdx` at the rest,
 which `cryptO` absorbs (with the lengths block) before the call of
-`vg_chacha20_xor` decrypts it. -/
+`vg_chacha20_xor` decrypts it. Below 512 bytes (449 to 511, past `fold`),
+`wholeO` runs the kernel once, absorbing the first 448 bytes while it stores
+the keystream of all of them at `ctx + 736`. -/
 
 /-- A chunk of `open` but for `next`: the 512 bytes at `rsi` absorbed during
 the rounds, then decrypted, and `rsi` advanced past them. -/
@@ -626,6 +628,14 @@ registers restored. -/
 def tailO (two : Bool) (k : Nat) : Prog isa :=
   .seq (.block (tailA two)) (.seq (troundsG two (oblocks k) (ofirst k) 10) (.block (tailBO two k)))
 
+/-- More than `fold` (448) bytes but no whole chunk (449 to 511): the
+kernel's eight blocks of keystream stored at `buf + kOff` (`ctx + 736`) while
+the first 448 bytes of ciphertext, at `rsi`, are absorbed (`tailKMain` with
+`pre`), then `leaveTO`, `rbx`, `rbp` at the rest, which `cryptO` absorbs with
+the lengths block before `decRest` decrypts the data from that keystream. -/
+def wholeO (vl : Bool) : Prog isa :=
+  .seq (.block enter) (.seq (tailKMain vl true) (.block (leaveTO 28 ++ ([.vop .vzeroupper] : List Instr))))
+
 /-- After the whole chunks: with 65 to 256 bytes left, `tailO` (4 blocks
 absorbed up to 128 bytes, 8 below 192, 12 from 192); otherwise `leaveO` (the
 prologue computed the keystream of 1 to 64 bytes left, `twoKs`). -/
@@ -660,13 +670,16 @@ def restTest (lo n : Nat) : List Instr :=
   [.mov .rax (.reg .r13), .alu .and .rax (.imm 511), .alu .sub .rax (.imm (BitVec.ofNat 32 lo)),
    .alu .cmp .rax (.imm (BitVec.ofNat 32 n))]
 
-/-- The rest decrypted: from `buf` if `tailO` computed its keystream (at
-least 512 bytes, and 65 to 256 after the whole chunks), from `ctx + 736` if
-the prologue did (`twoKs`: 1 to 64 after them), otherwise by the
-implementation `x` of `vg_chacha20_xor` from the counter the chunks left. -/
+/-- The rest decrypted: below 512 bytes all of the data, from the keystream
+`wholeO` stored at `ctx + 736`, which is then wiped (`ctx[672, 1248)`: the
+wipe after `cryptO` covers only `ctx[672, 800)` past `fold` bytes); from
+`buf` if `tailO` computed its keystream (65 to 256 bytes after the whole
+chunks), from `ctx + 736` if the prologue did (`twoKs`: 1 to 64 after them),
+otherwise by the implementation `x` of `vg_chacha20_xor` from the counter the
+chunks left. -/
 def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm 512)])
-  (.ite .b (.seq (.block restArgs) (.call x.name x.code))
+  (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
     (.seq (.seq (.block (restTest 65 192))
       (.ite .b (xorTail x.wide 128)
         (.seq (.block (restTest 1 64))
@@ -675,7 +688,8 @@ def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
 bytes, as `open` does; otherwise the whole chunks decrypted and absorbed by
-`bulkO`, then the rest absorbed and decrypted. Then the keystream is wiped:
+`bulkO` (or, below 512 bytes, the first 448 absorbed by `wholeO`), then the
+rest absorbed and decrypted. Then the keystream is wiped:
 past `fold` bytes `ctx[672, 800)`, where `twoKs` stores the block of the last
 bytes too (`wipeL`). -/
 def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
@@ -685,7 +699,7 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
       (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
         (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128)))))
     (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
-      (.seq (.ite .b (.block whole) (bulkO x.vl))
+      (.seq (.ite .b (wholeO x.vl) (bulkO x.vl))
       (.seq (.block (padIns .rax 18))
       (.seq (macPadLengths b .rbx .rbp)
       (decRest x))))))

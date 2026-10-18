@@ -717,7 +717,9 @@ theorem tailKABg_ok (vl pre : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R
   have dak : (accR c).Disjoint (kR (bfA c)) := by
     rw [kc]; exact Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide)
   unfold tailKAB
-  refine WP.seq (WP.mono (tailKMain_ok vl pre hk h.rdi h.rcx h.rsi h.st h.bf mk hin hc st_bf dsk dbk dqs h.acc)
+  refine WP.seq (WP.mono (tailKMain_ok vl pre hk h.rdi h.rcx h.rsi h.st h.bf mk
+    (fun o n h => hin o n (Nat.le_trans h (Nat.mul_le_mul_left 16 (total_le pre)))) hc st_bf dsk dbk
+    (dqs.sub_left (Region.sub_prefix (by cases pre <;> decide))) h.acc)
     fun s₁ ⟨d₁, a₁, f₁, g₁, rd₁, wr₁⟩ => ?_)
   rw [leaveT_eq, List.append_assoc]
   refine WP.block_append (WP.mono (Proof.Poly1305.X86_64.reduce_ok s₁) fun s₂ ⟨red, k₂⟩ => ?_)

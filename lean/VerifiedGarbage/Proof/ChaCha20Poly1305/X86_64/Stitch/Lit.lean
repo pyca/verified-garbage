@@ -63,6 +63,8 @@ materialize_code bulkPF := bulkP false
 materialize_code bulkPT := bulkP true
 materialize_code bulkOF := bulkO false
 materialize_code bulkOT := bulkO true
+materialize_code wholeOF := wholeO false
+materialize_code wholeOT := wholeO true
 materialize_code bigSF := bigS false
 materialize_code bigST := bigS true
 
