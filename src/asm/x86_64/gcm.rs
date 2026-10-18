@@ -81149,32 +81149,6 @@ vinserti128 ymm0, ymm0, xmm0, 1
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vinserti128 ymm1, ymm1, xmm1, 1
 vshufi32x4 zmm1, zmm1, zmm1, 68
-mov r11, r15
-add r11, 1536
-vmovdqu32 zmm8, ZMMWORD PTR [r13+256]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+320]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+64], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+384]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+128], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+448]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+192], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+512]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+256], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+576]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+320], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+640]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+384], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+704]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+448], zmm8
 vpxord zmm2, zmm2, zmm2
 vmovdqu32 ZMMWORD PTR [r15+512], zmm2
 vmovdqu32 ZMMWORD PTR [r15+576], zmm2
@@ -81392,13 +81366,14 @@ mov r9, QWORD PTR [r15+288]
 shr r9, 2
 mov r11, r9
 shl r11, 6
-add r11, r15
-add r11, 1344
+add r11, r13
+add r11, 64
 vpxord zmm8, zmm8, zmm8
 vpxord zmm9, zmm9, zmm9
 vpxord zmm10, zmm10, zmm10
 236:
 vmovdqu32 zmm12, ZMMWORD PTR [r11+128]
+vshufi32x4 zmm12, zmm12, zmm12, 78
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+128]
 vpshufb zmm7, zmm7, zmm0
 vpclmulqdq zmm11, zmm7, zmm12, 0
@@ -82104,32 +82079,6 @@ vinserti128 ymm0, ymm0, xmm0, 1
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vinserti128 ymm1, ymm1, xmm1, 1
 vshufi32x4 zmm1, zmm1, zmm1, 68
-mov r11, r15
-add r11, 1536
-vmovdqu32 zmm8, ZMMWORD PTR [r13+256]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+320]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+64], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+384]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+128], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+448]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+192], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+512]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+256], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+576]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+320], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+640]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+384], zmm8
-vmovdqu32 zmm8, ZMMWORD PTR [r13+704]
-vshufi32x4 zmm8, zmm8, zmm8, 78
-vmovdqu32 ZMMWORD PTR [r11+448], zmm8
 vpxord zmm2, zmm2, zmm2
 vmovdqu32 ZMMWORD PTR [r15+512], zmm2
 vmovdqu32 ZMMWORD PTR [r15+576], zmm2
@@ -82301,13 +82250,14 @@ mov r9, QWORD PTR [r15+288]
 shr r9, 2
 mov r11, r9
 shl r11, 6
-add r11, r15
-add r11, 1344
+add r11, r13
+add r11, 64
 vpxord zmm8, zmm8, zmm8
 vpxord zmm9, zmm9, zmm9
 vpxord zmm10, zmm10, zmm10
 237:
 vmovdqu32 zmm12, ZMMWORD PTR [r11+128]
+vshufi32x4 zmm12, zmm12, zmm12, 78
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+128]
 vpshufb zmm7, zmm7, zmm0
 vpclmulqdq zmm11, zmm7, zmm12, 0
