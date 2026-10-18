@@ -2,12 +2,14 @@
 //! `[1, q)` by rejection, then `y = g^x mod p`, for a domain the caller
 //! assures is prime.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::{vec, vec::Vec};
 
 use super::{Backend, Error, PrivateKey, PublicKey, Secret};
-use crate::arch::dsa::{vg_dsa_generate_key, vg_dsa_generate_key_adx};
+use crate::arch::dsa::vg_dsa_generate_key;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::dsa::vg_dsa_generate_key_adx;
 use crate::cpu::detected;
 
 impl PrivateKey {
@@ -15,8 +17,8 @@ impl PrivateKey {
     /// `x` uniformly from `[1, q)` with the operating system's random number
     /// generator and computing `y = g^x mod p`. `g` must have `p`'s width.
     ///
-    /// The domain's algebraic consistency is checked before any randomness is
-    /// drawn; callers must assure its primality separately. At most 128 draws
+    /// The domain's algebraic consistency is checked before the assembly consumes
+    /// the random tape; callers must assure its primality separately. At most 128 draws
     /// are made, so an invalid `q` returns an error instead of retrying
     /// indefinitely.
     pub fn generate(p: &[u8], q: &[u8], g: &[u8]) -> Result<Self, Error> {
@@ -76,6 +78,7 @@ impl PrivateKey {
             }
             let status = match backend {
                 Backend::Baseline => generate!(vg_dsa_generate_key),
+                #[cfg(target_arch = "x86_64")]
                 Backend::Adx => generate!(vg_dsa_generate_key_adx),
             };
             match status {

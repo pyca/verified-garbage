@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA signing and verification for every AArch64 arithmetic backend -/
@@ -42,6 +43,34 @@ def artifacts (v : Backend) : List Artifact := [
     stack := v.stack
     verified := v.verifyVerified
     spSafe := v.verifySp
+    features := v.features },
+  Spec.Dsa.generateKeyApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["Checks the domain before consuming randomness, samples x with the \
+      verified rejection sampler, then derives y = g^x with the selected Montgomery backend. \
+      Every failure zeros the entire output."]
+    code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
+      (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveKey v.mul)
+    stack := v.stack + 256
+    verified := keygen_verified v
+    spSafe := keygen_sp v
+    features := v.features },
+  Spec.Dsa.checkParametersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["g^q mod p uses the selected Montgomery backend."]
+    code := Impl.Dsa.AArch64.Generate.checkParameters v.mul
+    stack := v.stack
+    verified := v.parametersVerified
+    spSafe := v.parametersSp
+    features := v.features },
+  Spec.Dsa.deriveKeyApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["y = g^x mod p uses the selected Montgomery backend. \
+      Every failure zeros the entire output."]
+    code := Impl.Dsa.AArch64.Generate.deriveKey v.mul
+    stack := v.stack
+    verified := v.deriveVerified
+    spSafe := v.deriveSp
     features := v.features }]
 
 end VG.Generic.DsaArithmetic.AArch64.Dsa

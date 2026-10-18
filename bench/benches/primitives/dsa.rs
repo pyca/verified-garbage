@@ -162,7 +162,7 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         {
             let mut group = c.benchmark_group(format!("dsa_generate_key_q{}", q_len * 8));
             group.bench_function(BenchmarkId::new(VG, size), |b| {
