@@ -241,7 +241,20 @@ structure KFin (L : Kem) (σ s : State) : Prop where
   ek : bytesAt s.mem (pa s (.r12, 0)) L.ekLen = ekK L σ
   dk : bytesAt s.mem (pa s (.r13, 0)) L.dkLen = dkK L σ ++ ekK L σ ++ H (ekK L σ) ++ kgZ σ
 
-theorem fin_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State} (h : KRestT L L.k L.k σ s) :
+/-- Before the keys' last pieces: `t̂` encoded to `ek` and `ŝ` to `dk`. -/
+structure KFinPre (L : Kem) (σ s : State) : Prop where
+  kc : KC σ s
+  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK L σ
+  r15 : s.gpr .r15 = 1
+  ek : bytesAt s.mem (pa s (.r12, 0)) (384 * L.k) =
+    KPke.catK (fun i => encode12 (KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) i)) L.k
+  dk : bytesAt s.mem (pa s (.r13, 0)) (384 * L.k) = KPke.catK (fun j => encode12 (KPke.kgS L.p (kgD σ) j)) L.k
+
+theorem KRestT.pre {L : Kem} {σ s : State} (h : KRestT L L.k L.k σ s) : KFinPre L σ s :=
+  ⟨h.kc, h.rho, h.r15, bytesAt_catK _ _ _ _ _ _ L.k fun i hi => by rw [Nat.zero_add]; exact h.ek i hi,
+    bytesAt_catK _ _ _ _ _ _ L.k fun j hj => by rw [Nat.zero_add]; exact h.dk j hj⟩
+
+theorem fin_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) {s : State} (h : KFinPre L σ s) :
     WP isa (fin L) s (KFin L σ) := by
   have L₀ := h.kc.lay W hp
   unfold fin
@@ -252,10 +265,8 @@ theorem fin_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s 
   have L₁ := k₁.lay W hp
   have hek : bytesAt s₁.mem (pa s₁ (.r12, 0)) L.ekLen = ekK L σ := by
     rw [Kem.ekLen, Params.ekLen, bytesAt_split, show 0 + 384 * L.p.k = 384 * L.k from Nat.zero_add _,
-      hP₁.pa (p := (.r12, 384 * L.k)) r12_cs, hb₁, h.rho, ekK, KPke.ekPKE]
-    refine congrArg (· ++ _) (bytesAt_catK _ _ _ _ _ _ L.k fun i hi => ?_)
-    rw [Nat.zero_add, L₀.keepBytes hP₁.b (W.f₁E i hi)]
-    exact h.ek i hi
+      hP₁.pa (p := (.r12, 384 * L.k)) r12_cs, hb₁, h.rho, ekK, KPke.ekPKE, L₀.keepBytes hP₁.b W.f₁E]
+    exact congrArg (· ++ _) h.ek
   -- `ek` to `dk`.
   refine WP.seq (WP.mono (copy_okL L₁ (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
     fun s₂ ⟨hP₂, hb₂⟩ => ?_)
@@ -288,9 +299,8 @@ theorem fin_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s 
     rw [hP₄.pa (p := (.r13, 384 * L.k + L.ekLen + 32)) r13_cs, hb₄,
       L₃.keepBytes hP₄.b W.dkH, hP₃.pa (p := (.r13, 384 * L.k + L.ekLen)) r13_cs, hb₃,
       L₂.keepBytes hP'.b W.dkE, hP₂.pa (p := (.r13, 384 * L.k)) r13_cs, hb₂, dkK, KPke.dkPKE]
-    refine congrArg (· ++ _ ++ _ ++ _) (bytesAt_catK _ _ _ _ _ _ L.k fun j hj => ?_)
-    rw [Nat.zero_add, L₀.keepBytes hP.b (W.dkS j hj)]
-    exact h.dk j hj
+    rw [L₀.keepBytes hP.b W.dkS]
+    exact congrArg (· ++ _ ++ _ ++ _) h.dk
 
 end KeyGen
 
