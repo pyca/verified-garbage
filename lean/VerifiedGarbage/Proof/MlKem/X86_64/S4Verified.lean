@@ -31,7 +31,7 @@ def sample4Sat : State where
   rd := [⟨0x1000, 136⟩]
   wr := [⟨0x2000, 4096⟩, ⟨0x4000, 8192⟩]
 
-theorem sample4_post {s s' : State} (h : sample4K.post s s') :
+theorem sample4_post {s s' : State} (h : (sample4KW w16).post s s') :
     let r := (s'.gpr .rax).setWidth 32
     (r = 1 → ∀ k < 4, Spec.MlKem.Reduced s'.mem (Spec.MlKem.poly4 (s.gpr .rsi) k)) ∧
       ((r = 1 ∧ ∀ k < 4, ∃ iters, Spec.MlKem.sampleNTT iters (Spec.MlKem.seed4 s.mem (s.gpr .rdi) k) =

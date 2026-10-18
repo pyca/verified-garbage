@@ -20,19 +20,21 @@ and the epilogue, which returns whether every seed sampled its polynomial.
 
 namespace VG.Proof.MlKem.X86_64.S4
 
+variable {w16 : Bool}
+
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Spec.MlKem
 open VG.Proof.Sha3.X86_64.X4 (la)
 
 section
-variable {σ : State} (hp : Pre σ)
+variable {σ : State} (hp : PreW w16 σ)
 include hp
 
 /-- The prologue, the round constants and the padded seeds. -/
-theorem start_ok : WP isa (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) ++ absorb4)) σ (SqInv σ 0) := by
+theorem start_ok : WP isa (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) ++ absorb4)) σ (SqInvW w16 σ 0) := by
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (pro_ok hp) fun s₁ h₁ => WP.mono (rc_ok hp h₁.env) fun s₂ h₂ => ?_
-  have he₂ : Env σ s₂ := Env.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
+  have he₂ : EnvW w16 σ s₂ := EnvW.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega))
     h₂.frame h₂.keep.2.1 h₂.keep.2.2 fun r hr => h₂.keep.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -48,8 +50,8 @@ theorem epi_eq : epi = [.mov32 .rax (.reg .r14), .mov .r14 (.mem (at_ .rbx 4416)
     .mov .r12 (.mem (at_ .rbx 4400)), .mov .rbp (.mem (at_ .rbx 4392)), .mov .rbx (.mem (at_ .rbx 4384))] := rfl
 
 /-- The return value, and the callee-saved registers restored. -/
-theorem end_ok {X : Mem → Prop} {s : State} (h : PC X σ 4 s) :
-    WP isa (.block epi) s fun s' => sample4K.post σ s' ∧ gprPreserved σ s' := by
+theorem end_ok {X : Mem → Prop} {s : State} (h : PCW w16 X σ 4 s) :
+    WP isa (.block epi) s fun s' => (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
     in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
   rw [epi_eq]
@@ -84,10 +86,10 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PC X σ 4 s) :
       (by decide)
 
 /-- Everything after the prologue, the round constants and the padded seeds. -/
-theorem body_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
+theorem body_ok {fast : Bool} {s : State} (h : SqInvW w16 σ 0 s) :
     WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
       (.seq (run1 0) (.seq (run1 1) (.seq (run1 2) (.seq (run1 3) (tail4 fast))))))) s fun s' =>
-      sample4K.post σ s' ∧ gprPreserved σ s' := by
+      (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) (sqT_of h)) fun _ ⟨q₃, _⟩ =>
     WP.seq (WP.mono (p1_zero_ok hp q₃) fun _ p₀ => ?_))
   refine WP.seq (WP.mono (run1_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1_ok hp (by decide) p₁)
@@ -99,8 +101,8 @@ theorem body_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
 
 end
 
-theorem correct {fast : Bool} (σ : State) (hs : sample4K.pre σ) :
-    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ sample4K.post σ s' := by
+theorem correct {fast : Bool} (σ : State) (hs : (sample4KW w16).pre σ) :
+    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ (sample4KW w16).post σ s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok (fast := fast) hp h)
   exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2, hF.1⟩

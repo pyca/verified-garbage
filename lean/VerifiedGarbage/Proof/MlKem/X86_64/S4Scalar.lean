@@ -27,6 +27,8 @@ polynomials already sampled.
 
 namespace VG.Proof.MlKem.X86_64.S4
 
+variable {w16 : Bool}
+
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Spec.MlKem
 
@@ -34,25 +36,25 @@ open VG.Spec.MlKem
 abbrev NoX (_ : Mem) : Prop := True
 
 section
-variable {σ : State} (hp : Pre σ)
+variable {σ : State} (hp : PreW w16 σ)
 include hp
 
-theorem callK_ok' {K : Nat} (hK : K < 4) {s : State} (h : PC NoX σ K s) : WP isa (callK K) s (PC NoX σ (K + 1)) :=
+theorem callK_ok' {K : Nat} (hK : K < 4) {s : State} (h : PCW w16 NoX σ K s) : WP isa (callK K) s (PCW w16 NoX σ (K + 1)) :=
   WP.seq (WP.mono (argsK_ok hK h) fun _ h₂ => WP.seq (WP.mono (callK_ok hp hK (fun _ _ _ _ => trivial) h₂)
     fun _ h₃ => andK_ok h₃))
 
-theorem scalar_body_ok {s : State} (h : I0 σ s) :
+theorem scalar_body_ok {s : State} (h : I0W w16 σ s) :
     WP isa (.seq (callK 0) (.seq (callK 1) (.seq (callK 2) (.seq (callK 3) (.block epi))))) s fun s' =>
-      sample4K.post σ s' ∧ gprPreserved σ s' := by
-  have p₀ : PC NoX σ 0 s := ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩
+      (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
+  have p₀ : PCW w16 NoX σ 0 s := ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩
   exact WP.seq (WP.mono (callK_ok' hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (callK_ok' hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (callK_ok' hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (callK_ok' hp (by decide) p₃) fun _ p₄ => end_ok hp p₄))))
 
 end
 
-theorem correct_scalar (σ : State) (hs : sample4K.pre σ) :
-    ∃ t s', Exec isa Impl.MlKem.X86_64.Sample4.sampleNTT4 σ t s' ∧ abiPreserved σ s' ∧ sample4K.post σ s' := by
+theorem correct_scalar (σ : State) (hs : (sample4KW w16).pre σ) :
+    ∃ t s', Exec isa Impl.MlKem.X86_64.Sample4.sampleNTT4 σ t s' ∧ abiPreserved σ s' ∧ (sample4KW w16).post σ s' := by
   have hp := pre_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok hp) fun _ h => scalar_body_ok hp h)
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
@@ -63,11 +65,11 @@ theorem callK_ct {K : Nat} (hK : K < 4) {hc : VG.Taint.Hint X86_64.Taint.T}
       (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * K))),
         .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * K))), .mov .rdx (.reg .rbx),
         .alu .add .rdx (.imm (BitVec.ofNat 32 oScalar))]) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => PC NoX σ K s) (callK K) (R4 fun σ s => PC NoX σ (K + 1) s) :=
+    RelCT isa (R4W w16 fun σ s => PCW w16 NoX σ K s) (callK K) (R4W w16 fun σ s => PCW w16 NoX σ (K + 1) s) :=
   RelCT.seq (args_ct (X := fun _ => NoX) hK c) (RelCT.seq (call_ct hK fun _ _ _ _ _ _ => trivial) and_ct)
 
-theorem ct_scalar : ConstantTime isa sample4K.pre sample4K.pub Impl.MlKem.X86_64.Sample4.sampleNTT4 := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => PC NoX σ 0 s)
+theorem ct_scalar : ConstantTime isa (sample4KW w16).pre (sample4KW w16).pub Impl.MlKem.X86_64.Sample4.sampleNTT4 := by
+  refine relStart (Q := fun _ _ => True) (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => PCW w16 NoX σ 0 s)
     (fun σ s hp h => by
       subst h
       exact WP.mono (pro_ok (pre_of hp)) fun _ h => ⟨h.env, trivial, by rw [h.r14]; rfl, fun _ h _ _ => absurd h (by omega)⟩)

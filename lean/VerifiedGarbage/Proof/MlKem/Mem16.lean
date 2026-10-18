@@ -75,4 +75,17 @@ theorem coeffAtW_writeW (h : Bool) (m : Mem) (p : Addr) {i j : Nat} (hi : i < 25
   · subst j; exact readW_writeW_cw h m _ v
   · exact Mem.readW_writeW_sep (cAddr_sep h p hi hj (Ne.symm ‹_›)) (by have := cw_bytes_le h; omega)
 
+/-- A polynomial stored apart from the regions of a frame. -/
+theorem polyIsW_frame (h : Bool) {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {f : Poly}
+    (hd : ∀ r ∈ rs, (cRegion h p).Disjoint r) (hp : PolyIsW (cw h) m p f) : PolyIsW (cw h) m' p f := by
+  have e : ∀ i < n, coeffAtW (cw h) m' p i = coeffAtW (cw h) m p i := fun i hi => by
+    rw [coeffAtW_eq, coeffAtW_eq]
+    exact hf.readW (cAddr_contains h p (by rw [n_eq] at hi; exact hi)) hd (by have := cw_bytes_le h; omega)
+  refine ⟨fun i hi => by rw [e i hi]; exact hp.1 i hi, ?_⟩
+  rw [← hp.2]
+  simp only [polyAtW]
+  congr 1
+  funext i
+  rw [e i.val i.isLt]
+
 end VG.Proof.MlKem
