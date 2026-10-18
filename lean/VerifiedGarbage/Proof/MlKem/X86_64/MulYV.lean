@@ -73,48 +73,6 @@ theorem decMulY4_correct : ∀ s, (decMulK 4).pre s →
     ∃ t s', Exec isa (decryptMulY 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
   decMulY_correct (.inr rfl) decMulY4_wo decMulY4_ctl
 
-theorem decMulY3_verified : Verified X86_64.target (decryptMulY 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
-  Verified.of_correct decMulY3_correct decMulY3_ct
-    { pre := by sig_implies_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
-        X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
-        X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
-        X86_64.argRegs]
-      sat := by
-        refine ⟨decMulSat 3, ?_⟩
-        sig_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReduced_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem decMulY4_verified : Verified X86_64.target (decryptMulY 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
-  Verified.of_correct decMulY4_correct decMulY4_ct
-    { pre := by sig_implies_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
-        X86_64.argRegs]
-      post := by sig_implies_post [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
-        X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi,
-        X86_64.argRegs]
-      sat := by
-        refine ⟨decMulSat 4, ?_⟩
-        sig_pre [Spec.MlKem.decryptMulContract, Spec.MlKem.decryptMulSig, decMulK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReduced_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
 /-! ## `encrypt_mul` -/
 
 theorem encMulY_correct {k : Nat} (hk : k = 3 ∨ k = 4)

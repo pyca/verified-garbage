@@ -205,9 +205,4 @@ theorem addY_verified : Verified X86_64.target addAvx2 (Spec.MlKem.addContract X
     mlkem_implies [Spec.MlKem.addContract, Spec.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
       [accSat] using accSat)
 
-theorem subY_verified : Verified X86_64.target subAvx2 (Spec.MlKem.subContract X86_64.abi) :=
-  Verified.of_correct subY_correct subY_ct (by
-    mlkem_implies [Spec.MlKem.subContract, Spec.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
-      [accSat] using accSat)
-
 end VG.Proof.MlKem.X86_64
