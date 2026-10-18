@@ -81,15 +81,16 @@ each), then `R_p mod p` and `R_q mod q` (`w_p` and `w_q` words). -/
 in `rax` after `off`, zeroed unless below `[aN]` (a mask from the borrow of
 `[j] - [aN]`), so that what follows is safe whatever `pre` holds. -/
 def loadPre (j : Nat) (off : List Instr) : List (Prog isa) := [
-  .seq (.block [.mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))]) zeroAccLoop,
+  .seq (.block [.mov .rsi (.mem (stk 13)), .mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))])
+    zeroAccLoop,
   .block (off ++ ([.alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-    .mov .rsi (.mem (stk 13)), .alu .add .rsi (.reg .rax), .mov .r12 (.mem (hdr sW)),
-    .mov .rbx (.mem (hdr (sArr j)))] : List Instr)),
+    .alu .add .rsi (.reg .rax), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr j)))] : List Instr)),
   copyWords,
   .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr j))), .mov .r10 (.mem (hdr (sArr aN))),
     .mov32 .rbp (.imm 0)],
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
-  wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .alu .and .rax (.reg .rbp), .store (ix .rbx .r14) .rax]]
+  .block [.mov .r15 (.reg .rbp)],
+  wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .alu .and .rax (.reg .r15), .store (ix .rbx .r14) .rax]]
 
 /-- `R² mod n`'s offset in `pre`, in `n`'s workspace: `w`. -/
 def offN : List Instr := [.mov .rax (.mem (hdr sW))]
