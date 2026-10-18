@@ -56,8 +56,8 @@ def MontS.fnLazy : MontS where
     refine WP.seq (WP.mono (fnArgs_ok _ _ _ _) fun t ⟨hdx, hcx, h8, hm, k⟩ => ?_)
     rw [← hm] at hinv ⊢
     refine WP.mono (MontFn.mulBaseLazy_ok (hg.scr.congr k.2.2) ((k.gpr (by decide)).trans hg.rdi) (hm ▸ hg.hdr)
-      hZ hw hw' (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hdx hcx h8
-      hinv) fun t' ⟨h2, h3, k', _⟩ => ?_
+      hZ hw hw' (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) hdx hcx h8 hinv) fun t' ⟨h2, h3, k', _⟩ => ?_
     exact ⟨⟨hg.scr.congr ((k.trans k').2.2), ((k.trans k').gpr (by decide)).trans hg.rdi, h3.hdr (hm ▸ hg.hdr)⟩,
       wv_lt _ _ _ _, h2, h3, (k.trans k').mono (by decide)⟩
   ct := Mont.fnBase.ct (.inr (.inl ⟨rfl, rfl, rfl⟩))
