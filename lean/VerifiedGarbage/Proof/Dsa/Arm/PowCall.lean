@@ -25,18 +25,10 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm.Pow
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_movw op2_reg)
 
-theorem body_noCalls (n e : Nat) : (body n e).noCalls = true := by
-  simp only [body, contextSetup, exponentiate, exponentStep, exponentBody, exponentProduct, Dynamic.mul, rowD,
-    digitRowD, mulRowD, csubD, Dynamic.zeros, ptrLoop, one, powerTwo, addD, addDigits, selectW, Code.noCalls,
+theorem body_noFrames (n e : Nat) : (body n e).noFrames = true := by
+  simp only [body, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, exponentiate, exponentStep, exponentBody, exponentProduct, Dynamic.mul, rowD,
+    digitRowD, mulRowD, csubD, Dynamic.zeros, ptrLoop, one, powerTwo, addD, addDigits, selectW, Code.noFrames,
     Bool.and_self]
-
-/-- The context's bytes, in words: the function's `ws_len`. -/
-theorem words_eq {n : Nat} (hn48 : n ≤ 48) :
-    ((BitVec.ofNat 16 (contextBytes n / 8)).setWidth 32).toNat * 8 = contextBytes n := by
-  have h : contextBytes n / 8 < 2 ^ 16 := by simp only [contextBytes, slot, stride]; omega
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
-  simp only [contextBytes, slot, stride]
-  omega
 
 /-- The arguments of a call, `r11` keeping `r12`. -/
 theorem head_ok {s : State} (n : Nat) :
@@ -67,13 +59,6 @@ theorem entry_pre {s u : State} {base : Addr} {size n e : Nat} (hs : Ws s base s
   have := hs.nowrap
   omega
 
-/-- The context's region, within the working space's. -/
-theorem covers_ctx {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : contextBytes n ≤ size) :
-    Covers [⟨base, contextBytes n⟩] s.wr := by
-  have h := hs.write (d := 0) (n := contextBytes n) (by omega)
-  rw [show off base 0 = base from BitVec.add_zero _] at h
-  exact Covers.one h
-
 /-- A call: `b ^ x mod m` into slot 9, as `body_ok`, with `r12` kept and
 the registers the calling convention keeps. -/
 theorem call_ok {s : State} {base : Addr} {size n e m : Nat} (hs : Ws s base size) (hz : contextBytes n ≤ size)
@@ -86,9 +71,9 @@ theorem call_ok {s : State} {base : Addr} {size n e m : Nat} (hs : Ws s base siz
   unfold Impl.Dsa.Arm.Pow.call
   refine WP.seq (WP.mono (head_ok n) fun u ⟨h11, h0, h1, R₁, M₁⟩ => ?_)
   have w₁ := hs.of_rest R₁ (by decide)
-  refine WP.seq (WP.call (k := powK n e) (powK_correct hn hn48 he hen)
+  refine WP.seq (WP.callCalls (k := powK n e) (powK_correct hn hn48 he hen)
     (entry_pre hs hz hn48 h0 h1 M₁ (by rw [hv]; exact hodd) (by rw [hv]; exact hm1))
-    (Covers.right (covers_ctx w₁ hz)) (covers_ctx w₁ hz) (fun v hrd hwr hsp _ P _ post => ?_) (body_noCalls n e))
+    (Covers.right (covers_ctx w₁ hz)) (covers_ctx w₁ hz) (fun v hrd hwr hsp _ P _ post => ?_) (body_noFrames n e))
   have b0 : State.addr (u.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0, hs.wb]
   simp only [powK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, b0, M₁, hv] at post
   obtain ⟨V, O⟩ := post
@@ -122,7 +107,7 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n e : Nat}
   have w₁ := hs₁.of_rest R₁ (by decide)
   have w₂ := hs₂.of_rest R₂ (by decide)
   refine SameTrace.of_relCT (P := fun a b => a = u₁ ∧ b = u₂) (RelCT.seq
-    (RelCT.call (powK_correct hn hn48 he hen) (powK_ct n e) [] [⟨base, contextBytes n⟩] ?_)
+    (RelCT.call (powK_correct hn hn48 he hen) (powK_ct n e hn hn48) [] [⟨base, contextBytes n⟩] ?_)
     ((relCT_of_check (τ := VG.Arm.Taint.ofRegs []) (σ := VG.Arm.Taint.ofRegs []) (h := .block [])
       (by decide)).mono (fun _ _ _ => nothing _ _) fun _ _ _ => trivial)) ⟨rfl, rfl⟩
   rintro a b ⟨rfl, rfl⟩
