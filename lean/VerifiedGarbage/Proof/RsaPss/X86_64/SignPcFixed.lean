@@ -15,7 +15,7 @@ depend on the hash function
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 
@@ -47,4 +47,4 @@ theorem sFixed : SFixed :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

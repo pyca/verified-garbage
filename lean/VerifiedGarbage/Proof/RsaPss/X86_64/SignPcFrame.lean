@@ -14,7 +14,7 @@ below `rsp` (`fb`), within the stack the function uses (`stkR`).
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 
@@ -149,4 +149,4 @@ theorem SPre.outside {s : State} (hp : SPre G s) {R : Region} (hO : (⟨s.gpr .r
   · exact hO a hc ha
   · exact hS a ha hc
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

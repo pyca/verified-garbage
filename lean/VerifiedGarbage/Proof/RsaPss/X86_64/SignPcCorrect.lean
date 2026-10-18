@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -458,4 +458,4 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
     (by rw [emLen_eq h0, hrl, hGl]) (by rw [emLen_eq h0, hrl, hGl, bytesAt_length]; omega_arith), hnB, hrl, hGl,
     bytesAt_length]
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

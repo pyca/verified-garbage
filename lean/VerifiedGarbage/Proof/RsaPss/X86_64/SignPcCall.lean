@@ -17,7 +17,7 @@ key's values, the frame and our working space kept (`priv_call`).
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -531,4 +531,4 @@ theorem privArgs_ok {s : State} (hp : SPre G s) {u : State} (L : Lay u (fb s) (s
     rw [ifn (by omega_using [h16']), ifn (by omega_using [h16'])]
     exact hk1 i hi (by omega_using [h16'])
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

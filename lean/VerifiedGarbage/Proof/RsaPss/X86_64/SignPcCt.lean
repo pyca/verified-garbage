@@ -21,7 +21,7 @@ data (`sign_ct`). With `sign_correct`, `sign` meets
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -361,4 +361,4 @@ theorem sign_verified (hv : ∀ s, chkPcContract.pre s → ∃ t s', Exec isa pr
   Verified.of_correct (k := signK lk.G) (sign_correct hH K lk hv hC hdC)
     (sign_ct hv hct hC hdC hH K lk hc) (sign_implies lk.G (sign_sat lk.G lk.mem))
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

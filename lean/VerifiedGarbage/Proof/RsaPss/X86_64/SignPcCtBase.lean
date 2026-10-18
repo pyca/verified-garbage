@@ -22,7 +22,7 @@ regions after the frame are `out` and the working space.
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -68,14 +68,14 @@ theorem pa : SPre G a := SPre.of G h.1
 theorem ps : SPre G s := SPre.of G h.2.2
 
 theorem fb : fb s = fb a := by
-  simp only [VG.Proof.RsaPss.X86_64.Pc.fb, h.gpr (r := .rsp) (by decide)]
+  simp only [VG.Proof.RsaPss.X86_64.SgnPc.fb, h.gpr (r := .rsp) (by decide)]
 
 theorem wr : s.wr = a.wr := by
   rw [h.ps.hwr, h.pa.hwr, h.arg (i := 13) (by decide), h.arg (i := 14) (by decide), h.gpr (r := .rdi) (by decide),
     h.gpr (r := .rsi) (by decide)]
 
-theorem frR : frR s = ⟨VG.Proof.RsaPss.X86_64.Pc.fb a, frameBytes⟩ := by
-  simp only [VG.Proof.RsaPss.X86_64.Pc.frR, h.fb]
+theorem frR : frR s = ⟨VG.Proof.RsaPss.X86_64.SgnPc.fb a, frameBytes⟩ := by
+  simp only [VG.Proof.RsaPss.X86_64.SgnPc.frR, h.fb]
 
 theorem n0 : s.mem (s.gpr .rdx) = a.mem (a.gpr .rdx) := by
   have := congrArg (fun l => l.getD 0 0) h.nB
@@ -135,16 +135,16 @@ namespace SSib
 variable {a s : State} (h : SSib G a s)
 include h
 
-theorem sn0v : sn0v s = sn0v a := by simp only [VG.Proof.RsaPss.X86_64.Pc.sn0v, h.n0]
-theorem slo : slo s = slo a := by simp only [VG.Proof.RsaPss.X86_64.Pc.slo, h.sn0v]
+theorem sn0v : sn0v s = sn0v a := by simp only [VG.Proof.RsaPss.X86_64.SgnPc.sn0v, h.n0]
+theorem slo : slo s = slo a := by simp only [VG.Proof.RsaPss.X86_64.SgnPc.slo, h.sn0v]
 theorem seml : seml s = seml a := by
-  simp only [VG.Proof.RsaPss.X86_64.Pc.seml, h.slo, h.gpr (r := .rcx) (by decide)]
-theorem sdb {D : Nat} : sdb D s = sdb D a := by simp only [VG.Proof.RsaPss.X86_64.Pc.sdb, h.seml]
-theorem ssl : ssl s = ssl a := by simp only [VG.Proof.RsaPss.X86_64.Pc.ssl, h.arg (i := 12) (by decide)]
-theorem snb {H : Hash} : snb H s = snb H a := by simp only [VG.Proof.RsaPss.X86_64.Pc.snb, h.ssl]
+  simp only [VG.Proof.RsaPss.X86_64.SgnPc.seml, h.slo, h.gpr (r := .rcx) (by decide)]
+theorem sdb {D : Nat} : sdb D s = sdb D a := by simp only [VG.Proof.RsaPss.X86_64.SgnPc.sdb, h.seml]
+theorem ssl : ssl s = ssl a := by simp only [VG.Proof.RsaPss.X86_64.SgnPc.ssl, h.arg (i := 12) (by decide)]
+theorem snb {H : Hash} : snb H s = snb H a := by simp only [VG.Proof.RsaPss.X86_64.SgnPc.snb, h.ssl]
 
 theorem sw {H : Hash} (k : Nat) : sw H s k = sw H a k := by
-  unfold VG.Proof.RsaPss.X86_64.Pc.sw
+  unfold VG.Proof.RsaPss.X86_64.SgnPc.sw
   split <;> simp only [h.gpr (r := .rdi) (by decide),
     h.gpr (r := .rdx) (by decide), h.gpr (r := .rcx) (by decide), h.gpr (r := .r8) (by decide),
     h.gpr (r := .r9) (by decide), h.arg (i := 10) (by decide), h.arg (i := 11) (by decide),
@@ -152,7 +152,7 @@ theorem sw {H : Hash} (k : Nat) : sw H s k = sw H a k := by
     h.snb, h.ssl]
 
 /-- The frame, `out` and the working space are apart. -/
-theorem rest : RestOk 2 (VG.Proof.RsaPss.X86_64.Pc.fb a) a.wr := by
+theorem rest : RestOk 2 (VG.Proof.RsaPss.X86_64.SgnPc.fb a) a.wr := by
   have hp := h.pa
   refine ⟨by rw [hp.hwr]; rfl, ?_, ?_⟩
   · rw [hp.hwr]
@@ -224,4 +224,4 @@ theorem SS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
 
 theorem slo_le (s : State) : slo s ≤ 1 := by unfold slo loV; split <;> omega
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

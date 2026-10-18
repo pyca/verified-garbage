@@ -17,7 +17,7 @@ modulus' first byte (`signPro_ok`): the working space and the frame as
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -166,4 +166,4 @@ theorem signPro_ok {s : State} (hp : SPre G s) :
   · rw [show sScr = 8 * 21 from rfl]
     exact (R6.fr 21 (by decide)).trans (by simp [proW, upd])
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

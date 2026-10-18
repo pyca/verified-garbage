@@ -18,7 +18,7 @@ not (`signEnc_ct`). Each piece keeps the memory outside the writable regions
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -392,4 +392,4 @@ theorem signEnc_ct (hc : PssChecks H.P H.D) :
     ((signLen_ct hH hc.sign).seq ((shash_ct hH K hc.hash2).seq (sclearEm_ct.seq ((sputSalt_ct hH lk).seq
       ((sputH_ct hH hc.sign).seq ((smgf_ct hH K lk hc.hash2).seq sclearTop_ct)))))))))
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

@@ -47,12 +47,12 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl)
       the signature against `e`. Only the lengths, `salt_len`, the public key and the values of `n` in \
       `pre` decide a branch or an address."]
     code := Impl.RsaPss.X86_64.signPc v.H (privPcOf c).name (privPcOf c).code
-    stack := Proof.RsaPss.X86_64.Pc.signStack
-    verified := Proof.RsaPss.X86_64.Pc.sign_verified (hct := (privPcOf c).ct)
+    stack := Proof.RsaPss.X86_64.SgnPc.signStack
+    verified := Proof.RsaPss.X86_64.SgnPc.sign_verified (hct := (privPcOf c).ct)
       (hdC := (privPcOf c).depth) (hH := v.ok) (K := v.K) (lk := v.mgf) (hc := v.pss)
       (privPcOf c).ok (X86_64.SpSafe.of_all (privPcOf c).spSafe)
     spSafe := Code.all_of_allInstrs
-      (Proof.RsaPss.X86_64.Pc.sign_spAll v.ok v.K (X86_64.SpSafe.of_all (privPcOf c).spSafe))
+      (Proof.RsaPss.X86_64.SgnPc.sign_spAll v.ok v.K (X86_64.SpSafe.of_all (privPcOf c).spSafe))
     features := v.features ++ c.features.filter (!v.features.contains ·) }]
 
 end VG.Generic.MdHash.RsaPrivateCrt.X86_64.RsaPss

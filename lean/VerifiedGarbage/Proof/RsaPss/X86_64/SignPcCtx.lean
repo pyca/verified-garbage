@@ -21,7 +21,7 @@ the frame and the calls use, `signStack`) on the registers and the stack
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
@@ -170,4 +170,4 @@ theorem sign_implies (hsat : ∃ s, (Spec.RsaPss.signPrecomputedContract G G abi
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := hsat
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

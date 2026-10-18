@@ -15,7 +15,7 @@ control bits (no instruction loads MXCSR).
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Rsa.X86_64 (chkPcContract)
@@ -76,4 +76,4 @@ theorem sign_correct (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {priv
     exact Offset.base_disjoint_below (s.gpr .rsp) (n := (signPc H privN privC).x86_64Depth) (k := 8)
       (by unfold signStack at *; omega) _ (Offset.contains_base _ (by omega) (by omega)) hc
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc

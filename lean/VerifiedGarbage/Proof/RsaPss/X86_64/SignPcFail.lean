@@ -14,7 +14,7 @@ nothing else of the working space or the frame.
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64.SgnPc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
@@ -100,4 +100,4 @@ theorem signFail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
   simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
   rw [hmw, ifp (Offset.contains_base _ (by simp at h₁; omega) (by simp at h₁; omega))]
 
-end VG.Proof.RsaPss.X86_64.Pc
+end VG.Proof.RsaPss.X86_64.SgnPc
