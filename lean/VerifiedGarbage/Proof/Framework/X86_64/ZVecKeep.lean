@@ -70,7 +70,14 @@ theorem exec_zscal {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c
     intro hc
     obtain ⟨a, b, c⟩ := ih₁ hc; obtain ⟨a', b', c'⟩ := ih₂ hc
     exact ⟨a'.trans a, b'.trans b, c'.trans c⟩
-  | call => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
+  | call hc₁ _ hr ih =>
+    intro hc
+    obtain ⟨a, b, c⟩ := ih hc
+    simp only [isa, call, Option.some.injEq] at hc₁
+    subst hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    exact ⟨a, b, c⟩
   | frame => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
 
 /-- Scalar code keeps the vector registers, `zmm` included. -/
