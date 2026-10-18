@@ -27,19 +27,9 @@ open VG.Spec.MlKem
 
 theorem kdWf1024 : KpkeDec.KdWf kem1024 := ⟨.inr rfl, by decide, by decide, by decide⟩
 
-theorem kpkeDec1024Sse_ct :
-    ConstantTime isa (kpkeDecK kem1024).pre (kpkeDecK kem1024).pub (kpkeDec kem1024 .sse (dmInner .sse)) :=
-  VG.Taint.constantTime (A := taint) _ (kpkeDec_agree kem1024) (by taint_decide)
-
 theorem kpkeDec1024Y_ct :
     ConstantTime isa (kpkeDecK kem1024).pre (kpkeDecK kem1024).pub (kpkeDec kem1024 .avx2 dmInnerY) :=
   VG.Taint.constantTime (A := taint) _ (kpkeDec_agree kem1024) (by taint_decide)
-
-theorem kpkeDec1024Sse_correct : ∀ s, (kpkeDecK kem1024).pre s →
-    ∃ t s', Exec isa (kpkeDec kem1024 .sse (dmInner .sse)) s t s' ∧ abiPreserved s s' ∧
-      (kpkeDecK kem1024).post s s' :=
-  KpkeDec.kpkeDec_correct ArithOk.sse calls1024 kdWf1024 dmOkSse (by lit_decide) (by lit_decide)
-    (by lit_decide) (by lit_decide) (by lit_decide)
 
 theorem kpkeDec1024Y_correct : ∀ s, (kpkeDecK kem1024).pre s →
     ∃ t s', Exec isa (kpkeDec kem1024 .avx2 dmInnerY) s t s' ∧ abiPreserved s s' ∧ (kpkeDecK kem1024).post s s' :=
@@ -69,10 +59,6 @@ theorem kpkeDec1024_of {c : Prog isa}
           | (intro a h₁ h₂
              simp only [Region.Contains] at h₁ h₂
              bv_omega) }
-
-theorem kpkeDec1024Sse_verified :
-    Verified X86_64.target (kpkeDec kem1024 .sse (dmInner .sse)) (mlKem1024.kpkeDecryptContract X86_64.abi) :=
-  kpkeDec1024_of kpkeDec1024Sse_correct kpkeDec1024Sse_ct
 
 theorem kpkeDec1024Y_verified :
     Verified X86_64.target (kpkeDec kem1024 .avx2 dmInnerY) (mlKem1024.kpkeDecryptContract X86_64.abi) :=

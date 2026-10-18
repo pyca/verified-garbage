@@ -65,17 +65,12 @@ def epi : List Instr :=
     .mov .rbp (.mem (at_ .rbx (oKS + 8))), .mov .rbx (.mem (at_ .rbx oKS))]
 
 /-- The code of `vg_mlkem*_decrypt_mul` of rank `k`, with `inner` in its
-MXCSR region (`decryptMul`, `decryptMulY`), but for the restore of the
+MXCSR region (`decryptMulY`), but for the restore of the
 registers it saves. -/
 def dmBody (inner : Nat → Prog isa) (k : Nat) : Prog isa :=
   .seq (.block (KpkeMul.save ++ [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi),
       .mov .r13 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
     (withMxcsr .rbx oMx (inner k))
-
-/-- The code `decryptMul B` runs in its MXCSR region. -/
-def dmInner (B : Bodies) (_ : Nat) : Prog isa :=
-  .seq (KpkeMul.start B) (.seq (.loop (KpkeMul.term B) .ne)
-    (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) B.inv))
 
 /-- The code `decryptMulY` runs in its MXCSR region. -/
 def dmInnerY (k : Nat) : Prog isa :=
