@@ -121,16 +121,23 @@ def sround3 (j : Nat) : Prog isa :=
 
 end
 
-/-- Double round `n`, absorbing its blocks. -/
-def sround (pre : Bool) (n : Nat) : Prog isa :=
-  if blocks pre n = 4 then sround4 (firstBlock pre n)
-  else if blocks pre n = 3 then sround3 (firstBlock pre n)
+/-- Double round `n` of a schedule absorbing `bl n` blocks (4, 3 or none)
+from block `fb n`. -/
+def sroundS (bl fb : Nat → Nat) (n : Nat) : Prog isa :=
+  if bl n = 4 then sround4 (fb n)
+  else if bl n = 3 then sround3 (fb n)
   else ChaCha20.X86_64.Avx2.doubleRound
 
-/-- `n` double rounds, each absorbing its blocks. -/
-def srounds (pre : Bool) : Nat → Prog isa
+/-- `n` double rounds of a schedule, each absorbing its blocks. -/
+def sroundsS (bl fb : Nat → Nat) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (srounds pre n) (sround pre n)
+  | n + 1 => .seq (sroundsS bl fb n) (sroundS bl fb n)
+
+/-- Double round `n` of a chunk, absorbing its blocks. -/
+abbrev sround (pre : Bool) (n : Nat) : Prog isa := sroundS (blocks pre) (firstBlock pre) n
+
+/-- `n` double rounds of a chunk, each absorbing its blocks. -/
+abbrev srounds (pre : Bool) (n : Nat) : Prog isa := sroundsS (blocks pre) (firstBlock pre) n
 
 section
 open ChaCha20.X86_64.Avx2 (quarterV)
@@ -160,28 +167,31 @@ def sround3V (j : Nat) : Prog isa :=
 
 end
 
-/-- `sround` with `vprold`. -/
-def sroundV (pre : Bool) (n : Nat) : Prog isa :=
-  if blocks pre n = 4 then sround4V (firstBlock pre n)
-  else if blocks pre n = 3 then sround3V (firstBlock pre n)
+/-- `sroundS` with `vprold`. -/
+def sroundVS (bl fb : Nat → Nat) (n : Nat) : Prog isa :=
+  if bl n = 4 then sround4V (fb n)
+  else if bl n = 3 then sround3V (fb n)
   else ChaCha20.X86_64.Avx2.doubleRoundV
 
-def sroundsV (pre : Bool) : Nat → Prog isa
+def sroundsVS (bl fb : Nat → Nat) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (sroundsV pre n) (sroundV pre n)
+  | n + 1 => .seq (sroundsVS bl fb n) (sroundVS bl fb n)
 
-/-- `srounds` with `vprold` (AVX-512VL), from and to the registers and slots
-`srounds` keeps the words in, as `Avx2.roundsVL`. -/
-def sroundsVL (pre : Bool) (n : Nat) : Prog isa :=
+/-- `sroundsS` with `vprold` (AVX-512VL), from and to the registers and slots
+`sroundsS` keeps the words in, as `Avx2.roundsVL`. -/
+def sroundsVLS (bl fb : Nat → Nat) (n : Nat) : Prog isa :=
   .seq (.block [.vmovdquLoad .l256 .xmm14 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)),
     .vmovdquLoad .l256 .xmm15 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 11))])
-  (.seq (sroundsV pre n) (.block [.vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)) .xmm14,
+  (.seq (sroundsVS bl fb n) (.block [.vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 10)) .xmm14,
     .vmovdquStore .l256 (at_ .rcx (ChaCha20.X86_64.Avx2.slotOff 11)) .xmm15,
     .vmovdquLoad .l256 .xmm15 (at_ .rcx ChaCha20.X86_64.Avx2.rot16Off)]))
 
+/-- The ten double rounds of a schedule, with `vprold` if `vl`. -/
+def sroundsForS (vl : Bool) (bl fb : Nat → Nat) : Prog isa :=
+  if vl then sroundsVLS bl fb 10 else sroundsS bl fb 10
+
 /-- A chunk's ten double rounds, with `vprold` if `vl`. -/
-def sroundsFor (vl : Bool) (pre : Bool) : Prog isa :=
-  if vl then sroundsVL pre 10 else srounds pre 10
+abbrev sroundsFor (vl : Bool) (pre : Bool) : Prog isa := sroundsForS vl (blocks pre) (firstBlock pre)
 
 /-- The counter advanced by 8 and 512 bytes fewer left; `CF` is clear if at
 least 512 bytes remain. -/
@@ -349,11 +359,15 @@ def storeRow (off row : Nat) (xs : List XReg) : List Instr :=
      .vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1),
      .vmovdquStore .l128 (at_ .rcx (off + 64 * (i + 4) + 16 * row)) .xmm13]
 
+/-- The eight blocks' keystream stored at `buf + kOff` while the blocks of
+a schedule at `rsi` are absorbed. -/
+def tailKMainS (vl : Bool) (bl fb : Nat → Nat) : Prog isa :=
+  .seq (.block ChaCha20.X86_64.Avx2.setup)
+  (.seq (sroundsForS vl bl fb) (.block (ChaCha20.X86_64.Avx2.finishWith (storeRow kOff))))
+
 /-- The eight blocks' keystream stored at `buf + kOff` while the 512 bytes
 at `rsi` (the last chunk) are absorbed. -/
-def tailKMain (vl pre : Bool) : Prog isa :=
-  .seq (.block ChaCha20.X86_64.Avx2.setup)
-  (.seq (sroundsFor vl pre) (.block (ChaCha20.X86_64.Avx2.finishWith (storeRow kOff))))
+abbrev tailKMain (vl pre : Bool) : Prog isa := tailKMainS vl (blocks pre) (firstBlock pre)
 
 /-- `tailK`'s moves: `buf` into `r9`, the stored keystream into `rsi`, the
 bytes left into `rdx`. -/
@@ -655,19 +669,77 @@ the lengths block before `decRest` decrypts the data from that keystream. -/
 def wholeO (vl : Bool) : Prog isa :=
   .seq (.block enter) (.seq (tailKMain vl true) (.block (leaveTO 28 ++ ([.vop .vzeroupper] : List Instr))))
 
-/-- After the whole chunks: with 65 to 256 bytes left, `tailO` (4 blocks
-absorbed up to 128 bytes, 8 below 192, 12 from 192); otherwise `leaveO` (the
-prologue computed the keystream of 1 to 64 bytes left, `twoKs`). -/
-def restO : Prog isa :=
+/-! With 257 to 511 bytes left after the whole chunks, their keystream is
+stored at `buf + kOff` (`ctx + 736`), where `decRest` decrypts them from and
+then wipes it, as `wholeO`'s: up to 384 bytes, six blocks by `Avx2Tail`'s
+code for three sets (`tail3O`, as `tailO`), whose rounds absorb the first
+16 blocks; from 385, the kernel's eight (`tailKO`, as `wholeO`), whose
+rounds absorb the first 24. -/
+
+/-- `Avx2Tail`'s double round `n` on three sets, absorbing the `bl n` blocks
+from `fb n`, as `troundG`. -/
+def troundG3 (bl fb : Nat → Nat) (n : Nat) : List Instr :=
+  let h := ChaCha20.X86_64.Avx2Tail.half3
+  let r := ChaCha20.X86_64.Avx2Tail.rot3
+  let j := fb n + bl n - 4
+  if bl n = 0 then
+    h .xmm14 12 ++ h .xmm15 7 ++ r 0x39 0x4e 0x93 ++ h .xmm14 12 ++ h .xmm15 7 ++ r 0x93 0x4e 0x39
+  else
+    h .xmm14 12 ++ (if bl n = 4 then piece j else []) ++ h .xmm15 7 ++ piece (j + 1) ++
+      r 0x39 0x4e 0x93 ++ h .xmm14 12 ++ piece (j + 2) ++ h .xmm15 7 ++ piece (j + 3) ++ r 0x93 0x4e 0x39
+
+def troundsG3 (bl fb : Nat → Nat) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (troundsG3 bl fb n) (.block (troundG3 bl fb n))
+
+/-- As `tailA`, with `Avx2Tail`'s setup of three sets. -/
+def tailA3 : List Instr :=
+  ChaCha20.X86_64.Avx2Tail.consts ++ ChaCha20.X86_64.Avx2.consts ++
+    ([.mov .r12 (.reg .r9), .mov .r9 (.reg .rcx)] : List Instr) ++ ChaCha20.X86_64.Avx2Tail.setup3 ++
+    ([.mov .r9 (.reg .r12)] : List Instr)
+
+/-- `Avx2Tail.storeSetT` to `rsi + off`. -/
+def storeSetS (a b c d : XReg) (off : Nat) : List Instr :=
+  [.vop (.vperm2i128 .xmm12 a b 0x20), .vmovdquStore .l256 (at_ .rsi off) .xmm12,
+   .vop (.vperm2i128 .xmm12 c d 0x20), .vmovdquStore .l256 (at_ .rsi (off + 32)) .xmm12,
+   .vop (.vperm2i128 .xmm12 a b 0x31), .vmovdquStore .l256 (at_ .rsi (off + 64)) .xmm12,
+   .vop (.vperm2i128 .xmm12 c d 0x31), .vmovdquStore .l256 (at_ .rsi (off + 96)) .xmm12]
+
+/-- After the rounds: `leaveTO`, and the six blocks' keystream at
+`ctx + 736` (`buf + kOff`), through `rsi`, which the rest of `cryptO` sets
+before it reads it. -/
+def tailBO3 (k : Nat) : List Instr :=
+  leaveTO k ++ ([.mov .r9 (.reg .rcx)] : List Instr) ++ ptr .rsi .r15 736 ++ ChaCha20.X86_64.Avx2Tail.addIn3 ++
+    storeSetS .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSetS .xmm4 .xmm5 .xmm6 .xmm7 128 ++
+    storeSetS .xmm8 .xmm9 .xmm10 .xmm11 256 ++ ([.vop .vzeroupper] : List Instr)
+
+/-- The keystream of the bytes left (at most 384) stored at `buf + kOff`
+while their first `k` blocks are absorbed, and the registers restored. -/
+def tail3O (k : Nat) : Prog isa :=
+  .seq (.block tailA3) (.seq (troundsG3 (oblocks k) (ofirst k) 10) (.block (tailBO3 k)))
+
+/-- The kernel's eight blocks of keystream stored at `buf + kOff` while the
+first `k` blocks of the bytes left are absorbed, then `leaveTO`. -/
+def tailKO (vl : Bool) (k : Nat) : Prog isa :=
+  .seq (tailKMainS vl (oblocks k) (ofirst k)) (.block (leaveTO k ++ ([.vop .vzeroupper] : List Instr)))
+
+/-- After the whole chunks, with `rdx` the bytes left less 193: with 193 to
+256 left, `tailO` (12 blocks absorbed); with 257 to 384, `tail3O` (16);
+with 385 to 511, `tailKO` (24); otherwise `leaveO` (the prologue computed the
+keystream of 1 to 192 bytes left, `twoKs` or `fourKs`). -/
+def restO (vl : Bool) : Prog isa :=
   .seq (.block (padIns .rdx 8 ++
     ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 193), .alu .cmp .rdx (.imm 64)] : List Instr)))
-  (.ite .b (tailO true 12) (.block leaveO))
+  (.ite .b (tailO true 12)
+    (.seq (.block [.alu .cmp .rdx (.imm 192)])
+      (.ite .b (tail3O 16)
+        (.seq (.block [.alu .cmp .rdx (.imm 319)]) (.ite .b (tailKO vl 24) (.block leaveO))))))
 
 /-- The whole chunks of at least 512 bytes of data, decrypted and absorbed,
-and of 64 to 256 bytes after them the first blocks absorbed and the
+and of 193 to 511 bytes after them the first blocks absorbed and the
 keystream computed. -/
 def bulkO (vl : Bool) : Prog isa :=
-  .seq (.block enter) (.seq (.loop (chunkO vl) .ae) restO)
+  .seq (.block enter) (.seq (.loop (chunkO vl) .ae) (restO vl))
 
 /-- The arguments of the call on the rest of the data (`rbx`, `rbp`), from
 the counter the chunks left. -/
@@ -689,17 +761,21 @@ def restTest (lo n : Nat) : List Instr :=
 /-- The rest decrypted: below 512 bytes all of the data, from the keystream
 `wholeO` stored at `ctx + 736`, which is then wiped (`ctx[672, 1248)`: the
 wipe after `cryptO` covers only `ctx[672, 800)` past `fold` bytes); from
-`buf` if `tailO` computed its keystream (65 to 256 bytes after the whole
-chunks), from `ctx + 736` if the prologue did (`twoKs`: 1 to 64 after them),
-otherwise by the implementation `x` of `vg_chacha20_xor` from the counter the
-chunks left. -/
+`buf` if `tailO` computed its keystream (193 to 256 bytes after the whole
+chunks), from `ctx + 736` if the prologue did (`twoKs`, `fourKs`: 1 to 192
+after them) or `tail3O` or `tailKO` (257 to 511, then wiped), otherwise (none)
+by the implementation `x` of `vg_chacha20_xor` from the counter the chunks
+left. -/
 def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm 512)])
   (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
     (.seq (.seq (.block (restTest 193 64))
       (.ite .b (xorTail x.wide 128)
         (.seq (.block (restTest 1 192))
-          (.ite .b (xorTail x.wide 736) (.seq (.block restArgs) (.call x.name x.code))))))
+          (.ite .b (xorTail x.wide 736)
+            (.seq (.block (restTest 257 255))
+              (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
+                (.seq (.block restArgs) (.call x.name x.code))))))))
       (.block (padIns .rax 20))))
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
