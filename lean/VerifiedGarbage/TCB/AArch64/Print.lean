@@ -207,6 +207,8 @@ def Instr.asm : Instr → List String
   | .umulh d n m => [s!"umulh {d.name .x}, {n.name .x}, {m.name .x}"]
   | .umaddl d n m a => [s!"umaddl {d.name .x}, {n.name .w}, {m.name .w}, {a.name .x}"]
   | .umull d n m => [s!"umull {d.name .x}, {n.name .w}, {m.name .w}"]
+  | .clz sz d n => [s!"clz {d.name sz}, {n.name sz}"]
+  | .rbit sz d n => [s!"rbit {d.name sz}, {n.name sz}"]
   | .rev32 d n => [s!"rev {d.name .w}, {n.name .w}"]
   | .rev d n => [s!"rev {d.name .x}, {n.name .x}"]
   | .movz sz d imm hw => [s!"movz {d.name sz}, #{imm.toNat}, lsl #{16 * hw}"]

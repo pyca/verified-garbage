@@ -77,7 +77,7 @@ def gprDst : Instr → Option Reg
   | .bicRor _ d .. | .extr _ d .. | .mul _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adcs _ d .. | .sbcs _ d ..
   | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .cselc _ d .. | .csneg _ d .. | .adrSym d _
   | .madd _ d .. | .addImm _ d .. | .subImm _ d .. | .ror _ d .. | .lsr _ d .. | .lsl _ d ..
-  | .rev32 d _ | .rev d _ | .addSp d _ | .movz _ d .. | .movk _ d .. | .ldr _ d .. | .ldrb d ..
+  | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .addSp d _ | .movz _ d .. | .movk _ d .. | .ldr _ d .. | .ldrb d ..
   | .ldrSp d _ | .umov _ d .. | .pop d => some d
   | _ => none
 

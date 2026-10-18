@@ -57,7 +57,8 @@ Modelling choices:
   of their data when PSTATE.DIT is 1 (DDI 0487, "About PSTATE.DIT", FEAT_DIT,
   which lists MADD and UBFM, as it does the other modelled data-processing
   instructions that read a register: ADD, SUB, AND, BIC, EOR, ORR, EXTR, REV and
-  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST and UMULH; the
+  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST, UMULH, CLZ and
+  RBIT; the
   description of UMADDL, of which UMULL is an alias, says "This instruction is a
   data-independent-time instruction as described in About PSTATE.DIT": DDI
   0602, A64 ISA XML 2025-12, `umaddl.xml`). The code does not set PSTATE.DIT,
@@ -465,6 +466,11 @@ inductive Instr
   /-- `umull xd, wn, wm` (UMULL, the alias of UMADDL with the zero register as
   the addend): `n<31:0> * m<31:0>`, zero-extended -/
   | umull (d n m : Reg)
+  /-- `clz d, n` (CLZ): the number of zero bits of `n` above its highest one
+  bit, `size` if `n` is zero -/
+  | clz (sz : Size) (d n : Reg)
+  /-- `rbit d, n` (RBIT): the bits of `n` in reverse order -/
+  | rbit (sz : Size) (d n : Reg)
   /-- `rev wd, wn` (REV, 32-bit): reverse the bytes of the low 32 bits -/
   | rev32 (d n : Reg)
   /-- `rev xd, xn` (REV, 64-bit): reverse the bytes of all 64 bits -/
@@ -1140,6 +1146,13 @@ def exec : Instr → State → Option State
     some (s.write .x d (s.gpr a + (s.read .w n).setWidth 64 * (s.read .w m).setWidth 64))
   | .umull d n m, s =>
     some (s.write .x d ((s.read .w n).setWidth 64 * (s.read .w m).setWidth 64))
+  -- DDI 0487 C6.2, CLZ: result = CountLeadingZeroBits(X[n, datasize]);
+  -- X[d, datasize] = result<datasize-1:0>. CountLeadingZeroBits(x) is
+  -- N - (HighestSetBit(x) + 1) (J1, shared pseudocode), `BitVec.clz`.
+  | .clz sz d n, s => some (s.write sz d (s.read sz n).clz)
+  -- DDI 0487 C6.2, RBIT: for i = 0 to datasize-1,
+  -- result<datasize-1-i> = operand<i>; `BitVec.reverse`.
+  | .rbit sz d n, s => some (s.write sz d (s.read sz n).reverse)
   | .rev32 d n, s => some (s.write .w d (rev32 (s.read .w n)))
   | .rev d n, s => some (s.write .x d (rev64 (s.read .x n)))
   | .movz sz d imm hw, s =>
