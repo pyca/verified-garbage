@@ -18,8 +18,8 @@ public import VerifiedGarbage.Proof.Divstep.WordBasic
 
 The operations of a batch on words of the working space, as numbers: the
 mask of a word's sign (`maskOf_ok`), a masked copy (`maskCopy_ok`), the
-signed linear combination `w [x] + w' [y]` (`lin_ok`, from the wide
-Montgomery multiplication's rows; `linR_ok`, column by column in registers),
+signed linear combination `w [x] + w' [y]` (`linR_ok`, column by column in
+registers),
 and the arithmetic shift by 59 (`shr59_ok`).
 -/
 
@@ -125,199 +125,7 @@ theorem movRcx_ok (s : State) (src : Reg) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩
 
-/-- `[T] -= 2^64 ([x] & mask(w))` modulo `2^(64 K)`, the masked words copied to
-`[U]` first: `[T] + 2^64 masked = [T]₀` modulo `2^(64 K)`. -/
-theorem subSh_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (w : Reg) {T x U K : Nat} (hK : 2 ≤ K) (hT : T + 8 * K ≤ size)
-    (hx : x + 8 * (K - 1) ≤ size) (hU : U + 8 * (K - 1) ≤ size)
-    (hUT : U + 8 * (K - 1) ≤ T ∨ T + 8 * K ≤ U) (hUx : U + 8 * (K - 1) ≤ x ∨ x + 8 * (K - 1) ≤ U) :
-    WP isa (.block (maskOf .r13 w ++ maskCopy .r13 U x (K - 1) ++ chainW .sub .sbb (K - 1) (T + 8) (T + 8) U)) s
-      fun t =>
-        (wordsVal t.mem base T K + 2 ^ 64 * masked (smask (s.gpr w)) (wordsVal s.mem base x (K - 1))) %
-            2 ^ (64 * K) = wordsVal s.mem base T K % 2 ^ (64 * K) ∧
-        KeepRegs [.rax, .r8, .r13] s t ∧ Unch base [(T, 8 * K), (U, 8 * (K - 1))] s.mem t.mem := by
-  have hn := hs.nowrap
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (maskOf_ok s (d := .r13) (src := w) (by decide)) fun s₁ ⟨g₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (maskCopy_ok (m := .r13) (by decide) (K - 1) hs₁ (dst := U) (src := x)
-    (by rw [g₁]; exact smask_isMask _) hU hx hUx) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  obtain ⟨L, rfl⟩ : ∃ L, K = L + 1 := ⟨K - 1, by omega_using [hK]⟩
-  simp only [Nat.add_sub_cancel] at e₂ O₂ hx hU hUT hUx ⊢
-  refine WP.mono (chainWSub_ok L hs₂ (op := .sub) (c := false) (t := T + 8) (a := T + 8) (b := U)
-    (.inl ⟨rfl, rfl⟩) (.inl (by omega_using [hK])) (by omega_using [hT]) (by omega_using [hT]) (by omega_using [hU]) (.inl rfl) (by
-      rcases hUT with h | h
-      · exact .inr (.inl (by omega_using [h]))
-      · exact .inr (.inr (by omega_using [h])))) fun t ⟨c, _, e₃, k₃, O₃⟩ => ?_
-  refine ⟨?_, ((Keeps.regs k₁).mono (by decide)).trans ((k₂.mono (by decide)).trans (k₃.mono (by decide))),
-    ?_⟩
-  · -- The words of `T`: the lowest kept, the others less the masked ones.
-    have hm₁ : s₁.mem = s.mem := k₁.2.1
-    have hw0 : word t.mem base T = word s.mem base T := by
-      rw [O₃.word (by omega_using []) (by omega_using [hn, hT]), O₂.word (by omega_using [hUT]) (by omega_using [hn, hT]), hm₁]
-    have hT₂ : wordsVal s₂.mem base (T + 8) L = wordsVal s.mem base (T + 8) L := by
-      rw [O₂.wordsVal (by omega_using [hUT]) (by omega_using [hn, hT]), hm₁]
-    rw [hm₁, g₁] at e₂
-    simp only [Bool.toNat_false, Nat.add_zero, hT₂, e₂] at e₃
-    simp only [wordsVal]
-    rw [hw0, pow64_succ]
-    have : (word s.mem base T).toNat + 2 ^ 64 * wordsVal t.mem base (T + 8) L +
-        2 ^ 64 * masked (smask (s.gpr w)) (wordsVal s.mem base x L) =
-        (word s.mem base T).toNat + 2 ^ 64 * wordsVal s.mem base (T + 8) L +
-          2 ^ 64 * (2 ^ (64 * L) * c.toNat) := by
-      rw [Nat.add_assoc, ← Nat.mul_add, e₃, Nat.mul_add, ← Nat.add_assoc]
-    rw [this, ← Nat.mul_assoc, Nat.add_mul_mod_self_left]
-  · rw [← k₁.2.1]
-    refine ((O₂.trans (Outside.refl _ _ _ _)).unch.trans (O₃.mono (o' := T) (n' := 8 * (L + 1)) (by omega_using [])
-      (by omega_using [])).unch).mono fun v hv => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hv ⊢
-    rcases hv with h | h <;> simp [h]
-
-/-- The products' code of `lin`. -/
-def prods (w w' : Reg) (t x y k K : Nat) : List Instr :=
-  zeroWords K t ++
-  ([.mov .rcx (.reg w)] : List Instr) ++ memRow k t x ++ ((if k < K then [.store (sc (t + 8 * k)) .rbp] else []) : List Instr) ++
-  ([.mov .rcx (.reg w')] : List Instr) ++ memRow k t y ++
-  ((if k < K then [.mov .r8 (.mem (sc (t + 8 * k))), .alu .add .r8 (.reg .rbp), .store (sc (t + 8 * k)) .r8]
-    else []) : List Instr)
-
-theorem lin_eq (w w' : Reg) (t x y U k K : Nat) :
-    lin w w' t x y U k K = prods w w' t x y k K ++
-      ((maskOf .r13 w ++ maskCopy .r13 U x (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U) ++
-        (maskOf .r13 w' ++ maskCopy .r13 U y (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U)) := by
-  simp only [lin, prods, List.append_assoc]
-
-/-- `[t + 8 k] += rbp`, through `r8`. -/
-theorem addTop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat} (hd : d + 8 ≤ size) :
-    WP isa (.block [.mov .r8 (.mem (sc d)), .alu .add .r8 (.reg .rbp), .store (sc d) .r8]) s fun t =>
-      t.mem = s.mem.writeW (off base d) (word s.mem base d + s.gpr .rbp) ∧ KeepRegs [.r8] s t := by
-  rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (movMem_ok hs .r8 hd) fun u ⟨lu, _, ku⟩ => ?_
-  rw [← List.singleton_append, WP.block_append_iff]
-  have ha : WP isa (.block [.alu .add .r8 (.reg .rbp)]) u fun v =>
-      v.gpr .r8 = word s.mem base d + s.gpr .rbp ∧ Keeps [.r8] u v := by
-    irun [lu, ku.1 .rbp (by decide)]
-    exact ⟨fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false], rfl, rfl, rfl⟩
-  refine WP.mono ha fun v ⟨av, kv⟩ => ?_
-  have hsv := (hs.of_keeps ku (by decide)).of_keeps kv (by decide)
-  refine WP.mono (storeReg_ok hsv .r8 hd) fun t ⟨mt, _, _, kt⟩ => ⟨?_, ?_⟩
-  · rw [mt, av, kv.2.1, ku.2.1]
-  · exact ((Keeps.regs ku).trans (Keeps.regs kv)).trans (kt.mono (by decide))
-
-/-- `wordsVal` of the first `k ≤ K` of `K` zero words. -/
-theorem wordsVal_zero_le {m : Mem} {base : Addr} {d k K : Nat} (h : wordsVal m base d K = 0) (hk : k ≤ K) :
-    wordsVal m base d k = 0 := by
-  induction K generalizing d k with
-  | zero => rw [Nat.le_zero.mp hk]; rfl
-  | succ K ih =>
-    cases k with
-    | zero => rfl
-    | succ k =>
-      simp only [wordsVal] at h ⊢
-      have h1 : (word m base d).toNat = 0 := by omega_using [h]
-      have h2 : wordsVal m base (d + 8) K = 0 := by
-        rcases Nat.eq_zero_or_pos (wordsVal m base (d + 8) K) with h' | h'
-        · exact h'
-        · omega_using [h]
-      rw [h1, ih h2 (by omega_using [hk])]
-
-/-- A top word modulo `2^64`, under `X = 2^(64 k)` above `A < X`. -/
-theorem mod_top (A X c : Nat) : (A + X * (c % 2 ^ 64)) % (X * 2 ^ 64) = (A + X * c) % (X * 2 ^ 64) := by
-  conv => rhs; rw [← Nat.mod_add_div c (2 ^ 64), Nat.mul_add, ← Nat.add_assoc, ← Nat.mul_assoc]
-  rw [Nat.add_mul_mod_self_left]
-
-/-- The products of `lin`: `[t] = w [x] + w' [y]` modulo `2^(64 K)`, unsigned. -/
-theorem prods_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
-    (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi])
-    {T x y k K : Nat} (hkK : k ≤ K) (hk' : K ≤ k + 1)
-    (hx : x + 8 * k ≤ size) (hy : y + 8 * k ≤ size) (hT : T + 8 * K ≤ size)
-    (hTx : T + 8 * K ≤ x ∨ x + 8 * k ≤ T) (hTy : T + 8 * K ≤ y ∨ y + 8 * k ≤ T) :
-    WP isa (.block (prods w w' T x y k K)) s fun t =>
-      wordsVal t.mem base T K % 2 ^ (64 * K) =
-        ((s.gpr w).toNat * wordsVal s.mem base x k + (s.gpr w').toNat * wordsVal s.mem base y k) %
-          2 ^ (64 * K) ∧
-      KeepRegs [.rax, .rcx, .rdx, .rbp, .r8] s t ∧ Outside base T (8 * K) s.mem t.mem := by
-  have hn := hs.nowrap
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw hw'
-  simp only [prods, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (zeroWords_ok hs (k := K) (t := T) hT) fun s₁ ⟨z₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (movRcx_ok s₁ w) fun s₂ ⟨c₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keeps k₂ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (memRow_ok hs₂ (k := k) (t := T) (d := x) (by omega_using [hkK, hT]) hx (by omega_using [hkK, hTx])) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have hX : wordsVal s₂.mem base x k = wordsVal s.mem base x k := by
-    rw [k₂.2.1]; exact O₁.wordsVal (by omega_using [hTx]) (by omega_using [hx, hn])
-  have hY₃ : wordsVal s₃.mem base y k = wordsVal s.mem base y k := by
-    rw [O₃.wordsVal (by omega_using [hkK, hTy]) (by omega_using [hy, hn]), k₂.2.1]; exact O₁.wordsVal (by omega_using [hTy]) (by omega_using [hy, hn])
-  have hT₂ : wordsVal s₂.mem base T k = 0 := by rw [k₂.2.1]; exact wordsVal_zero_le z₁ hkK
-  rw [hT₂, Nat.zero_add, c₂, k₁.gpr w (by simp [hw.2.2.2.2.1]), hX] at e₃
-  have hw'₃ : s₃.gpr w' = s.gpr w' := by
-    rw [k₃.gpr w' (by simp [hw'.2.2.2.2.1, hw'.1, hw'.2.2.1, hw'.2.2.2.1]), k₂.1 w' (by simp [hw'.2.1]),
-      k₁.gpr w' (by simp [hw'.2.2.2.2.1])]
-  by_cases hk : k < K
-  · -- `K = k + 1`: the carry words stored on top.
-    have hK : K = k + 1 := by omega_using [hk', hk]
-    subst hK
-    simp only [hk, ↓reduceIte]
-    rw [WP.block_append_iff]
-    refine WP.mono (storeReg_ok hs₃ .rbp (d := T + 8 * k) (by omega_using [hT])) fun s₄ ⟨m₄, g₄, _, k₄⟩ => ?_
-    have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-    have O₄ : Outside base (T + 8 * k) 8 s₃.mem s₄.mem := by rw [m₄]; exact writeW_outside _ _ _ (by omega_using [hn, hT])
-    rw [WP.block_append_iff]
-    refine WP.mono (movRcx_ok s₄ w') fun s₅ ⟨c₅, k₅⟩ => ?_
-    have hs₅ := hs₄.of_keeps k₅ (by decide)
-    rw [WP.block_append_iff]
-    refine WP.mono (memRow_ok hs₅ (k := k) (t := T) (d := y) (by omega_using [hT]) hy (by omega_using [hTy]))
-      fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
-    have hs₆ := hs₅.of_keepRegs k₆ (by decide)
-    refine WP.mono (addTop_ok hs₆ (d := T + 8 * k) (by omega_using [hT])) fun t ⟨m₇, k₇⟩ => ?_
-    refine ⟨?_, ((((k₁.mono (by decide)).trans ((Keeps.regs k₂).mono (by decide))).trans
-      (k₃.mono (by decide))).trans ((k₄.mono (by decide)).trans ((Keeps.regs k₅).mono (by decide)))).trans
-      ((k₆.mono (by decide)).trans (k₇.mono (by decide))), fun a ha => ?_⟩
-    · have hY₅ : wordsVal s₅.mem base y k = wordsVal s.mem base y k := by
-        rw [k₅.2.1, O₄.wordsVal (by omega_using [hTy]) (by omega_using [hy, hn]), hY₃]
-      have hT₅ : wordsVal s₅.mem base T k = wordsVal s₃.mem base T k := by
-        rw [k₅.2.1, O₄.wordsVal (by omega_using []) (by omega_using [hn, hT])]
-      rw [hT₅, hY₅, c₅, k₄.gpr w' (by simp), hw'₃] at e₆
-      have htop₆ : word s₆.mem base (T + 8 * k) = s₃.gpr .rbp := by
-        rw [O₆.word (by omega_using []) (by omega_using [hn, hT]), k₅.2.1, m₄, word_writeW_self]
-      rw [m₇, wordsVal_succ_top, word_writeW_self, (writeW_outside s₆.mem base (d := T + 8 * k) _
-        (by omega_using [hn, hT])).wordsVal (by omega_using []) (by omega_using [hn, hT]), htop₆, BitVec.toNat_add]
-      have key : wordsVal s₆.mem base T k + 2 ^ (64 * k) * ((s₃.gpr .rbp).toNat + (s₆.gpr .rbp).toNat) =
-          (s.gpr w).toNat * wordsVal s.mem base x k + (s.gpr w').toNat * wordsVal s.mem base y k := by
-        rw [Nat.mul_add]; omega_using [e₃, e₆]
-      rw [pow64_succ, Nat.mul_comm (2 ^ 64) (2 ^ (64 * k)), mod_top, key]
-    · have O₇ : Outside base (T + 8 * k) 8 s₆.mem t.mem := by rw [m₇]; exact writeW_outside _ _ _ (by omega_using [hn, hT])
-      rw [O₇ a (by omega_using [ha]), O₆ a (by omega_using [ha]), k₅.2.1, O₄ a (by omega_using [ha]), O₃ a (by omega_using [ha]), k₂.2.1, O₁ a ha]
-  · -- `K = k`: the carry words dropped.
-    have hK : K = k := by omega_using [hkK, hk]
-    subst hK
-    simp only [hk, ↓reduceIte, List.append_nil, List.nil_append]
-    rw [WP.block_append_iff]
-    refine WP.mono (movRcx_ok s₃ w') fun s₅ ⟨c₅, k₅⟩ => ?_
-    have hs₅ := hs₃.of_keeps k₅ (by decide)
-    refine WP.mono (memRow_ok hs₅ (t := T) (d := y) (by omega_using [hT]) hy (by omega_using [hTy])) fun t ⟨e₆, k₆, O₆⟩ => ?_
-    refine ⟨?_, (((k₁.mono (by decide)).trans ((Keeps.regs k₂).mono (by decide))).trans
-      (k₃.mono (by decide))).trans (((Keeps.regs k₅).mono (by decide)).trans (k₆.mono (by decide))),
-      fun a ha => ?_⟩
-    · rw [k₅.2.1, hY₃, c₅, hw'₃] at e₆
-      rw [show (s.gpr w).toNat * wordsVal s.mem base x K + (s.gpr w').toNat * wordsVal s.mem base y K =
-          wordsVal t.mem base T K + 2 ^ (64 * K) * ((s₃.gpr .rbp).toNat + (t.gpr .rbp).toNat) by
-        rw [Nat.mul_add]; omega_using [e₃, e₆], Nat.add_mul_mod_self_left]
-    · rw [O₆ a ha, k₅.2.1, O₃ a ha, k₂.2.1, O₁ a ha]
-
-/-- Apart from each range of a list written out. -/
-tactic_template "inv_apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
-                   forall_eq_or_imp, forall_eq] <;> omega))
-
-/-- `omega` on the layout alone of `lin_ok` and `linR_ok`: first without its disjunctions,
+/-- `omega` on the layout alone of `linR_ok`: first without its disjunctions,
 which it would split, then with one. -/
 tactic_template "inv_lin_omega" : tactic =>
   `(tactic| first
@@ -328,52 +136,6 @@ tactic_template "inv_lin_omega" : tactic =>
     | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hUx]
     | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hUy]
     | omega_using [hkK, hK, hk', hx, hy, hT, hU, hTx, hTy, hUT, hUx, hUy, hn])
-
-/-- `[T] = w [x] + w' [y] - 2^64 (([x] & mask(w)) + ([y] & mask(w')))` modulo
-`2^(64 K)` (`[x]`, `[y]` of `k` words, `K - 1 ≤ k ≤ K`). -/
-theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
-    (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
-    {T x y U k K : Nat} (hkK : k ≤ K) (hK : 2 ≤ K) (hk' : K ≤ k + 1)
-    (hx : x + 8 * k ≤ size) (hy : y + 8 * k ≤ size) (hT : T + 8 * K ≤ size) (hU : U + 8 * (K - 1) ≤ size)
-    (hTx : T + 8 * K ≤ x ∨ x + 8 * k ≤ T) (hTy : T + 8 * K ≤ y ∨ y + 8 * k ≤ T)
-    (hUT : U + 8 * (K - 1) ≤ T ∨ T + 8 * K ≤ U) (hUx : U + 8 * (K - 1) ≤ x ∨ x + 8 * k ≤ U)
-    (hUy : U + 8 * (K - 1) ≤ y ∨ y + 8 * k ≤ U) :
-    WP isa (.block (lin w w' T x y U k K)) s fun t =>
-      (wordsVal t.mem base T K + 2 ^ 64 * (masked (smask (s.gpr w)) (wordsVal s.mem base x (K - 1)) +
-        masked (smask (s.gpr w')) (wordsVal s.mem base y (K - 1)))) % 2 ^ (64 * K) =
-      ((s.gpr w).toNat * wordsVal s.mem base x k + (s.gpr w').toNat * wordsVal s.mem base y k) % 2 ^ (64 * K) ∧
-      KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧ Unch base [(T, 8 * K), (U, 8 * (K - 1))] s.mem t.mem := by
-  have hn := hs.nowrap
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw hw'
-  rw [lin_eq, WP.block_append_iff]
-  refine WP.mono (prods_ok hs (w := w) (w' := w') (by simp [hw.1, hw.2.1, hw.2.2.1, hw.2.2.2.1, hw.2.2.2.2.1,
-    hw.2.2.2.2.2.1]) (by simp [hw'.1, hw'.2.1, hw'.2.2.1, hw'.2.2.2.1, hw'.2.2.2.2.1, hw'.2.2.2.2.2.1])
-    hkK hk' hx hy hT hTx hTy) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (subSh_ok hs₁ w (T := T) (x := x) (U := U) hK hT (by inv_lin_omega) hU hUT (by inv_lin_omega))
-    fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  refine WP.mono (subSh_ok hs₂ w' (T := T) (x := y) (U := U) hK hT (by inv_lin_omega) hU hUT (by inv_lin_omega))
-    fun t ⟨e₃, k₃, O₃⟩ => ⟨?_, ((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans (k₃.mono (by decide)),
-      (O₁.unch.trans (O₂.trans O₃)).mono fun v hv => by
-        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hv ⊢
-        rcases hv with h | h | h | h | h <;> simp [h]⟩
-  have gw : s₁.gpr w = s.gpr w := k₁.gpr w (by simp [hw.1, hw.2.1, hw.2.2.1, hw.2.2.2.1, hw.2.2.2.2.1])
-  have gw' : s₂.gpr w' = s.gpr w' := by
-    rw [k₂.gpr w' (by simp [hw'.1, hw'.2.2.2.2.1, hw'.2.2.2.2.2.2]),
-      k₁.gpr w' (by simp [hw'.1, hw'.2.1, hw'.2.2.1, hw'.2.2.2.1, hw'.2.2.2.2.1])]
-  have mx : wordsVal s₁.mem base x (K - 1) = wordsVal s.mem base x (K - 1) :=
-    O₁.wordsVal (by inv_lin_omega) (by inv_lin_omega)
-  have my : wordsVal s₂.mem base y (K - 1) = wordsVal s.mem base y (K - 1) := by
-    rw [O₂.wordsVal (by inv_apart) (by inv_lin_omega)]; exact O₁.wordsVal (by inv_lin_omega) (by inv_lin_omega)
-  rw [gw, mx] at e₂
-  rw [gw', my] at e₃
-  generalize 2 ^ (64 * K) = M at *
-  generalize masked (smask (s.gpr w)) (wordsVal s.mem base x (K - 1)) = a at *
-  generalize masked (smask (s.gpr w')) (wordsVal s.mem base y (K - 1)) = b at *
-  rw [show wordsVal t.mem base T K + 2 ^ 64 * (a + b) = (wordsVal t.mem base T K + 2 ^ 64 * b) + 2 ^ 64 * a by
-    rw [Nat.mul_add]; omega_using [], ← Nat.mod_add_mod, e₃, Nat.mod_add_mod, e₂, e₁]
 
 /-! ## The shift by 59 -/
 
@@ -495,8 +257,8 @@ theorem shr59_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 
 /-! ## The signed linear combination in registers
 
-`linR` computes what `lin` does (`linR_ok`, stated as `linM_ok`), the signed
-`w [x] + w' [y]` modulo `2^(64 K)`, with fewer instructions: with `a = |w|`
+`linR` computes the signed `w [x] + w' [y]` modulo `2^(64 K)` (`linR_ok`):
+with `a = |w|`
 and `M` the mask of `w`'s sign, `w X ≡ a (X ⊕ M) + (a & M)` (`X ⊕ M` over `K`
 words is `X` or `2^(64 K) - 1 - X`, `xorSum_zero`, `xorSum_ones`), and the
 sum is taken column by column: each column's two products added to the
