@@ -202,15 +202,6 @@ theorem troundG3_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot)
     refine WP.block_append (WP.mono (piece_tw3 hk hrsi hin (by omega) h₈) fun t₉ h₉ => ?_)
     exact WP.mono (seg_tw3 (trH3_ok 5) acc_gpr h₉) fun _ h' => hfin h'
 
-/-- The ten double rounds of three sets, absorbing the `tot` blocks of the schedule. -/
-theorem troundsG3_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot)
-    (hN : 16 * tot ≤ N) {vs : Nat → CState} (h : TB3 s₁ vs (AccTo q R0 R1 X s₁ 0) s₁) :
-    ∀ n, n ≤ 10 → WP isa (troundsG3 bl fb n) s₁
-      (TB3 s₁ (fun j => Nat.repeat innerBlock n (vs j)) (AccTo q R0 R1 X s₁ (fb n)))
-  | 0, _ => WP.block_nil (by rw [sc.first0]; exact h)
-  | n + 1, hn => WP.seq (WP.mono (troundsG3_ok sc hN h n (by omega)) fun _ h' =>
-      troundG3_ok hk hrsi hin sc hN (by omega) h')
-
 end
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

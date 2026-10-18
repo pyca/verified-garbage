@@ -2728,7 +2728,7 @@ theorem bulkO_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 51
   · simp only [decide_eq_false_iff_not] at hc₆
     have ek : kOfK (L - 512 * T) = 24 := by unfold kOfK; split <;> omega
     exact WP.seq (WP.mono (tailKOg_ok vl hl he.hk (by omega) (by omega) (tpo_of L₆) (by rw [L₆.wr]; simp)
-      L₆.consts) fun s₇ tm => WP.mono (padIns_ok .rax (by decide) s₇)
+      L₆.consts) fun s₇ tm => WP.mono (padIns_ok .rax (by cases vl <;> decide) s₇)
         fun s' p => tailK_fin hl hge he L₆ hT (by omega) (by rw [ek]; exact tm.pad p))
 
 /-- `vzeroupper` keeps all but the vector registers' upper bits. -/
@@ -3905,7 +3905,7 @@ theorem tail3O16_taint : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (ta
   taint_decide_sum []
 
 theorem tailKO24_taint (vl : Bool) : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp])
-    (.seq (tailKO vl 24) (.block (padIns .rax 19))) h).isSome = true := by
+    (.seq (tailKO vl 24) (.block (padIns .rax (if vl then 35 else 19)))) h).isSome = true := by
   cases vl <;> taint_decide_sum []
 
 theorem cmp192_taint : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp])

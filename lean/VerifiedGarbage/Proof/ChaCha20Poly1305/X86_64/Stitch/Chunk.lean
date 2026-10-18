@@ -191,28 +191,9 @@ theorem blocks_cases (pre : Bool) (n : Nat) : blocks pre n = 4 ∨ blocks pre n 
   unfold blocks; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;> split <;>
     (try split) <;> simp
 
-/-- A schedule of the blocks the ten double rounds absorb: `bl n` blocks
-(0, 3 or 4) in round `n`, from block `fb n`, `tot` in all. -/
-structure SchedOk (bl fb : Nat → Nat) (tot : Nat) : Prop where
-  first0 : fb 0 = 0
-  succ : ∀ n, n < 10 → fb (n + 1) = fb n + bl n
-  le : ∀ n, n ≤ 10 → fb n ≤ tot
-  cases : ∀ n, n < 10 → bl n = 4 ∨ bl n = 3 ∨ bl n = 0
-  four : ∀ n, n < 10 → bl n ≠ 0 → 4 ≤ fb n + bl n
-
-/-- A chunk's schedule. -/
-theorem schedOk_pre (pre : Bool) : SchedOk (blocks pre) (firstBlock pre) (total pre) where
-  first0 := by cases pre <;> rfl
-  succ n _ := firstBlock_succ pre n
-  le n hn := firstBlock_le pre hn
-  cases n _ := blocks_cases pre n
-  four n _ := by
-    unfold firstBlock blocks; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;>
-      split <;> (try split) <;> omega
-
-/-- The registers of the kernel and the reads of Poly1305 during the rounds
-of a schedule (`fb`), relative to the state `s₁` after the kernel's setup. -/
-structure SRS (fb : Nat → Nat) (buf q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V : Nat → CState) (s₁ : State)
+/-- The registers of the kernel and the reads of Poly1305 during the rounds,
+relative to the state `s₁` after the kernel's setup. -/
+structure SR (pre : Bool) (buf q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V : Nat → CState) (s₁ : State)
     (n : Nat) (s : State) : Prop where
   holds : Holds buf false (fun j => Nat.repeat innerBlock n (V j)) s
   m16 : ∀ l, s.lane .xmm15 l = rot16Mask
@@ -220,10 +201,7 @@ structure SRS (fb : Nat → Nat) (buf q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V
   gpr : ∀ r, r ∉ absorbRegs → s.gpr r = s₁.gpr r
   rd : s.rd = s₁.rd
   wr : s.wr = s₁.wr
-  acc : Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * fb n))) s
-
-/-- `SRS` during a chunk's rounds. -/
-abbrev SR (pre : Bool) := SRS (firstBlock pre)
+  acc : Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * firstBlock pre n))) s
 
 section
 variable {buf q : Addr} {R0 R1 : BitVec 64} {X : Nat} {V : Nat → CState} {s₁ : State}
@@ -426,22 +404,22 @@ theorem sround0_ok {j : Nat} {vs : Nat → CState} {s : State}
   exact quarter_si (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₃
 
-theorem sroundsS_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot) (htot : tot ≤ T) :
-    ∀ n, n ≤ 10 → SRS fb buf q R0 R1 X V s₁ 0 s₁ → WP isa (sroundsS bl fb n) s₁ (SRS fb buf q R0 R1 X V s₁ n)
+theorem srounds_ok (pre : Bool) (htot : total pre ≤ T) : ∀ n, n ≤ 10 → SR pre buf q R0 R1 X V s₁ 0 s₁ →
+    WP isa (srounds pre n) s₁ (SR pre buf q R0 R1 X V s₁ n)
   | 0, _, h => WP.block_nil h
   | n + 1, hn, h => by
-    refine WP.seq (WP.mono (sroundsS_ok sc htot n (by omega) h) fun s hs => ?_)
+    refine WP.seq (WP.mono (srounds_ok pre htot n (by omega) h) fun s hs => ?_)
     have hs' : SI buf s₁ false (fun j => Nat.repeat innerBlock n (V j))
-        (AccTo q R0 R1 X s₁ (fb n)) s :=
+        (AccTo q R0 R1 X s₁ (firstBlock pre n)) s :=
       ⟨hs.holds, hs.m16, hs.frame, hs.gpr, hs.rd, hs.wr, hs.acc⟩
-    have hb' : fb n + bl n ≤ T := by
-      rw [← sc.succ n (by omega)]; exact Nat.le_trans (sc.le _ hn) htot
+    have hb' : firstBlock pre n + blocks pre n ≤ T := by
+      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega)) htot
     have fin : ∀ {s'}, SI buf s₁ false (fun j => Nat.repeat innerBlock (n + 1) (V j))
-        (AccTo q R0 R1 X s₁ (fb n + bl n)) s' → SRS fb buf q R0 R1 X V s₁ (n + 1) s' :=
-      fun h' => ⟨h'.holds, h'.m16, h'.frame, h'.gpr, h'.rd, h'.wr, by rw [sc.succ n (by omega)]; exact h'.poly⟩
-    show WP isa (sroundS bl fb n) s _
-    unfold sroundS
-    rcases sc.cases n (by omega) with e | e | e
+        (AccTo q R0 R1 X s₁ (firstBlock pre n + blocks pre n)) s' → SR pre buf q R0 R1 X V s₁ (n + 1) s' :=
+      fun h' => ⟨h'.holds, h'.m16, h'.frame, h'.gpr, h'.rd, h'.wr, by rw [firstBlock_succ]; exact h'.poly⟩
+    show WP isa (sround pre n) s _
+    unfold sround
+    rcases blocks_cases pre n with e | e | e
     · rw [ite_eq_left e]
       rw [e] at hb' fin
       exact WP.mono (sround4_ok hk hrcx hrsi hb h8 hd hT hin hb' hs') fun _ h' => fin h'
@@ -451,10 +429,6 @@ theorem sroundsS_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot) (
     · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
       rw [e, Nat.add_zero] at fin
       exact WP.mono (sround0_ok hrcx hb h8 hs') fun _ h' => fin h'
-
-theorem srounds_ok (pre : Bool) (htot : total pre ≤ T) (n : Nat) (hn : n ≤ 10) (h : SR pre buf q R0 R1 X V s₁ 0 s₁) :
-    WP isa (srounds pre n) s₁ (SR pre buf q R0 R1 X V s₁ n) :=
-  sroundsS_ok hk hrcx hrsi hb h8 hd hT hin (schedOk_pre pre) htot n hn h
 
 end
 
@@ -608,20 +582,19 @@ theorem sround0V_ok {j : Nat} {vs : Nat → CState} {s : State}
     ⟨hh, by rw [hm, h.mem], fun r hr => by rw [hg, h.gpr r hr], by rw [hrd, h.rd],
       by rw [hwr, h.wr], acc_gpr s s' hg h.poly⟩
 
-theorem sroundsVS_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot) (htot : tot ≤ T)
-    {V : Nat → CState} {s : State}
-    (h : SIV s₁ V (AccTo q R0 R1 X s₁ (fb 0)) s) : ∀ n, n ≤ 10 →
-    WP isa (sroundsVS bl fb n) s
-      (SIV s₁ (fun j => Nat.repeat innerBlock n (V j)) (AccTo q R0 R1 X s₁ (fb n)))
+theorem sroundsV_ok (pre : Bool) (htot : total pre ≤ T) {V : Nat → CState} {s : State}
+    (h : SIV s₁ V (AccTo q R0 R1 X s₁ (firstBlock pre 0)) s) : ∀ n, n ≤ 10 →
+    WP isa (sroundsV pre n) s
+      (SIV s₁ (fun j => Nat.repeat innerBlock n (V j)) (AccTo q R0 R1 X s₁ (firstBlock pre n)))
   | 0, _ => WP.block_nil h
   | n + 1, hn => by
-    refine WP.seq (WP.mono (sroundsVS_ok sc htot h n (by omega)) fun s hs => ?_)
-    have hb' : fb n + bl n ≤ T := by
-      rw [← sc.succ n (by omega)]; exact Nat.le_trans (sc.le _ hn) htot
-    show WP isa (sroundVS bl fb n) s _
-    rw [sc.succ n (by omega)]
-    unfold sroundVS
-    rcases sc.cases n (by omega) with e | e | e
+    refine WP.seq (WP.mono (sroundsV_ok pre htot h n (by omega)) fun s hs => ?_)
+    have hb' : firstBlock pre n + blocks pre n ≤ T := by
+      rw [← firstBlock_succ]; exact Nat.le_trans (firstBlock_le pre (by omega)) htot
+    show WP isa (sroundV pre n) s _
+    rw [firstBlock_succ]
+    unfold sroundV
+    rcases blocks_cases pre n with e | e | e
     · rw [ite_eq_left e]
       rw [e] at hb' ⊢
       exact sround4V_ok hk hrsi hin hb' hs
@@ -631,41 +604,31 @@ theorem sroundsVS_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot) 
     · rw [ite_eq_right (by omega), ite_eq_right (by omega), e, Nat.add_zero]
       exact sround0V_ok hs
 
-/-- A schedule's rounds with `vprold` end as `sroundsS` does. -/
-theorem sroundsVLS_ok {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot) (htot : tot ≤ T)
-    {V : Nat → CState} (hrcx : s₁.gpr .rcx = buf)
+/-- A chunk's rounds with `vprold` end as `srounds` does. -/
+theorem sroundsVL_ok (pre : Bool) (htot : total pre ≤ T) {V : Nat → CState} (hrcx : s₁.gpr .rcx = buf)
     (hb : bufR buf ∈ s₁.wr) (h16 : M16 s₁.mem buf) (n : Nat) (hn : n ≤ 10)
-    (h : SRS fb buf q R0 R1 X V s₁ 0 s₁) :
-    WP isa (sroundsVLS bl fb n) s₁ (SRS fb buf q R0 R1 X V s₁ n) := by
-  unfold sroundsVLS
+    (h : SR pre buf q R0 R1 X V s₁ 0 s₁) :
+    WP isa (sroundsVL pre n) s₁ (SR pre buf q R0 R1 X V s₁ n) := by
+  unfold sroundsVL
   refine WP.seq (WP.mono (loadV_ok h.holds hrcx hb) fun s₂ ⟨h₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
-  have i₂ : SIV s₁ V (AccTo q R0 R1 X s₁ (fb 0)) s₂ :=
+  have i₂ : SIV s₁ V (AccTo q R0 R1 X s₁ (firstBlock pre 0)) s₂ :=
     ⟨h₂, m₂, fun r _ => by rw [g₂], rd₂, wr₂, acc_gpr s₁ s₂ g₂ h.acc⟩
-  refine WP.seq (WP.mono (sroundsVS_ok hk hrsi hin sc htot i₂ n hn) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (sroundsV_ok hk hrsi hin pre htot i₂ n hn) fun s₃ h₃ => ?_)
   have r₃ : s₃.gpr .rcx = buf := by rw [h₃.gpr _ (by decide), hrcx]
   refine WP.mono (storeV_ok (s₀ := s₃) ⟨h₃.holds, rfl, rfl, rfl, rfl⟩ r₃ (by rw [h₃.wr]; exact hb)
     (by rw [h₃.mem]; exact h16)) fun s₄ h₄ => ?_
   exact ⟨h₄.holds, h₄.m16, by rw [← h₃.mem]; exact h₄.frame, fun r hr => by rw [h₄.gpr, h₃.gpr r hr],
     by rw [h₄.rd, h₃.rd], by rw [h₄.wr, h₃.wr], acc_gpr s₃ s₄ h₄.gpr h₃.poly⟩
 
-/-- A schedule's rounds, with `vprold` or without. -/
-theorem sroundsForS_ok (vl : Bool) {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk bl fb tot) (htot : tot ≤ T)
-    (hT : T ≤ 32) {V : Nat → CState} (hrcx : s₁.gpr .rcx = buf)
-    (hb : bufR buf ∈ s₁.wr) (h8 : Proof.ChaCha20.X86_64.Avx2.M8 s₁.mem buf) (h16 : M16 s₁.mem buf)
-    (hd : (⟨q, 16 * T⟩ : Region).Disjoint (slotsR buf))
-    (h : SRS fb buf q R0 R1 X V s₁ 0 s₁) :
-    WP isa (sroundsForS vl bl fb) s₁ (SRS fb buf q R0 R1 X V s₁ 10) := by
-  cases vl
-  · exact sroundsS_ok hk hrcx hrsi hb h8 hd hT hin sc htot 10 (by decide) h
-  · exact sroundsVLS_ok hk hrsi hin sc htot hrcx hb h16 10 (by decide) h
-
 /-- A chunk's rounds, with `vprold` or without. -/
 theorem sroundsFor_ok (vl pre : Bool) (htot : total pre ≤ T) (hT : T ≤ 32) {V : Nat → CState} (hrcx : s₁.gpr .rcx = buf)
     (hb : bufR buf ∈ s₁.wr) (h8 : Proof.ChaCha20.X86_64.Avx2.M8 s₁.mem buf) (h16 : M16 s₁.mem buf)
     (hd : (⟨q, 16 * T⟩ : Region).Disjoint (slotsR buf))
     (h : SR pre buf q R0 R1 X V s₁ 0 s₁) :
-    WP isa (sroundsFor vl pre) s₁ (SR pre buf q R0 R1 X V s₁ 10) :=
-  sroundsForS_ok hk hrsi hin vl (schedOk_pre pre) htot hT hrcx hb h8 h16 hd h
+    WP isa (sroundsFor vl pre) s₁ (SR pre buf q R0 R1 X V s₁ 10) := by
+  cases vl
+  · exact srounds_ok hk hrcx hrsi hb h8 hd hT hin pre htot 10 (by decide) h
+  · exact sroundsVL_ok hk hrsi hin pre htot hrcx hb h16 10 (by decide) h
 
 end
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailO
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last 257 to 511 bytes of `open`
@@ -13,9 +13,10 @@ keystream stored at `ctx + 736` (`kA buf`) while their first `k` blocks are
 absorbed, the accumulator stored and the registers restored, `rbx`, `rbp` at
 the bytes after those blocks (`TailMidKO`): up to 384 bytes by
 `Stitch.tail3O` (`tail3Og_ok`): the constants stored and `Avx2Tail`'s setup
-of three sets (`tailA3_ok`), the rounds (`troundsG3_ok`), and the output
-through `rsi` (`tailBO3_ok`, `out3_ok`); up to 512 by `Stitch.tailKO`
-(`tailKOg_ok`): the kernel's eight blocks (`tailKMainS_ok`) and `leaveTO`.
+of three sets (`tailA3_ok`), the rounds (two loops, `roundsL_ok`, of
+`K3.round4` and `K3.round0`), and the output through `rsi` (`tailBO3_ok`,
+`out3_ok`); up to 512 by `Stitch.tailKO` (`tailKOg_ok`): the kernel's eight
+blocks (`tailKL_ok`) and `leaveTO`.
 -/
 
 @[expose] public section
@@ -34,15 +35,89 @@ open VG.Spec.Poly1305 (P bytesAt leNum)
 open VG.Proof.Poly1305 (absorbAll)
 open VG.Proof.Poly1305.X86_64 (hval absorbRegs)
 
-/-- The schedules of `tail3O` and `tailKO`: four blocks in each of the first
-4 or 6 rounds. -/
-theorem schedOk_o16 : SchedOk (oblocks 16) (ofirst 16) 16 :=
+/-- The schedules of `tail3O`'s rounds: four blocks, and none. -/
+theorem schedOk_o4 : SchedOk (oblocks 4) (ofirst 4) 4 :=
   ⟨by decide, by decide, by decide, by decide, by decide⟩
-theorem schedOk_o24 : SchedOk (oblocks 24) (ofirst 24) 24 :=
+theorem schedOk_o0 : SchedOk (oblocks 0) (ofirst 0) 0 :=
   ⟨by decide, by decide, by decide, by decide, by decide⟩
+
+/-- After `n` double rounds of three sets from `s₁`, the first `j` blocks at
+`q` absorbed: as `TB3`, with `rsi` and `rdi` free. -/
+structure K3 (q : Addr) (R0 R1 : BitVec 64) (X : Nat) (V : Nat → CState) (s₁ : State)
+    (n j : Nat) (s : State) : Prop where
+  hb : HB 3 (fun l => Nat.repeat innerBlock n (V l)) s
+  ym : YM3 s
+  mem : s.mem = s₁.mem
+  gpr : ∀ r, r ∉ absorbRegs → r ≠ .rsi → r ≠ .rdi → s.gpr r = s₁.gpr r
+  rd : s.rd = s₁.rd
+  wr : s.wr = s₁.wr
+  acc : Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * j))) s
+
+section
+variable {q : Addr} {R0 R1 : BitVec 64} {X : Nat} {V : Nat → CState} {s₁ : State}
+
+theorem K3.keep {n j : Nat} {s s' : State} (h : K3 q R0 R1 X V s₁ n j s)
+    (g : ∀ r, r ≠ .rsi → r ≠ .rdi → s'.gpr r = s.gpr r) (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi)
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : K3 q R0 R1 X V s₁ n j s' :=
+  ⟨fun k hk l hl i hi => by simpa only [State.lane, hx, hy] using h.hb k hk l hl i hi,
+    fun l => by simpa only [State.lane, hx, hy] using h.ym l, by rw [hm, h.mem],
+    fun r hr h₁ h₂ => by rw [g r h₁ h₂, h.gpr r hr h₁ h₂], by rw [hrd, h.rd], by rw [hwr, h.wr],
+    acc_keep h.acc g⟩
+
+/-- A double round of three sets absorbing the four blocks at `rsi`. -/
+theorem K3.round4 {k : Nat} (hk : Key R0 R1)
+    (hin : ∀ off n, off + n ≤ 16 * k → InRegions (s₁.rd ++ s₁.wr) (q + BitVec.ofNat 64 off) n)
+    {n j : Nat} (hj : j + 4 ≤ k) {s : State}
+    (h : K3 q R0 R1 X V s₁ n j s) (hrsi : s.gpr .rsi = q + BitVec.ofNat 64 (16 * j)) :
+    WP isa (.block (troundG3 (oblocks 4) (ofirst 4) 0)) s fun s' => K3 q R0 R1 X V s₁ (n + 1) (j + 4) s' ∧
+      s'.gpr .rsi = s.gpr .rsi ∧ s'.gpr .rdi = s.gpr .rdi := by
+  have hin' : ∀ off n', off + n' ≤ 16 * 4 →
+      InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 off) n' := by
+    intro off n' hn
+    rw [h.rd, h.wr, Offset.add_add]
+    exact hin _ _ (by omega)
+  have i₀ : TB3 s (fun l => Nat.repeat innerBlock n (V l))
+      (AccTo (q + BitVec.ofNat 64 (16 * j)) R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * j))) s
+        (ofirst 4 0)) s :=
+    ⟨h.hb, h.ym, rfl, fun _ _ => rfl, rfl, rfl, by
+      simp only [AccTo, show ofirst 4 0 = 0 from rfl, Nat.mul_zero]
+      rw [show bytesAt s.mem (q + BitVec.ofNat 64 (16 * j)) 0 = [] from rfl, VG.Proof.Poly1305.absorbAll_nil]
+      exact h.acc⟩
+  refine WP.mono (troundG3_ok hk hrsi hin' schedOk_o4 (Nat.le_refl _) (by decide) i₀) fun s' h' => ?_
+  have hm : bytesAt s.mem (q + BitVec.ofNat 64 (16 * j)) (16 * 4) =
+      bytesAt s₁.mem (q + BitVec.ofNat 64 (16 * j)) (16 * 4) := by rw [h.mem]
+  exact ⟨⟨h'.hb, h'.ym, by rw [h'.mem, h.mem], fun r hr h₁ h₂ => by rw [h'.gpr r hr, h.gpr r hr h₁ h₂],
+    by rw [h'.rd, h.rd], by rw [h'.wr, h.wr], acc_next hm h'.poly⟩, h'.gpr _ (by decide), h'.gpr _ (by decide)⟩
+
+/-- A double round of three sets absorbing nothing. -/
+theorem K3.round0 {k : Nat} (hk : Key R0 R1)
+    (hin : ∀ off n, off + n ≤ 16 * k → InRegions (s₁.rd ++ s₁.wr) (q + BitVec.ofNat 64 off) n)
+    {n j : Nat} {s : State} (h : K3 q R0 R1 X V s₁ n j s) (hrsi : s.gpr .rsi = q) :
+    WP isa (.block (troundG3 (oblocks 0) (ofirst 0) 0)) s fun s' => K3 q R0 R1 X V s₁ (n + 1) j s' ∧
+      s'.gpr .rsi = s.gpr .rsi ∧ s'.gpr .rdi = s.gpr .rdi := by
+  have i₀ : TB3 s (fun l => Nat.repeat innerBlock n (V l))
+      (AccTo q R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * j))) s (ofirst 0 0)) s :=
+    ⟨h.hb, h.ym, rfl, fun _ _ => rfl, rfl, rfl, by
+      simp only [AccTo, show ofirst 0 0 = 0 from rfl, Nat.mul_zero]
+      rw [show bytesAt s.mem q 0 = [] from rfl, VG.Proof.Poly1305.absorbAll_nil]
+      exact h.acc⟩
+  refine WP.mono (troundG3_ok hk hrsi (fun off n' hn => by rw [h.rd, h.wr]; exact hin off n' hn) schedOk_o0
+    (Nat.zero_le _) (by decide) i₀) fun s' h' => ?_
+  have a := h'.poly
+  simp only [AccTo, show ofirst 0 1 = 0 from rfl, Nat.mul_zero] at a
+  rw [show bytesAt s.mem q 0 = [] from rfl, VG.Proof.Poly1305.absorbAll_nil] at a
+  exact ⟨⟨h'.hb, h'.ym, by rw [h'.mem, h.mem], fun r hr h₁ h₂ => by rw [h'.gpr r hr, h.gpr r hr h₁ h₂],
+    by rw [h'.rd, h.rd], by rw [h'.wr, h.wr], a⟩, h'.gpr _ (by decide), h'.gpr _ (by decide)⟩
+
+end
 
 section
 variable {c : Addr}
+
+/-- The state, 64 bytes below `buf`, where `roundsL` leaves `rdi`. -/
+theorem bf_sub64 : bfA c - 64 = stA c := by
+  simp only [bfA, stA]
+  rw [show BitVec.ofNat 64 128 = BitVec.ofNat 64 64 + 64 from rfl, ← BitVec.add_assoc, BitVec.add_sub_cancel]
 
 theorem tailA3_eq : tailA3 = pairsCode tPairs ++ (pairsCode constPairs ++
     (([.mov .r12 (.reg .r9), .mov .r9 (.reg .rcx)] : List Instr) ++
@@ -273,16 +348,21 @@ theorem tail3Og_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
     rw [Offset.add_add]
     exact Offset.contains_base _ (by omega) (by omega)
   -- The rounds.
-  refine WP.seq (WP.mono (troundsG3_ok hk hrsi₁ hin schedOk_o16 (Nat.le_refl _) tb₁ 10 (by decide))
-    fun s₂ tb₂ => ?_)
-  have hrcx₂ : s₂.gpr .rcx = bfA c := by rw [tb₂.gpr _ (by decide), gk₁ _ (by decide) (by decide), h.rcx]
-  have hrdi₂ : s₂.gpr .rdi = stA c := by rw [tb₂.gpr _ (by decide), gk₁ _ (by decide) (by decide), h.rdi]
-  have hrsi₂ : s₂.gpr .rsi = dp + BitVec.ofNat 64 o := by rw [tb₂.gpr _ (by decide), hrsi₁]
+  have k₁ : K3 (dp + BitVec.ofNat 64 o) R0 R1 X (fun j => ctr (stateAt s.mem (stA c)) j) s₁ 0 0 s₁ :=
+    ⟨tb₁.hb, tb₁.ym, rfl, fun _ _ _ _ => rfl, rfl, rfl, tb₁.poly⟩
+  refine WP.seq (WP.mono (roundsL_ok (K3 (dp + BitVec.ofNat 64 o) R0 R1 X _ s₁) (k := 16) (by decide) (by decide)
+    (by decide) (by decide) (fun _ _ _ _ h' g x y m rd wr => h'.keep g x y m rd wr)
+    (fun n s hn h' hr => K3.round4 hk hin (j := 4 * n) (show 4 * n + 4 ≤ 16 by omega) h' hr)
+    (fun n s _ _ h' hr => K3.round0 hk hin h' hr) k₁ hrsi₁) fun s₂ ⟨tb₂, r₂, d₂⟩ => ?_)
+  have hrcx₂ : s₂.gpr .rcx = bfA c := by
+    rw [tb₂.gpr _ (by decide) (by decide) (by decide), gk₁ _ (by decide) (by decide), h.rcx]
+  have hrdi₂ : s₂.gpr .rdi = stA c := by rw [d₂, hrcx₂, bf_sub64]
+  have hrsi₂ : s₂.gpr .rsi = dp + BitVec.ofNat 64 o := r₂
   have wr₂ : s₂.wr = s.wr := by rw [tb₂.wr, wr₁]
   have m₂ : s₂.mem = tMem c s.mem := by rw [tb₂.mem, m₁]
   have hi₂ : Incs s₂.mem (bfA c) := by rw [m₂]; exact Proof.ChaCha20.X86_64.Avx2.tincs_mem _ _
   refine (WP.mono (tailBO3_ok (k := 16) (by decide) (by decide) tb₂.hb hrcx₂ hrdi₂ (by rw [wr₂]; exact h.st)
-    (by rw [wr₂]; exact h.bf) (by rw [wr₂]; exact h.ps) (by rw [wr₂]; exact hkr) hi₂ tb₂.poly.h2)
+    (by rw [wr₂]; exact h.bf) (by rw [wr₂]; exact h.ps) (by rw [wr₂]; exact hkr) hi₂ tb₂.acc.h2)
     fun s₃ ⟨ks₃, acc₃, f₃, rbx₃, rbp₃, r12₃, r13₃, r14₃, r15₃, rcx₃, rsp₃, rd₃, wr₃⟩ => ?_)
   -- What the stores of `tailA3` keep in the context.
   have ctxk : ∀ d, 520 ≤ d → d + 8 ≤ 552 →
@@ -301,7 +381,8 @@ theorem tail3Og_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
     by rw [rbp₃, hslot, Offset.ofNat_sub_ofNat (by omega)],
     by rw [r12₃, ctxk 520 (by decide) (by decide)], by rw [r13₃, ctxk 528 (by decide) (by decide)],
     by rw [r14₃, ctxk 536 (by decide) (by decide)], r15₃,
-    by rw [rsp₃, tb₂.gpr _ (by decide), gk₁ _ (by decide) (by decide), h.rsp], by rw [rd₃, tb₂.rd, rd₁],
+    by rw [rsp₃, tb₂.gpr _ (by decide) (by decide) (by decide), gk₁ _ (by decide) (by decide), h.rsp],
+    by rw [rd₃, tb₂.rd, rd₁],
     by rw [wr₃, wr₂]⟩
   · rw [ks₃ i (by omega), S₂, Proof.ChaCha20.X86_64.Avx2.plus_block, VG.Proof.ChaCha20.keystream_getD _ hi]
   · -- The accumulator: the first 16 blocks absorbed.
@@ -311,8 +392,8 @@ theorem tail3Og_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
       refine bytesAt_frame (tMem_frame _) (fun r hr => ?_) (by omega)
       simp only [List.mem_singleton] at hr; subst hr
       exact (hl.bf_d.symm.sub_left (Offset.sub_base _ (by omega)))
-    have v := tb₂.poly.val
-    rw [show ofirst 16 10 = 16 from rfl, hb1] at v
+    have v := tb₂.acc.val
+    rw [hb1] at v
     rw [acc₃, v]
   · have f1 : Frame [bufR (bfA c)] s.mem s₂.mem := by rw [m₂]; exact tMem_frame _
     exact (f1.mono (by simp)).trans f₃
@@ -340,7 +421,8 @@ theorem tailKOg_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
     rw [Offset.add_add]
     exact Offset.contains_base _ (by omega) (by omega)
   unfold tailKO
-  refine WP.seq (WP.mono (tailKMainS_ok vl schedOk_o24 rfl (by decide) hk h.rdi h.rcx h.rsi h.st h.bf hkr hin
+  refine WP.seq (WP.mono (tailKL_ok vl (k := 24) (by decide) (by decide) (by decide) (by decide) (by decide) hk
+    h.rdi h.rcx h.rsi bf_sub64 h.st h.bf hkr hin
     hcs st_bf dsk dbk dqs h.acc) fun s₂ ⟨d₂, a₂, f₂, g₂, rd₂, wr₂⟩ => ?_)
   rw [leaveTO_eq, List.append_assoc]
   refine WP.block_append (WP.mono (Proof.Poly1305.X86_64.reduce_ok s₂) fun s₃ ⟨red, k₃⟩ => ?_)

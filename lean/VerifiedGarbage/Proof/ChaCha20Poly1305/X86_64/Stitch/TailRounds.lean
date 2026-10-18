@@ -65,6 +65,25 @@ theorem half_eq (two : Bool) :
       (trH two 5).flatMap ymmOf := by
   cases two <;> decide +kernel
 
+/-- A schedule of the blocks the ten double rounds absorb: `bl n` blocks
+(0, 3 or 4) in round `n`, from block `fb n`, `tot` in all. -/
+structure SchedOk (bl fb : Nat → Nat) (tot : Nat) : Prop where
+  first0 : fb 0 = 0
+  succ : ∀ n, n < 10 → fb (n + 1) = fb n + bl n
+  le : ∀ n, n ≤ 10 → fb n ≤ tot
+  cases : ∀ n, n < 10 → bl n = 4 ∨ bl n = 3 ∨ bl n = 0
+  four : ∀ n, n < 10 → bl n ≠ 0 → 4 ≤ fb n + bl n
+
+/-- A chunk's schedule. -/
+theorem schedOk_pre (pre : Bool) : SchedOk (blocks pre) (firstBlock pre) (total pre) where
+  first0 := by cases pre <;> rfl
+  succ n _ := firstBlock_succ pre n
+  le n hn := firstBlock_le pre hn
+  cases n _ := blocks_cases pre n
+  four n _ := by
+    unfold firstBlock blocks; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;>
+      split <;> (try split) <;> omega
+
 /-- A double round with the blocks between its parts. -/
 theorem troundG_eq (two : Bool) (bl fb : Nat → Nat) (n : Nat) (h0 : bl n ≠ 0) :
     troundG two bl fb n = (trH two 0).flatMap ymmOf ++

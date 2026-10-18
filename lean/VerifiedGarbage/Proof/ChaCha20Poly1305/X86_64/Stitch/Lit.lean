@@ -34,9 +34,6 @@ materialize_code troundsTT := trounds true true 10
 materialize_code troundsO4 := troundsG false (oblocks 4) (ofirst 4) 10
 materialize_code troundsO8 := troundsG true (oblocks 8) (ofirst 8) 10
 materialize_code troundsO12 := troundsG true (oblocks 12) (ofirst 12) 10
-materialize_code trounds3O16 := troundsG3 (oblocks 16) (ofirst 16) 10
-materialize_code sroundsKF := sroundsForS false (oblocks 24) (ofirst 24)
-materialize_code sroundsKT := sroundsForS true (oblocks 24) (ofirst 24)
 
 materialize_code firstChunkF := firstChunk false
 materialize_code firstChunkT := firstChunk true
