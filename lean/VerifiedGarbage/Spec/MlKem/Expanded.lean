@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlKem.Contract
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Spec.MlKem.Kpke16
 
 /-!
 # ML-KEM-768 and ML-KEM-1024 with expanded encapsulation keys
@@ -18,8 +19,9 @@ algorithms of the standard, on the same outputs.
 An *expanded encapsulation key* (`ExpandedEk`) is the encapsulation key
 `ek`, then `H(ek)` (32 bytes), then `Â` sampled from the `ρ` of `ek`, row by
 row, each entry as its 256 coefficients, less than `q`, as little-endian
-`u32`s (1 KiB): as the functions of `Spec/MlKem/Poly.lean` take polynomials
-(`PolyIs`). For ML-KEM-768 it is 10432 bytes, for ML-KEM-1024 17984.
+`u16`s (512 bytes): as the functions of `Spec/MlKem/Kpke16.lean` take
+polynomials (`PolyIsW 16`). For ML-KEM-768 it is 5824 bytes, for ML-KEM-1024
+9792.
 
 The functions, for each parameter set:
 
@@ -51,12 +53,12 @@ namespace VG.Spec.MlKem
 open Sha3 (bytesAt)
 
 /-- The length of an expanded encapsulation key: the key (`384k + 32`
-bytes), `H` of it (32 bytes), and the `k²` entries of `Â`, 1 KiB each. -/
-def Params.ekxLen (p : Params) : Nat := p.ekLen + 32 + 1024 * (p.k * p.k)
+bytes), `H` of it (32 bytes), and the `k²` entries of `Â`, 512 bytes each. -/
+def Params.ekxLen (p : Params) : Nat := p.ekLen + 32 + 512 * (p.k * p.k)
 
 /-- The offset of `Â[i, j]` in an expanded encapsulation key: the entries
 follow `H(ek)`, row by row. -/
-def Params.ekxA (p : Params) (i j : Nat) : Nat := p.ekLen + 32 + 1024 * (p.k * i + j)
+def Params.ekxA (p : Params) (i j : Nat) : Nat := p.ekLen + 32 + 512 * (p.k * i + j)
 
 /-- The expanded encapsulation key of `ek` is at `x` in `m`: the bytes of
 `ek`, then those of `H(ek)`, then, for some bound on `SampleNTT`'s
@@ -66,7 +68,8 @@ iterations for which it samples the matrix `Â` of `K-PKE.Encrypt`
 def ExpandedEk (p : Params) (m : Mem) (x : Addr) (ek : List Byte) : Prop :=
   bytesAt m x p.ekLen = ek ∧ bytesAt m (x + BitVec.ofNat 64 p.ekLen) 32 = H ek ∧
     ∃ iters A, sampleMatrix p.k iters (ekRho p ek) = some A ∧
-      ∀ i < p.k, ∀ j < p.k, PolyIs m (x + BitVec.ofNat 64 (p.ekxA i j)) ((A.getD i []).getD j zero)
+      ∀ i < p.k, ∀ j < p.k,
+        PolyIsW 16 m (x + BitVec.ofNat 64 (p.ekxA i j)) ((A.getD i []).getD j zero)
 
 /-- The postcondition of `keygen_expanded`, with the seed at `seed`: writes
 to `ekx` the expanded key of the encapsulation key of
@@ -110,7 +113,7 @@ def DecapsExpandedPost (p : Params) (dk ct key : Addr) (m m' : Mem) : Prop :=
 def ekxDoc (p : Params) : String :=
   s!"an expanded encapsulation key of {p.name}: the encapsulation key ({p.ekLen} bytes), then \
     `H(ek)` (32 bytes), then the matrix `Â` sampled from its `ρ` (FIPS 203 Algorithm 14, \
-    lines 4–8), row by row, each entry as 256 little-endian `u32` coefficients less than `q` \
+    lines 4–8), row by row, each entry as 256 little-endian `u16` coefficients less than `q` \
     = 3329 ({p.ekxLen} bytes in all; see `VG.Spec.MlKem.ExpandedEk`)"
 
 /-! ## Any parameter set, with `scratch` words of working space -/
@@ -259,7 +262,7 @@ def Params.decapsExpandedApi (p : Params) (scratch : Nat) (ns : String) : Api wh
 
 /-! ## ML-KEM-768 -/
 
-theorem ekxLen768 : mlKem768.ekxLen = 10432 := rfl
+theorem ekxLen768 : mlKem768.ekxLen = 5824 := rfl
 
 /-- The signature of `vg_mlkem768_keygen_expanded`. -/
 def keyGenExpandedSig : Sig := mlKem768.keyGenExpandedSig 4096
@@ -309,7 +312,7 @@ open Spec.MlKem
 
 /-! ## ML-KEM-1024 -/
 
-theorem ekxLen1024 : mlKem1024.ekxLen = 17984 := rfl
+theorem ekxLen1024 : mlKem1024.ekxLen = 9792 := rfl
 
 /-- The signature of `vg_mlkem1024_keygen_expanded`. -/
 def keyGenExpandedSig : Sig := mlKem1024.keyGenExpandedSig 6144

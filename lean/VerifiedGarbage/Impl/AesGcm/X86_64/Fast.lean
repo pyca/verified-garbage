@@ -14,7 +14,7 @@ absorbed without a call (`aad`): `J₀` and the first counter block (`j012`,
 and multiplied by `H'` (`aadMul`), the prepared power `H` at `ctx + 272`,
 where `oneAad` would call `vg_ghash`, which computes `H'` from `H` on every
 call; five bytes (a TLS 1.3 record's header) are put together in a register
-instead (`aadReg`). `SealSplit.prefix` and `SealSplit.body` then end it as `run` does.
+instead (`aadReg`), and sixteen loaded as a block (`aadFull`). `SealSplit.prefix` and `SealSplit.body` then end it as `run` does.
 -/
 
 @[expose] public section
@@ -66,13 +66,20 @@ def aadMulR : List Instr :=
   Gcm.X86_64.Pclmul.mul .xmm2 .xmm7 .xmm3 ++
   ([.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .r14 16) .xmm2] : List Instr)
 
+/-- Sixteen bytes of additional data at `rsi`, a whole block, loaded into
+`xmm7`: no padding, and no stores for the load to wait for. -/
+def aadFull : List Instr :=
+  [.movdquLoad .xmm7 (at_ .rsi 0)]
+
 /-- The additional data, `rcx` bytes (1 to 16), multiplied into the
-accumulator: five bytes from a register (`aadReg`), any other length padded
-in `T` (`aadPad`). -/
+accumulator: five bytes from a register (`aadReg`), sixteen loaded whole
+(`aadFull`), any other length padded in `T` (`aadPad`). -/
 def aadSome : Prog isa :=
   .seq (.block [.alu .cmp .rcx (imm 5)])
     (.ite .e (.seq (.block [.mov .rsi (.mem (at_ .r15 aadO))]) (.block (aadReg ++ aadMulR)))
-      (.seq aadPad (.block aadMul)))
+      (.seq (.block [.alu .cmp .rcx (imm 16)])
+        (.ite .e (.seq (.block [.mov .rsi (.mem (at_ .r15 aadO))]) (.block (aadFull ++ aadMulR)))
+          (.seq aadPad (.block aadMul)))))
 
 /-- `J₀`, the first counter block (with the accumulator zeroed), and the
 additional data absorbed, if any. -/

@@ -174,7 +174,9 @@ After CI passes on `main`, it publishes the Linux x86-64 project build and
 Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`, an OCI artifact
 whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
 relative to `lean/`, with each module's outputs in one `.ltar` archive, the
-format of Lake's `ltar` facet and Mathlib's cache (`ci/lean_cache.py`). Only
+format of Lake's `ltar` facet and Mathlib's cache, and every other file (the
+outputs' `.hash` files, the dependencies' checkouts) in one tar,
+`.lake/ltar/files.tar`, first in the layer (`ci/lean_cache.py`). Only
 the latest version is retained. CI compares the checked build's cache key
 with the manifest's `io.pyca.lean.cache-key` annotation and skips packaging
 and publishing when it matches, so Rust- or docs-only changes do not create
@@ -183,10 +185,11 @@ a new cache version.
 Restore it with `ci/fetch_lean_cache.py`, which streams the layer straight
 from the registry API with an anonymous pull token, resumes from where it
 stopped when the connection drops, and checks the download against the
-layer's digest, and `ci/lean_cache.py unpack`, which unpacks the archives
-with the toolchain's `leantar` as they arrive. Install the toolchain in
-`lean/lean-toolchain` first (with elan, `lean --version` in `lean/` installs
-it). Then, with `python3` and `zstd` installed, from the repository root:
+layer's digest, and `ci/lean_cache.py unpack`, which extracts `files.tar`
+with `tar` in the background and unpacks the archives with the toolchain's
+`leantar` as they arrive. Install the toolchain in `lean/lean-toolchain`
+first (with elan, `lean --version` in `lean/` installs it). Then, with
+`python3`, `tar` and `zstd` installed, from the repository root:
 
 ```sh
 set -o pipefail
@@ -194,8 +197,9 @@ python3 ci/fetch_lean_cache.py | zstd -dc | python3 ci/lean_cache.py unpack lean
 ```
 
 The download (about 1 GB) streams through the pipeline and is never
-stored: the archives are staged in `/dev/shm` a batch at a time (`--tmp`
-for another directory), and only the unpacked build is written. If the
+stored: `files.tar` and the archives, a batch at a time, are staged in
+`/dev/shm` (`--tmp` for another directory), and only the unpacked build is
+written. If the
 pipeline fails (a connection that drops five times in a row without
 progress, or a download that does not match the digest), run it again. The
 manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`

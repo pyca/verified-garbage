@@ -15,9 +15,9 @@ with the contract of `vg_sha512_compress`, for CPUs with the SHA512 extension
   the hash value's `[u64; 8]` layout once per call. Each `vsha512rnds2` does
   two rounds and swaps the roles of the two registers.
 * Four rounds at a time, `Wₜ + Kₜ` for them is formed in `ymm0`: the four
-  constants are loaded as immediates through `rax`, `xmm11` and `xmm12`,
-  since the model has no constant pool; the second `vsha512rnds2` reads the
-  upper two from `xmm0` after `vextracti128`.
+  constants are loaded from the table `VG_SHA512_K` (`vmovdquTbl`, through
+  its address in `rax`); the second `vsha512rnds2` reads the upper two from
+  `xmm0` after `vextracti128`.
 * The message schedule is kept four words to a register, `W₄ᵢ … W₄ᵢ₊₃` in
   `ymm(3 + i mod 4)`, computed with `vsha512msg1`, `vperm2i128` and
   `vpalignr` (for `Wₜ₋₇`), `vpaddq` and `vsha512msg2`.
@@ -49,10 +49,12 @@ def const2 (x : XReg) (c₀ c₁ : BitVec 64) : List Instr :=
   [.movImm64 .rax c₀, .vop (.vmovq x .rax), .movImm64 .rax c₁, .vop (.vmovq .xmm11 .rax),
    .vop (.vbin .vpunpcklqdq .l128 x x .xmm11)]
 
-/-- `Kᵢ … Kᵢ₊₃` into `ymm0`, `Kᵢ` in bits 63:0, through `xmm12`. -/
-def kQuad (i : Nat) : List Instr :=
-  const2 .xmm0 (K i) (K (i + 1)) ++ const2 .xmm12 (K (i + 2)) (K (i + 3)) ++
-  ([.vop (.vinserti128 .xmm0 .xmm0 .xmm12 1)] : List Instr)
+/-- The name of the table of the round constants. -/
+def kSym : String := "VG_SHA512_K"
+
+/-- `Kᵢ … Kᵢ₊₃` into `ymm0`, `Kᵢ` in bits 63:0, from the table, whose address
+`rax` holds. -/
+def kQuad (i : Nat) : List Instr := [.vmovdquTbl .xmm0 (at_ .rax (8 * i)) kSym Spec.Sha512.Ks]
 
 /-- The `vpshufb` mask that reverses the bytes of each quadword. -/
 def bswapMask : BitVec 128 := 0x08090a0b0c0d0e0f0001020304050607#128
@@ -94,11 +96,12 @@ def mask : List Instr :=
   const2 .xmm8 (bswapMask.extractLsb' 0 64) (bswapMask.extractLsb' 64 64) ++
   ([.vop (.vinserti128 .xmm8 .xmm8 .xmm8 1)] : List Instr)
 
-/-- Load the hash value `H₀ … H₇` as `ABEF` (`H₀, H₁, H₄, H₅` from quadword 3
-down) into `ymm1` and `CDGH` (`H₂, H₃, H₆, H₇`) into `ymm2`. -/
+/-- Load the mask, the table's address into `rax`, and the hash value
+`H₀ … H₇` as `ABEF` (`H₀, H₁, H₄, H₅` from quadword 3 down) into `ymm1` and
+`CDGH` (`H₂, H₃, H₆, H₇`) into `ymm2`. -/
 def load : List Instr :=
   mask ++
-  ([.vmovdquLoad .l256 .xmm1 (at_ .rdi 0), .vmovdquLoad .l256 .xmm2 (at_ .rdi 32),
+  ([.leaSym .rax kSym, .vmovdquLoad .l256 .xmm1 (at_ .rdi 0), .vmovdquLoad .l256 .xmm2 (at_ .rdi 32),
    -- ymm7 := H₄ H₅ H₀ H₁ (from quadword 0), ymm2 := H₆ H₇ H₂ H₃
    .vop (.vperm2i128 .xmm7 .xmm2 .xmm1 0x20),
    .vop (.vperm2i128 .xmm2 .xmm2 .xmm1 0x31),

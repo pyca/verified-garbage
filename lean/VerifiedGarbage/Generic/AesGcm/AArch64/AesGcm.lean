@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
@@ -24,7 +25,9 @@ target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 
 Each function needs the CPU features of the implementations it calls:
-`init` calls only AES's, `stream_init` and `stream_aad` only GHASH's.
+`init` calls only AES's, `stream_init` and `stream_aad` only GHASH's. With
+the interleaved loops (`GcmImpl.stitch`), the functions with the powers also
+need `FEAT_SHA3`.
 
 The functions' calls (`bl`) keep the return address in `x30`, which they
 save in the working space. `seal` and `open` read their last arguments from
@@ -56,6 +59,14 @@ def fastOpenNote (v : GcmImpl) : List String :=
   if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
     the tag as `seal` does on that path, calling `" ++ v.gh.fn.name ++ "` once, on the whole blocks of the \
     ciphertext, and decrypts only if it matches."] else []
+
+/-- How the functions with the powers take the whole chunks of 128 bytes of a
+TLS record, with the interleaved loops. -/
+def stitchNote (v : GcmImpl) : List String :=
+  if v.stitch then ["With the interleaved loops, it encrypts or decrypts the first 128 ⌊n / 128⌋ bytes of the \
+    text and hashes them eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL \
+    products and their reduction (with `eor3`, which needs `FEAT_SHA3`), from a table of the powers, and \
+    hashes the rest's whole blocks with the call."] else []
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
@@ -151,20 +162,18 @@ def withPowersNote (v : GcmImpl) (g : GhashWithImpl) (name : String) : String :=
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v, withPowersNote v g Spec.Gcm.sealApi.name]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
-      (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
+    notes := [note v, withPowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealPwCode v g)
     stack := 2592
-    verified := Fast.sealPw_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features },
+    verified := sealPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v, withPowersNote v g Spec.Gcm.openApi.name]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3
-      (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
+    notes := [note v, withPowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
-    verified := Fast.openPw_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features }]
+    verified := openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures }]
 
 /-- How the `*_store_powers` functions store the powers. -/
 def storePowersNote (v : GcmImpl) (g : GhashStoreImpl) (name : String) : String :=
@@ -177,20 +186,20 @@ def storePowersNote (v : GcmImpl) (g : GhashStoreImpl) (name : String) : String 
 def storePowersArtifacts (v : GcmImpl) (g : GhashStoreImpl) : List Artifact :=
   [Spec.Gcm.sealStorePowersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v, storePowersNote v g Spec.Gcm.sealApi.name]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
-      (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
+    notes := [note v, storePowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealStCode v g)
     stack := 2592
-    verified := Fast.sealSt_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features },
+    verified := sealStCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Pmull.prepPow
+      Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures },
   Spec.Gcm.openStorePowersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v, storePowersNote v g Spec.Gcm.openApi.name]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3
-      (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
+    notes := [note v, storePowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openStCode v g)
     stack := 2592
-    verified := Fast.openSt_framed v g Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features }]
+    verified := openStCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Pmull.prepPow
+      Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=

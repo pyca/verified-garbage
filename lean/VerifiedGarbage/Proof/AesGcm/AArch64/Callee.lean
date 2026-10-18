@@ -408,6 +408,11 @@ structure GcmImpl where
   ctr : Ctr32Impl
   key : KeyImpl
   gh : GhashImpl
+  /-- Whether `seal` and `open` take the records of TLS with the loops that
+  interleave counter mode and GHASH eight blocks at a time
+  (`Impl/AesGcm/AArch64/Stitch.lean`), which need PMULL (`gh.pmull`) and
+  `FEAT_SHA3` (`eor3`). -/
+  stitch : Bool := false
 
 namespace GcmImpl
 
@@ -417,9 +422,10 @@ def callees : Callees := ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn
 
 /-- What the names of the AES-GCM functions end with: once if both
 implementations have the same suffix (`_aes`, for the one feature they
-need). -/
+need), then `_sha3` with the interleaved loops (`stitch`). -/
 def suffix : String :=
-  if v.gh.suffix = v.ctr.suffix then v.ctr.suffix else v.ctr.suffix ++ v.gh.suffix
+  (if v.gh.suffix = v.ctr.suffix then v.ctr.suffix else v.ctr.suffix ++ v.gh.suffix) ++
+    if v.stitch then "_sha3" else ""
 
 
 end GcmImpl
@@ -439,5 +445,7 @@ structure GcmVariant where
   ctr : Ctr32Impl
   key : KeyImpl
   gh : GhashName
+  /-- `GcmImpl.stitch`. -/
+  stitch : Bool := false
 
 end VG.Proof.AesGcm.AArch64

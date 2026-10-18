@@ -153,6 +153,7 @@ Modelling choices:
 * MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
   the multiplies of the model but `mul` and `mulx` (`pmuludq`, `vpmuludq`,
   `pmullw`, `vpmullw`, `pmulhw`, `vpmulhw`, `pmaddwd`, `vpmaddwd`,
+  `pmulhrsw`, `vpmulhrsw`,
   `vpmadd52luq` and `vpmadd52huq`), although on Intel's DOIT
   list, may take up to a cycle longer to retire for specific data values
   unless MXCSR holds `0x1FBF` (Intel, "MXCSR Configuration Dependent Timing", and
@@ -241,8 +242,12 @@ inductive Instr
   | andn (dst src1 src2 : Reg)
   /-- `movzx r32, BYTE PTR [src]`: the byte, zero-extended into the 64-bit register. -/
   | movzx8 (dst : Reg) (src : MemOp)
+  /-- `movzx r32, WORD PTR [src]`: the word, zero-extended into the 64-bit register. -/
+  | movzx16 (dst : Reg) (src : MemOp)
   /-- `mov BYTE PTR [dst], r8`: the low byte of `src`. -/
   | store8 (dst : MemOp) (src : Reg)
+  /-- `mov WORD PTR [dst], r16`: the low 16 bits of `src`. -/
+  | store16 (dst : MemOp) (src : Reg)
   /-- `bswap r64` -/
   | bswap (dst : Reg)
   /-- `op r64, count` (64-bit) with an immediate count. Only counts `1 ≤ count ≤ 63`
@@ -394,7 +399,8 @@ inductive Instr
 (x86-64-v1, which includes SSE and SSE2: System V AMD64 psABI,
 "Micro-Architecture Levels"), named as Rust's target features. SDM Vol. 2,
 the "CPUID Feature Flag" column of each instruction's opcode table: SSSE3
-for PSHUFB and PALIGNR (`66 0F 38 00 /r`, `66 0F 3A 0F /r ib`), SHA for
+for PSHUFB, PALIGNR and PMULHRSW (`66 0F 38 00 /r`, `66 0F 3A 0F /r ib`,
+`66 0F 38 0B /r`), SSE4_1 for PBLENDW (`66 0F 3A 0E /r ib`), SHA for
 SHA256RNDS2, SHA256MSG1 and SHA256MSG2 (`NP 0F 38 CB /r`, `NP 0F 38 CC /r`,
 `NP 0F 38 CD /r`) and for SHA1RNDS4, SHA1NEXTE, SHA1MSG1 and SHA1MSG2
 (`NP 0F 3A CC /r ib`, `NP 0F 38 C8 /r`, `NP 0F 38 C9 /r`, `NP 0F 38 CA /r`); AES for AESENC, AESENCLAST, AESDEC, AESDECLAST, AESIMC
@@ -402,12 +408,13 @@ and AESKEYGENASSIST (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`,
 `66 0F 38 DF /r`, `66 0F 38 DB /r`, `66 0F 3A DF /r ib`); PCLMULQDQ for
 PCLMULQDQ (`66 0F 3A 44 /r ib`); SSE2 for MOVQ xmm, r64 (`66 REX.W 0F 6E /r`),
 PAND, PANDN, PADDQ, PMULUDQ, PSLLQ, PSRLQ, PSLLDQ, PSRLDQ and PCMPEQD
-(`66 0F 76 /r`); AVX for the
+(`66 0F 76 /r`), PMADDWD (`66 0F F5 /r`) and PCMPGTW (`66 0F 65 /r`); AVX for the
 VEX.128 forms of the lane-wise instructions (e.g. `VEX.128.66.0F.WIG FE /r`
-VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD), for VMOVDQA, VMOVDQU (both
+VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD) and of VPBLENDW
+(`VEX.128.66.0F3A.WIG 0E /r ib`), for VMOVDQA, VMOVDQU (both
 lengths), VMOVQ and VZEROUPPER; AVX2 for their VEX.256 forms (e.g.
-`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD) and
-for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
+`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD,
+`VEX.256.66.0F3A.WIG 0E /r ib` VPBLENDW) and for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
 VINSERTI128, VEXTRACTI128 and VBROADCASTI128 at any length; AVX for VPMOVMSKB reg, xmm1
 (`VEX.128.66.0F.WIG D7 /r`) and AVX2 for VPMOVMSKB reg, ymm1
 (`VEX.256.66.0F.WIG D7 /r`) and VPERMD (`VEX.256.66.0F38.W0 36 /r`). LDMXCSR and STMXCSR (SSE,
@@ -474,7 +481,8 @@ AVX and AVX512F requirements also ensure the vector state is enabled,
 following the model's existing feature convention. -/
 def Instr.requires : Instr → List String
   | .zop (.zbinH .vaesenc ..) | .zop (.zbinH .vaesenclast ..) => ["vaes", "avx512f"]
-  | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
+  | .xop (.bin .pshufb ..) | .xop (.palignr ..) | .xop (.bin .pmulhrsw ..) => ["ssse3"]
+  | .xop (.pblendw ..) => ["sse4.1"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..) | .xop (.sha256rnds2 ..) => ["sha"]
   | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..) | .xop (.bin .sha1nexte ..)
   | .xop (.sha1rnds4 ..) => ["sha"]
@@ -492,10 +500,10 @@ def Instr.requires : Instr → List String
   | .vop (.vpclmulqdq .l128 ..) => ["pclmulqdq", "avx"]
   | .vop (.vpclmulqdq .l256 ..) => ["vpclmulqdq", "avx"]
   | .vop (.vbin _ .l256 ..) | .vbinLoad _ .l256 .. | .vop (.vshift _ .l256 ..)
-  | .vop (.vpshufd .l256 ..) | .vop (.vpalignr .l256 ..) => ["avx2"]
+  | .vop (.vpshufd .l256 ..) | .vop (.vpalignr .l256 ..) | .vop (.vpblendw .l256 ..) => ["avx2"]
   | .vop (.vbin _ .l128 ..) | .vbinLoad _ .l128 .. | .vop (.vshift _ .l128 ..)
   | .vop (.vpshufd .l128 ..)
-  | .vop (.vpalignr .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
+  | .vop (.vpalignr .l128 ..) | .vop (.vpblendw .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. => ["avx"]
   | .vop (.vpblendd ..) | .vop (.vvar ..) | .vop (.vpbroadcastd ..) | .vop (.vpbroadcastq ..)
   | .vop (.vpermq ..) | .vop (.vpermd ..) | .vop (.vperm2i128 ..) | .vop (.vinserti128 ..) | .vop (.vextracti128 ..)
@@ -541,7 +549,18 @@ def exec : Instr → State → Option State
   | .rorx d r n, s => execRorx d r n s
   | .andn d a b, s => some (execAndn d a b s)
   | .movzx8 d m, s => (s.load8 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
+  -- SDM Vol. 2, "MOVZX—Move With Zero-Extend", `MOVZX r32, r/m16` (0F B7 /r):
+  -- `DEST := ZeroExtend(SRC)`, the source the 2 bytes at the address,
+  -- little-endian (SDM Vol. 1 §1.3.1), and the 32-bit result zero-extended to
+  -- 64 bits (SDM Vol. 1 §3.4.1.1); no alignment is required and no flags are
+  -- affected.
+  | .movzx16 d m, s => (s.load16 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
   | .store8 m r, s => s.store8 (s.ea m) ((s.gpr r).setWidth 8)
+  -- SDM Vol. 2, "MOV—Move", `MOV r/m16, r16` (66 89 /r): `DEST := SRC`,
+  -- the source the register's low 16 bits (AX, CX, …, R8W–R15W; SDM Vol. 1
+  -- §3.4.1.1), the destination the 2 bytes at the address, little-endian
+  -- (SDM Vol. 1 §1.3.1); no alignment is required and no flags are affected.
+  | .store16 m r, s => s.store16 (s.ea m) ((s.gpr r).setWidth 16)
   | .bswap d, s => some (s.setReg d (bswap64 (s.gpr d)))
   | .shift op d n, s => execShift op d n s
   | .shiftCl op d, s => some (execShiftCl op d s)
@@ -726,7 +745,9 @@ def addrs : Instr → State → List Addr
   | .rorx .., _ => []
   | .andn .., _ => []
   | .movzx8 _ m, s => [s.ea m]
+  | .movzx16 _ m, s => [s.ea m]
   | .store8 m _, s => [s.ea m]
+  | .store16 m _, s => [s.ea m]
   | .bswap _, _ => []
   | .shift .., _ => []
   | .shiftCl .., _ => []
@@ -868,10 +889,10 @@ one (the pop of a frame also moves `rsp`, as the push does): `mul` writes
 two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
-  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
-  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..

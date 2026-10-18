@@ -748,12 +748,39 @@ def openSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
   .seq (.block (smallTest (openLim small.vl)))
     (.ite .b (openStitched small .avx2) big)
 
+/-- The lengths from `ifmaLo` to `ifmaHi - 1` the IFMA instance opens with the
+AVX2 code, with AVX-512VL's rounds (`openWin`). From 449 bytes its own
+`open` computes the one-time key's block and the data's in a pass of twelve
+blocks (`Avx512Tail.part3`), and from 448 absorbs the ciphertext with
+`vg_poly1305_blocks_ifma`, whose powers cost as much as a few hundred bytes;
+one after the other, while the AVX2 code absorbs the ciphertext with the
+scalar Poly1305 inside its ChaCha20 rounds. On an Intel Xeon with
+AVX512_IFMA, the AVX2 code is 9-17% faster from 449 to 639 bytes (the medians
+of ten runs), 2-5% from 640 to 704, and slower below 449 and from 705 on;
+its `seal` gains less than 5% beyond 449 bytes, so `seal` keeps its own code. -/
+def ifmaLo : Nat := 449
+def ifmaHi : Nat := 640
+
+/-- `CF` set if `len` (`r9`) is from `ifmaLo` to `ifmaHi - 1` (unsigned,
+`len - ifmaLo < ifmaHi - ifmaLo`); `rax` is scratch. -/
+def ifmaTest : List Instr :=
+  [.mov .rax (.reg .r9), .alu .sub .rax (.imm (BitVec.ofNat 32 ifmaLo)),
+   .alu .cmp .rax (.imm (BitVec.ofNat 32 (ifmaHi - ifmaLo)))]
+
+/-- `open` for `ifmaLo` to `ifmaHi - 1` bytes of data with the AVX2 code,
+`openStitched` with the implementation `small` of `vg_chacha20_xor` and
+`vg_poly1305_blocks_avx2`, and otherwise with `big`. -/
+def openWin (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
+  .seq (.block ifmaTest) (.ite .b (openStitched small .avx2) big)
+
 /-- The `open` an instance uses, as `sealFor`: with the AVX2 implementation of
 `vg_poly1305_blocks`, `openStitched`; with the AVX-512 one (without IFMA),
-`openSmall` of `open`; otherwise `open`. -/
+`openSmall` of `open`; with the IFMA one, `openWin` of `open`, with
+`vg_chacha20_xor_avx512vl`'s rounds; otherwise `open`. -/
 def openFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
   | .avx2 => openStitched x .avx2
   | .avx512 => openSmall x.small («open» x .avx512)
+  | .ifma => openWin ChaCha20.X86_64.Callee.avx512vl.small («open» x .ifma)
   | b => «open» x b
 
 end VG.Impl.ChaCha20Poly1305.X86_64.Stitch

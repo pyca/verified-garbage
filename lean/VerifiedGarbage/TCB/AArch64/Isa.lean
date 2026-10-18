@@ -313,6 +313,12 @@ inductive VOp
   | umull (hi : Bool) (d n m : VReg)
   /-- `umlal vd.2d, vn.2s, vm.2s`, or `umlal2 vd.2d, vn.4s, vm.4s` if `hi` -/
   | umlal (hi : Bool) (d n m : VReg)
+  /-- `umull vd.4s, vn.4h, vm.4h`, or `umull2 vd.4s, vn.8h, vm.8h` if `hi` (UMULL (vector),
+  `size = 01`) -/
+  | umullH (hi : Bool) (d n m : VReg)
+  /-- `umlal vd.4s, vn.4h, vm.4h`, or `umlal2 vd.4s, vn.8h, vm.8h` if `hi` (UMLAL (vector),
+  `size = 01`) -/
+  | umlalH (hi : Bool) (d n m : VReg)
   /-- `mul vd.4s, vn.4s, vm.4s` (MUL (vector)) -/
   | mul (d n m : VReg)
   /-- `mla vd.4s, vn.4s, vm.4s` (MLA (vector)) -/
@@ -840,6 +846,11 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   element1 * element2` (unsigned, 64 bits), then `Elem[result, e, 64] =
   product` (UMULL) or `Elem[operand3, e, 64] + product` (UMLAL, `operand3 =
   V[d]`);
+  with `size = 01` (`esize = 16`, `umullH`, `umlalH`), `part` 1 selects the
+  upper 64 bits (`Vpart[n, part]`): `element1 = Elem[operand1, e, 16];
+  element2 = Elem[operand2, e, 16]; product = element1 * element2` (unsigned,
+  32 bits) for each of the 4 elements, then `Elem[result, e, 32] = product`
+  (UMULL) or `Elem[operand3, e, 32] + product` (UMLAL, modulo `2 ^ 32`);
 * "MUL (vector)", "MLA (vector)", "MLS (vector)" (`.4s`): `product =
   (UInt(element1) * UInt(element2))<esize-1:0>`, and `Elem[result, e] =
   product`, `Elem[operand3, e] + product` or `Elem[operand3, e] - product`
@@ -936,6 +947,17 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
     let prod (e : Nat) : BitVec 64 :=
       (vword (s.v n) (p + e)).setWidth 64 * (vword (s.v m) (p + e)).setWidth 64
     some (d, ofVDwords (vdword (s.v d) 0 + prod 0) (vdword (s.v d) 1 + prod 1))
+  | .umullH hi d n m =>
+    let p := if hi then 4 else 0
+    let prod (e : Nat) : BitVec 32 :=
+      (vhalf (s.v n) (p + e)).setWidth 32 * (vhalf (s.v m) (p + e)).setWidth 32
+    some (d, ofVWords (prod 0) (prod 1) (prod 2) (prod 3))
+  | .umlalH hi d n m =>
+    let p := if hi then 4 else 0
+    let prod (e : Nat) : BitVec 32 :=
+      (vhalf (s.v n) (p + e)).setWidth 32 * (vhalf (s.v m) (p + e)).setWidth 32
+    some (d, ofVWords (vword (s.v d) 0 + prod 0) (vword (s.v d) 1 + prod 1)
+      (vword (s.v d) 2 + prod 2) (vword (s.v d) 3 + prod 3))
   | .mul d n m => some (d, VArr.s4.map2 (fun _ x y => x * y) (s.v n) (s.v m))
   | .mla d n m => some (d, mapWords3 (fun a x y => a + x * y) (s.v d) (s.v n) (s.v m))
   | .mls d n m => some (d, mapWords3 (fun a x y => a - x * y) (s.v d) (s.v n) (s.v m))

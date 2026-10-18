@@ -5,9 +5,9 @@ the generated code in `src/asm/x86_64/` and `src/asm/x86/`.
 
 On some Intel processors, a few vector multiplies (Intel's list, "MCDT Data
 Operand Independent Timing Instructions": `pmuludq`, `pmullw`, `pmulhw`,
-`pmaddwd`, their VEX/EVEX forms, and others the ISA models do not have
-yet) may take a cycle longer for specific data values unless MXCSR holds
-`0x1FBF`. The leakage model of the proofs does not see this (see "MCDT" in
+`pmaddwd`, `pmulhrsw`, their VEX/EVEX forms, and others the ISA models do
+not have yet) may take a cycle longer for specific data values unless MXCSR
+holds `0x1FBF`. The leakage model of the proofs does not see this (see "MCDT" in
 `lean/VerifiedGarbage/TCB/X86_64/Isa.lean`), so this script checks that each
 such instruction is inside a *protected region* of its function, which is
 Intel's sequence, exactly:

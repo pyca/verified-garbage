@@ -39,12 +39,22 @@ def nativeTCB : FilePath :=
 
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
-/-- The names of the functions a generated file defines. -/
+/-- The names of the functions a generated file defines: each line declaring
+`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …). -/
 def fnNames (text : String) : List String :=
   (text.splitOn "\n").filterMap fun line =>
-    match line.splitOn "extern \"C\" fn " with
-    | [_, rest] => some ((rest.splitOn "(").headD "")
+    match line.splitOn "extern \"" with
+    | [_, rest] =>
+      match rest.splitOn "\" fn " with
+      | [_, decl] => some ((decl.splitOn "(").headD "")
+      | _ => none
     | _ => none
+
+/-- Whether a file declares functions that `fnNames` does not read: then it
+cannot tell which functions other registration files emit into the file,
+and must not overwrite it. -/
+def unreadFns (text : String) : Bool :=
+  (fnNames text).length != ((text.splitOn "\n").filter (·.contains "fn vg_")).length
 
 /-- Runs a process, inheriting its output; its exit code. -/
 def runProc (cmd : String) (args : Array String) : IO UInt32 := do
@@ -105,6 +115,10 @@ def main (args : List String) : IO UInt32 := do
       ok := false
       continue
     let current ← IO.FS.readFile target
+    if unreadFns current || unreadFns text then
+      IO.eprintln s!"{target}: cannot read the names of its functions: run Emit.lean"
+      ok := false
+      continue
     let others := (fnNames current).filter (!(fnNames text).contains ·)
     unless others.isEmpty do
       IO.eprintln s!"{target} also has {others}, from other registration files: run Emit.lean"

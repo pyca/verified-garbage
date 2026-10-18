@@ -69,6 +69,24 @@ theorem weaveGo_merge {α : Type} (n m : Nat) : ∀ f i j (a b : List α), Merge
 theorem weave_merge {α : Type} (a b : List α) : Merge (VG.Impl.Weave.weave a b) a b :=
   weaveGo_merge _ _ _ _ _ _ _
 
+/-- An interleaving of groups is one of their instructions. -/
+theorem Merge.flatten {α : Type} {c a b : List (List α)} (h : Merge c a b) : Merge c.flatten a.flatten b.flatten := by
+  induction h with
+  | nil => exact .nil
+  | @left x c a b _ ih =>
+    simp only [List.flatten_cons]
+    induction x with
+    | nil => exact ih
+    | cons y x ihx => exact .left ihx
+  | @right y c a b _ ih =>
+    simp only [List.flatten_cons]
+    induction y with
+    | nil => exact ih
+    | cons z y ihy => exact .right ihy
+
+theorem weaveG_merge {α : Type} (a b : List (List α)) : Merge (VG.Impl.Weave.weaveG a b) a.flatten b.flatten :=
+  (weave_merge a b).flatten
+
 /-! ## Commuting instructions -/
 
 /-- Running `x` then `y` from a state of `P` faults alike, or ends in the
@@ -178,6 +196,12 @@ theorem WP.weave {P : M.State → Prop} {a b : List M.Instr} (hind : Indeps M P 
     {Q : M.State → Prop} (h : WP M (.block a) s fun t => WP M (.block b) t Q) :
     WP M (.block (VG.Impl.Weave.weave a b)) s Q :=
   WP.merge (weave_merge a b) hind hs (WP.block_append_iff.mpr h)
+
+/-- Independent blocks, woven in groups (`Impl.Weave.weaveG`), run as the first and then the second. -/
+theorem WP.weaveG {P : M.State → Prop} {a b : List (List M.Instr)} (hind : Indeps M P a.flatten b.flatten)
+    {s : M.State} (hs : P s) {Q : M.State → Prop} (h : WP M (.block a.flatten) s fun t => WP M (.block b.flatten) t Q) :
+    WP M (.block (VG.Impl.Weave.weaveG a b)) s Q :=
+  WP.merge (weaveG_merge a b) hind hs (WP.block_append_iff.mpr h)
 
 /-! ## Footprints -/
 

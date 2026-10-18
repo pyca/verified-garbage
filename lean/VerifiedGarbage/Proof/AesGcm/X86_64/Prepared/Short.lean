@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
 `vg_aes_gcm_seal_prepared` and `vg_aes_gcm_open_prepared` take the short
 path with its table of powers copied from the prepared key context
 (`GcmImpl.sealCodeP`, `GcmImpl.openCodeP`), and otherwise the code of the
-other instances, which `open` replaces for TLS records with `FastOpen.sel`. -/
+other instances, which `seal` and `open` replace for TLS records with
+`FastSeal.sel` and `FastOpen.sel`. -/
 
 @[expose] public section
 
@@ -23,12 +24,17 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCodeP (v.withBlk B)))
       (Spec.Gcm.sealPreparedContract X86_64.abi 2624) := by
-  unfold GcmImpl.sealCodeP GcmImpl.sealCode; split
+  unfold GcmImpl.sealCodeP; split
   · exact sealPreparedCode_framed (sealPreparedCode_verified (Short.sealMP_correct v B hF)
-      (Short.sealMW_ct hF v B Short.powOk_powersP Short.powersP_ct)) (Short.sealMP_spSafe v B) (Short.sealMP_xdepth v B)
+      (Short.sealMW_ct hF v B Short.powOk_powersP Short.powersP_ct
+        (FastSeal.sealSel_ok hF v B Short.finKs_ksOk (Short.sealLongOk_sealLong hF v B))
+        (FastSeal.sealSel_rel hF v B Short.finKs_ksOk Short.finKs_rel (Short.sealLongRel_sealLong hF v B)))) (Short.sealMP_spSafe v B)
+      (Short.sealMP_xdepth v B)
   · split
-    · exact sealPreparedCode_framed (sealPreparedCode_verified (SealFin.sealFM_correct v B hF)
-        (SealFin.sealFM_ct v B hF)) (SealFin.sealFM_spSafe v B) (SealFin.sealFM_xdepth v B)
+    · exact sealPreparedCode_framed (sealPreparedCode_verified (Short.sealFinP_correct v B hF)
+        (SealFin.sealFMW_ct v B (FastSeal.sealSel_ok hF v B Short.finKsA_ksOk (SealFin.sealLongOk_mid v B hF))
+          (FastSeal.sealSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel (SealFin.sealLongRel_mid v B hF))))
+        (Short.sealFinP_spSafe v B) (Short.sealFinP_xdepth v B)
     · exact sealPrepared_framed v B
 
 /-- `vg_aes_gcm_open_prepared`, with the short path if `v` has it. -/
@@ -36,11 +42,15 @@ theorem openSelPrepared_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCodeP (v.withBlk B)))
       (Spec.Gcm.openPreparedContract X86_64.abi 2632) := by
-  unfold GcmImpl.openCodeP GcmImpl.openCode; split
+  unfold GcmImpl.openCodeP; split
   · exact openPreparedCode_framed (openPreparedCode_verified (Short.openMP_correct v B hF)
       (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct
-        (FastOpen.openSel_rel hF v B (Short.longRel_openLong v B)))) (Short.openMP_spSafe v B)
+        (FastOpen.openSel_rel hF v B Short.finKs_ksOk Short.finKs_rel (Short.longRel_openLong v B)))) (Short.openMP_spSafe v B)
       (Short.openMP_xdepth v B)
-  · exact openPrepared_framed v B
+  · split
+    · exact openPrepared_framed v B
+    · exact openPreparedCode_framed (openPreparedCode_verified (Short.openFinP_correct v B hF)
+        (FastOpen.openFinW_ct (FastOpen.openSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel
+          (Short.longRel_openLong v B)))) (Short.openFinP_spSafe v B) (Short.openFinP_xdepth v B)
 
 end VG.Proof.AesGcm.X86_64

@@ -20,14 +20,14 @@ theorem setReg_syms (s : State) (r : Reg) (v : BitVec 64) : (s.setReg r v).syms 
 
 theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
   cases i with
-  | store m r | store32 m r | store8 m r | movdquStore m r | stmxcsr m =>
-    simp only [exec, State.store64, State.store32, State.store8, State.store128] at h
+  | store m r | store32 m r | store8 m r | store16 m r | movdquStore m r | stmxcsr m =>
+    simp only [exec, State.store64, State.store32, State.store8, State.store16, State.store128] at h
     split at h <;> cases h; rfl
   | vmovdquStore len m r =>
     cases len <;> simp only [exec, State.store128, State.store256] at h <;> split at h <;> cases h <;> rfl
   | vmovdqu32Store m r =>
     simp only [exec, State.store512] at h; split at h <;> cases h; rfl
-  | mov _ _ | mov32 _ _ | movzx8 _ _ | movdquLoad _ _ | vbroadcasti128 _ _ | vmovdqu32Load _ _
+  | mov _ _ | mov32 _ _ | movzx8 _ _ | movzx16 _ _ | movdquLoad _ _ | vbroadcasti128 _ _ | vmovdqu32Load _ _
   | vbroadcasti32x4 _ _ | vbroadcasti32x4H _ _ | zbcst _ _ _ _ | vpmadd52Load _ _ _ _ =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>

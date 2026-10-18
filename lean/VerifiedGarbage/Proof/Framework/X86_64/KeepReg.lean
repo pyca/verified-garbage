@@ -149,7 +149,7 @@ theorem exec_xmm {i : Instr} (hw : writesVec i = false) {s s' : State} (h : exec
       | (simp only [exec, reduceCtorEq] at h; done)
       | (simp only [exec, Option.some.injEq] at h; subst h; rfl)
       | (obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl)
-      | (simp only [exec, State.store64, State.store32, State.store8, State.store128, State.store512,
+      | (simp only [exec, State.store64, State.store32, State.store8, State.store16, State.store128, State.store512,
           State.store256] at h
          split at h <;> cases h; rfl)
       | (rename_i len _ _; cases len <;>

@@ -19,7 +19,7 @@ and the timing guarantee still apply. Existing contracts are unchanged.
 
 namespace VG.Spec.RsaPkcs1Sig
 
-open Rsa (bytesAt lenValid publicScratchWords)
+open Rsa (bytesAt lenValid publicScratchWords scratchWords writtenOutcome)
 
 /-- `verifySig` with a final read-only slice of precomputed `u64` words. -/
 def verifyPrecomputedSig : Sig where
@@ -116,5 +116,56 @@ def recoverPrecomputedApi : Api where
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be recovery's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]
+
+/-! ## `vg_rsa_pkcs1_sign_precomputed` -/
+
+/-- `signSig` with a final read-only slice of precomputed `u64` words. -/
+def signPrecomputedSig : Sig where
+  params := signSig.params ++ [("pre", .slice false .u64 "pre_len")]
+  ret := some .u32
+
+/-- `signContract` with the precomputed values of the private key
+(`Rsa.privatePrecompute`): its outcome when `pre` holds them. -/
+def signPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  signPrecomputedSig.contract A
+    (pre := fun _out outLen _n nLen _e eLen _hash _digest _digestLen _p pLen _q qLen _dp dpLen
+        _dq dqLen _qinv qinvLen _scratch scratchLen _pre preLen _ =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat)
+    (post := fun out _outLen n nLen e eLen hash digest digestLen p pLen q qLen dp _dpLen dq
+        _dqLen qinv _qinvLen _scratch _scratchLen pre preLen m m' r =>
+      Rsa.privatePreOk m n nLen.toNat p pLen.toNat q qLen.toNat pre preLen.toNat →
+        writtenOutcome m' out nLen.toNat r
+          (signId (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
+            (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
+            (bytesAt m qinv pLen.toNat) hash.toNat (bytesAt m digest digestLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen n nLen e eLen _hash _digest _digestLen _p _pLen _q _qLen _dp
+        _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        Rsa.privatePreLeak m pre nLen.toNat)
+
+def signPrecomputedApi : Api where
+  module := "rsa_pkcs1_sig"
+  name := "vg_rsa_pkcs1_sign_precomputed"
+  sig := signPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => signPrecomputedContract A stack
+  summary := signApi.summary ++ "\n\n\
+    This entry point also takes `pre`, the `pre_len` words `vg_rsa_private_precompute` \
+    wrote for `n`, `p` and `q` (returning 1), and calls `vg_rsa_private_checked_precomputed` \
+    in place of `vg_rsa_private_checked`. With those values, it returns exactly the result \
+    specified above. If `pre` does not hold those values, the result is unspecified; memory \
+    safety and the timing guarantee still apply. Timing may additionally depend on the \
+    first `2 * ⌈n_len / 8⌉` words of `pre` (the values of `n`), not on the rest.\n\n\
+    Contract: `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`."
+  safety := signApi.safety ++
+    ["`pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.",
+      "For the result to be the one specified above, `pre` must hold what \
+        `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1)."]
 
 end VG.Spec.RsaPkcs1Sig

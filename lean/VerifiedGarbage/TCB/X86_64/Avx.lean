@@ -23,7 +23,7 @@ inductive VBinOp
   | vpaddd | vpaddq | vpxor | vpor | vpand | vpandn | vpshufb | vpmuludq
   | vpunpckldq | vpunpckhdq | vpunpcklqdq | vpunpckhqdq
   | vpaddw | vpsubw | vpsubd | vpmullw | vpmulhw | vpackssdw | vpunpcklwd | vpunpckhwd
-  | vpmaddwd
+  | vpmaddwd | vpmulhrsw | vpcmpgtw
   | vpsubq
   | vaesenc | vaesenclast | vaesdec | vaesdeclast
   | vpcmpeqd
@@ -51,6 +51,10 @@ inductive VOp
   | vpalignr (len : VLen) (dst src1 src2 : XReg) (shift : BitVec 8)
   /-- `vpblendd dst, src1, src2, imm8` -/
   | vpblendd (len : VLen) (dst src1 src2 : XReg) (sel : BitVec 8)
+  /-- `vpblendw dst, src1, src2, imm8` (`VEX.256.66.0F3A.WIG 0E /r ib`, `VEX.128` for
+  `.l128`): the words of `src2` that `imm8` selects, the others of `src1`, each lane with
+  the same `imm8` -/
+  | vpblendw (len : VLen) (dst src1 src2 : XReg) (sel : BitVec 8)
   /-- `vop dst, src1, src2` (`vpsllvd`, `vpsrlvd`, `vpsllvq`, `vpsrlvq`) -/
   | vvar (op : VVarOp) (len : VLen) (dst src1 src2 : XReg)
   /-- `vpbroadcastd dst, xmm` -/
@@ -120,9 +124,10 @@ into `DEST[127:0]`, then of `SRC1[255:128]` and `SRC2[255:128]` into
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 VPADDD, VPADDQ, VPXOR, VPOR, VPAND, VPANDN, VPSHUFB, VPMULUDQ,
 VPUNPCK{L,H}{DQ,QDQ}, VPADDW, VPSUBW, VPSUBD, VPMULLW, VPMULHW, VPACKSSDW,
-VPUNPCK{L,H}WD, VPSUBQ, VPCMPEQD and VPMADDWD are, lane by lane, PADDD, PADDQ, PXOR,
+VPUNPCK{L,H}WD, VPSUBQ, VPCMPEQD, VPMADDWD, VPMULHRSW and VPCMPGTW are, lane by lane, PADDD, PADDQ, PXOR,
 POR, PAND, PANDN, PSHUFB, PMULUDQ, PUNPCK{L,H}{DQ,QDQ}, PADDW, PSUBW, PSUBD,
-PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ, PCMPEQD and PMADDWD (SDM Vol. 2, each
+PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ, PCMPEQD, PMADDWD, PMULHRSW and PCMPGTW
+(SDM Vol. 2, each
 instruction's "VEX.256 encoded version" pseudocode, with `SRC1` in place of
 the destination; VPACKSSDW and VPUNPCK{L,H}WD pack and interleave within
 each 128-bit lane). -/
@@ -136,6 +141,7 @@ def VBinOp.sse : VBinOp → XBinOp
   | .vpunpckhwd => .punpckhwd | .vpsubq => .psubq
   | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vaesdec => .aesdec
   | .vaesdeclast => .aesdeclast | .vpcmpeqd => .pcmpeqd | .vpmaddwd => .pmaddwd
+  | .vpmulhrsw => .pmulhrsw | .vpcmpgtw => .pcmpgtw
 
 /-! ### Vector AES and carry-less multiplication
 
@@ -358,7 +364,9 @@ Vol. 2 (no flags are affected; `VEX.128` versions zero `DEST[MAXVL-1:128]`):
   with the same `imm8`), `alignRight` (VPALIGNR: `temp1[255:0] :=
   ((SRC1[127:0] << 128) OR SRC2[127:0]) >> (imm8*8)`, and likewise for
   bits 255:128), `blendDwords` (VPBLENDD, lane `j` selected by
-  `imm8[4j+3:4j]`), and `VVarOp.eval`.
+  `imm8[4j+3:4j]`), `blendWords` (VPBLENDW: "IF (imm8[i] == 1) THEN
+  DEST[16i+15:16i] := SRC2[16i+15:16i] ELSE DEST[16i+15:16i] := SRC1[16i+15:16i]",
+  and for the upper lane `imm8[i]` again selects word `8+i`), and `VVarOp.eval`.
 * VAESENC/VAESENCLAST and VPCLMULQDQ: see the vector AES and carry-less
   multiplication description above.
 * VMOVDQA (register form): `DEST[255:0] := SRC[255:0]` (`VEX.128`:
@@ -397,6 +405,8 @@ def VOp.exec : VOp → State → State
   | .vpblendd len d a b n, s =>
     s.setV len d (blendDwords (s.lane a 0) (s.lane b 0) (n.extractLsb' 0 4))
       (blendDwords (s.lane a 1) (s.lane b 1) (n.extractLsb' 4 4))
+  | .vpblendw len d a b n, s =>
+    s.setV len d (blendWords (s.lane a 0) (s.lane b 0) n) (blendWords (s.lane a 1) (s.lane b 1) n)
   | .vvar op len d a b, s =>
     s.setV len d (op.eval (s.lane a 0) (s.lane b 0)) (op.eval (s.lane a 1) (s.lane b 1))
   | .vpbroadcastd len d r, s =>

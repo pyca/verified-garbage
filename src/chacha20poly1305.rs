@@ -14,7 +14,9 @@
 //! `vg_poly1305_blocks` for the same CPUs: on x86-64, CPUs with AVX512_IFMA,
 //! AVX-512F and AVX2 run `vg_chacha20_poly1305_seal_ifma` and
 //! `vg_chacha20_poly1305_open_ifma` (with `vg_chacha20_xor_avx512` and
-//! `vg_poly1305_blocks_ifma`), other CPUs with AVX-512F, AVX-512VL and AVX2
+//! `vg_poly1305_blocks_ifma`; from 449 to 639 bytes, `open_ifma` runs the
+//! code `vg_chacha20_poly1305_open_avx512vl` runs for short data, so these
+//! CPUs need AVX-512VL too), other CPUs with AVX-512F, AVX-512VL and AVX2
 //! `vg_chacha20_poly1305_seal_avx512vl` and `vg_chacha20_poly1305_open_avx512vl`
 //! (with `vg_chacha20_xor_avx512vl`, which keeps short data in `ymm` registers,
 //! and `vg_poly1305_blocks_avx512`), other CPUs with AVX-512F and AVX2
@@ -60,14 +62,15 @@ use core::mem::MaybeUninit;
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
-    VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
-    VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES, VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
-    vg_chacha20_poly1305_open_avx2, vg_chacha20_poly1305_open_avx512,
-    vg_chacha20_poly1305_open_avx512vl, vg_chacha20_poly1305_open_ifma,
-    vg_chacha20_poly1305_seal_avx2, vg_chacha20_poly1305_seal_avx512,
-    vg_chacha20_poly1305_seal_avx512vl, vg_chacha20_poly1305_seal_gather_avx2,
-    vg_chacha20_poly1305_seal_gather_avx512, vg_chacha20_poly1305_seal_gather_avx512vl,
-    vg_chacha20_poly1305_seal_gather_ifma, vg_chacha20_poly1305_seal_ifma,
+    VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+    VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
+    VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, vg_chacha20_poly1305_open_avx2,
+    vg_chacha20_poly1305_open_avx512, vg_chacha20_poly1305_open_avx512vl,
+    vg_chacha20_poly1305_open_ifma, vg_chacha20_poly1305_seal_avx2,
+    vg_chacha20_poly1305_seal_avx512, vg_chacha20_poly1305_seal_avx512vl,
+    vg_chacha20_poly1305_seal_gather_avx2, vg_chacha20_poly1305_seal_gather_avx512,
+    vg_chacha20_poly1305_seal_gather_avx512vl, vg_chacha20_poly1305_seal_gather_ifma,
+    vg_chacha20_poly1305_seal_ifma,
 };
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open, vg_chacha20_poly1305_seal, vg_chacha20_poly1305_seal_gather,
@@ -88,12 +91,16 @@ use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
 /// The best implementation a CPU with the features `f` can run (`open`'s
-/// instances need the same features as `seal`'s, see the tests).
+/// instances need the same features as `seal`'s, see the tests, but for
+/// `open_ifma`'s, which also need `vg_chacha20_xor_avx512vl`'s).
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
     Backend::select_for(
         f,
-        VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
+        Features::all(&[
+            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES,
+        ]),
         VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
@@ -607,14 +614,18 @@ mod tests {
             VG_POLY1305_BLOCKS_IFMA_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, ifma);
-        assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma);
+        // `open_ifma` runs `vg_chacha20_xor_avx512vl`'s rounds from 449 to
+        // 639 bytes.
+        let ifma_open = Features::all(&[ifma, VG_CHACHA20_XOR_AVX512VL_FEATURES]);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES, ifma);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         assert_eq!(select(avx512vl), Backend::Avx512Vl);
-        assert_eq!(select(ifma), Backend::Ifma);
+        assert_eq!(select(ifma_open), Backend::Ifma);
         assert_eq!(select(Features::all(&[avx512vl, ifma])), Backend::Ifma);
+        assert_ne!(select(ifma), Backend::Ifma);
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
