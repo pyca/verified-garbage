@@ -94,8 +94,8 @@ namespace VG.Proof.Gcm.X86_64.StitchZTo
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch (nb SPreTo StitchToOkM CtxMode hk in_sub_int)
-open VG.Proof.Gcm.X86_64.Pclmul (pows_ok const_ok ldrev_ok hInv_ok rev_eq)
-open VG.Proof.Gcm.X86_64.Vpclmul (powersP_ok powers16P_ok)
+open VG.Proof.Gcm.X86_64.Pclmul (mul_ok const_ok ldrev_ok hInv_ok rev_eq)
+open VG.Proof.Gcm.X86_64.Vpclmul (powersYP_ok powers16P_ok)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ finZ48 powers48)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.Stitch (setupG)
@@ -125,15 +125,18 @@ theorem setupGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
   have hH : x * φ (s₄.xmm .xmm3) = φ (hk s₀) := by
     rw [t₄, l₃, o₁₂.mem, o₁₂.gpr _ (by decide), BitVec.ofInt_natCast]; rfl
   rw [WP.block_append_iff]
-  refine WP.mono (pows_ok s₄ (by rw [o₄.xmm _ (by decide), o₃.xmm _ (by decide), c₂]) hH)
-    fun s₇ ⟨hH2, hH3, hH4, o₇⟩ => ?_
+  refine WP.mono (mul_ok .xmm4 .xmm3 .xmm3 s₄ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by rw [o₄.xmm _ (by decide), o₃.xmm _ (by decide), c₂])) fun s₇ ⟨m₇, o₇⟩ => ?_
+  have hH2 : x * φ (s₇.xmm .xmm4) = φ (hk s₀) ^ 2 := by
+    rw [m₇, show ∀ a : Q, x * (x * a * a) = (x * a) * (x * a) from fun a => by ring, hH, pow_two]
   have o₁₇ := o₁₃.trans (o₄.trans o₇)
   rw [WP.block_append_iff]
-  refine WP.mono (powersP_ok (H := hk s₀)
+  refine WP.mono (powersYP_ok (H := hk s₀)
     (by rw [(o₂.trans (o₃.trans (o₄.trans o₇))).xmm _ (by decide), c₁, rev_eq])
     (by rw [(o₃.trans (o₄.trans o₇)).xmm _ (by decide), c₂])
-    (by rw [o₇.xmm _ (by decide), hH]) hH2 hH3 hH4)
-    fun s₈ ⟨l0, l1, _, pw8, _, g₈, m₈, rd₈, wr₈⟩ => ?_
+    (by rw [o₇.xmm _ (by decide), hH]) hH2)
+    fun s₈ ⟨l0, l1, _, pw8, g₈, m₈, rd₈, wr₈⟩ => ?_
   refine WP.mono (powers16P_ok l1 pw8) fun s₉ ⟨pw, F⟩ => ⟨fun l hl => ?_, fun l hl => ?_, pw,
     fun r hr => by rw [F.gpr, g₈ r hr, o₁₇.gpr r hr], by rw [F.mem, m₈, o₁₇.mem],
     by rw [F.rd, rd₈, o₁₇.rd], by rw [F.wr, wr₈, o₁₇.wr]⟩
