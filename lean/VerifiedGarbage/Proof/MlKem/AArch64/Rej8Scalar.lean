@@ -52,7 +52,7 @@ theorem CoeffsW.reject {w16 : Bool} {m : Mem} {p : Addr} {L : List Zq} (h : Coef
     (hl : L.length < 256) (w : BitVec 32) (hw : w.toNat < 2 ^ 16) :
     CoeffsW w16 (m.writeW (cAddr w16 p L.length) w) p L := by
   intro i hi
-  rw [coeffAtW_writeW m p (show i<256 by omega) hl _ hw, ite_eq_right (by omega),
+  rw [coeffAtW_writeW32 m p (show i<256 by omega) hl _ hw, ite_eq_right (by omega),
     ite_eq_right (by omega), h i hi]
 
 theorem CoeffsW.accept {w16 : Bool} {m : Mem} {p : Addr} {L : List Zq} (h : CoeffsW w16 m p L)
@@ -62,7 +62,7 @@ theorem CoeffsW.accept {w16 : Bool} {m : Mem} {p : Addr} {L : List Zq} (h : Coef
   have hi' : i < L.length+1 := by simpa using hi
   have hx : x.val < 3329 := x.isLt
   have hw' : w.toNat = x.val := by rw [hw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  rw [coeffAtW_writeW m p (show i<256 by omega) hl _ (by omega)]
+  rw [coeffAtW_writeW32 m p (show i<256 by omega) hl _ (by omega)]
   by_cases he : L.length=i
   · subst i
     rw [ite_eq_left rfl,cvW_last,hw']
@@ -107,7 +107,7 @@ theorem accept_ok {w16 : Bool} {aP : Addr} {s₀ : State}
     rw [e₆, toNat_sub_n (by rw [x14, v14, c4]; split <;> omega), c4, x14, v14]
   have fr : Frame [polyRegion aP] s₀.mem u₆.mem := by
     rw [m₆]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains w16 _ hlt)
+    exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 w16 _ hlt)
   have acc : ∀ L' : List Zq, L'.length = L.length + (if v < q then 1 else 0) →
       CoeffsW w16 u₆.mem aP L' → AccW w16 aP s₀ L' u₆ := fun L' hl hc =>
     ⟨by rw [k₆.rd, h.rd], by rw [k₆.wr, h.wr], by rw [k₆.sp, h.sp], by rw [hl]; split <;> omega,

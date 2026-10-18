@@ -38,7 +38,7 @@ theorem zeroBody_ok {w16 : Bool} {aP : Addr} {L : List Zq} {s u : State} {j : Na
     rw [hv.mem,hc.mem,hb.mem,ea,ha.mem]
     rfl
   refine ⟨(h.keep.trans hk).mono (by decide),?_,?_,?_,?_⟩
-  · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains w16 _ hj)
+  · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 w16 _ hj)
   · rw [hv.gpr .x3 (by decide),ec,hb.gpr,ha.gpr .x3 (by decide),h.x3,← cAddr_add w16 aP j 1]
     cases w16 <;> rfl
   · rw [ev,toNat_sub_n (by rw [hc.gpr .x4 (by decide),hb.gpr,ha.gpr .x4 (by decide),h.x4]; change 1≤256-j; omega),
@@ -46,7 +46,7 @@ theorem zeroBody_ok {w16 : Bool} {aP : Addr} {L : List Zq} {s u : State} {j : Na
     change 256-j-1=256-(j+1)
     omega
   · intro i hi
-    rw [hm,coeffAtW_writeW _ _ (show i<256 by omega) hj _ (by decide)]
+    rw [hm,coeffAtW_writeW32 _ _ (show i<256 by omega) hj _ (by decide)]
     by_cases he : j=i
     · rw [ite_eq_left he,ite_eq_right (by omega)]; rfl
     · rw [ite_eq_right he,ite_eq_right (by omega),h.coeffs i (by omega)]

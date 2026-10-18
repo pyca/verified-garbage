@@ -30,7 +30,7 @@ theorem fix_ok {w16 : Bool} {aP : Addr} {s₀ s : State} {L : List Zq}
   refine ⟨⟨hk.rd.trans h.rd,hk.wr.trans h.wr,hk.sp.trans h.sp,h.len,
     by rw [hk.get .x3,h.x3],by rw [hk.get .x4,h.x4],by rw [hk.get .x9,h.x9],?_,?_⟩,hk⟩
   · rw [hm]; exact h.coeffs.reject hlt 0 (by decide)
-  · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains w16 _ hlt)
+  · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 w16 _ hlt)
 
 structure PostW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (aP : Addr) (s₀ u : State) :
     Prop where

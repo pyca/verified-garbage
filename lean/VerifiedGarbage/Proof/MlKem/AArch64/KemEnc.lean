@@ -95,7 +95,7 @@ theorem EInvW.frame {w16 : Bool} {s₀ : State} (hp : Pre P L s₀) {kC co : Nat
     have hd : ∀ r ∈ W, (polyRegion (sA L s₀ (aOff P i j))).Disjoint r := fun r hr =>
       (hW r hr).2.2.1.sub_left (R.sub2 (by lom) (by lom))
     exact ⟨reducedW_frame hf hd (h.a i hi j hj).1, by rw [polyAtW_frame hf hd]; exact (h.a i hi j hj).2⟩
-  · exact polyIsW_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left
+  · exact polyIsW_frame_poly hf (fun r hr => (hW r hr).2.2.2.1.sub_left
       (R.sub2 (by simp only [yOff]; omega) (by simp only [yOff]; omega))) (h.y j hj)
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.1.sub_left
       (R.sub2 (by omega) (by have := mul_succ_le (a := 32 * P.du) hi; omega))) (by kom)]

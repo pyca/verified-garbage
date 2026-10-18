@@ -39,7 +39,7 @@ theorem advance_ok (w16 : Bool) (s : State) {n : Nat} (hn : n≤8)
     cases w16 <;>
     · rw [ee,toNat_lsl_n (by rw [dn]; simp only [Bool.false_eq_true, ite_false, ite_true]; omega),dn,
         BitVec.toNat_ofNat]
-      simp only [VG.Proof.MlKem.cs, Bool.false_eq_true, ite_false, ite_true]; omega
+      simp only [VG.Proof.MlKem.cs_eq, Bool.false_eq_true, ite_false, ite_true]; omega
   refine ⟨(((((((ha.trans hb).trans hc0).trans hd).trans he).trans hf).trans hg).trans ht).mono
     (by decide),?_,?_,?_,?_⟩
   · rw [ht.get .x3,hg.get .x3,ef,en,he.get .x3,hd.get .x3,hc0.get .x3,hb.get .x3,ha.get .x3]

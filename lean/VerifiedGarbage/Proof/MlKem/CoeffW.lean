@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlKem.Mem16Bytes
+public import VerifiedGarbage.Proof.MlKem.Mem16
 
 /-!
 # ML-KEM: coefficients stored with 16 or 32 bits
@@ -19,14 +20,8 @@ namespace VG.Proof.MlKem
 
 open VG VG.Spec.MlKem
 
-/-- The bits of a coefficient: 16 with `w16`, otherwise 32. -/
-abbrev cw (w16 : Bool) : Nat := if w16 then 16 else 32
-
-/-- The bytes from a coefficient to the next. -/
-abbrev cs (w16 : Bool) : Nat := if w16 then 2 else 4
-
-/-- The address of coefficient `i` of the polynomial at `p`. -/
-abbrev cAddr (w16 : Bool) (p : Addr) (i : Nat) : Addr := p + BitVec.ofNat 64 (cs w16 * i)
+/-- The bytes from a coefficient to the next (`cAddr`'s step). -/
+abbrev cs (w16 : Bool) : Nat := cw w16 / 8
 
 /-- Coefficient `i` of the polynomial at `p`, as a number. -/
 def cval (w16 : Bool) (m : Mem) (p : Addr) (i : Nat) : Nat := (coeffAtW (cw w16) m p i).toNat
@@ -37,9 +32,11 @@ theorem cval_true (m : Mem) (p : Addr) (i : Nat) : cval true m p i = (coeffAtW 1
 
 theorem cAddr_false (p : Addr) (i : Nat) : cAddr false p i = coeffAddr p i := rfl
 
+theorem cs_eq (w16 : Bool) : cs w16 = if w16 then 2 else 4 := cw_bytes w16
+
 /-- A 32-bit store at coefficient `i` stays in the 1024-byte slot of a polynomial. -/
 theorem cs_store_le (w16 : Bool) {i : Nat} (hi : i < 256) : cs w16 * i + 4 ≤ 1024 := by
-  cases w16 <;> simp only [cs, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases w16 <;> simp only [cs_eq, Bool.false_eq_true, ite_false, ite_true] <;> omega
 
 theorem cAddr_add (w16 : Bool) (p : Addr) (j k : Nat) :
     cAddr w16 p j + BitVec.ofNat 64 (cs w16 * k) = cAddr w16 p (j + k) := by
@@ -73,7 +70,7 @@ theorem cval_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256)
     · subst e; simp
     · rw [ite_eq_right (Ne.symm e), ite_eq_right e, ite_eq_right (by simp)]
   · rw [cval_true, cval_true, coeffAtW16_toNat, coeffAtW16_toNat]
-    simp only [cAddr, cs, ite_true]
+    simp only [cAddr, cs_eq, ite_true]
     rw [writeW32_byte m p (by omega) (by omega), writeW32_byte m p (by omega) (by omega)]
     by_cases e : i = j
     · subst e
@@ -96,7 +93,7 @@ theorem cval_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256)
         rw [ite_eq_right (by omega), ite_eq_right (by omega)]
 
 /-- The same store, as the `cw w16`-bit coefficient. -/
-theorem coeffAtW_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256)
+theorem coeffAtW_writeW32 {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256)
     (v : BitVec 32) (hv : v.toNat < 2 ^ 16) :
     coeffAtW (cw w16) (m.writeW (cAddr w16 p j) v) p i =
       if j = i then BitVec.ofNat (cw w16) v.toNat
@@ -114,7 +111,7 @@ theorem coeffAtW_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 
     split <;> simp
 
 /-- A 32-bit store at a coefficient stays in the polynomial's 1024 bytes. -/
-theorem cAddr_contains (w16 : Bool) (p : Addr) {i : Nat} (hi : i < 256) :
+theorem cAddr_contains4 (w16 : Bool) (p : Addr) {i : Nat} (hi : i < 256) :
     (polyRegion p).Contains (cAddr w16 p i) 4 := by
   cases w16
   · exact coeff_contains p (show i < n from hi)
@@ -141,7 +138,7 @@ theorem reducedW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame 
     (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (hr : ReducedW (cw w16) m p) : ReducedW (cw w16) m' p :=
   fun i hi => by rw [coeffAtW_frame hf hd hi]; exact hr i hi
 
-theorem polyIsW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+theorem polyIsW_frame_poly {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     {f : Poly} (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (h : PolyIsW (cw w16) m p f) :
     PolyIsW (cw w16) m' p f :=
   ⟨reducedW_frame hf hd h.1, by rw [polyAtW_frame hf hd]; exact h.2⟩
@@ -149,14 +146,6 @@ theorem polyIsW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame r
 /-- The coefficients at `p`: the first `t` of them are `G`'s, the others `old`'s. -/
 def CoeffsUpToW (w16 : Bool) (m : Mem) (p : Addr) (t : Nat) (G old : Nat → BitVec (cw w16)) : Prop :=
   ∀ i < 256, coeffAtW (cw w16) m p i = if i < t then G i else old i
-
-/-- `f` is stored with `w` bits at `p` if each coefficient is. -/
-theorem polyIsW_of_toNat {w : Nat} {m : Mem} {p : Addr} {f : Poly}
-    (h : ∀ i < n, (coeffAtW w m p i).toNat = (f[i]!).val) : PolyIsW w m p f := by
-  refine ⟨fun i hi => by rw [h i hi]; exact (f[i]!).isLt, ext_getElem! fun i hi => ?_⟩
-  rw [getElem!_eq _ hi]
-  simp only [polyAtW, Vector.getElem_ofFn]
-  rw [h i hi, ofNat_val]
 
 /-- All 256 coefficients written. -/
 theorem CoeffsUpToW.polyIs {w16 : Bool} {m : Mem} {p : Addr} {G old : Nat → BitVec (cw w16)}

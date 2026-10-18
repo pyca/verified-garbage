@@ -25,7 +25,7 @@ theorem batch_frameW (w16 : Bool) (s : State) {aP : Addr} {L : List Zq}
     rw [ite_eq_right Bool.false_ne_true]
     apply Frame.write (r := polyRegion aP) (Frame.write (r := polyRegion aP) (Frame.refl _ _) (by simp) _ ?_) (by simp) _ ?_
     · rw [h3]
-      exact contains_off (by simp only [cs, Bool.false_eq_true, ite_false]; omega) (by decide)
+      exact contains_off (by simp only [cs_eq, Bool.false_eq_true, ite_false]; omega) (by decide)
     · rw [h3]
       change (polyRegion aP).Contains (aP+BitVec.ofNat 64 (4*L.length)+BitVec.ofNat 64 16) 16
       rw [ptr_add]
@@ -34,7 +34,7 @@ theorem batch_frameW (w16 : Bool) (s : State) {aP : Addr} {L : List Zq}
     rw [ite_eq_left rfl]
     refine Frame.write (r := polyRegion aP) (Frame.refl _ _) (by simp) _ ?_
     rw [h3]
-    exact contains_off (by simp only [cs, ite_true]; omega) (by decide)
+    exact contains_off (by simp only [cs_eq, ite_true]; omega) (by decide)
 
 theorem batch_invW {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte}
     {bP aP : Addr} {s₀ s u : State} (h : Scalar.InvW w16 initial N B bP aP s₀ t s)

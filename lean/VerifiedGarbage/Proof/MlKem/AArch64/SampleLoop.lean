@@ -97,7 +97,7 @@ theorem CoeffsW.zero {w16 : Bool} {m : Mem} {aP : Addr} {L : List Zq} (h : Coeff
     (hl : L.length < 256) :
     CoeffsUpToW w16 (m.writeW (cAddr w16 aP L.length) (0 : BitVec 32)) aP L.length (cvW w16 L)
       fun _ => 0 := fun i hi => by
-  rw [coeffAtW_writeW m aP hi hl _ (by decide)]
+  rw [coeffAtW_writeW32 m aP hi hl _ (by decide)]
   by_cases e : L.length = i
   · rw [ite_eq_left e, ite_eq_right (by omega)]; rfl
   · rw [ite_eq_right e]
@@ -109,7 +109,7 @@ theorem CoeffsW.zero {w16 : Bool} {m : Mem} {aP : Addr} {L : List Zq} (h : Coeff
 theorem CoeffsW.reject {w16 : Bool} {m : Mem} {aP : Addr} {L : List Zq} (h : CoeffsW w16 m aP L)
     (hl : L.length < 256) (w : BitVec 32) (hw : w.toNat < 2 ^ 16) :
     CoeffsW w16 (m.writeW (cAddr w16 aP L.length) w) aP L := fun i hi hne => by
-  rw [coeffAtW_writeW m aP hi hl _ hw, ite_eq_right (Ne.symm hne)]
+  rw [coeffAtW_writeW32 m aP hi hl _ hw, ite_eq_right (Ne.symm hne)]
   split
   · rw [ite_eq_right (by omega)]
   · exact h i hi hne
@@ -120,7 +120,7 @@ theorem CoeffsW.accept {w16 : Bool} {m : Mem} {aP : Addr} {L : List Zq} (h : Coe
     CoeffsW w16 (m.writeW (cAddr w16 aP L.length) w) aP (L ++ [x]) := fun i hi hne => by
   have hx : x.val < 3329 := x.isLt
   have hw' : w.toNat = x.val := by rw [hw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  rw [coeffAtW_writeW m aP hi hl _ (by omega)]
+  rw [coeffAtW_writeW32 m aP hi hl _ (by omega)]
   simp only [List.length_append, List.length_singleton] at hne ⊢
   by_cases e : L.length = i
   · subst e
@@ -181,7 +181,7 @@ theorem accept_ok {w16 : Bool} {aP : Addr} {s₀ : State}
     rw [e₆, toNat_sub_n (by rw [x14, v14, c4]; split <;> omega), c4, x14, v14]
   have fr : Frame [polyRegion aP] s₀.mem u₆.mem := by
     rw [m₆]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains w16 _ hlt)
+    exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 w16 _ hlt)
   have acc : ∀ L' : List Zq, L'.length = L.length + (if v < q then 1 else 0) →
       CoeffsW w16 u₆.mem aP L' → AccW w16 aP s₀ L' u₆ := fun L' hl hc =>
     ⟨by rw [k₆.rd, h.rd], by rw [k₆.wr, h.wr], by rw [k₆.sp, h.sp], by rw [hl]; split <;> omega,
@@ -415,7 +415,7 @@ theorem fix_ok {aP : Addr} {s₀ : State} (hina : ∀ i < 256, InRegions s₀.wr
       rfl
     refine ⟨(h₁.keep.trans h₂.keep).mono (by decide), ?_, ?_, fun hf => absurd hf (by omega)⟩
     · rw [m₂]
-      exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains false _ hlt)
+      exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 false _ hlt)
     · rw [m₂]
       exact reduced_of_coeffs (h.coeffs.zero hlt)
 
