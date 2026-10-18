@@ -12,7 +12,7 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 
-def searchSlots : List Nat := [1, 3, 4, 5, 13, 15, 28]
+def searchSlots : List Nat := [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17, 18, 28]
 
 def searchWrites (p : PPrimalityPlan) (C : Addr) : List Region :=
   ⟨C, 24⟩ :: ⟨p.construct.hash.F, frameBytes⟩ :: p.changed

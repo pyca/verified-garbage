@@ -16,7 +16,7 @@ def attemptWords (W : Nat → BitVec 64) (offset : Nat) : Nat → BitVec 64 :=
 theorem attemptWords_slot (W : Nat → BitVec 64) (offset : Nat) {k : Nat} (hk : k ∈ searchSlots) :
     attemptWords W offset k = W k := by
   simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [attemptWords, upd]
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [attemptWords, upd]
 
 def SearchMemory.attemptPlan {p : SearchPlan} {W : Nat → BitVec 64} {s : State}
     (h : SearchMemory p W s) (offset : Nat) (hc : offset + p.attempt.construct.hash.count < 2 ^ 32) : PPrimalityPlan :=
