@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPcContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
@@ -21,8 +22,9 @@ buffers off the return address of its calls (`Contract.clear`), and its
 calls (of Montgomery multiplication) make no calls. It comes with the
 `vg_rsa_public_precompute` of its Montgomery multiplication and an
 independently verified `vg_rsa_public_precomputed_checked` operation that
-checks its result, which are proven the same way. Both need no more CPU
-features.
+checks its result, which are proven the same way, and with the
+`vg_rsa_private_crt_precomputed` of the same CPU features. They need no more
+CPU features.
 -/
 
 @[expose] public section
@@ -54,6 +56,16 @@ structure CrtImpl where
   pcNosp : NoSp pc
   pcDepth : pc.depth = 1
   pcSpSafe : pc.all (fun i => !isa.writesSp i) = true
+  /-- `vg_rsa_private_crt_precomputed` for the same CPU features, which
+  `vg_rsa_private_checked_precomputed` calls, proven the same way. -/
+  pcrtName : String
+  pcrt : Prog isa
+  pcrtDepth : pcrt.depth = 1
+  pcrtOk : ∀ s, crtPcContract.clear.pre s → ∃ t s', Exec isa pcrt s t s' ∧ abiPreserved s s' ∧
+    crtPcContract.post s s'
+  pcrtCt : ConstantTime isa crtPcContract.clear.pre crtPcContract.pub pcrt
+  pcrtNosp : NoSp pcrt
+  pcrtSpSafe : pcrt.all (fun i => !isa.writesSp i) = true
   /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
   `_adx`; nothing for the baseline implementation). -/
   suffix : String

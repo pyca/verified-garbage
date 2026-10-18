@@ -84,6 +84,17 @@ theorem crtPc_call_verified {c : Prog isa} (hc : c.InlineOk = true)
   Verified.of_inline_sig hc hcor hct crtPc_implies8 (fun _ h => Sig.clear_of_pre h)
     (fun _ _ _ _ h => Sig.rsp_of_pub h) crtPc_patch
 
+theorem crtPc_call_ok {c : Prog isa} (hc : c.InlineOk = true)
+    (hcor : ∀ s, crtPcContract.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ crtPcContract.post s s') :
+    ∀ s, crtPcContract.clear.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ crtPcContract.post s s' :=
+  ok_of_inline hc hcor crtPc_patch
+
+theorem crtPc_call_ct {c : Prog isa} (hc : c.InlineOk = true)
+    (hcor : ∀ s, crtPcContract.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ crtPcContract.post s s')
+    (hct : ConstantTime isa crtPcContract.pre crtPcContract.pub c.inline) :
+    ConstantTime isa crtPcContract.clear.pre crtPcContract.pub c :=
+  ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := hcor s h; ⟨t, s', e⟩) (fun _ _ h => h.1 .rsp (by simp)) hct
+
 /-! ## `vg_rsa_recover_primes` -/
 
 theorem rp_call_verified (M : Mont) {c : Prog isa} (hc : c.InlineOk = true)

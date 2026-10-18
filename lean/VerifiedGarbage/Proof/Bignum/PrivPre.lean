@@ -100,4 +100,31 @@ theorem privatePre_vals {m : Mem} {pre : Addr} {nB pB qB : List Byte} {k : Nat} 
       show w + w + wp + i = 2 * w + wp + i by omega] at this
     exact this
 
+/-- `pre` holding `privatePrecompute` of a key begins with `publicPrecompute`
+of its modulus. -/
+theorem privatePre_public {m : Mem} {pre : Addr} {nB pB qB : List Byte} {k L : Nat} (hl : nB.length = k)
+    (hL : Spec.Rsa.precomputedWords k ≤ L)
+    (h : Spec.Rsa.privatePrecompute nB pB qB = some (Spec.Rsa.wordsAt m pre L)) :
+    Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt m pre (Spec.Rsa.precomputedWords k)) := by
+  unfold Spec.Rsa.privatePrecompute at h
+  cases hp : Spec.Rsa.publicPrecompute nB with
+  | none => rw [hp] at h; cases h
+  | some ws =>
+    rw [hp] at h
+    dsimp only at h
+    split at h
+    · have hws : ws.length = Spec.Rsa.precomputedWords k := by
+        unfold Spec.Rsa.publicPrecompute at hp
+        dsimp only at hp
+        split at hp
+        · cases hp
+          simp [Spec.Rsa.toWords, Spec.Rsa.precomputedWords, hl]
+          omega
+        · cases hp
+      have e := congrArg (List.take (Spec.Rsa.precomputedWords k)) (Option.some.inj h)
+      rw [List.append_assoc, List.take_left' hws] at e
+      rw [e]
+      simp only [Spec.Rsa.wordsAt, ← List.map_take, List.take_range, Nat.min_eq_left hL]
+    · cases h
+
 end VG.Proof.Bignum

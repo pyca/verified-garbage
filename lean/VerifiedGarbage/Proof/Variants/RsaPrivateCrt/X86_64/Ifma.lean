@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VerifiedPc
+public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
@@ -40,6 +42,15 @@ def variant : CrtImpl where
   pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  pcrtName := Spec.Rsa.privateCrtPrecomputedApi.name ++ "_ifma"
+  pcrt := Impl.Rsa.X86_64.CrtIfma.code CallMont.adx.mm true
+  pcrtDepth := by lit_decide
+  pcrtOk := crtPc_call_ok (by lit_decide) (Ifma.codePc_correct Mont.fnAdx (by decide +kernel) (by decide +kernel)
+    (by decide +kernel) (by decide +kernel))
+  pcrtCt := crtPc_call_ct (by lit_decide) (Ifma.codePc_correct Mont.fnAdx (by decide +kernel) (by decide +kernel)
+    (by decide +kernel) (by decide +kernel)) (Ifma.codePc_constantTime Mont.fnAdx (by decide +kernel))
+  pcrtNosp := noSp_of (by lit_decide)
+  pcrtSpSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 

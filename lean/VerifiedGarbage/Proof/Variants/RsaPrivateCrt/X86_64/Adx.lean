@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPcVerified
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Adx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
@@ -49,6 +50,18 @@ def variant : CrtImpl where
   pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  pcrtName := Spec.Rsa.privateCrtPrecomputedApi.name ++ "_adx"
+  pcrt := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm
+    (Impl.Rsa.X86_64.Crt.expLoop5S CallMont.lazyAdx CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV) true
+  pcrtDepth := by decide +kernel
+  pcrtOk := crtPc_call_ok (by decide +kernel)
+    (crtPcCode_correct Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx) (by decide +kernel))
+  pcrtCt := crtPc_call_ct (by decide +kernel)
+    (crtPcCode_correct Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx) (by decide +kernel))
+    (crtPcCode_constantTime Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx)
+      (CrtExpL.w5S_ct Mont.fnAdx MontS.fnLazyAdx))
+  pcrtNosp := noSp_of (by decide +kernel)
+  pcrtSpSafe := Code.all_of_allInstrs (by decide +kernel)
   suffix := "_adx"
   features := ["avx", "avx2", "bmi2", "adx"]
 
