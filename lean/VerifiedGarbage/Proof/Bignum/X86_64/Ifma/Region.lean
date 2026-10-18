@@ -697,7 +697,7 @@ theorem bv_padE {m : Mem} {F : Addr} {o : Nat} {eb : List Byte} (hL : eb.length 
   rw [this, show (padE l eb).take l.P = padE l eb by rw [List.take_of_length_le (by omega_using [hl])], padE, os2ip_zeros]
 
 /-- `recode` in region `p` of the area `off B a`, from its workspace `off B o`. -/
-theorem recr_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a p : Nat} (hs : Scr u B Z)
+theorem recr_ok (hl : LayOk l) (hw : l.w ≠ 4) {u : State} {B : Addr} {Z o a p : Nat} (hs : Scr u B Z)
     (hdi : u.gpr .rdi = off B o) (hia : word u.mem (off B o) (8 * sIfma) = off B a)
     (hoa : o + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (recode l p)) u fun u' =>
@@ -706,12 +706,12 @@ theorem recr_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a p : Nat} (hs : Scr 
       Frm B [(a + (l.D * p + l.oD), l.ND)] u.mem u'.mem ∧ Keep [.rax, .rcx, .rdx, .r8, .r9] u u' := by
   have hn := hs.nowrap
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
+  obtain ⟨d1, d2⟩ := lay_oD l hw
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   have hPD : l.oE + l.P ≤ l.oD := d1
-  refine WP.mono (recode_ok hl hp hdi (by rw [off_off]; exact hs.ld (by unfold sIfma sFn; omega_using [hoa, haZ, hT]))
+  refine WP.mono (recode_ok hl hw hp hdi (by rw [off_off]; exact hs.ld (by unfold sIfma sFn; omega_using [hoa, haZ, hT]))
       hia (by omega_using [hDp, o7, o10, hDb2])
       (fun i hi => by rw [off_off]; exact
         let ⟨_, h, c⟩ := hs.region (d := a + (l.D * p + l.oE + i)) (n := 1)
@@ -905,7 +905,7 @@ structure RegOut (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (F : Addr) (p X 
   fin : Limbs l m F (l.D * p + l.oFin) Fin
   k0 : ∀ t < 4, word m F (l.D * p + l.oK0 + 8 * t) = k0
   e : ∀ i, i < l.P → m (off F (l.D * p + l.oE + i)) = (padE l eb).getD i 0
-  d : ∀ i < l.ND, (m (off F (l.D * p + l.oD + i))).toNat = digit l (Spec.Rsa.os2ip eb) i
+  d : ∀ i < l.ND, nibOf l i (m (off F (l.D * p + dAt l i))).toNat = digit l (Spec.Rsa.os2ip eb) i
 
 /-- A region after changes outside it. -/
 theorem RegOut.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin : Nat} {k0 : BitVec 64} {eb : List Byte}
@@ -913,7 +913,6 @@ theorem RegOut.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin 
     (hd : ∀ r ∈ rs, a + l.D * p + l.D ≤ r.1 ∨ r.1 + r.2 ≤ a + l.D * p) (hz : a + l.D * p + l.D ≤ 2 ^ 64) :
     RegOut l m' (off B a) p X K1 Xc Y Fin k0 eb := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
   obtain ⟨-, pP, pX, -, -, -⟩ := lay_P hl
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hoM : oM = 0 := rfl
@@ -933,8 +932,9 @@ theorem RegOut.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin 
           (by omega_using [hz, o6, o7, o10, pP, pX, hi]), ← off_off]
       exact h.e i hi,
     fun i hi => by
-      rw [off_off, byte_frm hf (fun r hr => by rcases hd r hr with h | h <;> omega_using [d2, o7, o10, hi, h])
-          (by omega_using [hz, d2, o7, o10, hi]), ← off_off]
+      obtain ⟨d1, d2⟩ := lay_dAt hl hi
+      rw [off_off, byte_frm hf (fun r hr => by rcases hd r hr with h | h <;> omega_using [d2, o7, o10, h])
+          (by omega_using [hz, d2, o7, o10]), ← off_off]
       exact h.d i hi⟩
 
 /-- The prime's workspace and `n`'s slots after `regionA`, for the tail. -/
@@ -986,7 +986,7 @@ theorem tailR_disj (hl : LayOk l) {a p : Nat} {c : Nat} (hc : c + l.NB ≤ l.oK0
   rintro _ (rfl | rfl | rfl) <;> simp only <;> omega_using [hc, o1, o6, o9]
 
 /-- A region's numbers and exponent before `recode`, and its digits after. -/
-theorem regOut_of (hl : LayOk l) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin : Nat} {k0 : BitVec 64}
+theorem regOut_of (hl : LayOk l) (hw : l.w ≠ 4) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin : Nat} {k0 : BitVec 64}
     {eb : List Byte} (hp : p < 2) (hz : a + 2 * l.D ≤ 2 ^ 64) (hL : eb.length ≤ l.E)
     (n : Limbs l m (off B a) (l.D * p + oM) X) (k1 : Limbs l m (off B a) (l.D * p + l.oK1) K1)
     (x : Limbs l m (off B a) (l.D * p + l.oX) Xc) (y : Limbs l m (off B a) (l.D * p + l.oY) Y)
@@ -997,7 +997,7 @@ theorem regOut_of (hl : LayOk l) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin : Na
       digit l (bv m (off B a) (l.D * p + l.oE) l.P) i) :
     RegOut l m' (off B a) p X K1 Xc Y Fin k0 eb := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
+  obtain ⟨d1, d2⟩ := lay_oD l hw
   obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hoM : oM = 0 := rfl
@@ -1019,7 +1019,26 @@ theorem regOut_of (hl : LayOk l) {m m' : Mem} {B : Addr} {a p X K1 Xc Y Fin : Na
   · rw [off_off, byte_frm hf (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [d1, hi])
       (by omega_using [hz, hDp, o6, o7, o10, d1, d2, hi]), ← off_off]
     exact he i hi
-  · rw [hd i hi, bv_padE (Nat.le_trans hL pE) he]
+  · simp only [nibOf, dAt, hw, ite_false]
+    rw [← Nat.add_assoc, hd i hi, bv_padE (Nat.le_trans hL pE) he]
+
+/-- With windows of 4 bits, a region's numbers and exponent: its digits are
+the exponent's nibbles (`digit_nib`), so it needs no `recode`. -/
+theorem regOut4 (hl : LayOk l) (hw : l.w = 4) {m : Mem} {B : Addr} {a p X K1 Xc Y Fin : Nat} {k0 : BitVec 64}
+    {eb : List Byte} (hL : eb.length ≤ l.E)
+    (n : Limbs l m (off B a) (l.D * p + oM) X) (k1 : Limbs l m (off B a) (l.D * p + l.oK1) K1)
+    (x : Limbs l m (off B a) (l.D * p + l.oX) Xc) (y : Limbs l m (off B a) (l.D * p + l.oY) Y)
+    (fin : Limbs l m (off B a) (l.D * p + l.oFin) Fin) (hk : ∀ t < 4, word m (off B a) (l.D * p + l.oK0 + 8 * t) = k0)
+    (he : ∀ i, i < l.P → m (off (off B a) (l.D * p + l.oE + i)) = (padE l eb).getD i 0) :
+    RegOut l m (off B a) p X K1 Xc Y Fin k0 eb := by
+  obtain ⟨pE, -, -, -, -, -⟩ := lay_P hl
+  refine ⟨n, k1, x, y, fin, hk, he, fun i hi => ?_⟩
+  rw [← bv_padE (Nat.le_trans hL pE) he, digit_nib hl hw hi]
+  simp only [dAt, hw, ite_true, Nat.add_assoc]
+
+/-- The digits (where `recode` writes them) end within a region. -/
+theorem lay_oDD (hl : LayOk l) : l.oD + l.ND ≤ l.D := by
+  rcases hl with rfl | rfl | rfl <;> decide
 
 /-- `region p`: prime `p`'s region of the area at `off B a`, from its
 workspace at `off B o` (16 words). -/
@@ -1038,7 +1057,7 @@ theorem region_ok (hl : LayOk l) {s : State} {B : Addr} {Z o w a p X sp sl : Nat
       t.gpr .rdi = off B o ∧ Keep mmRegs s t := by
   have hn := hc.scr.nowrap
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
+  have d2 : l.oD + l.ND ≤ l.D := lay_oDD hl
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hoM : oM = 0 := rfl
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
@@ -1053,17 +1072,36 @@ theorem region_ok (hl : LayOk l) {s : State} {B : Addr} {Z o w a p X sp sl : Nat
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   have htr : ∀ q < 2, ∀ r ∈ tailR l a q, a ≤ r.1 ∧ r.1 + r.2 ≤ Z := fun q hq => tailR_bound hl hq haZ
   rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
-  · rw [show region l 0 sp sl = (k1 l ++ [arrLoop l 0]) ++
-      (([.block (k0St l 0), .block (eZero l)] ++ eCopy l sp sl) ++ recode l 0) from rfl]
+  · by_cases hw : l.w = 4
+    · rw [show region l 0 sp sl = (k1 l ++ [arrLoop l 0]) ++ ([.block (k0St l 0), .block (eZero l)] ++ eCopy l sp sl) by
+        unfold region; simp only [hw, ↓reduceIte]; rfl]
+      refine wp_seqs_append (by simp [k1, copyArr]) (by simp) (WP.mono (regionA_ok hl hc hia hoa haZ hp hN hY)
+        fun t ⟨lM, lK, lX, lY, lF₀, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
+      have cA := TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA
+      refine WP.mono (regionB0_ok hl cA hoa haZ hsp hsl hL1 hL2 r12 lF₀) fun t' ⟨lF, hk, hE, fB, kB⟩ =>
+        ⟨?_, fA.trans (fB.widen fun r hr => hwide _ hp r (List.mem_append_left _ hr)), ?_, ?_,
+          (kA.trans kB).mono (by decide)⟩
+      · refine regOut4 hl hw hL2 ?_ ?_ ?_ ?_ ?_ hk hE
+        · exact lM.of_frm hl fB (tailR_disj hl (by omega_using [o1, hoM])) (by omega_using [haZ, hn, hDb1, hoM])
+        · exact lK.of_frm hl fB (tailR_disj hl (by omega_using [o6, o7, o9])) (by omega_using [haZ, hn, o7, o10])
+        · exact lX.of_frm hl fB (tailR_disj hl (by omega_using [o1, o3, o6])) (by omega_using [haZ, hn, o3, o10])
+        · exact lY.of_frm hl fB (tailR_disj hl (by omega_using [o1, o2, o6])) (by omega_using [haZ, hn, o2, o10])
+        · rw [ite_eq_left_of_eq_true _ _ (eq_true (rfl : (0 : Nat) = 0))]
+          exact lF
+      · rw [kB.2.2, wA]
+      · rw [kB.gpr (by decide), dA]
+    rw [show region l 0 sp sl = (k1 l ++ [arrLoop l 0]) ++
+      (([.block (k0St l 0), .block (eZero l)] ++ eCopy l sp sl) ++ recode l 0) by
+        unfold region; simp only [hw, ↓reduceIte]; rfl]
     refine wp_seqs_append (by simp [k1, copyArr]) (by simp) (WP.mono (regionA_ok hl hc hia hoa haZ hp hN hY)
       fun t ⟨lM, lK, lX, lY, lF₀, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
     have cA := TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA
     refine wp_seqs_append (by simp [eCopy]) (by simp [recode]) (WP.mono (regionB0_ok hl cA hoa haZ
       hsp hsl hL1 hL2 r12 lF₀) fun t' ⟨lF, hk, hE, fB, kB⟩ => ?_)
     have cB := cA.of_frm fB (htr 0 (by decide)) hoa (by omega_using [haZ]) hsp hsl kB
-    refine WP.mono (recr_ok hl cB.scr cB.rdi cB.ia hoa haZ (p := 0) (by decide))
+    refine WP.mono (recr_ok hl hw cB.scr cB.rdi cB.ia hoa haZ (p := 0) (by decide))
       fun t'' ⟨hd, fR, kR⟩ => ⟨?_, fA.trans ((fB.append fR).widen (hwide _ hp)), ?_, ?_, (kA.trans kB).trans kR |>.mono (by decide)⟩
-    · refine regOut_of hl (by decide) (by omega_using [haZ, hn]) hL2 ?_ ?_ ?_ ?_ ?_ hk hE fR hd
+    · refine regOut_of hl hw (by decide) (by omega_using [haZ, hn]) hL2 ?_ ?_ ?_ ?_ ?_ hk hE fR hd
       · exact lM.of_frm hl fB (tailR_disj hl (by omega_using [o1, hoM])) (by omega_using [haZ, hn, hDb1, hoM])
       · exact lK.of_frm hl fB (tailR_disj hl (by omega_using [o6, o7, o9])) (by omega_using [haZ, hn, o7, o10])
       · exact lX.of_frm hl fB (tailR_disj hl (by omega_using [o1, o3, o6])) (by omega_using [haZ, hn, o3, o10])
@@ -1072,17 +1110,35 @@ theorem region_ok (hl : LayOk l) {s : State} {B : Addr} {Z o w a p X sp sl : Nat
         exact lF
     · rw [kR.2.2, kB.2.2, wA]
     · rw [kR.gpr (by decide), kB.gpr (by decide), dA]
-  · rw [show region l 1 sp sl = (k1 l ++ [arrLoop l 1]) ++
-      (([.block (k0St l 1), .block (eZero l), .block (finOne l)] ++ eCopy l sp sl) ++ recode l 1) from rfl]
+  · by_cases hw : l.w = 4
+    · rw [show region l 1 sp sl = (k1 l ++ [arrLoop l 1]) ++
+          ([.block (k0St l 1), .block (eZero l), .block (finOne l)] ++ eCopy l sp sl) by
+        unfold region; simp only [hw, ↓reduceIte]; rfl]
+      refine wp_seqs_append (by simp [k1, copyArr]) (by simp) (WP.mono (regionA_ok hl hc hia hoa haZ hp hN hY)
+        fun t ⟨lM, lK, lX, lY, _, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
+      have cA := TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA
+      refine WP.mono (regionB1_ok hl cA hoa haZ hsp hsl hL1 hL2 r12) fun t' ⟨lF, hk, hE, fB, kB⟩ =>
+        ⟨?_, fA.trans (fB.widen fun r hr => hwide _ hp r (List.mem_append_left _ hr)), ?_, ?_,
+          (kA.trans kB).mono (by decide)⟩
+      · refine regOut4 hl hw hL2 ?_ ?_ ?_ ?_ lF hk hE
+        · exact lM.of_frm hl fB (tailR_disj hl (by omega_using [o1, hoM])) (by omega_using [haZ, hn, hDb1, hoM])
+        · exact lK.of_frm hl fB (tailR_disj hl (by omega_using [o6, o7, o9])) (by omega_using [haZ, hn, o7, o10])
+        · exact lX.of_frm hl fB (tailR_disj hl (by omega_using [o1, o3, o6])) (by omega_using [haZ, hn, o3, o10])
+        · exact lY.of_frm hl fB (tailR_disj hl (by omega_using [o1, o2, o6])) (by omega_using [haZ, hn, o2, o10])
+      · rw [kB.2.2, wA]
+      · rw [kB.gpr (by decide), dA]
+    rw [show region l 1 sp sl = (k1 l ++ [arrLoop l 1]) ++
+      (([.block (k0St l 1), .block (eZero l), .block (finOne l)] ++ eCopy l sp sl) ++ recode l 1) by
+        unfold region; simp only [hw, ↓reduceIte]; rfl]
     refine wp_seqs_append (by simp [k1, copyArr]) (by simp) (WP.mono (regionA_ok hl hc hia hoa haZ hp hN hY)
       fun t ⟨lM, lK, lX, lY, _, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
     have cA := TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA
     refine wp_seqs_append (by simp [eCopy]) (by simp [recode]) (WP.mono (regionB1_ok hl cA hoa haZ
       hsp hsl hL1 hL2 r12) fun t' ⟨lF, hk, hE, fB, kB⟩ => ?_)
     have cB := cA.of_frm fB (htr 1 (by decide)) hoa (by omega_using [haZ]) hsp hsl kB
-    refine WP.mono (recr_ok hl cB.scr cB.rdi cB.ia hoa haZ (p := 1) (by decide))
+    refine WP.mono (recr_ok hl hw cB.scr cB.rdi cB.ia hoa haZ (p := 1) (by decide))
       fun t'' ⟨hd, fR, kR⟩ => ⟨?_, fA.trans ((fB.append fR).widen (hwide _ hp)), ?_, ?_, (kA.trans kB).trans kR |>.mono (by decide)⟩
-    · refine regOut_of hl (by decide) (by omega_using [haZ, hn]) hL2 ?_ ?_ ?_ ?_ lF hk hE fR hd
+    · refine regOut_of hl hw (by decide) (by omega_using [haZ, hn]) hL2 ?_ ?_ ?_ ?_ lF hk hE fR hd
       · exact lM.of_frm hl fB (tailR_disj hl (by omega_using [o1, hoM])) (by omega_using [haZ, hn, hDb1, hoM])
       · exact lK.of_frm hl fB (tailR_disj hl (by omega_using [o6, o7, o9])) (by omega_using [haZ, hn, o7, o10])
       · exact lX.of_frm hl fB (tailR_disj hl (by omega_using [o1, o3, o6])) (by omega_using [haZ, hn, o3, o10])

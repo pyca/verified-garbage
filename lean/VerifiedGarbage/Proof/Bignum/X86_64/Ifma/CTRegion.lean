@@ -297,12 +297,12 @@ def RecP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : RegPub) (t : State)
   t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
     t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)
 
-theorem recBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
+theorem recBlk_ok (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
     WP isa (.block (recBlk l p)) s (RecP l p q) := by
   have hH := h.hd
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩ := h
   obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
-  obtain ⟨d1, d2⟩ := lay_oD l
+  obtain ⟨d1, d2⟩ := lay_oD l hw
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   have hG : l.P / l.w < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
@@ -321,13 +321,13 @@ theorem recBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : R
     all_goals rfl) rfl) fun t h => h.1
 
 /-- `recode` is constant time. -/
-theorem recode_ct (hl : LayOk l) {p sp sl : Nat} (hB : TOk [.rdi] (.block (recBlk l p)))
+theorem recode_ct (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} (hB : TOk [.rdi] (.block (recBlk l p)))
     (hL : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)) :
     RelCT isa (Two (RT l p sp sl)) (seqs (recode l p)) fun _ _ => True := by
   obtain ⟨_, hB⟩ := hB
   obtain ⟨_, hL⟩ := hL
   rw [recode_eq]
-  exact RelCT.seq (two_piece (Ψ := RecP l p) [.rdi] (pins_rt fun _ _ h => h) hB fun q s h => recBlk_ok hl h)
+  exact RelCT.seq (two_piece (Ψ := RecP l p) [.rdi] (pins_rt fun _ _ h => h) hB fun q s h => recBlk_ok hl hw h)
     (two_taint [.r8, .r9, .rcx] (pins_eqs (fun q r => if r = .r8 then off (off q.B q.a) (l.D * p + l.oE) else
       if r = .r9 then off (off q.B q.a) (l.D * p + l.oD) else BitVec.ofNat 64 (l.P / l.w)) fun q s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -539,8 +539,19 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hoM : oM = 0 := rfl
   have := NB_le hl
+  by_cases hw : l.w = 4
+  · rw [show region l 0 sp sl = k1 l ++ (arrLoop l 0 ::
+      .block (k0St l 0) :: .block (eZero l) :: eCopy l sp sl) by unfold region; simp only [hw, ↓reduceIte]; rfl]
+    refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
+    refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel0 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
+      (fun _ _ h => arrLoop_rt hl h) ?_
+    refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 0 hR.k00) (fun _ _ h => k0St_rt hl h) ?_
+    refine ct_cons (by simp [eCopy]) (eZero_ct 0 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
+    exact (two_map id (fun _ _ h => ⟨h.1, h.2.1⟩) (eCopy_ct hl hT hR.eEnd)).mono (fun _ _ h => h)
+      fun _ _ _ => trivial
   rw [show region l 0 sp sl = k1 l ++ (arrLoop l 0 ::
-    .block (k0St l 0) :: .block (eZero l) :: (eCopy l sp sl ++ recode l 0)) from rfl]
+    .block (k0St l 0) :: .block (eZero l) :: (eCopy l sp sl ++ recode l 0)) by
+      unfold region; simp only [hw, ↓reduceIte]; rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
   refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel0 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (fun _ _ h => arrLoop_rt hl h) ?_
@@ -548,7 +559,7 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   refine ct_cons (by simp [eCopy]) (eZero_ct 0 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
   refine VG.Proof.Bignum.X86_64.RelCT.seqs_append (by simp [eCopy]) (by simp [recode])
     (RelCT.seq (two_post (two_map id (fun _ _ h => ⟨h.1, h.2.1⟩) (eCopy_ct hl hT hR.eEnd))
-      fun _ _ h => eCopy_rt hl ⟨h.1, h.2.1⟩) (recode_ct hl hR.rb0 hR.rl))
+      fun _ _ h => eCopy_rt hl ⟨h.1, h.2.1⟩) (recode_ct hl hw hR.rb0 hR.rl))
 
 /-- `q`'s region is constant time. -/
 theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -559,8 +570,20 @@ theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hoM : oM = 0 := rfl
   have := NB_le hl
+  by_cases hw : l.w = 4
+  · rw [show region l 1 sp sl = k1 l ++ (arrLoop l 1 ::
+      .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: eCopy l sp sl) by
+        unfold region; simp only [hw, ↓reduceIte]; rfl]
+    refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
+    refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel1 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
+      (fun _ _ h => arrLoop_rt hl h) ?_
+    refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 1 hR.k01) (fun _ _ h => k0St_rt hl h) ?_
+    refine ct_cons (List.cons_ne_nil _ _) (eZero_ct 1 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
+    refine ct_cons (by simp [eCopy]) (finOne_ct hR.fin) (fun _ _ h => finOne_rt hl h) ?_
+    exact (eCopy_ct hl hT hR.eEnd).mono (fun _ _ h => h) fun _ _ _ => trivial
   rw [show region l 1 sp sl = k1 l ++ (arrLoop l 1 ::
-    .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: (eCopy l sp sl ++ recode l 1)) from rfl]
+    .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: (eCopy l sp sl ++ recode l 1)) by
+      unfold region; simp only [hw, ↓reduceIte]; rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
   refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel1 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (fun _ _ h => arrLoop_rt hl h) ?_
@@ -568,6 +591,6 @@ theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   refine ct_cons (List.cons_ne_nil _ _) (eZero_ct 1 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
   refine ct_cons (by simp [eCopy]) (finOne_ct hR.fin) (fun _ _ h => finOne_rt hl h) ?_
   exact VG.Proof.Bignum.X86_64.RelCT.seqs_append (by simp [eCopy]) (by simp [recode])
-    (RelCT.seq (two_post (eCopy_ct hl hT hR.eEnd) fun _ _ h => eCopy_rt hl h) (recode_ct hl hR.rb1 hR.rl))
+    (RelCT.seq (two_post (eCopy_ct hl hT hR.eEnd) fun _ _ h => eCopy_rt hl h) (recode_ct hl hw hR.rb1 hR.rl))
 
 end VG.Proof.Bignum.X86_64.Ifma

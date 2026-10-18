@@ -81,9 +81,10 @@ def P : Nat := l.E + (l.w - l.E % l.w) % l.w
 def ND : Nat := 8 * (l.P / l.w)
 /-- The first digit with a bit of the exponent (those before are zero). -/
 def k0 : Nat := 8 * (l.P - l.E) / l.w
-/-- The bytes of the padded exponent and of its digits, each a whole number
-of 32 bytes. -/
-def XE : Nat := (l.P + 31) / 32 * 32 + (l.ND + 31) / 32 * 32
+/-- The bytes of the padded exponent and of its digits (none with windows of
+4 bits, whose digits are the exponent's nibbles), each a whole number of 32
+bytes. -/
+def XE : Nat := (l.P + 31) / 32 * 32 + (if l.w = 4 then 0 else (l.ND + 31) / 32 * 32)
 
 /-! In a prime's region: the modulus, `k₀` in each quadword, `Y`, the base
 `X`, the selected entry, the table, the padded exponent, its digits (a byte
@@ -329,11 +330,11 @@ def recode (p : Nat) : List (Prog isa) :=
 
 /-- A prime's region (`p` 0 or 1): the modulus, `2^(104 S - 64 W) mod X`,
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
-exponent and its digits. -/
+exponent and, with windows of more than 4 bits, its digits. -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
   k1 l ++ [arrLoop l p] ++
     [.block (k0St l p), .block (eZero l)] ++
-    (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen ++ recode l p
+    (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen ++ (if l.w = 4 then [] else recode l p)
 
 /-! ## The vector code (`rbx` the area) -/
 
@@ -393,17 +394,37 @@ def winSetup (b : Nat) : List Instr :=
    .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx),
    .alu .add .r11 (.imm (BitVec.ofNat 32 l.oY))]
 
+/-- A nibble of `r` by the mask in `rdx` (all ones for the high nibble,
+zero for the low), through `rcx`: `lo ^ ((hi ^ lo) & mask)`. -/
+def nibSel (r : Reg) : List Instr :=
+  [.mov .rcx (.reg r), .shift .shr .rcx 4, .alu .and r (.imm 15), .alu .xor .rcx (.reg r),
+    .alu .and .rcx (.reg .rdx), .alu .xor r (.reg .rcx)]
+
+/-- Digit `r13` of each prime into its `V`: with windows of 4 bits, a nibble
+of byte `r13 / 2` of the padded exponent (the high one for an even digit);
+otherwise the digit's byte at `oD`. -/
+def digLoad : List Instr :=
+  if l.w = 4 then
+    ([.mov .r8 (.reg .r13), .shift .shr .r8 1, .mov .rdx (.reg .r13), .alu .and .rdx (.imm 1),
+      .alu .sub .rdx (.imm 1),
+      .movzx8 .rax { base := .rbx, index := some .r8, disp := ((l.oE : Nat) : Int) },
+      .movzx8 .rsi { base := .rbx, index := some .r8, disp := ((l.D + l.oE : Nat) : Int) }] : List Instr) ++
+    nibSel .rax ++ ([.store (at_ .rbx l.oV) .rax] : List Instr) ++
+    nibSel .rsi ++ ([.store (at_ .rbx (l.D + l.oV)) .rsi] : List Instr)
+  else
+    (List.range 2).flatMap fun p =>
+      [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oD : Nat) : Int) },
+        .store (at_ .rbx (l.D * p + l.oV)) .rax]
+
 /-- A window: `Y := Y^(2^w) T_v 2^(-52 S)` for each prime, `v` its digit
-`r13` (at `oD`, into `oV`). `S := T_v` first, then one loop of `w + 1`
+`r13` (`digLoad`, into `oV`). `S := T_v` first, then one loop of `w + 1`
 multiplications (`r15` counting them down): `w` squarings of `Y`, then
 `Y S`. After the last digit (`r13 = ND`), instead `S := Fin` and the one
 multiplication `Y S`. -/
 def window : List (Prog isa) :=
   [.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.ND))])
       (.ite .e (.block (copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1)]))
-        (seqs ([.block ((List.range 2).flatMap fun p =>
-            [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oD : Nat) : Int) },
-              .store (at_ .rbx (l.D * p + l.oV)) .rax])] ++ select l 0 ++ select l 1 ++
+        (seqs ([.block (digLoad l)] ++ select l 0 ++ select l 1 ++
           [.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (l.w + 1)))]]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))

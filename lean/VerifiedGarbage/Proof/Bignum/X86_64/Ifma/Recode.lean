@@ -90,6 +90,39 @@ theorem digit_group (hl : LayOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < 
 
 /-! ## A group -/
 
+/-- Byte `j` of the big-endian value of `n` bytes. -/
+theorem bv_byte (m : Mem) (F : Addr) (o : Nat) {n j : Nat} (hj : j < n) :
+    bv m F o n / 256 ^ (n - 1 - j) % 256 = (m (off F (o + j))).toNat := by
+  obtain ⟨k, rfl⟩ : ∃ k, n = j + 1 + k := ⟨n - 1 - j, by omega⟩
+  have hr := bv_lt m F (o + (j + 1)) k
+  have hb := (m (off F (o + j))).isLt
+  rw [bv_add, show j + 1 + k - 1 - j = k by omega, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.pow_pos (by decide)),
+    Nat.div_eq_of_lt hr, Nat.zero_add, bv]
+  omega
+
+/-- With windows of 4 bits, digit `i` of the padded exponent's value is a
+nibble of byte `i / 2` (`nibOf`), as the windows read it without `recode`. -/
+theorem digit_nib (hl : LayOk l) (hw : l.w = 4) {m : Mem} {F : Addr} {o i : Nat} (hi : i < l.ND) :
+    digit l (bv m F o l.P) i = nibOf l i (m (off F (o + i / 2))).toNat := by
+  obtain ⟨hP, hN⟩ := lay_groups hl
+  have hg : i / 8 < l.P / l.w := by omega
+  have e := digit_group hl (m := m) (F := F) (o := o) hg (show i % 8 < 8 by omega)
+  rw [show 8 * (i / 8) + i % 8 = i by omega] at e
+  have hT : l.T = 16 := by simp only [Lay.T, hw]
+  have hb := bv_byte m F (o + l.w * (i / 8)) (n := l.w) (j := i % 8 / 2) (by omega)
+  rw [show o + l.w * (i / 8) + i % 8 / 2 = o + i / 2 by rw [hw]; omega] at hb
+  have hpow : ∀ t < 8, 16 ^ (7 - t) = 256 ^ (4 - 1 - t / 2) * 16 ^ (1 - t % 2) := by decide
+  rw [e, hT]
+  simp only [nibOf, hw, ite_true] at hb ⊢
+  rw [show i % 2 = i % 8 % 2 by omega, hpow _ (by omega), ← Nat.div_div_eq_div_mul, ← hb]
+  generalize bv m F (o + 4 * (i / 8)) 4 / 256 ^ (4 - 1 - i % 8 / 2) = X
+  rcases Nat.mod_two_eq_zero_or_one (i % 8) with h | h
+  · simp only [h, ↓reduceIte, Nat.sub_zero, Nat.pow_one]
+    rw [show 256 = 16 * 16 from rfl, Nat.mod_mul_right_div_self]
+  · simp only [h, Nat.one_ne_zero, ↓reduceIte, Nat.sub_self, Nat.pow_zero, Nat.div_one]
+    rw [Nat.mod_mod_of_dvd _ (by decide : 16 ∣ 256)]
+
+
 theorem shl8_or {a : Nat} (ha : a < 2 ^ 48) (b : BitVec 8) :
     BitVec.ofNat 64 a <<< 8 ||| b.setWidth 64 = BitVec.ofNat 64 (a * 256 + b.toNat) := by
   apply BitVec.eq_of_toNat_eq
@@ -320,7 +353,7 @@ theorem recLoop_ok (hl : LayOk l) {s₀ : State} {F : Addr} {e d : Nat}
 
 /-- `recode l p`: the digits of the padded exponent of region `p` of the
 area `F` (in the header's slot `sIfma`, `rdi = W`). -/
-theorem recode_ok (hl : LayOk l) {s : State} {W F : Addr} {p : Nat} (hp : p < 2) (hdi : s.gpr .rdi = W)
+theorem recode_ok (hl : LayOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : Nat} (hp : p < 2) (hdi : s.gpr .rdi = W)
     (hia : InRegions (s.rd ++ s.wr) (off W (8 * sIfma)) 8) (hiv : word s.mem W (8 * sIfma) = F)
     (hn : l.D * p + l.oK1 < 2 ^ 63)
     (hrd : ∀ i < l.P, InRegions (s.rd ++ s.wr) (off F (l.D * p + l.oE + i)) 1)
@@ -330,7 +363,7 @@ theorem recode_ok (hl : LayOk l) {s : State} {W F : Addr} {p : Nat} (hp : p < 2)
       Outside F (l.D * p + l.oD) l.ND s.mem s'.mem ∧
       VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx, .r8, .r9] s s' ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨hP, hN⟩ := lay_groups hl
-  obtain ⟨d1, d2⟩ := lay_oD l
+  obtain ⟨d1, d2⟩ := lay_oD l hw
   have hD := hl.D_bounds
   have hG : l.P / l.w < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
   have he : l.D * p + l.oE < 2 ^ 31 := by
