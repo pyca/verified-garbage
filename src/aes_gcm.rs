@@ -1131,7 +1131,10 @@ impl AesGcm {
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         // Short messages take the prepared instances too once their short path
-        // reads the powers (`short_ready`), as in `encrypt_in_place`.
+        // reads the powers (`short_ready`), as in `encrypt_in_place`. On
+        // AVX-512 that makes 16- to 255-byte opens 6–33% faster (Emerald
+        // Rapids), for one more register move on the long path (within 0.5%
+        // on Zen 3, #2775).
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
