@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPcCt
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPcImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
@@ -18,17 +17,18 @@ public import VerifiedGarbage.Proof.Framework.Registration
 # RSASSA-PSS signing on x86-64
 
 A generic file of two interfaces (see `TCB/Emit.lean`):
-`vg_rsa_pss_<H>_mgf1_<H>_sign`, for the hash function of an `MdHash` variant
-`v` with MGF1 over the same hash function, calling `v`'s compression
-function, and `vg_rsa_private_checked` calling an implementation `c` of
-`vg_rsa_private_crt` (`Variants/RsaPrivateCrt/X86_64/`). It is emitted once
-for each pair, named by `Emit.qualifiedName` with the hash function's name
-and `crt` as tags (e.g. `vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_adx`),
-and needs both's CPU features.
+`vg_rsa_pss_<H>_mgf1_<H>_sign_precomputed`, for the hash function of an
+`MdHash` variant `v` with MGF1 over the same hash function, calling `v`'s
+compression function, and `vg_rsa_private_checked_precomputed` calling an
+implementation `c` of `vg_rsa_private_crt_precomputed`
+(`Variants/RsaPrivateCrt/X86_64/`). It is emitted once for each pair, named
+by `Emit.qualifiedName` with the hash function's name and `crt` as tags
+(e.g. `vg_rsa_pss_sha256_mgf1_sha256_sign_precomputed_sha256_shani_crt_adx`),
+and needs both's CPU features. The Rust code signs with it on x86-64, so
+`vg_rsa_pss_<H>_mgf1_<H>_sign` is not emitted here.
 
-Its stack is its frame, a return address and `vg_rsa_private_checked`'s
-3256 bytes. `vg_rsa_pss_<H>_mgf1_<H>_sign_precomputed`, calling
-`vg_rsa_private_checked_precomputed` (1208 bytes), is emitted the same way.
+Its stack is its frame, a return address and
+`vg_rsa_private_checked_precomputed`'s 1208 bytes.
 -/
 
 @[expose] public section
@@ -36,24 +36,9 @@ Its stack is its frame, a return address and `vg_rsa_private_checked`'s
 namespace VG.Generic.MdHash.RsaPrivateCrt.X86_64.RsaPss
 
 open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
-open VG.Proof.RsaPss.X86_64 (signStack sign_verified sign_spAll)
 open VG.Proof.Rsa.X86_64 (privPcOf)
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact := [
-  (Spec.RsaPss.signApi v.mgf.G v.mgf.G).artifact X86_64.target {
-    suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
-    notes := ["This implementation builds EMSA-PSS's \
-      encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is \
-      masked with MGF1, and the encoding is signed with `" ++ (privOf c).name ++ "`, which checks \
-      the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch \
-      or an address."]
-    code := Impl.RsaPss.X86_64.sign v.H (privOf c).name (privOf c).code
-    stack := signStack
-    verified := sign_verified (hct := (privOf c).ct)
-      (hdC := (privOf c).depth) (hH := v.ok) (K := v.K) (lk := v.mgf) (hc := v.pss)
-      (privOf c).ok (X86_64.SpSafe.of_all (privOf c).spSafe)
-    spSafe := Code.all_of_allInstrs (sign_spAll v.ok v.K (X86_64.SpSafe.of_all (privOf c).spSafe))
-    features := v.features ++ c.features.filter (!v.features.contains ·) },
   (Spec.RsaPss.signPrecomputedApi v.mgf.G v.mgf.G).artifact X86_64.target {
     suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
     notes := ["This implementation builds EMSA-PSS's \
