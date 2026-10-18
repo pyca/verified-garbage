@@ -12,48 +12,6 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Spec.Rsa.Mont (arrAt numAt Keeps Operand)
 open VG.Proof.X25519.Arm (Rest)
 
-/-- The exponentiation's own controls: the exponent's pointer and count, the
-bits left in the byte and the byte. -/
-def KeepsExp (base : BitVec 32) (m m' : Mem) : Prop :=
-  ∀ e ∈ [128, 132, 192, 200], m'.readW (off (State.addr base) e) 32 = m.readW (off (State.addr base) e) 32
-
-theorem KeepsExp.refl (base : BitVec 32) (m : Mem) : KeepsExp base m m := fun _ _ => rfl
-
-theorem KeepsExp.trans {base : BitVec 32} {m₁ m₂ m₃ : Mem} (h₁ : KeepsExp base m₁ m₂)
-    (h₂ : KeepsExp base m₂ m₃) : KeepsExp base m₁ m₃ := fun e he => (h₂ e he).trans (h₁ e he)
-
-theorem KeepsExp.of_keeps {m m' : Mem} {base : BitVec 32} {len w o : Nat}
-    (keep : Keeps (State.addr base) len w o m m') (size : 256 ≤ 8 * len) : KeepsExp base m m' := by
-  intro e he
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-  rcases he with rfl | rfl | rfl | rfl <;> exact keeps_header_readW keep size (by decide)
-
-theorem KeepsExp.of_outside {m m' : Mem} {base : BitVec 32} {o n : Nat}
-    (outside : Outside (State.addr base) o n m m') (ho : 204 ≤ o) : KeepsExp base m m' := by
-  intro e he
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-  rcases he with rfl | rfl | rfl | rfl <;> exact outside_read32 outside (Or.inl (by omega)) (by omega)
-
-/-- A header word that neither of two writes touches. -/
-theorem read_after_writes (m : Mem) (base : BitVec 32) {d e a : Nat} (v u : BitVec 32)
-    (hd : a + 4 ≤ d ∨ d + 4 ≤ a) (he : a + 4 ≤ e ∨ e + 4 ≤ a) (fit : d + 4 ≤ 256) (fit' : e + 4 ≤ 256)
-    (fa : a + 4 ≤ 256) :
-    ((m.writeW (off (State.addr base) d) v).writeW (off (State.addr base) e) u).readW
-      (off (State.addr base) a) 32 = m.readW (off (State.addr base) a) 32 := by
-  have o1 := writeW32_outside m (State.addr base) (d := d) v (by omega)
-  have o2 := writeW32_outside (m.writeW (off (State.addr base) d) v) (State.addr base) (d := e) u (by omega)
-  rw [outside_read32 o2 he (by omega), outside_read32 o1 hd (by omega)]
-
-/-- Writes to header words 196 and later (the window's controls) alone. -/
-theorem KeepsExp.of_writes (m : Mem) (base : BitVec 32) {d e : Nat} (v u : BitVec 32)
-    (hd : 204 ≤ d ∨ d = 196) (hd' : d + 4 ≤ 256) (he : 204 ≤ e ∨ e = 196) (he' : e + 4 ≤ 256) :
-    KeepsExp base m ((m.writeW (off (State.addr base) d) v).writeW (off (State.addr base) e) u) := by
-  intro a ha
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
-  have o1 := writeW32_outside m (State.addr base) (d := d) v (by omega)
-  have o2 := writeW32_outside (m.writeW (off (State.addr base) d) v) (State.addr base) (d := e) u (by omega)
-  rw [outside_read32 o2 (by omega) (by omega), outside_read32 o1 (by omega) (by omega)]
-
 /-- The scan has gone over the first `j` entries for the digit `d`. -/
 structure ScanInv (base : BitVec 32) (len w M x A d j : Nat) (s : State) : Prop where
   power : ExpState base len w M x A s

@@ -16,6 +16,48 @@ open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
 theorem rest_round {rs : List Reg} {s t : State} (h : Rest rs s t) : Rest roundClobbers s t :=
   h.mono fun r _ => by cases r <;> simp [roundClobbers]
 
+/-- The exponentiation's own controls: the exponent's pointer and count, the
+bits left in the byte and the byte. -/
+def KeepsExp (base : BitVec 32) (m m' : Mem) : Prop :=
+  ∀ e ∈ [128, 132, 192, 200], m'.readW (off (State.addr base) e) 32 = m.readW (off (State.addr base) e) 32
+
+theorem KeepsExp.refl (base : BitVec 32) (m : Mem) : KeepsExp base m m := fun _ _ => rfl
+
+theorem KeepsExp.trans {base : BitVec 32} {m₁ m₂ m₃ : Mem} (h₁ : KeepsExp base m₁ m₂)
+    (h₂ : KeepsExp base m₂ m₃) : KeepsExp base m₁ m₃ := fun e he => (h₂ e he).trans (h₁ e he)
+
+theorem KeepsExp.of_keeps {m m' : Mem} {base : BitVec 32} {len w o : Nat}
+    (keep : Keeps (State.addr base) len w o m m') (size : 256 ≤ 8 * len) : KeepsExp base m m' := by
+  intro e he
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl | rfl | rfl <;> exact keeps_header_readW keep size (by decide)
+
+theorem KeepsExp.of_outside {m m' : Mem} {base : BitVec 32} {o n : Nat}
+    (outside : Outside (State.addr base) o n m m') (ho : 204 ≤ o) : KeepsExp base m m' := by
+  intro e he
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl | rfl | rfl <;> exact outside_read32 outside (Or.inl (by omega)) (by omega)
+
+/-- A header word that neither of two writes touches. -/
+theorem read_after_writes (m : Mem) (base : BitVec 32) {d e a : Nat} (v u : BitVec 32)
+    (hd : a + 4 ≤ d ∨ d + 4 ≤ a) (he : a + 4 ≤ e ∨ e + 4 ≤ a) (fit : d + 4 ≤ 256) (fit' : e + 4 ≤ 256)
+    (fa : a + 4 ≤ 256) :
+    ((m.writeW (off (State.addr base) d) v).writeW (off (State.addr base) e) u).readW
+      (off (State.addr base) a) 32 = m.readW (off (State.addr base) a) 32 := by
+  have o1 := writeW32_outside m (State.addr base) (d := d) v (by omega)
+  have o2 := writeW32_outside (m.writeW (off (State.addr base) d) v) (State.addr base) (d := e) u (by omega)
+  rw [outside_read32 o2 he (by omega), outside_read32 o1 hd (by omega)]
+
+/-- Writes to header words 196 and later (the window's controls) alone. -/
+theorem KeepsExp.of_writes (m : Mem) (base : BitVec 32) {d e : Nat} (v u : BitVec 32)
+    (hd : 204 ≤ d ∨ d = 196) (hd' : d + 4 ≤ 256) (he : 204 ≤ e ∨ e = 196) (he' : e + 4 ≤ 256) :
+    KeepsExp base m ((m.writeW (off (State.addr base) d) v).writeW (off (State.addr base) e) u) := by
+  intro a ha
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
+  have o1 := writeW32_outside m (State.addr base) (d := d) v (by omega)
+  have o2 := writeW32_outside (m.writeW (off (State.addr base) d) v) (State.addr base) (d := e) u (by omega)
+  rw [outside_read32 o2 (by omega) (by omega), outside_read32 o1 (by omega) (by omega)]
+
 /-- The table's first `j` entries are built, array 1 holds `x^(j-1) R`, and
 the controls point to entry `j`. -/
 structure BuildInv (base : BitVec 32) (len w M x j : Nat) (s : State) : Prop where
@@ -51,7 +93,8 @@ theorem entryStep_ok (s : State) {base : BitVec 32} {len w M x E a j : Nat}
       numAt t.mem (State.addr base) w 1 = numAt s.mem (State.addr base) w 1 ∧
       t.mem.readW (off (State.addr base) 220) 32 = base + BitVec.ofNat 32 (arrAt w (8 + (j + 1))) ∧
       t.mem.readW (off (State.addr base) 228) 32 = BitVec.ofNat 32 (j + 1) ∧
-      t.z = decide (j + 1 = 8) ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+      t.z = decide (j + 1 = 8) ∧ KeepsExp base s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have nowrap := h.ready.workspace.nowrap
   have fe := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega)) fits
   have sepHdr (d : Nat) (hd : d + 4 ≤ 256) : d + 4 ≤ arrAt w (8 + j) := by
@@ -78,15 +121,18 @@ theorem entryStep_ok (s : State) {base : BitVec 32} {len w M x E a j : Nat}
   obtain ⟨powerT, frameT⟩ := power.after_ctl ctl restT ptr
   obtain ⟨e220, e228⟩ := header_after_writes u.mem base (base + BitVec.ofNat 32 (arrAt w (8 + (j + 1))))
     (BitVec.ofNat 32 (j + 1))
+  have keeps : KeepsExp base s.mem t.mem :=
+    (KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)).trans (by
+      rw [memT]; exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide))
   refine ⟨powerT, tableU.after_ctl ctl fits nowrap (by omega), ?_, by rw [memT]; exact e220,
-    by rw [memT]; exact e228, zT, frameU.trans frameT, restU.trans (rest_round restT)⟩
+    by rw [memT]; exact e228, zT, keeps, frameU.trans frameT, restU.trans (rest_round restT)⟩
   rw [ctl_num (len := len) ctl (Nat.le_trans (arrAt_le (by decide)) fits) nowrap, prodU]
 
 /-- One entry of the loop: `[1] := [1] · x R`, then copied to entry `j`. -/
 theorem tableBody_ok (s : State) {base : BitVec 32} {len w M x j : Nat}
     (h : BuildInv base len w M x j s) (hj : 2 ≤ j) (hj' : j < 8) :
     WP isa tableBody s fun t => BuildInv base len w M x (j + 1) t ∧ t.z = decide (j + 1 = 8) ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
   have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega) fits
   rw [tableBody, WP.seq_iff]
@@ -105,38 +151,39 @@ theorem tableBody_ok (s : State) {base : BitVec 32} {len w M x j : Nat}
   have indexU := (keeps_header_readW keeps size (d := 228) (bits := 32) (by decide)).trans h.index
   refine WP.mono (entryStep_ok u power (h.table.of_keeps keeps fits (by decide) (by omega)) fits
     (a := 1) (by decide) hj' entryU indexU bound prod) ?_
-  rintro t ⟨powerT, tableT, prodT, entryT, indexT, zT, frameT, restT⟩
+  rintro t ⟨powerT, tableT, prodT, entryT, indexT, zT, keepsT, frameT, restT⟩
   refine ⟨⟨powerT, tableT, fits, by rw [prodT]; exact bound, ?_, entryT, indexT⟩, zT,
-    frameU.trans frameT, restU.trans restT⟩
+    (KeepsExp.of_keeps keeps size).trans keepsT, frameU.trans frameT, restU.trans restT⟩
   rw [prodT, show j + 1 - 1 = j by omega]
   exact prod
 
 theorem tableLoop_ok (s : State) {base : BitVec 32} {len w M x : Nat} (h : BuildInv base len w M x 2 s) :
-    WP isa (.loop tableBody .ne) s fun t => BuildInv base len w M x 8 t ∧
+    WP isa (.loop tableBody .ne) s fun t => BuildInv base len w M x 8 t ∧ KeepsExp base s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   let inv := fun k t => ∃ j, j + k = 8 ∧ 0 < k ∧ 2 ≤ j ∧ BuildInv base len w M x j t ∧
-    Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+    KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
   refine WP.loop (M := isa) inv ?_ 6 s ?_
   · intro k t hk
-    obtain ⟨j, hjk, hk, hj, hi, frame, rest⟩ := hk
+    obtain ⟨j, hjk, hk, hj, hi, keeps, frame, rest⟩ := hk
     refine WP.mono (tableBody_ok t hi hj (by omega)) ?_
-    rintro u ⟨hu, hz, frameU, restU⟩
+    rintro u ⟨hu, hz, keepsU, frameU, restU⟩
     by_cases he : j + 1 = 8
     · left
-      refine ⟨?_, he ▸ hu, frame.trans frameU, rest.trans restU⟩
+      refine ⟨?_, he ▸ hu, keeps.trans keepsU, frame.trans frameU, rest.trans restU⟩
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, by omega, hu, frame.trans frameU, rest.trans restU⟩
+      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, by omega, hu, keeps.trans keepsU, frame.trans frameU,
+        rest.trans restU⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · exact ⟨2, rfl, by decide, Nat.le_refl _, h, Frame.refl _ _, Rest.refl _ _⟩
+  · exact ⟨2, rfl, by decide, Nat.le_refl _, h, KeepsExp.refl _ _, Frame.refl _ _, Rest.refl _ _⟩
 
 /-- The table built from the encoded input: `T[j] = x^j R mod M`. -/
 theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     (h : ExpState base len w M x 0 s) (fits : arrAt w 16 ≤ 8 * len) :
     WP isa tableBuild s fun t => ExpState base len w M x 0 t ∧ TableHolds t.mem base w M x 8 ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have nowrap := h.ready.workspace.nowrap
   rw [tableBuild, WP.seq_iff]
   refine WP.mono (tableInit_ok s h.ready) ?_
@@ -155,7 +202,7 @@ theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   refine WP.mono step0 fun v hv => ?_
   rw [WP.seq_iff]
   refine WP.mono hv ?_
-  rintro v ⟨powerV, tableV, _, e220V, e228V, _, frameV, restV⟩
+  rintro v ⟨powerV, tableV, _, e220V, e228V, _, keepsV, frameV, restV⟩
   -- `T[1] := x R`
   have step1 := entryStep_ok v powerV (j := 1) (a := 5) tableV fits (by decide) (by decide) e220V e228V
     powerV.inputBound (by rw [Nat.pow_one]; exact powerV.inputValue)
@@ -164,7 +211,7 @@ theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   refine WP.mono step1 fun y hy => ?_
   rw [WP.seq_iff]
   refine WP.mono hy ?_
-  rintro y ⟨powerY, tableY, _, e220Y, e228Y, _, frameY, restY⟩
+  rintro y ⟨powerY, tableY, _, e220Y, e228Y, _, keepsY, frameY, restY⟩
   -- array 1 `:= x R`
   rw [WP.seq_iff]
   refine wp_mov (op2_imm (by decide)) fun z c => WP.block_nil ?_
@@ -193,8 +240,13 @@ theorem tableBuild_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     · rw [outside_read32 outside (Or.inl (sepHdr 220 (by decide))) (by omega)]; exact e220Y
     · rw [outside_read32 outside (Or.inl (sepHdr 228 (by decide))) (by omega)]; exact e228Y
   refine WP.mono (tableLoop_ok q inv) ?_
-  rintro t ⟨invT, frameT, restT⟩
-  refine ⟨invT.power, invT.table, frameU.trans (frameV.trans (frameY.trans (frameQ.trans frameT))),
+  rintro t ⟨invT, keepsT, frameT, restT⟩
+  have keepsU : KeepsExp base s.mem u.mem := by
+    rw [memU]; exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide)
+  have keepsQ : KeepsExp base y.mem q.mem := by
+    exact KeepsExp.of_outside outside (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
+  refine ⟨invT.power, invT.table, keepsU.trans (keepsV.trans (keepsY.trans (keepsQ.trans keepsT))),
+    frameU.trans (frameV.trans (frameY.trans (frameQ.trans frameT))),
     (rest_round restU).trans (restV.trans (restY.trans ((rest_round (c.rest (ws := [.r11]) (by simp))).trans
       (restQ.trans restT))))⟩
 
