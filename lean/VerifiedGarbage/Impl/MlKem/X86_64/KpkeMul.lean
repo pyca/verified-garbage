@@ -217,13 +217,16 @@ def rowK (B : Bodies) (k : Nat) : Prog isa :=
       (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
         .alu .sub .r14 (.imm 1)])))
 
+/-- `rowKR` with the polynomials of a row of `Â` `ra` bytes apart. -/
+def rowKRs (r : Nat → Prog isa) (k ra : Nat) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .r13), .mov .rdx (.reg .r12), .mov .rcx (.reg .rbx)])
+    (.seq (r k) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (ra * k))), .alu .add .r15 (.imm 1024),
+      .alu .sub .r14 (.imm 1)]))
+
 /-- Row `i` with the backend's own row `r`: `t[i]` (at `r15`) plus the
 products of row `i` of `Â` (at `r13`) and `ŝ` (at `r12`); then the next
 `i`. -/
-def rowKR (r : Nat → Prog isa) (k : Nat) : Prog isa :=
-  .seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .r13), .mov .rdx (.reg .r12), .mov .rcx (.reg .rbx)])
-    (.seq (r k) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
-      .alu .sub .r14 (.imm 1)]))
+def rowKR (r : Nat → Prog isa) (k : Nat) : Prog isa := rowKRs r k 1024
 
 /-- Row `i` of `keygen_mul`: the backend's own row, or through the
 accumulator. -/
@@ -314,12 +317,20 @@ def decryptMulY (k : Nat) : Prog isa :=
     (.block restore))
 
 open KpkeMul in
-/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/
-def keygenMul (B : Bodies) (k : Nat) : Prog isa :=
+/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B` and the rows `row`. -/
+def keygenMulg (row : Prog isa) (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov .r15 (.reg .rcx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop (rowOf B k) .ne))))
+    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop row .ne))))
     (.block restore))
+
+open KpkeMul in
+/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/
+def keygenMul (B : Bodies) (k : Nat) : Prog isa := keygenMulg (rowOf B k) B k
+
+open KpkeMul in
+/-- `keygenMul` with AVX2, reading `Â` as `k²` polynomials of `u16`s (`rowY16`). -/
+def keygenMul16Y (k : Nat) : Prog isa := keygenMulg (rowKRs rowY16 k 512) Bodies.avx2 k
 
 open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k`, with the code of `B`. -/
