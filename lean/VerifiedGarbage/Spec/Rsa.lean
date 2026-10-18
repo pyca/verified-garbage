@@ -127,6 +127,28 @@ def publicPrecompute (nB : List Byte) : Option (List (BitVec 64)) :=
   let w := modulusWords nB.length
   if modulusValid n nB.length then some (toWords n w ++ toWords (2 ^ (128 * w) % n) w) else none
 
+/-- The 64-bit words of a `k`-octet prime factor in the private-key
+operation: `max(2, ⌈k / 8⌉)`. -/
+def primeWords (k : Nat) : Nat := max 2 (modulusWords k)
+
+/-- What the private-key operation with the factors `pB` and `qB` of the
+modulus `nB` needs of them besides `publicPrecompute nB`, with
+`w_X = primeWords` of `X`'s length and `R_X = 2^(64 w_X)`: after
+`publicPrecompute nB`, `R_p mod p` and `R_q mod q` (`R_X` in Montgomery
+form modulo `X`, from which the operation brings its input to `X`), as
+`w_p` and `w_q` words, least significant first; or `none` if the modulus
+is not valid or `p q ≠ n`. -/
+def privatePrecompute (nB pB qB : List Byte) : Option (List (BitVec 64)) :=
+  let p := os2ip pB
+  let q := os2ip qB
+  let wp := primeWords pB.length
+  let wq := primeWords qB.length
+  match publicPrecompute nB with
+  | some ws =>
+    if p * q = os2ip nB then some (ws ++ toWords (2 ^ (64 * wp) % p) wp ++ toWords (2 ^ (64 * wq) % q) wq)
+    else none
+  | none => none
+
 /-! ## The primitives on integers -/
 
 /-- RSAEP (§5.1.1) and RSAVP1 (§5.2.2): `x^e mod n`, or `none` if `x` is not
