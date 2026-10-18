@@ -36,11 +36,17 @@ runs:
       env:
         MODS: ${{ inputs.mods }}
       run: lake build --no-build $MODS
+    - uses: ./.github/actions/leantar
+      if: ${{ inputs.cache-hit != 'true' && github.event_name != 'merge_group' }}
+    - name: Store Mathlib and its dependencies as module archives
+      if: ${{ inputs.cache-hit != 'true' && github.event_name != 'merge_group' }}
+      shell: bash
+      run: python3 ci/lean_cache.py store lean .lake/packages --archive-dir .lake/mathlib-ltar
     # Every job that uses this action saves on a miss; one of them wins, and
     # the others only warn that the key is taken.
     - name: Save Mathlib and its dependencies
       if: ${{ inputs.cache-hit != 'true' && github.event_name != 'merge_group' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: lean/.lake/packages
+        path: lean/.lake/mathlib-ltar
         key: ${{ inputs.cache-key }}
