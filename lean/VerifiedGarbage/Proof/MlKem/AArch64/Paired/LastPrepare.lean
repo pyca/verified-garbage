@@ -8,17 +8,19 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem
 
-structure LastPrepared (B : Nat→Byte) (p out table : Addr) (s t : State) : Prop where
+structure LastPreparedW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t : State) : Prop where
  keep : Keep prepareRegs s t
- env : Rej8.Env 168 B (p+400) out t
+ env : Rej8.EnvW w16 168 B (p+400) out t
  constants : Rej8.Constants t
  pointer : t.gpr .x19=p
  tablePtr : t.gpr .x16=table
 
-theorem lastPrepare_ok {s : State} {p seed out table : Addr} {sb ss off a k : Nat}
+abbrev LastPrepared := LastPreparedW false
+
+theorem lastPrepare_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss off a k : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hk : 0<k) (hk256 : k≤256)
     (h : LastInput sb ss off p seed out table s) :
-    WP isa (prepareCode sb ss a a k) s (LastPrepared (xofByte (seedBytes s.mem seed a k)) p out table s) := by
+    WP isa (prepareCode sb ss a a k) s (LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s) := by
   refine WP.seq (WP.mono_syms (start_ok (a:=a) (b:=a) (k:=k) hss hsb h8
     h.ptr h.seedPtr h.readable h.context.scratch h.separate)
     fun u ⟨ku,fu,_,u19,_,_,bu,_⟩ sy => ?_)
@@ -44,7 +46,7 @@ theorem lastPrepare_ok {s : State} {p seed out table : Addr} {sb ss off a k : Na
     exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (bu.xof hk hk256 hi)
   have ready : Rej8.TableReady v out :=
     ⟨by rw [v16]; exact ctv.artifact,by rw [v16]; exact ctv.readable,by rw [v16]; exact ctv.tableOut⟩
-  have env := rejection_env (off := 400) (N := 168) (by decide) (by decide)
+  have env := rejection_envW (w16 := w16) (off := 400) (N := 168) (by decide) (by decide)
     ctv.scratch ctv.output ctv.apart stream (fun _ hm => ready.read hm)
     (fun _ hm => ready.artifact.vector hm) (fun _ hm => ready.disjoint hm)
   exact ⟨ku.trans kv,env,cv,v19,v16⟩

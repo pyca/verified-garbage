@@ -111,7 +111,7 @@ theorem lastH_relCT {σ τ : State} (hp : Pre P (enL P) σ) (hq : Pre P (enL P) 
   have seed : Paired.seedBytes s.mem (sA (enL P) σ SB) e P.k=Paired.seedBytes u.mem (sA (enL P) σ SB) e P.k := by
     unfold Paired.seedBytes
     rw [h.1.b.rho,ba SB,h.2.1.b.rho]
-  have ct := Paired.lastCode_relCT (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  have ct := Paired.lastCode_relCT (w16 := false) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     ps pu (sdisj hp (by lom) (by lom) (by lom))
     (by rw [h.1.b.kb.sp,h.2.1.b.kb.sp,sm.sp]) (by rw [h.1.b.kb.x28,h.2.1.b.kb.x28,sm.base]) seed
   have ht := exec_post (singleton_stepH hp he h.1 h.2.2.1) et

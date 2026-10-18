@@ -81,7 +81,7 @@ theorem last_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
   have seed : Paired.seedBytes s.mem (sA L σ SB) e P.k=Paired.seedBytes u.mem (sA L σ SB) e P.k := by
     unfold Paired.seedBytes
     rw [h.1.rho,ba SB,h.2.1.rho]
-  have ct := Paired.lastCode_relCT (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  have ct := Paired.lastCode_relCT (w16 := false) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     ps pu (sdisj hp (by lom) (by lom) (by lom))
     (by rw [h.1.kb.sp,h.2.1.kb.sp,sp]) (by rw [h.1.kb.x28,h.2.1.kb.x28,base]) seed
   have ht := Paired.exec_post (singleton_step hp he h.1 h.2.2.1) et
