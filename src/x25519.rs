@@ -55,9 +55,9 @@ enum Backend {
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for the ladder (on
-    /// `ymm` registers, with AVX512VL) and the fixed-base comb (on `zmm`
-    /// registers, with AVX512F), and `Adx`'s multiplications for the
-    /// inversion.
+    /// `ymm` registers, `ymm16`–`ymm20` among them, with AVX512F and
+    /// AVX512VL) and the fixed-base comb (on `zmm` registers, with
+    /// AVX512F), and `Adx`'s multiplications for the inversion.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -294,8 +294,12 @@ mod tests {
                 Backend::select(Features(adx.0 | Features::of(&["avx512ifma"]).0)),
                 Backend::Adx
             );
-            // The ladder's features alone, without the comb's AVX512F.
-            assert_eq!(Backend::select(VG_X25519_IFMA_FEATURES), Backend::Adx);
+            // Without AVX512F, which the ladder's EVEX-encoded instructions and
+            // the comb need.
+            assert_eq!(
+                Backend::select(Features(ifma.0 & !Features::of(&["avx512f"]).0)),
+                Backend::Adx
+            );
         }
     }
 

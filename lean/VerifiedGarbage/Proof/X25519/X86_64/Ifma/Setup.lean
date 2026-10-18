@@ -87,7 +87,7 @@ theorem initS_range : ∀ x ∈ initS.st, 1664 ≤ x.1 ∧ x.1 + 32 ≤ 1664 + 5
 def initB : Bnds :=
   ⟨fun _ => 2 ^ 64 - 1,
     fun g => if g = .rax then 2 ^ 51 - 1 else if g = .r11 then 1 else if g = .r12 then 121665 else 2 ^ 64 - 1,
-    fun _ => 2 ^ 64 - 1, fun _ => 0⟩
+    fun _ => 2 ^ 64 - 1, fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem initS_ok : ∀ j < 5, ∀ l < 4, (initS.reg j).ok initB l = true ∧ (initS.reg j).bnd initB l < 2 ^ 52 := by
   decide +kernel
@@ -112,7 +112,7 @@ def xl (m : Mem) (base : Addr) : Nat → Nat :=
 
 theorem initB_env {s : State} (ha : s.gpr .rax = 0x7ffffffffffff)
     (h11 : s.gpr .r11 = 1) (h12 : s.gpr .r12 = 121665) : EnvOK s initB := by
-  refine ⟨fun r k _ => lt64 _, fun g => ?_, fun d k _ => lt64 _, fun _ _ _ => Nat.zero_le _⟩
+  refine ⟨fun r k _ => lt64 _, fun g => ?_, fun d k _ => lt64 _, fun _ _ _ => Nat.zero_le _, fun _ _ _ => lt64 _⟩
   simp only [initB]
   split
   · subst_vars; rw [ha]; decide

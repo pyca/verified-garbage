@@ -45,7 +45,7 @@ theorem loadS_range : ∀ x ∈ loadS.st, 1664 ≤ x.1 ∧ x.1 + 32 ≤ 1664 + 2
 
 def loadB : Bnds :=
   ⟨fun _ => 2 ^ 64 - 1, fun g => if g = .rax then 2 ^ 51 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem loadS_ok : ∀ j < 5, ∀ l < 4, (loadS.reg j).ok loadB l = true ∧ (loadS.reg j).bnd loadB l < 2 ^ 52 := by
   decide +kernel
@@ -95,7 +95,7 @@ def prodBound : Nat := 2 ^ 60 + 2 ^ 56
 def dblBB : Bnds :=
   ⟨fun i => if i < 5 then prodBound - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 2 ^ 64 - 1,
-    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0⟩
+    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem dblBS_ok : ∀ j < 5, ∀ l < 4, (dblBS.reg j).ok dblBB l = true ∧
     (dblBS.reg j).bnd dblBB l < 2 ^ 63 ∧ (dblBS.reg (5 + j)).ok dblBB l = true ∧
@@ -138,7 +138,7 @@ theorem packT_nat (E : Env) : ∀ m < 4, ∀ j < 4, (packT m).nat E j =
 def packB : Bnds :=
   ⟨fun r => if r < 5 then 2 ^ 51 + 18 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KM then 2 ^ 51 - 1 else if d = EK13 then 2 ^ 13 - 1 else if d = EK26 then 2 ^ 26 - 1
-      else if d = EK39 then 2 ^ 39 - 1 else 2 ^ 64 - 1, fun _ => 0⟩
+      else if d = EK39 then 2 ^ 39 - 1 else 2 ^ 64 - 1, fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem packT_ok : ∀ m < 4, ∀ j < 4, (packT m).ok packB j = true := by decide +kernel
 

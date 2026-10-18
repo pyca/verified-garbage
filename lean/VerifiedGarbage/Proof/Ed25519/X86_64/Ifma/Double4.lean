@@ -53,7 +53,7 @@ theorem EConsts.outside {m m' : Mem} {base : Addr} (hk : EConsts m base)
 /-! ## Loading -/
 
 theorem loadB_env {s : State} (ha : s.gpr .rax = 0x7ffffffffffff) : EnvOK s loadB := by
-  refine ⟨fun r k _ => lt64 _, fun g => ?_, fun d k _ => lt64 _, fun _ _ _ => Nat.zero_le _⟩
+  refine ⟨fun r k _ => lt64 _, fun g => ?_, fun d k _ => lt64 _, fun _ _ _ => Nat.zero_le _, fun _ _ _ => lt64 _⟩
   simp only [loadB]
   split
   · subst_vars; rw [ha]; decide

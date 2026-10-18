@@ -45,7 +45,7 @@ theorem Kept.vm {base : Addr} {s s' : State} (h : vm s s' = s') (hm : s'.mem = s
 /-- Stage 1 and its product. -/
 theorem part1_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) (hk : Consts s.mem base x1)
     (hy : ∀ l < 4, ∀ i < 5, lanes s 0 l i < 2 ^ 61) :
-    WP isa (.block (stage1 ++ mul4 OPL)) s fun s' => Kept base s s' ∧
+    WP isa (.block (stage1 ++ mul4H)) s fun s' => Kept base s s' ∧
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i < 2 ^ 61) ∧
       fe5 (lanes s' 0 0) = (fe5 (lanes s 0 0) + fe5 (lanes s 0 1)) * (fe5 (lanes s 0 0) + fe5 (lanes s 0 1)) ∧
       fe5 (lanes s' 0 1) = (fe5 (lanes s 0 0) - fe5 (lanes s 0 1)) * (fe5 (lanes s 0 0) - fe5 (lanes s 0 1)) ∧
@@ -61,9 +61,9 @@ theorem part1_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   refine WP.mono (carryI_wp hs₁.rdi (scr_ctx hs₁) hk₁.c fun l hl i hi => (u₁ l hl i hi).2) fun s₂ ⟨v₂, m₂, u₂, _⟩ => ?_
   have hs₂ := scr_of hs₁ (vm_gpr v₂) (vm_wr v₂)
   rw [WP.block_append_iff]
-  refine WP.mono (s1b_wp hs₂.rdi (scr_ctx hs₂)) fun s₃ ⟨g₃, r₃, w₃, o₃, u₃, _⟩ => ?_
+  refine WP.mono (s1b_wp base (scr_ctx hs₂)) fun s₃ ⟨g₃, r₃, w₃, o₃, u₃, _⟩ => ?_
   have hs₃ := scr_of hs₂ g₃ w₃
-  refine WP.mono (mul4_wp (a := OPL) (by decide) (mulS_eq _ _) (mulL_nat) mulL_ok mulL_keep mulL_st
+  refine WP.mono (mul4H_wp
     hs₃.rdi (scr_ctx hs₃) (fun l hl i hi => by rw [(u₃ l hl i hi).1]; exact (u₂ _ (VG.Proof.Poly1305.X86_64.Avx2.sel4_lt _ _) i hi).2)
     (fun l hl i hi => by rw [(u₃ l hl i hi).2]; exact (u₂ _ (VG.Proof.Poly1305.X86_64.Avx2.sel4_lt _ _) i hi).2))
     fun s₄ ⟨v₄, m₄, u₄, _⟩ => ?_

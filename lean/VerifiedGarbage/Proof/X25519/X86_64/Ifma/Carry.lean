@@ -65,7 +65,7 @@ theorem carryF_nat (E : Env) (l : Nat) : ∀ k < 5,
 def carryB (r : Nat → Nat) : Bnds :=
   ⟨fun i => if i = r 0 ∨ i = r 1 ∨ i = r 2 ∨ i = r 3 ∨ i = r 4 then 2 ^ 63 - 1 else 2 ^ 64 - 1,
     fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else if d = K19 then 19 else 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem carryI_ok : ∀ k < 5, ∀ l < 4, (carryI.reg k).ok (carryB id) l = true ∧
     (carryI.reg k).bnd (carryB id) l < 2 ^ 52 := by decide +kernel
