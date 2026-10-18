@@ -571,7 +571,7 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
   verified : ∀ s, (compressK H).pre s →
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compressK H).post s s'
   noCalls : code.noCalls = true
-  keeps : ((instrs code).all fun i => dstOf i != some .r0 && dstOf i != some .r3) = true
+  keeps : ((instrs code).all fun i => !clobbers i .r0 && !clobbers i .r3) = true
 
 /-- `CalleeOk` does not depend on the length field or the digest. -/
 theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
@@ -607,11 +607,10 @@ theorem compressWith_ok {P : Params} {H : Md P.B P.N P.L} {n : Instr} {s : State
       H.stateAt s'.mem (State.addr st) =
         H.compressBlocks (H.stateAt s.mem (State.addr st)) s.mem (State.addr src) k → Q s') :
     WP isa (compressWith n name code) s Q := by
-  have hk : ∀ i ∈ instrs code, dstOf i ≠ some .r0 ∧ dstOf i ≠ some .r3 := by
+  have hk : ∀ i ∈ instrs code, clobbers i .r0 = false ∧ clobbers i .r3 = false := by
     intro i hi
     have := List.all_eq_true.mp hf.keeps i hi
-    simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at this
-    exact this
+    simpa only [Bool.and_eq_true, Bool.not_eq_true'] using this
   unfold compressWith
   refine WP.seq (hn _ _ fun s₁ u₁ => WP.block_nil ?_)
   have e0 : s₁.gpr .r0 = st := by rw [u₁.other _ (by decide), h0]

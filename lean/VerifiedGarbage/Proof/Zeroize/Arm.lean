@@ -219,7 +219,7 @@ theorem verified : Verified target zeroize (Spec.Zeroize.zeroizeContract abi) :=
     obtain ⟨tr, t, he, ho, _⟩ := correct s hp
     refine ⟨tr, t, he, ⟨?_, Exec.sp he⟩, ho⟩
     intro r hr
-    have hc : zeroize.allInstrs (fun i => preserved.all (fun r => dstOf i != some r)) = true := by decide +kernel
+    have hc : zeroize.allInstrs (fun i => preserved.all (fun r => !clobbers i r)) = true := by decide +kernel
     rw [Code.allInstrs_eq] at hc
     apply Exec.gpr (fun i hi => ?_) he
     simpa only [bne, Bool.not_eq_true', beq_eq_false_iff_ne] using

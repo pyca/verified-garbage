@@ -79,7 +79,7 @@ abbrev unpackRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r12]
 theorem movN_ok (r : Reg) (N : Nat) (hN : encodable (BitVec.ofNat 32 N) = true) (s : State) :
     WP isa (.block [.mov r (.imm (BitVec.ofNat 32 N))]) s fun s' =>
       (s'.gpr r = BitVec.ofNat 32 N ∧ s'.mem = s.mem) ∧ Keep [r] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, dstOf])
+  refine WP.keep _ ?_ (by simp [writesOnly, dsts, dstOf])
   run_block [hN, and_true]
 
 /-! ## Packing -/

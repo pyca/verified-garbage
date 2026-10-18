@@ -32,14 +32,14 @@ theorem compressBlocks_one (H : HashValue) (m : Mem) (p : Addr) :
     compressBlocks H m p 1 = compress H (blockAt m p) := by
   simp [compressBlocks]
 
-theorem r0_ok : ∀ i ∈ instrs Impl.Sha256.Arm.compress, dstOf i ≠ some .r0 := by
-  have : ((instrs Impl.Sha256.Arm.compress).all fun i => dstOf i != some .r0) = true := by
+theorem r0_ok : ∀ i ∈ instrs Impl.Sha256.Arm.compress, clobbers i .r0 = false := by
+  have : ((instrs Impl.Sha256.Arm.compress).all fun i => !clobbers i .r0) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp this i hi
 
-theorem r3_ok : ∀ i ∈ instrs Impl.Sha256.Arm.compress, dstOf i ≠ some .r3 := by
-  have : ((instrs Impl.Sha256.Arm.compress).all fun i => dstOf i != some .r3) = true := by
+theorem r3_ok : ∀ i ∈ instrs Impl.Sha256.Arm.compress, clobbers i .r3 = false := by
+  have : ((instrs Impl.Sha256.Arm.compress).all fun i => !clobbers i .r3) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp this i hi

@@ -87,7 +87,7 @@ theorem roundInput_ok (i : Nat) (hi : i < 8) (s : State)
         xorBits (fun k => if k = 0 then s.gpr .r11
           else s.mem.readW (wordAddr (s.gpr .r0) (k - 1)) 32) (roundInputBits i j p)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((sboxInputs i).all fun op => dstOf op != some r) = true →
+      (∀ r, ((sboxInputs i).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   have hchk := roundInput_check i hi
   rw [sboxInputsLiteral_eq i hi] at hchk
@@ -166,7 +166,7 @@ theorem roundInput_chunk (i : Nat) (hi : i < 8) (s : State)
       inputAt s' 0 = roundChunk i ((s.gpr .r11).setWidth 32)
         ((keyWord s).setWidth 48) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((sboxInputs i).all fun op => dstOf op != some r) = true →
+      (∀ r, ((sboxInputs i).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, bits, rd, wr, sp, mem, keep⟩ := roundInput_ok i hi s hread
   refine ⟨s', run, ?_, rd, wr, sp, mem, keep⟩
@@ -218,7 +218,7 @@ theorem roundOutput_ok (i : Nat) (hi : i < 8) (s : State) :
         xorBits (fun k => if k = 0 then s.gpr .r10 else s.gpr (q (k - 1)))
           (roundOutputBits i p)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((sboxOutputs i).all fun op => dstOf op != some r) = true →
+      (∀ r, ((sboxOutputs i).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   have hchk := roundOutput_check i hi
   rw [sboxOutputsLiteral_eq i hi] at hchk
@@ -251,7 +251,7 @@ theorem roundOutput_piece (i : Nat) (hi : i < 8) (s : State) (b : BitVec 4)
     ∃ s', runBlock isa (sboxOutputs i) s = some s' ∧
       s'.gpr .r10 = s.gpr .r10 ^^^ (boxPiece i b).zeroExtend 32 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((sboxOutputs i).all fun op => dstOf op != some r) = true →
+      (∀ r, ((sboxOutputs i).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, bits, rd, wr, sp, mem, keep⟩ := roundOutput_ok i hi s
   refine ⟨s', run, ?_, rd, wr, sp, mem, keep⟩
@@ -278,21 +278,21 @@ theorem roundOutput_piece (i : Nat) (hi : i < 8) (s : State) (b : BitVec 4)
 def roundKept : List Reg := [.r0, .r1, .r2, .r3, .r9, .r11]
 
 theorem roundInput_keeps : ∀ i < 8, (.r10 :: roundKept).all
-    (fun r => (instrs (sboxInputsLiteral i)).all fun op => dstOf op != some r) = true := by
+    (fun r => (instrs (sboxInputsLiteral i)).all fun op => !clobbers op r) = true := by
   decide +kernel
 
 theorem roundOutput_keeps : ∀ i < 8, roundKept.all
-    (fun r => (instrs (sboxOutputsLiteral i)).all fun op => dstOf op != some r) = true := by
+    (fun r => (instrs (sboxOutputsLiteral i)).all fun op => !clobbers op r) = true := by
   decide +kernel
 
 theorem roundInput_keep (i : Nat) (hi : i < 8) (r : Reg) (hr : r ∈ .r10 :: roundKept) :
-    (sboxInputs i).all (fun op => dstOf op != some r) = true := by
+    (sboxInputs i).all (fun op => !clobbers op r) = true := by
   have h := List.all_eq_true.mp (roundInput_keeps i hi) r hr
   rw [sboxInputsLiteral_eq i hi] at h
   exact h
 
 theorem roundOutput_keep (i : Nat) (hi : i < 8) (r : Reg) (hr : r ∈ roundKept) :
-    (sboxOutputs i).all (fun op => dstOf op != some r) = true := by
+    (sboxOutputs i).all (fun op => !clobbers op r) = true := by
   have h := List.all_eq_true.mp (roundOutput_keeps i hi) r hr
   rw [sboxOutputsLiteral_eq i hi] at h
   exact h

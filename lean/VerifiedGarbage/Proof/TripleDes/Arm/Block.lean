@@ -65,7 +65,7 @@ theorem blockStore_ok (d : Direction) (s : State) (l r : BitVec 32)
   have keeps : ∀ q ∈ loadKept, s₁.gpr q = s.gpr q := by
     intro q hq
     have checks : ∀ q ∈ loadKept,
-        ((instrs finalPermutation.lit).all fun op => dstOf op != some q) = true := by decide +kernel
+        ((instrs finalPermutation.lit).all fun op => !clobbers op q) = true := by decide +kernel
     exact reg₁ q (checks q hq)
   have fit₁ : (s₁.gpr .r1).toNat + 8 ≤ 2 ^ 32 := by rw [keeps .r1 (by decide)]; exact fit
   have hw₁ : ∀ t < 2, InRegions s₁.wr (State.addr (s₁.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by

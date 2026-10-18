@@ -78,34 +78,27 @@ theorem ok_entry {s : State} {b : BitVec 32} {e : Nat} (hs : Scr s b) (hk : AtEn
   sep k _ j hj := by simp [entryCfg] at hj
 
 theorem keyPlanes_all (w : Nat) (hw : w = 0 ∨ w = 1) :
-    (layerKeep.all fun r => (keyPlanes w).all fun i => dstOf i != some r) = true ∧
-    ((keyPlanes w).all fun i => dstOf i != some u7) = true ∧
-    ((keyPlanes w).all fun i => dstOf i != some .lr) = true ∧
-    ((keyPlanes w).all fun i => dstOf i != some (q 4)) = true := by
+    (layerKeep.all fun r => (keyPlanes w).all fun i => !clobbers i r) = true ∧
+    ((keyPlanes w).all fun i => !clobbers i u7) = true ∧
+    ((keyPlanes w).all fun i => !clobbers i .lr) = true ∧
+    ((keyPlanes w).all fun i => !clobbers i (q 4)) = true := by
   rcases hw with rfl | rfl <;> decide +kernel
 
 /-- The registers the table's construction writes. -/
 def keyWrites : List Reg := [q 4, q 5, t1, u7, .lr]
 
 theorem keyPlanes_dst (w : Nat) (hw : w = 0 ∨ w = 1) :
-    ((keyPlanes w).all fun i => dstOf i == none || dstOf i == some (q 5) || dstOf i == some t1) = true := by
+    ((keyPlanes w).all fun i => (dsts i).all fun r => r == q 5 || r == t1) = true := by
   rcases hw with rfl | rfl <;> decide +kernel
 
 theorem keyPlanes_keep (w : Nat) (hw : w = 0 ∨ w = 1) (r : Reg) (hr : r ∉ keyWrites) :
-    ((keyPlanes w).all fun i => dstOf i != some r) = true := by
+    ((keyPlanes w).all fun i => !clobbers i r) = true := by
   have h5 : r ≠ q 5 := fun h => hr (by rw [h]; decide)
   have h11 : r ≠ t1 := fun h => hr (by rw [h]; decide)
   refine List.all_eq_true.mpr fun i hi => ?_
-  have := List.all_eq_true.mp (keyPlanes_dst w hw) i hi
-  cases hd : dstOf i with
-  | none => rfl
-  | some x =>
-    rw [hd] at this
-    have hx : x = q 5 ∨ x = t1 := by revert this; cases x <;> decide
-    simp only [bne_iff_ne, ne_eq, Option.some.injEq]
-    rcases hx with rfl | rfl
-    · exact fun h => h5 h.symm
-    · exact fun h => h11 h.symm
+  rw [clobbers_eq_false_of_all (List.all_eq_true.mp (keyPlanes_dst w hw) i hi)
+    (by simp [h5, h11])]
+  rfl
 
 /-- The planes of the word in `q 4` to words `8 w …` of the entry `e` at `kp`. -/
 theorem keyPlanes_step {s : State} {b : BitVec 32} {e w : Nat} (hs : Scr s b)

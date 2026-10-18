@@ -1292,14 +1292,14 @@ open VG.Proof.Sha3 (off_disjoint sub_offset add_zero')
 
 theorem permute_noCalls : permute.noCalls = true := by decide +kernel
 
-theorem permute_r0 : ∀ i ∈ instrs permute, dstOf i ≠ some .r0 := by
-  have : ((instrs permute).all fun i => dstOf i != some .r0) = true := by
+theorem permute_r0 : ∀ i ∈ instrs permute, clobbers i .r0 = false := by
+  have : ((instrs permute).all fun i => !clobbers i .r0) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp this i hi
 
-theorem permute_r1 : ∀ i ∈ instrs permute, dstOf i ≠ some .r1 := by
-  have : ((instrs permute).all fun i => dstOf i != some .r1) = true := by
+theorem permute_r1 : ∀ i ∈ instrs permute, clobbers i .r1 = false := by
+  have : ((instrs permute).all fun i => !clobbers i .r1) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp this i hi

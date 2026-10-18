@@ -150,7 +150,7 @@ theorem round_step (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : 
     (hlin : check (lanes 32 11) linCfg (linExt 40) (lin l a) linEnv
       (linPostG 11 [] (linOuts l a) (linKeep a) linEnv) = true)
     (hall : (layerKeep.all fun r =>
-      (preX a b c d ++ lin l a).all fun i => dstOf i != some r) = true)
+      (preX a b c d ++ lin l a).all fun i => !clobbers i r) = true)
     (hk : AtEntry s (s₀.gpr sb) m) (hm : m + 4 ≤ 32) {X : Nat → Nat → Spec.Sm4.Word} (hX : StRel s X) :
     ∃ s', runBlock isa (round l a a b c d) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       StRel s' (fun b' => sround l (E (m + a)) a (X b')) := by
