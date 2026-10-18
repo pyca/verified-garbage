@@ -30,16 +30,10 @@ fn cavp_generated_keys() {
             Ok(())
         })
         .unwrap();
-        assert_eq!(
-            key.packed.0,
-            [&p[..], &q, &g, &y, &x].concat(),
-            "vector {i}"
-        );
-        assert_eq!(
-            key.public.packed,
-            [&p[..], &q, &g, &y].concat(),
-            "vector {i}"
-        );
+        let packed = [&p[..], &q, &g, &y, &x].concat();
+        assert_eq!(key.packed.0, packed, "vector {i}");
+        let public = &packed[..packed.len() - q.len()];
+        assert_eq!(key.public.packed, public, "vector {i}");
     }
 }
 
