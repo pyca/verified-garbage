@@ -43,6 +43,11 @@ def UPubPc.lp (p : UPubPc) : LPub := ⟨off p.u.B p.u.o, slot p.u.wx 8, p.u.wx, 
 def PreAt (B : Addr) (Z : Nat) (P : Addr) (W : Nat) (rsp : Addr) (s : State) : Prop :=
   PreSrc s B Z P W ∧ s.gpr .rsp = rsp
 
+theorem PreAt.congrK {B : Addr} {Z : Nat} {P : Addr} {W : Nat} {rsp : Addr} {s t : State} {rs : List Reg}
+    (h : PreAt B Z P W rsp s) (hi : InScr B Z s.mem t.mem) (k : Keep rs s t) (hsp : Reg.rsp ∉ rs) :
+    PreAt B Z P W rsp t :=
+  ⟨h.1.congrK hi k hsp, (k.1 _ hsp).trans h.2⟩
+
 /-- `unitPhasePc_ok`'s hypotheses, and `E`, what the offset's code needs. -/
 def UPrePc (sl : Nat) (E : UPubPc → State → Prop) (p : UPubPc) (s : State) : Prop :=
   UPre sl p.u s ∧ PreAt p.u.B p.u.Z p.P p.W p.rsp s ∧ p.d + p.u.wx ≤ p.W ∧ E p s

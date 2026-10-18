@@ -49,11 +49,6 @@ theorem StagePc.stage {R : StageRel} {p : CrtPubPc} {t : State} (h : StagePc R p
   let ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, _, _, hr, _⟩ := h
   ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr⟩
 
-theorem PreAt.congrK {B : Addr} {Z : Nat} {P : Addr} {W : Nat} {rsp : Addr} {s t : State} {rs : List Reg}
-    (h : PreAt B Z P W rsp s) (hi : InScr B Z s.mem t.mem) (k : Keep rs s t) (hsp : Reg.rsp ∉ rs) :
-    PreAt B Z P W rsp t :=
-  ⟨h.1.congrK hi k hsp, (k.1 _ hsp).trans h.2⟩
-
 /-- A part constant time from a stage, with its correctness, goes to the
 next stage. -/
 theorem stagePc_post {R R' : StageRel} {c : Prog isa} (hct : RelCT isa (Two (StagePc R)) c fun _ _ => True)
