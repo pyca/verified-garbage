@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
+public import VerifiedGarbage.Proof.Rsa.X86_64.PreVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
@@ -140,5 +141,9 @@ theorem checkCrtKey_verified :
     Verified target (Impl.Rsa.X86_64.CheckCrtKey.code)
       (Spec.Rsa.checkCrtKeyContract abi) :=
   Key.ck_verified (by decide +kernel)
+
+theorem privatePrecompute_verified :
+    Verified target Impl.Rsa.X86_64.PrivPre.code (Spec.Rsa.privatePrecomputeContract abi) :=
+  Key.pp_verified (by decide +kernel)
 
 end VG.Proof.Rsa.X86_64.Instances

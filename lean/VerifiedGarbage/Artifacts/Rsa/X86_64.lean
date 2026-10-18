@@ -182,6 +182,13 @@ def artifacts : List Artifact := [
         `q qInv`), which are below the divisor when the comparison before it holds: `64 c` doublings \
         modulo the divisor rather than one per bit of the product."]
     code := Impl.Rsa.X86_64.CheckCrtKey.code
-    verified := Proof.Rsa.X86_64.Instances.checkCrtKey_verified }]
+    verified := Proof.Rsa.X86_64.Instances.checkCrtKey_verified },
+  Spec.Rsa.privatePrecomputeApi.artifact X86_64.target {
+    notes := ["Baseline x86-64: `vg_rsa_check_key`'s workspace and pieces. `n` is checked first, the only \
+        branch on the key; then `p q = n` gives a mask, and `n`, `R² mod n`, `R_p mod p` and `R_q mod q` are \
+        computed whatever its outcome, each power of 2 reduced by restoring division over the accumulator \
+        (`2^(128 w)` over `2 w + 2` words, `R_X` over `w + 2`), and written to `pre` and'ed with the mask."]
+    code := Impl.Rsa.X86_64.PrivPre.code
+    verified := Proof.Rsa.X86_64.Instances.privatePrecompute_verified }]
 
 end VG.Artifacts.Rsa.X86_64
