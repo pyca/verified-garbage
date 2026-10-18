@@ -171,12 +171,12 @@ def vE : Prog isa :=
         lea .rdx (.r15, 32 * L.du * L.k) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.dv)))]))
         (L.ce A.codecs)))))
 
-variable (mul : Nat → Prog isa)
+/-- The prologue, `t̂`, `y` and the products, with the code `mul` of the products. -/
+def kpkeEncPre (mul : Nat → Prog isa) : Prog isa :=
+  .seq (.block proE) (.seq (seqR (tHatE L A) 0 L.k) (.seq (seqR yE 0 L.k) (prodE L mul)))
 
-/-- The body, between `proE` and `epiE`. -/
-def encBody : Prog isa :=
-  .seq (seqR (tHatE L A) 0 L.k) (.seq (seqR yE 0 L.k)
-    (.seq (prodE L mul) (.seq (seqR (uE L A) 0 L.k) (vE L A))))
+/-- `u`, `v` and the epilogue. -/
+def kpkeEncPost : Prog isa := .seq (seqR (uE L A) 0 L.k) (.seq (vE L A) (.block epiE))
 
 end Kpke16
 
@@ -189,7 +189,6 @@ def kpkeDec (L : Kem) (A : Arith) (inner : Nat → Prog isa) : Prog isa :=
 open Kpke16 in
 /-- `vg_mlkem*_kpke_encrypt` of the parameter set `L`, with the arithmetic of
 `A` and the code `mul` of `vg_mlkem*_encrypt_mul` (reading `Â` as `u16`s). -/
-def kpkeEnc (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa :=
-  .seq (.block proE) (.seq (encBody L A mul) (.block epiE))
+def kpkeEnc (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeEncPre L A mul) (kpkeEncPost L A)
 
 end VG.Impl.MlKem.X86_64

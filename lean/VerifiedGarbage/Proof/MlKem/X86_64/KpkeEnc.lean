@@ -892,6 +892,36 @@ end
 
 /-! ## The function -/
 
+/-- The prologue, `t̂`, `y` and the products. -/
+theorem pre_wp {L : Kem} {A : Arith} (hA : ArithOk A) (W : KeWf L) {mul : Nat → Prog isa}
+    (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
+      (encMulK16 L.k).post s s')
+    (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) {σ : State} (hp : (kpkeEncK L).pre σ) :
+    WP isa (kpkeEncPre L A mul) σ (EU L σ 0) := by
+  have E := ep hp
+  refine WP.seq (WP.mono (pro_ok E) fun s₁ h₁ => ?_)
+  have d₀ : ER L σ 0 0 s₁ :=
+    ⟨h₁, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  refine WP.seq (WP.mono (seqR_ok (I := fun i s => ER L σ i 0 s) L.k 0
+    (fun i _ hi s h => t_ok E hA W hn12 (by omega) h) s₁ d₀) fun s₂ h₂ => ?_)
+  rw [Nat.zero_add] at h₂
+  refine WP.seq (WP.mono (seqR_ok (I := fun j s => ER L σ L.k j s) L.k 0
+    (fun j _ hj s h => y_ok E W (by omega) h) s₂ h₂) fun s₃ h₃ => ?_)
+  rw [Nat.zero_add] at h₃
+  exact mul_ok E W hv hn h₃
+
+/-- `u`, `v` and the epilogue. -/
+theorem post_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+    (W : KeWf L) (hnA : A.add.noCalls = true) (hnC : (L.ce A.codecs).noCalls = true)
+    (hnD : A.codecs.dd.noCalls = true) {σ : State} (hp : (kpkeEncK L).pre σ) {s : State} (h : EU L σ 0 s) :
+    WP isa (kpkeEncPost L A) s fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
+  have E := ep hp
+  refine WP.seq (WP.mono (seqR_ok (I := fun i s => EU L σ i s) L.k 0
+    (fun i _ hi s h => u_ok E hA K W hnA hnC (by omega) h) s h) fun s₅ h₅ => ?_)
+  rw [Nat.zero_add] at h₅
+  exact WP.seq (WP.mono (v_ok E hA K W hnA hnC hnD h₅) fun s₆ ⟨kt₆, hm₆⟩ =>
+    WP.mono (epi_ok E kt₆) fun s₇ ⟨hg, hm⟩ => ⟨hg, by show bytesAt _ _ _ = _; rw [hm]; exact hm₆⟩)
+
 theorem kpkeEnc_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
@@ -899,25 +929,8 @@ theorem kpkeEnc_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K 
     (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) (hnA : A.add.noCalls = true)
     (hnC : (L.ce A.codecs).noCalls = true) (hnD : A.codecs.dd.noCalls = true)
     {σ : State} (hp : (kpkeEncK L).pre σ) :
-    WP isa (kpkeEnc L A mul) σ fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
-  have E := ep hp
-  refine WP.seq (WP.mono (pro_ok E) fun s₁ h₁ => ?_)
-  have d₀ : ER L σ 0 0 s₁ :=
-    ⟨h₁, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  refine WP.seq ?_
-  unfold encBody
-  refine WP.seq (WP.mono (seqR_ok (I := fun i s => ER L σ i 0 s) L.k 0
-    (fun i _ hi s h => t_ok E hA W hn12 (by omega) h) s₁ d₀) fun s₂ h₂ => ?_)
-  rw [Nat.zero_add] at h₂
-  refine WP.seq (WP.mono (seqR_ok (I := fun j s => ER L σ L.k j s) L.k 0
-    (fun j _ hj s h => y_ok E W (by omega) h) s₂ h₂) fun s₃ h₃ => ?_)
-  rw [Nat.zero_add] at h₃
-  refine WP.seq (WP.mono (mul_ok E W hv hn h₃) fun s₄ h₄ => ?_)
-  refine WP.seq (WP.mono (seqR_ok (I := fun i s => EU L σ i s) L.k 0
-    (fun i _ hi s h => u_ok E hA K W hnA hnC (by omega) h) s₄ h₄) fun s₅ h₅ => ?_)
-  rw [Nat.zero_add] at h₅
-  exact WP.mono (v_ok E hA K W hnA hnC hnD h₅) fun s₆ ⟨kt₆, hm₆⟩ =>
-    WP.mono (epi_ok E kt₆) fun s₇ ⟨hg, hm⟩ => ⟨hg, by show bytesAt _ _ _ = _; rw [hm]; exact hm₆⟩
+    WP isa (kpkeEnc L A mul) σ fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' :=
+  WP.seq (WP.mono (pre_wp hA W hv hn hn12 hp) fun _ h => post_wp hA K W hnA hnC hnD hp h)
 
 theorem kpkeEnc_correct {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KeWf L) {mul : Nat → Prog isa}
