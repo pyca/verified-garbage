@@ -50,6 +50,7 @@ mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
 mod dsa;
+mod dsa_parameters;
 mod ecdh_brainpoolp256r1;
 mod ecdh_brainpoolp384r1;
 mod ecdh_brainpoolp512r1;
@@ -513,6 +514,7 @@ benches! {
     (ecdsa_brainpoolp384r1::USES, ecdsa_brainpoolp384r1::bench),
     (ecdsa_brainpoolp512r1::USES, ecdsa_brainpoolp512r1::bench),
     (dsa::USES, dsa::bench),
+    (dsa_parameters::USES, dsa_parameters::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdsa_p521::USES, ecdsa_p521::bench),
