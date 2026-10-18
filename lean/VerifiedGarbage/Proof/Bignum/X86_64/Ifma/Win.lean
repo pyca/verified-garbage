@@ -315,7 +315,7 @@ theorem sel2_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
   · rw [(f₁.trans f₂).word_at hl hp (.inr (by omega_using [o4, o8])) (by omega_using [o8, o10]) (by omega_using [o4, o10])]
   · rw [g₂ r r1 r2 r3 r4, g₁ r r1 r2 r3 r4]
 
-theorem amm_winSetup (b : Nat) : amm l l.oY l.oY b = .seq (.block (winSetup l b)) (ammCore l) := rfl
+theorem amm_winSetup (b : Nat) : amm l l.oY l.oY b = .seq (.block (winSetup l b)) (ammMul l) := rfl
 
 /-- The comparison of `r15` with 1. -/
 theorem r15Cmp_ok {s : State} {n : Nat} (hn : n ≤ 6) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
@@ -349,7 +349,7 @@ structure MulInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) 
 def mulBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prog isa :=
   .seq (.block [.alu .cmp .r15 (.imm 1)])
     (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
-      (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))
+      (.seq (ammMul l) (.block [.alu .sub .r15 (.imm 1)])))
 
 /-- The `w + 1` multiplications: `w` squarings, then `Y S`. `Y ≡ x^E R` and
 `S ≡ x^v R` give `Y ≡ x^(T E + v) R`. -/

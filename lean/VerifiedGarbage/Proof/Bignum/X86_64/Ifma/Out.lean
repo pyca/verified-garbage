@@ -512,4 +512,18 @@ theorem ammCore_ok (hl : AmmOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
     exact o'.trans hf
   · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₂ r r1 r2 r5, g₁ r r1 r2, RegUpd.gpr_setReg_of_ne _ _ r6]
 
+/-- What `ammCore_ok` proves of `ammCore l`, of a code `c`. -/
+def CoreOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (c : Prog isa) : Prop :=
+  ∀ {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat},
+    Env l (s.setReg .r10 (s.gpr .rbx)) a m k bl → s.gpr .r11 = B → Scr s B (l.D * (l.nl - 1) + l.NB) →
+    WP isa c s fun s' =>
+      (∀ p < l.nl, ∀ q < l.L, word s'.mem B (l.D * p + l.off q) =
+        BitVec.ofNat 64 (carried (lm l a m k bl p l.S) q)) ∧
+      (∀ p < l.nl, s'.gpr (cReg p) = BitVec.ofNat 64 (carryIn (lm l a m k bl p l.S) l.L)) ∧
+      OutN l B 0 l.NB s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.gpr .r12 = mask52 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr
+
+theorem ammCore_core (hl : AmmOk l) : CoreOk l (ammCore l) := fun e hB hs => ammCore_ok hl e hB hs
+
 end VG.Proof.Bignum.X86_64.Ifma

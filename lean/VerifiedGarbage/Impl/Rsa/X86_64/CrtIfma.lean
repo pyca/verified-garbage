@@ -210,6 +210,82 @@ def carryOut : List Instr :=
   (List.range l.nl).map (fun p => .mov32 (cReg p) (.imm 0)) ++
     (List.range l.L).flatMap fun j => (List.range l.nl).flatMap (carryStep l j)
 
+/-! ### The multiplication with a look-ahead of `u`
+
+`ammCoreU`: `ammCore` with its `S` steps unrolled and the next step's `u`
+computed from limb 1 of the accumulator alone, before the rest of the row,
+so that the chain from one `u` to the next is a multiplication, the carry,
+the additions into limb 1, the multiplication by `k₀` and the broadcast,
+and the row's other products run beside it. The limbs of the second
+operand and the `u`s alternate between two registers of each lane (`par`,
+the step's parity), so no step copies one. -/
+
+/-- Lane `p`'s registers after the roles: the limb of the second operand and
+`u` of a step of parity `par`, a temporary, the two products of `u` for limb
+1, and the next `lo(a₀ b)`; then the zero register. -/
+def ubReg (p par : Nat) : VReg := vreg (l.nl * l.R + 8 * p + par)
+def uuReg (p par : Nat) : VReg := vreg (l.nl * l.R + 8 * p + 2 + par)
+def utReg (p : Nat) : VReg := vreg (l.nl * l.R + 8 * p + 4)
+def um1Reg (p : Nat) : VReg := vreg (l.nl * l.R + 8 * p + 5)
+def um2Reg (p : Nat) : VReg := vreg (l.nl * l.R + 8 * p + 6)
+def upnReg (p : Nat) : VReg := vreg (l.nl * l.R + 8 * p + 7)
+def uzReg : VReg := vreg (l.nl * l.R + 8 * l.nl)
+
+/-- Step `i` of lane `p`: `b_i` in `ubReg p (i % 2)`, `u_i` in
+`uuReg p (i % 2)`, and role 0 already holding `lo(a₀ b_i)`; it leaves
+`b_(i+1)`, `u_(i+1)` and role 0's `lo(a₀ b_(i+1))` for the next, unless `i`
+is the last step. -/
+def ammStepU (p i : Nat) : List Instr :=
+  let D := l.D
+  let par := i % 2
+  let nxt := (i + 1) % 2
+  let B := ubReg l p par
+  let U := uuReg l p par
+  let z (r : VReg) : Instr := .eop (.bin .vpxorq r r r)
+  let loA (k : Nat) : Instr := .evMadd52Load false (acc l p k i) B (at_ .r8 (D * p + 32 * k))
+  let hiA (k : Nat) : Instr := .evMadd52Load true (acc l p (k + 1) i) B (at_ .r8 (D * p + 32 * k))
+  let loM (k : Nat) : Instr := .evMadd52Load false (acc l p k i) U (at_ .r10 (D * p + oM + 32 * k))
+  let hiM (k : Nat) : Instr := .evMadd52Load true (acc l p k (i + 1)) U (at_ .r10 (D * p + oM + 32 * k))
+  let last := l.S ≤ i + 1
+  [loM 0, z (um1Reg l p), .evMadd52Load false (um1Reg l p) U (at_ .r10 (D * p + oM + 32)),
+    z (um2Reg l p), .evMadd52Load true (um2Reg l p) U (at_ .r10 (D * p + oM)),
+    loA 1, hiA 0] ++
+  (if last then [] else
+    [.mov .rax (.mem (at_ .r9 (D * p + l.off (i + 1)))), .eop (.vmovq (ubReg l p nxt) .rax),
+      .eop (.vpbroadcastq (ubReg l p nxt) (ubReg l p nxt)), z (upnReg l p),
+      .evMadd52Load false (upnReg l p) (ubReg l p nxt) (at_ .r8 (D * p)),
+      .eop (.bin .vpaddq (acc l p 1 i) (acc l p 1 i) (upnReg l p))]) ++
+  [.eop (.bin .vpaddq (acc l p 1 i) (acc l p 1 i) (um1Reg l p)),
+    .eop (.bin .vpaddq (acc l p 1 i) (acc l p 1 i) (um2Reg l p)),
+    .eop (.shift .vpsrlq (utReg l p) (acc l p 0 i) 52), .eop (.vmovqx (utReg l p) (utReg l p)),
+    .eop (.bin .vpaddq (acc l p 1 i) (acc l p 1 i) (utReg l p))] ++
+  (if last then [] else
+    [z (utReg l p), .evMadd52Load false (utReg l p) (acc l p 1 i) (at_ .r10 (D * p + l.oK0)),
+      .eop (.vpbroadcastq (uuReg l p nxt) (utReg l p))]) ++
+  [.eop (.valignq (acc l p 0 i) (uzReg l) (acc l p 0 i) 1)] ++
+  (List.range (l.R - 2)).flatMap (fun j => [loA (j + 2), hiA (j + 1), loM (j + 2), hiM (j + 1)]) ++
+  [hiA (l.R - 1), hiM (l.R - 1)]
+
+/-- The start: `b₀`, role 0's `lo(a₀ b₀)` and `u₀` from it. -/
+def ammStartU (p : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ .r9 (l.D * p))), .eop (.vmovq (ubReg l p 0) .rax),
+    .eop (.vpbroadcastq (ubReg l p 0) (ubReg l p 0)),
+    .evMadd52Load false (acc l p 0 0) (ubReg l p 0) (at_ .r8 (l.D * p)),
+    .eop (.bin .vpxorq (utReg l p) (utReg l p) (utReg l p)),
+    .evMadd52Load false (utReg l p) (acc l p 0 0) (at_ .r10 (l.D * p + l.oK0)),
+    .eop (.vpbroadcastq (uuReg l p 0) (utReg l p))]
+
+/-- `ammCore` with the look-ahead, its `S` steps unrolled. -/
+def ammCoreU : Prog isa :=
+  .block (([.mov .r10 (.reg .rbx)] : List Instr) ++
+    (List.range (l.nl * l.R)).map (fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))) ++
+    [.eop (.bin .vpxorq (uzReg l) (uzReg l) (uzReg l))] ++
+    (List.range l.nl).flatMap (ammStartU l) ++
+    (List.range l.S).flatMap (fun i => (List.range l.nl).flatMap fun p => ammStepU l p i) ++
+    ((List.range l.nl).flatMap fun p => (List.range l.R).map fun k =>
+      .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
+    ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)
+
 /-- `[r11] := [r8] [r9] 2^(-52 S)` modulo each prime, almost (`rbx` the
 area): `S / R` blocks, then the first `S % R` steps of another, which leave
 role `k` in the register of `k + S % R`. -/
@@ -221,11 +297,14 @@ def ammCore : Prog isa :=
           .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
         ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 
+/-- The multiplication of a layout: with the look-ahead for 2048 bits. -/
+def ammMul : Prog isa := if l = lay2048 then ammCoreU l else ammCore l
+
 /-- `[o] := [a] [b] 2^(-52 S)`, the offsets in `p`'s region. -/
 def amm (o a b : Nat) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
       .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))])
-    (ammCore l)
+    (ammMul l)
 
 /-! ## Moving numbers between the layouts -/
 
@@ -386,7 +465,7 @@ to the next entry, `ZF` after the last. -/
 def convTabBody : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))])
     (.seq (.ite .b (.block (convSetup l)) (.block (tabSetup l)))
-      (.seq (ammCore l)
+      (.seq (ammMul l)
         (.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.NB)))])
           (.seq (.ite .e (.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX)) (.block []))
             (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
@@ -437,7 +516,7 @@ def window : List (Prog isa) :=
           [.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (l.w + 1)))]]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
-        (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
+        (.seq (ammMul l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
 /-- The exponentiations, a digit of each exponent (`r13`, from the first
 that holds a bit of it, `k0`) at a time, and after the last,

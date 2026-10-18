@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -76,8 +76,8 @@ theorem Out2.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l (off B o) 0 
   · rcases hx p hp with h3 | h3 <;> omega
   · omega
 
-/-- `ammCore` with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
-theorem ammCoreSpecN_ok (hl : AmmOk l) {s : State} {B : Addr} {Z o a b : Nat} {k : Nat → Nat}
+/-- A multiplication `c` (`ammCore`, or `ammCoreU`) with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
+theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : State} {B : Addr} {Z o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
     (hs : Scr s B Z) (hZ : l.D * (l.nl - 1) + l.NB + 32 ≤ Z) (hZb : Z ≤ 2 ^ 63)
     (ho : o + l.D * (l.nl - 1) + l.NB ≤ Z) (ha : a + l.D * (l.nl - 1) + l.NB ≤ Z)
@@ -86,7 +86,7 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {s : State} {B : Addr} {Z o a b : Nat} {k
       limb l s.mem B (l.D * p + oM) j < 2 ^ 52)
     (hk : ∀ p < l.nl, ∀ t < 4, word s.mem B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p))
     (hklt : ∀ p < l.nl, k p < 2 ^ 52) (hk0 : ∀ p < l.nl, (limb l s.mem B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0) :
-    WP isa (ammCore l) s fun s' => (∀ p < l.nl,
+    WP isa c s fun s' => (∀ p < l.nl,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
       (val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM) →
         val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM) →
@@ -138,7 +138,7 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {s : State} {B : Addr} {Z o a b : Nat} {k
       exact rdS _ n hn (by rw [show lim l .r10 = l.D * (l.nl - 1) + l.NB + 32 from rfl] at hd; omega)
   have hNB : 0 < l.NB := by simp only [Lay.NB]; omega
   have hs₃ : Scr s (off B o) (l.D * (l.nl - 1) + l.NB) := hs.sub (by omega) (by omega)
-  refine WP.mono (ammCore_ok hl e r11₃ hs₃) fun s' ⟨hw, _, hf, hg, h12, hrd, hwr, hx⟩ => ?_
+  refine WP.mono (hc e r11₃ hs₃) fun s' ⟨hw, _, hf, hg, h12, hrd, hwr, hx⟩ => ?_
   refine ⟨fun p hp => ?_, hf.rebaseN (by omega), hg, h12, hrd, hwr, hx⟩
   have hq : ∀ j < l.L, limb l s'.mem B (l.D * p + o) j = carried (lm l A M k Bl p l.S) j := fun j hj => by
     have := hw p hp j hj
@@ -179,7 +179,7 @@ theorem ammCoreSpecN_ok (hl : AmmOk l) {s : State} {B : Addr} {Z o a b : Nat} {k
   refine ⟨hlt2, ?_⟩
   rw [he, hbS, Nat.add_mul_mod_self_left]
 
-/-- `ammCore` with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
+/-- The layout's multiplication with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
 theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
     (hs : Scr s B (2 * l.D))
@@ -191,7 +191,7 @@ theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
     (hA : ∀ p < 2, val52 l s.mem B (l.D * p + a) < 2 * val52 l s.mem B (l.D * p + oM))
     (hBv : ∀ p < 2, val52 l s.mem B (l.D * p + b) < 2 * val52 l s.mem B (l.D * p + oM))
     (hM : ∀ p < 2, 4 * val52 l s.mem B (l.D * p + oM) ≤ 2 ^ (52 * l.S)) :
-    WP isa (ammCore l) s fun s' => (∀ p < 2,
+    WP isa (ammMul l) s fun s' => (∀ p < 2,
       (∀ j < l.L, limb l s'.mem B (l.D * p + o) j < 2 ^ 52) ∧
       val52 l s'.mem B (l.D * p + o) < 2 * val52 l s.mem B (l.D * p + oM) ∧
       val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % val52 l s.mem B (l.D * p + oM) =
@@ -201,7 +201,7 @@ theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   have hn := hl.nl
   have hD' := hl.amm.D_ge
-  refine WP.mono (ammCoreSpecN_ok hl.amm hB r8₃ r9₃ r11₃ hs (by rw [hn]; simp only [Nat.reduceSub, Nat.mul_one]; omega)
+  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl) hB r8₃ r9₃ r11₃ hs (by rw [hn]; simp only [Nat.reduceSub, Nat.mul_one]; omega)
     (by have := hl.D_bounds; omega)
     (by rw [hn]; simpa using ho) (by rw [hn]; simpa using ha) (by rw [hn]; simpa using hb)
     (fun p hp => hlt p (by omega)) (fun p hp => hk p (by omega)) (fun p hp => hklt p (by omega))

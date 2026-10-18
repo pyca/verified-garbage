@@ -59498,7 +59498,6 @@ add r9, 3360
 mov r11, r8
 2359:
 mov r10, rbx
-mov ecx, 4
 vpxorq ymm0, ymm0, ymm0
 vpxorq ymm1, ymm1, ymm1
 vpxorq ymm2, ymm2, ymm2
@@ -59509,44 +59508,43 @@ vpxorq ymm6, ymm6, ymm6
 vpxorq ymm7, ymm7, ymm7
 vpxorq ymm8, ymm8, ymm8
 vpxorq ymm9, ymm9, ymm9
-vpxorq ymm10, ymm10, ymm10
-vpxorq ymm11, ymm11, ymm11
-vpxorq ymm12, ymm12, ymm12
-vpxorq ymm13, ymm13, ymm13
-vpxorq ymm14, ymm14, ymm14
-2360:
+vpxorq ymm26, ymm26, ymm26
 mov rax, QWORD PTR [r9]
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8]
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
 mov rax, QWORD PTR [r9+3712]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3712]
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+32]
 vmovq xmm11, rax
 vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3744]
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm0, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm5, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm0, 52
-vmovq xmm15, xmm15
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
 vpaddq ymm1, ymm1, ymm15
-valignq ymm0, ymm14, ymm0, 1
-vpsrlq ymm15, ymm5, 52
-vmovq xmm15, xmm15
-vpaddq ymm6, ymm6, ymm15
-valignq ymm5, ymm14, ymm5, 1
-vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3712]
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm0, ymm26, ymm0, 1
 vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+64]
 vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+32]
 vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+64]
@@ -59559,114 +59557,138 @@ vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+96]
 vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+128]
 vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3808]
 vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3840]
-mov rax, QWORD PTR [r9+32]
-vmovq xmm10, rax
-vpbroadcastq ymm10, xmm10
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3744]
-vmovq xmm11, rax
-vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3744]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10]
 vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm1, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm6, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm1, 52
-vmovq xmm15, xmm15
-vpaddq ymm2, ymm2, ymm15
-valignq ymm1, ymm14, ymm1, 1
-vpsrlq ymm15, ymm6, 52
-vmovq xmm15, xmm15
-vpaddq ymm7, ymm7, ymm15
-valignq ymm6, ymm14, ymm6, 1
-vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+64]
-vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+64]
-vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+32]
-vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+96]
-vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+64]
-vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+96]
-vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+64]
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+96]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8]
 mov rax, QWORD PTR [r9+64]
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3776]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+96]
 vmovq xmm11, rax
 vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3744]
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm2, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm7, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm2, 52
-vmovq xmm15, xmm15
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
 vpaddq ymm3, ymm3, ymm15
-valignq ymm2, ymm14, ymm2, 1
-vpsrlq ymm15, ymm7, 52
-vmovq xmm15, xmm15
-vpaddq ymm8, ymm8, ymm15
-valignq ymm7, ymm14, ymm7, 1
-vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3712]
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm2, ymm26, ymm2, 1
 vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+64]
 vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+32]
 vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+64]
@@ -59679,114 +59701,138 @@ vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+96]
 vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+128]
 vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3808]
 vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3840]
-mov rax, QWORD PTR [r9+96]
-vmovq xmm10, rax
-vpbroadcastq ymm10, xmm10
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3808]
-vmovq xmm11, rax
-vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3744]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10]
 vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm3, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm8, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm3, 52
-vmovq xmm15, xmm15
-vpaddq ymm4, ymm4, ymm15
-valignq ymm3, ymm14, ymm3, 1
-vpsrlq ymm15, ymm8, 52
-vmovq xmm15, xmm15
-vpaddq ymm9, ymm9, ymm15
-valignq ymm8, ymm14, ymm8, 1
-vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+64]
-vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+64]
-vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+32]
-vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+96]
-vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+64]
-vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+96]
-vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+64]
-vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+96]
-vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8]
 mov rax, QWORD PTR [r9+128]
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3840]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+8]
 vmovq xmm11, rax
 vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3744]
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm4, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm9, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm4, 52
-vmovq xmm15, xmm15
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm17
 vpaddq ymm0, ymm0, ymm15
-valignq ymm4, ymm14, ymm4, 1
-vpsrlq ymm15, ymm9, 52
-vmovq xmm15, xmm15
-vpaddq ymm5, ymm5, ymm15
-valignq ymm9, ymm14, ymm9, 1
-vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3712]
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm4, ymm26, ymm4, 1
 vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+64]
 vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+32]
 vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+64]
@@ -59799,25 +59845,1106 @@ vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+96]
 vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+128]
 vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3808]
 vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3840]
-add r9, 8
-sub rcx, 1
-jne 2360b
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3720]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm25
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+40]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
+vpaddq ymm1, ymm1, ymm15
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm0, ymm26, ymm0, 1
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3752]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+72]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3784]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+104]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
+vpaddq ymm3, ymm3, ymm15
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm2, ymm26, ymm2, 1
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3816]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+136]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3848]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+16]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm17
+vpaddq ymm0, ymm0, ymm15
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm4, ymm26, ymm4, 1
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3728]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm25
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+48]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
+vpaddq ymm1, ymm1, ymm15
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm0, ymm26, ymm0, 1
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3760]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+80]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3792]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+112]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
+vpaddq ymm3, ymm3, ymm15
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm2, ymm26, ymm2, 1
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3824]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+144]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3856]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+24]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm17
+vpaddq ymm0, ymm0, ymm15
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm4, ymm26, ymm4, 1
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3736]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm25
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+56]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
+vpaddq ymm1, ymm1, ymm15
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm0, ymm26, ymm0, 1
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3768]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+88]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3800]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+120]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
+vpaddq ymm3, ymm3, ymm15
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm2, ymm26, ymm2, 1
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3832]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+152]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3864]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm15
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+valignq ymm4, ymm26, ymm4, 1
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3840]
 vmovdqu64 YMMWORD PTR [r11], ymm0
 vmovdqu64 YMMWORD PTR [r11+32], ymm1
 vmovdqu64 YMMWORD PTR [r11+64], ymm2
@@ -60032,9 +61159,9 @@ and rcx, r12
 mov QWORD PTR [r11+3864], rcx
 shr rsi, 52
 cmp r13, 832
-je 2361f
-jmp 2362f
-2361:
+je 2360f
+jmp 2361f
+2360:
 vmovdqu64 ymm0, YMMWORD PTR [rbx+192]
 vmovdqu64 YMMWORD PTR [rbx+672], ymm0
 vmovdqu64 ymm0, YMMWORD PTR [rbx+224]
@@ -60075,14 +61202,14 @@ vmovdqu64 ymm0, YMMWORD PTR [rbx+4160]
 vmovdqu64 YMMWORD PTR [rbx+4640], ymm0
 vmovdqu64 ymm0, YMMWORD PTR [rbx+4192]
 vmovdqu64 YMMWORD PTR [rbx+4672], ymm0
-2362:
+2361:
 add r13, 160
 cmp r13, 3232
 jne 2357b
 mov r13d, 0
-2363:
+2362:
 cmp r13, 256
-je 2364f
+je 2363f
 mov r8, r13
 shr r8, 1
 mov rdx, r13
@@ -60113,6 +61240,41 @@ vpxorq ymm1, ymm1, ymm1
 vpxorq ymm2, ymm2, ymm2
 vpxorq ymm3, ymm3, ymm3
 vpxorq ymm4, ymm4, ymm4
+2365:
+mov rax, rcx
+xor rax, rdx
+cmp rax, 1
+sbb rax, rax
+vmovq xmm5, rax
+vpbroadcastq ymm5, xmm5
+vmovdqu64 ymm6, YMMWORD PTR [r8]
+vpternlogq ymm0, ymm6, ymm5, 248
+vmovdqu64 ymm6, YMMWORD PTR [r8+32]
+vpternlogq ymm1, ymm6, ymm5, 248
+vmovdqu64 ymm6, YMMWORD PTR [r8+64]
+vpternlogq ymm2, ymm6, ymm5, 248
+vmovdqu64 ymm6, YMMWORD PTR [r8+96]
+vpternlogq ymm3, ymm6, ymm5, 248
+vmovdqu64 ymm6, YMMWORD PTR [r8+128]
+vpternlogq ymm4, ymm6, ymm5, 248
+add r8, 160
+add rcx, 1
+cmp rcx, 16
+jne 2365b
+vmovdqu64 YMMWORD PTR [rbx+512], ymm0
+vmovdqu64 YMMWORD PTR [rbx+544], ymm1
+vmovdqu64 YMMWORD PTR [rbx+576], ymm2
+vmovdqu64 YMMWORD PTR [rbx+608], ymm3
+vmovdqu64 YMMWORD PTR [rbx+640], ymm4
+mov r8, rbx
+add r8, 4384
+mov rdx, QWORD PTR [rbx+7232]
+mov ecx, 0
+vpxorq ymm0, ymm0, ymm0
+vpxorq ymm1, ymm1, ymm1
+vpxorq ymm2, ymm2, ymm2
+vpxorq ymm3, ymm3, ymm3
+vpxorq ymm4, ymm4, ymm4
 2366:
 mov rax, rcx
 xor rax, rdx
@@ -60134,49 +61296,14 @@ add r8, 160
 add rcx, 1
 cmp rcx, 16
 jne 2366b
-vmovdqu64 YMMWORD PTR [rbx+512], ymm0
-vmovdqu64 YMMWORD PTR [rbx+544], ymm1
-vmovdqu64 YMMWORD PTR [rbx+576], ymm2
-vmovdqu64 YMMWORD PTR [rbx+608], ymm3
-vmovdqu64 YMMWORD PTR [rbx+640], ymm4
-mov r8, rbx
-add r8, 4384
-mov rdx, QWORD PTR [rbx+7232]
-mov ecx, 0
-vpxorq ymm0, ymm0, ymm0
-vpxorq ymm1, ymm1, ymm1
-vpxorq ymm2, ymm2, ymm2
-vpxorq ymm3, ymm3, ymm3
-vpxorq ymm4, ymm4, ymm4
-2367:
-mov rax, rcx
-xor rax, rdx
-cmp rax, 1
-sbb rax, rax
-vmovq xmm5, rax
-vpbroadcastq ymm5, xmm5
-vmovdqu64 ymm6, YMMWORD PTR [r8]
-vpternlogq ymm0, ymm6, ymm5, 248
-vmovdqu64 ymm6, YMMWORD PTR [r8+32]
-vpternlogq ymm1, ymm6, ymm5, 248
-vmovdqu64 ymm6, YMMWORD PTR [r8+64]
-vpternlogq ymm2, ymm6, ymm5, 248
-vmovdqu64 ymm6, YMMWORD PTR [r8+96]
-vpternlogq ymm3, ymm6, ymm5, 248
-vmovdqu64 ymm6, YMMWORD PTR [r8+128]
-vpternlogq ymm4, ymm6, ymm5, 248
-add r8, 160
-add rcx, 1
-cmp rcx, 16
-jne 2367b
 vmovdqu64 YMMWORD PTR [rbx+4224], ymm0
 vmovdqu64 YMMWORD PTR [rbx+4256], ymm1
 vmovdqu64 YMMWORD PTR [rbx+4288], ymm2
 vmovdqu64 YMMWORD PTR [rbx+4320], ymm3
 vmovdqu64 YMMWORD PTR [rbx+4352], ymm4
 mov r15d, 5
-jmp 2365f
-2364:
+jmp 2364f
+2363:
 vmovdqu64 ymm0, YMMWORD PTR [rbx+3552]
 vmovdqu64 YMMWORD PTR [rbx+512], ymm0
 vmovdqu64 ymm0, YMMWORD PTR [rbx+3584]
@@ -60198,27 +61325,26 @@ vmovdqu64 YMMWORD PTR [rbx+4320], ymm0
 vmovdqu64 ymm0, YMMWORD PTR [rbx+7392]
 vmovdqu64 YMMWORD PTR [rbx+4352], ymm0
 mov r15d, 1
-2365:
-2368:
+2364:
+2367:
 cmp r15, 1
-je 2369f
+je 2368f
 mov r8, rbx
 add r8, 192
 mov r9, rbx
 add r9, 192
 mov r11, rbx
 add r11, 192
-jmp 2370f
-2369:
+jmp 2369f
+2368:
 mov r8, rbx
 add r8, 192
 mov r9, rbx
 add r9, 512
 mov r11, rbx
 add r11, 192
-2370:
+2369:
 mov r10, rbx
-mov ecx, 4
 vpxorq ymm0, ymm0, ymm0
 vpxorq ymm1, ymm1, ymm1
 vpxorq ymm2, ymm2, ymm2
@@ -60229,44 +61355,43 @@ vpxorq ymm6, ymm6, ymm6
 vpxorq ymm7, ymm7, ymm7
 vpxorq ymm8, ymm8, ymm8
 vpxorq ymm9, ymm9, ymm9
-vpxorq ymm10, ymm10, ymm10
-vpxorq ymm11, ymm11, ymm11
-vpxorq ymm12, ymm12, ymm12
-vpxorq ymm13, ymm13, ymm13
-vpxorq ymm14, ymm14, ymm14
-2371:
+vpxorq ymm26, ymm26, ymm26
 mov rax, QWORD PTR [r9]
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8]
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
 mov rax, QWORD PTR [r9+3712]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3712]
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+32]
 vmovq xmm11, rax
 vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3744]
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm0, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm5, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm0, 52
-vmovq xmm15, xmm15
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
 vpaddq ymm1, ymm1, ymm15
-valignq ymm0, ymm14, ymm0, 1
-vpsrlq ymm15, ymm5, 52
-vmovq xmm15, xmm15
-vpaddq ymm6, ymm6, ymm15
-valignq ymm5, ymm14, ymm5, 1
-vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3712]
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm0, ymm26, ymm0, 1
 vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+64]
 vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+32]
 vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+64]
@@ -60279,114 +61404,138 @@ vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+96]
 vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+128]
 vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3808]
 vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3840]
-mov rax, QWORD PTR [r9+32]
-vmovq xmm10, rax
-vpbroadcastq ymm10, xmm10
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3744]
-vmovq xmm11, rax
-vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3744]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10]
 vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm1, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm6, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm1, 52
-vmovq xmm15, xmm15
-vpaddq ymm2, ymm2, ymm15
-valignq ymm1, ymm14, ymm1, 1
-vpsrlq ymm15, ymm6, 52
-vmovq xmm15, xmm15
-vpaddq ymm7, ymm7, ymm15
-valignq ymm6, ymm14, ymm6, 1
-vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+64]
-vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+64]
-vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+32]
-vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+96]
-vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+64]
-vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+96]
-vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+64]
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+96]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8]
 mov rax, QWORD PTR [r9+64]
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3776]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+96]
 vmovq xmm11, rax
 vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3744]
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm2, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm7, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm2, 52
-vmovq xmm15, xmm15
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
 vpaddq ymm3, ymm3, ymm15
-valignq ymm2, ymm14, ymm2, 1
-vpsrlq ymm15, ymm7, 52
-vmovq xmm15, xmm15
-vpaddq ymm8, ymm8, ymm15
-valignq ymm7, ymm14, ymm7, 1
-vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3712]
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm2, ymm26, ymm2, 1
 vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+64]
 vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+32]
 vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+64]
@@ -60399,114 +61548,138 @@ vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+96]
 vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+128]
 vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3808]
 vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3840]
-mov rax, QWORD PTR [r9+96]
-vmovq xmm10, rax
-vpbroadcastq ymm10, xmm10
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3808]
-vmovq xmm11, rax
-vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3744]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10]
 vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm3, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm8, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm3, 52
-vmovq xmm15, xmm15
-vpaddq ymm4, ymm4, ymm15
-valignq ymm3, ymm14, ymm3, 1
-vpsrlq ymm15, ymm8, 52
-vmovq xmm15, xmm15
-vpaddq ymm9, ymm9, ymm15
-valignq ymm8, ymm14, ymm8, 1
-vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+64]
-vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+64]
-vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+32]
-vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+96]
-vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+64]
-vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+96]
-vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+64]
-vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+96]
-vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+128]
-vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8]
 mov rax, QWORD PTR [r9+128]
 vmovq xmm10, rax
 vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3712]
 mov rax, QWORD PTR [r9+3840]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+8]
 vmovq xmm11, rax
 vpbroadcastq ymm11, xmm11
-vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+32]
-vpmadd52luq ymm9, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm5, ymm11, YMMWORD PTR [r8+3744]
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm4, YMMWORD PTR [r10+160]
-vpbroadcastq ymm12, xmm15
-vpxorq ymm15, ymm15, ymm15
-vpmadd52luq ymm15, ymm9, YMMWORD PTR [r10+3872]
-vpbroadcastq ymm13, xmm15
-vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8]
-vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10]
-vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+32]
-vpmadd52huq ymm5, ymm11, YMMWORD PTR [r8+3712]
-vpmadd52luq ymm9, ymm13, YMMWORD PTR [r10+3712]
-vpmadd52luq ymm5, ymm13, YMMWORD PTR [r10+3744]
-vpsrlq ymm15, ymm4, 52
-vmovq xmm15, xmm15
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm17
 vpaddq ymm0, ymm0, ymm15
-valignq ymm4, ymm14, ymm4, 1
-vpsrlq ymm15, ymm9, 52
-vmovq xmm15, xmm15
-vpaddq ymm5, ymm5, ymm15
-valignq ymm9, ymm14, ymm9, 1
-vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10]
-vpmadd52huq ymm5, ymm13, YMMWORD PTR [r10+3712]
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm4, ymm26, ymm4, 1
 vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+64]
 vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+32]
 vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+64]
@@ -60519,25 +61692,1106 @@ vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+96]
 vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+128]
 vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+96]
-vpmadd52luq ymm6, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52huq ymm6, ymm11, YMMWORD PTR [r8+3744]
-vpmadd52luq ymm6, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52huq ymm6, ymm13, YMMWORD PTR [r10+3744]
-vpmadd52luq ymm7, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52huq ymm7, ymm11, YMMWORD PTR [r8+3776]
-vpmadd52luq ymm7, ymm13, YMMWORD PTR [r10+3808]
-vpmadd52huq ymm7, ymm13, YMMWORD PTR [r10+3776]
-vpmadd52luq ymm8, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm8, ymm11, YMMWORD PTR [r8+3808]
-vpmadd52luq ymm8, ymm13, YMMWORD PTR [r10+3840]
-vpmadd52huq ymm8, ymm13, YMMWORD PTR [r10+3808]
 vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+128]
 vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+128]
-vpmadd52huq ymm9, ymm11, YMMWORD PTR [r8+3840]
-vpmadd52huq ymm9, ymm13, YMMWORD PTR [r10+3840]
-add r9, 8
-sub rcx, 1
-jne 2371b
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3720]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm25
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+40]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
+vpaddq ymm1, ymm1, ymm15
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm0, ymm26, ymm0, 1
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3752]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+72]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3784]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+104]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
+vpaddq ymm3, ymm3, ymm15
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm2, ymm26, ymm2, 1
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3816]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+136]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3848]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+16]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm17
+vpaddq ymm0, ymm0, ymm15
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm4, ymm26, ymm4, 1
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3728]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm25
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+48]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
+vpaddq ymm1, ymm1, ymm15
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm0, ymm26, ymm0, 1
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3760]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+80]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3792]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+112]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
+vpaddq ymm3, ymm3, ymm15
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm2, ymm26, ymm2, 1
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3824]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+144]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3856]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+24]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm17
+vpaddq ymm0, ymm0, ymm15
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm0, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm4, ymm26, ymm4, 1
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3736]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm25
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm5, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+56]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm1, ymm1, ymm17
+vpaddq ymm1, ymm1, ymm15
+vpaddq ymm1, ymm1, ymm16
+vpsrlq ymm14, ymm0, 52
+vmovq xmm14, xmm14
+vpaddq ymm1, ymm1, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm1, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm0, ymm26, ymm0, 1
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3768]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm6, ymm6, ymm25
+vpaddq ymm6, ymm6, ymm23
+vpaddq ymm6, ymm6, ymm24
+vpsrlq ymm22, ymm5, 52
+vmovq xmm22, xmm22
+vpaddq ymm6, ymm6, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm6, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm5, ymm26, ymm5, 1
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+88]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm2, ymm2, ymm17
+vpaddq ymm2, ymm2, ymm15
+vpaddq ymm2, ymm2, ymm16
+vpsrlq ymm14, ymm1, 52
+vmovq xmm14, xmm14
+vpaddq ymm2, ymm2, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm2, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm1, ymm26, ymm1, 1
+vpmadd52luq ymm3, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm4, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3800]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm7, ymm7, ymm25
+vpaddq ymm7, ymm7, ymm23
+vpaddq ymm7, ymm7, ymm24
+vpsrlq ymm22, ymm6, 52
+vmovq xmm22, xmm22
+vpaddq ymm7, ymm7, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm7, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm6, ymm26, ymm6, 1
+vpmadd52luq ymm8, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm9, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+120]
+vmovq xmm10, rax
+vpbroadcastq ymm10, xmm10
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm10, YMMWORD PTR [r8]
+vpaddq ymm3, ymm3, ymm17
+vpaddq ymm3, ymm3, ymm15
+vpaddq ymm3, ymm3, ymm16
+vpsrlq ymm14, ymm2, 52
+vmovq xmm14, xmm14
+vpaddq ymm3, ymm3, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm3, YMMWORD PTR [r10+160]
+vpbroadcastq ymm12, xmm14
+valignq ymm2, ymm26, ymm2, 1
+vpmadd52luq ymm4, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm0, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm0, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3832]
+vmovq xmm18, rax
+vpbroadcastq ymm18, xmm18
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm18, YMMWORD PTR [r8+3712]
+vpaddq ymm8, ymm8, ymm25
+vpaddq ymm8, ymm8, ymm23
+vpaddq ymm8, ymm8, ymm24
+vpsrlq ymm22, ymm7, 52
+vmovq xmm22, xmm22
+vpaddq ymm8, ymm8, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm8, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm20, xmm22
+valignq ymm7, ymm26, ymm7, 1
+vpmadd52luq ymm9, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm5, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm5, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm3, ymm12, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm12, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm12, YMMWORD PTR [r10]
+vpmadd52luq ymm4, ymm10, YMMWORD PTR [r8+32]
+vpmadd52huq ymm4, ymm10, YMMWORD PTR [r8]
+mov rax, QWORD PTR [r9+152]
+vmovq xmm11, rax
+vpbroadcastq ymm11, xmm11
+vpxorq ymm17, ymm17, ymm17
+vpmadd52luq ymm17, ymm11, YMMWORD PTR [r8]
+vpaddq ymm4, ymm4, ymm17
+vpaddq ymm4, ymm4, ymm15
+vpaddq ymm4, ymm4, ymm16
+vpsrlq ymm14, ymm3, 52
+vmovq xmm14, xmm14
+vpaddq ymm4, ymm4, ymm14
+vpxorq ymm14, ymm14, ymm14
+vpmadd52luq ymm14, ymm4, YMMWORD PTR [r10+160]
+vpbroadcastq ymm13, xmm14
+valignq ymm3, ymm26, ymm3, 1
+vpmadd52luq ymm0, ymm10, YMMWORD PTR [r8+64]
+vpmadd52huq ymm0, ymm10, YMMWORD PTR [r8+32]
+vpmadd52luq ymm0, ymm12, YMMWORD PTR [r10+64]
+vpmadd52huq ymm0, ymm12, YMMWORD PTR [r10+32]
+vpmadd52luq ymm1, ymm10, YMMWORD PTR [r8+96]
+vpmadd52huq ymm1, ymm10, YMMWORD PTR [r8+64]
+vpmadd52luq ymm1, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm1, ymm12, YMMWORD PTR [r10+64]
+vpmadd52luq ymm2, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm2, ymm10, YMMWORD PTR [r8+96]
+vpmadd52luq ymm2, ymm12, YMMWORD PTR [r10+128]
+vpmadd52huq ymm2, ymm12, YMMWORD PTR [r10+96]
+vpmadd52huq ymm3, ymm10, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm12, YMMWORD PTR [r10+128]
+vpmadd52luq ymm8, ymm20, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm20, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm20, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm9, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm9, ymm18, YMMWORD PTR [r8+3712]
+mov rax, QWORD PTR [r9+3864]
+vmovq xmm19, rax
+vpbroadcastq ymm19, xmm19
+vpxorq ymm25, ymm25, ymm25
+vpmadd52luq ymm25, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm9, ymm9, ymm25
+vpaddq ymm9, ymm9, ymm23
+vpaddq ymm9, ymm9, ymm24
+vpsrlq ymm22, ymm8, 52
+vmovq xmm22, xmm22
+vpaddq ymm9, ymm9, ymm22
+vpxorq ymm22, ymm22, ymm22
+vpmadd52luq ymm22, ymm9, YMMWORD PTR [r10+3872]
+vpbroadcastq ymm21, xmm22
+valignq ymm8, ymm26, ymm8, 1
+vpmadd52luq ymm5, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm5, ymm18, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm5, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm5, ymm20, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm6, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm6, ymm18, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm6, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm6, ymm20, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm7, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm7, ymm18, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm7, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm7, ymm20, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm8, ymm18, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm20, YMMWORD PTR [r10+3840]
+vpmadd52luq ymm4, ymm13, YMMWORD PTR [r10]
+vpxorq ymm15, ymm15, ymm15
+vpmadd52luq ymm15, ymm13, YMMWORD PTR [r10+32]
+vpxorq ymm16, ymm16, ymm16
+vpmadd52huq ymm16, ymm13, YMMWORD PTR [r10]
+vpmadd52luq ymm0, ymm11, YMMWORD PTR [r8+32]
+vpmadd52huq ymm0, ymm11, YMMWORD PTR [r8]
+vpaddq ymm0, ymm0, ymm15
+vpaddq ymm0, ymm0, ymm16
+vpsrlq ymm14, ymm4, 52
+vmovq xmm14, xmm14
+vpaddq ymm0, ymm0, ymm14
+valignq ymm4, ymm26, ymm4, 1
+vpmadd52luq ymm1, ymm11, YMMWORD PTR [r8+64]
+vpmadd52huq ymm1, ymm11, YMMWORD PTR [r8+32]
+vpmadd52luq ymm1, ymm13, YMMWORD PTR [r10+64]
+vpmadd52huq ymm1, ymm13, YMMWORD PTR [r10+32]
+vpmadd52luq ymm2, ymm11, YMMWORD PTR [r8+96]
+vpmadd52huq ymm2, ymm11, YMMWORD PTR [r8+64]
+vpmadd52luq ymm2, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm2, ymm13, YMMWORD PTR [r10+64]
+vpmadd52luq ymm3, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm3, ymm11, YMMWORD PTR [r8+96]
+vpmadd52luq ymm3, ymm13, YMMWORD PTR [r10+128]
+vpmadd52huq ymm3, ymm13, YMMWORD PTR [r10+96]
+vpmadd52huq ymm4, ymm11, YMMWORD PTR [r8+128]
+vpmadd52huq ymm4, ymm13, YMMWORD PTR [r10+128]
+vpmadd52luq ymm9, ymm21, YMMWORD PTR [r10+3712]
+vpxorq ymm23, ymm23, ymm23
+vpmadd52luq ymm23, ymm21, YMMWORD PTR [r10+3744]
+vpxorq ymm24, ymm24, ymm24
+vpmadd52huq ymm24, ymm21, YMMWORD PTR [r10+3712]
+vpmadd52luq ymm5, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52huq ymm5, ymm19, YMMWORD PTR [r8+3712]
+vpaddq ymm5, ymm5, ymm23
+vpaddq ymm5, ymm5, ymm24
+vpsrlq ymm22, ymm9, 52
+vmovq xmm22, xmm22
+vpaddq ymm5, ymm5, ymm22
+valignq ymm9, ymm26, ymm9, 1
+vpmadd52luq ymm6, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52huq ymm6, ymm19, YMMWORD PTR [r8+3744]
+vpmadd52luq ymm6, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52huq ymm6, ymm21, YMMWORD PTR [r10+3744]
+vpmadd52luq ymm7, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52huq ymm7, ymm19, YMMWORD PTR [r8+3776]
+vpmadd52luq ymm7, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm7, ymm21, YMMWORD PTR [r10+3776]
+vpmadd52luq ymm8, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm8, ymm19, YMMWORD PTR [r8+3808]
+vpmadd52luq ymm8, ymm21, YMMWORD PTR [r10+3840]
+vpmadd52huq ymm8, ymm21, YMMWORD PTR [r10+3808]
+vpmadd52huq ymm9, ymm19, YMMWORD PTR [r8+3840]
+vpmadd52huq ymm9, ymm21, YMMWORD PTR [r10+3840]
 vmovdqu64 YMMWORD PTR [r11], ymm0
 vmovdqu64 YMMWORD PTR [r11+32], ymm1
 vmovdqu64 YMMWORD PTR [r11+64], ymm2
@@ -60752,15 +63006,223 @@ and rcx, r12
 mov QWORD PTR [r11+3864], rcx
 shr rsi, 52
 sub r15, 1
-jne 2368b
+jne 2367b
 add r13, 1
 cmp r13, 257
-jne 2363b
+jne 2362b
 lfence
 ldmxcsr DWORD PTR [rbx+7424]
 vzeroupper
 mov r11, QWORD PTR [rdi+232]
 add r11, 3904
+mov r8, QWORD PTR [rdi+80]
+mov eax, 0
+mov rcx, QWORD PTR [r11]
+or rax, rcx
+mov rcx, QWORD PTR [r11+32]
+ror rcx, 12
+movabs rbp, -4503599627370496
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+32]
+shr rcx, 12
+or rax, rcx
+mov rcx, QWORD PTR [r11+64]
+ror rcx, 24
+movabs rbp, -1099511627776
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+8], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+64]
+shr rcx, 24
+or rax, rcx
+mov rcx, QWORD PTR [r11+96]
+ror rcx, 36
+movabs rbp, -268435456
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+16], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+96]
+shr rcx, 36
+or rax, rcx
+mov rcx, QWORD PTR [r11+128]
+ror rcx, 48
+movabs rbp, -65536
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+24], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+128]
+shr rcx, 48
+or rax, rcx
+mov rcx, QWORD PTR [r11+8]
+ror rcx, 60
+movabs rbp, -16
+and rcx, rbp
+or rax, rcx
+mov rcx, QWORD PTR [r11+40]
+ror rcx, 8
+movabs rbp, -72057594037927936
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+32], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+40]
+shr rcx, 8
+or rax, rcx
+mov rcx, QWORD PTR [r11+72]
+ror rcx, 20
+movabs rbp, -17592186044416
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+40], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+72]
+shr rcx, 20
+or rax, rcx
+mov rcx, QWORD PTR [r11+104]
+ror rcx, 32
+movabs rbp, -4294967296
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+48], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+104]
+shr rcx, 32
+or rax, rcx
+mov rcx, QWORD PTR [r11+136]
+ror rcx, 44
+movabs rbp, -1048576
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+56], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+136]
+shr rcx, 44
+or rax, rcx
+mov rcx, QWORD PTR [r11+16]
+ror rcx, 56
+movabs rbp, -256
+and rcx, rbp
+or rax, rcx
+mov rcx, QWORD PTR [r11+48]
+ror rcx, 4
+movabs rbp, -1152921504606846976
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+64], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+48]
+shr rcx, 4
+or rax, rcx
+mov rcx, QWORD PTR [r11+80]
+ror rcx, 16
+movabs rbp, -281474976710656
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+72], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+80]
+shr rcx, 16
+or rax, rcx
+mov rcx, QWORD PTR [r11+112]
+ror rcx, 28
+movabs rbp, -68719476736
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+80], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+112]
+shr rcx, 28
+or rax, rcx
+mov rcx, QWORD PTR [r11+144]
+ror rcx, 40
+movabs rbp, -16777216
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+88], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+144]
+shr rcx, 40
+or rax, rcx
+mov rcx, QWORD PTR [r11+24]
+ror rcx, 52
+movabs rbp, -4096
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+96], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+56]
+or rax, rcx
+mov rcx, QWORD PTR [r11+88]
+ror rcx, 12
+movabs rbp, -4503599627370496
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+104], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+88]
+shr rcx, 12
+or rax, rcx
+mov rcx, QWORD PTR [r11+120]
+ror rcx, 24
+movabs rbp, -1099511627776
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+112], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+120]
+shr rcx, 24
+or rax, rcx
+mov rcx, QWORD PTR [r11+152]
+ror rcx, 36
+movabs rbp, -268435456
+and rcx, rbp
+or rax, rcx
+mov QWORD PTR [r8+120], rax
+mov eax, 0
+mov rcx, QWORD PTR [r11+152]
+shr rcx, 36
+or rax, rcx
+mov QWORD PTR [r8+128], rax
+mov rbx, QWORD PTR [rdi+112]
+mov r10, QWORD PTR [rdi+64]
+mov r12, QWORD PTR [rdi+48]
+mov rsi, QWORD PTR [rdi+88]
+mov ebp, 0
+mov r14, 0
+2370:
+add rbp, rbp
+mov rax, QWORD PTR [r8+r14*8]
+sbb rax, QWORD PTR [r10+r14*8]
+mov QWORD PTR [rsi+r14*8], rax
+sbb rbp, rbp
+add r14, 1
+cmp r14, r12
+jne 2370b
+mov rax, QWORD PTR [r8+r12*8]
+add rbp, rbp
+sbb rax, 0
+sbb rbp, rbp
+mov r14, 0
+2371:
+mov rax, QWORD PTR [r8+r14*8]
+mov rdx, QWORD PTR [rsi+r14*8]
+xor rax, rdx
+and rax, rbp
+xor rax, rdx
+mov QWORD PTR [rbx+r14*8], rax
+add r14, 1
+cmp r14, r12
+jne 2371b
+mov rdi, QWORD PTR [rdi+128]
+mov rdi, QWORD PTR [rdi+232]
+mov r11, QWORD PTR [rdi+232]
+add r11, 192
 mov r8, QWORD PTR [rdi+80]
 mov eax, 0
 mov rcx, QWORD PTR [r11]
@@ -60966,217 +63428,26 @@ add r14, 1
 cmp r14, r12
 jne 2373b
 mov rdi, QWORD PTR [rdi+128]
-mov rdi, QWORD PTR [rdi+232]
-mov r11, QWORD PTR [rdi+232]
-add r11, 192
-mov r8, QWORD PTR [rdi+80]
-mov eax, 0
-mov rcx, QWORD PTR [r11]
-or rax, rcx
-mov rcx, QWORD PTR [r11+32]
-ror rcx, 12
-movabs rbp, -4503599627370496
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+32]
-shr rcx, 12
-or rax, rcx
-mov rcx, QWORD PTR [r11+64]
-ror rcx, 24
-movabs rbp, -1099511627776
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+8], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+64]
-shr rcx, 24
-or rax, rcx
-mov rcx, QWORD PTR [r11+96]
-ror rcx, 36
-movabs rbp, -268435456
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+16], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+96]
-shr rcx, 36
-or rax, rcx
-mov rcx, QWORD PTR [r11+128]
-ror rcx, 48
-movabs rbp, -65536
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+24], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+128]
-shr rcx, 48
-or rax, rcx
-mov rcx, QWORD PTR [r11+8]
-ror rcx, 60
-movabs rbp, -16
-and rcx, rbp
-or rax, rcx
-mov rcx, QWORD PTR [r11+40]
-ror rcx, 8
-movabs rbp, -72057594037927936
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+32], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+40]
-shr rcx, 8
-or rax, rcx
-mov rcx, QWORD PTR [r11+72]
-ror rcx, 20
-movabs rbp, -17592186044416
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+40], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+72]
-shr rcx, 20
-or rax, rcx
-mov rcx, QWORD PTR [r11+104]
-ror rcx, 32
-movabs rbp, -4294967296
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+48], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+104]
-shr rcx, 32
-or rax, rcx
-mov rcx, QWORD PTR [r11+136]
-ror rcx, 44
-movabs rbp, -1048576
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+56], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+136]
-shr rcx, 44
-or rax, rcx
-mov rcx, QWORD PTR [r11+16]
-ror rcx, 56
-movabs rbp, -256
-and rcx, rbp
-or rax, rcx
-mov rcx, QWORD PTR [r11+48]
-ror rcx, 4
-movabs rbp, -1152921504606846976
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+64], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+48]
-shr rcx, 4
-or rax, rcx
-mov rcx, QWORD PTR [r11+80]
-ror rcx, 16
-movabs rbp, -281474976710656
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+72], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+80]
-shr rcx, 16
-or rax, rcx
-mov rcx, QWORD PTR [r11+112]
-ror rcx, 28
-movabs rbp, -68719476736
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+80], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+112]
-shr rcx, 28
-or rax, rcx
-mov rcx, QWORD PTR [r11+144]
-ror rcx, 40
-movabs rbp, -16777216
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+88], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+144]
-shr rcx, 40
-or rax, rcx
-mov rcx, QWORD PTR [r11+24]
-ror rcx, 52
-movabs rbp, -4096
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+96], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+56]
-or rax, rcx
-mov rcx, QWORD PTR [r11+88]
-ror rcx, 12
-movabs rbp, -4503599627370496
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+104], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+88]
-shr rcx, 12
-or rax, rcx
-mov rcx, QWORD PTR [r11+120]
-ror rcx, 24
-movabs rbp, -1099511627776
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+112], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+120]
-shr rcx, 24
-or rax, rcx
-mov rcx, QWORD PTR [r11+152]
-ror rcx, 36
-movabs rbp, -268435456
-and rcx, rbp
-or rax, rcx
-mov QWORD PTR [r8+120], rax
-mov eax, 0
-mov rcx, QWORD PTR [r11+152]
-shr rcx, 36
-or rax, rcx
-mov QWORD PTR [r8+128], rax
-mov rbx, QWORD PTR [rdi+112]
-mov r10, QWORD PTR [rdi+64]
-mov r12, QWORD PTR [rdi+48]
-mov rsi, QWORD PTR [rdi+88]
-mov ebp, 0
-mov r14, 0
-2374:
-add rbp, rbp
-mov rax, QWORD PTR [r8+r14*8]
-sbb rax, QWORD PTR [r10+r14*8]
-mov QWORD PTR [rsi+r14*8], rax
-sbb rbp, rbp
-add r14, 1
-cmp r14, r12
-jne 2374b
-mov rax, QWORD PTR [r8+r12*8]
-add rbp, rbp
-sbb rax, 0
-sbb rbp, rbp
-mov r14, 0
-2375:
-mov rax, QWORD PTR [r8+r14*8]
-mov rdx, QWORD PTR [rsi+r14*8]
-xor rax, rdx
-and rax, rbp
-xor rax, rdx
-mov QWORD PTR [rbx+r14*8], rax
-add r14, 1
-cmp r14, r12
-jne 2375b
-mov rdi, QWORD PTR [rdi+128]
 2222:
 mov rdi, QWORD PTR [rdi+232]
 mov r8, QWORD PTR [rdi+96]
+mov r12, QWORD PTR [rdi+48]
+mov eax, 0
+mov r14, 0
+2374:
+mov QWORD PTR [r8+r14*8], rax
+add r14, 1
+cmp r14, r12
+jne 2374b
+mov QWORD PTR [r8+r12*8], rax
+mov QWORD PTR [r8+r12*8+8], rax
+mov rax, QWORD PTR [rdi+128]
+mov rdx, QWORD PTR [rax+96]
+mov QWORD PTR [rdi+184], rdx
+mov rdx, QWORD PTR [rax+48]
+mov QWORD PTR [rdi+176], rdx
+2375:
+mov r8, QWORD PTR [rdi+72]
 mov r12, QWORD PTR [rdi+48]
 mov eax, 0
 mov r14, 0
@@ -61187,39 +63458,22 @@ cmp r14, r12
 jne 2376b
 mov QWORD PTR [r8+r12*8], rax
 mov QWORD PTR [r8+r12*8+8], rax
-mov rax, QWORD PTR [rdi+128]
-mov rdx, QWORD PTR [rax+96]
-mov QWORD PTR [rdi+184], rdx
-mov rdx, QWORD PTR [rax+48]
-mov QWORD PTR [rdi+176], rdx
-2377:
-mov r8, QWORD PTR [rdi+72]
-mov r12, QWORD PTR [rdi+48]
-mov eax, 0
-mov r14, 0
-2378:
-mov QWORD PTR [r8+r14*8], rax
-add r14, 1
-cmp r14, r12
-jne 2378b
-mov QWORD PTR [r8+r12*8], rax
-mov QWORD PTR [r8+r12*8+8], rax
 mov r12, QWORD PTR [rdi+176]
 cmp r12, QWORD PTR [rdi+48]
-jb 2379f
+jb 2377f
 mov r12, QWORD PTR [rdi+48]
-jmp 2380f
-2379:
-2380:
+jmp 2378f
+2377:
+2378:
 mov rsi, QWORD PTR [rdi+184]
 mov rbx, QWORD PTR [rdi+72]
 mov r14, 0
-2381:
+2379:
 mov rax, QWORD PTR [rsi+r14*8]
 mov QWORD PTR [rbx+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2381b
+jne 2379b
 mov rax, QWORD PTR [rdi+176]
 sub rax, r12
 mov QWORD PTR [rdi+176], rax
@@ -61244,7 +63498,7 @@ mov r12, QWORD PTR [rdi+48]
 mov rsi, QWORD PTR [rdi+88]
 mov ebp, 0
 mov r14, 0
-2382:
+2380:
 add rbp, rbp
 mov rax, QWORD PTR [rbx+r14*8]
 adc rax, QWORD PTR [r9+r14*8]
@@ -61252,7 +63506,7 @@ mov QWORD PTR [r8+r14*8], rax
 sbb rbp, rbp
 add r14, 1
 cmp r14, r12
-jne 2382b
+jne 2380b
 mov eax, 0
 add rbp, rbp
 adc rax, 0
@@ -61260,7 +63514,7 @@ mov QWORD PTR [r8+r12*8], rax
 mov rbx, QWORD PTR [rdi+96]
 mov ebp, 0
 mov r14, 0
-2383:
+2381:
 add rbp, rbp
 mov rax, QWORD PTR [r8+r14*8]
 sbb rax, QWORD PTR [r10+r14*8]
@@ -61268,13 +63522,13 @@ mov QWORD PTR [rsi+r14*8], rax
 sbb rbp, rbp
 add r14, 1
 cmp r14, r12
-jne 2383b
+jne 2381b
 mov rax, QWORD PTR [r8+r12*8]
 add rbp, rbp
 sbb rax, 0
 sbb rbp, rbp
 mov r14, 0
-2384:
+2382:
 mov rax, QWORD PTR [r8+r14*8]
 mov rdx, QWORD PTR [rsi+r14*8]
 xor rax, rdx
@@ -61283,22 +63537,22 @@ xor rax, rdx
 mov QWORD PTR [rbx+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2384b
+jne 2382b
 mov rax, QWORD PTR [rdi+176]
 test rax, rax
-jne 2377b
+jne 2375b
 mov rax, QWORD PTR [rdi+128]
 mov rax, QWORD PTR [rax+240]
 mov rsi, QWORD PTR [rax+112]
 mov r12, QWORD PTR [rdi+48]
 mov rbx, QWORD PTR [rdi+72]
 mov r14, 0
-2385:
+2383:
 mov rax, QWORD PTR [rsi+r14*8]
 mov QWORD PTR [rbx+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2385b
+jne 2383b
 mov edx, 1
 mov ecx, 1
 mov r8d, 4
@@ -61307,19 +63561,19 @@ mov r12, QWORD PTR [rdi+48]
 mov rsi, QWORD PTR [rdi+72]
 mov rbx, QWORD PTR [rdi+96]
 mov r14, 0
-2386:
+2384:
 mov rax, QWORD PTR [rsi+r14*8]
 mov QWORD PTR [rbx+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2386b
+jne 2384b
 mov r8, QWORD PTR [rdi+112]
 mov r10, QWORD PTR [rdi+96]
 mov rsi, QWORD PTR [rdi+80]
 mov r12, QWORD PTR [rdi+48]
 mov ebp, 0
 mov r14, 0
-2387:
+2385:
 add rbp, rbp
 mov rax, QWORD PTR [r8+r14*8]
 sbb rax, QWORD PTR [r10+r14*8]
@@ -61327,14 +63581,14 @@ mov QWORD PTR [rsi+r14*8], rax
 sbb rbp, rbp
 add r14, 1
 cmp r14, r12
-jne 2387b
+jne 2385b
 mov r15, rbp
 mov ebp, 0
 mov r10, QWORD PTR [rdi+64]
 mov r8, QWORD PTR [rdi+80]
 mov rbx, QWORD PTR [rdi+104]
 mov r14, 0
-2388:
+2386:
 mov rax, QWORD PTR [r10+r14*8]
 and rax, r15
 add rbp, rbp
@@ -61343,16 +63597,16 @@ mov QWORD PTR [rbx+r14*8], rax
 sbb rbp, rbp
 add r14, 1
 cmp r14, r12
-jne 2388b
+jne 2386b
 mov r8, QWORD PTR [rdi+72]
 mov r12, QWORD PTR [rdi+48]
 mov eax, 0
 mov r14, 0
-2389:
+2387:
 mov QWORD PTR [r8+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2389b
+jne 2387b
 mov QWORD PTR [r8+r12*8], rax
 mov QWORD PTR [r8+r12*8+8], rax
 mov rax, QWORD PTR [rdi+128]
@@ -61362,7 +63616,7 @@ mov rbx, QWORD PTR [rdi+72]
 mov eax, 0
 mov rdx, rcx
 mov r14, rsi
-2390:
+2388:
 sub rdx, 1
 ror rax, 56
 movzx ebp, BYTE PTR [r14]
@@ -61370,27 +63624,27 @@ add rax, rbp
 add r14, 1
 mov rbp, rdx
 and rbp, 7
-je 2391f
-jmp 2392f
-2391:
+je 2389f
+jmp 2390f
+2389:
 mov rbp, rdx
 shr rbp, 3
 mov QWORD PTR [rbx+rbp*8], rax
 mov eax, 0
-2392:
+2390:
 test rdx, rdx
-jne 2390b
+jne 2388b
 mov r15, QWORD PTR [rdi+192]
 mov r12, QWORD PTR [rdi+48]
 mov rbx, QWORD PTR [rdi+72]
 mov r14, 0
-2393:
+2391:
 mov rax, QWORD PTR [rbx+r14*8]
 and rax, r15
 mov QWORD PTR [rbx+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2393b
+jne 2391b
 mov edx, 6
 mov ecx, 5
 mov r8d, 1
@@ -61404,22 +63658,22 @@ mov rcx, rbx
 add rcx, rcx
 add rcx, 2
 mov r14d, 0
-2394:
+2392:
 mov QWORD PTR [r8+r14*8], rax
 add r14, 1
 cmp r14, rcx
-jne 2394b
+jne 2392b
 mov rax, QWORD PTR [rdi+240]
 mov rsi, QWORD PTR [rax+112]
 mov r12, QWORD PTR [rax+48]
 mov rbx, QWORD PTR [rdi+80]
 mov r14, 0
-2395:
+2393:
 mov rax, QWORD PTR [rsi+r14*8]
 mov QWORD PTR [rbx+r14*8], rax
 add r14, 1
 cmp r14, r12
-jne 2395b
+jne 2393b
 mov rax, QWORD PTR [rdi+232]
 mov r11, QWORD PTR [rax+112]
 mov r10, QWORD PTR [rax+48]
@@ -61428,11 +63682,11 @@ mov r9, QWORD PTR [rax+64]
 mov r12, QWORD PTR [rax+48]
 mov r8, QWORD PTR [rdi+80]
 mov r13d, 0
-2396:
+2394:
 mov rcx, QWORD PTR [r11+r13*8]
 mov ebp, 0
 mov r14, 0
-2397:
+2395:
 mov rax, QWORD PTR [r9+r14*8]
 mul rcx
 add rax, rbp
@@ -61443,7 +63697,7 @@ mov QWORD PTR [r8+r14*8], rax
 mov rbp, rdx
 add r14, 1
 cmp r14, r12
-jne 2397b
+jne 2395b
 mov rax, QWORD PTR [r8+r12*8]
 add rax, rbp
 mov QWORD PTR [r8+r12*8], rax
@@ -61453,7 +63707,7 @@ mov QWORD PTR [r8+r12*8+8], rax
 add r8, 8
 add r13, 1
 cmp r13, r10
-jne 2396b
+jne 2394b
 mov rbx, QWORD PTR [rdi+80]
 mov rsi, QWORD PTR [rdi+128]
 mov rcx, QWORD PTR [rdi+144]
@@ -61461,23 +63715,23 @@ mov r15, QWORD PTR [rdi+176]
 mov edx, 0
 mov r14, rsi
 add r14, rcx
-2398:
+2396:
 mov rbp, rdx
 and rbp, 7
-je 2399f
-jmp 2400f
-2399:
+je 2397f
+jmp 2398f
+2397:
 mov rbp, rdx
 shr rbp, 3
 mov rax, QWORD PTR [rbx+rbp*8]
 and rax, r15
-2400:
+2398:
 sub r14, 1
 mov BYTE PTR [r14], al
 shr rax, 8
 add rdx, 1
 cmp rdx, rcx
-jne 2398b
+jne 2396b
 mov rax, QWORD PTR [rdi+176]
 and rax, 1
 mov rbx, QWORD PTR [rdi]
@@ -61491,11 +63745,11 @@ jmp 21f
 mov rsi, QWORD PTR [rdi+128]
 mov rcx, QWORD PTR [rdi+144]
 mov eax, 0
-2401:
+2399:
 mov BYTE PTR [rsi], al
 add rsi, 1
 sub rcx, 1
-jne 2401b
+jne 2399b
 mov rbx, QWORD PTR [rdi]
 mov rbp, QWORD PTR [rdi+8]
 mov r12, QWORD PTR [rdi+16]
