@@ -375,6 +375,18 @@ def gatherNote (t ts : Nat) (sealName splitName enc : String) : String :=
     padded with zeros to a whole block (as GHASH pads it), and encrypts each slice from where it is to the \
     output with `" ++ enc ++ "`."
 
+/-- How `vg_aes_gcm_seal_gather_prepared` takes a TLS record's text, before
+`gatherNote`'s paths. -/
+def tlsNote (splitName : String) (long fill : Bool) : String :=
+  "A text of a TLS record (a 12-byte nonce, at most 16 bytes of additional data, and one or two slices, \
+    the second ending at most 16 bytes after the first's whole blocks) is sealed first, from the entry: the \
+    second slice, if any, is copied to the output after the first, and the text is encrypted with `" ++
+    splitName ++ "` from the first slice where it is" ++
+    (if long then ", if that slice holds at least 256 bytes"
+      else ", unless the text is at least 256 bytes long and that slice shorter") ++
+    (if fill then ", or the text is a multiple of 256 bytes whose last block the first slice starts and \
+      the second fills" else "") ++ "."
+
 /-- `vg_aes_gcm_seal_gather` calling the implementations `v`, and the
 `_precomputed` one if its loops read the powers from the key context. -/
 def artifactsGather (v : GcmVariant) : List Artifact :=
@@ -483,17 +495,18 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
 def artifactsGatherR (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name]
+      notes := [tlsNote (splitFnR v).fn.name (tlsLong v) (tlsFill v),
+        gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
-        (shortFnR v).code (initFn v.impl).fn
-          (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn)
+        (Impl.AesGcm.X86_64.SealGather.withFront (tlsLong v) (tlsFill v) (splitFnR v).fn
+          (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
+            (shortFnR v).code (initFn v.impl).fn (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn))
       stack := 5128
       verified := Gather.sealGatherPrepared_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
-        (toFnR v) (finFn v.impl)
+        (toFnR v) (finFn v.impl) (splitFnR v) (tlsLong v) (tlsFill v)
       spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFnR v) (initFn v.impl) (aadFn v.impl) (toFnR v)
-          (finFn v.impl))
+        (Gather.withFront_spAll (shortFnR v) (initFn v.impl) (aadFn v.impl) (toFnR v)
+          (finFn v.impl) (splitFnR v) (tlsLong v) (tlsFill v))
       features := v.impl.features }]
 
 /-- How an instance of `vg_aes_gcm_seal_split` works. -/

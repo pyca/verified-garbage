@@ -331,10 +331,10 @@ theorem sealGatherG_wp {q : Nat} {quick fast test short : Prog isa} {go : Bool}
     (hfast : L s < q → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s))
     (htest : ∀ st, E2 s st → WP isa test st fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some go)
     (hshort : go = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa short st (Done s))
-    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
-    WP isa (sealGather quick fast test short I.fn A.fn T.fn F.fn) s (Done s) := by
+    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) {st : State} (hs : Same s st) :
+    WP isa (sealGather quick fast test short I.fn A.fn T.fn F.fn) st (Done s) := by
   unfold sealGather gatherRest
-  refine WP.seq (WP.mono (entry1_ok hp) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
+  refine WP.seq (WP.mono (entry1_ok hp hs) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
     WP.seq (WP.mono (hquick _ h₂) fun σ ⟨E₀, r₀, c₀⟩ => ?_)))
   refine WP.ite (decide (L s < q)) (by simp only [eval, c₀]) (fun e => hfast (by simpa using e) σ E₀ r₀)
     (fun _ => WP.seq (WP.mono (htest _ E₀) fun st ⟨E, r11, cf⟩ => ?_))

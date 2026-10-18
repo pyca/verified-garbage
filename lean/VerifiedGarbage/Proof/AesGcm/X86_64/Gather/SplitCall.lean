@@ -136,8 +136,27 @@ theorem splitPre_of {u : State}
     hp.w_n, hp.w_ad, fR_wrap hp, hp.w_d, hp.w_t, by rw [hsp48]; omega, by rw [hsp48]; omega, hp.rounds, hfl,
     hok⟩
 
+/-- What the call of `vg_aes_gcm_seal_split` needs of the state it is made
+from: the stack, the callee-saved registers and the regions as on entry, the
+memory as on entry but where the code writes, `ctx` and `rounds` in `work`
+(for `splitCtx`), and the slices after the first in the output after it. -/
+structure SCBase (s st : State) : Prop where
+  rsp : st.gpr .rsp = SP s
+  saved : ∀ r ∈ calleeSaved, st.gpr r = s.gpr r
+  rd : st.rd = s.rd
+  wr : st.wr = s.wr
+  frame : Frame (wR s ++ [tR s]) s.mem st.mem
+  ctx : st.mem.readW (W s + BitVec.ofNat 64 0) 64 = K s
+  rounds : st.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi
+  out : bytesAt st.mem (Dst s + BitVec.ofNat 64 (fl s)) (L s - fl s) =
+    gathered 64 s.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s)
+
+omit hp in
+theorem SPBase.toSC {st : State} (h : SPBase s st) : SCBase s st :=
+  ⟨h.rsp, h.saved, h.rd, h.wr, h.frame, h.kept.ctx, h.kept.rounds, h.out⟩
+
 /-- `work`, above the five arguments pushed. -/
-theorem pushedW {st : State} (h : Base s (AL s) 0 st) {p : State}
+theorem pushedW {st : State} (h : SCBase s st) {p : State}
     (hP : p.gpr .rsp = SP s - BitVec.ofNat 64 40) (hrd : p.rd = st.rd)
     (hwr : p.wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr)
     (hf : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem p.mem) :
@@ -151,7 +170,7 @@ theorem pushedW {st : State} (h : Base s (AL s) 0 st) {p : State}
   rw [e88, hrd, hwr, h.rd, h.wr]; exact in_cons (a_in hp (i := 5) (by decide))
 
 /-- `ctx` and `rounds`, from `work` above the five arguments pushed. -/
-theorem splitCtx_ok {st : State} (h : Base s (AL s) 0 st) {p : State}
+theorem splitCtx_ok {st : State} (h : SCBase s st) {p : State}
     (hP : p.gpr .rsp = SP s - BitVec.ofNat 64 40) (hrd : p.rd = st.rd)
     (hwr : p.wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr)
     (hf : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem p.mem) :
@@ -159,15 +178,19 @@ theorem splitCtx_ok {st : State} (h : Base s (AL s) 0 st) {p : State}
       (∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .r11 → q.gpr r = p.gpr r) ∧ q.mem = p.mem ∧ q.rd = p.rd ∧
       q.wr = p.wr := by
   obtain ⟨a₈, e₈⟩ := pushedW hp h hP hrd hwr hf
-  have kp := h.kept.frame hf fun r hr => by
+  have hd : ∀ r ∈ [(⟨SP s - BitVec.ofNat 64 40, 40⟩ : Region)], (kpR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.b_w.symm.sub_left kpR_sub).sub_right (stk_sub (s := s) (by decide) (by decide))
+  have k : ∀ d, d + 8 ≤ 104 → p.mem.readW (W s + BitVec.ofNat 64 d) 64 = st.mem.readW (W s + BitVec.ofNat 64 d) 64 :=
+    fun d hd' => hf.readW (Offset.contains_base _ hd' (by omega)) hd (by decide)
+  have kc : p.mem.readW (W s + BitVec.ofNat 64 0) 64 = K s := by rw [k 0 (by decide)]; exact h.ctx
+  have kr : p.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi := by rw [k 8 (by decide)]; exact h.rounds
   have r₀ : InRegions (p.rd ++ p.wr) (W s + BitVec.ofNat 64 0) 8 := by
     rw [hrd, hwr, h.rd, h.wr]; exact in_cons (w_in' hp (by decide))
   have r₁ : InRegions (p.rd ++ p.wr) (W s + BitVec.ofNat 64 8) 8 := by
     rw [hrd, hwr, h.rd, h.wr]; exact in_cons (w_in' hp (by decide))
   apply WP.of_runBlock
-  refine ⟨_, by simp only [splitCtx, gCtx, gRounds]; xrun [a₈, e₈, r₀, r₁, kp.ctx, kp.rounds], ?_⟩
+  refine ⟨_, by simp only [splitCtx, gCtx, gRounds]; xrun [a₈, e₈, r₀, r₁, kc, kr], ?_⟩
   refine ⟨by simp [gpr_setReg], by simp [gpr_setReg], fun r h₁ h₂ h₃ => by simp [gpr_setReg, h₁, h₂, h₃], ?_, ?_, ?_⟩
   all_goals simp [mem_setReg, rd_setReg, wr_setReg]
 
@@ -195,7 +218,7 @@ structure SplitQ (s st q : State) : Prop where
 
 /-- What the call of `vg_aes_gcm_seal_split` needs, after the push and
 `splitCtx`, and its stack arguments. -/
-theorem splitCallEntry {st : State} (h : SPBase s st) (g : SplitRegs s st) {q : State} (Q : SplitQ s st q) :
+theorem splitCallEntry {st : State} (h : SCBase s st) (g : SplitRegs s st) {q : State} (Q : SplitQ s st q) :
     (splitK M).pre (q.callEntry.withRegions (splitRd s M) (sealWr s)) ∧
       Covers (splitRd s M ++ sealWr s) (q.rd ++ q.wr) ∧ Covers (sealWr s) q.wr ∧
       stackArg (q.callEntry.withRegions (splitRd s M) (sealWr s)) 0 = fb s ∧
@@ -291,7 +314,7 @@ theorem splitCallEntry {st : State} (h : SPBase s st) (g : SplitRegs s st) {q : 
 those after it gathered in the output after it, with `src`, `src_len`,
 `dst`, `len` and `tag` pushed for it: what `vg_aes_gcm_seal_gather` must
 leave. -/
-theorem splitCall_ok (S : SplitFn M) {st : State} (h : SPBase s st) (g : SplitRegs s st) :
+theorem splitCall_ok (S : SplitFn M) {st : State} (h : SCBase s st) (g : SplitRegs s st) :
     WP isa (.frame (.push [.rax, .r10, .r11, .rdi, .rsi]) (.seq (.block splitCtx) (.call S.fn.name S.fn.code))
       (.pop .rax 5)) st (Done s) := by
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
@@ -312,7 +335,7 @@ theorem splitCall_ok (S : SplitFn M) {st : State} (h : SPBase s st) (g : SplitRe
   have hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
     rw [pushed_wr, hsp]; rfl
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.seq (WP.mono
-    (splitCtx_ok hp h.toBase hP (pushed_rd _ _) hPw hpf') fun q ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ => ?_))
+    (splitCtx_ok hp h hP (pushed_rd _ _) hPw hpf') fun q ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ => ?_))
   obtain ⟨hpre, cr, cw, a0, a1, a2, a3, a4⟩ := splitCallEntry hp h g ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩
   have qsp : q.gpr .rsp = SP s - BitVec.ofNat 64 40 := by
     rw [q_g _ (by decide) (by decide) (by decide), hP]
@@ -416,7 +439,7 @@ theorem copySplit_wp (S : SplitFn M) (hL : L s - fl s < 2 ^ 63) {st : State} (h 
   refine WP.seq (WP.mono (gatherCopy_wp s₂ (splitGatherPre hp hL P₂.toBase r9₂ rdi₂ r11₂)) fun s₃ ⟨m₃, k₃⟩ => ?_)
   have B₃ := split_after hp P₂ m₃ k₃
   refine WP.seq (WP.mono (splitArgs_ok hp B₃) fun s₄ ⟨dx, cx, r8, r9, ax, r10, di, si, r11, cs, m, rd, wr⟩ => ?_)
-  exact splitCall_ok hp S (B₃.regs m cs rd wr) ⟨dx, cx, r8, r9, ax, r10, di, si, r11⟩
+  exact splitCall_ok hp S (B₃.regs m cs rd wr).toSC ⟨dx, cx, r8, r9, ax, r10, di, si, r11⟩
 
 end
 
