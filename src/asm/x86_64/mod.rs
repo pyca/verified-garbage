@@ -329,6 +329,9 @@ pub(crate) mod mlkem;
 pub(crate) mod mlkem1024;
 
 #[rustfmt::skip]
+pub(crate) mod mlkem16;
+
+#[rustfmt::skip]
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]

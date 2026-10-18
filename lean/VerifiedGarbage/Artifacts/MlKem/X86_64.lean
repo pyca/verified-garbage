@@ -29,29 +29,27 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 namespace VG.Artifacts.MlKem.X86_64
 
-/-- What a K-PKE function of either parameter set does, calling `calls`. -/
-def kpkeNotes (calls : List String) : List String :=
-  ["The function computes with the code of `vg_mlkem_ntt_avx2`, `vg_mlkem_multiply_ntts_avx2` and \
-    `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 registers, with 16-bit polynomials, and calls " ++
-    ", ".intercalate (calls.map (s!"`{·}`")) ++ " (with the 8 bytes of stack below its return \
-    address). It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of \
-    MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
+/-- What a K-PKE function of either parameter set does. -/
+def kpkeNotes : List String :=
+  ["The function computes with the code of `vg_mlkem_ntt_avx2`, `vg_mlkem_multiply_ntts_avx2`, \
+    `vg_mlkem_inv_ntt_avx2` and its encodings and compressions inlined, on AVX2 registers, with 16-bit \
+    polynomials, and calls nothing. It sets MXCSR to `0x1FBF` once around all its multiplications \
+    (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
+    before returning."]
 
 def artifacts : List Artifact := [
   Spec.MlKem.kpkeKeyGenApi.artifact X86_64.target {
-    notes := kpkeNotes ["vg_mlkem_encode12_avx2"]
+    notes := kpkeNotes
     code := Impl.MlKem.X86_64.kpkeKg Impl.MlKem.X86_64.kem768 .avx2 Impl.MlKem.X86_64.keygenMul16Y
     verified := Proof.MlKem.X86_64.kpkeKg768Y_verified
     features := ["avx", "avx2"] },
   Spec.MlKem.kpkeEncryptApi.artifact X86_64.target {
-    notes := kpkeNotes ["vg_mlkem_decode12_avx2", "vg_mlkem_add_avx2",
-      "vg_mlkem_compress_encode_avx2", "vg_mlkem_decode_decompress_avx2"]
+    notes := kpkeNotes
     code := Impl.MlKem.X86_64.kpkeEnc Impl.MlKem.X86_64.kem768 .avx2 Impl.MlKem.X86_64.encryptMul16Y
     verified := Proof.MlKem.X86_64.kpkeEnc768Y_verified
     features := ["avx", "avx2"] },
   Spec.MlKem.kpkeDecryptApi.artifact X86_64.target {
-    notes := kpkeNotes ["vg_mlkem_decode12_avx2", "vg_mlkem_sub_avx2",
-      "vg_mlkem_compress_encode_avx2", "vg_mlkem_decode_decompress_avx2"]
+    notes := kpkeNotes
     code := Impl.MlKem.X86_64.kpkeDec Impl.MlKem.X86_64.kem768 .avx2 Impl.MlKem.X86_64.Kpke16.dmInnerY
     verified := Proof.MlKem.X86_64.kpkeDec768Y_verified
     features := ["avx", "avx2"] },
@@ -105,17 +103,6 @@ def artifacts : List Artifact := [
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .sse 3
     verified := Proof.MlKem.X86_64.decMulSse3_verified },
-  Spec.MlKem.decryptMulApi.artifact X86_64.target {
-    suffix := "_avx2"
-    notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
-        `vg_mlkem_multiply_ntts_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 registers: the `NTT`s \
-        first, as 16-bit words in the order the products read them, then each output's products summed in \
-        16-bit words and its `NTT⁻¹`. It sets MXCSR to `0x1FBF` once around all its multiplications \
-        (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."]
-    code := Impl.MlKem.X86_64.decryptMulY 3
-    verified := Proof.MlKem.X86_64.decMulY3_verified
-    features := ["avx", "avx2"] },
   Spec.MlKem.keygenMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
         `vg_mlkem_add` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once around all its \
@@ -123,15 +110,6 @@ def artifacts : List Artifact := [
         caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .sse 3
     verified := Proof.MlKem.X86_64.kgMulSse3_verified },
-  Spec.MlKem.keygenMulApi.artifact X86_64.target {
-    suffix := "_avx2"
-    notes := ["The function computes with the code of `vg_mlkem_ntt_avx2` and \
-        `vg_mlkem_multiply_ntts_avx2` inlined, on AVX2 registers, summing each row's products in 16-bit \
-        words. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of \
-        MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
-    code := Impl.MlKem.X86_64.keygenMul .avx2 3
-    verified := Proof.MlKem.X86_64.kgMulAvx3_verified
-    features := ["avx", "avx2"] },
   Spec.MlKem.addApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.add
     verified := Proof.MlKem.X86_64.add_verified },
@@ -144,13 +122,6 @@ def artifacts : List Artifact := [
         multiplications."]
     code := Impl.MlKem.X86_64.addAvx2
     verified := Proof.MlKem.X86_64.addY_verified
-    features := ["avx", "avx2"] },
-  Spec.MlKem.subApi.artifact X86_64.target {
-    suffix := "_avx2"
-    notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
-        multiplications."]
-    code := Impl.MlKem.X86_64.subAvx2
-    verified := Proof.MlKem.X86_64.subY_verified
     features := ["avx", "avx2"] },
   Spec.MlKem.sampleNTTApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.sampleNTT
@@ -169,15 +140,6 @@ def artifacts : List Artifact := [
         `*b`). It has no multiplications."]
     code := Impl.MlKem.X86_64.decode12Avx2
     verified := Proof.MlKem.X86_64.decode12Y_verified
-    features := ["avx", "avx2"] },
-  Spec.MlKem.encode12Api.artifact X86_64.target {
-    suffix := "_avx2"
-    notes := ["The function computes on 32 coefficients at a time in AVX2 registers: it packs them into \
-        words, forms each pair's 24-bit value with shifts and an addition, gathers the bytes with `vpshufb` \
-        and `vpermd`, and stores the 48 bytes as 32 and 16, so that it writes only the 384 bytes of `*out`. \
-        It has no multiplications."]
-    code := Impl.MlKem.X86_64.encode12Avx2
-    verified := Proof.MlKem.X86_64.encode12Y_verified
     features := ["avx", "avx2"] },
   Spec.MlKem.cbd2Api.artifact X86_64.target {
     code := Impl.MlKem.X86_64.cbd2
