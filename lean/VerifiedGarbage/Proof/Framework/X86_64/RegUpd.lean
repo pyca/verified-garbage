@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
-# x86-64: reading a state after a write, for symbolic execution
+# x86-64: reading a state after a write, for symbolic execution (measurement: DO NOT MERGE)
 
 Unfolding `State.setReg` (or `setFlags`, `arithFlags`, `setXmm`, `setV`)
 turns the state into a structure of functions
