@@ -46,6 +46,16 @@ def block (is : List Instr) (m : Machine) : Except String Machine := do
     state := { next with gpr := fun r => rs[r.ctorIdx]!, mem := memory words }
   return ⟨state, words⟩
 
+/-- Materialize words written by the model's call or frame push, just as
+`block` materializes instruction stores. -/
+def pushedMachine (before : Machine) (after : State) : Machine :=
+  let low := (after.gpr .esp).toNat
+  let count := ((before.state.gpr .esp).toNat - low) / 4
+  let words := (List.range count).foldl (fun ws i =>
+    let a := BitVec.ofNat 64 (low + 4 * i)
+    ws.insert (low / 4 + i) (after.mem.readW a 32)) before.words
+  ⟨{ after with mem := memory words }, words⟩
+
 /-- Enough steps for every loop of the tests. -/
 def fuel : Nat := 1000000000
 
@@ -60,8 +70,16 @@ def evaluate : Nat → Prog isa → Machine → Except String Machine
     let next ← evaluate fuel body m
     let some again := isa.eval c next.state | throw "undefined loop condition"
     if again then evaluate fuel (.loop body c) next else pure next
-  | _, .call .., _ => .error "unexpected call"
-  | _, .frame .., _ => .error "unexpected frame"
+  | fuel + 1, .call _ body, m => do
+    let some entered := isa.call m.state | throw "call fault"
+    let result ← evaluate fuel body (pushedMachine m entered)
+    let some returned := isa.ret entered result.state | throw "return fault"
+    pure ⟨returned, result.words⟩
+  | fuel + 1, .frame push body pop, m => do
+    let some entered := isa.push push m.state | throw "frame push fault"
+    let result ← evaluate fuel body (pushedMachine m entered)
+    let some returned := isa.pop pop entered result.state | throw "frame pop fault"
+    pure ⟨returned, result.words⟩
 
 def put (words : Words) (address count value : Nat) : Words :=
   (List.range count).foldl (fun ws i => ws.insert (address / 4 + i)
