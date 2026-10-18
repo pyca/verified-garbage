@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
@@ -152,6 +153,9 @@ structure Arith where
   sub : Prog isa
   cbdN : String
   cbd : Prog isa
+  /-- `cbd` with 16-bit coefficients (`vg_mlkem16_cbd2`). -/
+  cbd16N : String
+  cbd16 : Prog isa
   dec12N : String
   dec12 : Prog isa
   enc12N : String
@@ -166,12 +170,14 @@ structure Arith where
 
 def Arith.sse : Arith :=
   ⟨"vg_mlkem_inv_ntt", X86_64.nttInv,
-    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12,
+    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem16_cbd2", cbd2_16,
+    "vg_mlkem_decode12", decode12,
     "vg_mlkem_encode12", encode12, .sse, "", .base, encryptMul .sse, decryptMul .sse⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_inv_ntt_avx2",
     nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
+    "vg_mlkem16_cbd2_avx2", cbd2_16Avx2,
     "vg_mlkem_decode12_avx2", decode12Avx2, "vg_mlkem_encode12_avx2", encode12Avx2, .avx2, "_avx2", .avx2,
     encryptMulY, decryptMulY⟩
 

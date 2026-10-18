@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
@@ -56,6 +57,7 @@ structure ArithOk (A : Arith) : Prop where
   add : CalleeOk (accK Spec.MlKem.add) A.add
   sub : CalleeOk (accK Spec.MlKem.sub) A.sub
   cbd : CalleeOk cbd2K A.cbd
+  cbd16 : CalleeOk Cbd16.cbd2_16K A.cbd16
   dec12 : CalleeOk decode12K A.dec12
   enc12 : CalleeOk encode12K A.enc12
   dm : ∀ k, k = 3 ∨ k = 4 → CalleeOk (decMulK k) (A.decMul k)
@@ -70,6 +72,8 @@ theorem ArithOk.sse : ArithOk .sse where
   sub := ⟨sub_correct, sub_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
   cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  cbd16 := ⟨cbd2_16_correct, cbd2_16_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
   dec12 := ⟨decode12_correct, decode12_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
@@ -102,6 +106,8 @@ theorem ArithOk.avx2 : ArithOk .avx2 where
   sub := ⟨subY_correct, subY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
   cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  cbd16 := ⟨cbd2_16Y_correct, cbd2_16Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
   dec12 := ⟨decode12Y_correct, decode12Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
