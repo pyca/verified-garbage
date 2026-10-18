@@ -47,7 +47,7 @@ theorem gPre {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) : GPre sl (gp p
   have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have hX8 : 256 ≤ slot p.wx 8 := by unfold slot hdrBytes; omega
   dsimp only [GPre, gp]
-  exact ⟨hg, by omega, by omega, by omega, hN.n, hN.inv, hodd, hN1, hN.r2, hN.one, hsl, hslv, hws.hdr.hw,
+  exact ⟨hg, by omega, by omega, by omega, hN.n, hN.inv, hodd, hN1, hN.r2lt, hN.one, hsl, hslv, hws.hdr.hw,
     (hs.sub (o := p.o) (n := slot p.wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega), by omega, hwx⟩
 
 /-- After `gPow`. -/
@@ -64,8 +64,8 @@ theorem gPow_u1 (M : Mont) {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) :
   have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have hX8 : 256 ≤ slot p.wx 8 := by unfold slot hdrBytes; omega
   have hoL : p.o + slot p.wx 8 ≤ 2 ^ 64 := by omega
-  refine WP.mono (gPow_ok M hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 hN.r2 hN.one hsl hslv
-    hws.hdr.hw ((hs.sub (o := p.o) (n := slot p.wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega))
+  refine WP.mono (gPow_ok M (ok := False) hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 False.elim hN.r2lt
+    hN.one hsl hslv hws.hdr.hw ((hs.sub (o := p.o) (n := slot p.wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega))
     (by omega) hwx) fun s₁ ⟨hg₁, _, _, f₁, _⟩ => ?_
   have f₁' : Frm p.B (gRanges p.w) s.mem s₁.mem := f₁
   have fx : Frm p.B (gRanges p.w ++ [xRange p.o p.wx]) s.mem s₁.mem :=

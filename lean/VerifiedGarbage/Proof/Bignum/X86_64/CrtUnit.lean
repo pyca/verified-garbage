@@ -81,7 +81,8 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   simp only [List.append_assoc]
   -- `G`.
   refine wp_seqs_append (by simp [Crt.gPow]) (by simp) ?_
-  refine WP.mono (gPow_ok M hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 hN.r2 hN.one hsl hslv
+  refine WP.mono (gPow_ok M (ok := True) hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 (fun _ => hN.r2) hN.r2lt
+    hN.one hsl hslv
     hws.hdr.hw (by
       have := (hs.sub (o := o) (n := slot wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega)
       exact this) (by omega) hwx) fun s₁ ⟨hg₁, hlt₁, hG₁, f₁, k₁⟩ => ?_
@@ -154,11 +155,11 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   · exact hX₃.of_outside (by rw [hm]; exact ho₄) (by decide) (by decide) (by decide) (by omega)
       (by have := hc₃.good.scr.nowrap; omega)
   · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hlt₁
-  · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hG₁
+  · rw [hbw _ _ (by have := slot_le (w := w) (show Public.aY < 8 by decide); omega), hYn]; exact hG₁ trivial
   · rw [hY]
     have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
     have e : wv s₂.mem B (slot w Public.aY) w % X = 1 * (2 ^ (64 * wx)) ^ (nChunks w wx + 1) % X := by
-      rw [hYn, ← Nat.mod_mod_of_dvd _ hdvd, hG₁, Nat.mod_mod_of_dvd _ hdvd, Nat.one_mul, ← Nat.pow_mul]
+      rw [hYn, ← Nat.mod_mod_of_dvd _ hdvd, hG₁ trivial, Nat.mod_mod_of_dvd _ hdvd, Nat.one_mul, ← Nat.pow_mul]
     have := VG.Proof.Bignum.redc_cancel hR (hXc.trans e)
     rwa [Nat.one_mul] at this
   · have := hdr_lt_slot wx Public.aY (show sMaskX < 32 by decide)

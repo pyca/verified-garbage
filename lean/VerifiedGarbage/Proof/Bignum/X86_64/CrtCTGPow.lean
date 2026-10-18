@@ -28,7 +28,7 @@ abbrev GPub.L (p : GPub) : Lay := ⟨p.B, p.Z, p.w, p.minv⟩
 
 /-- After the top `j` bits of `D` in `gPow`'s loop. -/
 def GLoop (p : GPub) (j : Nat) (t : State) : Prop :=
-  ∃ s₀, GInv s₀ p.B p.Z p.w p.minv p.N (gD p.w p.wx) (gD p.w p.wx).log2 j t ∧ slot p.w 8 ≤ p.Z ∧ 2 ≤ p.w ∧ p.w < 2
+  ∃ s₀, GInv s₀ p.B p.Z p.w p.minv p.N (gD p.w p.wx) (gD p.w p.wx).log2 False j t ∧ slot p.w 8 ≤ p.Z ∧ 2 ≤ p.w ∧ p.w < 2
       ^ 30 ∧
     p.N % 2 = 1 ∧ 1 < p.N ∧ 1 ≤ p.wx ∧ p.wx ≤ p.w
 
@@ -181,9 +181,9 @@ theorem GSl.good {sl : Nat} {p : GPub} {t : State} (h : GSl sl p t) :
   exact ⟨⟨hs.1.scr.congr k.2.2, (k.gpr (by decide)).trans hs.1.rdi,
     by rw [hm]; exact Hdr.store hs.1.hdr (by decide) (by decide) _⟩, hZ⟩
 
-theorem GPre.hyp {sl : Nat} {p : GPub} {s : State} (h : GPre sl p s) : GHyp s p.B p.Z p.w p.minv p.N p.wx := by
-  obtain ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2, hone, _, _, _, _, hwx, hwx'⟩ := h
-  exact ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2, hone, hwx, hwx'⟩
+theorem GPre.hyp {sl : Nat} {p : GPub} {s : State} (h : GPre sl p s) : GHyp s p.B p.Z p.w p.minv p.N p.wx False := by
+  obtain ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2lt, hone, _, _, _, _, hwx, hwx'⟩ := h
+  exact ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, False.elim, hr2lt, hone, hwx, hwx'⟩
 
 /-- `GSl` past a step that keeps the memory and the registers but `rs`. -/
 theorem GSl.step {sl : Nat} {p : GPub} {t t' : State} {rs : List Reg} (h : GSl sl p t) (hm : t'.mem = t.mem)
@@ -274,7 +274,7 @@ theorem gTop_ct (sl : Nat) : RelCT isa (Two (GHd sl)) (.seq topBit (.block [.sto
 /-- `Y := R`: the loop's start. -/
 theorem gStart_ok (M : Mont) {sl : Nat} {p : GPub} {t : State} (h : GTop sl p t) :
     WP isa (M.mm Public.aY Public.aR2 Public.aOne) t fun t' => 0 < (gD p.w p.wx).log2 + 1 ∧ GLoop p 0 t' := by
-  obtain ⟨s, ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2', hone, _, _, _, _, hwx, hwx'⟩, hg₃, hm₃', k₃⟩ := h
+  obtain ⟨s, ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, _, hone, _, _, _, _, hwx, hwx'⟩, hg₃, hm₃', k₃⟩ := h
   have hnw := hg.scr.nowrap
   have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega
   have hR : Nat.Coprime (2 ^ (64 * p.w)) p.N := VG.Proof.Bignum.coprime_pow2 hodd _
@@ -288,12 +288,8 @@ theorem gStart_ok (M : Mont) {sl : Nat} {p : GPub} {t : State} (h : GTop sl p t)
         exact hinv)
     (by rw [hwv₃ Public.aOne (by decide), hone]; exact hN1))
     fun t₄ ⟨hg₄, hn₄, hinv₄, hlt₄, hm₄, ha₄, k₄⟩ => ⟨by omega, s, ?_, hZ, hw, hw30, hodd, hN1, hwx, hwx'⟩
-  rw [hwv₃ Public.aR2 (by decide), hwv₃ Public.aOne (by decide), hone, Nat.mul_one] at hm₄
-  have hY₄ : wv t₄.mem p.B (slot p.w Public.aY) p.w % p.N =
-      2 ^ ((gD p.w p.wx) / 2 ^ ((gD p.w p.wx).log2 + 1 - 0)) * 2 ^ (64 * p.w) % p.N := by
-    rw [Nat.sub_zero, Nat.div_eq_of_lt Nat.lt_log2_self, Nat.pow_zero, Nat.one_mul]
-    apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm₄, hr2']
+  have hY₄ : False → wv t₄.mem p.B (slot p.w Public.aY) p.w % p.N =
+      2 ^ ((gD p.w p.wx) / 2 ^ ((gD p.w p.wx).log2 + 1 - 0)) * 2 ^ (64 * p.w) % p.N := False.elim
   have hfr₄ : Frm p.B (gRanges p.w) s.mem t₄.mem := by
     have o1 := writeW_outside s.mem p.B (BitVec.ofNat 64 (gD p.w p.wx)) (d := 8 * sD) (by unfold sD sFn; omega)
     have o2 := writeW_outside (s.mem.writeW (off p.B (8 * sD)) (BitVec.ofNat 64 (gD p.w p.wx))) p.B

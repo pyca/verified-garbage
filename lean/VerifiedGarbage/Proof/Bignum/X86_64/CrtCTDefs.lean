@@ -130,7 +130,7 @@ def GPre (sl : Nat) (p : GPub) (s : State) : Prop :=
     wv s.mem p.B (slot p.w Public.aN) p.w = p.N ∧
     ((word s.mem p.B (slot p.w Public.aN)).toNat * p.minv.toNat + 1) % 2 ^ 64 = 0 ∧
     p.N % 2 = 1 ∧ 1 < p.N ∧
-    wv s.mem p.B (slot p.w Public.aR2) p.w % p.N = 2 ^ (64 * p.w) * 2 ^ (64 * p.w) % p.N ∧
+    wv s.mem p.B (slot p.w Public.aR2) p.w < p.N ∧
     wv s.mem p.B (slot p.w Public.aOne) p.w = 1 ∧ sl < 32 ∧ word s.mem p.B (8 * sl) = p.Bx ∧
     word s.mem p.Bx (8 * sW) = BitVec.ofNat 64 p.wx ∧ InRegions (s.rd ++ s.wr) (off p.Bx (8 * sW)) 8 ∧
     1 ≤ p.wx ∧ p.wx ≤ p.w
