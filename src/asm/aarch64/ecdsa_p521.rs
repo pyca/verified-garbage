@@ -9484,19 +9484,19 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #2800, lsl #0
 movz x3, #2800, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #3160, lsl #0
 movz x3, #3160, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1144, lsl #0
 movz x2, #1792, lsl #0
 movz x3, #1792, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1072, lsl #0
@@ -9837,7 +9837,7 @@ mov v29.d[0], x30
 movz x1, #1504, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1504]
@@ -10439,7 +10439,7 @@ mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1720, lsl #0
 movz x3, #1720, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1216, lsl #0
@@ -10528,7 +10528,7 @@ mov v29.d[0], x30
 movz x1, #2080, lsl #0
 movz x2, #2008, lsl #0
 movz x3, #2008, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1504]
@@ -10946,7 +10946,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11012,7 +11012,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11078,7 +11078,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11144,7 +11144,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11210,7 +11210,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11276,7 +11276,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11342,7 +11342,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11408,7 +11408,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1864, lsl #0
 movz x3, #1864, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -11873,7 +11873,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1432, lsl #0
 movz x3, #1432, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1864, lsl #0
@@ -12061,7 +12061,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1936, lsl #0
 movz x3, #1936, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -12079,7 +12079,7 @@ mov v29.d[0], x30
 movz x1, #1072, lsl #0
 movz x2, #2080, lsl #0
 movz x3, #2080, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1072]
@@ -12595,13 +12595,13 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1432, lsl #0
 movz x3, #1432, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1360, lsl #0
 movz x3, #1360, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1792]
@@ -13086,7 +13086,7 @@ mov v29.d[0], x30
 movz x1, #1072, lsl #0
 movz x2, #1936, lsl #0
 movz x3, #1936, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1072]
@@ -13293,7 +13293,7 @@ mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1792, lsl #0
 movz x3, #1792, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1792]
@@ -13549,13 +13549,13 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1216, lsl #0
 movz x3, #1216, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1144, lsl #0
 movz x3, #1144, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1864, lsl #0
@@ -14034,7 +14034,7 @@ mov v29.d[0], x30
 movz x1, #1432, lsl #0
 movz x2, #1432, lsl #0
 movz x3, #1432, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1432]
@@ -14170,7 +14170,7 @@ mov v29.d[0], x30
 movz x1, #1288, lsl #0
 movz x2, #1936, lsl #0
 movz x3, #1936, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1288]
@@ -14377,7 +14377,7 @@ mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1792, lsl #0
 movz x3, #1792, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1792]
@@ -14927,7 +14927,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1432, lsl #0
 movz x3, #1432, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1864, lsl #0
@@ -15115,7 +15115,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1936, lsl #0
 movz x3, #1936, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
@@ -15133,7 +15133,7 @@ mov v29.d[0], x30
 movz x1, #1072, lsl #0
 movz x2, #2080, lsl #0
 movz x3, #2080, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1072]
@@ -15649,13 +15649,13 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1432, lsl #0
 movz x3, #1432, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1360, lsl #0
 movz x3, #1360, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1792]
@@ -16140,7 +16140,7 @@ mov v29.d[0], x30
 movz x1, #1072, lsl #0
 movz x2, #1936, lsl #0
 movz x3, #1936, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1072]
@@ -16347,7 +16347,7 @@ mov v29.d[0], x30
 movz x1, #1792, lsl #0
 movz x2, #1792, lsl #0
 movz x3, #1792, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 movz x7, #0, lsl #0
 ldr x8, [x0, #1792]
@@ -16662,7 +16662,7 @@ mov v29.d[0], x30
 movz x1, #1720, lsl #0
 movz x2, #1648, lsl #0
 movz x3, #1648, lsl #0
-bl {vg_p521_mul_mod_p}
+bl {vg_p521_sqr_mod_p}
 umov x30, v29.d[0]
 mov v29.d[0], x30
 movz x1, #1216, lsl #0
@@ -19881,6 +19881,7 @@ ret
         vg_p521_mul_mod_n = sym super::p521_mont::vg_p521_mul_mod_n,
         vg_p521_inv_mod_n = sym super::p521_inverse::vg_p521_inv_mod_n,
         vg_p521_mul_mod_p = sym super::p521_mont::vg_p521_mul_mod_p,
+        vg_p521_sqr_mod_p = sym super::p521_mont::vg_p521_sqr_mod_p,
         VG_P521_COMB = sym super::consts::VG_P521_COMB,
     )
 }

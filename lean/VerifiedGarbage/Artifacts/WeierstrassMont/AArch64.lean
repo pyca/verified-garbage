@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqr521Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery products modulo the curves' `p` and `n` on AArch64 -/
@@ -26,6 +27,13 @@ def notesSqr384 : List String := ["The function is the product modulo P-384's `p
   the product, its schedule adapted from s2n-bignum's `bignum_montsqr_p384_alt` (Apache-2.0 OR ISC \
   OR MIT-0): the fifteen products of distinct words once (a `mul` and `umulh` row for each word), the \
   sum doubled, then the six squares of the words added."]
+
+/-- The dedicated Mersenne-prime square uses every off-diagonal product once. -/
+def notesSqr521 : List String := ["The function loads all nine input words before writing the output, \
+  computes the symmetric square in registers, folds at bit 521, and conditionally corrects to \
+  the canonical field residue. A cyclic 55-bit rotation supplies the Montgomery factor. \
+  Callee-saved registers are kept in vector lanes; the output pointer is duplicated in v22. \
+  The function has no stack frame and permits the output to alias the input."]
 
 /-- How the functions work. -/
 def notes : List String := ["The function zero-extends the offsets, saves the callee-saved \
@@ -53,6 +61,10 @@ def artifacts : List Artifact := [
     notes := notesSqr384
     code := sqrFn384
     verified := p384p_sqr_verified },
+  p521p.sqrApi.artifact AArch64.target {
+    notes := notesSqr521
+    code := sqrFn521
+    verified := p521p_sqr_verified },
   p521p.mulApi.artifact AArch64.target {
     notes := notes
     code := mulFn p521p.k p521p.m

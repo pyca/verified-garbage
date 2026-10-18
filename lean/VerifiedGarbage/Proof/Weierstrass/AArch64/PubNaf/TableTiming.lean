@@ -106,8 +106,16 @@ theorem store_relCT {K : WinCfg} {base : Addr} {size m : Nat} {C : Curve}
     · simpa only [F, qxy, ite_false, ite_true] using ht.2.1
     · simpa only [F, qxz, qyz, ite_false] using ht.2.2
 
-/-- The pieces of the table whose timing taint tracking checks, and the
-registers its field programs do not write. -/
+/-- A public control register may be saved and restored inside a called kernel. -/
+theorem relCT_keepGprExec {P Q : State → State → Prop} {c : Prog isa} {r : Reg} {v : BitVec 64}
+    (h : RelCT isa P c Q) (hk : ∀ {s t tr}, Exec isa c s tr t → t.gpr r = s.gpr r) :
+    RelCT isa (fun s t => P s t ∧ s.gpr r=v ∧ t.gpr r=v) c
+      (fun s t => Q s t ∧ s.gpr r=v ∧ t.gpr r=v) := by
+  intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et
+  obtain ⟨he,hq⟩ := h _ _ _ _ _ _ hp es et
+  exact ⟨he,hq,(hk es).trans ps,(hk et).trans pt⟩
+
+/-- Timing certificates and semantic preservation of table control registers. -/
 structure TableChecks (K : WinCfg) : Prop where
   copyP : FieldCT (.block (copyPt K.M.n K.R K.P))
   ptr : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
@@ -120,8 +128,8 @@ structure TableChecks (K : WinCfg) : Prop where
   zaddu : FieldCT (fprogB K.M (zadduOps K))
   bump : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x19, .x20]))
     (.block [.addImm .x .x20 .x20 (stride K), decCounter])
-  keepD : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (fprogB K.M (dbluOps K)), clobbers i r = false
-  keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (fprogB K.M (zadduOps K)), clobbers i r = false
+  keepD : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr}, Exec isa (fprogB K.M (dbluOps K)) s tr t → t.gpr r = s.gpr r
+  keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr}, Exec isa (fprogB K.M (zadduOps K)) s tr t → t.gpr r = s.gpr r
 
 /-- The slots the construction reads after `m` entries. -/
 def tblLive (K : WinCfg) (m : Nat) : List Nat :=
@@ -209,9 +217,9 @@ theorem tableStepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       rcases hi with rfl | rfl | rfl | rfl | rfl <;> simp [tblLive, coZσ, jacCoords]
     exact (coZ_relCT hL hp (coZσ_ren hW) CoZTable.zaddu_out CoZTable.zaddu_reads hv hc.zaddu).mono
       (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
-  have add' := relCT_keepGpr (r := .x19) (v := BitVec.ofNat 64 (8 - m))
-    (relCT_keepGpr (r := .x20) (v := off base (stride K * m)) add (hc.keep .x20 (by simp)) (by decide))
-    (hc.keep .x19 (by simp)) (by decide)
+  have add' := relCT_keepGprExec (r := .x19) (v := BitVec.ofNat 64 (8 - m))
+    (relCT_keepGprExec (r := .x20) (v := off base (stride K * m)) add (hc.keep .x20 (by simp)))
+    (hc.keep .x19 (by simp))
   rw [tableStep]
   refine RelCT.seq (add'.mono (fun _ _ ⟨h, a, b, c, d⟩ => ⟨⟨h, a, b⟩, c, d⟩) (fun _ _ h => h)) ?_
   apply RelCT.block_append
@@ -376,9 +384,9 @@ theorem dblu_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       · exact Or.inl rfl
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
-  exact (relCT_keepGpr (r := .x19) (v := BitVec.ofNat 64 7)
-    (relCT_keepGpr (r := .x20) (v := off base (stride K * 1)) d (hc.keepD .x20 (by simp)) (by decide))
-    (hc.keepD .x19 (by simp)) (by decide)).mono (fun _ _ ⟨h, a, b, c, d⟩ => ⟨⟨h, a, b⟩, c, d⟩)
+  exact (relCT_keepGprExec (r := .x19) (v := BitVec.ofNat 64 7)
+    (relCT_keepGprExec (r := .x20) (v := off base (stride K * 1)) d (hc.keepD .x20 (by simp)))
+    (hc.keepD .x19 (by simp))).mono (fun _ _ ⟨h, a, b, c, d⟩ => ⟨⟨h, a, b⟩, c, d⟩)
     (fun _ _ ⟨⟨h, a, b⟩, c, d⟩ => ⟨h, a, b, c, d⟩)
 
 /-- The table's construction, for the values it computes: two runs from the

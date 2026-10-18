@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedTiming
@@ -31,7 +36,7 @@ open VG.Impl.Weierstrass.AArch64
 
 /-- Constant time for the registers `rs`, by taint tracking. -/
 macro "reg_ct" rs:term : tactic => `(tactic|
-  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs $rs) (fun _ _ _ _ h => h) (by taint_decide))
+  exact VectorTaint.constantTime (Taint.ofRegs $rs) (fun _ _ _ _ h => h) (by taint_decide))
 
 /-- The window method's slots, which the public NAF uses. -/
 abbrev Kq := packedQ p521
@@ -58,13 +63,19 @@ theorem keep_of {c : Prog isa}
   · exact hh.1
   · exact hh.2
 
-theorem dblu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (fprogB Kq.M (PubNaf.dbluOps Kq)),
-    clobbers i r = false :=
-  keep_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+theorem dblu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr},
+    Exec isa (fprogB Kq.M (PubNaf.dbluOps Kq)) s tr t → t.gpr r = s.gpr r := by
+  intro r hr s t tr he
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl <;>
+    exact gpr_top (by decide) he (by decide +kernel) (by decide +kernel)
 
-theorem zaddu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (fprogB Kq.M (PubNaf.zadduOps Kq)),
-    clobbers i r = false :=
-  keep_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+theorem zaddu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr},
+    Exec isa (fprogB Kq.M (PubNaf.zadduOps Kq)) s tr t → t.gpr r = s.gpr r := by
+  intro r hr s t tr he
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl <;>
+    exact gpr_top (by decide) he (by decide +kernel) (by decide +kernel)
 
 theorem window_checks : PubNaf.WindowChecks Kq where
   table := {
