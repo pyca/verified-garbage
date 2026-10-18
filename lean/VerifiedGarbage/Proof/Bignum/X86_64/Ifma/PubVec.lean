@@ -192,7 +192,7 @@ theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gp
   have hp : ∀ p < l.nl, p = 0 := fun p hp => by omega
   have h0 : ∀ c, l.D * 0 + c = c := fun c => by rw [Nat.mul_zero, Nat.zero_add]
   have hM : val52 l s.mem B oM = M := hm.val
-  refine WP.mono (ammCoreSpecN_ok hl.amm (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
+  refine WP.mono (ammCoreSpecN_ok hl.amm (ammCore_core hl.amm) (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega) (by omega)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega)

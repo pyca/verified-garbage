@@ -321,4 +321,13 @@ theorem ammCoreU_ok {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat 
   · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₃ r r1, g₂ r r1, k₁.gpr r r1,
       RegUpd.gpr_setReg_of_ne _ _ r6]
 
+theorem ammCoreU_core : CoreOk lay2048 (ammCoreU lay2048) := fun e hB hs => ammCoreU_ok e hB hs
+
+/-- The multiplication of each layout. -/
+theorem ammMul_core {l : Lay} (hl : LayOk l) : CoreOk l (ammMul l) := by
+  unfold ammMul
+  split
+  · rename_i h; subst h; exact ammCoreU_core
+  · exact ammCore_core hl.amm
+
 end VG.Proof.Bignum.X86_64.Ifma

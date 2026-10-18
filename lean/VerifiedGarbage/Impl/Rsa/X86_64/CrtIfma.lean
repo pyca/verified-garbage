@@ -297,11 +297,14 @@ def ammCore : Prog isa :=
           .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
         ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 
+/-- The multiplication of a layout: with the look-ahead for 2048 bits. -/
+def ammMul : Prog isa := if l = lay2048 then ammCoreU l else ammCore l
+
 /-- `[o] := [a] [b] 2^(-52 S)`, the offsets in `p`'s region. -/
 def amm (o a b : Nat) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
       .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))])
-    (ammCore l)
+    (ammMul l)
 
 /-! ## Moving numbers between the layouts -/
 
@@ -462,7 +465,7 @@ to the next entry, `ZF` after the last. -/
 def convTabBody : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))])
     (.seq (.ite .b (.block (convSetup l)) (.block (tabSetup l)))
-      (.seq (ammCore l)
+      (.seq (ammMul l)
         (.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.NB)))])
           (.seq (.ite .e (.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX)) (.block []))
             (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
@@ -513,7 +516,7 @@ def window : List (Prog isa) :=
           [.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (l.w + 1)))]]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
-        (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
+        (.seq (ammMul l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
 /-- The exponentiations, a digit of each exponent (`r13`, from the first
 that holds a bit of it, `k0`) at a time, and after the last,
