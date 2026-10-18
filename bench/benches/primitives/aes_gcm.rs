@@ -506,10 +506,11 @@ fn tls_records(c: &mut Criterion) {
     /// are), since the end of a record costs differently from its blocks;
     /// and records of 16, 64 and 255 bytes with their content type (alerts,
     /// handshake messages, small requests), shorter than the messages the
-    /// library computes its keys' powers for.
-    const TLS_SIZES: [usize; 18] = [
-        15, 63, 254, 255, 256, 257, 1023, 1024, 1025, 4095, 4096, 4097, 9999, 10000, 10001, 16383,
-        16384, 16385,
+    /// library computes its keys' powers for; and a 2048-byte record, where
+    /// VAES's `seal` changes paths.
+    const TLS_SIZES: [usize; 19] = [
+        15, 63, 254, 255, 256, 257, 1023, 1024, 1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001,
+        16383, 16384, 16385,
     ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
