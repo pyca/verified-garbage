@@ -21,9 +21,14 @@ namespace VG.Proof.Bignum.X86_64.Ifma
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Impl.Rsa.X86_64.CrtIfma
-open VG.Proof.Bignum.X86_64.AmmSym (G Ctx Keeps)
+open VG.Proof.Bignum.X86_64.AmmSym (G Ctx Keeps mad_lo lo_comm)
 
 /-! ## The start -/
+
+theorem R2048 : lay2048.R = 5 := rfl
+theorem S2048 : lay2048.S = 20 := rfl
+theorem nl2048 : lay2048.nl = 2 := rfl
+
 
 def b0U (p : Nat) : T := .bc (.lane0 (.ld .r9 (lay2048.D * p)))
 def s0U (p : Nat) : T := .mad false (.reg (regOf lay2048 p 0 0)) (b0U p) (ldA lay2048 p 0)
@@ -43,11 +48,62 @@ def checkStartU (p : Nat) : Bool :=
 
 theorem checkStartU_2048 : ∀ p < lay2048.nl, checkStartU p = true := by decide +kernel
 
+theorem run_ammStartU {p : Nat} (hp : p < lay2048.nl) :
+    ∃ σ, ESym.init.run (limU lay2048) (ammStartU lay2048 p) = some σ ∧ ∀ r < 32, σ.reg r = expStartU p r := by
+  have h := checkStartU_2048 p hp
+  unfold checkStartU at h
+  split at h
+  · rename_i σ hσ
+    refine ⟨σ, hσ, fun r hr => ?_⟩
+    simp only [List.all_eq_true, List.mem_range] at h
+    exact T.eq_of_beq (h r hr)
+  · cases h
+
+theorem regsS2048 (p : Nat) :
+    regOf lay2048 p 0 0 = 5 * p + (0 + 0) % 5 ∧ ubN lay2048 p 0 = 10 + 8 * p + 0 ∧
+      uuN lay2048 p 0 = 10 + 8 * p + 2 + 0 ∧ utN lay2048 p = 10 + 8 * p + 4 :=
+  ⟨by simp only [regOf, show lay2048.R = 5 from rfl], rfl, rfl, rfl⟩
+
+/-- Lane `p`'s start: `b₀` (`b`), role 0 plus `lo(a₀ b₀)`, and `u₀`. -/
+theorem ammStartU_ok {s : State} {p : Nat} (hp : p < 2) {a m : Nat → Nat} {k b : Nat}
+    (hc : Ctx (limU lay2048) s) (h0 : ∀ t < 4, qv s (vreg (regOf lay2048 p 0 0)) t = 0)
+    (ina : ∀ t < 4, s.mem.readW (s.gpr .r8 + BitVec.ofNat 64 (lay2048.D * p + 32 * 0 + 8 * t)) 64 =
+      BitVec.ofNat 64 (a (0 + lay2048.R * t)))
+    (ink : s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (lay2048.D * p + lay2048.oK0 + 8 * 0)) 64 = BitVec.ofNat 64 k)
+    (inb : s.mem.readW (s.gpr .r9 + BitVec.ofNat 64 (lay2048.D * p)) 64 = BitVec.ofNat 64 b) :
+    WP isa (.block (ammStartU lay2048 p)) s fun s' =>
+      (∀ t < 4, qv s' (vreg (regOf lay2048 p 0 0)) t = BitVec.ofNat 64 (0 + lo (a (0 + lay2048.R * t)) b)) ∧
+      (∀ t < 4, qv s' (vreg (ubN lay2048 p 0)) t = BitVec.ofNat 64 b) ∧
+      (∀ t < 4, qv s' (vreg (uuN lay2048 p 0)) t = BitVec.ofNat 64 (stepU ⟨a, m, k⟩ (fun _ => 0) b)) ∧
+      (∀ r < 32, r ≠ regOf lay2048 p 0 0 → r ≠ ubN lay2048 p 0 → r ≠ utN lay2048 p → r ≠ uuN lay2048 p 0 →
+        ∀ t < 4, qv s' (vreg r) t = qv s (vreg r) t) ∧
+      Keeps s s' := by
+  obtain ⟨σ, e, hσ⟩ := run_ammStartU (p := p) (by rw [nl2048]; exact hp)
+  have := regsS2048 p
+  have hs0 : ∀ t < 4, (s0U p).eval s t = BitVec.ofNat 64 (0 + lo (a (0 + lay2048.R * t)) b) := fun t ht => by
+    simp only [s0U, b0U, ldA, T.eval, ite_true, G.eval]
+    rw [h0 t ht, inb, ina t ht, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by decide)]
+  refine WP.mono (run_ok hc (SRel.init s) e) fun s' hs => ⟨fun t ht => ?_, fun t ht => ?_,
+    fun t ht => ?_, fun r hr h1 h2 h3 h4 t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega)]
+    simp only [expStartU, ite_true]
+    exact hs0 t ht
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega)]
+    simp (disch := omega) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
+    simp only [b0U, T.eval, ite_true, G.eval]
+    exact inb
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega)]
+    simp (disch := omega) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
+    simp only [k0U, T.eval]
+    rw [hs0 0 (by decide), ink, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by decide),
+      Nat.zero_add, lo_comm]
+    rfl
+  · rw [hs.reg _ t ht, vi_vreg _ hr, hσ _ hr]
+    simp (disch := omega) only [expStartU, ↓ite_eq_right]
+    rfl
+
 /-! ## The registers of a step -/
 
-theorem R2048 : lay2048.R = 5 := rfl
-theorem S2048 : lay2048.S = 20 := rfl
-theorem nl2048 : lay2048.nl = 2 := rfl
 
 theorem regOf2048 {p kk j : Nat} :
     5 * p ≤ regOf lay2048 p kk j ∧ regOf lay2048 p kk j < 5 * p + 5 := by

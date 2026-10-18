@@ -283,7 +283,7 @@ def ammCoreU : Prog isa :=
     (List.range l.nl).flatMap (ammStartU l) ++
     (List.range l.S).flatMap (fun i => (List.range l.nl).flatMap fun p => ammStepU l p i) ++
     ((List.range l.nl).flatMap fun p => (List.range l.R).map fun k =>
-      .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k l.S)) ++
+      .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
     ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)
 
 /-- `[r11] := [r8] [r9] 2^(-52 S)` modulo each prime, almost (`rbx` the
