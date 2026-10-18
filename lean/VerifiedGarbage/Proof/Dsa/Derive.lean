@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
 public import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.Random
 
 /-! # The domain check and key derivation as the checks the implementations make
 
@@ -139,5 +140,48 @@ theorem deriveKeyBytes_eq {pLen qLen : Nat} {params x : List Byte}
   rw [checkParametersBytes_eq hl hpl]
   simp only [hxl, bne_self_eq_false, Bool.or_false, Bool.and_true, Bool.and_self]
   exact derive_checks pLen qLen a _ _ henc
+
+/-- Key generation as the wrapper computes it: the domain check, sampling,
+and derivation from the accepted draw. -/
+theorem generateKeyBytes_eq {pLen qLen : Nat} {params rand : List Byte}
+    (hl : Spec.Dsa.lengthsValid pLen qLen) (hpl : params.length = 2 * pLen + qLen) :
+    Spec.Dsa.generateKeyBytes pLen qLen params rand =
+      if Spec.Dsa.checkParametersBytes pLen qLen params then
+        match (Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand).scalar with
+        | none => ⟨none,
+            if (Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand).trace.getLast?
+              == some 2 then 2 else 0,
+            (Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand).used,
+            (Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand).trace⟩
+        | some x =>
+          let res := Spec.Dsa.deriveKeyBytes pLen qLen params (Spec.Dsa.encodeBE qLen x)
+          ⟨res, Spec.Dsa.signStatus res,
+            (Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand).used,
+            (Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand).trace ++
+              [if res.isSome then 5 else 6]⟩
+      else ⟨none, 0, 0, [4]⟩ := by
+  unfold Spec.Dsa.generateKeyBytes Spec.Dsa.checkParametersBytes
+  simp only [hl, hpl, decide_true, Bool.not_true, bne_self_eq_false, Bool.or_false, Bool.false_eq_true,
+    ↓reduceIte, beq_self_eq_true, Bool.true_and]
+  by_cases hv : Spec.Dsa.parametersValid (Spec.Dsa.paramsBytes pLen qLen params)
+  rotate_left
+  · simp only [hv, decide_false, Bool.not_false, ↓reduceIte, Bool.false_eq_true]
+  simp only [hv, decide_true, Bool.not_true, Bool.false_eq_true, ↓reduceIte]
+  generalize hd : Spec.Dsa.Random.sample (Spec.Dsa.paramsBytes pLen qLen params).q 128 rand = draw
+  cases hx : draw.scalar with
+  | none => rfl
+  | some x =>
+    have hr := VG.Proof.Dsa.Random.sample_range _ _ _ _ (hd ▸ hx)
+    have hq : (Spec.Dsa.paramsBytes pLen qLen params).q < 256 ^ qLen := by
+      have := decodeBE_lt ((params.drop pLen).take qLen)
+      rwa [show ((params.drop pLen).take qLen).length = qLen by
+        simp only [List.length_take, List.length_drop]; omega] at this
+    have hdec : Spec.Dsa.decodeBE (Spec.Dsa.encodeBE qLen x) = x := decodeBE_encodeBE (by omega)
+    unfold Spec.Dsa.deriveKeyBytes Spec.Dsa.checkParametersBytes
+    simp only [hl, hpl, hv, decide_true, beq_self_eq_true, Bool.and_self, Bool.not_true,
+      encodeBE_length, bne_self_eq_false, Bool.or_false, Bool.false_eq_true, ↓reduceIte, hdec]
+    cases Spec.Dsa.generate (Spec.Dsa.paramsBytes pLen qLen params) [x] with
+    | none => rfl
+    | some key => cases hk : Spec.Dsa.keyValid key <;> simp [hk, Spec.Dsa.signStatus]
 
 end VG.Proof.Dsa
