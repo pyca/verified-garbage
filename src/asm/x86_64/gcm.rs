@@ -729,23 +729,14 @@ pub(crate) const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ghash_pclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r"movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+        r"lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -988,6 +979,7 @@ pshufb xmm2, xmm0
 movdqu XMMWORD PTR [rsi], xmm2
 ret
 .p2align 6",
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -1013,23 +1005,14 @@ pub(crate) const VG_GHASH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ghash_vpclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r"movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+        r"lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -1672,6 +1655,7 @@ pshufb xmm2, xmm0
 movdqu XMMWORD PTR [rsi], xmm2
 ret
 .p2align 6",
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -1690,23 +1674,14 @@ pub(crate) const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        r"movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+        r"lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -2292,6 +2267,7 @@ vmovdqu YMMWORD PTR [rdi+992], ymm3
 vzeroupper
 ret
 .p2align 6",
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -16713,23 +16689,14 @@ mov QWORD PTR [r15+200], rax
 jmp 213f
 212:
 213:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -17051,6 +17018,7 @@ ret
 .p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -23463,23 +23431,14 @@ jmp 218f
 218:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -23803,6 +23762,7 @@ ret
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -23927,16 +23887,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 212b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -23976,16 +23930,10 @@ jmp 211f
 210:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -24029,16 +23977,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -24167,23 +24109,14 @@ jmp 221f
 221:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -24494,16 +24427,10 @@ jmp 219f
 218:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 movdqu xmm5, XMMWORD PTR [r14]
@@ -25012,23 +24939,14 @@ jmp 282f
 282:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -25353,6 +25271,7 @@ ret
         vg_aes_gcm_encrypt_blocks_to_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_prepared_aesni_pclmul_avx,
         vg_aes_gcm_encrypt_blocks_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_aesni_pclmul_avx,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -31105,16 +31024,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 212b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -31154,16 +31067,10 @@ jmp 211f
 210:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -31207,16 +31114,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -31283,23 +31184,14 @@ mov QWORD PTR [r15+200], rax
 jmp 214f
 213:
 214:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -31790,23 +31682,14 @@ mov QWORD PTR [r15+200], rax
 jmp 249f
 248:
 249:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -32129,6 +32012,7 @@ ret
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_aesni_pclmul_avx,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -32259,16 +32143,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 218b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -32308,16 +32186,10 @@ jmp 217f
 216:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -32361,16 +32233,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -32437,16 +32303,10 @@ mov QWORD PTR [r15+200], rax
 jmp 220f
 219:
 220:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 mov rax, QWORD PTR [r15+208]
@@ -33218,6 +33078,7 @@ ret
         vg_aes_gcm_decrypt_blocks_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared_aesni_pclmul_avx,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -56930,23 +56791,14 @@ mov rax, r9
 and rax, 15
 sub r9, rax
 add r11, 64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -57868,6 +57720,7 @@ ret
 .p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -57908,23 +57761,14 @@ mov rax, r9
 and rax, 15
 sub r9, rax
 add r11, 64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -58526,6 +58370,7 @@ ret
 .p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -60991,23 +60836,14 @@ mov rax, r9
 and rax, 15
 sub r9, rax
 add r11, 64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -61934,6 +61770,7 @@ jmp 222f
 ret
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -63232,16 +63069,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 212b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -63281,16 +63112,10 @@ jmp 211f
 210:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -63334,16 +63159,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -63618,16 +63437,10 @@ jmp 219f
 218:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 movdqu xmm5, XMMWORD PTR [r14]
@@ -64297,6 +64110,7 @@ ret
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -64337,16 +64151,10 @@ and rax, 15
 sub r9, rax
 add r11, 127
 and r11, -64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vinserti128 ymm1, ymm1, xmm1, 1
 vmovdqu ymm3, YMMWORD PTR [rdi+480]
@@ -65073,6 +64881,7 @@ ret
 .p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -65110,16 +64919,10 @@ cmp r9, 16
 jb 20f
 add r11, 127
 and r11, -64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vinserti128 ymm1, ymm1, xmm1, 1
 vmovdqu ymm3, YMMWORD PTR [rdi+480]
@@ -65926,6 +65729,7 @@ ret
 .p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -66452,16 +66256,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 218b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -66501,16 +66299,10 @@ jmp 217f
 216:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -66554,16 +66346,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -66630,16 +66416,10 @@ mov QWORD PTR [r15+200], rax
 jmp 220f
 219:
 220:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 mov rax, QWORD PTR [r15+208]
@@ -67411,6 +67191,7 @@ ret
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -68281,16 +68062,10 @@ and rax, 15
 sub r9, rax
 add r11, 127
 and r11, -64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vinserti128 ymm1, ymm1, xmm1, 1
 vmovdqu ymm3, YMMWORD PTR [rdi+480]
@@ -69022,6 +68797,7 @@ jmp 222f
 ret
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -69758,23 +69534,14 @@ mov rax, r9
 and rax, 15
 sub r9, rax
 add r11, 64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -71246,6 +71013,7 @@ ret
 .p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -71286,23 +71054,14 @@ mov rax, r9
 and rax, 15
 sub r9, rax
 add r11, 64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -72308,6 +72067,7 @@ ret
 .p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -72498,23 +72258,14 @@ shl r8, 2
 mov QWORD PTR [r15+288], r8
 sub r8, rax
 mov QWORD PTR [r15+296], r8
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -73176,23 +72927,14 @@ mov QWORD PTR [r15+200], rax
 jmp 256f
 255:
 256:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -73501,6 +73243,7 @@ ret
 .p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -73643,23 +73386,14 @@ shl r8, 2
 mov QWORD PTR [r15+288], r8
 sub r8, rax
 mov QWORD PTR [r15+296], r8
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -74652,6 +74386,7 @@ ret
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -76154,23 +75889,14 @@ mov rax, r9
 and rax, 15
 sub r9, rax
 add r11, 64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [rdi+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -77647,6 +77373,7 @@ jmp 237f
 ret
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -78541,23 +78268,14 @@ shl r8, 2
 mov QWORD PTR [r15+288], r8
 sub r8, rax
 mov QWORD PTR [r15+296], r8
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -79278,23 +78996,14 @@ jmp 272f
 272:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -79605,6 +79314,7 @@ ret
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -79737,16 +79447,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 214b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -79786,16 +79490,10 @@ jmp 213f
 212:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -79839,16 +79537,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -79977,23 +79669,14 @@ jmp 223f
 223:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -80290,16 +79973,10 @@ jmp 221f
 220:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 vmovdqu xmm5, XMMWORD PTR [r14]
@@ -80674,23 +80351,14 @@ shl r8, 2
 mov QWORD PTR [r15+288], r8
 sub r8, rax
 mov QWORD PTR [r15+296], r8
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -81411,23 +81079,14 @@ jmp 2138f
 2138:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -81739,6 +81398,7 @@ ret
         vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -81776,16 +81436,10 @@ cmp r9, 16
 jb 20f
 add r11, 127
 and r11, -64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vinserti128 ymm1, ymm1, xmm1, 1
 vmovdqu ymm3, YMMWORD PTR [rdi+480]
@@ -83598,6 +83252,7 @@ ret
 .p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -83635,16 +83290,10 @@ cmp r9, 16
 jb 20f
 add r11, 127
 and r11, -64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vinserti128 ymm1, ymm1, xmm1, 1
 vmovdqu ymm3, YMMWORD PTR [rdi+480]
@@ -84851,6 +84500,7 @@ ret
 .p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -84972,16 +84622,10 @@ shl r8, 2
 mov QWORD PTR [r15+288], r8
 sub r8, rax
 mov QWORD PTR [r15+296], r8
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vinserti128 ymm1, ymm1, xmm1, 1
@@ -85304,16 +84948,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 251b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -85353,16 +84991,10 @@ jmp 250f
 249:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -85406,16 +85038,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -85482,23 +85108,14 @@ mov QWORD PTR [r15+200], rax
 jmp 253f
 252:
 253:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -85975,23 +85592,14 @@ mov QWORD PTR [r15+200], rax
 jmp 288f
 287:
 288:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r13+240]
 pshufb xmm7, xmm0
-movabs rax, 1
-movq xmm13, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm13, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm13, XMMWORD PTR [rax+32]
 movabs rax, -1
 movq xmm14, rax
 punpcklqdq xmm14, xmm14
@@ -86301,6 +85909,7 @@ ret
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -86442,16 +86051,10 @@ shl r8, 2
 mov QWORD PTR [r15+288], r8
 sub r8, rax
 mov QWORD PTR [r15+296], r8
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vshufi32x4 zmm0, zmm0, zmm0, 68
 vinserti128 ymm1, ymm1, xmm1, 1
@@ -86865,16 +86468,10 @@ mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
 jne 271b
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm7, XMMWORD PTR [r15+96]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
@@ -86914,16 +86511,10 @@ jmp 270f
 269:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -86967,16 +86558,10 @@ movzx r10d, BYTE PTR [rsi+4]
 shl r10, 32
 add rax, r10
 movq xmm7, rax
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 pshufb xmm7, xmm0
 movdqu xmm3, XMMWORD PTR [r13+272]
 pxor xmm8, xmm8
@@ -87043,16 +86628,10 @@ mov QWORD PTR [r15+200], rax
 jmp 273f
 272:
 273:
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 mov rax, QWORD PTR [r15+208]
@@ -87811,6 +87390,7 @@ ret
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -88694,16 +88274,10 @@ mov eax, 0
 mov QWORD PTR [r11+40], rax
 add r11, 127
 and r11, -64
-movabs rax, 579005069656919567
-movq xmm0, rax
-movabs rax, 283686952306183
-movq xmm12, rax
-punpcklqdq xmm0, xmm12
-movabs rax, 0
-movq xmm1, rax
-movabs rax, -4467570830351532032
-movq xmm12, rax
-punpcklqdq xmm1, xmm12
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
 vinserti128 ymm0, ymm0, xmm0, 1
 vinserti128 ymm1, ymm1, xmm1, 1
 vmovdqu ymm3, YMMWORD PTR [rdi+480]
@@ -90525,6 +90099,7 @@ jmp 289f
 ret
 .p2align 6",
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 

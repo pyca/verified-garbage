@@ -8150,6 +8150,16 @@ pub(crate) static VG_ED25519_VERIFY_BASE: Table<16384> = Table(*b"\
     \x00\x00\x00\x00\x00\x00\x00\x00\
 ");
 
+/// The table of constants `VG_GCM_CONSTS` (`Artifact.consts`).
+pub(crate) static VG_GCM_CONSTS: Table<48> = Table(*b"\
+    \x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\
+    \x07\x06\x05\x04\x03\x02\x01\x00\
+    \x00\x00\x00\x00\x00\x00\x00\x00\
+    \x00\x00\x00\x00\x00\x00\x00\xc2\
+    \x01\x00\x00\x00\x00\x00\x00\x00\
+    \x00\x00\x00\x00\x00\x00\x00\xc2\
+");
+
 /// The table of constants `VG_MLKEM_NTT_ZETAS` (`Artifact.consts`).
 pub(crate) static VG_MLKEM_NTT_ZETAS: Table<5120> = Table(*b"\
     \xed\x08\xed\x08\xed\x08\xed\x08\
