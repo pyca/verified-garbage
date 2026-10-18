@@ -148,3 +148,45 @@ fn generation_errors() {
     );
     assert_eq!(draws, 1);
 }
+
+#[test]
+fn imported_private_components() {
+    let cases = vectors(
+        include_str!("../../../vectors/nist-cavp-dsa/SigGen.txt"),
+        true,
+    );
+    for (p_len, q_len) in [(128, 20), (256, 28), (256, 32), (384, 32)] {
+        let v = cases
+            .iter()
+            .find(|v| hex(&v["P"], 0).len() == p_len && hex(&v["Q"], 0).len() == q_len)
+            .unwrap();
+        let (p, q, g) = domain(v);
+        let x = hex(&v["X"], q_len);
+        let y = hex(&v["Y"], p_len);
+        let key = PrivateKey::from_private_components(&p, &q, &g, &x).unwrap();
+        assert_eq!(key.packed.0, [&p[..], &q, &g, &y, &x].concat());
+        let signature = key.sign(b"imported key").unwrap();
+        assert!(key.public_key().verify(b"imported key", &signature));
+        for bad_x in [vec![0; q_len], q.clone(), vec![255; q_len]] {
+            assert_eq!(
+                PrivateKey::from_private_components(&p, &q, &g, &bad_x).unwrap_err(),
+                Error::InvalidKeyOrNonce
+            );
+        }
+        assert_eq!(
+            PrivateKey::from_private_components(&p, &q, &vec![0; p_len], &x).unwrap_err(),
+            Error::InvalidKeyOrNonce
+        );
+        for (p, q, g, x) in [
+            (&p[..1], &q[..], &g[..], &x[..]),
+            (&p, &q[..1], &g, &x),
+            (&p, &q, &g[..1], &x),
+            (&p, &q, &g, &x[..1]),
+        ] {
+            assert_eq!(
+                PrivateKey::from_private_components(p, q, g, x).unwrap_err(),
+                Error::Length
+            );
+        }
+    }
+}

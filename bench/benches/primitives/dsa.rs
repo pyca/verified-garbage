@@ -86,6 +86,36 @@ pub fn bench(c: &mut Criterion) {
         // CI interprets the final benchmark ID component as a numeric size.
         let size = p_len * 8;
 
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+        {
+            let mut group = c.benchmark_group(format!("dsa_from_private_q{}", q_len * 8));
+            group.bench_function(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    PrivateKey::from_private_components(
+                        black_box(&p),
+                        black_box(&q),
+                        black_box(&g),
+                        black_box(&x),
+                    )
+                    .unwrap()
+                })
+            });
+            group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+                b.iter(|| {
+                    let p = BigNum::from_slice(black_box(&p)).unwrap();
+                    let q = BigNum::from_slice(black_box(&q)).unwrap();
+                    let g = BigNum::from_slice(black_box(&g)).unwrap();
+                    let mut x = BigNum::from_slice(black_box(&x)).unwrap();
+                    x.set_const_time();
+                    let mut y = BigNum::new().unwrap();
+                    let mut ctx = openssl::bn::BigNumContext::new().unwrap();
+                    y.mod_exp(&g, &x, &p, &mut ctx).unwrap();
+                    Dsa::from_private_components(p, q, g, x, y).unwrap()
+                })
+            });
+            group.finish();
+        }
+
         let mut group = c.benchmark_group(format!("dsa_sign_q{}", q_len * 8));
         group.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| black_box(&key).sign(black_box(&digest)).unwrap())

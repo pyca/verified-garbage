@@ -102,6 +102,25 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        let mut group = c.benchmark_group("ffdh_from_private");
+        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+            b.iter(|| {
+                PrivateKey::from_private_components(black_box(&params), black_box(&x)).unwrap()
+            })
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+            b.iter(|| {
+                Dh::from_pqg(
+                    BigNum::from_slice(black_box(&p)).unwrap(),
+                    q.as_ref().map(|q| BigNum::from_slice(q).unwrap()),
+                    BigNum::from_slice(black_box(&g)).unwrap(),
+                )
+                .unwrap()
+                .set_private_key(BigNum::from_slice(black_box(&x)).unwrap())
+                .unwrap()
+            })
+        });
+        group.finish();
         let mut group = c.benchmark_group("ffdh_generate");
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())

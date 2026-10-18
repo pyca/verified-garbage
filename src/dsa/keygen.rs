@@ -13,6 +13,63 @@ use crate::arch::dsa::vg_dsa_generate_key_adx;
 use crate::cpu::detected;
 
 impl PrivateKey {
+    /// Import big-endian `p`, `q`, `g` and `x`, deriving `y = g^x mod p`.
+    /// This accepts private components from PKCS#8, which omits `y`.
+    /// `g` must have `p`'s width and `x` must have `q`'s width.
+    /// Checks the domain's algebraic consistency and `0 < x < q`;
+    /// callers must assure domain primality separately.
+    /// Available on x86-64 and AArch64.
+    pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
+        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
+            || g.len() != p.len()
+            || x.len() != q.len()
+        {
+            return Err(Error::Length);
+        }
+        let (p_len, q_len) = (p.len(), q.len());
+        let mut params = Vec::with_capacity(2 * p_len + q_len);
+        for component in [p, q, g] {
+            params.extend_from_slice(component);
+        }
+        let backend = Backend::select(detected());
+        let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
+        let mut scratch = Secret(vec![0u64; 16 * p_len]);
+        let derive = match backend {
+            Backend::Baseline => crate::arch::dsa::vg_dsa_derive_key,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => crate::arch::dsa::vg_dsa_derive_key_adx,
+        };
+        // SAFETY: the checks establish the supported widths and buffer sizes.
+        // Output and scratch are separate allocations, disjoint from all inputs.
+        // Backend selection establishes the required CPU features. Both secret
+        // allocations are wiped on drop, including on failure.
+        let status = unsafe {
+            derive(
+                output.0.as_mut_ptr(),
+                output.0.len(),
+                params.as_ptr(),
+                params.len(),
+                p_len,
+                x.as_ptr(),
+                q_len,
+                scratch.0.as_mut_ptr(),
+                scratch.0.len(),
+            )
+        };
+        if status != 1 {
+            return Err(Error::InvalidKeyOrNonce);
+        }
+        Ok(Self {
+            public: PublicKey {
+                packed: output.0[..3 * p_len + q_len].to_vec(),
+                p_len,
+                q_len,
+                backend,
+            },
+            packed: output,
+        })
+    }
+
     /// Generate a key for the big-endian domain `p`, `q` and `g`, sampling
     /// `x` uniformly from `[1, q)` with the operating system's random number
     /// generator and computing `y = g^x mod p`. `g` must have `p`'s width.
