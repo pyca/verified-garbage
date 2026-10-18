@@ -1,0 +1,48 @@
+name: Build leantar with batch packing
+description: >
+  Builds `leantar`, the toolchain's compressor for Lake's per-module `.ltar`
+  archives, from leangz at `LEANGZ_REV` with `ci/leantar/batch.patch`
+  (digama0/leangz#13: `-p -` packs many archives in one process, and
+  `--level` sets the zstd level), and puts it on PATH as `leantar-batch`.
+  The toolchain's own `leantar` packs one archive per process, about half a
+  CPU-second each; this one packs a build's 16,000 modules in seconds. Only
+  packing needs it: the archives' format is unchanged, and the toolchain's
+  `leantar` unpacks them (`ci/lean_cache.py`). The binary is cached until
+  the revision or the patch changes.
+
+runs:
+  using: composite
+  steps:
+    - name: Restore leantar
+      id: cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/leantar-batch
+        key: leantar-batch-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('ci/leantar/**', '.github/actions/leantar/action.yml') }}
+    - name: Build leantar
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      env:
+        # The base of digama0/leangz#13: master after #12.
+        LEANGZ_REV: ff38677829d4c2756700194d4e252ad7290c5e98
+      run: |
+        src="$RUNNER_TEMP/leangz"
+        git init -q "$src"
+        git -C "$src" fetch -q --depth 1 https://github.com/digama0/leangz "$LEANGZ_REV"
+        git -C "$src" checkout -q FETCH_HEAD
+        git -C "$src" apply "$GITHUB_WORKSPACE/ci/leantar/batch.patch"
+        rustup toolchain install stable --profile minimal
+        cargo +stable build --manifest-path "$src/Cargo.toml" --release --locked --bin leantar
+        mkdir -p "$RUNNER_TEMP/leantar-batch"
+        cp "$src/target/release/leantar" "$RUNNER_TEMP/leantar-batch/leantar-batch"
+    - name: Save leantar
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/leantar-batch
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+    - name: Put leantar on PATH
+      shell: bash
+      run: |
+        echo "$RUNNER_TEMP/leantar-batch" >> "$GITHUB_PATH"
+        "$RUNNER_TEMP/leantar-batch/leantar-batch" --version

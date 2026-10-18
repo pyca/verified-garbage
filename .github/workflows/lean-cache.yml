@@ -44,7 +44,7 @@ jobs:
       # The commit CI checked (GITHUB_SHA is main's head when this started).
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       # Bump if the archive format or compression settings change.
-      CACHE_FORMAT: zstd5-oras-v3
+      CACHE_FORMAT: ltar5-oras-v4
       ORAS_VERSION: 1.3.2
       ORAS_SHA256: 9229ccc6d17bb282039ad4a69abb16dcb887a5bce567c075d731d9b3c7ad8eaf
     steps:
@@ -104,16 +104,41 @@ jobs:
         with:
           key: ${{ steps.keys.outputs.build-cache }}
           restore-keys: ${{ steps.keys.outputs.build-cache }}
-      - name: Package the checked build and dependencies
+      - name: Check the checked build was restored
         if: ${{ steps.publish.outputs.needed == 'true' }}
         env:
           CACHE_HIT: ${{ steps.prepare.outputs.cache-hit }}
         run: |
           # Never publish a fallback or an empty project build.
           [ "$CACHE_HIT" = true ] || { echo "::error::The checked build cache is missing"; exit 1; }
-          mkdir -p "$RUNNER_TEMP/lean-cache-image"
-          tar -C lean -cf - .lake/build .lake/packages \
-            | zstd -T0 -5 -o "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst"
+      # Its archives of the modules that have not changed since are reused,
+      # so only the others are packed again (ci/lean_cache.py). The
+      # registry is public: the pull needs no token.
+      - name: Restore the published module archives
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        run: |
+          key=$(jq -r '.annotations["io.pyca.lean.cache-key"] // empty' "$RUNNER_TEMP/lean-cache-manifest.json" 2>/dev/null || true)
+          case "$key" in
+            *"-$CACHE_FORMAT") ;;
+            *) echo "No published cache in this format: packing every module."; exit 0 ;;
+          esac
+          # A failed download must not leave a partial archive that the
+          # index vouches for: then pack everything.
+          set -o pipefail
+          if ! python3 ci/fetch_lean_cache.py | zstd -dc | tar -xf - -C lean .lake/ltar; then
+            echo "::warning::Restoring the published archives failed: packing every module."
+            rm -rf lean/.lake/ltar
+          fi
+      - uses: ./.github/actions/leantar
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+      # The archive goes to memory: it is uploaded, then discarded.
+      - name: Package the checked build and dependencies
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        run: |
+          set -o pipefail
+          mkdir -p /dev/shm/lean-cache-image
+          python3 ci/lean_cache.py pack lean .lake/build .lake/packages \
+            | zstd -T0 -5 -o /dev/shm/lean-cache-image/lean-cache.tar.zst
       - name: Upload the cache image
         id: upload
         if: ${{ steps.publish.outputs.needed == 'true' }}
@@ -124,9 +149,10 @@ jobs:
           # Runs hold the workflow's lock from the decision to here, so no
           # newer cache was published since.
           # The archive is the one layer, as it is: the README's restore
-          # streams it from the registry API into `zstd -dc | tar -x`.
+          # streams it from the registry API into
+          # `zstd -dc | ci/lean_cache.py unpack`.
           toolchain=$(cat lean/lean-toolchain)
-          cd "$RUNNER_TEMP/lean-cache-image"
+          cd /dev/shm/lean-cache-image
           printf '%s' "$GH_TOKEN" | oras push --username "$GITHUB_ACTOR" --password-stdin \
             --artifact-type application/vnd.pyca.lean-cache.v1 \
             --annotation "org.opencontainers.image.source=https://github.com/$GH_REPO" \

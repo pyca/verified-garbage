@@ -173,26 +173,31 @@ to optimize").
 After CI passes on `main`, it publishes the Linux x86-64 project build and
 Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`, an OCI artifact
 whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
-relative to `lean/`. Only the latest version is retained. CI compares the
-checked build's cache key with the manifest's `io.pyca.lean.cache-key`
-annotation and skips packaging and publishing when it matches, so Rust- or
-docs-only changes do not create a new cache version.
+relative to `lean/`, with each module's outputs in one `.ltar` archive, the
+format of Lake's `ltar` facet and Mathlib's cache (`ci/lean_cache.py`). Only
+the latest version is retained. CI compares the checked build's cache key
+with the manifest's `io.pyca.lean.cache-key` annotation and skips packaging
+and publishing when it matches, so Rust- or docs-only changes do not create
+a new cache version.
 
 Restore it with `ci/fetch_lean_cache.py`, which streams the layer straight
 from the registry API with an anonymous pull token, resumes from where it
 stopped when the connection drops, and checks the download against the
-layer's digest. With `python3` and `zstd` installed, from the repository
-root:
+layer's digest, and `ci/lean_cache.py unpack`, which unpacks the archives
+with the toolchain's `leantar` as they arrive. Install the toolchain in
+`lean/lean-toolchain` first (with elan, `lean --version` in `lean/` installs
+it). Then, with `python3` and `zstd` installed, from the repository root:
 
 ```sh
 set -o pipefail
-python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
+python3 ci/fetch_lean_cache.py | zstd -dc | python3 ci/lean_cache.py unpack lean
 ```
 
-The download (about 3 GB) streams through the pipeline and is never
-stored. If the pipeline fails (a connection that drops five times in a row
-without progress, or a download that does not match the digest), run it
-again. Install the toolchain in `lean/lean-toolchain` separately; the
+The download (about 1 GB) streams through the pipeline and is never
+stored: the archives are staged in `/dev/shm` a batch at a time (`--tmp`
+for another directory), and only the unpacked build is written. If the
+pipeline fails (a connection that drops five times in a row without
+progress, or a download that does not match the digest), run it again. The
 manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`
 annotations identify the cached build. Lake rebuilds outputs that differ
 from the checkout. The modules' `.trace` files carry the profile CI's build
@@ -202,10 +207,11 @@ Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
 with
 `python3 -c 'import sys, zstandard; zstandard.ZstdDecompressor().copy_stream(sys.stdin.buffer, sys.stdout.buffer)'`.
 
-Keep `--no-same-owner`: the archive's files belong to CI's runner user, and
-`tar` run as root (as in a container) would keep that owner. Git then refuses
-the dependencies' checkouts in `.lake/packages` as owned by someone else, so
-Lake clones them again and builds Mathlib from source.
+`unpack` leaves the files' owner alone, as `tar --no-same-owner` would: the
+archive's files belong to CI's runner user, and extracting them as root (as
+in a container) would keep that owner. Git then refuses the dependencies'
+checkouts in `.lake/packages` as owned by someone else, so Lake clones them
+again and builds Mathlib from source.
 
 Moving the cache to a different absolute path can also make Lake relink
 native libraries and rebuild affected native modules. A normal `lake build`

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Streams the published Lean cache archive to stdout, resuming after dropped connections.
 
-  python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
+  python3 ci/fetch_lean_cache.py | zstd -dc | python3 ci/lean_cache.py unpack lean
 
 reads ghcr.io/pyca/vg-lean-cache:latest's one layer, lean-cache.tar.zst
 (lean/README.md, "Restoring the CI build cache"), with an anonymous pull
@@ -13,7 +13,7 @@ digest and exits non-zero if they differ. It prints the cached build's
 revision and its progress to stderr.
 
 Only the standard library: an agent restoring the cache needs nothing but
-`python3` and `zstd`.
+`python3`, `zstd` and the Lean toolchain (whose `leantar` unpacks it).
 """
 
 import hashlib
