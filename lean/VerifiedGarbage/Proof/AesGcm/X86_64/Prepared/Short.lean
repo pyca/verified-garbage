@@ -47,8 +47,10 @@ theorem openSelPrepared_framed (hF : Short.ShortFacts) :
       (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct
         (FastOpen.openSel_rel hF v B Short.finKs_ksOk Short.finKs_rel (Short.longRel_openLong v B)))) (Short.openMP_spSafe v B)
       (Short.openMP_xdepth v B)
-  · exact openPreparedCode_framed (openPreparedCode_verified (Short.openFinP_correct v B hF)
-      (FastOpen.openFinW_ct (FastOpen.openSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel
-        (Short.longRel_openLong v B)))) (Short.openFinP_spSafe v B) (Short.openFinP_xdepth v B)
+  · split
+    · exact openPrepared_framed v B
+    · exact openPreparedCode_framed (openPreparedCode_verified (Short.openFinP_correct v B hF)
+        (FastOpen.openFinW_ct (FastOpen.openSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel
+          (Short.longRel_openLong v B)))) (Short.openFinP_spSafe v B) (Short.openFinP_xdepth v B)
 
 end VG.Proof.AesGcm.X86_64

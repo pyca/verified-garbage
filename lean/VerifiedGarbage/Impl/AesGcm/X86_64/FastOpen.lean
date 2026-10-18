@@ -64,7 +64,8 @@ def sel (other : Prog isa) (ks : Prog isa := Short.finKs) : Prog isa :=
 
 /-- `vg_aes_gcm_open`'s frame, as `Impl.AesGcm.X86_64.open` and
 `Short.open` have it, around `lng` for an allowed tag length: for the
-instances without the short path, `sel` on 128-bit registers. -/
+256-bit VAES instances, which have no short path, `sel` with the 128-bit
+keystream `Short.finKsA`. -/
 def openFin (lng : Prog isa) : Prog isa :=
   .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk

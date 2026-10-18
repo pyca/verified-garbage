@@ -214,6 +214,9 @@ def openCodeP (v : GcmImpl) (c : Callees) : Prog isa :=
   if v.short then
     Impl.AesGcm.X86_64.Short.«open» c Impl.AesGcm.X86_64.Short.powersP
       (Impl.AesGcm.X86_64.FastOpen.sel c (Impl.AesGcm.X86_64.Short.openLong c)) Impl.AesGcm.X86_64.Short.ghashP
+  -- The 128-bit AES-NI instances keep the other instances' `open`: on Zen 3 the path
+  -- for TLS records made their odd-length records slower (#2755).
+  else if v.fin then «open» c
   else
     Impl.AesGcm.X86_64.FastOpen.openFin
       (Impl.AesGcm.X86_64.FastOpen.sel c (Impl.AesGcm.X86_64.Short.openLong c) Impl.AesGcm.X86_64.Short.finKsA)
@@ -234,6 +237,8 @@ theorem openCodeP_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.openCodeP (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
   unfold GcmImpl.openCodeP; split
   · exact Short.openMP_spSafe v B
-  · exact Short.openFinP_spSafe v B
+  · split
+    · exact openM_spSafe v B
+    · exact Short.openFinP_spSafe v B
 
 end VG.Proof.AesGcm.X86_64
