@@ -53,13 +53,15 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 def oM : Nat := 0
 
 /-- The sizes: `R` registers per number, primes of `W` words, `S` steps
-of a multiplication (`S ≤ 4 R`): the Montgomery radix is `2^(52 S)`; and
-windows of `w` bits. -/
+of a multiplication (`S ≤ 4 R`): the Montgomery radix is `2^(52 S)`;
+windows of `w` bits; and `nl` lanes, numbers multiplied side by side, each
+in its own region `D` bytes after the previous one (the two primes). -/
 structure Lay where
   R : Nat
   W : Nat
   S : Nat
   w : Nat
+  nl : Nat
   deriving DecidableEq, Repr
 
 namespace Lay
@@ -117,14 +119,14 @@ end Lay
 
 /-- 2048-bit keys: primes of 16 words, numbers of 20 limbs, windows of 4
 bits. -/
-def lay2048 : Lay := ⟨5, 16, 20, 4⟩
+def lay2048 : Lay := ⟨5, 16, 20, 4, 2⟩
 /-- 3072-bit keys: primes of 24 words, numbers of 32 limbs, of which 30
 hold the primes' 1536 bits and a multiplication's 30 steps, windows of 5
 bits. -/
-def lay3072 : Lay := ⟨8, 24, 30, 5⟩
+def lay3072 : Lay := ⟨8, 24, 30, 5, 2⟩
 /-- 4096-bit keys: primes of 32 words, numbers of 40 limbs, windows of 5
 bits. -/
-def lay4096 : Lay := ⟨10, 32, 40, 5⟩
+def lay4096 : Lay := ⟨10, 32, 40, 5, 2⟩
 
 /-- In the prime workspaces: the base of the IFMA area, and a counter. -/
 def sIfma : Nat := sFn 13
@@ -150,22 +152,23 @@ def vreg (n : Nat) : VReg :=
 
 variable (l : Lay)
 
-/-- The register of limb role `k` of prime `p` at step `i` of a block. -/
+/-- The register of limb role `k` of lane `p` at step `i` of a block; then
+each lane's `b` and `u`, the zero register and a temporary. -/
 def acc (p k i : Nat) : VReg := vreg (l.R * p + (k + i) % l.R)
-def bReg (p : Nat) : VReg := vreg (2 * l.R + p)
-def uReg (p : Nat) : VReg := vreg (2 * l.R + 2 + p)
-def zReg : VReg := vreg (2 * l.R + 4)
-def tReg : VReg := vreg (2 * l.R + 5)
+def bReg (p : Nat) : VReg := vreg (l.nl * l.R + p)
+def uReg (p : Nat) : VReg := vreg (l.nl * l.R + l.nl + p)
+def zReg : VReg := vreg (l.nl * l.R + 2 * l.nl)
+def tReg : VReg := vreg (l.nl * l.R + 2 * l.nl + 1)
 
 /-! ## The multiplication -/
 
-/-- Step `i` of a block, for `p` (0) and `q` (1) in turn at each stage:
+/-- Step `i` of a block, for each lane (`p` then `q`) in turn at each stage:
 `r8` the first operand, `r9` the second plus 8 per block, `r10` the region
 (the modulus and `k₀`). Ordered so that the chain through `u` and the
 shift starts first: the low halves into roles 0 and 1, `u`, what role 1
 needs before the shift, the shift, then the rest limb by limb. -/
 def ammStep (i : Nat) : List Instr :=
-  let ps := [0, 1]
+  let ps := List.range l.nl
   let D := l.D
   let loA (p k : Nat) : Instr := .evMadd52Load false (acc l p k i) (bReg l p) (at_ .r8 (D * p + 32 * k))
   let hiA (p k : Nat) : Instr := .evMadd52Load true (acc l p (k + 1) i) (bReg l p) (at_ .r8 (D * p + 32 * k))
@@ -191,24 +194,30 @@ and the count of blocks. -/
 def ammBlock : List Instr :=
   (List.range l.R).flatMap (ammStep l) ++ ([.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr)
 
+/-- Lane `p`'s carry (`rdx`, then `rsi`) and its temporary (`rax`, then `rcx`). -/
+def cReg (p : Nat) : Reg := if p = 0 then .rdx else .rsi
+def cTmp (p : Nat) : Reg := if p = 0 then .rax else .rcx
+
+/-- Limb `j` of lane `p`'s carry chain. -/
+def carryStep (j p : Nat) : List Instr :=
+  [.alu .add (cReg p) (.mem (at_ .r11 (l.D * p + l.off j))), .mov (cTmp p) (.reg (cReg p)),
+    .alu .and (cTmp p) (.reg .r12), .store (at_ .r11 (l.D * p + l.off j)) (cTmp p), .shift .shr (cReg p) 52]
+
 /-- The accumulators' limbs, carried in order into limbs below `2⁵²`, at
-`r11` and `r11 + D`, the two chains interleaved (carries in `rdx` and
+`r11` (and `r11 + D`), the lanes' chains interleaved (carries in `rdx` and
 `rsi`); `r12` holds `2⁵² - 1`. -/
 def carryOut : List Instr :=
-  ([.mov32 .rdx (.imm 0), .mov32 .rsi (.imm 0)] : List Instr) ++ (List.range l.L).flatMap fun j =>
-    [.alu .add .rdx (.mem (at_ .r11 (l.off j))), .mov .rax (.reg .rdx), .alu .and .rax (.reg .r12),
-     .store (at_ .r11 (l.off j)) .rax, .shift .shr .rdx 52,
-     .alu .add .rsi (.mem (at_ .r11 (l.D + l.off j))), .mov .rcx (.reg .rsi), .alu .and .rcx (.reg .r12),
-     .store (at_ .r11 (l.D + l.off j)) .rcx, .shift .shr .rsi 52]
+  (List.range l.nl).map (fun p => .mov32 (cReg p) (.imm 0)) ++
+    (List.range l.L).flatMap fun j => (List.range l.nl).flatMap (carryStep l j)
 
 /-- `[r11] := [r8] [r9] 2^(-52 S)` modulo each prime, almost (`rbx` the
 area): `S / R` blocks, then the first `S % R` steps of another, which leave
 role `k` in the register of `k + S % R`. -/
 def ammCore : Prog isa :=
   .seq (.block (([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm (BitVec.ofNat 32 (l.S / l.R)))] : List Instr) ++
-      (List.range (2 * l.R + 5)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))))
+      (List.range (l.nl * l.R + 2 * l.nl + 1)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))))
     (.seq (.loop (.block (ammBlock l)) .ne)
-      (.block ((List.range (l.S % l.R)).flatMap (ammStep l) ++ ((List.range 2).flatMap fun p => (List.range l.R).map fun k =>
+      (.block ((List.range (l.S % l.R)).flatMap (ammStep l) ++ ((List.range l.nl).flatMap fun p => (List.range l.R).map fun k =>
           .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
         ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 

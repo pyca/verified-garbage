@@ -56,6 +56,7 @@ use crate::arch::rsa_pkcs1_enc::{
     vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
     vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
     vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
+    vg_rsa_pkcs1_encrypt_precomputed_ifma,
 };
 use crate::cpu::detected;
 use crate::hashes::sha256::Sha256Backend;
@@ -149,7 +150,9 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
         Backend::Baseline => vg_rsa_pkcs1_encrypt_precomputed,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_adx,
+        Backend::Adx => vg_rsa_pkcs1_encrypt_precomputed_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_ifma,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are

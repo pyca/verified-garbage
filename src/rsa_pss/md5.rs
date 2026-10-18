@@ -14,8 +14,10 @@
 use crate::arch::rsa_pss_md5_mgf1_md5::{
     VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_ADX_FEATURES, VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_IFMA_FEATURES,
     VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES,
+    VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES,
     vg_rsa_pss_md5_mgf1_md5_sign_crt_adx, vg_rsa_pss_md5_mgf1_md5_sign_crt_ifma,
     vg_rsa_pss_md5_mgf1_md5_verify_precomputed_rsa_adx,
+    vg_rsa_pss_md5_mgf1_md5_verify_precomputed_rsa_ifma,
 };
 use crate::arch::rsa_pss_md5_mgf1_md5::{
     vg_rsa_pss_md5_mgf1_md5_sign, vg_rsa_pss_md5_mgf1_md5_verify_precomputed,
@@ -27,6 +29,7 @@ super::pss_hash!(16, Md5Backend {
         verify: vg_rsa_pss_md5_mgf1_md5_verify_precomputed [],
         sign: vg_rsa_pss_md5_mgf1_md5_sign [],
         verify_adx: vg_rsa_pss_md5_mgf1_md5_verify_precomputed_rsa_adx [VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES],
+        verify_ifma: vg_rsa_pss_md5_mgf1_md5_verify_precomputed_rsa_ifma [VG_RSA_PSS_MD5_MGF1_MD5_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES],
         adx: vg_rsa_pss_md5_mgf1_md5_sign_crt_adx [VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_ADX_FEATURES],
         ifma: vg_rsa_pss_md5_mgf1_md5_sign_crt_ifma [VG_RSA_PSS_MD5_MGF1_MD5_SIGN_CRT_IFMA_FEATURES],
     },

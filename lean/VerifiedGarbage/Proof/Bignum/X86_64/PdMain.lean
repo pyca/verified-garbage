@@ -210,6 +210,8 @@ structure PdPre (s : State) (B : Addr) (Z k : Nat) (op ep ip : Addr) (L : Nat) (
   r : wv s.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) = R
   odd : N % 2 = 1
   n1 : 1 < N
+  /-- The checks find the modulus' top word nonzero. -/
+  big : 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ N
   rlt : R < N
   x : Src s B Z ip xb
   e : Src s B Z ep eb

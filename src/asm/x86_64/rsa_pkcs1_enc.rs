@@ -3857,3 +3857,126 @@ ret
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }
+
+/// The CPU features `vg_rsa_pkcs1_encrypt_precomputed_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PKCS1_ENCRYPT_PRECOMPUTED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+
+/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string given by the caller. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes) and the padding string `PS` (`ps_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` or `e` is not such a number or `PS` has a zero byte. RFC 8017 requires `PS` to be pseudo-randomly generated nonzero bytes, freshly for every encryption.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the message or the padding string.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`.
+///
+/// This implementation builds `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in its frame, finding whether `PS` has a zero byte without a branch, and calls `vg_rsa_public_precomputed_checked_ifma` on it with the cached modulus values. It then sets `out` to zeros and the result to 0 under a mask if `PS` had a zero byte, without branching on the public operation's result, and overwrites the frame's `EM` with zeros either way.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ps` must be valid for reads of `ps_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `msg_len + 11` must be at most `n_len`.
+/// * `ps_len` must be `n_len - msg_len - 3`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `msg`, `ps`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `msg`, `ps`, `scratch` and `pre` may overlap the return address on the stack or the 1120 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_encrypt_precomputed_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, ps: *const u8, ps_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-1112]
+mov r10, QWORD PTR [rsp+1152]
+mov r11, QWORD PTR [rsp+1160]
+mov rsi, QWORD PTR [rsp+1136]
+mov rax, QWORD PTR [rsp+1144]
+mov QWORD PTR [rsp+32], rdi
+mov QWORD PTR [rsp+40], rdx
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+56], r8
+mov QWORD PTR [rsp+64], r9
+mov rdi, rsp
+add rdi, 80
+mov QWORD PTR [rsp], rdi
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+mov rcx, rax
+mov eax, 0
+mov BYTE PTR [rsp+80], al
+mov eax, 2
+mov BYTE PTR [rsp+81], al
+mov r10d, 0
+mov edx, 0
+20:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rsp+r10*1+82], al
+cmp rax, 1
+sbb r11, r11
+or rdx, r11
+add r10, 1
+cmp r10, rcx
+jne 20b
+mov rsi, QWORD PTR [rsp+1120]
+mov r11, QWORD PTR [rsp+1128]
+mov eax, 0
+mov BYTE PTR [rsp+rcx*1+82], al
+mov QWORD PTR [rsp+72], rdx
+mov rdi, rsp
+add rdi, rcx
+add rdi, 83
+mov rcx, r11
+mov r10d, 0
+test rcx, rcx
+jne 21f
+jmp 22f
+21:
+23:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 23b
+22:
+mov rdi, QWORD PTR [rsp+32]
+mov rsi, QWORD PTR [rsp+48]
+mov rdx, QWORD PTR [rsp+40]
+mov rcx, QWORD PTR [rsp+48]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rdx, QWORD PTR [rsp+1168]
+mov rcx, QWORD PTR [rsp+1176]
+call {vg_rsa_public_precomputed_checked_ifma}
+mov rdx, QWORD PTR [rsp+72]
+xor rdx, -1
+and rax, rdx
+mov r11, rax
+mov rdi, QWORD PTR [rsp+32]
+mov rcx, QWORD PTR [rsp+48]
+mov r10d, 0
+24:
+movzx eax, BYTE PTR [rdi+r10*1]
+and rax, rdx
+mov BYTE PTR [rdi+r10*1], al
+mov eax, 0
+mov BYTE PTR [rsp+r10*1+80], al
+add r10, 1
+cmp r10, rcx
+jne 24b
+mov rax, r11
+lea rsp, [rsp+1112]
+ret
+.p2align 6",
+        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
+    )
+}

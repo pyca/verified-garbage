@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -53,6 +54,17 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
     verified := Proof.Bignum.X86_64.FoldedPublic.adx_verified
     features := ["bmi2", "adx"] },
+  Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
+    suffix := "_ifma"
+    notes := ["For `e = 65537` and a modulus of 32, 48 or 64 words: the input and `R² mod n` into numbers \
+        of 52-bit limbs, then twenty Montgomery multiplications with AVX512_IFMA, as \
+        `vg_rsa_private_crt_ifma`'s (one lane, the radix `R' = 2^(52 L)` for `4 L` limbs): \
+        `R²` to `R'²` by a square and a product by `2^(208 L - 256 W)`, the input into Montgomery form, \
+        sixteen squares and a last product by it; the result back to words and reduced once. Within \
+        Intel's MXCSR prologue and epilogue. Otherwise `vg_rsa_public_precomputed_checked_adx`'s code."]
+    code := Impl.Rsa.X86_64.PubIfma.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
+    verified := Proof.Bignum.X86_64.Ifma.Pub.ifma_verified
+    features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
   Spec.Rsa.privateCrtApi.artifact X86_64.target {
     notes := ["Baseline x86-64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input \
         below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
