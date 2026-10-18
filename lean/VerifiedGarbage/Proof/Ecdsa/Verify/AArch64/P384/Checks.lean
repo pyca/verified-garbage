@@ -73,8 +73,16 @@ theorem window_checks : PubNaf.WindowChecks Kq where
     dblu := by reg_ct [.x0]
     zaddu := by reg_ct [.x0]
     bump := by reg_ct [.x0, .x19, .x20]
-    keepD := dblu_keep
-    keep := zaddu_keep }
+    keepD := by
+      intro r hr s t tr he
+      exact Exec.gpr (dblu_keep r hr) he (Or.inr (by
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+        rcases hr with rfl | rfl <;> decide))
+    keep := by
+      intro r hr s t tr he
+      exact Exec.gpr (zaddu_keep r hr) he (Or.inr (by
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+        rcases hr with rfl | rfl <;> decide)) }
   cache := by reg_ct [.x0]
   infinity := by reg_ct [.x0]
   counter := by reg_ct [.x0]

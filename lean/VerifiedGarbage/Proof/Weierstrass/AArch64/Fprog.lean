@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Ecdsa.Generic
 
@@ -240,6 +240,7 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) ht,
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
+set_option exponentiation.threshold 1024 in
 /-- One operation, a call for a product modulo a modulus whose products are
 calls. -/
 theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
@@ -280,9 +281,20 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         rw [toM_mul hm heq, hI.val a hR.1]
       · simp only [Bool.not_eq_true] at hsq
         simp only [hsq, Bool.false_eq_true, ↓reduceIte]
-        refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
-          (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
-        rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+        by_cases hsq521 : (a == b && sqr521Ok M.n m') = true
+        · simp only [Bool.and_eq_true, beq_iff_eq] at hsq521
+          obtain ⟨rfl, hsp⟩ := hsq521
+          obtain ⟨hn9, hm'⟩ := Mont.sqr521Ok_eq hsp
+          subst hm'
+          simp only [hsp, beq_self_eq_true, Bool.and_self, ↓reduceIte]
+          refine WP.mono (Mont.sqrCall521_ok hI.scr hI.mod hn9 ht hown.1 hown.2.1 (hI.lt a hR.1))
+            fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+          rw [toM_mul hm heq, hI.val a hR.1]
+        · simp only [Bool.not_eq_true] at hsq521
+          simp only [hsq521, Bool.false_eq_true, ↓reduceIte]
+          refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
+            (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+          rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b => exact fop_ok hL hAl hm hI hS hR
   | sub o a b => exact fop_ok hL hAl hm hI hS hR
 
