@@ -51,9 +51,14 @@ Modelling choices:
   no equivalent of AArch64's PSTATE.DIT). The model has only the 32-bit
   `mul`, which T. Pornin's survey ("Constant-Time Mul", BearSSL) reports as
   constant time on the ARMv7 cores, including the Cortex-M3 (one cycle), which
-  runs the same Thumb code (`target_arch = "arm"` includes ARMv7-M); the long
-  multiplies `umull`/`umlal` are left out, as the Cortex-M3 terminates them
-  early depending on the operands.
+  runs the same Thumb code (`target_arch = "arm"` includes ARMv7-M), and
+  `mla`, its multiply-accumulate on the same multiplier, which the Cortex-M3
+  Technical Reference Manual (ARM DDI 0337H, Table 3-1, "Cortex-M3
+  instruction set summary") lists at a fixed two cycles; the long multiplies
+  `umull`/`umlal` are left out, as the Cortex-M3 terminates them early
+  depending on the operands (the same table: 3 to 5 and 4 to 7 cycles, its
+  note a: "UMULL, SMULL, UMLAL, and SMLAL instructions use early termination
+  depending on the size of the source values").
 * Calls are `bl` and returns `bx lr` (DDI 0406C, A8.8.25 "BL, BLX
   (immediate)", A8.8.27 "BX"). The return addresses are the next of the
   state's `unknowns`, which nothing constrains (see `TCB/Code.lean`); a
@@ -139,6 +144,8 @@ inductive Instr
   | rev (d m : Reg)
   /-- `mul d, n, m`: the low 32 bits of `n * m` (no flags set) -/
   | mul (d n m : Reg)
+  /-- `mla d, n, m, a`: the low 32 bits of `n * m + a` (no flags set) -/
+  | mla (d n m a : Reg)
   /-- `ldr t, [n, #off]` (`0 ≤ off < 4096`) -/
   | ldr (t n : Reg) (off : Nat)
   /-- `str t, [n, #off]` (`0 ≤ off < 4096`) -/
@@ -271,7 +278,16 @@ and later; the 16-bit T1 encoding sets the flags outside an IT block, so an
 assembler uses T2 for `mul`) instruction sets. `pc` (and, in Thumb, `sp`) as
 any of the registers is UNPREDICTABLE, which the model cannot express; since
 ARMv6, `d` may be `n` (the ARM encoding's `ArchVersion() < 6 && d == n`
-restriction does not apply to ARMv7).
+restriction does not apply to ARMv7);
+"MLA" (A8.8.100) with `S` = 0: `result = operand1 * operand2 + addend;
+R[d] = result<31:0>`, flags unchanged, where the operands are `SInt(R[n])`
+and `SInt(R[m])` and the addend `SInt(R[a])` (the low 32 bits of the result
+are those of the unsigned `R[n] * R[m] + R[a]`). It exists in the ARM
+(encoding A1) and Thumb (encoding T1, ARMv6T2 and later) instruction sets,
+and so in the ARMv7 baseline: `requires` stays empty. `pc` (and, in Thumb,
+`sp`) as any of the registers is UNPREDICTABLE, which the model cannot
+express (T1 with `Ra` = `pc` is MUL's encoding); the ARM encoding's
+`ArchVersion() < 6 && d == n` restriction does not apply to ARMv7.
 
 `adrSym d name` is three instructions, which the linker completes with the
 static's address `S` (`State.syms name`): "MOVW" (A8.8.102, "MOV
@@ -317,6 +333,7 @@ def exec : Instr → State → Option State
   | .adrSym d name, s => some (s.setReg d (s.syms name))
   | .rev d m, s => some (s.setReg d (rev (s.gpr m)))
   | .mul d n m, s => some (s.setReg d (s.gpr n * s.gpr m))
+  | .mla d n m a, s => some (s.setReg d (s.gpr n * s.gpr m + s.gpr a))
   | .ldr t n off, s =>
     if off < 4096 then
       (s.load32 (State.addr (s.gpr n + BitVec.ofNat 32 off))).map fun x => s.setReg t x

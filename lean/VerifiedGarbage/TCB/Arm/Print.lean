@@ -45,6 +45,7 @@ def Instr.asm : Instr → List String
       s!"movt {d.name}, #:upper16:({name} - (2f + 2 * (3f - 2f)))", "2:", s!"add {d.name}, pc", "3:"]
   | .rev d m => [s!"rev {d.name}, {m.name}"]
   | .mul d n m => [s!"mul {d.name}, {n.name}, {m.name}"]
+  | .mla d n m a => [s!"mla {d.name}, {n.name}, {m.name}, {a.name}"]
   | .ldr t n off => [s!"ldr {t.name}, [{n.name}, #{off}]"]
   | .str t n off => [s!"str {t.name}, [{n.name}, #{off}]"]
   | .ldrb t n off => [s!"ldrb {t.name}, [{n.name}, #{off}]"]
