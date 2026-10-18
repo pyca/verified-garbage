@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Mgf1.X86_64
+public import VerifiedGarbage.Impl.Dispatch.X86_64
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on x86-64
 
-`encrypt` and `decrypt`, for a hash function `H` (the label's) and MGF1's
-hash function `G`, each an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
-functions of MD5, SHA-1, SHA-224, SHA-256 or the SHA-512 family), calling
-those functions, MGF1 (`Impl/Mgf1/X86_64.lean`), and the RSA operation: the
-public-key operation within BoringSSL's limits (`vg_rsa_public_checked`)
-when encrypting, the private-key operation checked against `e`
-(`vg_rsa_private_checked`) when decrypting.
+`encrypt` and `decrypt`, for the hash function `H` (the label's) and MGF1's
+hash function `G` that the selectors `hash` and `mgf1_hash` name (SHA-1 or
+a SHA-2 function), calling their streaming functions through the tables
+`hash_fns` and `mgf1_fns` (`Spec/HashFns.lean`), MGF1
+(`Impl/Mgf1/X86_64.lean`), and the RSA
+operation: the public-key operation within BoringSSL's limits
+(`vg_rsa_public_checked`) when encrypting, the private-key operation
+checked against `e` (`vg_rsa_private_checked`) when decrypting.
 
 Everything runs in a frame of `frameBytes` bytes: at `rsp`, the stack
 arguments of the RSA operation; then the slots, which hold the arguments
@@ -19,11 +21,24 @@ and the values the code computes (the callees keep no caller-saved
 register). The first `oRsa` = 8192 bytes of `scratch` are ours; the RSA
 operation gets the rest, `scratch_len - 1024` words.
 
+## The hash functions
+
+The selectors and the tables are the last four arguments, on the stack;
+after the other arguments, the code (`selPrologue`) copies each selector to
+a slot (`sSelH`, `sSelG`), the lengths it computes with from `hLen` to slots
+of their own (`sHD` = `hLen`, `sH1` = `hLen + 1`, `sH2` = `2 hLen + 1`,
+`sH3` = `2 hLen + 2`, and `sGD`, MGF1's `hLen`), choosing them by a dispatch
+on the selector (`Dispatch.X86_64.chain`, over `lens`), and each table's
+three addresses to three slots (`sFnH`, `sFnG`). Each call of a streaming
+function is an indirect call of the address in its slot
+(`Mgf1.X86_64.initF`, …).
+
 ## Encryption
 
 `encrypt(out = rdi, out_len = rsi, n = rdx, n_len = rcx, e = r8,
-e_len = r9, label, label_len, msg, msg_len, seed, scratch, scratch_len)`,
-the last seven on the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen
+e_len = r9, label, label_len, msg, msg_len, seed, seed_len, scratch,
+scratch_len, …, hash, mgf1_hash, hash_fns, mgf1_fns)`, all but the first six on
+the stack. If `k < 2 hLen + 2` or `msg_len > k - 2 hLen
 - 2` (public), it writes zeros to `out` and returns 0. Otherwise it writes
 `EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the
 label hashed with `H`), masks `DB` with MGF1 of the seed and then the seed
@@ -34,8 +49,8 @@ into `out`.
 
 `decrypt(out = rdi, out_len = rsi, msg_len = rdx, n = rcx, n_len = r8,
 e = r9, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len,
-label, label_len, ct, ct_len, scratch, scratch_len)`, the last seventeen
-on the stack. `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch`
+label, label_len, ct, ct_len, scratch, scratch_len, hash, mgf1_hash, hash_fns,
+mgf1_fns)`, the last twenty-one on the stack. `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch`
 and returns `r` (1, 0 or 2), which only selects values without a branch.
 If `k < 2 hLen + 2` (public), the result is `r = 2 ? 2 : 0`, with zeros to
 `out` and `*msg_len`. Otherwise, as BoringSSL's
@@ -59,15 +74,14 @@ message, then zeros. With `ok` all ones exactly when `r = 1` and
 namespace VG.Impl.RsaOaep.X86_64
 
 open VG.X86_64
-open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
-open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout mgfXor)
+open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout mgfXor initF updF finF)
 
 /-! ## The frame -/
 
 /-- The frame: the RSA operation's stack arguments (14 words for the
 private operation, 4 for the public one) at `rsp`, then the slots. It is
 `≡ 8 (mod 16)`, so that `rsp` is a multiple of 16 at the calls. -/
-def frameBytes : Nat := 296
+def frameBytes : Nat := 408
 
 /-- MGF1's slots. -/
 def sScr : Nat := 112
@@ -98,6 +112,19 @@ def sAcc : Nat := 248
 def sIdx : Nat := 256
 def sOk : Nat := 264
 def sA : Nat := 272
+/-- The selectors of `H` and `G`, and the lengths computed from their
+digests' (`hLen`): `hLen`, `hLen + 1`, `2 hLen + 1` and `2 hLen + 2` of
+`H`, and `hLen` of `G`. -/
+def sSelH : Nat := 296
+def sSelG : Nat := 304
+def sHD : Nat := 312
+def sH1 : Nat := 320
+def sH2 : Nat := 328
+def sH3 : Nat := 336
+def sGD : Nat := 344
+/-- The addresses of `H`'s and `G`'s streaming functions, three slots each. -/
+def sFnH : Nat := 360
+def sFnG : Nat := 384
 
 /-! ## Our part of `scratch` -/
 
@@ -119,7 +146,7 @@ def oW : Nat := 4096
 def oRsa : Nat := 8192
 
 /-- MGF1's layout. -/
-def lay : Layout := ⟨sScr, sSrc, sSrcLen, sDst, sDstLen, sCtr, sDone, oSt, oCtr, oDig, oW⟩
+def lay : Layout := ⟨sScr, sSrc, sSrcLen, sDst, sDstLen, sCtr, sDone, sFnG, sGD, oSt, oCtr, oDig, oW⟩
 
 /-- The function's stack argument `j`. -/
 def arg (j : Nat) : MemOp := sp (frameBytes + 8 + 8 * j)
@@ -133,31 +160,59 @@ def argSlot (j d : Nat) : List Instr := [.mov .rax (.mem (arg j)), .store (sp d)
 /-- `imm32 n`. -/
 def im (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
-variable (H G : Stream)
+/-! ## The hash functions' selectors, lengths and functions -/
+
+/-- The hash functions' numbers and digest lengths: SHA-1 (1) and the SHA-2
+functions (2 to 7), as `Spec.HashId.mgf1` numbers them. -/
+def lens : List (Nat × Nat) := [(1, 20), (2, 28), (3, 32), (4, 48), (5, 64), (6, 28), (7, 32)]
+
+/-- `hLen` and the lengths computed from it, of the hash function of digest
+length `D`, to their slots. -/
+def consts (D : Nat) : List Instr :=
+  [.mov32 .rax (im D), .store (sp sHD) .rax, .mov32 .rax (im (D + 1)), .store (sp sH1) .rax,
+    .mov32 .rax (im (2 * D + 1)), .store (sp sH2) .rax, .mov32 .rax (im (2 * D + 2)), .store (sp sH3) .rax]
+
+/-- The three words of the table the stack argument `j` points to, to the
+slots from `d`. -/
+def fnSlots (j d : Nat) : List Instr :=
+  [.mov .rax (.mem (arg j)), .mov .r10 (.mem (at_ .rax)), .store (sp d) .r10,
+    .mov .r10 (.mem (at_ .rax 8)), .store (sp (d + 8)) .r10, .mov .r10 (.mem (at_ .rax 16)),
+    .store (sp (d + 16)) .r10]
+
+/-- The selectors, the stack arguments `jH` and `jG`, to their slots, and
+the lengths of the hash functions they name to theirs; then the tables'
+words, the stack arguments `jG + 1` and `jG + 2`, to theirs. -/
+def selPrologue (jH jG : Nat) : Prog isa :=
+  seqs [.block (argSlot jH sSelH),
+    Dispatch.X86_64.chain (lens.map fun (i, D) => (i, .block (consts D))),
+    .block (argSlot jG sSelG),
+    Dispatch.X86_64.chain (lens.map fun (i, D) => (i, .block [.mov32 .rax (im D), .store (sp sGD) .rax])),
+    .block (fnSlots (jG + 1) sFnH ++ fnSlots (jG + 2) sFnG)]
 
 /-! ## Common pieces -/
 
 /-- The label's hash, `H(label)`, to `scratch + o`. -/
 def hashLabel (o : Nat) : Prog isa :=
-  seqs [.block (scr .rdi oSt), .call H.initN H.initC,
+  seqs [.block (scr .rdi oSt), initF sFnH,
     .block (scr .rdi oSt ++ [.mov32 .rsi (.imm 0), .mov .rdx (.mem (sp sLab)), .mov .rcx (.mem (sp sLabLen))] ++
       scr .r8 oW),
-    .call H.updN H.updC,
+    updF sFnH,
     .block (scr .rdi oSt ++ [.mov .rsi (.mem (sp sLabLen))] ++ scr .rdx o ++ scr .rcx oW),
-    .call H.finN H.finC]
+    finF sFnH]
 
 /-- MGF1's slots for masking `DB` (`k - hLen - 1` bytes at `EM + 1 + hLen`)
 with the seed (`hLen` bytes at `EM + 1`). -/
 def dbArgs : List Instr :=
-  scr .rax (oEm + 1 + H.D) ++ [.mov .rdx (.mem (sp sK)), .alu .sub .rdx (im (H.D + 1))] ++ scr .rcx (oEm + 1) ++
-    [.mov32 .r9 (im H.D), .store (sp sDst) .rax, .store (sp sDstLen) .rdx, .store (sp sSrc) .rcx,
+  scr .rax (oEm + 1) ++ [.alu .add .rax (.mem (sp sHD)), .mov .rdx (.mem (sp sK)), .alu .sub .rdx (.mem (sp sH1))] ++
+    scr .rcx (oEm + 1) ++
+    [.mov .r9 (.mem (sp sHD)), .store (sp sDst) .rax, .store (sp sDstLen) .rdx, .store (sp sSrc) .rcx,
       .store (sp sSrcLen) .r9]
 
 /-- MGF1's slots for masking the seed with `DB`. -/
 def seedArgs : List Instr :=
-  scr .rax (oEm + 1) ++ [.mov32 .rdx (im H.D)] ++ scr .rcx (oEm + 1 + H.D) ++
-    [.mov .r9 (.mem (sp sK)), .alu .sub .r9 (im (H.D + 1)), .store (sp sDst) .rax, .store (sp sDstLen) .rdx,
-      .store (sp sSrc) .rcx, .store (sp sSrcLen) .r9]
+  scr .rax (oEm + 1) ++ [.mov .rdx (.mem (sp sHD))] ++ scr .rcx (oEm + 1) ++
+    [.alu .add .rcx (.mem (sp sHD)), .mov .r9 (.mem (sp sK)), .alu .sub .r9 (.mem (sp sH1)), .store (sp sDst) .rax,
+      .store (sp sDstLen) .rdx, .store (sp sSrc) .rcx, .store (sp sSrcLen) .r9]
 
 /-- `k` zeros to `out`. -/
 def zeroOut : Prog isa :=
@@ -165,7 +220,7 @@ def zeroOut : Prog isa :=
     (byteLoop [.store8 (ix .rdi .r8) .rax] (.reg .r10))
 
 /-- `k ≥ 2 hLen + 2`: CF set if not, with `k` in `rax`. -/
-def chkK : List Instr := [.mov .rax (.mem (sp sK)), .alu .cmp .rax (im (2 * H.D + 2))]
+def chkK : List Instr := [.mov .rax (.mem (sp sK)), .alu .cmp .rax (.mem (sp sH3))]
 
 /-! ## Encryption -/
 
@@ -173,10 +228,10 @@ def chkK : List Instr := [.mov .rax (.mem (sp sK)), .alu .cmp .rax (im (2 * H.D 
 def encPrologue : List Instr :=
   [.store (sp sOut) .rdi, .store (sp sN) .rdx, .store (sp sK) .rcx, .store (sp sE) .r8, .store (sp sEl) .r9] ++
   argSlot 0 sLab ++ argSlot 1 sLabLen ++ argSlot 2 sMsg ++ argSlot 3 sMsgLen ++ argSlot 4 sSeed ++
-  argSlot 5 sScr ++ argSlot 6 sScrLen
+  argSlot 6 sScr ++ argSlot 7 sScrLen
 
 /-- `msg_len ≤ k - 2 hLen - 2`, from `rax = k`: CF set if not. -/
-def chkMsg : List Instr := [.alu .sub .rax (im (2 * H.D + 2)), .alu .cmp .rax (.mem (sp sMsgLen))]
+def chkMsg : List Instr := [.alu .sub .rax (.mem (sp sH3)), .alu .cmp .rax (.mem (sp sMsgLen))]
 
 /-- Zeros to `out`, and 0. -/
 def encFail : Prog isa := zeroOut
@@ -188,13 +243,14 @@ def clearEm : Prog isa :=
 
 /-- The seed to `EM + 1`. -/
 def copySeed : Prog isa :=
-  .seq (.block ([.mov .rsi (.mem (sp sSeed))] ++ scr .rcx oEm ++ [.mov32 .r8 (.imm 0)]))
-    (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8 (oEm + 1)) .rax] (im H.D))
+  .seq (.block ([.mov .rsi (.mem (sp sSeed))] ++ scr .rcx oEm ++ [.mov .r10 (.mem (sp sHD)), .mov32 .r8 (.imm 0)]))
+    (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8 (oEm + 1)) .rax] (.reg .r10))
 
 /-- `lHash` (the digest at `scratch + oDig`) to `EM + 1 + hLen`. -/
 def copyLh : Prog isa :=
-  .seq (.block (scr .rsi oDig ++ scr .rcx oEm ++ [.mov32 .r8 (.imm 0)]))
-    (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8 (oEm + 1 + H.D)) .rax] (im H.D))
+  .seq (.block (scr .rsi oDig ++ scr .rcx (oEm + 1) ++
+      [.mov .r10 (.mem (sp sHD)), .alu .add .rcx (.reg .r10), .mov32 .r8 (.imm 0)]))
+    (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax] (.reg .r10))
 
 /-- `0x01` at `EM + k - mLen - 1`, and the message after it, if it is not
 empty. -/
@@ -215,23 +271,20 @@ def pubArgs : List Instr :=
     .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]
 
 /-- `EM`, before masking. -/
-def encEm : Prog isa := seqs [clearEm, copySeed H, hashLabel H oDig, copyLh H, putMsg]
+def encEm : Prog isa := seqs [clearEm, copySeed, hashLabel oDig, copyLh, putMsg]
 
 variable (pubN : String) (pubC : Prog isa)
 
 /-- After the checks. -/
 def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H), mgfXor lay G, .block (seedArgs H), mgfXor lay G, .block pubArgs,
+  seqs [encEm, .block dbArgs, mgfXor lay, .block seedArgs, mgfXor lay, .block pubArgs,
     .call pubN pubC]
 
-/-- The prologue and the checks, then `main`. -/
+/-- The selectors and the tables (the stack arguments 10 to 13), the
+prologue and the checks, then `main`. -/
 def encBodyWith (main : Prog isa) : Prog isa :=
-  seqs [.block (encPrologue ++ chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
-
-def encBody : Prog isa := encBodyWith H (encMain H G pubN pubC)
-
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`. -/
-def encrypt : Prog isa := .frame (.alloc frameBytes) (encBody H G pubN pubC) (.free frameBytes)
+  seqs [.block encPrologue, selPrologue 10 11, .block chkK, .ite .b encFail
+    (seqs [.block chkMsg, .ite .b encFail main])]
 
 /-! ## Decryption -/
 
@@ -262,14 +315,18 @@ def decFail : Prog isa :=
 
 /-- `acc := EM[0] ∨ ⋁ (lHash'[i] ⊕ lHash[i])`. -/
 def accLh : Prog isa :=
-  .seq (.block (scr .rcx oLh ++ scr .rdi (oEm + 1 + H.D) ++ scr .rsi oEm ++
-      [.movzx8 .rdx (at_ .rsi), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rcx oLh ++ scr .rdi (oEm + 1) ++ [.mov .r10 (.mem (sp sHD)), .alu .add .rdi (.reg .r10)] ++
+      scr .rsi oEm ++ [.movzx8 .rdx (at_ .rsi), .mov32 .r8 (.imm 0)]))
     (.seq (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .r9 (ix .rdi .r8), .alu .xor .rax (.reg .r9),
-        .alu .or .rdx (.reg .rax)] (im H.D))
+        .alu .or .rdx (.reg .rax)] (.reg .r10))
       (.block [.store (sp sAcc) .rdx]))
 
-/-- `T`'s length, `t = k - 2 hLen - 1`, to `r10`. -/
-def tLen : List Instr := [.mov .r10 (.mem (sp sK)), .alu .sub .r10 (im (2 * H.D + 1))]
+/-- `T`'s length, `t = k - 2 hLen - 1`, to `r10` (through `rax`, so that the
+taint analysis sees it public). -/
+def tLen : List Instr := [.mov .r10 (.mem (sp sK)), .mov .rax (.mem (sp sH2)), .alu .sub .r10 (.reg .rax)]
+
+/-- `d += 2 hLen + 1`, `T`'s offset in `EM`. -/
+def tOff (d : Reg) : List Instr := [.mov .rax (.mem (sp sH2)), .alu .add d (.reg .rax)]
 
 /-- The scan of `T`: `rdx` all ones while no `0x01` has been seen
 (`looking`), `rsi` the index of the first, `rcx` the accumulator, ORed with
@@ -285,7 +342,7 @@ def scanBody : List Instr :=
 
 /-- The scan, then `acc |= looking` and `idx` into its slot. -/
 def scan : Prog isa :=
-  .seq (.block (scr .rdi (oEm + 1 + 2 * H.D) ++ tLen H ++
+  .seq (.block (scr .rdi oEm ++ tOff .rdi ++ tLen ++
       [.mov .rdx (.imm 0xFFFFFFFF), .mov32 .rsi (.imm 0), .mov .rcx (.mem (sp sAcc)), .mov32 .r8 (.imm 0)]))
     (.seq (byteLoop scanBody (.reg .r10))
       (.block [.alu .or .rcx (.reg .rdx), .store (sp sAcc) .rcx, .store (sp sIdx) .rsi]))
@@ -294,7 +351,7 @@ def scan : Prog isa :=
 and `r10` and the buffer's in `rcx` for `copyT` and `shift` after it, which
 store through them and so cannot read the frame's public slots. -/
 def clearBuf : Prog isa :=
-  .seq (.block (scr .rsi (oEm + 1 + 2 * H.D) ++ tLen H ++ scr .rcx oBuf ++ [.mov32 .rax (.imm 0),
+  .seq (.block (scr .rsi oEm ++ tOff .rsi ++ tLen ++ scr .rcx oBuf ++ [.mov32 .rax (.imm 0),
       .mov32 .r8 (.imm 0)]))
     (.loop (.block [.store (ix .rcx .r8) .rax, .alu .add .r8 (.imm 8), .alu .cmp .r8 (.imm 2048)]) .ne)
 
@@ -341,23 +398,25 @@ def outLoop : Prog isa :=
 
 /-- `*msg_len := (t - idx - 1) ∧ ok`, and the result `(ok ∧ 1) ∨ ((r = 2) ? 2 : 0)`. -/
 def decRet : List Instr :=
-  [.mov .r11 (.mem (sp sOk)), .mov .rax (.mem (sp sK)), .alu .sub .rax (im (2 * H.D + 2)),
+  [.mov .r11 (.mem (sp sOk)), .mov .rax (.mem (sp sK)), .alu .sub .rax (.mem (sp sH3)),
     .alu .sub .rax (.mem (sp sIdx)), .alu .and .rax (.reg .r11), .mov .rdi (.mem (sp sMl)),
     .store (at_ .rdi) .rax, .alu .and .r11 (.imm 1)] ++ faultBit ++ [.alu .or .rax (.reg .r11)]
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H oLh, .block (seedArgs H), mgfXor lay G, .block (dbArgs H), mgfXor lay G, accLh H, scan H,
-    clearBuf H, copyT, shift, .block okMask, outLoop, .block (decRet H)]
+  seqs [hashLabel oLh, .block seedArgs, mgfXor lay, .block dbArgs, mgfXor lay, accLh, scan,
+    clearBuf, copyT, shift, .block okMask, outLoop, .block decRet]
 
 variable (privN : String) (privC : Prog isa)
 
+/-- The selectors and the tables (the stack arguments 17 to 20), the
+prologue, the private operation and the check of `k`, then the decoding. -/
 def decBody : Prog isa :=
-  seqs [.block (decPrologue ++ privArgs), .call privN privC,
-    .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H),
-    .ite .b decFail (decMain H G)]
+  seqs [.block decPrologue, selPrologue 17 18, .block privArgs, .call privN privC,
+    .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK),
+    .ite .b decFail decMain]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody H G privN privC) (.free frameBytes)
+/-- `vg_rsa_oaep_decrypt`. -/
+def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody privN privC) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64

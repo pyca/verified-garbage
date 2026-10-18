@@ -117,6 +117,7 @@ pub mod ed25519;
 pub mod ed448;
 mod error;
 pub mod ffdh;
+mod hash_fns;
 pub mod hashes;
 pub mod hmac;
 pub mod idea_cbc;

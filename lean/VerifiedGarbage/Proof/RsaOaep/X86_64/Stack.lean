@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.Funs
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
@@ -54,46 +57,41 @@ theorem SpSafe.of_noSp {c : Prog isa} (h : NoSp c) : SpSafe c := fun i hi => by
   cases i <;> simp_all [Taint.clobbers, Taint.dstOf, isa, Instr.dst]
   all_goals (constructor <;> intro e <;> subst e <;> simp_all)
 
-/-! ## Pieces that keep `rsp`, MXCSR and the stack shallow -/
+/-! ## Pieces that keep `rsp`, MXCSR's control bits and the stack shallow -/
 
-/-- The instructions of `c` neither write `rsp` nor load MXCSR. -/
-def okI (i : Instr) : Bool := !Taint.clobbers i .rsp && !loadsMxcsr i
+/-- The instructions of `c` do not write `rsp`. -/
+def okI (i : Instr) : Bool := !Taint.clobbers i .rsp
 
-/-- Code that never writes `rsp` or loads MXCSR, with calls nested at most
-two deep. -/
-def Good (c : Prog isa) : Prop := c.allInstrs okI = true ∧ c.depth ≤ 2
+/-- Code that never writes `rsp`, keeps MXCSR's control bits (`ctlOk`: it
+loads MXCSR nowhere, and the functions it calls indirectly keep them), with
+calls nested at most two deep. -/
+def Good (c : Prog isa) : Prop := c.allInstrs okI = true ∧ ctlOk c = true ∧ c.depth ≤ 2
 
 theorem Good.noSp {c : Prog isa} (h : Good c) : NoSp c := fun i hi => by
-  have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans h.1) i hi
-  simp only [okI, Bool.and_eq_true, Bool.not_eq_true'] at this
-  exact this.1
-
-theorem Good.mx {c : Prog isa} (h : Good c) : ∀ i ∈ instrs c, loadsMxcsr i = false := fun i hi => by
-  have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans h.1) i hi
-  simp only [okI, Bool.and_eq_true, Bool.not_eq_true'] at this
-  exact this.2
+  have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _).symm.trans h.1) i hi
+  simp only [okI, Bool.not_eq_true'] at this
+  exact this
 
 theorem Good.xdepth {c : Prog isa} (h : Good c) : c.x86_64Depth ≤ 16 := by
-  have := xdepth_le h.noSp; have := h.2; omega
+  have := xdepth_le h.noSp; have := h.2.2; omega
 
-/-- A callee whose instructions never write `rsp` or load MXCSR, with calls
-nested at most one deep. -/
-theorem okI_all_of {c : Prog isa} (hs : NoSp c) (hm : c.allInstrs (fun i => !loadsMxcsr i) = true) :
-    c.allInstrs okI = true := by
-  rw [Code.allInstrs_eq] at hm ⊢
-  refine List.all_eq_true.mpr fun i hi => ?_
-  have h1 := hs i hi
-  have h2 := List.all_eq_true.mp hm i hi
-  simp only [okI, h1, Bool.not_false, Bool.true_and]; exact h2
+/-- What a piece changes of memory, within `ws`, keeping the functions at
+every address and the statics. -/
+structure StepW (ws : List Region) (s s' : State) : Prop where
+  frame : Frame ws s.mem s'.mem
+  funs : s'.funs = s.funs
+  syms : s'.syms = s.syms
 
-/-- What a `Good` piece keeps: `rsp`, MXCSR, and memory but within the
-writable regions and the 16 bytes below `rsp`. -/
+/-- What a `Good` piece keeps: `rsp`, MXCSR's control bits, the functions and
+statics, and memory but within the writable regions and the 16 bytes below
+`rsp`. -/
 theorem wp_good {c : Prog isa} (hc : Good c) {s : State} {Q : State → Prop} (h : WP isa c s Q) :
-    WP isa c s fun s' => Q s' ∧ s'.gpr .rsp = s.gpr .rsp ∧ s'.mxcsr = s.mxcsr ∧
-      Frame (s.wr ++ [below (s.gpr .rsp) 16]) s.mem s'.mem := by
+    WP isa c s fun s' => Q s' ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
+      StepW (s.wr ++ [below (s.gpr .rsp) 16]) s s' := by
   obtain ⟨t, s', he, hq⟩ := h
   have hsp := SpSafe.of_noSp hc.noSp
-  refine ⟨t, s', he, hq, Exec.rsp hsp he, Exec.mxcsr hc.mx he, ?_⟩
+  refine ⟨t, s', he, hq, Exec.rsp hsp he, Exec.ctl hc.2.1 he, ⟨?_, Exec.funs he, Exec.syms he⟩⟩
   exact Frame.below_mono (Exec.stackFrame hsp he (by have := hc.xdepth; omega)) hc.xdepth (by omega)
 
 end VG.Proof.RsaOaep.X86_64

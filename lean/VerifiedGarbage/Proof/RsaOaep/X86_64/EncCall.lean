@@ -31,7 +31,7 @@ variable {H : Spec.Mgf1.Hash}
 def outR (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
 
 /-- The working space. -/
-def scrR (s : State) : Region := ⟨stackArg s 5, (stackArg s 6).toNat * 8⟩
+def scrR (s : State) : Region := ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
 
 /-- Memory changed only in the stack the function uses, `out` and the
 working space. -/
@@ -65,34 +65,57 @@ theorem FrE.step {s : State} {m m' : Mem} (h : FrE s m) {ws : List Region}
 theorem EPre.wr {s : State} (hp : EPre H s) : (allocState frameBytes s).wr = [frR s, outR s, scrR s] := by
   simp [allocState, hp.hwr, outR, scrR]
 
+theorem owned_one {stack : Nat} {e : State} {ws : List Region} (h : Owned stack e ws) {r : Region} (hr : r ∈ ws) :
+    Owned stack e [r] := fun q hq => by rw [List.mem_singleton.mp hq]; exact h r hr
+
+/-- What the function writes is the entry's own: the frame and the 16 bytes
+below it are in the stack it uses, `out` and the working space writable. -/
+theorem EPre.owned {s : State} (hp : EPre H s) :
+    Owned encStack s [frR s, outR s, scrR s, below (fb s) 16] := by
+  have hstk : Owned encStack s [stkR s] := fun r hr x hx => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact ⟨stkR s, List.mem_append_right _ (by simp [abi, encStack, stackBelow, stkR]), hx⟩
+  have hw : ∀ r ∈ s.wr, Owned encStack s [r] := fun r hr q hq x hx => by
+    rw [List.mem_singleton] at hq; subst hq
+    exact ⟨q, List.mem_append_left _ hr, hx⟩
+  exact (hstk.sub (frame_sub s)).cons ((hw _ (by simp [hp.hwr, outR])).cons
+    ((hw _ (by simp [hp.hwr, scrR])).cons (hstk.sub (ret_sub s))))
+
+theorem EPre.scrO {s : State} (hp : EPre H s) : Owned encStack s [⟨stackArg s 6, oRsa⟩] := by
+  have := hp.hsl; have := hp.k1
+  exact (owned_one hp.owned (r := scrR s) (by simp)).sub (Region.sub_prefix (by unfold oRsa; omega))
+
+theorem EPre.sp16 {s : State} (hp : EPre H s) : 16 ≤ (fb s).toNat := by
+  have := fb_toNat hp; have := hp.sp1; unfold encStack frameBytes at *; omega
+
 /-! ## The arguments -/
 
-theorem pubArgs_ok {s u : State} (L : Lay u (fb s) (stackArg s 5)) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep u.mem (fb s) (stackArg s 5) V W) (hW : ∀ k, 21 ≤ k → k ≤ 26 → W k = encW s k) :
-    WP isa (.block pubArgs) u fun u' => Lay u' (fb s) (stackArg s 5) ∧
+theorem pubArgs_ok {s u : State} (L : Lay u (fb s) (stackArg s 6)) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep u.mem (fb s) (stackArg s 6) V W) (hW : ∀ k, 21 ≤ k → k ≤ 26 → W k = encW s k) :
+    WP isa (.block pubArgs) u fun u' => Lay u' (fb s) (stackArg s 6) ∧
       Keep [.rax, .rdx, .rcx, .r9, .rdi, .rsi, .r8] u u' ∧
-      Rep u'.mem (fb s) (stackArg s 5) V (upd (upd (upd (upd W 0 (off (stackArg s 5) oEm)) 1 (s.gpr .rcx)) 2
-        (off (stackArg s 5) oRsa)) 3 (stackArg s 6 - 1024)) ∧
+      Rep u'.mem (fb s) (stackArg s 6) V (upd (upd (upd (upd W 0 (off (stackArg s 6) oEm)) 1 (s.gpr .rcx)) 2
+        (off (stackArg s 6) oRsa)) 3 (stackArg s 7 - 1024)) ∧
       u'.gpr .rdi = s.gpr .rdi ∧ u'.gpr .rsi = s.gpr .rcx ∧ u'.gpr .rdx = s.gpr .rdx ∧ u'.gpr .rcx = s.gpr .rcx ∧
       u'.gpr .r8 = s.gpr .r8 ∧ u'.gpr .r9 = s.gpr .r9 := by
   have hs := L.slot
   simp only [Bignum.word] at hs
   have G' := L.geo
   have e : ∀ k, 21 ≤ k → k ≤ 26 → W k = encW s k := hW
-  have w21 : W 21 = s.gpr .rdi := (e 21 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w22 : W 22 = s.gpr .rdx := (e 22 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w23 : W 23 = s.gpr .rcx := (e 23 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w24 : W 24 = s.gpr .r8 := (e 24 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w25 : W 25 = s.gpr .r9 := (e 25 (by omega) (by omega)).trans (by simp [encW, upd])
-  have w26 : W 26 = stackArg s 6 := (e 26 (by omega) (by omega)).trans (by simp [encW, upd])
-  have R1 := (((R.wf G' (k := 0) (by decide) (off (stackArg s 5) oEm)).wf G' (k := 1) (by decide) (s.gpr .rcx)).wf G'
-    (k := 2) (by decide) (off (stackArg s 5) oRsa)).wf G' (k := 3) (by decide) (stackArg s 6 - 1024)
+  have w21 : W 21 = s.gpr .rdi := (e 21 (by omega) (by omega)).trans (by simp [encW, fnW, selW, encPW, upd])
+  have w22 : W 22 = s.gpr .rdx := (e 22 (by omega) (by omega)).trans (by simp [encW, fnW, selW, encPW, upd])
+  have w23 : W 23 = s.gpr .rcx := (e 23 (by omega) (by omega)).trans (by simp [encW, fnW, selW, encPW, upd])
+  have w24 : W 24 = s.gpr .r8 := (e 24 (by omega) (by omega)).trans (by simp [encW, fnW, selW, encPW, upd])
+  have w25 : W 25 = s.gpr .r9 := (e 25 (by omega) (by omega)).trans (by simp [encW, fnW, selW, encPW, upd])
+  have w26 : W 26 = stackArg s 7 := (e 26 (by omega) (by omega)).trans (by simp [encW, fnW, selW, encPW, upd])
+  have R1 := (((R.wf G' (k := 0) (by decide) (off (stackArg s 6) oEm)).wf G' (k := 1) (by decide) (s.gpr .rcx)).wf G'
+    (k := 2) (by decide) (off (stackArg s 6) oRsa)).wf G' (k := 3) (by decide) (stackArg s 7 - 1024)
   have z : off (fb s) (8 * 0) = fb s := BitVec.add_zero _
   rw [z, show 8 * 1 = 8 from rfl, show 8 * 2 = 16 from rfl, show 8 * 3 = 24 from rfl] at R1
   have h0 : InRegions u.wr (fb s) 8 := by rw [← z]; exact L.st (d := 0) (by decide)
   refine WP.mono (WP.keep [.rax, .rdx, .rcx, .r9, .rdi, .rsi, .r8] (Q := fun u' => u'.mem =
-      (((u.mem.writeW (fb s) (off (stackArg s 5) oEm)).writeW (off (fb s) 8) (s.gpr .rcx)).writeW
-        (off (fb s) 16) (off (stackArg s 5) oRsa)).writeW (off (fb s) 24) (stackArg s 6 - 1024) ∧
+      (((u.mem.writeW (fb s) (off (stackArg s 6) oEm)).writeW (off (fb s) 8) (s.gpr .rcx)).writeW
+        (off (fb s) 16) (off (stackArg s 6) oRsa)).writeW (off (fb s) 24) (stackArg s 7 - 1024) ∧
       u'.gpr .rdi = s.gpr .rdi ∧ u'.gpr .rsi = s.gpr .rcx ∧ u'.gpr .rdx = s.gpr .rdx ∧ u'.gpr .rcx = s.gpr .rcx ∧
       u'.gpr .r8 = s.gpr .r8 ∧ u'.gpr .r9 = s.gpr .r9) ?_ rfl) fun u' ⟨⟨hm, h1, h2, h3, h4, h5, h6⟩, kk⟩ =>
     ⟨L.of_rep' R (by rw [hm]; exact R1) (by simp [upd]) (kk.gpr (by decide)) kk.2.2, kk, by rw [hm]; exact R1,
@@ -130,19 +153,19 @@ theorem stackArg_entry {t : State} {F : Addr} (hsp : t.gpr .rsp = F) (hF : 8 ≤
   exact Mem.readW_writeW_sep hsep (by decide)
 
 /-- The working space the call gets: ours ends at `oRsa`. -/
-def rsaR (s : State) : Region := ⟨off (stackArg s 5) oRsa, (stackArg s 6 - 1024).toNat * 8⟩
+def rsaR (s : State) : Region := ⟨off (stackArg s 6) oRsa, (stackArg s 7 - 1024).toNat * 8⟩
 
 /-- What the call reads: `n`, `e`, `EM` and its stack arguments. -/
 def pubRd (s : State) : List Region :=
-  [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨off (stackArg s 5) oEm, (s.gpr .rcx).toNat⟩,
+  [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨off (stackArg s 6) oEm, (s.gpr .rcx).toNat⟩,
     ⟨fb s, 32⟩]
 
 /-- What it writes: `out` and the rest of the working space. -/
 def pubWr (s : State) : List Region := [⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩, rsaR s]
 
 theorem rsa_toNat {s : State} (hp : EPre H s) :
-    (stackArg s 6 - 1024).toNat = (stackArg s 6).toNat - 1024 ∧
-      (off (stackArg s 5) oRsa).toNat = (stackArg s 5).toNat + oRsa := by
+    (stackArg s 7 - 1024).toNat = (stackArg s 7).toNat - 1024 ∧
+      (off (stackArg s 6) oRsa).toNat = (stackArg s 6).toNat + oRsa := by
   have := hp.hsl; have := hp.wS; have := hp.k1
   constructor
   · rw [BitVec.toNat_sub, show (1024 : BitVec 64).toNat = 1024 from rfl]; omega
@@ -155,7 +178,7 @@ theorem rsa_sub {s : State} (hp : EPre H s) : Region.Sub (rsaR s) (scrR s) := by
   rw [h1]
   exact Offset.sub_base _ (by unfold oRsa; omega)
 
-theorem em_sub {s : State} (hp : EPre H s) : Region.Sub ⟨off (stackArg s 5) oEm, (s.gpr .rcx).toNat⟩ (scrR s) := by
+theorem em_sub {s : State} (hp : EPre H s) : Region.Sub ⟨off (stackArg s 6) oEm, (s.gpr .rcx).toNat⟩ (scrR s) := by
   have := hp.hsl; have := hp.k2
   exact Offset.sub_base _ (by unfold oEm; omega)
 

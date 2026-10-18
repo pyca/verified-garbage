@@ -40,57 +40,67 @@ theorem clearEm_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   refine WP.mono (clearQ_ok Lv (hm ▸ R) (o := oEm) (n := 1024) (by decide) (by decide) (by decide) (by decide)
     h₁ h₂ h₃) fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hk.trans kw).mono (by decide), Rw⟩
 
-/-- A copy into our working space from `rsi = p`, set by `pre`. -/
+/-- A copy of `n` bytes (in `r10`) into our working space from `rsi = p`,
+set by `pre`. -/
 theorem copyFrom_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {pre : List Instr} {p : Addr} {o disp n : Nat}
     (hpre : WP isa (.block pre) u fun v => v.gpr .rsi = p ∧ v.gpr .rcx = off S o ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧
-      v.mem = u.mem ∧ Keep [.rsi, .rcx, .r8] u v)
+      v.gpr .r10 = BitVec.ofNat 64 n ∧ v.mem = u.mem ∧ Keep [.rsi, .rcx, .r10, .r8] u v)
     (hn : 0 < n) (hn31 : n < 2 ^ 31) (ho : o + disp + n ≤ oRsa)
     (hsrc : ∀ i < n, InRegions (u.rd ++ u.wr) (p + BitVec.ofNat 64 i) 1)
     (hdis : ∀ i < n, ∀ j < n, p + BitVec.ofNat 64 i ≠ off S (o + disp + j)) :
     WP isa (.seq (.block pre) (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8 disp) .rax]
-      (.imm (BitVec.ofNat 32 n)))) u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .rax, .r8] u u' ∧
+      (.reg .r10))) u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .r10, .rax, .r8] u u' ∧
       Rep u'.mem F S (cpV V (fun i => u.mem (p + BitVec.ofNat 64 i)) (o + disp) n) W := by
-  refine WP.seq (WP.mono hpre fun v ⟨h₁, h₂, h₃, hm, hk⟩ => ?_)
+  refine WP.seq (WP.mono hpre fun v ⟨h₁, h₂, h₃, h₁₀, hm, hk⟩ => ?_)
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have hsrc' : ∀ i < n, InRegions (v.rd ++ v.wr) (p + BitVec.ofNat 64 i) 1 := fun i hi => by
     rw [hk.2.1, hk.2.2]; exact hsrc i hi
-  refine WP.mono (copy_ok Lv (hm ▸ R) (d := .rcx) (by decide) (stepI_ok hn31 v [.rax, .r8]) hn ho h₁ h₂ h₃
+  refine WP.mono (copy_ok Lv (hm ▸ R) (d := .rcx) (by decide)
+    (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₁₀) hn ho h₁ h₂ h₃
     hsrc' hdis) fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hk.trans kw).mono (by decide), ?_⟩
   rw [hm] at Rw; exact Rw
 
-theorem copySeed_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {p : Addr} (hp : W 31 = p) (hD : 0 < H.D) (hD64 : H.D ≤ 64)
-    (hsrc : ∀ i < H.D, InRegions (u.rd ++ u.wr) (p + BitVec.ofNat 64 i) 1)
-    (hdis : ∀ i < H.D, ∀ j < H.D, p + BitVec.ofNat 64 i ≠ off S (oEm + (oEm + 1) + j)) :
-    WP isa (copySeed H) u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .rax, .r8] u u' ∧
-      Rep u'.mem F S (cpV V (fun i => u.mem (p + BitVec.ofNat 64 i)) (oEm + (oEm + 1)) H.D) W := by
+theorem copySeed_ok {D : Nat} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {p : Addr} (hp : W 31 = p) (hW : W 39 = BitVec.ofNat 64 D) (hD : 0 < D) (hD64 : D ≤ 64)
+    (hsrc : ∀ i < D, InRegions (u.rd ++ u.wr) (p + BitVec.ofNat 64 i) 1)
+    (hdis : ∀ i < D, ∀ j < D, p + BitVec.ofNat 64 i ≠ off S (oEm + (oEm + 1) + j)) :
+    WP isa copySeed u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .r10, .rax, .r8] u u' ∧
+      Rep u'.mem F S (cpV V (fun i => u.mem (p + BitVec.ofNat 64 i)) (oEm + (oEm + 1)) D) W := by
   have hs := L.slot
   simp only [Bignum.word] at hs
   refine copyFrom_ok L R ?_ hD (by omega) (by unfold oEm oRsa; omega) hsrc hdis
-  refine WP.mono (WP.keep [.rsi, .rcx, .r8] (Q := fun v => v.gpr .rsi = p ∧ v.gpr .rcx = off S oEm ∧
-    v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, d, k⟩
-  xrun [scr, Impl.Mgf1.X86_64.scr, lay, List.cons_append, List.nil_append, ea_sp, L.rsp,
-    L.ld (d := sScr) (by decide), L.ld (d := sSeed) (by decide), hs,
-    R.slot (d := sSeed) (k := 31) rfl (by decide) hp, VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide)]
+  refine WP.mono (WP.keep [.rsi, .rcx, .r10, .r8] (Q := fun v => v.gpr .rsi = p ∧ v.gpr .rcx = off S oEm ∧
+    v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.gpr .r10 = BitVec.ofNat 64 D ∧ v.mem = u.mem) ?_ rfl)
+    fun v ⟨⟨a, b, c, e, d⟩, k⟩ => ⟨a, b, c, e, d, k⟩
+  xrun [copySeed, scr, Impl.Mgf1.X86_64.scr, lay, List.cons_append, List.nil_append, ea_sp, L.rsp,
+    L.ld (d := sScr) (by decide), L.ld (d := sSeed) (by decide), L.ld (d := sHD) (by decide), hs,
+    R.slot (d := sSeed) (k := 31) rfl (by decide) hp, R.slot (d := sHD) (k := 39) rfl (by decide) hW,
+    VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide)]
 
-theorem copyLh_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (hD : 0 < H.D) (hD64 : H.D ≤ 64) :
-    WP isa (copyLh H) u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .rax, .r8] u u' ∧
-      Rep u'.mem F S (cpV V (fun i => V (oDig + i)) (oEm + (oEm + 1 + H.D)) H.D) W := by
+theorem copyLh_ok {D : Nat} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) (hW : W 39 = BitVec.ofNat 64 D) (hD : 0 < D) (hD64 : D ≤ 64) :
+    WP isa copyLh u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .r10, .rax, .r8] u u' ∧
+      Rep u'.mem F S (cpV V (fun i => V (oDig + i)) (oEm + (oEm + 1 + D)) D) W := by
   have hs := L.slot
   simp only [Bignum.word] at hs
   have c1 : oDig = 3328 := rfl
   have c2 : oEm = 0 := rfl
-  refine WP.mono (copyFrom_ok L R (p := off S oDig) (o := oEm) ?_ hD (by omega) (by unfold oRsa; omega)
+  have e : oEm + (oEm + 1 + D) = oEm + 1 + D + 0 := by omega
+  rw [e]
+  refine WP.mono (copyFrom_ok L R (p := off S oDig) (o := oEm + 1 + D) (disp := 0) ?_ hD (by omega)
+    (by unfold oRsa; omega)
     (fun i hi => by rw [off_plus]; exact L.sld8 (by unfold oRsa; omega))
     (fun i hi j hj => by rw [off_plus]; exact Offset.add_ofNat_ne S (by omega) (by omega) (by omega)))
     fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, kw, ?_⟩
-  · refine WP.mono (WP.keep [.rsi, .rcx, .r8] (Q := fun v => v.gpr .rsi = off S oDig ∧ v.gpr .rcx = off S oEm ∧
-      v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, d, k⟩
+  · refine WP.mono (WP.keep [.rsi, .rcx, .r10, .r8] (Q := fun v => v.gpr .rsi = off S oDig ∧
+      v.gpr .rcx = off S (oEm + 1 + D) ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.gpr .r10 = BitVec.ofNat 64 D ∧
+      v.mem = u.mem) ?_ rfl) fun v ⟨⟨a, b, c, f, d⟩, k⟩ => ⟨a, b, c, f, d, k⟩
     xrun [copyLh, scr, Impl.Mgf1.X86_64.scr, lay, List.cons_append, List.nil_append, ea_sp, L.rsp,
-      L.ld (d := sScr) (by decide), hs, VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide)]
+      L.ld (d := sScr) (by decide), L.ld (d := sHD) (by decide), hs,
+      R.slot (d := sHD) (k := 39) rfl (by decide) hW,
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by decide),
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide), off_plus]
   · refine (congrArg (fun V' => Rep w.mem F S V' W) (funext fun x => ?_)).mp Rw
     simp only [cpV]
     split
@@ -181,53 +191,53 @@ theorem mW_other {W : Nat → BitVec 64} {S : Addr} {src srcLen dst dstLen k : N
     mW W S src srcLen dst dstLen k = W k := by
   simp only [mW, upd]; rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
 
-theorem dbArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {k : Nat} (hk : W 23 = BitVec.ofNat 64 k) (hD : H.D < 2 ^ 30) (hkD : H.D + 1 ≤ k) :
-    WP isa (.block (dbArgs H)) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx, .rcx, .r9] u u' ∧
-      Rep u'.mem F S V (mW W S (oEm + 1) H.D (oEm + 1 + H.D) (k - (H.D + 1))) := by
+theorem dbArgs_ok {D : Nat} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {k : Nat} (hk : W 23 = BitVec.ofNat 64 k) (hW : W 39 = BitVec.ofNat 64 D)
+    (hW1 : W 40 = BitVec.ofNat 64 (D + 1)) (hkD : D + 1 ≤ k) :
+    WP isa (.block dbArgs) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx, .rcx, .r9] u u' ∧
+      Rep u'.mem F S V (mW W S (oEm + 1) D (oEm + 1 + D) (k - (D + 1))) := by
   have hs := L.slot
   simp only [Bignum.word] at hs
   have G' := L.geo
-  have R1 := (((R.wf G' (k := 17) (by decide) (off S (oEm + 1 + H.D))).wf G' (k := 18) (by decide)
-    (BitVec.ofNat 64 (k - (H.D + 1)))).wf G' (k := 15) (by decide) (off S (oEm + 1))).wf G' (k := 16) (by decide)
-    (BitVec.ofNat 64 H.D)
+  have R1 := (((R.wf G' (k := 17) (by decide) (off S (oEm + 1 + D))).wf G' (k := 18) (by decide)
+    (BitVec.ofNat 64 (k - (D + 1)))).wf G' (k := 15) (by decide) (off S (oEm + 1))).wf G' (k := 16) (by decide)
+    (BitVec.ofNat 64 D)
   refine WP.mono (WP.keep [.rax, .rdx, .rcx, .r9] (Q := fun u' => u'.mem =
-      (((u.mem.writeW (off F (8 * 17)) (off S (oEm + 1 + H.D))).writeW (off F (8 * 18))
-        (BitVec.ofNat 64 (k - (H.D + 1)))).writeW (off F (8 * 15)) (off S (oEm + 1))).writeW (off F (8 * 16))
-        (BitVec.ofNat 64 H.D)) ?_ rfl) fun u' ⟨hm, kk⟩ => ⟨?_, kk, by rw [hm]; exact R1⟩
+      (((u.mem.writeW (off F (8 * 17)) (off S (oEm + 1 + D))).writeW (off F (8 * 18))
+        (BitVec.ofNat 64 (k - (D + 1)))).writeW (off F (8 * 15)) (off S (oEm + 1))).writeW (off F (8 * 16))
+        (BitVec.ofNat 64 D)) ?_ rfl) fun u' ⟨hm, kk⟩ => ⟨?_, kk, by rw [hm]; exact R1⟩
   · xrun [dbArgs, scr, Impl.Mgf1.X86_64.scr, lay, im, List.cons_append, List.nil_append, ea_sp, L.rsp,
       L.ld (d := sScr) (by decide), L.ld (d := sK) (by decide), hs, R.slot (d := sK) (k := 23) rfl (by decide) hk,
       L.st (d := sDst) (by decide), L.st (d := sDstLen) (by decide), L.st (d := sSrc) (by decide),
-      L.st (d := sSrcLen) (by decide),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 + H.D < 2 ^ 31 by unfold oEm; omega),
+      L.st (d := sSrcLen) (by decide), L.ld (d := sHD) (by decide), L.ld (d := sH1) (by decide),
+      R.slot (d := sHD) (k := 39) rfl (by decide) hW, R.slot (d := sH1) (k := 40) rfl (by decide) hW1, off_plus,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by unfold oEm; omega),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show H.D + 1 < 2 ^ 31 by omega), zx32 (show H.D < 2 ^ 32 by omega),
-      VG.Offset.ofNat_sub_ofNat (show H.D + 1 ≤ k by omega)]
+      VG.Offset.ofNat_sub_ofNat (show D + 1 ≤ k by omega)]
     rfl
   · exact L.of_rep' R (by rw [hm]; exact R1) (by simp [upd]) (kk.gpr (by decide)) kk.2.2
 
-theorem seedArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {k : Nat} (hk : W 23 = BitVec.ofNat 64 k) (hD : H.D < 2 ^ 30) (hkD : H.D + 1 ≤ k) :
-    WP isa (.block (seedArgs H)) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx, .rcx, .r9] u u' ∧
-      Rep u'.mem F S V (mW W S (oEm + 1 + H.D) (k - (H.D + 1)) (oEm + 1) H.D) := by
+theorem seedArgs_ok {D : Nat} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {k : Nat} (hk : W 23 = BitVec.ofNat 64 k) (hW : W 39 = BitVec.ofNat 64 D)
+    (hW1 : W 40 = BitVec.ofNat 64 (D + 1)) (hkD : D + 1 ≤ k) :
+    WP isa (.block seedArgs) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx, .rcx, .r9] u u' ∧
+      Rep u'.mem F S V (mW W S (oEm + 1 + D) (k - (D + 1)) (oEm + 1) D) := by
   have hs := L.slot
   simp only [Bignum.word] at hs
   have G' := L.geo
   have R1 := (((R.wf G' (k := 17) (by decide) (off S (oEm + 1))).wf G' (k := 18) (by decide)
-    (BitVec.ofNat 64 H.D)).wf G' (k := 15) (by decide) (off S (oEm + 1 + H.D))).wf G' (k := 16) (by decide)
-    (BitVec.ofNat 64 (k - (H.D + 1)))
+    (BitVec.ofNat 64 D)).wf G' (k := 15) (by decide) (off S (oEm + 1 + D))).wf G' (k := 16) (by decide)
+    (BitVec.ofNat 64 (k - (D + 1)))
   refine WP.mono (WP.keep [.rax, .rdx, .rcx, .r9] (Q := fun u' => u'.mem =
       (((u.mem.writeW (off F (8 * 17)) (off S (oEm + 1))).writeW (off F (8 * 18))
-        (BitVec.ofNat 64 H.D)).writeW (off F (8 * 15)) (off S (oEm + 1 + H.D))).writeW (off F (8 * 16))
-        (BitVec.ofNat 64 (k - (H.D + 1)))) ?_ rfl) fun u' ⟨hm, kk⟩ => ⟨?_, kk, by rw [hm]; exact R1⟩
+        (BitVec.ofNat 64 D)).writeW (off F (8 * 15)) (off S (oEm + 1 + D))).writeW (off F (8 * 16))
+        (BitVec.ofNat 64 (k - (D + 1)))) ?_ rfl) fun u' ⟨hm, kk⟩ => ⟨?_, kk, by rw [hm]; exact R1⟩
   · xrun [seedArgs, scr, Impl.Mgf1.X86_64.scr, lay, im, List.cons_append, List.nil_append, ea_sp, L.rsp,
       L.ld (d := sScr) (by decide), L.ld (d := sK) (by decide), hs, R.slot (d := sK) (k := 23) rfl (by decide) hk,
       L.st (d := sDst) (by decide), L.st (d := sDstLen) (by decide), L.st (d := sSrc) (by decide),
-      L.st (d := sSrcLen) (by decide),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 + H.D < 2 ^ 31 by unfold oEm; omega),
+      L.st (d := sSrcLen) (by decide), L.ld (d := sHD) (by decide), L.ld (d := sH1) (by decide),
+      R.slot (d := sHD) (k := 39) rfl (by decide) hW, R.slot (d := sH1) (k := 40) rfl (by decide) hW1, off_plus,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oEm + 1 < 2 ^ 31 by unfold oEm; omega),
-      VG.Proof.MlKem.X86_64.sx_ofNat (show H.D + 1 < 2 ^ 31 by omega), zx32 (show H.D < 2 ^ 32 by omega),
-      VG.Offset.ofNat_sub_ofNat (show H.D + 1 ≤ k by omega)]
+      VG.Offset.ofNat_sub_ofNat (show D + 1 ≤ k by omega)]
     rfl
   · exact L.of_rep' R (by rw [hm]; exact R1) (by simp [upd]) (kk.gpr (by decide)) kk.2.2
 

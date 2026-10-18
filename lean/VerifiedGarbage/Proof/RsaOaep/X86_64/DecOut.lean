@@ -123,29 +123,29 @@ theorem faultBit_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
 
 /-- The length to `*msg_len`, a region apart from the frame, our working
 space and the stack below it. -/
-theorem decRet_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem decRet_ok {D : Nat} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {pm : Addr} {k : Nat} (hpm : W 29 = pm) (hk : W 23 = BitVec.ofNat 64 k)
-    (hkD : 2 * Hm.D + 2 ≤ k) (hD64 : Hm.D ≤ 64) (hw : (⟨pm, 8⟩ : Region) ∈ u.wr)
+    (h3 : W 42 = BitVec.ofNat 64 (2 * D + 2)) (hkD : 2 * D + 2 ≤ k) (hw : (⟨pm, 8⟩ : Region) ∈ u.wr)
     (hnw : pm.toNat + 8 ≤ 2 ^ 64) (ha : Apart F S ⟨pm, 8⟩) :
-    WP isa (.block (decRet Hm)) u fun u' => Keep [.r11, .rax, .rdi] u u' ∧
-      u'.mem = u.mem.writeW pm ((BitVec.ofNat 64 (k - (2 * Hm.D + 2)) - W 32) &&& W 33) ∧
+    WP isa (.block decRet) u fun u' => Keep [.r11, .rax, .rdi] u u' ∧
+      u'.mem = u.mem.writeW pm ((BitVec.ofNat 64 (k - (2 * D + 2)) - W 32) &&& W 33) ∧
       u'.gpr .rax = faultW W ||| (W 33 &&& 1) := by
   have hst : InRegions u.wr pm 8 := by
     have := (Scr.of_mem hw hnw).st (d := 0) (by decide)
     rwa [show off pm 0 = pm from BitVec.add_zero _] at this
-  rw [show decRet Hm = [.mov .r11 (.mem (sp sOk)), .mov .rax (.mem (sp sK)), .alu .sub .rax (im (2 * Hm.D + 2)),
+  rw [show decRet = [.mov .r11 (.mem (sp sOk)), .mov .rax (.mem (sp sK)), .alu .sub .rax (.mem (sp sH3)),
       .alu .sub .rax (.mem (sp sIdx)), .alu .and .rax (.reg .r11), .mov .rdi (.mem (sp sMl)),
       .store (at_ .rdi) .rax] ++ (([.alu .and .r11 (.imm 1)] : List Instr) ++ faultBit ++
       ([.alu .or .rax (.reg .r11)] : List Instr)) from rfl, WP.block_append_iff]
   refine WP.mono (WP.keep [.r11, .rax, .rdi] (Q := fun v => v.gpr .r11 = W 33 ∧
-      v.mem = u.mem.writeW pm ((BitVec.ofNat 64 (k - (2 * Hm.D + 2)) - W 32) &&& W 33)) ?_ rfl)
+      v.mem = u.mem.writeW pm ((BitVec.ofNat 64 (k - (2 * D + 2)) - W 32) &&& W 33)) ?_ rfl)
     fun v ⟨⟨h11, hm⟩, kv⟩ => ?_
-  · xrun [im, ea_sp, ea_at0, L.rsp, L.ld (d := sOk) (by decide), L.ld (d := sK) (by decide),
-      L.ld (d := sIdx) (by decide), L.ld (d := sMl) (by decide), hst,
+  · xrun [ea_sp, ea_at0, L.rsp, L.ld (d := sOk) (by decide), L.ld (d := sK) (by decide),
+      L.ld (d := sIdx) (by decide), L.ld (d := sMl) (by decide), L.ld (d := sH3) (by decide), hst,
+      R.slot (d := sH3) (k := 42) rfl (by decide) h3,
       R.slot (d := sOk) (k := 33) rfl (by decide) rfl, R.slot (d := sK) (k := 23) rfl (by decide) hk,
       R.slot (d := sIdx) (k := 32) rfl (by decide) rfl, R.slot (d := sMl) (k := 29) rfl (by decide) hpm,
-      VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega),
-      VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega)]
+      VG.Offset.ofNat_sub_ofNat (show 2 * D + 2 ≤ k by omega)]
   have fv : Frame [⟨pm, 8⟩] u.mem v.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have Rv := Rep.apart R ha fv
