@@ -336,6 +336,65 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     g.finish();
 }
 
+/// Benchmarks an HMAC with the hash `H` and `md` (32-byte key) keyed once
+/// and reused for every message, against OpenSSL's and, if it has the hash,
+/// aws-lc-rs's `aws_lc`: absorbing the data and taking the MAC, leaving the
+/// computation keyed for the next (`Hmac::finalize_reset`; a `Signer` made
+/// from the same `PKey` for each message, as rust-openssl has no reset;
+/// aws-lc-rs's `hmac::sign` with one `hmac::Key`).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+pub(crate) fn hmac_reset_group<H: verified_garbage::hmac::HmacHash>(
+    c: &mut Criterion,
+    name: &str,
+    md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
+) {
+    use verified_garbage::hmac::Hmac;
+    let key = [0x0b; 32];
+    let pkey = PKey::hmac(&key).unwrap();
+    let mut g = c.benchmark_group(name);
+    for size in SIZES {
+        g.throughput(Throughput::Bytes(size as u64));
+        let data = vec![0x5a; size];
+        let mut h = Hmac::<H>::new(&key);
+        h.update(&data);
+        assert_eq!(
+            h.finalize_reset().as_ref(),
+            Hmac::<H>::mac(&key, &data).as_ref()
+        );
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                h.update(black_box(&data));
+                h.finalize_reset()
+            })
+        });
+        let mut out = [0u8; 64];
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Signer::new(md, &pkey).unwrap();
+                s.sign_oneshot(&mut out, black_box(&data)).unwrap()
+            })
+        });
+        if let Some(alg) = aws_lc {
+            use aws_lc_rs::hmac;
+            let k = hmac::Key::new(alg, &key);
+            assert_eq!(
+                hmac::sign(&k, &data).as_ref(),
+                Hmac::<H>::mac(&key, &data).as_ref()
+            );
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| hmac::sign(&k, black_box(&data)))
+            });
+        }
+    }
+    g.finish();
+}
+
 /// Benchmarks PBKDF2 with the hash of `vg` and `md` against OpenSSL's and,
 /// if it has the hash, aws-lc-rs's `aws_lc`, of a 32-byte password, deriving
 /// `len` bytes (a digest), with the sizes as the iteration counts.

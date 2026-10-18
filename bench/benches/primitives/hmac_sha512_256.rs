@@ -19,6 +19,7 @@ pub fn bench(c: &mut Criterion) {
     let md = MessageDigest::from_name("SHA512-256").unwrap();
     crate::hmac_group(c, "hmac-sha512-256", Hmac::<Sha512_256>::mac, md, None);
     crate::hmac_verify_group::<Sha512_256>(c, "hmac-sha512-256-verify", md, None);
+    crate::hmac_reset_group::<Sha512_256>(c, "hmac-sha512-256-reset", md, None);
 }
 
 #[cfg(not(any(

@@ -28,6 +28,12 @@ pub fn bench(c: &mut Criterion) {
         MessageDigest::sha384(),
         Some(aws_lc_rs::hmac::HMAC_SHA384),
     );
+    crate::hmac_reset_group::<Sha384>(
+        c,
+        "hmac-sha384-reset",
+        MessageDigest::sha384(),
+        Some(aws_lc_rs::hmac::HMAC_SHA384),
+    );
 }
 
 #[cfg(not(any(

@@ -21,4 +21,10 @@ pub fn bench(c: &mut Criterion) {
         MessageDigest::sha256(),
         Some(aws_lc_rs::hmac::HMAC_SHA256),
     );
+    crate::hmac_reset_group::<Sha256>(
+        c,
+        "hmac-sha256-reset",
+        MessageDigest::sha256(),
+        Some(aws_lc_rs::hmac::HMAC_SHA256),
+    );
 }

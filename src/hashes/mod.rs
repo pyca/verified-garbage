@@ -320,6 +320,14 @@ macro_rules! streaming_hash {
                 self.backend
             }
 
+            /// Sets the length of the message the streaming state
+            /// represents, for a state rewritten in place (HMAC's
+            /// `finalize_reset`, which restores the keyed state).
+            #[allow(dead_code)]
+            pub(crate) fn set_length(&mut self, length: u64) {
+                self.length = length;
+            }
+
             /// The streaming state, in place, and the length of the message
             /// it represents.
             #[allow(dead_code)]

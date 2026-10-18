@@ -49,6 +49,10 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     /// it is dropped).
     #[doc(hidden)]
     fn hmac_finalize(state: &mut Self::State) -> Self::Output;
+    /// Restores the state `hmac_init` keyed, in place, after
+    /// [`HmacHash::hmac_finalize`].
+    #[doc(hidden)]
+    fn hmac_reset(state: &mut Self::State);
 }
 
 /// The MAC did not match: the message or the key is not what was
@@ -74,7 +78,8 @@ impl core::error::Error for InvalidMac {}
 /// caller makes (by [`Clone`], or by moving the value) is wiped only where
 /// it is dropped, and is not wiped where it was moved from: this includes the
 /// copy Rust may make of a variable to pass it to [`Hmac::finalize`] or
-/// [`Hmac::verify`], which take it by value. [`Hmac::mac`] makes none.
+/// [`Hmac::verify`], which take it by value. [`Hmac::mac`] makes none, and
+/// neither does [`Hmac::finalize_reset`], which takes it by reference.
 #[derive(Clone)]
 pub struct Hmac<H: HmacHash> {
     state: H::State,
@@ -124,6 +129,16 @@ impl<H: HmacHash> Hmac<H> {
         H::hmac_finalize(&mut self.state)
     }
 
+    /// Returns the MAC of everything absorbed, and starts a new computation
+    /// with the same key in place, ready for the next message (the key is
+    /// not needed again). Unlike [`Hmac::finalize`], it never moves the
+    /// state, so it leaves no copy of it where the caller's variable was.
+    pub fn finalize_reset(&mut self) -> H::Output {
+        let mac = H::hmac_finalize(&mut self.state);
+        H::hmac_reset(&mut self.state);
+        mac
+    }
+
     /// Checks that `mac` is the MAC of everything absorbed, in constant
     /// time: the time taken does not depend on where, or whether, `mac`
     /// differs from it (its length is public). `mac` must be the whole MAC,
@@ -162,20 +177,29 @@ impl<T> Drop for WipeOnDrop<'_, T> {
 
 /// An HMAC computation with a hash function over verified streaming
 /// primitives: the computation of the inner hash, whose message is
-/// `(K₀ ⊕ ipad) ‖ text`, and the streaming state of the outer one, which
-/// represents `K₀ ⊕ opad`.
+/// `(K₀ ⊕ ipad) ‖ text`, the streaming state of the outer one, which
+/// represents `K₀ ⊕ opad`, and the `V`-byte hash value of `K₀ ⊕ ipad` (the
+/// inner state once keyed, of one block, whose buffer it does not read), for
+/// `finalize_reset` to restore.
+/// In C's layout, so `ipad` directly follows `outer` (arrays of bytes, with
+/// no padding between them), for one wipe of both.
 #[doc(hidden)]
 #[derive(Clone)]
-pub struct StreamingHmacState<H, const S: usize> {
+#[repr(C)]
+pub struct StreamingHmacState<H, const S: usize, const V: usize> {
     pub(crate) inner: H,
     pub(crate) outer: [u8; S],
+    pub(crate) ipad: [u8; V],
 }
 
-impl<H, const S: usize> Drop for StreamingHmacState<H, S> {
-    /// Wipes the outer state, which represents `K₀ ⊕ opad` (the inner hash
-    /// wipes its own).
+impl<H, const S: usize, const V: usize> Drop for StreamingHmacState<H, S, V> {
+    /// Wipes the outer state, which represents `K₀ ⊕ opad`, and the hash
+    /// value of `K₀ ⊕ ipad`, in one call (the inner hash wipes its own).
     fn drop(&mut self) {
-        crate::zeroize::zeroize(&mut self.outer);
+        // SAFETY: `outer` and `ipad` are the `S + V` bytes from `outer`'s
+        // start (`repr(C)`: in that order, each of alignment 1, so with no
+        // padding between them), valid for writes, in a value being dropped.
+        unsafe { crate::zeroize::zeroize_raw(self.outer.as_mut_ptr(), S + V) };
     }
 }
 
@@ -213,13 +237,16 @@ macro_rules! streaming_hmac {
         impl super::sealed::Sealed for $hash {}
 
         impl super::HmacHash for $hash {
-            type State = super::StreamingHmacState<$hash, $state>;
+            // The hash value is the start of the streaming state, before
+            // its block buffer.
+            type State = super::StreamingHmacState<$hash, $state, { $state - $hash::BLOCK_SIZE }>;
 
             fn hmac_empty() -> Self::State {
                 let backend = $backend::select($crate::cpu::detected());
                 super::StreamingHmacState {
                     inner: $hash::from_state([0; $state], Self::BLOCK_SIZE as u64, backend),
                     outer: [0; $state],
+                    ipad: [0; $state - $hash::BLOCK_SIZE],
                 }
             }
 
@@ -240,6 +267,17 @@ macro_rules! streaming_hmac {
                 // `init` needs no CPU feature that the hash's implementation
                 // was not selected for (`tests::backend_features`).
                 unsafe { init(inner, &mut state.outer, key.as_ptr(), key.len()) };
+                // Its hash value, for `hmac_reset`: copied in place.
+                state.ipad.copy_from_slice(&inner[..$state - $hash::BLOCK_SIZE]);
+            }
+
+            fn hmac_reset(state: &mut Self::State) {
+                // The keyed inner state, of one block, in place: its hash
+                // value, and the length of `K₀ ⊕ ipad`. Its buffer, of no byte
+                // of the message, is not read.
+                let (inner, _) = state.inner.state_mut();
+                inner[..$state - $hash::BLOCK_SIZE].copy_from_slice(&state.ipad);
+                state.inner.set_length(Self::BLOCK_SIZE as u64);
             }
 
             fn hmac_update(state: &mut Self::State, data: &[u8]) {
@@ -319,6 +357,37 @@ macro_rules! streaming_hmac {
                     super::super::Hmac::<$hash>::mac(key, data).as_ref(),
                     super::super::Hmac::<$hash>::mac(digest.as_ref(), data).as_ref(),
                 );
+            }
+
+            /// `finalize_reset` returns the MAC and leaves the computation
+            /// keyed again: each message after it, of no byte, of a block and
+            /// longer, gets its MAC with the same key, as `mac` computes it,
+            /// for a short key and one longer than a block, with the
+            /// implementation this CPU runs.
+            #[test]
+            fn finalize_reset() {
+                use $crate::hashes::HashFunction;
+                let b = <$hash as HashFunction>::BLOCK_SIZE;
+                let mut bytes = [0u8; 1000];
+                for (i, x) in bytes.iter_mut().enumerate() {
+                    *x = (i as u8).wrapping_mul(7);
+                }
+                for key in [&bytes[..16], &bytes[..2 * b + 3]] {
+                    let mut h = super::super::Hmac::<$hash>::new(key);
+                    for data in [&bytes[..3], &bytes[..0], &bytes[..b], &bytes[..3 * b + 5], &bytes[..3]] {
+                        h.update(data);
+                        assert_eq!(
+                            h.finalize_reset().as_ref(),
+                            super::super::Hmac::<$hash>::mac(key, data).as_ref(),
+                        );
+                    }
+                    // After a reset, `finalize` and `verify` see only what
+                    // follows it.
+                    h.update(&bytes[..b + 1]);
+                    let mac = super::super::Hmac::<$hash>::mac(key, &bytes[..b + 1]);
+                    assert!(h.clone().verify(mac.as_ref()).is_ok());
+                    assert_eq!(h.finalize().as_ref(), mac.as_ref());
+                }
             }
         }
     };
