@@ -35,14 +35,6 @@ open EncMul (hiR hi_dis_c hi_dis_c0 hi_dis_tab sub_hi in_vec)
 abbrev rowW (k : Nat) (s₀ : State) (i : Nat) : List Poly :=
   vecAtW 16 s₀.mem (aP s₀ + BitVec.ofNat 64 (512 * (k * i))) k
 
-theorem vecAtW_length (w : Nat) (m : Mem) (p : Addr) (k : Nat) : (vecAtW w m p k).length = k := by
-  simp [vecAtW]
-
-theorem vecAtW16_get (m : Mem) (p : Addr) {k j : Nat} (hj : j < k) :
-    (vecAtW 16 m p k)[j]! = polyAtW 16 m (p + BitVec.ofNat 64 (512 * j)) := by
-  rw [getElem!_pos _ j (by rw [vecAtW_length]; exact hj)]
-  simp [vecAtW]
-
 section
 variable {k : Nat} {s₀ : State} (hp : (kgMulK16 k).pre s₀)
 include hp

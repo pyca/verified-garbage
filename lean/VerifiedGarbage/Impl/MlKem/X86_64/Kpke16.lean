@@ -141,13 +141,14 @@ def widenIn (b f : Ptr) : Prog isa := .seq (.block (lea .rdx b ++ lea .r9 f)) vu
 /-- `t̂[i] = ByteDecode₁₂(ek_PKE[384i : 384i + 384])`, to polynomial `k + i`. -/
 def tHatE (i : Nat) : Prog isa := .seq (.block (lea .rdi (.r12, 384 * i) ++ lea .rsi (qP (L.k + i)))) A.dec12
 
-/-- `y[j]`, to polynomial `j`. -/
+/-- `y[j]` (`s[j]` and `e[j]` in `kpkeKg`), to polynomial `j`. -/
 def yE (j : Nat) : Prog isa := widenIn (.r13, 512 * j) (qP j)
 
 /-- `NTT⁻¹(Â^⊺ ∘ ŷ)` and `NTT⁻¹(t̂^⊺ ∘ ŷ)`, to the `k + 1` polynomials from
-`2k`: the code of `vg_mlkem*_encrypt_mul` (`mul`), from `a`. -/
+`2k`: the code of `vg_mlkem*_encrypt_mul` (`mul`), from `a` and from `y`
+(the first `k` polynomials of `r`). -/
 def prodE (mul : Nat → Prog isa) : Prog isa :=
-  .seq (.block (lea .rdi (qP (2 * L.k)) ++ lea .rsi (.rbp, 0) ++ lea .rdx (qP L.k) ++ lea .rcx (qP 0) ++
+  .seq (.block (lea .rdi (qP (2 * L.k)) ++ lea .rsi (.rbp, 0) ++ lea .rdx (qP L.k) ++ lea .rcx (.r13, 0) ++
     lea .r8 (.rbx, 0))) (mul L.k)
 
 /-- `f += g`, inline. -/
@@ -175,9 +176,9 @@ def vE : Prog isa :=
         lea .rdx (.r15, 32 * L.du * L.k) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.dv)))]))
         (L.ce A.codecs))))
 
-/-- The prologue, `t̂`, `y` and the products, with the code `mul` of the products. -/
+/-- The prologue, `t̂` and the products, with the code `mul` of the products. -/
 def kpkeEncPre (mul : Nat → Prog isa) : Prog isa :=
-  .seq (.block proE) (.seq (seqR (tHatE L A) 0 L.k) (.seq (seqR yE 0 L.k) (prodE L mul)))
+  .seq (.block proE) (.seq (seqR (tHatE L A) 0 L.k) (prodE L mul))
 
 /-- `u`, `v` and the epilogue. -/
 def kpkeEncPost : Prog isa := .seq (seqR (uE L A) 0 L.k) (.seq (vE L A) (.block epiE))

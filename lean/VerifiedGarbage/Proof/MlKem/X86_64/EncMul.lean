@@ -31,36 +31,43 @@ open VG.Spec.MlKem
 open DecMul (sub_c sub_c0 sub_v in_c in_c0 in_v dis_cc cov_one sx1024 sx2048)
 
 /-- `vg_mlkem*_encrypt_mul(u = rdi, a = rsi, t = rdx, y = rcx, scratch = r8)` of rank `k`, with
-`Â` stored at `a` in the region `aR a`, reduced as `aRed` says, as the matrix `aMat`. -/
-def encMulKA (k : Nat) (aR : Addr → Region) (aRed : Mem → Addr → Prop) (aMat : Mem → Addr → List (List Poly)) :
-    Contract isa where
+`Â` stored at `a` in the region `aR a`, reduced as `aRed` says, as the matrix `aMat`, and `y`
+stored at `y` in the region `yR y`, reduced as `yRed` says, as the vector `yVec`. -/
+def encMulKG (k : Nat) (aR : Addr → Region) (aRed : Mem → Addr → Prop) (aMat : Mem → Addr → List (List Poly))
+    (yR : Addr → Region) (yRed : Mem → Addr → Prop) (yVec : Mem → Addr → List Poly) : Contract isa where
   pre s :=
-    s.rd = [aR (s.gpr .rsi), vR (s.gpr .rdx) k, vR (s.gpr .rcx) k] ∧
+    s.rd = [aR (s.gpr .rsi), vR (s.gpr .rdx) k, yR (s.gpr .rcx)] ∧
     s.wr = [vR (s.gpr .rdi) (k + 1), cR (s.gpr .r8)] ∧
     (vR (s.gpr .rdi) (k + 1)).Disjoint (aR (s.gpr .rsi)) ∧
     (vR (s.gpr .rdi) (k + 1)).Disjoint (vR (s.gpr .rdx) k) ∧
-    (vR (s.gpr .rdi) (k + 1)).Disjoint (vR (s.gpr .rcx) k) ∧
+    (vR (s.gpr .rdi) (k + 1)).Disjoint (yR (s.gpr .rcx)) ∧
     (vR (s.gpr .rdi) (k + 1)).Disjoint (cR (s.gpr .r8)) ∧
     (aR (s.gpr .rsi)).Disjoint (cR (s.gpr .r8)) ∧ (vR (s.gpr .rdx) k).Disjoint (cR (s.gpr .r8)) ∧
-    (vR (s.gpr .rcx) k).Disjoint (cR (s.gpr .r8)) ∧
+    (yR (s.gpr .rcx)).Disjoint (cR (s.gpr .r8)) ∧
     (retR s).Disjoint (vR (s.gpr .rdi) (k + 1)) ∧ (retR s).Disjoint (aR (s.gpr .rsi)) ∧
-    (retR s).Disjoint (vR (s.gpr .rdx) k) ∧ (retR s).Disjoint (vR (s.gpr .rcx) k) ∧
+    (retR s).Disjoint (vR (s.gpr .rdx) k) ∧ (retR s).Disjoint (yR (s.gpr .rcx)) ∧
     (retR s).Disjoint (cR (s.gpr .r8)) ∧
-    aRed s.mem (s.gpr .rsi) ∧ VecReduced s.mem (s.gpr .rdx) k ∧ VecReduced s.mem (s.gpr .rcx) k
+    aRed s.mem (s.gpr .rsi) ∧ VecReduced s.mem (s.gpr .rdx) k ∧ yRed s.mem (s.gpr .rcx)
   post s s' :=
     VecIs s'.mem (s.gpr .rdi) (k + 1)
-      (((mulMatTVec k (aMat s.mem (s.gpr .rsi)) ((vecAt s.mem (s.gpr .rcx) k).map ntt)).map nttInv) ++
-        [nttInv (dot (vecAt s.mem (s.gpr .rdx) k) ((vecAt s.mem (s.gpr .rcx) k).map ntt))])
+      (((mulMatTVec k (aMat s.mem (s.gpr .rsi)) ((yVec s.mem (s.gpr .rcx)).map ntt)).map nttInv) ++
+        [nttInv (dot (vecAt s.mem (s.gpr .rdx) k) ((yVec s.mem (s.gpr .rcx)).map ntt))])
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+/-- `encMulKG` with `y` as `k` polynomials of `u32`s. -/
+abbrev encMulKA (k : Nat) (aR : Addr → Region) (aRed : Mem → Addr → Prop) (aMat : Mem → Addr → List (List Poly)) :
+    Contract isa :=
+  encMulKG k aR aRed aMat (fun p => vR p k) (fun m p => VecReduced m p k) (fun m p => vecAt m p k)
+
 /-- `encMulKA` with `Â` as `k²` polynomials of `u32`s. -/
-def encMulK (k : Nat) : Contract isa :=
+abbrev encMulK (k : Nat) : Contract isa :=
   encMulKA k (fun p => vR p (k * k)) (fun m p => VecReduced m p (k * k)) (fun m p => matAt m p k)
 
-/-- `encMulKA` with `Â` as `k²` polynomials of `u16`s. -/
-def encMulK16 (k : Nat) : Contract isa :=
-  encMulKA k (fun p => ⟨p, 512 * (k * k)⟩) (fun m p => VecReducedW 16 m p (k * k)) (fun m p => matAtW 16 m p k)
+/-- `encMulKG` with `Â` as `k²` polynomials of `u16`s and `y` as `k`. -/
+abbrev encMulK16 (k : Nat) : Contract isa :=
+  encMulKG k (fun p => ⟨p, 512 * (k * k)⟩) (fun m p => VecReducedW 16 m p (k * k)) (fun m p => matAtW 16 m p k)
+    (fun p => ⟨p, 512 * k⟩) (fun m p => VecReducedW 16 m p k) (fun m p => vecAtW 16 m p k)
 
 namespace EncMul
 
@@ -235,17 +242,18 @@ theorem accE_succ_t {k : Nat} {s₀ : State} {j : Nat} (hj : j < k) :
 
 section
 variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
-  {aMat : Mem → Addr → List (List Poly)} (hp : (encMulKA k aR aRed aMat).pre s₀) (hk : k ≤ 4)
+  {aMat : Mem → Addr → List (List Poly)} {yR : Addr → Region} {yRed : Mem → Addr → Prop}
+  {yVec : Mem → Addr → List Poly} (hp : (encMulKG k aR aRed aMat yR yRed yVec).pre s₀) (hk : k ≤ 4)
 include hp
 
 theorem dUC : (vR (uP s₀) (k + 1)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.1
 theorem dAC : (aR (aP s₀)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.1
 theorem dTC : (vR (tP s₀) k).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.1
-theorem dYC : (vR (yP s₀) k).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.1
+theorem dYC : (yR (yP s₀)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.1
 theorem rU : (retR s₀).Disjoint (vR (uP s₀) (k + 1)) := hp.2.2.2.2.2.2.2.2.2.1
 theorem rA : (retR s₀).Disjoint (aR (aP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.1
 theorem rT : (retR s₀).Disjoint (vR (tP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.1
-theorem rY : (retR s₀).Disjoint (vR (yP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.2.1
+theorem rY : (retR s₀).Disjoint (yR (yP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rC : (retR s₀).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 omit hp in
@@ -264,9 +272,6 @@ theorem t_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.
     PolyIs m (tP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (tP s₀ + BitVec.ofNat 64 (1024 * e))) :=
   in_frame hf he hp.2.2.2.1 (dTC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
-theorem y_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k) :
-    PolyIs m (yP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (yP s₀ + BitVec.ofNat 64 (1024 * e))) :=
-  in_frame hf he hp.2.2.2.2.1 (dYC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 omit hp in
 include hk in
@@ -288,6 +293,17 @@ include hp
 theorem a_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k * k) :
     PolyIs m (aP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (aP s₀ + BitVec.ofNat 64 (1024 * e))) :=
   in_frame hf he hp.2.2.1 (dAC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+
+end
+
+section
+variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
+  {aMat : Mem → Addr → List (List Poly)} (hp : (encMulKA k aR aRed aMat).pre s₀)
+include hp
+
+theorem y_frame {m : Mem} (hf : Frame [vR (uP s₀) (k + 1), cR (cP s₀)] s₀.mem m) {e : Nat} (he : e < k) :
+    PolyIs m (yP s₀ + BitVec.ofNat 64 (1024 * e)) (polyAt s₀.mem (yP s₀ + BitVec.ofNat 64 (1024 * e))) :=
+  in_frame hf he hp.2.2.2.2.1 (dYC hp) hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 end
 

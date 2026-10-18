@@ -248,11 +248,20 @@ def midK (B : Bodies) (k : Nat) : List Instr :=
 `rsi + oS`. -/
 def nttAccY : Prog isa := nttR NttR.passBsAccR10
 
-/-- `NTT` of the next polynomial (at `r13`) to the next accumulator (at
-`r9`). -/
-def nttTermY : Prog isa :=
+/-- `nttAccY` of the polynomial of `u16`s at `rdi`. -/
+def nttAccY16 : Prog isa := nttR16 NttR.passBsAccR10
+
+/-- `NTT` (the code `ntt`) of the next polynomial (at `r13`, `sy` bytes
+apart) to the next accumulator (at `r9`). -/
+def nttTermYg (ntt : Prog isa) (sy : BitVec 32) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbx), .mov .r10 (.reg .r9)])
-    (.seq nttAccY (.block [.alu .add .r13 (.imm 1024), .alu .add .r9 (.imm 512), .alu .sub .r14 (.imm 1)]))
+    (.seq ntt (.block [.alu .add .r13 (.imm sy), .alu .add .r9 (.imm 512), .alu .sub .r14 (.imm 1)]))
+
+/-- `nttTermYg` of polynomials of `u32`s. -/
+def nttTermY : Prog isa := nttTermYg nttAccY 1024
+
+/-- `nttTermYg` of polynomials of `u16`s. -/
+def nttTermY16 : Prog isa := nttTermYg nttAccY16 512
 
 /-- The table of the products, and `r9` at the first accumulator, at
 `scratch + 1024`. -/
@@ -286,11 +295,12 @@ def rowAY16 (k : Nat) : Prog isa := rowAYg (rowEY16 (512 * k) k) 512
 end KpkeMul
 
 open KpkeMul in
-/-- `encryptMulY` with the rows of `Â` computed by `rowA`. -/
-def encryptMulYg (rowA : Prog isa) (k : Nat) : Prog isa :=
+/-- `encryptMulY` with the `NTT`s of `y` computed by `term` and the rows of
+`Â` by `rowA`. -/
+def encryptMulYg (term rowA : Prog isa) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
       .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop nttTermY .ne)
+    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop term .ne)
       (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop rowA .ne)
         (rowInvY [.mov .rsi (.reg .r15)] 1024 k))))))
     (.block restore))
@@ -299,11 +309,12 @@ open KpkeMul in
 /-- `vg_mlkem*_encrypt_mul` of rank `k` with AVX2: `ŷ[j] = NTT(y[j])` to the
 accumulators at `scratch + 1024 + 512 j`, then each `u[i]`, and `v`, from
 them in one row of products (`rowEY`) and `NTT⁻¹`. -/
-def encryptMulY (k : Nat) : Prog isa := encryptMulYg (rowAY k) k
+def encryptMulY (k : Nat) : Prog isa := encryptMulYg nttTermY (rowAY k) k
 
 open KpkeMul in
-/-- `encryptMulY` reading `Â` as `k²` polynomials of `u16`s (`rowEY16`). -/
-def encryptMul16Y (k : Nat) : Prog isa := encryptMulYg (rowAY16 k) k
+/-- `encryptMulY` reading `Â` as `k²` polynomials of `u16`s (`rowEY16`) and
+`y` as `k` of `u16`s (`nttTermY16`). -/
+def encryptMul16Y (k : Nat) : Prog isa := encryptMulYg nttTermY16 (rowAY16 k) k
 
 open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k` with AVX2: `û[j] = NTT(u'[j])` to

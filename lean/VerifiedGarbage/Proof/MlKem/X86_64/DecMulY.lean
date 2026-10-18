@@ -96,7 +96,7 @@ theorem term_ok {j : Nat} (hj : j < k) {s : State} (hI : NInv k s₀ j s) :
   have hsr : s.rd = [vR (sP s₀) k, vR (uP s₀) k] := by rw [hI.rd, hp.1]
   have hsw : s.wr = [pR (wP s₀), cR (cP s₀)] := by rw [hI.wr, hp.2.1]
   have hU := u_frame hp hI.frame hj
-  unfold KpkeMul.nttTermY
+  unfold KpkeMul.nttTermY KpkeMul.nttTermYg
   refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .rdi = uP s₀ + BitVec.ofNat 64 (1024 * j) ∧
       s1.gpr .rsi = cP s₀ ∧ s1.gpr .r10 = yA (cP s₀) j ∧ s1.mem = s.mem ∧
       Keep [.rdi, .rsi, .r10] s s1) (by

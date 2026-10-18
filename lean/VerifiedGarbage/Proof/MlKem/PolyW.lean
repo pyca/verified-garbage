@@ -52,4 +52,12 @@ theorem polyIsW16_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p 
     (hd : ∀ r ∈ rs, (⟨p, 512⟩ : Region).Disjoint r) (h : PolyIsW 16 m p f) : PolyIsW 16 m' p f :=
   polyIsW16_congr (bytes_frame hf hd (by decide)) h
 
+theorem vecAtW_length (w : Nat) (m : Mem) (p : Addr) (k : Nat) : (vecAtW w m p k).length = k := by
+  simp [vecAtW]
+
+theorem vecAtW16_get (m : Mem) (p : Addr) {k j : Nat} (hj : j < k) :
+    (vecAtW 16 m p k)[j]! = polyAtW 16 m (p + BitVec.ofNat 64 (512 * j)) := by
+  rw [getElem!_pos _ j (by rw [vecAtW_length]; exact hj)]
+  simp [vecAtW]
+
 end VG.Proof.MlKem
