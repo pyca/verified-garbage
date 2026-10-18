@@ -57,15 +57,20 @@ def copyY : Prog isa := seqs [
   copyMasked]
 
 /-- Write p||q||g||y||x under the final mask: the packed domain as given,
-then y and x. -/
+then y and x, each copy setting its own destination. -/
 def writeKey : Prog isa := seqs [
   .block [.mov .r8 (.mem (Core.field .mask)), .mov .rdx (.mem (Core.field .out)),
     .mov .rsi (.mem (Core.field .p)), .mov .rcx (.mem (Core.field .pLen)), .alu .add .rcx (.reg .rcx),
     .alu .add .rcx (.mem (Core.field .qLen))],
   copyMasked,
-  .block [.mov .rsi (.mem (Core.field .y)), .mov .rcx (.mem (Core.field .pLen))],
+  .block [.mov .rdx (.mem (Core.field .out)), .mov .rcx (.mem (Core.field .pLen)),
+    .alu .add .rdx (.reg .rcx), .alu .add .rdx (.reg .rcx), .alu .add .rdx (.mem (Core.field .qLen)),
+    .mov .rsi (.mem (Core.field .y))],
   copyMasked,
-  .block [.mov .rsi (.mem (Core.field .x)), .mov .rcx (.mem (Core.field .qLen))],
+  .block [.mov .rdx (.mem (Core.field .out)), .mov .rcx (.mem (Core.field .pLen)),
+    .alu .add .rdx (.reg .rcx), .alu .add .rdx (.reg .rcx), .alu .add .rdx (.reg .rcx),
+    .alu .add .rdx (.mem (Core.field .qLen)), .mov .rsi (.mem (Core.field .x)),
+    .mov .rcx (.mem (Core.field .qLen))],
   copyMasked]
 
 /-- A malformed domain zeros the whole key, 3*p_len + 2*q_len bytes. -/
