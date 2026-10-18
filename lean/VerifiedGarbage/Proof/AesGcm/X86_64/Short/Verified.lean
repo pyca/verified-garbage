@@ -136,7 +136,8 @@ theorem sealSel_framed (hF : Short.ShortFacts) :
       (Short.sealM_spSafe v v.blkB) (Short.sealM_xdepth v v.blkB)
   · split
     · exact sealCode_framed (sealCode_verified (fun s hs => SealFin.sealFM_correct v v.blkB hF s ⟨hs, trivial⟩)
-        (ct_of_rel fun _ _ hp hp' hq => SealFin.sealFM_rel v v.blkB hF ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
+        (ct_of_rel fun _ _ hp hp' hq => SealFin.sealFMW_rel v v.blkB (SealFin.sealLongOk_mid v v.blkB hF)
+          (SealFin.sealLongRel_mid v v.blkB hF) ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
         (SealFin.sealFM_spSafe v v.blkB) (SealFin.sealFM_xdepth v v.blkB)
     · exact seal_framed v
 

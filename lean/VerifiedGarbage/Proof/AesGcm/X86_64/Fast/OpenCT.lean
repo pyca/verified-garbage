@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 
@@ -35,7 +36,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.S
 open VG.Impl.AesGcm.X86_64.FastOpen (incJ tagP)
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts FinI LongRel finKs_ksOk finKs_rel finTest_ok finTextArgs_ok
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk KsRel FinI LongRel finTest_ok finTextArgs_ok
   rel_env_regs rel_next rel_piece keepsEnv condS_of add_ofNat_ofNat)
 open VG.Proof.AesGcm.X86_64.Fast (IsFast)
 open VG.Spec.Aes (bytesAt)
@@ -59,10 +60,11 @@ theorem incJ_finI {Ctx W SP D : Addr} {R r : Nat} (s : State) (h : FinI Ctx W SP
 
 /-- `tagP` in two runs with the same rounds and bytes left, the prepared key
 context readable. -/
-theorem tagP_rel {Ctx W SP D : Addr} {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hr : r < 2 ^ 64) :
+theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : Addr} {R r : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hr : r < 2 ^ 64) :
     RelCT isa (fun s₁ s₂ => (FinI Ctx W SP D R r s₁ ∧ Covers [⟨Ctx, 1024⟩] (s₁.rd ++ s₁.wr)) ∧
         (FinI Ctx W SP D R r s₂ ∧ Covers [⟨Ctx, 1024⟩] (s₂.rd ++ s₂.wr)))
-      tagP fun _ _ => True := by
+      (tagP ks) fun _ _ => True := by
   have wPow : ∀ s, FinI Ctx W SP D R r s ∧ Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) →
       WP isa (.block finPowP) s (FinI Ctx W SP D R r) := fun s h =>
     WP.mono (Fast.finPowP_run s h.1.env.r13 (in_off h.2 (show 272 + 16 ≤ 1024 by decide) (by decide))
@@ -72,11 +74,11 @@ theorem tagP_rel {Ctx W SP D : Addr} {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R =
         rcases hg with rfl | rfl | rfl | rfl <;> decide)) o.rd o.wr (by rw [o.mem]; exact Frame.refl _ _)
   have p := rel_next (rel_env_regs [] (fun _ h => h.1.env) (fun _ h => h.1.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block finPowP) ⟨_, by taint_decide⟩) wPow wPow
-  have wKs : ∀ s, FinI Ctx W SP D R r s → WP isa finKs s (FinI Ctx W SP D R r) := fun s h =>
-    WP.mono (finKs_ksOk s h.env h.rounds hR) fun _ ⟨_, _, f, g, rd, wr, _⟩ => h.keep (fun g' hg => by
+  have wKs : ∀ s, FinI Ctx W SP D R r s → WP isa ks s (FinI Ctx W SP D R r) := fun s h =>
+    WP.mono (hks s h.env h.rounds hR) fun _ ⟨_, _, f, g, rd, wr, _⟩ => h.keep (fun g' hg => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide) (by decide)) rd wr f
-  have k := rel_next (finKs_rel hR) wKs wKs
+  have k := rel_next (hkr hR) wKs wKs
   have j := rel_next (rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r)
     (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr) (c := .block incJ) ⟨_, by taint_decide⟩)
     incJ_finI incJ_finI
@@ -110,17 +112,18 @@ theorem tagP_rel {Ctx W SP D : Addr} {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R =
     (b₀.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
     (b₁.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)))))
 
-theorem tagRel_tagP : TagRel CtxMode.prepared tagP := fun {_ _ _} _ {R _ _ _ n _} _ =>
+theorem tagRel_tagP {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) : TagRel CtxMode.prepared (tagP ks) :=
+  fun {_ _ _} _ {R _ _ _ n _} _ =>
   StreamTo.RelCT.of_imp ((R = 10 ∨ R = 12 ∨ R = 14) ∧ n < 2 ^ 64) (fun _ _ h => ⟨h.1.rounds.2, h.1.dD.ok.lt⟩)
-    fun ⟨hR, hr⟩ => (tagP_rel hR hr).mono (fun _ _ h =>
+    fun ⟨hR, hr⟩ => (tagP_rel hks hkr hR hr).mono (fun _ _ h =>
       ⟨⟨⟨h.1.env, h.1.rounds.1, h.1.dat, h.1.len⟩, h.1.ext.cov⟩, ⟨⟨h.2.env, h.2.rounds.1, h.2.dat, h.2.len⟩, h.2.ext.cov⟩⟩)
       fun _ _ h => h
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
-    (ho : LongRel CtxMode.prepared other) :
-    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other) := by
+theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {ks : Prog isa} (hks : KsOk ks)
+    (hkr : KsRel ks) {other : Prog isa} (ho : LongRel CtxMode.prepared other) :
+    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other ks) := by
   intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
@@ -141,7 +144,7 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
-    exact (openOkW_rel v B tagRel_tagP (tagP_ok hF) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
+    exact (openOkW_rel v B (tagRel_tagP hks hkr) (tagP_ok hF hks) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
       hres hok ((Fast.aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
         (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
         (fun _ _ g => ⟨g.1.1.aadPre C X hNp hnl hal hR, g.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)
@@ -149,5 +152,18 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
       (fun _ h => Fast.aad_mid hF C' X' h.1 hNp' hnl' hal' (by omega))).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
+
+/-- `openFin lng` in two runs, for `lng` that two runs go through alike. -/
+theorem openFinW_rel {M : CtxMode} {lng : Prog isa} (hlr : LongRel M lng) {s₀ s₀' : State}
+    (hp : (Proof.AesGcm.openX86_64M M).pre s₀) (hp' : (Proof.AesGcm.openX86_64M M).pre s₀')
+    (hq : Proof.AesGcm.openX86_64.pub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.FastOpen.openFin lng) fun _ _ => True :=
+  openM_relOf hp hp' hq fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok =>
+    hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
+
+theorem openFinW_ct {M : CtxMode} {lng : Prog isa} (hlr : LongRel M lng) :
+    ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub
+      (Impl.AesGcm.X86_64.FastOpen.openFin lng) :=
+  ct_of_rel fun _ _ hp hp' hq => openFinW_rel hlr hp hp' hq
 
 end VG.Proof.AesGcm.X86_64.FastOpen

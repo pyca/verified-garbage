@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 
@@ -23,7 +24,8 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.SealFin
 
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
-open VG.Proof.AesGcm.X86_64.Short (KsOk KsRel finKsA_ksOk finKsA_rel sealRunF_ok sealRunF_rel ShortFacts)
+open VG.Proof.AesGcm.X86_64.Short (KsOk KsRel finKsA_ksOk finKsA_rel sealRunF_ok sealRunF_rel ShortFacts
+  SealLongOk SealLongRel)
 open Gcm.X86_64.Stitch (CtxMode)
 
 theorem finishA_xdepth : (Impl.AesGcm.X86_64.Short.finishWith Impl.AesGcm.X86_64.Short.finKsA).x86_64Depth = 0 := by
@@ -31,24 +33,46 @@ theorem finishA_xdepth : (Impl.AesGcm.X86_64.Short.finishWith Impl.AesGcm.X86_64
 
 variable (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
 
+/-- `SealFin.mid` leaves what `sealRun_ok` does. -/
+theorem sealLongOk_mid (hF : ShortFacts) : SealLongOk M (Impl.AesGcm.X86_64.SealFin.mid (v.withBlk B)) :=
+  fun C X E hNp hnl hal => sealRunF_ok hF finKsA_ksOk v B C X E hNp hnl hal
+
+/-- `SealFin.mid` in two runs. -/
+theorem sealLongRel_mid (hF : ShortFacts) : SealLongRel M (Impl.AesGcm.X86_64.SealFin.mid (v.withBlk B)) :=
+  fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' =>
+    (sealRunF_rel hF finKsA_ksOk finKsA_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
+      (fun _ _ h => ⟨trivial, h⟩) fun _ _ h => h
+
+/-- `SealFin.seal` with `md` after the entry, which leaves what `sealRun_ok`
+does. -/
+theorem sealFMW_wp {md : Prog isa} (hmd : SealLongOk M md) {s : State} (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
+    WP isa (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B) md) s fun s' =>
+      gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' :=
+  sealM_of hp fun C X E hNp hnl hal => hmd C X E hNp hnl hal
+
+theorem sealFMW_rel {md : Prog isa} (hmd : SealLongOk M md) (hmr : SealLongRel M md) {s₀ s₀' : State}
+    (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
+    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B) md)
+      fun _ _ => True :=
+  sealM_relOf hp hp' hq (fun C X E hNp hnl hal => hmd C X E hNp hnl hal)
+    fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' =>
+      (hmr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono (fun _ _ h => h.2) fun _ _ h => h
+
+theorem sealFMW_ct {md : Prog isa} (hmd : SealLongOk M md) (hmr : SealLongRel M md) :
+    ConstantTime isa (Proof.AesGcm.sealX86_64M M).pre Proof.AesGcm.sealX86_64.pub
+      (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B) md) :=
+  ct_of_rel fun _ _ hp hp' hq => sealFMW_rel v B hmd hmr hp hp' hq
+
 theorem sealFM_wp (hF : ShortFacts) {s : State} (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
     WP isa (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)) s fun s' =>
       gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' :=
-  sealM_of hp fun C X E hNp hnl hal => sealRunF_ok hF finKsA_ksOk v B C X E hNp hnl hal
-
-theorem sealFM_rel (hF : ShortFacts) {s₀ s₀' : State}
-    (hp : (Proof.AesGcm.sealX86_64M M).pre s₀) (hp' : (Proof.AesGcm.sealX86_64M M).pre s₀')
-    (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B))
-      fun _ _ => True :=
-  sealM_relOf hp hp' hq (fun C X E hNp hnl hal => sealRunF_ok hF finKsA_ksOk v B C X E hNp hnl hal)
-    fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' =>
-      sealRunF_rel hF finKsA_ksOk finKsA_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR'
+  sealFMW_wp v B (sealLongOk_mid v B hF) hp
 
 theorem sealFM_ct (hF : ShortFacts) :
     ConstantTime isa (Proof.AesGcm.sealX86_64M M).pre Proof.AesGcm.sealX86_64.pub
       (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)) :=
-  ct_of_rel fun _ _ hp hp' hq => sealFM_rel v B hF hp hp' hq
+  sealFMW_ct v B (sealLongOk_mid v B hF) (sealLongRel_mid v B hF)
 
 theorem sealFM_mx :
     (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)).allInstrs (fun i => !loadsMxcsr i) = true := by

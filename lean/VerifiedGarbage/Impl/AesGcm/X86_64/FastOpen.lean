@@ -24,7 +24,8 @@ and the tag at `W + uO`.
 namespace VG.Impl.AesGcm.X86_64.FastOpen
 
 open VG.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm Callees copyLoop recv cmp oneBlocks oneUndo oneCrypt lenO tlO auxO uO)
+open VG.Impl.AesGcm.X86_64 (at_ imm Callees copyLoop recv cmp oneBlocks oneUndo oneCrypt lenO tlO auxO uO oneEntry
+  tagLenOk restore)
 
 /-- `J₀`, at the state's start, incremented: its last word, big-endian. -/
 def incJ : List Instr :=
@@ -32,10 +33,11 @@ def incJ : List Instr :=
     .store32 (at_ .r14 12) .rsi]
 
 /-- The tag of the ciphertext at `W + uO`, without calls, with `J₀`
-incremented once its keystream is computed. -/
-def tagP : Prog isa :=
+incremented once its keystream is computed, by `ks` (`Short.finKs` on
+512-bit registers, `Short.finKsA` on 128-bit ones). -/
+def tagP (ks : Prog isa := Short.finKs) : Prog isa :=
   .seq (.block Short.finPowP)
-  (.seq Short.finKs
+  (.seq ks
   (.seq (.block incJ)
   (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
   (.ite .e (.block (Short.finLens ++ Short.finGh1 ++ Short.tagK uO))
@@ -44,11 +46,11 @@ def tagP : Prog isa :=
 variable (c : Callees)
 
 /-- After the entry and `tagLenOk`: `Short.openLong` with `Fast.aad` and
-`tagP`. -/
-def run : Prog isa :=
+`tagP ks`. -/
+def run (ks : Prog isa := Short.finKs) : Prog isa :=
   .seq Fast.aad
   (.seq (oneBlocks c.dec)
-  (.seq tagP
+  (.seq (tagP ks)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
   (.seq recv
   (.seq (cmp uO)
@@ -57,7 +59,17 @@ def run : Prog isa :=
     (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
 
 /-- `Fast.cond`, then this path, or `other`. -/
-def sel (other : Prog isa) : Prog isa :=
-  .seq Fast.cond (.ite .e other (run c))
+def sel (other : Prog isa) (ks : Prog isa := Short.finKs) : Prog isa :=
+  .seq Fast.cond (.ite .e other (run c ks))
+
+/-- `vg_aes_gcm_open`'s frame, as `Impl.AesGcm.X86_64.open` and
+`Short.open` have it, around `lng` for an allowed tag length: for the
+256-bit VAES instances, which have no short path, `sel` with the 128-bit
+keystream `Short.finKsA`. -/
+def openFin (lng : Prog isa) : Prog isa :=
+  .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
+  (.seq tagLenOk
+  (.seq (.ite .e (.block [.mov32 .rax (imm 0)]) lng)
+    (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.FastOpen

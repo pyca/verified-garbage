@@ -169,6 +169,20 @@ theorem aadReg_ok {A : Addr} (s : State) (hsi : s.gpr .rsi = A) (q₁ : InRegion
     all_goals rfl
   exact WP.of_runBlock ⟨t, run, by rw [v, reg5_eq], m, g, rd, wr⟩
 
+/-- `aadFull`: the sixteen bytes at `rsi` in `xmm7`, whose `pshufb` by the
+reversal mask is their block. -/
+theorem aadFull_ok {A : Addr} (s : State) (hsi : s.gpr .rsi = A) (q : InRegions (s.rd ++ s.wr) A 16) :
+    WP isa (.block aadFull) s fun t =>
+      XBinOp.eval .pshufb (t.xmm .xmm7) revMask = Spec.Gcm.ofBytes (bytesAt s.mem A 16 ++ zeros (16 - 16)) ∧
+      t.mem = s.mem ∧ (∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have e : s.gpr .rsi + BitVec.ofInt 64 ((0 : Nat) : Int) = A := by
+    rw [hsi, BitVec.ofInt_natCast]; exact BitVec.add_zero A
+  refine WP.mono (ld_ok .xmm7 .rsi 0 s (by rw [e]; exact q)) fun t ⟨v, o⟩ => ?_
+  refine ⟨?_, o.mem, fun r hr _ => o.gpr r hr, o.rd, o.wr⟩
+  rw [v, e, ← VG.Proof.Gcm.X86_64.blockAt_eq, Spec.Gcm.zeros, Nat.sub_self, List.replicate_zero,
+    List.append_nil]
+  rfl
+
 /-- `pshufb xmm7, xmm0`. -/
 theorem pshufb7_ok (s : State) :
     WP isa (.block [.xop (.bin .pshufb .xmm7 .xmm0)]) s fun s' =>
@@ -404,20 +418,58 @@ theorem aadSome_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.o
       (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁]) m g rd wr
     refine ⟨E, R, Wr, ?_, F, K⟩
     rw [b, M₃, m₂, m₁]
-  · -- Any other length, padded in `T`.
-    refine WP.seq (WP.mono (aadPad_ok L he₁ (hAd.of_eq rd₁ wr₁) h1 h16 (by rw [m₁]; exact haad)
-      (by rw [g₁]; exact hcx)) fun s₄ ⟨he₄, rd₄, wr₄, hT₄, f₄⟩ => ?_)
-    have inT : InRegions (s₄.rd ++ s₄.wr) (W + BitVec.ofNat 64 96) 16 :=
-      in_left (in_off he₄.perm.w (show 96 + 16 ≤ 2560 by decide) (by decide))
-    have inH₄ : InRegions (s₄.rd ++ s₄.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
-      rw [rd₄, wr₄, rd₁, wr₁]; exact inH
-    refine WP.mono (aadMul_ok s₄ he₄.r13 he₄.r14 he₄.r15 inT inH₄ (outY he₄)) fun t ⟨b, m, g, rd, wr⟩ => ?_
-    have fT : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₄.mem := by rw [← m₁]; exact f₄
-    obtain ⟨E, R, Wr, F, K⟩ := fin s₄ t _ fT he₄ (by rw [rd₄, rd₁]) (by rw [wr₄, wr₁]) m g rd wr
-    refine ⟨E, R, Wr, ?_, F, K⟩
-    rw [b, fT.readW (r := ⟨Ctx + BitVec.ofNat 64 272, 16⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact cw.sub_right (Lay.wSub (by decide))) (by decide),
-      blockAt, hT₄, m₁]
+  · -- The length compared with 16.
+    obtain ⟨s₁', run₁', zf₁', -, g₁', m₁', rd₁', wr₁'⟩ := cmpImm_ok s₁ .rcx (by rw [g₁]; exact hcx) hlt
+      (show 16 < 2 ^ 31 by decide)
+    refine WP.seq (WP.of_runBlock ⟨s₁', run₁', ?_⟩)
+    have he₁' : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁' := he₁.keep (fun r _ => by rw [g₁']) rd₁' wr₁'
+    refine WP.ite (decide (al = 16)) (eval_e zf₁') (fun ht => ?_) (fun _ => ?_)
+    · -- Sixteen bytes, loaded whole.
+      have hx : al = 16 := by simpa using ht
+      subst hx
+      have q := he₁'.perm.wR (show 232 + 8 ≤ 2560 by decide)
+      obtain ⟨s₂, run₂, hsi₂, g₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa [.mov .rsi (.mem (at_ .r15 aadO))] s₁' = some s₂ ∧
+          s₂.gpr .rsi = A ∧ (∀ r, r ≠ .rsi → s₂.gpr r = s₁'.gpr r) ∧ s₂.mem = s₁'.mem ∧ s₂.rd = s₁'.rd ∧
+          s₂.wr = s₁'.wr := by
+        refine ⟨_, by xrun [he₁'.r15, q], ?_, ?_, ?_, ?_, ?_⟩
+        · simp [gpr_setReg, m₁', m₁, haad]
+        · intro r h; simp [gpr_setReg, h]
+        all_goals rfl
+      refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+      have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁'.keep (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide)) rd₂ wr₂
+      have q₁ : InRegions (s₂.rd ++ s₂.wr) A 16 := by
+        have := in_off hAd.rd (d := 0) (n := 16) (by decide) (by decide)
+        simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this
+        rwa [rd₂, wr₂, rd₁', wr₁', rd₁, wr₁]
+      rw [WP.block_append_iff]
+      refine WP.mono (aadFull_ok s₂ hsi₂ q₁) fun s₃ ⟨v₃, m₃, g₃, rd₃, wr₃⟩ => ?_
+      have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he₂.keep (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide)) rd₃ wr₃
+      have M₃ : s₃.mem = s.mem := by rw [m₃, m₂, m₁', m₁]
+      have inH₃ : InRegions (s₃.rd ++ s₃.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
+        rw [rd₃, wr₃, rd₂, wr₂, rd₁', wr₁', rd₁, wr₁]; exact inH
+      refine WP.mono (aadMulR_ok s₃ he₃.r13 he₃.r14 v₃ inH₃ (outY he₃)) fun t ⟨b, m, g, rd, wr⟩ => ?_
+      obtain ⟨E, R, Wr, F, K⟩ := fin s₃ t _ (by rw [M₃]; exact Frame.refl _ _) he₃
+        (by rw [rd₃, rd₂, rd₁', rd₁]) (by rw [wr₃, wr₂, wr₁', wr₁]) m g rd wr
+      refine ⟨E, R, Wr, ?_, F, K⟩
+      rw [b, M₃, m₂, m₁', m₁]
+    · -- Any other length, padded in `T`.
+      refine WP.seq (WP.mono (aadPad_ok L he₁' (hAd.of_eq (rd₁'.trans rd₁) (wr₁'.trans wr₁)) h1 h16
+        (by rw [m₁', m₁]; exact haad) (by rw [g₁', g₁]; exact hcx)) fun s₄ ⟨he₄, rd₄, wr₄, hT₄, f₄⟩ => ?_)
+      have inT : InRegions (s₄.rd ++ s₄.wr) (W + BitVec.ofNat 64 96) 16 :=
+        in_left (in_off he₄.perm.w (show 96 + 16 ≤ 2560 by decide) (by decide))
+      have inH₄ : InRegions (s₄.rd ++ s₄.wr) (Ctx + BitVec.ofNat 64 272) 16 := by
+        rw [rd₄, wr₄, rd₁', wr₁', rd₁, wr₁]; exact inH
+      refine WP.mono (aadMul_ok s₄ he₄.r13 he₄.r14 he₄.r15 inT inH₄ (outY he₄)) fun t ⟨b, m, g, rd, wr⟩ => ?_
+      have fT : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₄.mem := by rw [← m₁, ← m₁']; exact f₄
+      obtain ⟨E, R, Wr, F, K⟩ := fin s₄ t _ fT he₄ (by rw [rd₄, rd₁', rd₁]) (by rw [wr₄, wr₁', wr₁]) m g rd wr
+      refine ⟨E, R, Wr, ?_, F, K⟩
+      rw [b, fT.readW (r := ⟨Ctx + BitVec.ofNat 64 272, 16⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact cw.sub_right (Lay.wSub (by decide))) (by decide),
+        blockAt, hT₄, m₁', m₁]
 
 /-- `aad`: `J₀` of the 12-byte nonce at `Np`, the first counter block, and the
 `al` (at most 16) bytes of additional data at `A` absorbed and padded, for
