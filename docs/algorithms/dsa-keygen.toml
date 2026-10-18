@@ -1,0 +1,5 @@
+name = "DSA key generation"
+family = "DSA"
+specs = ["Dsa", "Dsa/Generate", "Dsa/Derive"]
+modules = ["src/dsa.rs", "src/dsa/keygen.rs"]
+asm = ["dsa"]

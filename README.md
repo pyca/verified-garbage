@@ -1752,22 +1752,6 @@ yours to keep:
 
 <tr>
 
-<td>DSA</td>
-
-<td>✅</td>
-
-<td>✅ BMI2, ADX</td>
-
-<td>✅</td>
-
-<td>✅</td>
-
-<td>✅</td>
-
-</tr>
-
-<tr>
-
 <td>ECDSA brainpoolP256r1</td>
 
 <td>✅</td>
@@ -1983,6 +1967,76 @@ yours to keep:
 <td>✅ AVX2; SSE2 and AVX2 polynomial arithmetic, rounding and norm check; matrix and masks sampled with four SHAKE128 or SHAKE256 instances at once</td>
 
 <td>✅ SHA extensions</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+</table>
+
+### DSA
+
+<table>
+
+<tr>
+
+<th>Algorithm</th>
+
+<th>Spec landed</th>
+
+<th>x86-64</th>
+
+<th>ARM64</th>
+
+<th>ARMv7</th>
+
+<th>x86</th>
+
+</tr>
+
+<tr>
+
+<td>DSA key generation</td>
+
+<td>✅</td>
+
+<td>✅ BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>DSA parameter generation</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>DSA</td>
+
+<td>✅</td>
+
+<td>✅ BMI2, ADX</td>
+
+<td>✅</td>
 
 <td>✅</td>
 

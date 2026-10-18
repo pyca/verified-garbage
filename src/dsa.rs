@@ -26,8 +26,6 @@
 use alloc::{vec, vec::Vec};
 use core::fmt;
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::dsa::vg_dsa_generate_key;
 #[cfg(test)]
 use crate::arch::dsa::vg_dsa_sign;
 #[cfg(all(target_arch = "x86_64", test))]
@@ -35,7 +33,7 @@ use crate::arch::dsa::vg_dsa_sign_adx;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
     VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
-    vg_dsa_generate_key_adx, vg_dsa_sign_random_adx, vg_dsa_verify_adx,
+    vg_dsa_sign_random_adx, vg_dsa_verify_adx,
 };
 use crate::arch::dsa::{vg_dsa_sign_random, vg_dsa_verify};
 use crate::cpu::{Features, detected};
@@ -178,100 +176,6 @@ impl fmt::Debug for PrivateKey {
 }
 
 impl PrivateKey {
-    /// Generate a key for the big-endian domain `p`, `q` and `g`, sampling
-    /// `x` uniformly from `[1, q)` with the operating system's random number
-    /// generator and computing `y = g^x mod p`. `g` must have `p`'s width.
-    ///
-    /// The domain's algebraic consistency is checked before any randomness is
-    /// drawn; callers must assure its primality separately. At most 128 draws
-    /// are made, so an invalid `q` returns an error instead of retrying
-    /// indefinitely.
-    #[cfg(target_arch = "x86_64")]
-    pub fn generate(p: &[u8], q: &[u8], g: &[u8]) -> Result<Self, Error> {
-        Self::generate_with_rng(p, q, g, |buf| {
-            getrandom::fill(buf).map_err(|_| Error::Randomness)
-        })
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    fn generate_with_rng(
-        p: &[u8],
-        q: &[u8],
-        g: &[u8],
-        mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
-    ) -> Result<Self, Error> {
-        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
-            || g.len() != p.len()
-        {
-            return Err(Error::Length);
-        }
-        let (p_len, q_len) = (p.len(), q.len());
-        let mut params = Vec::with_capacity(2 * p_len + q_len);
-        for component in [p, q, g] {
-            params.extend_from_slice(component);
-        }
-        let backend = Backend::select(detected());
-        // One draw's worth of bytes up front: a draw never takes more than q_len.
-        let mut tape = Secret(vec![0u8; q_len]);
-        random(&mut tape.0)?;
-        let mut scratch = Secret(vec![0u64; 64 * p_len + 1024]);
-        let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
-        loop {
-            let mut used = [0u64; 1];
-            macro_rules! generate {
-                ($function:path) => {
-                    // SAFETY: the checks above establish supported widths,
-                    // params_len = 2*p_len + q_len and out_len =
-                    // 3*p_len + 2*q_len. All writable buffers are separate
-                    // owned allocations, disjoint from the domain and the
-                    // random tape. Scratch has the contract's 64*p_len + 1024
-                    // words, and backend selection establishes CPU features.
-                    unsafe {
-                        $function(
-                            output.0.as_mut_ptr(),
-                            output.0.len(),
-                            &mut used,
-                            params.as_ptr(),
-                            params.len(),
-                            p_len,
-                            q_len,
-                            tape.0.as_ptr(),
-                            tape.0.len(),
-                            scratch.0.as_mut_ptr(),
-                            scratch.0.len(),
-                        )
-                    }
-                };
-            }
-            let status = match backend {
-                Backend::Baseline => generate!(vg_dsa_generate_key),
-                Backend::Adx => generate!(vg_dsa_generate_key_adx),
-            };
-            match status {
-                1 => break,
-                2 => {
-                    // The contract permits extending an exhausted tape and
-                    // replaying the same generation; never reuse it for another.
-                    let start = tape.0.len();
-                    tape.0.resize(start + q_len, 0);
-                    random(&mut tape.0[start..])?;
-                }
-                _ => return Err(Error::InvalidKeyOrNonce),
-            }
-        }
-        let public = PublicKey {
-            packed: output.0[..3 * p_len + q_len].to_vec(),
-            p_len,
-            q_len,
-            backend,
-        };
-        // The packed private key p || q || g || y || x is the output itself.
-        Ok(Self {
-            public,
-            packed: Secret(core::mem::take(&mut output.0)),
-        })
-    }
-
     /// Import big-endian `p`, `q`, `g`, `y` and `x`. `x` must have `q`'s
     /// width. Signing checks that `g^x mod p = y` and validates the domain's
     /// algebraic consistency; callers must assure domain primality separately.
@@ -408,6 +312,8 @@ impl PrivateKey {
         result == 1
     }
 }
+
+mod keygen;
 
 #[cfg(test)]
 #[path = "dsa/tests.rs"]
