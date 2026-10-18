@@ -49,7 +49,7 @@ impl Backend {
 /// and `VerifyingKey`, over its verified `keygen`, `sign_message` and
 /// `verify_message` functions (on AArch64, `verify_message_cached`, which
 /// takes the hash `tr` of the public key the `VerifyingKey` keeps), its
-/// `sign` and `verify` functions (which take `μ`, for known-answer tests)
+/// `sign` and `verify` functions (which take a precomputed `μ`)
 /// and its sizes.
 macro_rules! ml_dsa {
     (
@@ -213,11 +213,14 @@ macro_rules! ml_dsa {
                 }
             }
 
-            /// `ML-DSA.Verify_internal` (FIPS 204 Algorithm 8) with the
-            /// message representative `mu` = `μ` given: for known-answer
-            /// tests.
-            #[doc(hidden)]
-            pub fn verify_internal(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), Error> {
+            /// Verify a signature of the 64-byte message representative `mu`
+            /// using FIPS 204 Algorithm 8, with `μ` already computed.
+            /// For pure ML-DSA, compute `mu = SHAKE256(tr || 0x00 ||
+            /// len(ctx) || ctx || msg, 64)`, where `tr = SHAKE256(pk, 64)`
+            /// and `len(ctx)` is one byte (at most 255). This method does
+            /// not hash the message or apply context formatting.
+            /// Returns [`Error::InvalidSignature`] if verification fails.
+            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), Error> {
                 let mut scratch: Scratch = [0; $scratch];
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
                 // for reads (and, for `scratch`, writes) of their sizes; they
@@ -384,12 +387,19 @@ macro_rules! ml_dsa {
                 }
             }
 
-            /// `ML-DSA.Sign_internal` (FIPS 204 Algorithm 7) with the
-            /// message representative `mu` = `μ` and the randomness `rnd`
-            /// given: for known-answer tests only. `rnd` must otherwise be
-            /// fresh random bytes, which [`sign`](Self::sign) draws.
-            #[doc(hidden)]
-            pub fn sign_internal(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
+            /// Sign the 64-byte message representative `mu` using FIPS 204
+            /// Algorithm 7, with `μ` already computed. For pure ML-DSA,
+            /// compute `mu = SHAKE256(tr || 0x00 || len(ctx) || ctx || msg, 64)`,
+            /// where `tr = SHAKE256(pk, 64)` and `len(ctx)` is one byte
+            /// (at most 255). This method does not hash the message or
+            /// apply context formatting.
+            ///
+            /// Supply 32 fresh random bytes from an approved RBG as `rnd`
+            /// for hedged signing, or all zeros for deterministic signing.
+            /// FIPS 204 §3.4 recommends hedged signing where side channels
+            /// are a concern. Returns [`Error::LoopBound`] if a loop reaches
+            /// its bound.
+            pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
                 let mut sig = [0u8; $sig];
                 let mut scratch: Scratch = [0; $scratch];
                 // SAFETY: `self.sk`, `mu`, `rnd`, `sig` and `scratch` are
