@@ -14,8 +14,6 @@ public import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
-meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -55,8 +53,9 @@ CFB, whose precondition, public arguments and initial taint these share
 taint analysis: the pointers, `rounds`, `n` and the stack pointer are
 public, and so is everything the code computes from them; the IV is secret.
 `cbcEncryptChained_framed` and `cbcDecryptChained_framed` run them with
-their working space on the stack, zeroed on return: 3216 bytes, the 401
-words of the scratch buffer and 8 more.
+their working space on the stack, zeroed on return: 3280 bytes, the 409
+words of the scratch buffer and 8 more, below the 8 bytes the call of
+`vg_camellia_crypt_prepared` uses.
 -/
 
 @[expose] public section
@@ -93,8 +92,9 @@ theorem invCipher_eq (m : Mem) (p : Addr) (R : Nat) :
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB, hR⟩ := hp
-  have hwS : (⟨s₀.gpr .r9, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB, hR⟩ :=
+    hp
+  have hwS : (⟨s₀.gpr .r9, 8 * 409⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.cbcDecryptChained_wp ((dirCoreSpec .decrypt).toBlock rfl)
     (r := ⟨.rdx, .rcx, .r8, .r9⟩) ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r9) (P := s₀.gpr .rdx) (D := s₀.gpr .rcx) (n := (s₀.gpr .r8).toNat)
@@ -106,20 +106,33 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dKS
-        · exact dKV⟩)
+        · exact dKV, hst, fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dTS
+        · exact dTV⟩
+    (hstk := .inr ⟨hst, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dTV
+      · exact dTD
+      · exact dTS⟩))
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, by rw [invCipher_eq] at hdata; exact ⟨hdata, hiv⟩⟩
-  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+  rw [stkList_dirCore] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
   · exact dRS
   · exact dRD
   · exact dRV
+  · exact VG.Offset.base_disjoint_below _ (by decide)
 
 theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB, hR⟩ := hp
-  have hwS : (⟨s₀.gpr .r9, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB, hR⟩ :=
+    hp
+  have hwS : (⟨s₀.gpr .r9, 8 * 409⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.cbcEncryptChained_wp ((dirCoreSpec .encrypt).toBlock rfl)
     (r := ⟨.rdx, .rcx, .r8, .r9⟩) ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r9) (P := s₀.gpr .rdx) (D := s₀.gpr .rcx) (n := (s₀.gpr .r8).toNat)
@@ -131,41 +144,41 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dKS
-        · exact dKD⟩
-    ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), Modes.X86_64.keepsIv_of_scal (by lit_decide)⟩)
+        · exact dKD, hst, fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dTS
+        · exact dTD⟩
+    ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), Modes.X86_64.keepsIv_of_scal (by lit_decide)⟩
+    (hstk := .inr ⟨hst, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dTV
+      · exact dTD
+      · exact dTS⟩))
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, by rw [encCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
-  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+  rw [stkList_dirCore] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
   · exact dRS
   · exact dRD
   · exact dRV
+  · exact VG.Offset.base_disjoint_below _ (by decide)
 
 /-! ## Constant time -/
 
-/-- What is public at the core's loop of pairs of rounds in CBC decryption:
-`fbPairTaint`, without the IV's address in `xmm15`, which decryption does
-not keep. -/
-def decPairTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdx, .rsp, .rsi, .rdi, .r8, .r9], flags := true, lens := [16, 0, 8 * slots],
-    bases := [(.r9, 2, 0), (.rdx, 2, 8 * tailSlot)],
-    slots := [(2, 8 * endSlot, 8), (2, 8 * countSlot, 8), (2, 8 * dataSlot, 8)] }
-
-taint_summary decPairSum : taintS decPairTaint (.block pairBody)
-
 theorem cbcEncryptChained_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEncryptChained :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint cbcEncryptChained h).isSome = true)
-  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
 
 theorem cbcDecryptChained_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDecryptChained :=
-  let ⟨_, h⟩ := (by taint_decide_sum [decPairSum] : ∃ h, (taintS.check fbTaint cbcDecryptChained h).isSome = true)
-  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
 
 /-! ## The contracts -/
 
 theorem cbcEncryptChained_verified :
-    Verified X86_64.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract X86_64.abi slots) :=
+    Verified X86_64.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract X86_64.abi 409 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cbcEncryptChained_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncryptChained) (by lit_decide) he hg, hpost⟩)
@@ -175,7 +188,7 @@ theorem cbcEncryptChained_verified :
       fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
 theorem cbcDecryptChained_verified :
-    Verified X86_64.target cbcDecryptChained (Proof.Camellia.cbcDecChainedScratchContract X86_64.abi slots) :=
+    Verified X86_64.target cbcDecryptChained (Proof.Camellia.cbcDecChainedScratchContract X86_64.abi 409 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cbcDecryptChained_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecryptChained) (by lit_decide) he hg, hpost⟩)
@@ -184,33 +197,33 @@ theorem cbcDecryptChained_verified :
       Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcDecChainedPost, cbcDecX86_64,
       fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract X86_64.abi 3216).pre s := by
+theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract X86_64.abi 3288).pre s := by
   implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig, X86_64.abi, X86_64.argRegs]
     [fbFrameSat] using fbFrameSat
 
-theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract X86_64.abi 3216).pre s := by
+theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract X86_64.abi 3288).pre s := by
   implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig, X86_64.abi, X86_64.argRegs]
     [fbFrameSat] using fbFrameSat
 
 /-- CBC encryption with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 cbcEncryptChained)
-      (Spec.Camellia.cbcEncryptChainedContract X86_64.abi 3216) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cbcEncryptChained)
+      (Spec.Camellia.cbcEncryptChainedContract X86_64.abi 3288) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 401) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
-    (post := Proof.Camellia.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3216) (by rw [← Proof.Camellia.cbcEncChainedScratchContract_eq]; exact cbcEncryptChained_verified)
+    (n := 409) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
+    (post := Proof.Camellia.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) (by rw [← Proof.Camellia.cbcEncChainedScratchContract_eq]; exact cbcEncryptChained_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cbcEncChainedPostOut_local _) cbcEncFrameSat_pre
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 cbcDecryptChained)
-      (Spec.Camellia.cbcDecryptChainedContract X86_64.abi 3216) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cbcDecryptChained)
+      (Spec.Camellia.cbcDecryptChainedContract X86_64.abi 3288) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 401) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
-    (post := Proof.Camellia.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3216) (by rw [← Proof.Camellia.cbcDecChainedScratchContract_eq]; exact cbcDecryptChained_verified)
+    (n := 409) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
+    (post := Proof.Camellia.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) (by rw [← Proof.Camellia.cbcDecChainedScratchContract_eq]; exact cbcDecryptChained_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cbcDecChainedPostOut_local _) cbcDecFrameSat_pre
 
