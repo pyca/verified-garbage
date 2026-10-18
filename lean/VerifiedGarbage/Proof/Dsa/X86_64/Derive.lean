@@ -404,7 +404,7 @@ theorem deriveSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {original st 
      fun i hi j hj => scr_ne_out h.outSeparate (d := derivedY) (i := i)
       (by unfold deriveExtent derivedY usedBytes; omega_using [hi, hp384]) (by omega_using [hn]) j hj⟩
     ⟨fun i hi => hxs.rd i (by rw [p.xLength]; exact hi), h.xOut⟩
-    (fun i hi => by rw [hreg.2]; exact h.outWrite i hi) h.outSeparate)
+    (fun i hi => by rw [hreg.2]; exact h.outWrite i hi))
     fun w ⟨hw₁, hw₂, hw₃, hwf, hkw⟩ => ?_)
   have hwv : ∀ d, d + 8 ≤ deriveExtent → word w.mem p.base d = word v.mem p.base d := fun d hd =>
     Mem.readW_congr fun b hb => hwf _ (scr_ne_out h.outSeparate (d := d) (i := b) (by omega_using [hd, hb]) (by omega_using [hn]))

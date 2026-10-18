@@ -56,21 +56,26 @@ def copyY : Prog isa := seqs [
     .mov .rcx (.mem (Core.field .pLen)), .mov .r8 (.imm (-1))],
   copyMasked]
 
+/-- Load the key's addresses and widths once: out in r13, y in r9, x in r10,
+p_len in r11 and q_len in r12; the copies then compute every address from
+registers. -/
+def keyHead : List Instr :=
+  [.mov .r8 (.mem (Core.field .mask)), .mov .r13 (.mem (Core.field .out)),
+    .mov .r9 (.mem (Core.field .y)), .mov .r10 (.mem (Core.field .x)),
+    .mov .r11 (.mem (Core.field .pLen)), .mov .r12 (.mem (Core.field .qLen)),
+    .mov .rdx (.reg .r13), .mov .rsi (.mem (Core.field .p)), .mov .rcx (.reg .r11),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .r12)]
+
 /-- Write p||q||g||y||x under the final mask: the packed domain as given,
-then y and x, each copy setting its own destination. -/
+then y and x. -/
 def writeKey : Prog isa := seqs [
-  .block [.mov .r8 (.mem (Core.field .mask)), .mov .rdx (.mem (Core.field .out)),
-    .mov .rsi (.mem (Core.field .p)), .mov .rcx (.mem (Core.field .pLen)), .alu .add .rcx (.reg .rcx),
-    .alu .add .rcx (.mem (Core.field .qLen))],
+  .block keyHead,
   copyMasked,
-  .block [.mov .rdx (.mem (Core.field .out)), .mov .rcx (.mem (Core.field .pLen)),
-    .alu .add .rdx (.reg .rcx), .alu .add .rdx (.reg .rcx), .alu .add .rdx (.mem (Core.field .qLen)),
-    .mov .rsi (.mem (Core.field .y))],
+  .block [.mov .rdx (.reg .r13), .alu .add .rdx (.reg .r11), .alu .add .rdx (.reg .r11),
+    .alu .add .rdx (.reg .r12), .mov .rsi (.reg .r9), .mov .rcx (.reg .r11)],
   copyMasked,
-  .block [.mov .rdx (.mem (Core.field .out)), .mov .rcx (.mem (Core.field .pLen)),
-    .alu .add .rdx (.reg .rcx), .alu .add .rdx (.reg .rcx), .alu .add .rdx (.reg .rcx),
-    .alu .add .rdx (.mem (Core.field .qLen)), .mov .rsi (.mem (Core.field .x)),
-    .mov .rcx (.mem (Core.field .qLen))],
+  .block [.mov .rdx (.reg .r13), .alu .add .rdx (.reg .r11), .alu .add .rdx (.reg .r11),
+    .alu .add .rdx (.reg .r11), .alu .add .rdx (.reg .r12), .mov .rsi (.reg .r10), .mov .rcx (.reg .r12)],
   copyMasked]
 
 /-- A malformed domain zeros the whole key, 3*p_len + 2*q_len bytes. -/
