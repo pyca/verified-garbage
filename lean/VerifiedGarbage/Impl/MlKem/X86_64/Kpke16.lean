@@ -86,8 +86,8 @@ def wSub : Prog isa := .seq (.block (lea .rdi (qP (2 * L.k + 1)) ++ lea .rsi (qP
 
 /-- `m = ByteEncode₁(Compress₁(w))`. -/
 def mOut : Prog isa :=
-  .seq (.block (lea .rdi (qP (2 * L.k + 1)) ++ [.mov32 .rsi (.imm 1)] ++ lea .rdx (.r12, 0) ++
-      [.mov32 .rcx (.imm 32)]))
+  .seq (.block (lea .rdi (qP (2 * L.k + 1)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 1))] ++ lea .rdx (.r12, 0) ++
+      [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * 1)))]))
     A.codecs.ce
 
 /-- The body, between `pro` and `epi`. -/
@@ -99,7 +99,7 @@ end Kpke16
 
 open Kpke16 in
 /-- `vg_mlkem*_kpke_decrypt` of the parameter set `L`, with the arithmetic of `A`. -/
-def kpkeDecrypt (L : Kem) (A : Arith) : Prog isa :=
+def kpkeDec (L : Kem) (A : Arith) : Prog isa :=
   .seq (.block pro) (.seq (decBody L A) (.block epi))
 
 end VG.Impl.MlKem.X86_64
