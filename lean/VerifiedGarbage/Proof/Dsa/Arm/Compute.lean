@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
 public import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
 public import VerifiedGarbage.Proof.Dsa.Arm.Verify
 import VerifiedGarbage.Proof.Framework.Omega
@@ -49,7 +50,7 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   simp only [SignVerify.signCompute, Core.sequence, List.foldr]
-  refine WP.seq (WP.mono (publicKey_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
+  refine WP.seq (WP.mono (PublicValidation.call_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.run Rn₁ (by omega) fits
   refine WP.seq (WP.mono (privateKey_ok (Sc.run Rn₁) (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ix) (r₁ Ik) hP hPo)
@@ -97,7 +98,7 @@ theorem verifyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y
   have Lu : Impl.Dsa.Layout.u = 14816 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
   simp only [SignVerify.verifyCompute, Core.sequence, List.foldr]
-  refine WP.seq (WP.mono (publicKey_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
+  refine WP.seq (WP.mono (PublicValidation.call_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.run Rn₁ (by omega) fits
   have Sc₁ := Sc.run Rn₁

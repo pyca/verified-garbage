@@ -32,7 +32,7 @@ structure Input (s : State) (base : Addr) (size : Nat) (p : Pointer) (len v : Na
 
 /-- The working space's memory a schedule may change: the arithmetic's, the
 flag word and the computed values. -/
-def runRanges : List (Nat × Nat) := [(0, 64), (116, 4), (256, 15456)]
+def runRanges : List (Nat × Nat) := [(0, 64), (116, 4), (168, 36), (256, 15456)]
 
 /-- What a schedule keeps. -/
 structure Run (base : Addr) (s t : State) : Prop where
@@ -85,7 +85,7 @@ theorem Input.run {base : Addr} {s t : State} {size : Nat} {p : Pointer} {len v 
   have hO : ∀ r ∈ runRanges, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1 := by decide
   have hz' : ∀ r ∈ runRanges, r.1 + r.2 ≤ size := fun r hr => by
     simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega
   have P := pointerValue_keep (Rn.rest.gpr .r12 (by decide)) Rn.mem hO I.ok
   refine ⟨I.toReady.keep_rest Rn.rest (O := Rn.mem) (hO := hO), by rw [P]; exact I.outside, ?_⟩
   rw [operand, P, outs_bytes Rn.mem (by have := I.fits; omega) (fun r hr => by have := hz' r hr; omega)
