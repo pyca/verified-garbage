@@ -117,6 +117,16 @@ theorem cAddr_contains (w16 : Bool) (p : Addr) {i : Nat} (hi : i < 256) :
   · show (polyRegion p).Contains (p + BitVec.ofNat 64 (2 * i)) 4
     exact Offset.contains_base p (by omega) (by omega)
 
+/-- A coefficient of a polynomial in a region the frame does not write. -/
+theorem coeffAtW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) {i : Nat} (hi : i < 256) :
+    coeffAtW (cw w16) m' p i = coeffAtW (cw w16) m p i := by
+  cases w16
+  · show coeffAtW 32 m' p i = coeffAtW 32 m p i
+    exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+  · show coeffAtW 16 m' p i = coeffAtW 16 m p i
+    exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+
 /-- The coefficients at `p`: the first `t` of them are `G`'s, the others `old`'s. -/
 def CoeffsUpToW (w16 : Bool) (m : Mem) (p : Addr) (t : Nat) (G old : Nat → BitVec (cw w16)) : Prop :=
   ∀ i < 256, coeffAtW (cw w16) m p i = if i < t then G i else old i

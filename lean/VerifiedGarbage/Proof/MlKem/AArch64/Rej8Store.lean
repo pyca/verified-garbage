@@ -13,9 +13,35 @@ open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.MlKem.AArch64.Ntt16
 def wideLo (x z : BitVec 128) : BitVec 128 := VPermOp.eval .zip1 .h8 x z
 def wideHi (x z : BitVec 128) : BitVec 128 := VPermOp.eval .zip2 .h8 x z
 
-def storeCode : List Instr :=
- [.ldrq .v2 .x7 0,.vop (.tbl .v0 .v0 .v2),.vop (.perm .zip1 .h8 .v1 .v0 .v21),
- .vop (.perm .zip2 .h8 .v2 .v0 .v21),.strq .v1 .x3 0,.strq .v2 .x3 16]
+def storeCode (w16 : Bool := false) : List Instr :=
+ [.ldrq .v2 .x7 0,.vop (.tbl .v0 .v0 .v2)] ++
+ (if w16 then [.strq .v0 .x3 0] else [.vop (.perm .zip1 .h8 .v1 .v0 .v21),
+ .vop (.perm .zip2 .h8 .v2 .v0 .v21),.strq .v1 .x3 0,.strq .v2 .x3 16])
+
+/-- With 16-bit coefficients, the compacted halfwords themselves. -/
+structure StorePost16 (s t : State) (mask : Nat) : Prop where
+  keep : Keep [] s t
+  gpr : t.gpr=s.gpr
+  other : ∀ r, r ∉ [.v0,.v1,.v2] → t.v r=s.v r
+  mem : t.mem = s.mem.write (s.gpr .x3) 16 (compactValue (s.v .v0) mask)
+
+theorem store16_ok (s : State) (mask : Nat)
+    (hr : InRegions (s.rd++s.wr) (s.gpr .x7) 16)
+    (table : s.mem.read (s.gpr .x7) 16 = tableVec mask)
+    (hw0 : InRegions s.wr (s.gpr .x3) 16) :
+    WP isa (.block (storeCode true)) s (fun t => StorePost16 s t mask) := by
+  refine wp_ldrq (a := s.gpr .x7) (by decide) (ptr_zero _) hr fun a ha =>
+    wp_vop (d := .v0) rfl fun b hb => ?_
+  have hv0 : b.v .v0 = compactValue (s.v .v0) mask := by
+    rw [hb.v,ha.v,table,ha.get .v0]
+    rfl
+  refine wp_strq (a := s.gpr .x3) (by decide) (by rw [hb.gpr,ha.gpr]; exact ptr_zero _)
+    (by rw [hb.wr,ha.wr]; exact hw0) fun t ht => wp_nil ?_
+  have hc0 := (ha.chg.trans hb.chg).mono (rs' := [.v0,.v1,.v2]) (by decide)
+  refine ⟨hc0.keep.trans ht.keep, ht.gpr.trans (hb.gpr.trans ha.gpr), ?_, ?_⟩
+  · intro r hr
+    rw [ht.v,hc0.v r hr]
+  · rw [ht.mem,hv0,hb.mem,ha.mem]
 
 structure StorePost (s t : State) (mask : Nat) : Prop where
   keep : Keep [] s t

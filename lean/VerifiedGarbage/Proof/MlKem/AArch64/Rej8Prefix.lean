@@ -52,34 +52,46 @@ theorem append_cv_left {L R : List Zq} {i : Nat} (hi : i<L.length) :
 
 /-- Stores beyond the compacted prefix are irrelevant: later batches may
 overwrite them, and bounded failure clears the entire remaining suffix. -/
-theorem batch_prefix (s : State) {p : Addr} {L : List Zq}
-    (h3 : s.gpr .x3=coeffAddr p L.length) (hroom : L.length+8≤256)
-    (hz : ∀i<8,vhalf (s.v .v21) i=0) (hp : Scalar.Coeffs s.mem p L) :
-    Scalar.Coeffs (updatedMem s) p (L++acceptedValues s) := by
+theorem append_cvW {w16 : Bool} {L R : List Zq} {i : Nat} (hi : L.length≤i) :
+    Sample.cvW w16 (L++R) i=Sample.cvW w16 R (i-L.length) := by
+  simp only [Sample.cvW,List.getD_eq_getElem?_getD,List.getElem?_append_right hi]
+
+theorem append_cvW_left {w16 : Bool} {L R : List Zq} {i : Nat} (hi : i<L.length) :
+    Sample.cvW w16 (L++R) i=Sample.cvW w16 L i := by
+  simp only [Sample.cvW,List.getD_eq_getElem?_getD,List.getElem?_append_left hi]
+
+/-- `batch_prefix` with either width. -/
+theorem batch_prefixW (w16 : Bool) (s : State) {p : Addr} {L : List Zq}
+    (h3 : s.gpr .x3=cAddr w16 p L.length) (hroom : L.length+8≤256)
+    (hz : ∀i<8,vhalf (s.v .v21) i=0) (hp : Scalar.CoeffsW w16 s.mem p L) :
+    Scalar.CoeffsW w16 (updatedMem s w16) p (L++acceptedValues s) := by
   intro i hi
   have hn : acceptedCount s≤8 := accepted_length (maskAt s)
   have hlen : i<L.length+acceptedCount s := by
     simpa only [List.length_append,acceptedValues_length] using hi
   have hi256 : i<256 := by omega
-  rw [coeffAt_updatedMem s h3 hroom hi256]
+  apply BitVec.eq_of_toNat_eq
+  rw [coeffAtW_updatedMem w16 s h3 hroom hi256 hz]
   by_cases hbefore : i<L.length
-  · rw [ite_eq_right (by omega),ite_eq_right (by omega),hp i hbefore,
-      append_cv_left hbefore]
+  · rw [ite_eq_right (by omega),hp i hbefore,append_cvW_left hbefore]
   · have hk : i-L.length<acceptedCount s := by omega
-    rw [append_cv (by omega),accepted_cv s hk]
-    have hm : maskAt s<256 := acceptanceMask_bound (candidatesAt s)
-    by_cases hlo : i<L.length+4
-    · rw [ite_eq_left ⟨by omega,hlo⟩]
-      apply BitVec.eq_of_toNat_eq
-      have hv := (widened_coeffs (candidatesAt s) (s.v .v21) hm hz (i := i-L.length) (by omega)).1
-      rw [ite_eq_left (show i-L.length < (acceptedLanes (maskAt s)).length from hk)] at hv
-      rw [hv,BitVec.toNat_ofNat,Nat.mod_eq_of_lt]
-      exact Nat.lt_trans (accepted_value_lt s hk) (by decide)
-    · rw [ite_eq_right (by omega),ite_eq_left ⟨by omega,by omega⟩]
-      apply BitVec.eq_of_toNat_eq
-      have hv := (widened_coeffs (candidatesAt s) (s.v .v21) hm hz (i := i-(L.length+4)) (by omega)).2
-      rw [show 4+(i-(L.length+4))=i-L.length by omega,ite_eq_left (show i-L.length < (acceptedLanes (maskAt s)).length from hk)] at hv
-      rw [hv,BitVec.toNat_ofNat,Nat.mod_eq_of_lt]
-      exact Nat.lt_trans (accepted_value_lt s hk) (by decide)
+    rw [ite_eq_left ⟨by omega,by omega⟩,ite_eq_left hk,append_cvW (by omega)]
+    have hv := accepted_value_lt s hk
+    have he : (acceptedValues s).getD (i-L.length) 0 =
+        ofNat (vhalf (candidatesAt s) ((acceptedLanes (maskAt s)).getD (i-L.length) 0)).toNat := by
+      simp only [acceptedValues,List.getD_eq_getElem?_getD,List.getElem?_map,
+        List.getElem?_eq_getElem (show i-L.length<(acceptedLanes (maskAt s)).length from hk),
+        Option.map_some,Option.getD_some]
+    have hq : q = 3329 := rfl
+    simp only [Sample.cvW,he,BitVec.toNat_ofNat,val_ofNat]
+    cases w16 <;> simp only [cw,Bool.false_eq_true,ite_false,ite_true,Nat.reducePow,hq] <;> omega
+
+/-- Stores beyond the compacted prefix are irrelevant: later batches may
+overwrite them, and bounded failure clears the entire remaining suffix. -/
+theorem batch_prefix (s : State) {p : Addr} {L : List Zq}
+    (h3 : s.gpr .x3=coeffAddr p L.length) (hroom : L.length+8≤256)
+    (hz : ∀i<8,vhalf (s.v .v21) i=0) (hp : Scalar.Coeffs s.mem p L) :
+    Scalar.Coeffs (updatedMem s) p (L++acceptedValues s) :=
+  batch_prefixW false s h3 hroom hz hp
 
 end VG.Proof.MlKem.AArch64.Rej8

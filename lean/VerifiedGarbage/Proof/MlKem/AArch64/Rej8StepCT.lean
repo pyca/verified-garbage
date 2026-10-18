@@ -50,8 +50,8 @@ theorem scalarFour_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP 
           (scalarBody_relCT ps pu hsp (by omega))))
   intro s u tr ur s' u' hp es eu
   obtain ⟨htr,hs,hu⟩ := hct s u tr ur s' u' ⟨hp.1,hp.2.1⟩ es eu
-  obtain ⟨_,a,ea,_,va⟩ := scalarFour_ok ps.toLPre hp.1 ht
-  obtain ⟨_,b,eb,_,vb⟩ := scalarFour_ok pu.toLPre hp.2.1 ht
+  obtain ⟨_,a,ea,_,va⟩ := scalarFour_ok ps.toLPreW hp.1 ht
+  obtain ⟨_,b,eb,_,vb⟩ := scalarFour_ok pu.toLPreW hp.2.1 ht
   obtain ⟨_,rfl⟩ := Exec.det es ea
   obtain ⟨_,rfl⟩ := Exec.det eu eb
   refine ⟨htr,hs,hu,?_,?_⟩

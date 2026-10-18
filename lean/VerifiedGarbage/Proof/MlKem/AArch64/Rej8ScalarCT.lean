@@ -42,8 +42,8 @@ theorem scalarBody_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP 
           ⟨hpub.1,fun r hr => by
             have hr' : r=.x2 := by simpa only [Taint.ofRegs,RegSet.mem_ofList,List.mem_singleton] using hr
             subst r; exact hpub.2 .x2 (by simp)⟩ ep fp
-        obtain ⟨_,a',epa,ha,ka,_,_,va,wa⟩ := Scalar.chunk_ok ps.toLPre ht hp.1
-        obtain ⟨_,b',fpb,hb,kb,_,_,vb,wb⟩ := Scalar.chunk_ok pu.toLPre ht hp.2
+        obtain ⟨_,a',epa,ha,ka,_,_,va,wa⟩ := Scalar.chunk_ok ps.toLPreW ht hp.1
+        obtain ⟨_,b',fpb,hb,kb,_,_,vb,wb⟩ := Scalar.chunk_ok pu.toLPreW ht hp.2
         obtain ⟨_,rfl⟩ := Exec.det ep epa
         obtain ⟨_,rfl⟩ := Exec.det fp fpb
         have hrest := scalarTail_ct a b tr₂ ur₂ s' u' trivial trivial
@@ -57,8 +57,8 @@ theorem scalarBody_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP 
             · exact BitVec.eq_of_toNat_eq (va.trans vb.symm)
             · exact BitVec.eq_of_toNat_eq (wa.trans wb.symm)⟩ er fr
         rw [htr,hrest]
-  obtain ⟨_,a,ea,ha,_⟩ := Scalar.body_ok ps.toLPre ht hp.1
-  obtain ⟨_,b,eb,hb,_⟩ := Scalar.body_ok pu.toLPre ht hp.2
+  obtain ⟨_,a,ea,ha,_⟩ := Scalar.body_ok ps.toLPreW ht hp.1
+  obtain ⟨_,b,eb,hb,_⟩ := Scalar.body_ok pu.toLPreW ht hp.2
   obtain ⟨_,rfl⟩ := Exec.det es ea
   obtain ⟨_,rfl⟩ := Exec.det eu eb
   exact ⟨trace,ha,hb⟩
