@@ -81,6 +81,23 @@ theorem sampleH_checks (fast : Bool) : BatchHOk.checks (Impl.MlKem.X86_64.Sample
 theorem sampleH_ok (fast : Bool) : BatchHOk (Impl.MlKem.X86_64.Sample4.sampleH fast) :=
   .of_checks (SH.correct (fast := fast)) (SH.ct (fast := fast)) (sampleH_checks fast)
 
+/-- `BatchHOk` with 16-bit coefficients: the fragment meets `sampleHKW true`. -/
+structure BatchHOk16 (b : Prog isa) : Prop where
+  ok : ∀ s, (sampleHKW true).pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ (sampleHKW true).post s s'
+  ct : ConstantTime isa (sampleHKW true).pre (sampleHKW true).pub b
+  noCalls : b.noCalls = true
+  ctl : ctlOk b = true
+  sp : b.all (fun i => !isa.writesSp i) = true
+
+theorem sampleH16_checks (fast : Bool) : BatchHOk.checks (Impl.MlKem.X86_64.Sample4.sampleH fast true) = true := by
+  cases fast <;> decide +kernel
+
+theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampleH fast true) := by
+  have h := sampleH16_checks fast
+  simp only [BatchHOk.checks, Bool.and_eq_true] at h
+  exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1, h.1.2,
+    Code.all_of_allInstrs h.2⟩
+
 /-- An implementation of `vg_mlkem_sample_ntt4` on x86-64. -/
 structure Sample4Impl where
   /-- Its symbol and code. -/
@@ -119,6 +136,8 @@ structure Sample4Impl where
   arith : ArithOk callee.arith
   /-- Its fragment for encapsulation, if any, is verified. -/
   batchH : ∀ b, callee.batchH = some b → BatchHOk b
+  /-- So is the fragment with 16-bit coefficients. -/
+  batchH16 : ∀ b, callee.batchH16 = some b → BatchHOk16 b
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -165,6 +184,7 @@ def scalar : Sample4Impl where
   prfs_sp := prfsScalar_sp
   arith := ArithOk.sse
   batchH := fun _ h => nomatch h
+  batchH16 := fun _ h => nomatch h
   suffix := ""
   prfsDoc := "one at a time"
   features := []
@@ -194,6 +214,7 @@ def avx2 : Sample4Impl where
   prfs_sp := prfsAvx2_sp
   arith := ArithOk.avx2
   batchH := fun _ h => Option.some.inj h ▸ sampleH_ok false
+  batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok false
   suffix := "_avx2"
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
@@ -223,6 +244,7 @@ def avx512 : Sample4Impl where
   prfs_sp := prfsAvx2_sp
   arith := ArithOk.avx2
   batchH := fun _ h => Option.some.inj h ▸ sampleH_ok true
+  batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok true
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2", "avx512f", "avx512vl"]

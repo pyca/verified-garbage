@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Range
 
 `Sample4.sampleH` (`Impl/MlKem/X86_64/SampleH.lean`) runs the code of
 `vg_mlkem_sample_ntt4_avx2` on three seeds, its fourth Keccak state holding
-another sponge's. `SqY σ Y t n` is `SqT σ t n` (`S4SqT.lean`) for the first
+another sponge's. `SqY w16 σ Y t n` is `SqTW w16 σ t n` (`S4SqT.lean`) for the first
 three states (permuted `t + n` times, their buffers holding bytes `168 t` to
 `168 (t + n)` of their seeds' output) with the fourth state `Y` (`L3`): a
 squeeze permutes `Y` too (`sqY_ok`, `sqYs_ok`), and copies its output to the
@@ -20,6 +20,8 @@ fourth buffer, which nothing reads.
 @[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.SH
+
+variable {w16 : Bool}
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Proof.MlKem.X86_64.S4
@@ -45,16 +47,16 @@ theorem L3_perm (σ : State) (j : Nat) (Y : Spec.Sha3.State) :
   split <;> rfl
 
 /-- After `n` squeezes, `t` blocks after the absorption, with the fourth state `Y`. -/
-structure SqY (σ : State) (Y : Spec.Sha3.State) (t n : Nat) (s : State) : Prop where
-  env : Env σ s
+structure SqY (w16 : Bool) (σ : State) (Y : Spec.Sha3.State) (t n : Nat) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
   lanes : Lanes4 s.mem (scr σ) (L3 σ (t + n) Y)
   buf : ∀ k < 3, ∀ p < 168 * n, s.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (168 * t + p)
 
 /-- The permutation, after `n` squeezes. -/
-theorem permY_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {t n : Nat} (hn : n < 3) {s : State}
-    (h : SqY σ Y t n s) {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', Env σ s' ∧ s'.gpr .r14 = 1 ∧
+theorem permY_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {t n : Nat} (hn : n < 3) {s : State}
+    (h : SqY w16 σ Y t n s) {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', EnvW w16 σ s' ∧ s'.gpr .r14 = 1 ∧
       (∀ r < 24, ∀ k < 4, s'.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) ∧
       Lanes4 s'.mem (scr σ) (L3 σ (t + n + 1) (keccakF Y)) ∧
       (∀ k < 3, ∀ p < 168 * n, s'.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) (168 * t + p)) ∧
@@ -95,8 +97,8 @@ theorem permY_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} 
 
 /-- During the copy of block `n`: the first `I` lanes of state `K` copied,
 and all of the states before it. -/
-structure EXY (σ : State) (Y : Spec.Sha3.State) (m₀ : Mem) (t n K I : Nat) (s : State) : Prop where
-  env : Env σ s
+structure EXY (w16 : Bool) (σ : State) (Y : Spec.Sha3.State) (m₀ : Mem) (t n K I : Nat) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   rc : ∀ r < 24, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = RC r
   lanes : Lanes4 s.mem (scr σ) (L3 σ (t + n + 1) Y)
@@ -106,10 +108,10 @@ structure EXY (σ : State) (Y : Spec.Sha3.State) (m₀ : Mem) (t n K I : Nat) (s
   rbp : s.gpr .rbp = at' σ (oBuf + 168 * n)
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_nil) in
-theorem extY_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {m₀ : Mem} {t n K I : Nat} (hn : n < 3)
-    (hK : K < 4) (hI : I < 21) {s : State} (h : EXY σ Y m₀ t n K I s) :
+theorem extY_step {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {m₀ : Mem} {t n K I : Nat} (hn : n < 3)
+    (hK : K < 4) (hI : I < 21) {s : State} (h : EXY w16 σ Y m₀ t n K I s) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))),
-      .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXY σ Y m₀ t n K (I + 1)) := by
+      .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXY w16 σ Y m₀ t n K (I + 1)) := by
   refine wp_movm (a := at' σ (32 * I + 8 * K)) (by rw [ea_at, h.env.rbx])
     (in_scr' hp h.env.rd h.env.wr (by omega)) fun s₁ u₁ => wp_store (a := at' σ (oBuf + 504 * K + 168 * n + 8 * I))
       (by rw [ea_at, u₁.other _ (by decide), h.rbp, at', at', Offset.add_add,
@@ -154,22 +156,22 @@ theorem extY_step {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {m₀ : Mem} 
       exact h.buf k hk p hp' (by omega)
 
 /-- Block `n` of each state's output. -/
-theorem extractY_ok {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {m₀ : Mem} {t n : Nat} (hn : n < 3) {s : State}
-    (h : EXY σ Y m₀ t n 0 0 s) :
-    WP isa (.block extract) s fun s' => SqY σ Y t (n + 1) s' ∧ Frame [lowR σ] m₀ s'.mem := by
+theorem extractY_ok {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {m₀ : Mem} {t n : Nat} (hn : n < 3) {s : State}
+    (h : EXY w16 σ Y m₀ t n 0 0 s) :
+    WP isa (.block extract) s fun s' => SqY w16 σ Y t (n + 1) s' ∧ Frame [lowR σ] m₀ s'.mem := by
   rw [extract_eq]
-  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXY σ Y m₀ t n K 0 s) (fun K s hK h => ?_) 4
+  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXY w16 σ Y m₀ t n K 0 s) (fun K s hK h => ?_) 4
     (Nat.le_refl _) s h) fun s' h' =>
       ⟨⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' => h'.buf k hk p (by omega) (by omega)⟩, h'.fr⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXY σ Y m₀ t n K I s)
+  refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXY w16 σ Y m₀ t n K I s)
     (fun I s hI h => extY_step hp hn hK hI h) 21 (Nat.le_refl _) s h) fun s' h' =>
       ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega), h'.fr, h'.rbp⟩
 
 /-- `squeeze`, to block `n`: after `n + 1` squeezes, with `rbp`, `r10` and
 `r8` kept; it writes only below the saved registers. -/
-theorem sqY_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {t n : Nat} (hn : n < 3) {s : State}
-    (h : SqY σ Y t n s) (hbp : s.gpr .rbp = at' σ (oBuf + 168 * n)) :
-    WP isa (squeeze fast) s fun s' => (SqY σ (keccakF Y) t (n + 1) s' ∧ Frame [lowR σ] s.mem s'.mem) ∧
+theorem sqY_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {t n : Nat} (hn : n < 3) {s : State}
+    (h : SqY w16 σ Y t n s) (hbp : s.gpr .rbp = at' σ (oBuf + 168 * n)) :
+    WP isa (squeeze fast) s fun s' => (SqY w16 σ (keccakF Y) t (n + 1) s' ∧ Frame [lowR σ] s.mem s'.mem) ∧
       s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 ∧ s'.gpr .r8 = s.gpr .r8 := by
   unfold squeeze
   exact permY_ok (fast := fast) hp hn h fun s' ⟨he, h14, hrc, hl, hb, hf, h₁, h₂, hg⟩ =>
@@ -179,20 +181,20 @@ theorem sqY_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {t
           by rw [k.gpr (by decide), hg _ (by decide) (by decide) (by decide) (by decide) (by decide)]⟩
 
 /-- `SqY` does not depend on `rbp`, `r10` or the flags. -/
-theorem SqY.frame {σ : State} {Y : Spec.Sha3.State} {t n : Nat} {s s' : State} (h : SqY σ Y t n s)
+theorem SqY.frame {σ : State} {Y : Spec.Sha3.State} {t n : Nat} {s s' : State} (h : SqY w16 σ Y t n s)
     (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r, r ≠ .rbp → r ≠ .r10 → s'.gpr r = s.gpr r) : SqY σ Y t n s' := by
+    (hg : ∀ r, r ≠ .rbp → r ≠ .r10 → s'.gpr r = s.gpr r) : SqY w16 σ Y t n s' := by
   have k : Keep [.rbp, .r10] s s' := ⟨fun r hr => hg r (fun e => hr (by simp [e])) (fun e => hr (by simp [e])), hrd, hwr⟩
   exact ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14], by rw [hm]; exact h.rc,
     by rw [hm]; exact h.lanes, by rw [hm]; exact h.buf⟩
 
 /-- `squeezes b n`: after `b + n` squeezes; it writes only below the saved
 registers. -/
-theorem sqYs_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {t b n : Nat} (hn : 0 < n)
-    (hbn : b + n ≤ 3) {s : State} (h : SqY σ Y t b s) :
-    WP isa (squeezes b n fast) s fun s' => SqY σ (iterF n Y) t (b + n) s' ∧ Frame [lowR σ] s.mem s'.mem := by
+theorem sqYs_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.State} {t b n : Nat} (hn : 0 < n)
+    (hbn : b + n ≤ 3) {s : State} (h : SqY w16 σ Y t b s) :
+    WP isa (squeezes b n fast) s fun s' => SqY w16 σ (iterF n Y) t (b + n) s' ∧ Frame [lowR σ] s.mem s'.mem := by
   unfold squeezes
-  refine WP.mono (blocks_ok (b := b) (P := fun i s' => SqY σ (iterF (i - b) Y) t i s' ∧ Frame [lowR σ] s.mem s'.mem) hn
+  refine WP.mono (blocks_ok (b := b) (P := fun i s' => SqY w16 σ (iterF (i - b) Y) t i s' ∧ Frame [lowR σ] s.mem s'.mem) hn
     (by omega) (by simp only [oBuf]; omega) (by decide)
     (fun _ _ _ ⟨h', hf⟩ hm hrd hwr hg => ⟨h'.frame hm hrd hwr hg, by rw [hm]; exact hf⟩)
     (fun i u hb hi ⟨hi', hf⟩ hbp => WP.mono (sqY_ok (fast := fast) hp (by omega) hi' ?_)
@@ -203,11 +205,11 @@ theorem sqYs_ok {fast : Bool} {σ : State} (hp : Pre σ) {Y : Spec.Sha3.State} {
   · rwa [show i + 1 - b = (i - b) + 1 by omega, iterF_succ]
 
 /-- `SqY` after writes apart from the low scratch space and the saved registers. -/
-theorem SqY.apart {σ : State} {Y : Spec.Sha3.State} {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : SqY σ Y t n s)
+theorem SqY.apart {σ : State} {Y : Spec.Sha3.State} {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : SqY w16 σ Y t n s)
     {rs : List Region} (hf : Frame rs s.mem s'.mem) (hlow : ∀ r ∈ rs, (lowR σ).Disjoint r)
     (hsv : ∀ r ∈ rs, (⟨at' σ oSave, 40⟩ : Region).Disjoint r)
-    (hsub : ∀ r ∈ rs, ∃ R ∈ [aR σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : SqY σ Y t n s' := by
+    (hsub : ∀ r ∈ rs, ∃ R ∈ [aRW w16 σ, scrR σ, stkR σ], Region.Sub r R) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : SqY w16 σ Y t n s' := by
   refine ⟨h.env.apart hf hsv hsub hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),
     by rw [hg .r14 (by simp), h.r14], fun r hr k hk => ?_, fun i hi k hk => ?_, fun k hk p hp' => ?_⟩
