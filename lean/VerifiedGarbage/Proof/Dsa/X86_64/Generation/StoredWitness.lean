@@ -46,7 +46,7 @@ theorem forceStoredWitness_ok {s : State} {B p : Addr} {Z w N sp len : Nat} {mi 
     have hzero : a ≠ p := by simpa only [off, BitVec.add_zero] using ha 0 (by omega)
     rw [hmfinal, WriteBytes.writeW8_apply, ite_eq_right (ha (len - 1) (by omega)),
       WriteBytes.writeW8_apply, ite_eq_right hzero]
-  have hwords := words_outside_bytes (by have := h.good.scr.nowrap; omega : Z ≤ 2 ^ 64) hf hsep
+  have hwords := VG.Proof.Bignum.words_outside_bytes (by have := h.good.scr.nowrap; omega : Z ≤ 2 ^ 64) hf hsep
   refine ⟨h.of_words hd hwords k.2.2 hdit, ?_, hf, hwords, ?_⟩
   · rw [hmfinal, VG.Proof.Dsa.Generation.forcedWitness_memory s.mem p hlen (by omega)]
   · refine ⟨fun r hr => ?_, k.2⟩
