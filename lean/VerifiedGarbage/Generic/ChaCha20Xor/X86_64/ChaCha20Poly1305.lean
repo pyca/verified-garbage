@@ -99,6 +99,25 @@ def sealNotes (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
 def features (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
   (v.features ++ v.poly.features).eraseDups
 
+/-- What `vg_chacha20_poly1305_open` does in a window of lengths with the IFMA
+implementation of `vg_poly1305_blocks` (`Stitch.openWin`). -/
+def openNotes (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
+  match v.poly with
+  | .ifma => [xorNote v, "From " ++ toString Impl.ChaCha20Poly1305.X86_64.Stitch.ifmaLo ++ " to " ++
+      toString (Impl.ChaCha20Poly1305.X86_64.Stitch.ifmaHi - 1) ++ " bytes of data, it runs the code \
+      `vg_chacha20_poly1305_open_avx512vl` runs for short data instead: `vg_chacha20_xor_avx512vl`'s \
+      rounds with `vg_poly1305_blocks_avx2`'s Poly1305 inside them, rather than a pass of twelve blocks \
+      and then `vg_poly1305_blocks_ifma`."]
+  | _ => [xorNote v]
+
+/-- The CPU features `open` requires: with the IFMA implementation of
+`vg_poly1305_blocks`, those of `vg_chacha20_xor_avx512vl` too, which its
+window calls (`openNotes`). -/
+def openFeatures (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
+  match v.poly with
+  | .ifma => (features v ++ Proof.ChaCha20.X86_64.XorImpl.avx512vl.features).eraseDups
+  | _ => features v
+
 def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
     suffix := v.suffix
@@ -111,13 +130,13 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     features := features v },
   Spec.ChaCha20Poly1305.openApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [xorNote v]
+    notes := openNotes v
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)
     stack := 1744
     verified := Stitch.openFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
-    features := features v },
+    features := openFeatures v },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
     suffix := v.suffix
     notes := [gatherNote v]
