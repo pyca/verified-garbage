@@ -36,16 +36,18 @@
 //! ([`AesGcm::decrypt_in_place`], [`AesGcmDecryptor::finalize`]), or, for a
 //! protocol that truncates the tag, a `&[u8; N]` whose length `N` is a type
 //! parameter ([`AesGcm::decrypt_in_place_truncated`],
-//! [`AesGcmDecryptor::finalize_truncated`]): one of the lengths SP 800-38D
-//! §5.2.1.2 allows, 4, 8, 12, 13, 14, 15 or 16 bytes, checked at compile
-//! time. The length is never taken from a slice, because a slice's length
+//! [`AesGcmDecryptor::finalize_truncated`]): 4 through 16 bytes, checked
+//! at compile time. Lengths 5–7 and 9–11 are extensions to SP 800-38D
+//! §5.2.1.2; the standard allows only 4, 8, 12, 13, 14, 15 and 16 bytes.
+//! The length is never taken from a slice, because a slice's length
 //! often comes from the message: a protocol that splits a message with
 //! `msg.split_at(msg.len().saturating_sub(16))` would, given a 4-byte
 //! message, check an empty ciphertext against a 4-byte tag, which an
 //! attacker forges with probability 2⁻³² instead of 2⁻¹²⁸. Tags of 4 and 8
 //! bytes are only for the applications of SP 800-38D Appendix C, which
 //! bounds the lengths of the messages and the number of decryptions under
-//! one key.
+//! one key. These application-level restrictions are the caller's responsibility.
+//! Shorter tags provide less protection against forgery.
 //!
 //! The functions are emitted once for each implementation of AES
 //! (`vg_aes_expand_key` and `vg_aes_ctr32`) and of `vg_ghash` they call,
@@ -977,14 +979,13 @@ fn check_nonce(nonce: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// Fails to compile unless `N` is a tag length §5.2.1.2 allows: 4, 8, 12,
-/// 13, 14, 15 or 16 bytes.
+/// Fails to compile unless `N` is between 4 and 16 bytes, inclusive.
 macro_rules! assert_tag_length {
     ($n:expr) => {
         const {
             assert!(
-                matches!($n, 4 | 8 | 12 | 13 | 14 | 15 | 16),
-                "an AES-GCM tag is 4, 8, 12, 13, 14, 15 or 16 bytes long"
+                matches!($n, 4..=16),
+                "an AES-GCM tag is between 4 and 16 bytes long"
             )
         }
     };
@@ -1136,9 +1137,9 @@ impl AesGcm {
     /// `nonce`, decrypts `data` in place. Otherwise returns an error and
     /// leaves `data` unchanged.
     ///
-    /// `N` must be 4, 8, 12, 13, 14, 15 or 16 (SP 800-38D §5.2.1.2); any
-    /// other length is an error when the call is compiled. It is a type parameter, fixed
-    /// in the caller's code, so that it cannot come from the message: see
+    /// `N` must be between 4 and 16, inclusive; any
+    /// other length is an error when the call is compiled. It is a type
+    /// parameter, fixed in the caller's code, so that it cannot come from the message: see
     /// the [module documentation](self#tags). SP 800-38D Appendix C
     /// restricts 4- and 8-byte tags to applications that bound the length of
     /// the messages and the number of decryptions under one key.
@@ -1153,7 +1154,7 @@ impl AesGcm {
         self.open(nonce, aad, data, tag)
     }
 
-    /// GCM-AD (§7.2) with `tag`, of a length §5.2.1.2 allows (which the
+    /// GCM-AD (§7.2) with `tag`, of a length between 4 and 16 (which the
     /// callers check at compile time; `vg_aes_gcm_open` rejects any other).
     fn open(&self, nonce: &[u8], aad: &[u8], data: &mut [u8], tag: &[u8]) -> Result<(), Error> {
         check_nonce(nonce)?;
@@ -1602,7 +1603,7 @@ impl AesGcm {
         let mut pw = new_powers();
         let open_store = fns.open_store;
         // SAFETY: as in `seal_store`, with the received tag `tag` valid for
-        // reads of its length, one §5.2.1.2 allows, as `open_store` needs
+        // reads of its length, between 4 and 16, as `open_store` needs
         // (`open`'s callers check it at compile time).
         let ok = unsafe {
             open_store(
@@ -1886,10 +1887,8 @@ impl Stream<'_, false> {
 }
 
 impl Stream<'_, true> {
-    /// Finishes the message and checks that `tag` (of a length §5.2.1.2
-    /// allows, which the callers check at compile time;
-    /// `vg_aes_gcm_stream_verify` rejects any other) is the first
-    /// `tag.len()` bytes of its tag.
+    /// Finishes the message and checks the received prefix in constant time.
+    /// Callers check at compile time that its length is between 4 and 16.
     fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
         let f = instance!(self.key.backend, vg_aes_gcm_stream_verify,
             x86_64: [vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_pclmul,
@@ -1999,7 +1998,7 @@ impl AesGcmDecryptor<'_> {
     /// its tag. If they differ, this fails, and nothing may act on the
     /// plaintext [`update`](Self::update) returned.
     ///
-    /// `N` must be 4, 8, 12, 13, 14, 15 or 16 (SP 800-38D §5.2.1.2); any
+    /// `N` must be between 4 and 16, inclusive; any
     /// other length is an error when the call is compiled. It is a type
     /// parameter, fixed in the caller's code, so that it cannot come from the
     /// message: see the [module documentation](self#tags). SP 800-38D
@@ -3094,16 +3093,76 @@ mod tests {
         }
     }
 
-    /// Every tag length §5.2.1.2 allows.
+    /// Empty messages, partial blocks, and prepared-context boundaries.
+    fn truncated_boundaries<const N: usize>() {
+        let key = [3u8; 32];
+        let nonce = [4u8; 13];
+        let aad = [5u8; 20];
+        let msg: [u8; 2057] = core::array::from_fn(|i| i as u8);
+        for key_len in [16, 24, 32] {
+            let k = AesGcm::new(&key[..key_len]).unwrap();
+            for nonce_len in [12, 13] {
+                let nonce = &nonce[..nonce_len];
+                for len in [
+                    0, 1, 15, 16, 17, 127, 128, 255, 256, 257, 511, 512, 513, 1023, 1024, 1025,
+                    2057,
+                ] {
+                    let aad = &aad[..if len % 2 == 0 { 0 } else { aad.len() }];
+                    let mut ct = msg;
+                    let full = k.encrypt_in_place(nonce, aad, &mut ct[..len]).unwrap();
+                    let tag: [u8; N] = full[..N].try_into().unwrap();
+                    let mut buf = ct;
+                    k.decrypt_in_place_truncated(nonce, aad, &mut buf[..len], &tag)
+                        .unwrap();
+                    assert_eq!(&buf[..len], &msg[..len]);
+                    let mut d = k.decryptor(nonce).unwrap();
+                    d.update_aad(aad).unwrap();
+                    buf = ct;
+                    for chunk in buf[..len].chunks_mut(17) {
+                        d.update(chunk).unwrap();
+                    }
+                    d.finalize_truncated(&tag).unwrap();
+                    assert_eq!(&buf[..len], &msg[..len]);
+                    let mut bad = tag;
+                    bad[N - 1] ^= 1;
+                    buf = ct;
+                    assert_eq!(
+                        k.decrypt_in_place_truncated(nonce, aad, &mut buf[..len], &bad),
+                        Err(Error::TagMismatch)
+                    );
+                    assert_eq!(buf, ct);
+                }
+            }
+            let mut empty = [];
+            assert_eq!(
+                k.decrypt_in_place_truncated(&[], &aad, &mut empty, &[0; N]),
+                Err(Error::InvalidNonceLength)
+            );
+        }
+    }
+
+    /// Every supported tag length, including the extensions to §5.2.1.2.
     #[test]
     fn truncated_tags() {
         truncated::<4>();
+        truncated::<5>();
+        truncated::<6>();
+        truncated::<7>();
         truncated::<8>();
+        truncated::<9>();
+        truncated::<10>();
+        truncated::<11>();
         truncated::<12>();
         truncated::<13>();
         truncated::<14>();
         truncated::<15>();
         truncated::<16>();
+        truncated_boundaries::<5>();
+        truncated_boundaries::<6>();
+        truncated_boundaries::<7>();
+        truncated_boundaries::<9>();
+        truncated_boundaries::<10>();
+        truncated_boundaries::<11>();
     }
 
     /// Out-of-place encryption of a plaintext in pieces matches in-place

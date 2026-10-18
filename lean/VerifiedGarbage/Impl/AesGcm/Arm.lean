@@ -313,16 +313,11 @@ def cmp (o : Nat) : Prog isa :=
   .seq (.block (zero16 vO ++ [addI .r1 .r11 o, addI .r2 .r11 vO, .mov .r3 (.reg .r6)]))
     (.seq copyLoop (.block cmpTail))
 
-/-- `r0 := 1` if `r6 = k`. -/
-def chk (k : Nat) : Prog isa :=
-  .seq (.block [.cmp .r6 (imm k)]) (.ite .eq (.block [.mov .r0 (imm 1)]) (.block []))
-
-/-- `Z` is clear iff the tag length `r6` is one §5.2.1.2 allows (4, 8 or 12
-to 16). -/
+/-- `Z` is clear iff the tag length `r6` is between 4 and 16 bytes.
+The unsigned comparison rejects the wraparound when `r6 < 4`. -/
 def tagLenOk : Prog isa :=
-  .seq (.block [.mov .r0 (imm 0)])
-  (.seq (chk 4) (.seq (chk 8) (.seq (chk 12) (.seq (chk 13) (.seq (chk 14) (.seq (chk 15)
-  (.seq (chk 16) (.block [.cmp .r0 (imm 0)]))))))))
+  .block [.dp .sub .r0 .r6 (imm 4), .cmp .r0 (imm 13),
+    .mov .r0 (imm 0), .adc .r0 .r0 (imm 0), .cmp .r0 (imm 1)]
 
 /-! ## The functions -/
 

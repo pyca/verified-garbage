@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 # AES-GCM on AArch64: `vg_aes_gcm_stream_verify`
 
 Untrusted: everything here is checked by Lean. After the entry, `tagLenOk`
-checks the tag length (a public value); if §5.2.1.2 does not allow it, 0 is
+checks the tag length (a public value); if `tagLenOk` does not allow it, 0 is
 returned; otherwise `tagIn` copies the received tag to `W`, `finBody 112`
 writes the tag at `W + 112`, `cmpSeg` compares its first `tag_len` bytes with
 the received ones without a branch, and `verRet` returns 1 or 0
@@ -27,7 +27,7 @@ open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks ghashInput StreamRepr ofB
 open VG.Proof.Gcm (Absorbed lensBlock padded)
 
 theorem tagLenOk_le {t : Nat} (h : Spec.Gcm.tagLenOk t = true) : t ≤ 16 := by
-  simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at h
+  simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
   omega
 
 theorem setWidth_ofNat_bool (b : Bool) :

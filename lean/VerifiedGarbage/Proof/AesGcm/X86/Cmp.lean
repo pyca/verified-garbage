@@ -49,7 +49,7 @@ theorem tagLenOk_pc {W : BitVec 32} {t : Nat} (ht : t < 2 ^ 32) :
         InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 tglO) 4 ∧ slotv s.mem W tglO = BitVec.ofNat 32 t)
       tagLenOk (fun s₀ s => TlPost t s₀ s (Spec.Gcm.tagLenOk t) ∧ s.zf = some (!Spec.Gcm.tagLenOk t)) := by
   -- The first comparison.
-  refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s false ∧ s.zf = some (decide (t = 4)))
+  refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s false ∧ s.cf = some (decide (t < 4)))
     (Pc.taint [.ebp] (fun s₀ s ⟨hs, hb, ha, hin, hv⟩ => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]) (by taint_decide)) ?_
   · subst hs
@@ -58,61 +58,34 @@ theorem tagLenOk_pc {W : BitVec 32} {t : Nat} (ht : t < 2 ^ 32) :
     refine WP.of_runBlock ⟨_, by xrun [hb, ha, hin, hv], ⟨by mems [], by mems [], by mems [], fun r h₁ h₂ => ?_, by regs [],
       by regs []; rfl⟩, ?_⟩
     · simp only [gpr_setReg_of_ne _ _ h₁, gpr_setReg_of_ne _ _ h₂, gpr_arithFlags]
-    · mems []; rw [sub_beq32 ht (by decide)]
-  -- `ecx := 1` if `t = 4`.
-  refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s (decide (t = 4))) ?_ ?_
-  · refine Pc.ite (decide (t = 4)) (fun _ _ h => h.2) (fun h4 => ?_) (fun h4 => ?_)
-    · exact Pc.taint [] (fun s₀ s ⟨h, _⟩ => WP.of_runBlock ⟨_, by xrun [], ⟨by mems [h.mem], by mems [h.rd],
-        by mems [h.wr], fun r h₁ h₂ => by simp only [gpr_setReg_of_ne _ _ h₂]; exact h.other r h₁ h₂, by regs [h.ebx],
-        by regs [h4]; rfl⟩⟩)
-        (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)
-    · exact Pc.mono Pc.nil (fun _ _ h => h) fun _ _ ⟨h, _⟩ => by rw [h4]; exact h
-  -- The second.
-  refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s (decide (t = 4)) ∧ s.zf = some (decide (t = 8)))
-    (Pc.taint [] (fun s₀ s h => WP.of_runBlock ⟨_, by xrun [h.ebx], ⟨by mems [h.mem], by mems [h.rd], by mems [h.wr],
-      fun r h₁ h₂ => by regs [h.other r h₁ h₂], by regs [h.ebx], by regs [h.ecx]⟩, by
-        mems []; rw [sub_beq32 ht (by decide)]⟩) (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)) ?_
-  refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s (decide (t = 4) || decide (t = 8))) ?_ ?_
-  · refine Pc.ite (decide (t = 8)) (fun _ _ h => h.2) (fun h8 => ?_) (fun h8 => ?_)
-    · exact Pc.taint [] (fun s₀ s ⟨h, _⟩ => WP.of_runBlock ⟨_, by xrun [], ⟨by mems [h.mem], by mems [h.rd],
-        by mems [h.wr], fun r h₁ h₂ => by simp only [gpr_setReg_of_ne _ _ h₂]; exact h.other r h₁ h₂, by regs [h.ebx],
-        by regs [h8]; simp⟩⟩)
-        (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)
-    · exact Pc.mono Pc.nil (fun _ _ h => h) fun _ _ ⟨h, _⟩ => by rw [h8, Bool.or_false]; exact h
-  -- `12 ≤ t ≤ 16`.
-  refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s (decide (t = 4) || decide (t = 8)) ∧ s.cf = some (decide (t < 12)))
-    (Pc.taint [] (fun s₀ s h => WP.of_runBlock ⟨_, by xrun [h.ebx], ⟨by mems [h.mem], by mems [h.rd], by mems [h.wr],
-      fun r h₁ h₂ => by regs [h.other r h₁ h₂], by regs [h.ebx], by regs [h.ecx]⟩, by
-        mems []; simp [toNat_ofNat32 ht]⟩) (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)) ?_
+    · mems []; simp [toNat_ofNat32 ht]
   refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s (Spec.Gcm.tagLenOk t)) ?_ ?_
-  · refine Pc.ite (decide (t < 12)) (fun _ _ h => h.2) (fun hl => ?_) (fun hl => ?_)
+  · refine Pc.ite (decide (t < 4)) (fun _ _ h => h.2) (fun hl => ?_) (fun hl => ?_)
     · refine Pc.mono Pc.nil (fun _ _ h => h) fun _ _ ⟨h, _⟩ => ?_
-      have hl' : t < 12 := by simpa using hl
-      have : Spec.Gcm.tagLenOk t = (decide (t = 4) || decide (t = 8)) := by
-        rw [Bool.eq_iff_iff]; simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true,
-          decide_eq_true_eq]; constructor <;> intro h <;> omega
+      have hl' : t < 4 := by simpa using hl
+      have : Spec.Gcm.tagLenOk t = false := by
+        simp [Spec.Gcm.tagLenOk, show ¬ 4 ≤ t by omega]
       rw [this]; exact h
-    refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s (decide (t = 4) || decide (t = 8)) ∧
+    refine Pc.seq (Q := fun s₀ s => TlPost t s₀ s false ∧
         s.cf = some (decide (t < 17)))
       (Pc.taint [] (fun s₀ s ⟨h, _⟩ => WP.of_runBlock ⟨_, by xrun [h.ebx], ⟨by mems [h.mem], by mems [h.rd],
         by mems [h.wr], fun r h₁ h₂ => by regs [h.other r h₁ h₂], by regs [h.ebx], by regs [h.ecx]⟩, by
           mems []; simp [toNat_ofNat32 ht]⟩) (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)) ?_
     refine Pc.ite (decide (t < 17)) (fun _ _ h => h.2) (fun hu => ?_) (fun hu => ?_)
-    · have hl' : ¬ t < 12 := by simpa using hl
+    · have hl' : ¬ t < 4 := by simpa using hl
       have hu' : t < 17 := by simpa using hu
       have : Spec.Gcm.tagLenOk t = true := by
-        simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq]; omega
+        simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq]; omega
       rw [this]
       exact Pc.taint [] (fun s₀ s ⟨h, _⟩ => WP.of_runBlock ⟨_, by xrun [], ⟨by mems [h.mem], by mems [h.rd],
         by mems [h.wr], fun r h₁ h₂ => by simp only [gpr_setReg_of_ne _ _ h₂]; exact h.other r h₁ h₂, by regs [h.ebx],
         by regs []; rfl⟩⟩)
         (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)
     · refine Pc.mono Pc.nil (fun _ _ h => h) fun _ _ ⟨h, _⟩ => ?_
-      have hl' : ¬ t < 12 := by simpa using hl
+      have hl' : ¬ t < 4 := by simpa using hl
       have hu' : ¬ t < 17 := by simpa using hu
-      have : Spec.Gcm.tagLenOk t = (decide (t = 4) || decide (t = 8)) := by
-        rw [Bool.eq_iff_iff]; simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true,
-          decide_eq_true_eq]; constructor <;> intro h <;> omega
+      have : Spec.Gcm.tagLenOk t = false := by
+        simp [Spec.Gcm.tagLenOk, show ¬ t ≤ 16 by omega]
       rw [this]; exact h
   -- `ZF`.
   refine Pc.taint [] (fun s₀ s h => WP.of_runBlock ⟨_, by xrun [h.ecx], ⟨by mems [h.mem], by mems [h.rd],

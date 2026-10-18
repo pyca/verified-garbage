@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 # AES-GCM on ARMv7: checking a received tag
 
 Untrusted: everything here is checked by Lean. `tagLenOk` sets `Z` iff the
-tag length in `r6` is not one §5.2.1.2 allows (`tagLenOk_ok`); `recv` and
+tag length in `r6` is not one `tagLenOk` allows (`tagLenOk_ok`); `recv` and
 `cmp o` copy the received tag (at `tag`) and the computed one (at `W + o`),
 `r6` bytes of each, padded with zeros, to `W + 256` and `W + 240` (`recv_ok`,
 `cmp_ok`), and `cmpTail` sets `r0` to 1 if they are equal and 0 if not,
@@ -55,65 +55,24 @@ theorem le4_inj {x y : BitVec 32} (h : le4 x = le4 y) : x = y := by
     Bool.true_and] at this
   rwa [show 8 * (j / 8) + j % 8 = j by omega] at this
 
-/-- `chk k`: `r0 := 1` if `r6 = k`. -/
-theorem chk_ok (k : Nat) (hk : k < 2 ^ 32) (he : encodable (BitVec.ofNat 32 k) = true) {s : State} {tl : Nat}
-    (h6 : s.gpr .r6 = BitVec.ofNat 32 tl) (htl : tl < 2 ^ 32) {p : Bool}
-    (h0 : s.gpr .r0 = if p then 1 else 0) :
-    WP isa (chk k) s fun s' => s'.gpr .r0 = (if (tl == k || p) then 1 else 0) ∧
-      (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-  obtain ⟨s₁, run₁, hz, hg, hm, hrd, hwr, hsp⟩ := cmpk_ok s .r6 h6 htl hk he
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.ite _ (eval_eq' hz) (fun ht => ?_) (fun hf => ?_)
-  · have e : tl = k := by simpa using ht
-    refine WP.of_runBlock ⟨_, by arun [], ?_, ?_, ?_⟩
-    · simp [gpr_setReg, e]
-    · intro r hr; simp [gpr_setReg, hr, hg]
-    · exact ⟨hm, hrd, hwr, hsp⟩
-  · have e : tl ≠ k := by simpa using hf
-    refine WP.block_nil ⟨?_, fun r _ => by rw [hg], ⟨hm, hrd, hwr, hsp⟩⟩
-    rw [hg, h0]; simp [e]
-
-theorem tagLenOk_eq (tl : Nat) :
-    (tl == 16 || (tl == 15 || (tl == 14 || (tl == 13 || (tl == 12 || (tl == 8 || (tl == 4 || false))))))) =
-      Spec.Gcm.tagLenOk tl := by
-  simp only [Spec.Gcm.tagLenOk]
+/-- Subtracting 4 and comparing unsigned with 13 rejects both ends. -/
+theorem tagLenOk_carry {tl : Nat} (htl : tl < 2 ^ 32) :
+    decide (13 ≤ (BitVec.ofNat 32 tl - 4#32).toNat) = !Spec.Gcm.tagLenOk tl := by
   apply Bool.eq_iff_iff.mpr
-  simp only [Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq, Bool.or_false]
+  simp [Spec.Gcm.tagLenOk, BitVec.toNat_sub, Nat.mod_eq_of_lt htl]
   omega
 
 /-- `tagLenOk`: `Z` clear iff the tag length is allowed. -/
 theorem tagLenOk_ok {s : State} {tl : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 tl) (htl : tl < 2 ^ 32) :
     WP isa tagLenOk s fun s' => s'.z = !Spec.Gcm.tagLenOk tl ∧ (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-  obtain ⟨s₀, run₀, h0₀, hg₀, hk₀⟩ : ∃ s₀, runBlock isa [.mov .r0 (imm 0)] s = some s₀ ∧
-      s₀.gpr .r0 = (if false then 1 else 0) ∧ (∀ r, r ≠ .r0 → s₀.gpr r = s.gpr r) ∧ Keeps s s₀ := by
-    refine ⟨_, by arun [], ?_, ?_, ?_⟩
-    · simp [gpr_setReg]
-    · intro r hr; simp [gpr_setReg, hr]
-    · exact ⟨rfl, rfl, rfl, rfl⟩
-  refine WP.seq (WP.of_runBlock ⟨s₀, run₀, ?_⟩)
-  have g6 : ∀ {s' : State}, (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) → s'.gpr .r6 = BitVec.ofNat 32 tl :=
-    fun hg => by rw [hg _ (by decide), h6]
-  refine WP.seq (WP.mono (chk_ok 4 (by decide) (by decide) (g6 hg₀) htl h0₀) fun s₁ ⟨h0₁, hg₁, hk₁⟩ => ?_)
-  have hg₁' : ∀ r, r ≠ .r0 → s₁.gpr r = s.gpr r := fun r hr => (hg₁ r hr).trans (hg₀ r hr)
-  refine WP.seq (WP.mono (chk_ok 8 (by decide) (by decide) (g6 hg₁') htl h0₁) fun s₂ ⟨h0₂, hg₂, hk₂⟩ => ?_)
-  have hg₂' : ∀ r, r ≠ .r0 → s₂.gpr r = s.gpr r := fun r hr => (hg₂ r hr).trans (hg₁' r hr)
-  refine WP.seq (WP.mono (chk_ok 12 (by decide) (by decide) (g6 hg₂') htl h0₂) fun s₃ ⟨h0₃, hg₃, hk₃⟩ => ?_)
-  have hg₃' : ∀ r, r ≠ .r0 → s₃.gpr r = s.gpr r := fun r hr => (hg₃ r hr).trans (hg₂' r hr)
-  refine WP.seq (WP.mono (chk_ok 13 (by decide) (by decide) (g6 hg₃') htl h0₃) fun s₄ ⟨h0₄, hg₄, hk₄⟩ => ?_)
-  have hg₄' : ∀ r, r ≠ .r0 → s₄.gpr r = s.gpr r := fun r hr => (hg₄ r hr).trans (hg₃' r hr)
-  refine WP.seq (WP.mono (chk_ok 14 (by decide) (by decide) (g6 hg₄') htl h0₄) fun s₅ ⟨h0₅, hg₅, hk₅⟩ => ?_)
-  have hg₅' : ∀ r, r ≠ .r0 → s₅.gpr r = s.gpr r := fun r hr => (hg₅ r hr).trans (hg₄' r hr)
-  refine WP.seq (WP.mono (chk_ok 15 (by decide) (by decide) (g6 hg₅') htl h0₅) fun s₆ ⟨h0₆, hg₆, hk₆⟩ => ?_)
-  have hg₆' : ∀ r, r ≠ .r0 → s₆.gpr r = s.gpr r := fun r hr => (hg₆ r hr).trans (hg₅' r hr)
-  refine WP.seq (WP.mono (chk_ok 16 (by decide) (by decide) (g6 hg₆') htl h0₆) fun s₇ ⟨h0₇, hg₇, hk₇⟩ => ?_)
-  have hg₇' : ∀ r, r ≠ .r0 → s₇.gpr r = s.gpr r := fun r hr => (hg₇ r hr).trans (hg₆' r hr)
-  have hk : Keeps s s₇ := hk₀.trans (hk₁.trans (hk₂.trans (hk₃.trans (hk₄.trans (hk₅.trans (hk₆.trans hk₇))))))
-  rw [tagLenOk_eq] at h0₇
   refine WP.of_runBlock ⟨_, by arun [], ?_, ?_, ?_⟩
-  · simp only [z_subFlags, h0₇]
+  · simp only [z_subFlags, c_subFlags, gpr_setReg, z_setReg, c_setReg,
+      ite_true, ite_false, reduceCtorEq, h6]
+    simp only [show (13#32).toNat = 13 from rfl]
+    rw [tagLenOk_carry htl]
     cases Spec.Gcm.tagLenOk tl <;> rfl
-  · intro r hr; simp only [gpr_subFlags]; exact hg₇' r hr
-  · exact ⟨hk.mem, hk.rd, hk.wr, hk.sp⟩
+  · intro r hr; simp [gpr_setReg, gpr_subFlags, hr]
+  · exact ⟨rfl, rfl, rfl, rfl⟩
 
 theorem store4_zero_tail (m : Mem) (p : Addr) {k : Nat} (hk : k ≤ 16) :
     bytesAt (store4 m p 0 0 0 0) (p + BitVec.ofNat 64 k) (16 - k) = zeros (16 - k) := by

@@ -174,7 +174,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.s
         fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2.1, h.2.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun _ _ h => h.2) hK hK
   refine RelCT.seq a (rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) ?_ ?_)
-  · -- A length §5.2.1.2 does not allow (`rax` is 0).
+  · -- A length `tagLenOk` does not allow (`rax` is 0).
     exact (rel_env (by decide) (fun _ _ h => ⟨h.1.2.1.1.1.1.1, h.1.2.2.1.1.1.1⟩)
       (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.1.1.1.1 h.1.2.2.1.1.1.1)
         ⟨_, by taint_decide⟩)).mono (fun _ _ h => h) fun _ _ h => h.2
@@ -182,7 +182,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.s
     swap
     · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [hok] at this
     have hb : 1 ≤ t ∧ t ≤ 16 := by
-      simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
+      simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
       omega
     have hc : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s →
         WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s

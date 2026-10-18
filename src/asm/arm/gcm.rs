@@ -671,7 +671,7 @@ bx lr",
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -727,53 +727,14 @@ mov r8, r1
 mov r4, r2
 mov r5, r3
 ldr r6, [sp, #20]
+sub r0, r6, #4
+cmp r0, #13
 mov r0, #0
-cmp r6, #4
+adc r0, r0, #0
+cmp r0, #1
 beq 20f
-b 21f
-20:
-mov r0, #1
-21:
-cmp r6, #8
-beq 22f
-b 23f
-22:
-mov r0, #1
-23:
-cmp r6, #12
-beq 24f
-b 25f
-24:
-mov r0, #1
-25:
-cmp r6, #13
-beq 26f
-b 27f
-26:
-mov r0, #1
-27:
-cmp r6, #14
-beq 28f
-b 29f
-28:
-mov r0, #1
-29:
-cmp r6, #15
-beq 210f
-b 211f
-210:
-mov r0, #1
-211:
-cmp r6, #16
-beq 212f
-b 213f
-212:
-mov r0, #1
-213:
-cmp r0, #0
-beq 214f
 cmp r5, #12
-beq 216f
+beq 22f
 mov r0, #0
 str r0, [r10, #0]
 str r0, [r10, #4]
@@ -782,37 +743,37 @@ str r0, [r10, #12]
 mov r7, r5
 mov r6, #0
 cmp r5, #0
-beq 218f
+beq 24f
 cmp r6, #0
-beq 220f
+beq 26f
 mov r3, #16
 sub r3, r3, r6
 cmp r5, r3
 mov r12, #0
 adc r12, r12, #0
 cmp r12, #0
-beq 222f
-b 223f
-222:
+beq 28f
+b 29f
+28:
 mov r3, r5
-223:
+29:
 add r2, r10, #32
 add r2, r2, r6
 mov r1, r4
 add r4, r4, r3
 sub r5, r5, r3
 add r6, r6, r3
-224:
+210:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 224b
+bne 210b
 cmp r6, #16
-beq 225f
-b 226f
-225:
+beq 211f
+b 212f
+211:
 add r0, r9, #240
 add r1, r10, #0
 add r2, r10, #32
@@ -821,10 +782,10 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-226:
-b 221f
-220:
-221:
+212:
+b 27f
+26:
+27:
 mov r2, r4
 lsr r3, r5, #4
 and r12, r5, #15
@@ -832,37 +793,37 @@ sub r0, r5, r12
 add r4, r4, r0
 mov r5, r12
 cmp r3, #0
-beq 227f
+beq 213f
 add r0, r9, #240
 add r1, r10, #0
 add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-b 228f
-227:
-228:
+b 214f
+213:
+214:
 cmp r5, #0
-beq 229f
+beq 215f
 mov r1, r4
 add r2, r10, #32
 mov r3, r5
-231:
+217:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 231b
-b 230f
-229:
-230:
-b 219f
-218:
-219:
+bne 217b
+b 216f
+215:
+216:
+b 25f
+24:
+25:
 and r6, r7, #15
 cmp r6, #0
-beq 232f
+beq 218f
 mov r12, #0
 str r12, [r11, #96]
 str r12, [r11, #100]
@@ -871,13 +832,13 @@ str r12, [r11, #108]
 add r1, r10, #32
 add r2, r11, #96
 mov r3, r6
-234:
+220:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 234b
+bne 220b
 add r0, r9, #240
 add r1, r10, #0
 add r2, r11, #96
@@ -886,9 +847,9 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-b 233f
-232:
-233:
+b 219f
+218:
+219:
 mov r4, #0
 mov r5, #0
 mov r6, r7
@@ -915,8 +876,8 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-b 217f
-216:
+b 23f
+22:
 ldr r0, [r4, #0]
 ldr r1, [r4, #4]
 ldr r2, [r4, #8]
@@ -925,7 +886,7 @@ str r0, [r10, #0]
 str r1, [r10, #4]
 str r2, [r10, #8]
 str r3, [r10, #12]
-217:
+23:
 ldr r0, [r10, #0]
 ldr r1, [r10, #4]
 ldr r2, [r10, #8]
@@ -946,37 +907,37 @@ ldr r4, [sp, #0]
 ldr r5, [sp, #4]
 mov r6, #0
 cmp r5, #0
-beq 235f
+beq 221f
 cmp r6, #0
-beq 237f
+beq 223f
 mov r3, #16
 sub r3, r3, r6
 cmp r5, r3
 mov r12, #0
 adc r12, r12, #0
 cmp r12, #0
-beq 239f
-b 240f
-239:
+beq 225f
+b 226f
+225:
 mov r3, r5
-240:
+226:
 add r2, r10, #32
 add r2, r2, r6
 mov r1, r4
 add r4, r4, r3
 sub r5, r5, r3
 add r6, r6, r3
-241:
+227:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 241b
+bne 227b
 cmp r6, #16
-beq 242f
-b 243f
-242:
+beq 228f
+b 229f
+228:
 add r0, r9, #240
 add r1, r10, #16
 add r2, r10, #32
@@ -985,10 +946,10 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-243:
-b 238f
-237:
-238:
+229:
+b 224f
+223:
+224:
 mov r2, r4
 lsr r3, r5, #4
 and r12, r5, #15
@@ -996,38 +957,38 @@ sub r0, r5, r12
 add r4, r4, r0
 mov r5, r12
 cmp r3, #0
-beq 244f
+beq 230f
 add r0, r9, #240
 add r1, r10, #16
 add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-b 245f
-244:
-245:
+b 231f
+230:
+231:
 cmp r5, #0
-beq 246f
+beq 232f
 mov r1, r4
 add r2, r10, #32
 mov r3, r5
-248:
+234:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 248b
-b 247f
-246:
-247:
-b 236f
-235:
-236:
+bne 234b
+b 233f
+232:
+233:
+b 222f
+221:
+222:
 ldr r6, [sp, #4]
 and r6, r6, #15
 cmp r6, #0
-beq 249f
+beq 235f
 mov r12, #0
 str r12, [r11, #96]
 str r12, [r11, #100]
@@ -1036,6 +997,93 @@ str r12, [r11, #108]
 add r1, r10, #32
 add r2, r11, #96
 mov r3, r6
+237:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 237b
+add r0, r9, #240
+add r1, r10, #16
+add r2, r11, #96
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 236f
+235:
+236:
+ldr r4, [sp, #8]
+ldr r5, [sp, #12]
+mov r6, #0
+cmp r5, #0
+beq 238f
+cmp r6, #0
+beq 240f
+mov r3, #16
+sub r3, r3, r6
+cmp r5, r3
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 242f
+b 243f
+242:
+mov r3, r5
+243:
+add r2, r10, #32
+add r2, r2, r6
+mov r1, r4
+add r4, r4, r3
+sub r5, r5, r3
+add r6, r6, r3
+244:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 244b
+cmp r6, #16
+beq 245f
+b 246f
+245:
+add r0, r9, #240
+add r1, r10, #16
+add r2, r10, #32
+mov r3, #1
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+246:
+b 241f
+240:
+241:
+mov r2, r4
+lsr r3, r5, #4
+and r12, r5, #15
+sub r0, r5, r12
+add r4, r4, r0
+mov r5, r12
+cmp r3, #0
+beq 247f
+add r0, r9, #240
+add r1, r10, #16
+add r12, r11, #512
+push {{r12, lr}}
+bl {vg_ghash}
+ldr r12, [sp], #8
+b 248f
+247:
+248:
+cmp r5, #0
+beq 249f
+mov r1, r4
+add r2, r10, #32
+mov r3, r5
 251:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
@@ -1043,103 +1091,16 @@ add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
 bne 251b
-add r0, r9, #240
-add r1, r10, #16
-add r2, r11, #96
-mov r3, #1
-add r12, r11, #512
-push {{r12, lr}}
-bl {vg_ghash}
-ldr r12, [sp], #8
 b 250f
 249:
 250:
-ldr r4, [sp, #8]
-ldr r5, [sp, #12]
-mov r6, #0
-cmp r5, #0
-beq 252f
-cmp r6, #0
-beq 254f
-mov r3, #16
-sub r3, r3, r6
-cmp r5, r3
-mov r12, #0
-adc r12, r12, #0
-cmp r12, #0
-beq 256f
-b 257f
-256:
-mov r3, r5
-257:
-add r2, r10, #32
-add r2, r2, r6
-mov r1, r4
-add r4, r4, r3
-sub r5, r5, r3
-add r6, r6, r3
-258:
-ldrb r12, [r1, #0]
-strb r12, [r2, #0]
-add r1, r1, #1
-add r2, r2, #1
-subs r3, r3, #1
-bne 258b
-cmp r6, #16
-beq 259f
-b 260f
-259:
-add r0, r9, #240
-add r1, r10, #16
-add r2, r10, #32
-mov r3, #1
-add r12, r11, #512
-push {{r12, lr}}
-bl {vg_ghash}
-ldr r12, [sp], #8
-260:
-b 255f
-254:
-255:
-mov r2, r4
-lsr r3, r5, #4
-and r12, r5, #15
-sub r0, r5, r12
-add r4, r4, r0
-mov r5, r12
-cmp r3, #0
-beq 261f
-add r0, r9, #240
-add r1, r10, #16
-add r12, r11, #512
-push {{r12, lr}}
-bl {vg_ghash}
-ldr r12, [sp], #8
-b 262f
-261:
-262:
-cmp r5, #0
-beq 263f
-mov r1, r4
-add r2, r10, #32
-mov r3, r5
-265:
-ldrb r12, [r1, #0]
-strb r12, [r2, #0]
-add r1, r1, #1
-add r2, r2, #1
-subs r3, r3, #1
-bne 265b
-b 264f
-263:
-264:
-b 253f
-252:
-253:
+b 239f
+238:
+239:
 ldr r6, [sp, #12]
 and r6, r6, #15
 cmp r6, #0
-beq 266f
+beq 252f
 mov r12, #0
 str r12, [r11, #96]
 str r12, [r11, #100]
@@ -1148,13 +1109,13 @@ str r12, [r11, #108]
 add r1, r10, #32
 add r2, r11, #96
 mov r3, r6
-268:
+254:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 268b
+bne 254b
 add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
@@ -1163,9 +1124,9 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-b 267f
-266:
-267:
+b 253f
+252:
+253:
 ldr r4, [sp, #4]
 mov r5, #0
 ldr r6, [sp, #12]
@@ -1218,13 +1179,13 @@ str r0, [r11, #264]
 str r0, [r11, #268]
 add r2, r11, #256
 mov r3, r6
-269:
+255:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 269b
+bne 255b
 mov r0, #0
 str r0, [r11, #240]
 str r0, [r11, #244]
@@ -1233,13 +1194,13 @@ str r0, [r11, #252]
 add r1, r11, #112
 add r2, r11, #240
 mov r3, r6
-270:
+256:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 270b
+bne 256b
 ldr r0, [r11, #240]
 ldr r2, [r11, #256]
 eor r0, r0, r2
@@ -1263,31 +1224,31 @@ mov r1, #1
 sub r0, r1, r0
 mov r7, r0
 cmp r0, #0
-beq 271f
+beq 257f
 ldr r4, [sp, #8]
 ldr r5, [sp, #12]
 mov r6, #0
 cmp r5, #0
-beq 273f
+beq 259f
 cmp r6, #0
-beq 275f
+beq 261f
 mov r3, #16
 sub r3, r3, r6
 cmp r5, r3
 mov r12, #0
 adc r12, r12, #0
 cmp r12, #0
-beq 277f
-b 278f
-277:
+beq 263f
+b 264f
+263:
 mov r3, r5
-278:
+264:
 add r1, r10, #64
 add r1, r1, r6
 mov r2, r4
 add r4, r4, r3
 sub r5, r5, r3
-279:
+265:
 ldrb r12, [r2, #0]
 ldrb r0, [r1, #0]
 eor r12, r12, r0
@@ -1295,10 +1256,10 @@ strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 279b
-b 276f
-275:
-276:
+bne 265b
+b 262f
+261:
+262:
 mov r3, r4
 lsr r12, r5, #4
 and r0, r5, #15
@@ -1306,7 +1267,7 @@ sub r1, r5, r0
 add r4, r4, r1
 mov r5, r0
 cmp r12, #0
-beq 280f
+beq 266f
 mov r0, r9
 mov r1, r8
 add r2, r10, #48
@@ -1314,11 +1275,11 @@ add lr, r11, #512
 push {{r12, lr}}
 bl {vg_aes_ctr32}
 ldr r12, [sp], #8
-b 281f
-280:
-281:
+b 267f
+266:
+267:
 cmp r5, #0
-beq 282f
+beq 268f
 mov r12, #0
 str r12, [r10, #64]
 str r12, [r10, #68]
@@ -1336,7 +1297,7 @@ ldr r12, [sp], #8
 add r1, r10, #64
 mov r2, r4
 mov r3, r5
-284:
+270:
 ldrb r12, [r2, #0]
 ldrb r0, [r1, #0]
 eor r12, r12, r0
@@ -1344,21 +1305,21 @@ strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 284b
-b 283f
-282:
-283:
-b 274f
-273:
-274:
-b 272f
-271:
-272:
+bne 270b
+b 269f
+268:
+269:
+b 260f
+259:
+260:
+b 258f
+257:
+258:
 mov r0, r7
-b 215f
-214:
+b 21f
+20:
 mov r0, #0
-215:
+21:
 ldr r4, [r11, #128]
 ldr r5, [r11, #132]
 ldr r6, [r11, #136]
@@ -2454,7 +2415,7 @@ bx lr",
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -2505,51 +2466,12 @@ mov r10, r2
 mov r9, r0
 mov r8, r1
 ldr r6, [sp, #20]
+sub r0, r6, #4
+cmp r0, #13
 mov r0, #0
-cmp r6, #4
+adc r0, r0, #0
+cmp r0, #1
 beq 20f
-b 21f
-20:
-mov r0, #1
-21:
-cmp r6, #8
-beq 22f
-b 23f
-22:
-mov r0, #1
-23:
-cmp r6, #12
-beq 24f
-b 25f
-24:
-mov r0, #1
-25:
-cmp r6, #13
-beq 26f
-b 27f
-26:
-mov r0, #1
-27:
-cmp r6, #14
-beq 28f
-b 29f
-28:
-mov r0, #1
-29:
-cmp r6, #15
-beq 210f
-b 211f
-210:
-mov r0, #1
-211:
-cmp r6, #16
-beq 212f
-b 213f
-212:
-mov r0, #1
-213:
-cmp r0, #0
-beq 214f
 ldr r1, [sp, #16]
 mov r0, #0
 str r0, [r11, #256]
@@ -2558,26 +2480,26 @@ str r0, [r11, #264]
 str r0, [r11, #268]
 add r2, r11, #256
 mov r3, r6
-216:
+22:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 216b
+bne 22b
 ldr r0, [sp, #8]
 ldr r1, [sp, #12]
 orr r0, r0, r1
 cmp r0, #0
-beq 217f
+beq 23f
 ldr r6, [sp, #8]
-b 218f
-217:
+b 24f
+23:
 ldr r6, [sp, #0]
-218:
+24:
 and r6, r6, #15
 cmp r6, #0
-beq 219f
+beq 25f
 mov r12, #0
 str r12, [r11, #96]
 str r12, [r11, #100]
@@ -2586,13 +2508,13 @@ str r12, [r11, #108]
 add r1, r10, #32
 add r2, r11, #96
 mov r3, r6
-221:
+27:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 221b
+bne 27b
 add r0, r9, #240
 add r1, r10, #16
 add r2, r11, #96
@@ -2601,9 +2523,9 @@ add r12, r11, #512
 push {{r12, lr}}
 bl {vg_ghash}
 ldr r12, [sp], #8
-b 220f
-219:
-220:
+b 26f
+25:
+26:
 ldr r4, [sp, #0]
 ldr r5, [sp, #4]
 ldr r6, [sp, #8]
@@ -2656,13 +2578,13 @@ str r0, [r11, #252]
 add r1, r11, #0
 add r2, r11, #240
 mov r3, r6
-222:
+28:
 ldrb r12, [r1, #0]
 strb r12, [r2, #0]
 add r1, r1, #1
 add r2, r2, #1
 subs r3, r3, #1
-bne 222b
+bne 28b
 ldr r0, [r11, #240]
 ldr r2, [r11, #256]
 eor r0, r0, r2
@@ -2684,10 +2606,10 @@ orr r0, r0, r1
 lsr r0, r0, #31
 mov r1, #1
 sub r0, r1, r0
-b 215f
-214:
+b 21f
+20:
 mov r0, #0
-215:
+21:
 ldr r4, [r11, #128]
 ldr r5, [r11, #132]
 ldr r6, [r11, #136]
