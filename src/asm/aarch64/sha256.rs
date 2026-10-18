@@ -2742,7 +2742,9 @@ pub(crate) unsafe extern "C" fn vg_sha256_compress_sha2(state: *mut [u32; 8], bl
         r".arch_extension sha2
 cbz x2, 20f
 ldr q0, [x0, #0]
-ldr q1, [x0, #16]",
+ldr q1, [x0, #16]
+mov v30.16b, v0.16b
+mov v31.16b, v1.16b",
         concat!("adrp x4, ", vg_sym_page!("{VG_SHA256_K}")),
         concat!("add x4, x4, ", vg_sym_pageoff!("{VG_SHA256_K}")),
         r"ldr q16, [x4, #0]
@@ -2833,41 +2835,39 @@ sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
 sha256su0 v4.4s, v5.4s
 sha256su1 v4.4s, v6.4s, v7.4s
-ldr q30, [x4, #224]
 add v3.4s, v28.4s, v4.4s
 mov v2.16b, v0.16b
 sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
 sha256su0 v5.4s, v6.4s
 sha256su1 v5.4s, v7.4s, v4.4s
-ldr q31, [x4, #240]
 add v3.4s, v29.4s, v5.4s
 mov v2.16b, v0.16b
 sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
 sha256su0 v6.4s, v7.4s
 sha256su1 v6.4s, v4.4s, v5.4s
-add v3.4s, v30.4s, v6.4s
+ldr q3, [x4, #224]
+add v3.4s, v3.4s, v6.4s
 mov v2.16b, v0.16b
 sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
 sha256su0 v7.4s, v4.4s
 sha256su1 v7.4s, v5.4s, v6.4s
-add v3.4s, v31.4s, v7.4s
+ldr q3, [x4, #240]
+add v3.4s, v3.4s, v7.4s
 mov v2.16b, v0.16b
 sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
-ldr q2, [x0, #0]
-ldr q3, [x0, #16]
-add v0.4s, v0.4s, v2.4s
-add v1.4s, v1.4s, v3.4s
-str q0, [x0, #0]
-str q1, [x0, #16]
+add v0.4s, v0.4s, v30.4s
+add v1.4s, v1.4s, v31.4s
 add x1, x1, #64
 sub x2, x2, #1
 cbz x2, 22f
 .p2align 6
 24:
+mov v30.16b, v0.16b
+mov v31.16b, v1.16b
 ldr q4, [x1, #0]
 rev32 v4.16b, v4.16b
 add v3.4s, v16.4s, v4.4s
@@ -2954,28 +2954,28 @@ sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
 sha256su0 v6.4s, v7.4s
 sha256su1 v6.4s, v4.4s, v5.4s
-add v3.4s, v30.4s, v6.4s
+ldr q3, [x4, #224]
+add v3.4s, v3.4s, v6.4s
 mov v2.16b, v0.16b
 sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
 sha256su0 v7.4s, v4.4s
 sha256su1 v7.4s, v5.4s, v6.4s
-add v3.4s, v31.4s, v7.4s
+ldr q3, [x4, #240]
+add v3.4s, v3.4s, v7.4s
 mov v2.16b, v0.16b
 sha256h q0, q1, v3.4s
 sha256h2 q1, q2, v3.4s
-ldr q2, [x0, #0]
-ldr q3, [x0, #16]
-add v0.4s, v0.4s, v2.4s
-add v1.4s, v1.4s, v3.4s
-str q0, [x0, #0]
-str q1, [x0, #16]
+add v0.4s, v0.4s, v30.4s
+add v1.4s, v1.4s, v31.4s
 add x1, x1, #64
 sub x2, x2, #1
 cbnz x2, 24b
 b 23f
 22:
 23:
+str q0, [x0, #0]
+str q1, [x0, #16]
 b 21f
 20:
 21:
