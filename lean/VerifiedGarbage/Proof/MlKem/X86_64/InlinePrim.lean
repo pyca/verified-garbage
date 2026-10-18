@@ -61,6 +61,18 @@ theorem glueIn_ok {glue : List Instr} {c : Prog isa} {k : Contract isa}
       fun r hr => by rw [habi.1 r hr, k1.gpr (argRegs_cs r hr)], by rw [hm] at hf; exact hf⟩,
       s1, hV, hm, k1, hpost⟩) hn
 
+/-- Code run from a state that permits more than its proof's state: the
+code changes memory only within `wr`, and keeps every register that no
+instruction writes. -/
+theorem WP.narrowIn {c : Prog isa} {s : State} {rd wr : List Region} {P : State → Prop}
+    (h : WP isa c (s.withRegions rd wr) P) (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr)
+    (hn : c.noCalls = true) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → Frame wr s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = s.gpr r) →
+      P (s'.withRegions rd wr) → Q s') : WP isa c s Q :=
+  regionModel.wp_narrow h hc hw (Code.noFrames_of_noCalls hn) (.inl hn)
+    fun _ _ he hr hw hf hp => hQ _ hr hw hf (fun _ h => Exec.gpr h he) hp
+
 /-- The return address is apart from a region, after moves that keep the stack pointer. -/
 theorem retR_keep {s s1 : State} (k : Keep argRegs s s1) {R : Region} (h : (retR s).Disjoint R) (rd wr : List Region) :
     (retR (s1.withRegions rd wr)).Disjoint R := by
