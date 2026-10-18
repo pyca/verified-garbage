@@ -18,7 +18,8 @@ theorem fullSample_eq (L : KemLay) (kg : Bool) (a : Nat) :
       fullSampleCode (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
         ((if kg then KG.AH else KEM.AH)+1024*a) a L.k := by
   simp only [Impl.MlKem.AArch64.Paired.fullSample,fullSampleCode,fullPrep,fullEntry,
-    fullFinish,singleBody,singleWords,Rej8.zeroSuffix,Rej8.zeroBody,seqs,List.append_assoc]
+    fullFinish,singleBody,singleWords,Rej8.zeroSuffix,Rej8.zeroBody,seqs,List.append_assoc,
+    Bool.false_eq_true,ite_false]
 
 def fullRegs : List Reg := fullStartRegs++prepRegs++fullFinishRegs
 

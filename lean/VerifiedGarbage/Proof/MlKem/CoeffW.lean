@@ -73,19 +73,20 @@ theorem cval_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256)
     rw [writeW32_byte m p (by omega) (by omega), writeW32_byte m p (by omega) (by omega)]
     by_cases e : i = j
     · subst e
-      simp only [Nat.le_refl, Nat.lt_add_left_iff_pos, and_self, ite_true, BitVec.toNat_ofNat,
-        show 2 * i + 1 < 2 * i + 4 by omega, show 2 * i ≤ 2 * i + 1 by omega, show 2 * i - 2 * i = 0 by omega,
-        show 2 * i + 1 - 2 * i = 1 by omega]
+      rw [ite_eq_left (show 2 * i ≤ 2 * i ∧ 2 * i < 2 * i + 4 by omega),
+        ite_eq_left (show 2 * i ≤ 2 * i + 1 ∧ 2 * i + 1 < 2 * i + 4 by omega), ite_eq_left rfl,
+        BitVec.toNat_ofNat, BitVec.toNat_ofNat, show 2 * i + 1 - 2 * i = 1 by omega, Nat.sub_self]
       simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.mul_one]
       omega
     · rw [ite_eq_right e]
       by_cases e' : i = j + 1
       · subst e'
-        simp only [ite_true, and_self, BitVec.toNat_ofNat, show 2 * j ≤ 2 * (j + 1) by omega,
-          show 2 * (j + 1) < 2 * j + 4 by omega, show 2 * j ≤ 2 * (j + 1) + 1 by omega,
-          show 2 * (j + 1) + 1 < 2 * j + 4 by omega, show 2 * (j + 1) - 2 * j = 2 by omega,
-          show 2 * (j + 1) + 1 - 2 * j = 3 by omega]
+        rw [ite_eq_left (show 2 * j ≤ 2 * (j + 1) ∧ 2 * (j + 1) < 2 * j + 4 by omega),
+          ite_eq_left (show 2 * j ≤ 2 * (j + 1) + 1 ∧ 2 * (j + 1) + 1 < 2 * j + 4 by omega),
+          ite_eq_left ⟨trivial, rfl⟩, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+          show 2 * (j + 1) - 2 * j = 2 by omega, show 2 * (j + 1) + 1 - 2 * j = 3 by omega]
         have : v.toNat / 2 ^ 16 = 0 := Nat.div_eq_of_lt hv
+        have : v.toNat / 2 ^ (8 * 3) = 0 := Nat.div_eq_of_lt (by omega)
         omega
       · simp only [e', and_false, ite_false]
         rw [ite_eq_right (by omega), ite_eq_right (by omega)]
