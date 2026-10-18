@@ -20,7 +20,8 @@ the 34 bytes of the seed with `vg_keccak_absorb` (rate 168), pads it with
 `vg_keccak_squeeze`, and loops `n` times, with `rsi` at the 3 bytes of the
 iteration, `rdi` = `j`, the number of coefficients sampled, and `rcx`
 counting down: while `j < 256`, each of the two 12-bit values `d₁`, `d₂`
-of the 3 bytes (in `r9` and `r8`) is stored to `a[j]` (at `rbp + 4 rdi`),
+of the 3 bytes (in `r9` and `r8`) is stored to `a[j]` (at `rbp + 4 rdi`, or
+`rbp + 2 rdi` as a 16-bit coefficient for `vg_mlkem16_sample_ntt`),
 and `j` incremented by the carry of its comparison with `q`, 1 if it is
 less than `q` (`d₂` only if `j < 256` still). A value not counted is
 overwritten by the next, or lies past the coefficients sampled; without a
@@ -44,8 +45,8 @@ namespace VG.Impl.MlKem.X86_64
 
 open VG.X86_64
 
-/-- `a[j]`: `[rbp + 4 rdi]`. -/
-def aJ : MemOp := { base := .rbp, index := some .rdi, scale := 4 }
+/-- `a[j]`: `[rbp + 4 rdi]`, or `[rbp + 2 rdi]` for 16-bit coefficients (`h`). -/
+def aJ (h : Bool := false) : MemOp := { base := .rbp, index := some .rdi, scale := if h then 2 else 4 }
 
 /-- The 25 lanes of the state at `b + off`, zeroed (with `rax` = 0). -/
 def zeroSt (b : Reg) (off : Nat) : List Instr := (List.range 25).flatMap fun i => [.store (at_ b (off + 8 * i)) .rax]
@@ -80,38 +81,46 @@ def snLoad : List Instr :=
 /-- Store the value in `r` to `a[j]`, and count it (add 1 to `j`) if it is
 less than `q`: CF of the comparison. A value not counted is overwritten by
 the next one. -/
-def snTry (r : Reg) : List Instr := [.store32 aJ r, .alu32 .cmp r (.imm qImm), .alu .adc .rdi (.imm 0)]
+def snTry (r : Reg) (h : Bool := false) : List Instr :=
+  [if h then .store16 (aJ h) r else .store32 (aJ h) r, .alu32 .cmp r (.imm qImm), .alu .adc .rdi (.imm 0)]
 
-def snBody : Prog isa :=
+def snBody (h : Bool := false) : Prog isa :=
   .seq (.block snLoad)
-    (.seq (.ite .b (.seq (.block (snTry .r9)) (.seq (.block [.alu .cmp .rdi (.imm 256)]) (.ite .b (.block (snTry .r8)) (.block []))))
+    (.seq (.ite .b (.seq (.block (snTry .r9 h)) (.seq (.block [.alu .cmp .rdi (.imm 256)])
+        (.ite .b (.block (snTry .r8 h)) (.block []))))
         (.block []))
       (.block [.alu .add .rsi (.imm 3), .alu .sub .rcx (.imm 1)]))
 
 /-- `n` iterations of the loop, from the XOF output at `scratch + 840`, and `j` = 0. -/
-def snLoop (n : BitVec 32) : Prog isa :=
+def snLoop (n : BitVec 32) (h : Bool := false) : Prog isa :=
   .seq (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 840), .mov32 .rdi (.imm 0)])
-    (.seq (.block [.mov32 .rcx (.imm n)]) (.loop snBody .ne))
+    (.seq (.block [.mov32 .rcx (.imm n)]) (.loop (snBody h) .ne))
 
 /-- From the arguments of `absorb`: `n` iterations of the loop on the first
 `3 n` bytes of the XOF output. -/
-def snSample (n : BitVec 32) : Prog isa :=
+def snSample (n : BitVec 32) (h : Bool := false) : Prog isa :=
   .seq (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb)
     (.seq (.block snPadArgs)
       (.seq (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad)
         (.seq (.block (snSqzArgs (3 * n)))
-          (.seq (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) (snLoop n)))))
+          (.seq (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) (snLoop n h)))))
 
 /-- If `j < 256`, the 280 iterations from the start. -/
-def snMore : Prog isa :=
+def snMore (h : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .rdi (.imm 256)])
-    (.ite .b (.seq (.block (.mov .rcx (.mem (at_ .rbx 1696)) :: snAbs)) (snSample 280)) (.block []))
+    (.ite .b (.seq (.block (.mov .rcx (.mem (at_ .rbx 1696)) :: snAbs)) (snSample 280 h)) (.block []))
 
 /-- The return value, and `rbx`, `rbp` restored. -/
 def snEpi : List Instr :=
   [.mov .rax (.reg .rdi), .shift .shr .rax 8, .mov .rbp (.mem (at_ .rbx 1688)), .mov .rbx (.mem (at_ .rbx 1680))]
 
-def sampleNTT : Prog isa :=
-  .seq (.block snPro) (.seq (snSample 168) (.seq snMore (.block snEpi)))
+/-- `vg_mlkem_sample_ntt`, or `vg_mlkem16_sample_ntt` storing 16-bit
+coefficients (`h`): the same code, but for the stores of `snTry`. -/
+def sampleNTTW (h : Bool) : Prog isa :=
+  .seq (.block snPro) (.seq (snSample 168 h) (.seq (snMore h) (.block snEpi)))
+
+def sampleNTT : Prog isa := sampleNTTW false
+
+def sampleNTT16 : Prog isa := sampleNTTW true
 
 end VG.Impl.MlKem.X86_64
