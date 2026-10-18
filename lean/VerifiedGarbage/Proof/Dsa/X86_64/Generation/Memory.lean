@@ -44,4 +44,23 @@ theorem lay_of_rep {s t : State} {F S : Addr} {V V' : Nat → Byte}
   change word t.mem F (8 * 14) = word s.mem F (8 * 14)
   rw [Rt.fr 14 (by decide), R.fr 14 (by decide), h14]
 
+/-- Arithmetic calls preserve the complete hash representation when their
+workspace, draw buffer and call stack are disjoint from it. -/
+theorem rep_of_disjoint_frame {m m' : Mem} {F S : Addr} {rs : List Region}
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W)
+    (hf : Frame rs m m')
+    (hF : ∀ r ∈ rs, (⟨F, frameBytes⟩ : Region).Disjoint r)
+    (hS : ∀ r ∈ rs, (⟨S, oRsa⟩ : Region).Disjoint r) : Rep m' F S V W where
+  scr o ho := by
+    rw [hf _ (fun r hr hcontains => hS r hr _
+      (Offset.contains_base S (by omega : o + 1 ≤ oRsa) (by unfold oRsa at ho; omega)) hcontains)]
+    exact R.scr o ho
+  fr k hk := by
+    have sub : Region.Sub ⟨off F (8 * k), 8⟩ ⟨F, frameBytes⟩ :=
+      Offset.sub_base F (by simp only [nW, frameBytes] at hk ⊢; omega)
+    rw [VG.Proof.Bignum.word, hf.readW (r := ⟨off F (8 * k), 8⟩)
+      (Region.contains_self _ _)
+      (fun r hr a ha hb => hF r hr a (sub a ha) hb) (by decide)]
+    exact R.fr k hk
+
 end VG.Proof.Dsa.X86_64.Generation
