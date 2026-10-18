@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
 public import VerifiedGarbage.Impl.Bignum.Arm.ActivateWorkspace
 public import VerifiedGarbage.Impl.Bignum.Arm.Setup
 public import VerifiedGarbage.Impl.Bignum.Arm.ExpControls
-public import VerifiedGarbage.Impl.Bignum.Arm.SecretExp
+public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
 public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 
 /-! # One CRT factor's private power at the factor's own width
@@ -54,7 +54,7 @@ def narrowInput (slot : Nat) : Prog isa :=
   .seq (.block (narrowSource slot)) (.seq (.block narrowInputArgs) (.seq copyBytes (.block [.mov .r0 (.reg .r5)])))
 def exponentArgs (exponentSlot : Nat) : List Instr := [.ldrSp .r1 exponentSlot, .ldrSp .r2 (exponentSlot + 4)]
 def narrowExp (exponentSlot : Nat) : Prog isa :=
-  .seq (.block (exponentArgs exponentSlot)) (.seq (.block expControls) secretExpPhase)
+  .seq (.block (exponentArgs exponentSlot)) (.seq (.block expControls) windowExpPhase)
 /-- Reselect the factor's full-width workspace, with the narrow one in r1. -/
 def leaveNarrow (slot : Nat) : List Instr := [.mov .r1 (.reg .r0), .ldrSp .r0 8, .ldr .r0 .r0 slot]
 def narrowResult (slot : Nat) : Prog isa :=
