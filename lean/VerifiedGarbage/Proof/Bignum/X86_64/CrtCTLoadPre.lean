@@ -42,15 +42,14 @@ def LpGood (j : Nat) (p : LPub) (s : State) : Prop :=
     (∀ i < p.w, ∀ b < 8, ofs p.W (off p.P (8 * p.d + 8 * i) + BitVec.ofNat 64 b) < slot p.w j ∨
       slot p.w j + 8 * (p.w + 2) ≤ ofs p.W (off p.P (8 * p.d + 8 * i) + BitVec.ofNat 64 b))
 
-/-- Before `loadPre`: `LpGood`, the stack argument 12 is `pre`, and what `po`
-needs (`Q`). -/
-def LpPre (j : Nat) (Q : LPub → State → Prop) (p : LPub) (s : State) : Prop :=
+/-- Before `loadPre`: `LpGood`, and the stack argument 12 is `pre`. -/
+def LpPre (j : Nat) (p : LPub) (s : State) : Prop :=
   LpGood j p s ∧ s.gpr .rsp = p.rsp ∧ InRegions (s.rd ++ s.wr) (stackArgAddr s 12) 8 ∧
-    s.mem.readW (stackArgAddr s 12) 64 = p.P ∧ Q p s
+    s.mem.readW (stackArgAddr s 12) 64 = p.P
 
 /-- Before `po`: `pre` in `rsi`. -/
-def LpA (j : Nat) (Q : LPub → State → Prop) (p : LPub) (s : State) : Prop :=
-  LpGood j p s ∧ s.gpr .rsi = p.P ∧ Q p s
+def LpA (j : Nat) (p : LPub) (s : State) : Prop :=
+  LpGood j p s ∧ s.gpr .rsi = p.P
 
 /-- After `po`: the offset in `rax`. -/
 def LpB (j : Nat) (p : LPub) (s : State) : Prop :=
@@ -95,33 +94,34 @@ theorem LpGood.of_outside {j : Nat} {p : LPub} {s t : State} {rs : List Reg} (h 
     (List.mem_singleton_self _) ho' (Nat.le_refl _) (Nat.le_refl _)).hdr hg.hdr⟩, h1, h2, h3, h4,
     fun i hi => by rw [k.2.1, k.2.2]; exact h5 i hi, h6⟩
 
-theorem loadPre_ct {j : Nat} {po : List Instr} {Q : LPub → State → Prop} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem loadPre_ct {α : Type} (π : α → LPub) {j : Nat} {po : List Instr} {Q : α → State → Prop}
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rax, .rsi, .rdi]) (.block [.alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rsi (.reg .rax),
       .mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))]) hc).isSome = true)
-    (hQ : ∀ p s t, Q p s → t.mem = s.mem → Keep [.rsi] s t → Q p t)
-    (hpo : RelCT isa (Two (LpA j Q)) (.block po) (Two (LpB j))) :
-    RelCT isa (Two (LpPre j Q)) (seqs (Crt.loadPre j po)) fun _ _ => True := by
+    (hQ : ∀ a s t, Q a s → t.mem = s.mem → Keep [.rsi] s t → Q a t)
+    (hpo : RelCT isa (Two fun a s => LpA j (π a) s ∧ Q a s) (.block po) (Two (LpB j))) :
+    RelCT isa (Two fun a s => LpPre j (π a) s ∧ Q a s) (seqs (Crt.loadPre j po)) fun _ _ => True := by
   unfold Crt.loadPre
   simp only [seqs]
-  refine RelCT.seq (R := Two (LpC j)) (RelCT.seq (R := Two (LpC j)) (RelCT.block_append (RelCT.seq
-    (RelCT.block_append (RelCT.seq ?_ hpo)) ?_)) ?_) ?_
+  refine RelCT.seq (R := Two (LpC j)) (RelCT.seq (R := Two (LpC j))
+    (RelCT.block_append (RelCT.seq (RelCT.block_append (RelCT.seq ?_ hpo)) ?_)) ?_) ?_
   -- `pre` into `rsi`.
-  · refine two_piece [.rsp] (pins_of (fun p _ => p.rsp) fun p s h r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.2.1) (by taint_decide) fun p s h => ?_
-    obtain ⟨hg, hsp, ha, hP, hq⟩ := h
+  · refine two_piece [.rsp] (pins_of (fun a _ => (π a).rsp) fun a s h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.1.2.1) (by taint_decide) fun a s h => ?_
+    obtain ⟨⟨hg, hsp, ha, hP⟩, hq⟩ := h
     have e13 : off (s.gpr .rsp) (8 * 13) = stackArgAddr s 12 := rfl
-    exact WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = p.P ∧ t.mem = s.mem)
+    exact WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = (π a).P ∧ t.mem = s.mem)
       (by xrun [Crt.stk, State.ea, hdrOff, e13, ha, hP]) rfl) fun t ⟨⟨h1, hm⟩, k⟩ =>
-        ⟨hg.congr hm k (by decide), h1, hQ p s t hq hm k⟩
+        ⟨⟨hg.congr hm k (by decide), h1⟩, hQ a s t hq hm k⟩
   -- The source, the array and its length.
-  · refine two_piece [.rax, .rsi, .rdi] (pins_of (fun p r => if r = .rax then BitVec.ofNat 64 p.d else
+  · refine (two_piece (Φ := LpB j) [.rax, .rsi, .rdi] (pins_of (fun p r => if r = .rax then BitVec.ofNat 64 p.d else
       if r = .rsi then p.P else p.W) fun p s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact h.2.2
         · exact h.2.1
-        · exact h.1.rdi) hT fun p s h => ?_
+        · exact h.1.rdi) hT fun p s h => ?_)
     obtain ⟨hgd, hsi, hax⟩ := h
     obtain ⟨minv, hg, hZ, hw, hw', hj, -, -⟩ := id hgd
     have hn := hg.scr.nowrap
@@ -138,12 +138,12 @@ theorem loadPre_ct {j : Nat} {po : List Instr} {Q : LPub → State → Prop} {hc
         hl sW (by decide), hg.hdr.harr j hj, hg.hdr.hw]) rfl) fun t ⟨⟨h1, h2, h3, hm⟩, k⟩ =>
       ⟨hgd.congr hm k (by decide), h1, h2, h3⟩
   -- The array cleared.
-  · refine two_piece [.r8, .r12] (pins_of (fun p r => if r = .r8 then off p.W (slot p.w j) else
+  · refine (two_piece [.r8, .r12] (pins_of (fun p r => if r = .r8 then off p.W (slot p.w j) else
       BitVec.ofNat 64 p.w) fun p s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact h.2.2.1
-        · exact h.2.2.2) (by taint_decide) fun p s h => ?_
+        · exact h.2.2.2) (by taint_decide) fun p s h => ?_)
     obtain ⟨hgd, hsi, h8, h12⟩ := h
     obtain ⟨minv, hg, hZ, hw, hw', hj, -, -⟩ := id hgd
     have sj := Nat.le_trans (slot_le (w := p.w) hj) hZ
