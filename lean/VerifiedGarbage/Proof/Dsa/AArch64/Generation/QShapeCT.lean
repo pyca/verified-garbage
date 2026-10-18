@@ -1,0 +1,19 @@
+module
+
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.QShape
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.QShape
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+
+/-! Subgroup candidate shaping leaks only pointers and the digest length. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+theorem qShape_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.x12, .x2, .x9]) :
+    RelCT isa (Two Φ) Impl.Dsa.AArch64.Generation.qShape (fun _ _ => True) :=
+  two_taint _ hp (by taint_decide)
+
+end VG.Proof.Dsa.AArch64.Generation
