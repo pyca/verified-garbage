@@ -63,10 +63,18 @@ theorem loadZeros_relCT (k : Nat) :
   flatMap_relCT _ _ fun _ => erased_relCT (c₀ := .block [.mov .r4 (.imm 0), .str .r4 .r10 0])
     (VG.Taint.hintOf taint T10 (.block [.mov .r4 (.imm 0), .str .r4 .r10 0])) rfl T10_noBase rfl
 
+theorem zeroPad_relCT (k : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree T10) (zeroPad k) (VG.Arm.Taint.Agree T10) := by
+  unfold zeroPad
+  split
+  · exact loadZeros_relCT k
+  · exact erased_relCT (c₀ := zeroPadLoop 1)
+      (VG.Taint.hintOf taint T10 (zeroPadLoop 1)) rfl T10_noBase rfl
+
 theorem loadComponent_relCT (len n out : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T1) (loadComponent len n out) (VG.Arm.Taint.Agree T10) := by
   unfold loadComponent
-  refine RelCT.assoc (RelCT.seq ?_ (loadZeros_relCT _))
+  refine RelCT.assoc (RelCT.seq ?_ (zeroPad_relCT _))
   exact erased_relCT (c₀ := .seq (.block ([.movw .r8 0, .dp .add .r8 .r11 (.reg .r8)] ++ ptr .r10 0 ++ ptr .r9 0))
       (ptrLoop .r10 [.ldr .r4 .r8 0, .rev .r4 .r4, .str .r4 .r10 0, .dp .sub .r8 .r8 (.imm 4), bump .r10 4]))
     (VG.Taint.hintOf taint T1 (.seq (.block ([.movw .r8 0, .dp .add .r8 .r11 (.reg .r8)] ++ ptr .r10 0 ++ ptr .r9 0))
