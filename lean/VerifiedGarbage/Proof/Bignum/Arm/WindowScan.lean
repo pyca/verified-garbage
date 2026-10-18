@@ -84,16 +84,12 @@ theorem scanBody_ok (s : State) {base : BitVec 32} {len w M x A d j : Nat}
     rw [memT]
     exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide)
 
-/-- Array 1 `:= T[d]`. -/
-theorem scan_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
+theorem scanStage0_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
     (h : ExpState base len w M x A s) (table : TableHolds s.mem base w M x 8) (fits : arrAt w 16 ≤ 8 * len)
     (hd : d < 8) (digit : s.mem.readW (off (State.addr base) 196) 32 = BitVec.ofNat 32 d) :
-    WP isa scan s fun t => ExpState base len w M x A t ∧ TableHolds t.mem base w M x 8 ∧
-      numAt t.mem (State.addr base) w 1 = numAt t.mem (State.addr base) w (8 + d) ∧
-      t.mem.readW (off (State.addr base) 196) 32 = BitVec.ofNat 32 d ∧
-      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+    WP isa (.block scanInit) s fun t => ScanInv base len w M x A d 0 t ∧ KeepsExp base s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have nowrap := h.ready.workspace.nowrap
-  rw [scan, WP.seq_iff]
   refine WP.mono (tableInit_ok s h.ready) ?_
   rintro u ⟨memU, restU⟩
   have ctl : CtlOnly base s.mem u.mem := by
@@ -104,34 +100,48 @@ theorem scan_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
   rw [← memU] at e220 e228
   have keepsU : KeepsExp base s.mem u.mem := by
     rw [memU]; exact KeepsExp.of_writes _ _ _ _ (Or.inl (by decide)) (by decide) (Or.inl (by decide)) (by decide)
-  have inv0 : ScanInv base len w M x A d 0 u :=
-    ⟨powerU, table.after_ctl ctl fits nowrap (by decide), fits, hd,
+  exact ⟨⟨powerU, table.after_ctl ctl fits nowrap (by decide), fits, hd,
       by rw [memU, read_after_writes _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact digit,
-      fun h => absurd h (Nat.not_lt_zero _), e220, e228⟩
+      fun h => absurd h (Nat.not_lt_zero _), e220, e228⟩, keepsU, frameU, rest_round restU⟩
+
+theorem scanLoop_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
+    (h : ScanInv base len w M x A d 0 s) :
+    WP isa (.loop scanBody .ne) s fun t => ScanInv base len w M x A d 8 t ∧
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   let inv := fun k t => ∃ j, j + k = 8 ∧ 0 < k ∧ ScanInv base len w M x A d j t ∧
-    KeepsExp base u.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] u.mem t.mem ∧ Rest roundClobbers u t
-  have loop : WP isa (.loop scanBody .ne) u fun t => ScanInv base len w M x A d 8 t ∧
-      KeepsExp base u.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] u.mem t.mem ∧ Rest roundClobbers u t := by
-    refine WP.loop (M := isa) inv ?_ 8 u ?_
-    · intro k t hk
-      obtain ⟨j, hjk, hk, hi, keeps, frame, rest⟩ := hk
-      refine WP.mono (scanBody_ok t hi (by omega)) ?_
-      rintro v ⟨hv, hz, keepsV, frameV, restV⟩
-      by_cases he : j + 1 = 8
-      · left
-        refine ⟨?_, he ▸ hv, keeps.trans keepsV, frame.trans frameV, rest.trans restV⟩
-        change some (!v.z) = some false
-        simp only [hz, he, decide_true, Bool.not_true]
-      · right
-        refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, hv, keeps.trans keepsV, frame.trans frameV,
-          rest.trans restV⟩
-        change some (!v.z) = some true
-        simp only [hz, he, decide_false, Bool.not_false]
-    · exact ⟨0, rfl, by decide, inv0, KeepsExp.refl _ _, Frame.refl _ _, Rest.refl _ _⟩
-  refine WP.mono loop ?_
+    KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+  refine WP.loop (M := isa) inv ?_ 8 s ?_
+  · intro k t hk
+    obtain ⟨j, hjk, hk, hi, keeps, frame, rest⟩ := hk
+    refine WP.mono (scanBody_ok t hi (by omega)) ?_
+    rintro v ⟨hv, hz, keepsV, frameV, restV⟩
+    by_cases he : j + 1 = 8
+    · left
+      refine ⟨?_, he ▸ hv, keeps.trans keepsV, frame.trans frameV, rest.trans restV⟩
+      change some (!v.z) = some false
+      simp only [hz, he, decide_true, Bool.not_true]
+    · right
+      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, hv, keeps.trans keepsV, frame.trans frameV,
+        rest.trans restV⟩
+      change some (!v.z) = some true
+      simp only [hz, he, decide_false, Bool.not_false]
+  · exact ⟨0, rfl, by decide, h, KeepsExp.refl _ _, Frame.refl _ _, Rest.refl _ _⟩
+
+/-- Array 1 `:= T[d]`. -/
+theorem scan_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
+    (h : ExpState base len w M x A s) (table : TableHolds s.mem base w M x 8) (fits : arrAt w 16 ≤ 8 * len)
+    (hd : d < 8) (digit : s.mem.readW (off (State.addr base) 196) 32 = BitVec.ofNat 32 d) :
+    WP isa scan s fun t => ExpState base len w M x A t ∧ TableHolds t.mem base w M x 8 ∧
+      numAt t.mem (State.addr base) w 1 = numAt t.mem (State.addr base) w (8 + d) ∧
+      t.mem.readW (off (State.addr base) 196) 32 = BitVec.ofNat 32 d ∧
+      KeepsExp base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [scan, WP.seq_iff]
+  refine WP.mono (scanStage0_ok s h table fits hd digit) ?_
+  rintro u ⟨inv0, keepsU, frameU, restU⟩
+  refine WP.mono (scanLoop_ok u inv0) ?_
   rintro t ⟨invT, keepsT, frameT, restT⟩
   exact ⟨invT.power, invT.table, invT.selected hd, invT.digit, keepsU.trans keepsT, frameU.trans frameT,
-    (rest_round restU).trans restT⟩
+    restU.trans restT⟩
 
 /-- The power times `T[d]`: `x^(A + d) R`, and no pending bits. -/
 theorem windowApply_ok (s : State) {base : BitVec 32} {len w M x A d : Nat}
