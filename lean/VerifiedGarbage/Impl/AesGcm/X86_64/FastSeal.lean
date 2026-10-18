@@ -30,8 +30,8 @@ and of the counter block from `ks` (`Short.finKs` on 512-bit registers,
 def run (ks : Prog isa := Short.finKs) : Prog isa :=
   .seq Fast.aad (.seq (oneBlocks c.enc) (Short.finishWith ks))
 
-/-- `Fast.cond`, then this path, or `other`. -/
-def sel (other : Prog isa) (ks : Prog isa := Short.finKs) : Prog isa :=
-  .seq Fast.cond (.ite .e other (run c ks))
+/-- `Fast.cond any`, then this path, or `other`. -/
+def sel (other : Prog isa) (ks : Prog isa := Short.finKs) (any : Bool := false) : Prog isa :=
+  .seq (Fast.cond any) (.ite .e other (run c ks))
 
 end VG.Impl.AesGcm.X86_64.FastSeal

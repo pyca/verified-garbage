@@ -81,8 +81,10 @@
 //! prepared context once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
 //! it, so that one used for a few messages never pays for it. Once it has,
-//! shorter messages sealed use it too on the `_vaes_vpclmul_avx512` backend,
-//! whose short path copies its powers from it; they never count towards it.
+//! shorter messages use it too, which never count towards it: on the
+//! `_vaes_vpclmul_avx512` backend, whose short path copies its powers from
+//! it, and on the others, whose path for TLS records (a 12-byte nonce and at
+//! most 16 bytes of additional data) is faster at every length.
 //!
 //! On AArch64, the `_aes` instances of `seal` and `open` have
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
@@ -433,12 +435,6 @@ struct Prepared {
     stream_encrypt: StreamPrepared,
     #[cfg(target_arch = "x86_64")]
     stream_decrypt: StreamPrepared,
-    /// Whether `seal` and `seal_gather` have a short path that copies its
-    /// powers from the key context, so that messages shorter than
-    /// `POWERS_MIN_LEN` sealed gain from it too once it is ready. None on
-    /// AArch64.
-    #[cfg(target_arch = "x86_64")]
-    short: bool,
     /// `vg_aes_gcm_prepare`, which makes the prepared context from the key
     /// context without the key, if the backend has it (its features are
     /// among the backend's): `Powers::get` copies the key context and calls
@@ -594,7 +590,6 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
-    short: true,
     prepare: Some(vg_aes_gcm_prepare_vpclmul),
 };
 
@@ -607,7 +602,6 @@ static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
-    short: false,
     prepare: Some(vg_aes_gcm_prepare_vpclmul),
 };
 
@@ -620,7 +614,6 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
-    short: false,
     prepare: None,
 };
 
@@ -702,8 +695,11 @@ const POWERS_AFTER: u32 = 32;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 2;
 
-/// `Powers::calls` once the powers are published, for a backend whose
-/// short path reads them.
+/// `Powers::calls` once the powers are published on x86-64, whose `_prepared`
+/// instances are faster than the plain ones for shorter messages too: with
+/// a short path that copies its powers from the key context
+/// (`_vaes_vpclmul_avx512`), or a path for TLS records taken at every
+/// length (the others).
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
@@ -736,12 +732,11 @@ struct Powers {
     fns: Option<&'static Prepared>,
     /// The calls that could have read the powers, before they were ready
     /// (counted without a read-modify-write: one lost to a race only
-    /// delays the powers); once they are published, `SHORT_READY` if the
-    /// backend has a short path that reads them (`Prepared::short`), so that
-    /// messages shorter than `POWERS_MIN_LEN` take the `_prepared` instances
-    /// too. That test comes after the length's, so longer messages pay
-    /// nothing for it, and such messages never count (`Powers::get` finds
-    /// the powers ready).
+    /// delays the powers); once they are published, `SHORT_READY` on
+    /// x86-64, so that messages shorter than `POWERS_MIN_LEN` take the
+    /// `_prepared` instances too. That test comes after the length's, so
+    /// longer messages pay nothing for it, and such messages never count
+    /// (`Powers::get` finds the powers ready).
     calls: AtomicU32,
     /// Null, or the key context, from `Box::into_raw`: written before it is
     /// published here (with release ordering), never written again while it
@@ -832,10 +827,9 @@ impl Powers {
         store.then_some((Got::Store, fns))
     }
 
-    /// Whether messages shorter than `POWERS_MIN_LEN` sealed take the
-    /// `_prepared` instances: once the powers are published, on a backend
-    /// whose short path reads them (`Prepared::short`; none on AArch64,
-    /// where this is `false` without a load).
+    /// Whether messages shorter than `POWERS_MIN_LEN` take the `_prepared`
+    /// instances: once the powers are published, on x86-64 (`SHORT_READY`;
+    /// on AArch64 this is `false` without a load).
     #[inline(always)]
     fn short_ready(&self) -> bool {
         cfg!(target_arch = "x86_64") && self.calls.load(Ordering::Relaxed) == SHORT_READY
@@ -861,11 +855,9 @@ impl Powers {
                 q
             }
         };
-        // Only x86-64 has backends with a short path.
+        // Only x86-64's `_prepared` instances gain for shorter messages.
         #[cfg(target_arch = "x86_64")]
-        if self.fns.is_some_and(|f| f.short) {
-            self.calls.store(SHORT_READY, Ordering::Relaxed);
-        }
+        self.calls.store(SHORT_READY, Ordering::Relaxed);
         // SAFETY: as in `get`.
         unsafe { &*q }
     }
@@ -1233,13 +1225,19 @@ impl AesGcm {
             return None;
         }
         let (src, rest): (&[u8], &[u8]) = match plaintext {
-            [a] if a.len() >= POWERS_MIN_LEN => (a, &[]),
-            [a, b] if a.len() >= POWERS_MIN_LEN && a.len() % 16 + b.len() <= 16 => (a, b),
+            [a] => (a, &[]),
+            [a, b] if a.len() % 16 + b.len() <= 16 => (a, b),
             _ => return None,
         };
         let split = match self.backend {
-            Backend::VaesVpclmulAvx512 => vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
-            // The 256-bit one seals a last block that `src` starts and the
+            // On 512-bit registers from `POWERS_MIN_LEN` bytes on: the short
+            // path of the gathering is faster for less.
+            Backend::VaesVpclmulAvx512 if src.len() >= POWERS_MIN_LEN => {
+                vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512
+            }
+            // On 128- and 256-bit ones at any length, whose path for TLS
+            // records is faster than the others' at every length. The
+            // 256-bit one seals a last block that `src` starts and the
             // second piece fills more slowly than the gathering does (a
             // 1024-byte TLS record, of a 1023-byte payload: 22% slower), and
             // every other shape faster.
@@ -1255,6 +1253,7 @@ impl AesGcm {
             | Backend::Vpclmul
             | Backend::VaesPclmul
             | Backend::AesNiVpclmul
+            | Backend::VaesVpclmulAvx512
             | Backend::VaesVpclmul => return None,
         };
         let ctx = self.powers.ctx.load(Ordering::Acquire);
@@ -2667,8 +2666,8 @@ mod tests {
                     warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
                 }
                 for len in [
-                    17, 100, 255, 256, 257, 288, 481, 511, 512, 513, 767, 768, 769, 1024, 1535,
-                    1536, 2303, 2304, 2305, 3071, 3072, 3073, 4097, 10000,
+                    0, 1, 15, 16, 17, 100, 255, 256, 257, 288, 481, 511, 512, 513, 767, 768, 769,
+                    1024, 1535, 1536, 2303, 2304, 2305, 3071, 3072, 3073, 4097, 10000,
                 ] {
                     let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
                     for nonce_len in [12, 13] {
@@ -2699,11 +2698,16 @@ mod tests {
                                     .is_err()
                             );
                             assert_eq!(actual, want);
-                            // One piece (`seal_split_prepared` from 256
-                            // bytes on); a second of 1 byte (the same, a TLS
-                            // 1.3 record's content type), none (the same, a
-                            // TLS 1.2 record's), 16 bytes (the same when the
-                            // first ends on a block), or 17; three; empty
+                            // The pieces below split off up to 17 bytes.
+                            if len < 17 {
+                                continue;
+                            }
+                            // One piece (`seal_split_prepared`; on 512-bit
+                            // registers from 256 bytes); a second of 1 byte
+                            // (the same, a TLS 1.3 record's content type),
+                            // none (the same, a TLS 1.2 record's), 16 bytes
+                            // (the same when the first ends on a block), or
+                            // 17; three; empty
                             // pieces around and between them (which AArch64
                             // copies as it does the others); and as many
                             // pieces as `encrypt` takes.
