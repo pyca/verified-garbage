@@ -75,23 +75,34 @@ theorem stage_step {R R' : StageRel} {c : Prog isa} (hct : RelCT isa (Two (Stage
 
 def R0 : StageRel := fun _ σ _ _ _ _ _ _ t => t = σ
 
-def R1 : StageRel := fun p σ xb _ _ _ _ _ t => ∃ minv, NReady σ t p.B p.Z p.w minv p.N (Spec.Rsa.os2ip xb) True
+/-- Stage 1, its values right if `ok`. -/
+def R1o (ok : Prop) : StageRel := fun p σ xb _ _ _ _ _ t => ∃ minv, NReady σ t p.B p.Z p.w minv p.N (Spec.Rsa.os2ip xb) ok
 
-def R2 : StageRel := fun p σ xb pb qb _ _ qib t => ∃ minv mp mq, PReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) True
+/-- Stage 2, its values right if `ok`. -/
+def R2o (ok : Prop) : StageRel := fun p σ xb pb qb _ _ qib t => ∃ minv mp mq, PReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) ok
 
 /-- The mask of a run: whether the input and the key are valid. -/
 abbrev CrtPub.mask (p : CrtPub) (xb pb qb qib : List Byte) : Bool :=
   keyMask (decide (Spec.Rsa.os2ip xb < p.N)) p.N (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)
 
-def R3 : StageRel := fun p σ xb pb qb _ _ qib t => ∃ minv mp mq, CrtReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (p.mask xb pb qb qib) True
+/-- Stage 3, its values right if `ok`. -/
+def R3o (ok : Prop) : StageRel := fun p σ xb pb qb _ _ qib t => ∃ minv mp mq, CrtReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (p.mask xb pb qb qib) ok
 
-def R4 : StageRel := fun p σ xb pb qb _ dqb qib t => ∃ minv mp mq, QReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb (p.mask xb pb qb qib) True
+/-- Stage 4, its values right if `ok`. -/
+def R4o (ok : Prop) : StageRel := fun p σ xb pb qb _ dqb qib t => ∃ minv mp mq, QReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb (p.mask xb pb qb qib) ok
 
-def R5 : StageRel := fun p σ xb pb qb dpb dqb qib t => ∃ minv mp mq, PDone σ t p.B p.Z p.w p.pl p.ql minv mp mq
-  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb (p.mask xb pb qb qib) True
+/-- Stage 5, its values right if `ok`. -/
+def R5o (ok : Prop) : StageRel := fun p σ xb pb qb dpb dqb qib t => ∃ minv mp mq, PDone σ t p.B p.Z p.w p.pl p.ql minv mp mq
+  (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb (p.mask xb pb qb qib) ok
+
+abbrev R1 : StageRel := R1o True
+abbrev R2 : StageRel := R2o True
+abbrev R3 : StageRel := R3o True
+abbrev R4 : StageRel := R4o True
+abbrev R5 : StageRel := R5o True
 
 /-- `-n⁻¹` is the same in runs that agree on `n`. -/
 theorem nv_minv {t t' : State} {B : Addr} {w : Nat} {mi mi' : BitVec 64} {N : Nat} {ok ok' : Prop}
@@ -123,22 +134,26 @@ def RA : StageRel := fun p _ xb _ _ _ _ _ t => ∃ minv, SetupOut t p.B p.Z p.w 
 /-- After `R² mod n`. -/
 def RB : StageRel := fun p _ _ _ _ _ _ _ t => ∃ minv, Good t p.B p.Z p.w minv
 
+/-- The start of `n`'s setup (`setup_ok`) leaks the same in runs that agree
+on `n`. -/
+theorem nHead_ct : RelCT isa (Two (Stage R0)) (seqs (loadSteps ++ restSteps)) (Two (Stage RA)) := by
+  refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
+    (RelCT.seq setupLoad_ct (two_map (fun p : SPub => (⟨p.B, p.Z, p.w⟩ : RPub)) (fun _ _ h => h.sr)
+      setupRest_ct))).mono (fun _ _ h => two_bind (fun (p : CrtPub) _ _ h₁ h₂ =>
+        ⟨(⟨p.B, p.Z, p.k, p.np, p.ip, p.nb⟩ : SPub), stage0_sh h₁, stage0_sh h₂⟩) h)
+      fun _ _ h => h)) ?_
+  rintro p σ xb _ _ _ _ _ t h hv rfl
+  obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  have := h.k1
+  have := h.k2
+  have hZq := h.z
+  exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega) (by omega) (by omega) h.hK h.hN h.hIn
+    h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
+
 /-- `n`'s setup leaks the same in runs that agree on `n`. -/
 theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
   rw [nSetup_eq]
-  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq (R := Two (Stage RA)) ?_ ?_)
-  · refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
-      (RelCT.seq setupLoad_ct (two_map (fun p : SPub => (⟨p.B, p.Z, p.w⟩ : RPub)) (fun _ _ h => h.sr)
-        setupRest_ct))).mono (fun _ _ h => two_bind (fun (p : CrtPub) _ _ h₁ h₂ =>
-          ⟨(⟨p.B, p.Z, p.k, p.np, p.ip, p.nb⟩ : SPub), stage0_sh h₁, stage0_sh h₂⟩) h)
-        fun _ _ h => h)) ?_
-    rintro p σ xb _ _ _ _ _ t h hv rfl
-    obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
-    have := h.k1
-    have := h.k2
-    have hZq := h.z
-    exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega) (by omega) (by omega) h.hK h.hN h.hIn
-      h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
+  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq (R := Two (Stage RA)) nHead_ct ?_)
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two (Stage RB)) ?_ ?_)
   · refine stage_step ((R2w.choice_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
     · obtain ⟨σ₁, xb₁, _, _, _, _, _, h₁, hv, mi₁, so₁⟩ := h₁
@@ -171,11 +186,11 @@ theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) f
 
 /-- Runs at a stage agree on what a part needs, with `-n⁻¹` (the same in both
 runs) among its public data. -/
-theorem two_stage {R : StageRel} {α : Type} {Φ : α → State → Prop} (f : CrtPub → BitVec 64 → α)
+theorem two_stage {R : StageRel} {α : Type} {Φ : α → State → Prop} {ok : Prop} (f : CrtPub → BitVec 64 → α)
     (m : ∀ p σ xb pb qb dpb dqb qib t,
       CrtPre σ p.B p.Z p.k p.op p.np p.ip p.pp p.qp p.dpp p.dqp p.qip p.pl p.ql p.nb xb pb qb dpb dqb qib →
       Spec.Rsa.modulusValid p.N p.k = true → R p σ xb pb qb dpb dqb qib t →
-      ∃ minv, NVals t p.B p.w minv p.N True ∧ Φ (f p minv) t)
+      ∃ minv, NVals t p.B p.w minv p.N ok ∧ Φ (f p minv) t)
     {s₁ s₂ : State} (h : Two (Stage R) s₁ s₂) : Two Φ s₁ s₂ := by
   obtain ⟨p, ⟨σ₁, xb₁, pb₁, qb₁, dpb₁, dqb₁, qib₁, h₁, hv, r₁⟩, ⟨σ₂, xb₂, pb₂, qb₂, dpb₂, dqb₂, qib₂, h₂, hv₂, r₂⟩⟩ := h
   obtain ⟨m₁, n₁, φ₁⟩ := m p _ _ _ _ _ _ _ _ h₁ hv r₁
@@ -186,8 +201,9 @@ theorem two_stage {R : StageRel} {α : Type} {Φ : α → State → Prop} (f : C
   exact ⟨_, φ₁, φ₂⟩
 
 /-- The primes' setup leaks the same in runs that agree on the public data. -/
-theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup) (Two (Stage R2)) := by
-  refine stage_step (hS.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.pl, p.ql, p.pp, p.qp,
+theorem setupS_ct {ok : Prop} (hS : SetupCT) :
+    RelCT isa (Two (Stage (R1o ok))) (seqs primesSetup) (Two (Stage (R2o ok))) := by
+  refine stage_step (hS.mono (fun _ _ h => two_stage (ok := ok) (fun p minv => (⟨p.B, p.Z, p.w, minv, p.pl, p.ql, p.pp, p.qp,
     p.qip⟩ : SetupPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, hr⟩ => ?_) h) fun _ _ h => h)
     fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, hr⟩ => WP.mono (setupPart_ok h hr) fun _ h' => ⟨minv, h'⟩
   have hk1 := h.k1
@@ -203,8 +219,9 @@ theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup)
   · have := h.ql2; simp only [CrtPub.w]; omega
 
 /-- The checks leak the same in runs that agree on the public data. -/
-theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) := by
-  refine stage_step (hC.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
+theorem checksS_ct {ok : Prop} (hC : ChecksCT) :
+    RelCT isa (Two (Stage (R2o ok))) (seqs checks) (Two (Stage (R3o ok))) := by
+  refine stage_step (hC.mono (fun _ _ h => two_stage (ok := ok) (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
     offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ =>
       ?_) h) fun _ _ h => h)
     fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr) fun _ ⟨mp', mq', h'⟩ =>
@@ -225,13 +242,16 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
     wsWords_le (by have := h.pl2; omega) (by omega), hwq2, wsWords_le (by have := h.ql2; omega) (by omega),
     hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.n.nv.n, hr.n.msk, hr.pv, hr.qv, hr.qiv, hodd⟩
 
-/-- `q`'s phase leaks the same in runs that agree on the public data. -/
-theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (Stage R3)) (seqs (qPhase M.mm E.code)) (Two (Stage R4)) := by
-  refine stage_step (hQ.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offQ p.w p.pl,
-    wsWords p.ql, p.dqp, p.ql⟩ : PhasePub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => ?_) h)
-      fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (qPart_ok M E h hv hr rfl) fun _ h' =>
-      ⟨minv, mp, mq, h'⟩
+/-- `qPhase_ok`'s hypotheses after the checks, for any representative `C` of
+`c R mod n`. -/
+theorem qPre_of {p : CrtPub} {σ t : State} {xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {ok : Prop}
+    {C : Nat}
+    (h : CrtPre σ p.B p.Z p.k p.op p.np p.ip p.pp p.qp p.dpp p.dqp p.qip p.pl p.ql p.nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid p.N p.k = true)
+    (hr : CrtReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb)
+      (Spec.Rsa.os2ip qb) (p.mask xb pb qb qib) ok)
+    (hxm : wv t.mem p.B (slot p.w Public.aXm) p.w % p.N = C * 2 ^ (64 * p.w) % p.N) :
+    QPre ⟨p.B, p.Z, p.w, minv, p.N, offQ p.w p.pl, wsWords p.ql, p.dqp, p.ql⟩ t := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   obtain ⟨-, -, hQ'⟩ := mask_facts (Mk := p.mask xb pb qb qib) rfl hodd hPN hQN
   have hk1 := h.k1
@@ -242,22 +262,32 @@ theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (S
   have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
   have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
-  refine ⟨minv, hr.nv, ?_⟩
   unfold QPre
-  dsimp only [CrtPub.w]
+  dsimp only [CrtPub.w] at hxm ⊢
   exact ⟨mq, _, _, dqb, hr.good, by omega, by omega,
     by unfold offQ; omega, hZq, hwq2, wsWords_le (by omega) (by omega), hr.wsQ, hr.qws, hr.nv.weak False.elim,
-    hodd, hN1, hr.xm trivial, hr.qxv, hQ'.1, hQ'.2, by rw [hh _ (by decide) (by decide)]; exact h.hDq,
+    hodd, hN1, hxm, hr.qxv, hQ'.1, hQ'.2, by rw [hh _ (by decide) (by decide)]; exact h.hDq,
     by rw [hh _ (by decide) (by decide), h.dql]; exact h.hQl, h.dql, by rw [h.dql]; omega,
     by rw [h.dql]; omega, h.dq.congrK hr.iscr hr.keep⟩
 
-/-- `p`'s phase leaks the same in runs that agree on the public data. -/
-theorem pS_ct (M : Mont) (E : CrtExpL M) (hP : PPhaseCT M E) : RelCT isa (Two (Stage R4)) (seqs (pPhase M.mm E.code)) (Two (Stage R5)) := by
-  refine stage_step (hP.mono (fun _ _ h => two_stage (fun p minv => (⟨⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
-    wsWords p.pl, p.dpp, p.pl⟩, offQ p.w p.pl, wsWords p.ql, p.qip⟩ : PPhasePub))
-      (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => ?_) h) fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (pPart_ok M E h hv hr rfl) fun _ h' =>
+/-- `q`'s phase leaks the same in runs that agree on the public data. -/
+theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (Stage R3)) (seqs (qPhase M.mm E.code)) (Two (Stage R4)) :=
+  stage_step (hQ.mono (fun _ _ h => two_stage (ok := True) (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offQ p.w p.pl,
+    wsWords p.ql, p.dqp, p.ql⟩ : PhasePub)) (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hr⟩ =>
+      ⟨minv, hr.nv, qPre_of h hv hr (hr.xm trivial)⟩) h) fun _ _ h => h)
+    fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, hr⟩ => WP.mono (qPart_ok M E h hv hr rfl) fun _ h' =>
       ⟨minv, mp, mq, h'⟩
+
+/-- `pPhase_ok`'s hypotheses after `q`'s phase, for any representative `C`
+of `c R mod n`. -/
+theorem pPre_of {p : CrtPub} {σ t : State} {xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {ok : Prop}
+    {C : Nat}
+    (h : CrtPre σ p.B p.Z p.k p.op p.np p.ip p.pp p.qp p.dpp p.dqp p.qip p.pl p.ql p.nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid p.N p.k = true)
+    (hr : QReady σ t p.B p.Z p.w p.pl p.ql minv mp mq p.N (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb)
+      (Spec.Rsa.os2ip qb) dqb (p.mask xb pb qb qib) ok)
+    (hxm : wv t.mem p.B (slot p.w Public.aXm) p.w % p.N = C * 2 ^ (64 * p.w) % p.N) :
+    PPre ⟨⟨p.B, p.Z, p.w, minv, p.N, offP p.w, wsWords p.pl, p.dpp, p.pl⟩, offQ p.w p.pl, wsWords p.ql, p.qip⟩ t := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   obtain ⟨hMk', hP', -⟩ := mask_facts (Mk := p.mask xb pb qb qib) rfl hodd hPN hQN
   have hk1 := h.k1
@@ -271,19 +301,27 @@ theorem pS_ct (M : Mont) (E : CrtExpL M) (hP : PPhaseCT M E) : RelCT isa (Two (S
   have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
   have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
-  refine ⟨minv, hr.nv, ?_⟩
   unfold PPre
-  dsimp only [CrtPub.w]
+  dsimp only [CrtPub.w] at hxm ⊢
   refine ⟨mp, mq, _, _, dpb, qib, p.mask xb pb qb qib, hr.good, by omega,
     by omega, show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega, hZq, hwp2,
     wsWords_le (by omega) (by omega), by unfold wsWords; omega,
-    wsWords_le (by omega) (by omega), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv.weak False.elim, hodd, hN1, hr.xm trivial,
+    wsWords_le (by omega) (by omega), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv.weak False.elim, hodd, hN1, hxm,
     hr.pxv, hP'.1, hP'.2, hr.pmask, fun hm => ?_, by rw [hh _ (by decide) (by decide)]; exact h.hDp,
     by rw [hh _ (by decide) (by decide), h.dpl]; exact h.hPl, h.dpl, by rw [h.dpl]; omega, by rw [h.dpl]; omega,
     h.dp.congrK hr.iscr hr.keep, by rw [hh _ (by decide) (by decide)]; exact h.hQi, by rw [h.qil, h.dpl],
     h.qi.congrK hr.iscr hr.keep, by rw [h.qil]; unfold wsWords; omega, fun hm => ?_⟩
   · obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨_, hpq.symm⟩
   · obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact hqi
+
+/-- `p`'s phase leaks the same in runs that agree on the public data. -/
+theorem pS_ct (M : Mont) (E : CrtExpL M) (hP : PPhaseCT M E) : RelCT isa (Two (Stage R4)) (seqs (pPhase M.mm E.code)) (Two (Stage R5)) :=
+  stage_step (hP.mono (fun _ _ h => two_stage (ok := True) (fun p minv => (⟨⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
+    wsWords p.pl, p.dpp, p.pl⟩, offQ p.w p.pl, wsWords p.ql, p.qip⟩ : PPhasePub))
+      (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hr⟩ => ⟨minv, hr.nv, pPre_of h hv hr (hr.xm trivial)⟩) h)
+      fun _ _ h => h)
+    fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, hr⟩ => WP.mono (pPart_ok M E h hv hr rfl) fun _ h' =>
+      ⟨minv, mp, mq, h'⟩
 
 /-! ## The result -/
 
