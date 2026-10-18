@@ -88,6 +88,6 @@ theorem fwdW_ok (s₀ : State) (hi : Input s₀ "VG_MLKEM_NTT16_ZETAS" tableHalv
   refine WP.mono (count_loop (n := 8) (by decide) (fun b s => L2 s₀ s₄.mem b s (s₀.syms "VG_MLKEM_NTT16_ZETAS"))
     (fun b hb w hw => p2_body hp hb hw) j₀) fun s' h' => ⟨h'.st.sp, ?_⟩
   rw [ntt_eq_nttL]
-  exact polyIsW16_of_bytes h'.out
+  exact polyIsW16_of_bytes' h'.out
 
 end VG.Proof.MlKem.AArch64.Ntt16.W

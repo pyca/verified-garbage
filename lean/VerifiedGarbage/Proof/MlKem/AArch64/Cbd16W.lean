@@ -22,7 +22,7 @@ theorem correct (s : State) (hs : cbd2_16AArch64.pre s) :
     ∃ t s', Exec isa code16 s t s' ∧ abiPreserved s s' ∧ cbd2_16AArch64.post s s' := by
   obtain ⟨h1, h2, h3⟩ := hs
   obtain ⟨t, s', he, hi⟩ := loop_ok (s₀ := s) ⟨h1, h2, h3⟩
-  exact ⟨t, s', he, abi_of rfl (by decide +kernel) he, polyIsW16_of_bytes hi.out⟩
+  exact ⟨t, s', he, abi_of rfl (by decide +kernel) he, polyIsW16_of_bytes' hi.out⟩
 
 theorem ct : ConstantTime isa cbd2_16AArch64.pre cbd2_16AArch64.pub code16 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1])
