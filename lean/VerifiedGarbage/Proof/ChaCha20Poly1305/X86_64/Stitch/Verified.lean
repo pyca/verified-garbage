@@ -4706,6 +4706,80 @@ theorem openSmall_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx
   simp only [openSmall, Code.x86_64Depth, Nat.max_le]
   exact ⟨by decide, h, hb⟩
 
+/-! ## The IFMA instance's window with the AVX2 code
+
+`openWin big`, as `openSmall`: the comparison writes only `rax` and the
+flags. -/
+
+/-- What `ifmaTest` leaves, from `s`. -/
+def CmpedW (s t : State) : Prop :=
+  isa.eval .b t = some (decide (ifmaLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < ifmaHi)) ∧ FlagsOnly s t
+
+theorem cmpWin_ok (s : State) : WP isa (.block ifmaTest) s (CmpedW s) :=
+  WP.mono (ifmaTest_ok s) fun _ ⟨e, g, m, rd, wr, mx⟩ => ⟨e, ⟨fun r h _ => g r h, m, rd, wr, mx⟩⟩
+
+theorem openWin_ok (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
+    (hb : ∀ s, openX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s')
+    (s : State) (hs : openX86_64.pre s) :
+    ∃ t s', Exec isa (openWin u.callee big) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
+  have hw : WP isa (openWin u.callee big) s fun z => abiPreserved s z ∧ openX86_64.post s z := by
+    refine WP.seq (WP.mono (cmpWin_ok s) fun e ⟨he, hf⟩ => ?_)
+    refine WP.ite _ he (fun _ => ?_) (fun _ => ?_)
+    · obtain ⟨t, s', ex, ha, hp⟩ := openS_ok u hu e (hf.preO hs)
+      rw [hu] at ex
+      exact ⟨t, s', ex, hf.abi ha, hf.postO hp⟩
+    · obtain ⟨t, s', ex, ha, hp⟩ := hb e (hf.preO hs)
+      exact ⟨t, s', ex, hf.abi ha, hf.postO hp⟩
+  obtain ⟨t, s', he, hq⟩ := hw
+  exact ⟨t, s', he, hq⟩
+
+theorem rel_cmpedW {c : Prog isa} (hc : ConstantTime isa openX86_64.pre openX86_64.pub c)
+    {R : State → State → Prop}
+    (hR : ∀ a b, R a b → ∃ σ₁ σ₂, PPO σ₁ σ₂ ∧ CmpedW σ₁ a ∧ CmpedW σ₂ b) :
+    RelCT isa R c fun _ _ => True := by
+  intro a b t₁ t₂ a' b' hr e₁ e₂
+  obtain ⟨σ₁, σ₂, ⟨p₁, p₂, hp⟩, ⟨-, f₁⟩, ⟨-, f₂⟩⟩ := hR a b hr
+  exact ⟨hc _ _ _ _ _ _ (f₁.preO p₁) (f₂.preO p₂) (FlagsOnly.pubO f₁ f₂ hp) e₁ e₂, trivial⟩
+
+theorem openWin_ct (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
+    (hb : ConstantTime isa openX86_64.pre openX86_64.pub big) :
+    ConstantTime isa openX86_64.pre openX86_64.pub (openWin u.callee big) := by
+  refine RelCT.constantTime (Q := fun _ _ => True) ?_
+  have hblk : RelCT isa PPO (.block ifmaTest) fun _ _ => True := by
+    obtain ⟨_, hc⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r9]) (.block ifmaTest) hc).isSome = true :=
+      ⟨_, by taint_decide⟩
+    exact RelCT.taint (A := taint) (Taint.ofRegs [.r9]) (fun s₁ s₂ h => Taint.agree_ofRegs (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.2.2.2.2.1)) hc
+  refine RelCT.seq (RelCT.wpDep (F := CmpedW) hblk fun s₁ s₂ _ => ⟨cmpWin_ok s₁, cmpWin_ok s₂⟩) ?_
+  refine RelCT.ite (fun a b ⟨_, σ₁, σ₂, ⟨_, _, hp⟩, ⟨e₁, _⟩, ⟨e₂, _⟩⟩ => ?_) ?_ ?_
+  · rw [e₁, e₂, show σ₁.gpr .r9 = σ₂.gpr .r9 from hp.2.2.2.2.2.1]
+  · have hs := openS_ct u hu
+    rw [hu] at hs
+    exact rel_cmpedW hs
+      fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
+  · exact rel_cmpedW hb fun a b ⟨⟨_, σ₁, σ₂, hp, h₁, h₂⟩, _⟩ => ⟨σ₁, σ₂, hp, h₁, h₂⟩
+
+theorem openWin_verified (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
+    (hb : ∀ s, openX86_64.pre s → ∃ t s', Exec isa big s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s')
+    (hc : ConstantTime isa openX86_64.pre openX86_64.pub big) :
+    Verified X86_64.target (openWin u.callee big) (openScratchContract X86_64.abi 212 24) :=
+  Verified.of_correct (openWin_ok u hu hb) (openWin_ct u hu hc) openS_implies
+
+theorem openWin_spSafe (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
+    (hb : big.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (openWin u.callee big).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h := openS_spSafe u hu
+  rw [hu] at h
+  simp only [openWin, Code.all, hb, Bool.and_true]
+  exact Bool.and_eq_true_iff.mpr ⟨by decide, h⟩
+
+theorem openWin_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2) {big : Prog isa}
+    (hb : big.x86_64Depth ≤ 24) : (openWin u.callee big).x86_64Depth ≤ 24 := by
+  have h := openS_xdepth u
+  rw [hu] at h
+  simp only [openWin, Code.x86_64Depth, Nat.max_le]
+  exact ⟨by decide, h, hb⟩
+
 /-! ## The `open` of an instance -/
 
 theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -4716,6 +4790,11 @@ theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   | avx512 =>
     rw [hb] at h₁
     have := openSmall_spSafe v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
+  | ifma =>
+    rw [hb] at h₁
+    have := openWin_spSafe Proof.ChaCha20.X86_64.XorImpl.avx512vl.small
+      Proof.ChaCha20.X86_64.XorImpl.avx512vl.small_poly h₁
     rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
   | _ => rw [hb] at h₁; exact h₁
 
@@ -4735,6 +4814,21 @@ theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     have hv := openSmall_verified v.small v.small_poly ho hc
     have hs' := openSmall_spSafe v.small v.small_poly hs
     have hd' := openSmall_xdepth v.small v.small_poly hd
+    rw [Proof.ChaCha20.X86_64.XorImpl.small_callee] at hv hs' hd'
+    exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+      (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+      (bytes := 1720) (k := 42) hv (by decide) (by decide) (by decide) hs' hd' (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+      openFrameSat_pre
+  | ifma =>
+    have ho := open_ok v
+    have hc := open_ct v
+    have hs := open_spSafe v
+    have hd := open_xdepth v
+    rw [hb] at ho hc hs hd
+    have hp := Proof.ChaCha20.X86_64.XorImpl.avx512vl.small_poly
+    have hv := openWin_verified _ hp ho hc
+    have hs' := openWin_spSafe _ hp hs
+    have hd' := openWin_xdepth _ hp hd
     rw [Proof.ChaCha20.X86_64.XorImpl.small_callee] at hv hs' hd'
     exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
       (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
