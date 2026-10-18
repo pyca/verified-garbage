@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 # Inversion by divsteps on x86-64: a batch
 
 The signed linear combinations of a batch as integers modulo the words'
-range (`linM_ok`), the shift by 59 of a multiple of `2^59` (`shrM_ok`), and a
+range (`linR_ok`), the shift by 59 of a multiple of `2^59` (`shrM_ok`), and a
 batch: `59` divsteps on the low words, then `f`, `g`, `a`, `b` updated by
 their matrix, as `Divstep.batch` (`batch_ok`).
 -/
@@ -31,49 +31,6 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
-
-/-- `[T] = u [x] + v [y]` modulo `2^(64 K)`, for words `u`, `v` (signed) in `w`, `w'`. -/
-theorem linM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
-    (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
-    {T x y U k K : Nat} (hkK : k ≤ K) (hK : 2 ≤ K) (hk' : K ≤ k + 1)
-    (hx : x + 8 * k ≤ size) (hy : y + 8 * k ≤ size) (hT : T + 8 * K ≤ size) (hU : U + 8 * (K - 1) ≤ size)
-    (hTx : T + 8 * K ≤ x ∨ x + 8 * k ≤ T) (hTy : T + 8 * K ≤ y ∨ y + 8 * k ≤ T)
-    (hUT : U + 8 * (K - 1) ≤ T ∨ T + 8 * K ≤ U) (hUx : U + 8 * (K - 1) ≤ x ∨ x + 8 * k ≤ U)
-    (hUy : U + 8 * (K - 1) ≤ y ∨ y + 8 * k ≤ U) :
-    WP isa (.block (lin w w' T x y U k K)) s fun t =>
-      (wordsVal t.mem base T K : Int) % ((2 ^ (64 * K) : Nat) : Int) =
-        ((s.gpr w).toInt * wordsVal s.mem base x k + (s.gpr w').toInt * wordsVal s.mem base y k) %
-          ((2 ^ (64 * K) : Nat) : Int) ∧
-      KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧ Unch base [(T, 8 * K), (U, 8 * (K - 1))] s.mem t.mem := by
-  refine WP.mono (lin_ok hs hw hw' hkK hK hk' hx hy hT hU hTx hTy hUT hUx hUy) fun t ⟨e, kt, O⟩ => ⟨?_, kt, O⟩
-  rw [masked_smask, masked_smask] at e
-  have e' := congrArg (Nat.cast : Nat → Int) e
-  push_cast at e'
-  rw [← Divstep.toInt_sgn, ← Divstep.toInt_sgn]
-  refine Divstep.lin_words (X' := wordsVal s.mem base x (K - 1)) (Y' := wordsVal s.mem base y (K - 1)) ?_ ?_ ?_
-  · have := shifted_cong s.mem base x (k := k) (K := K) (by omega_using [hk']) (by omega_using [hK]); push_cast at this; exact this
-  · have := shifted_cong s.mem base y (k := k) (K := K) (by omega_using [hk']) (by omega_using [hK]); push_cast at this; exact this
-  · push_cast; convert e' using 3
-
-/-- `linM_ok` for `linC`: `lin`, or `linR` for up to five words, whose
-coefficients are below `2^62` in magnitude. -/
-theorem linCM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
-    (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
-    {T x y U k K : Nat} (hkK : k ≤ K) (hK : 3 ≤ K) (hk' : K ≤ k + 1)
-    (hx : x + 8 * k ≤ size) (hy : y + 8 * k ≤ size) (hT : T + 8 * K ≤ size) (hU : U + 8 * (K - 1) ≤ size)
-    (hTx : T + 8 * K ≤ x ∨ x + 8 * k ≤ T) (hTy : T + 8 * K ≤ y ∨ y + 8 * k ≤ T)
-    (hUT : U + 8 * (K - 1) ≤ T ∨ T + 8 * K ≤ U) (hUx : U + 8 * (K - 1) ≤ x ∨ x + 8 * k ≤ U)
-    (hUy : U + 8 * (K - 1) ≤ y ∨ y + 8 * k ≤ U)
-    (hu : (s.gpr w).toInt.natAbs ≤ 2 ^ 62) (hv : (s.gpr w').toInt.natAbs ≤ 2 ^ 62) :
-    WP isa (.block (linC w w' T x y U k K)) s fun t =>
-      (wordsVal t.mem base T K : Int) % ((2 ^ (64 * K) : Nat) : Int) =
-        ((s.gpr w).toInt * wordsVal s.mem base x k + (s.gpr w').toInt * wordsVal s.mem base y k) %
-          ((2 ^ (64 * K) : Nat) : Int) ∧
-      KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧ Unch base [(T, 8 * K), (U, 8 * (K - 1))] s.mem t.mem := by
-  unfold linC
-  split
-  · exact linR_ok hs hw hw' hkK hK hk' hx hy hT hU hTx hTy hUT hUx hUy hu hv
-  · exact linM_ok hs hw hw' hkK (by omega) hk' hx hy hT hU hTx hTy hUT hUx hUy
 
 /-- A coefficient of a batch's matrix is below `2^62` in magnitude. -/
 theorem coef_natAbs {u : Int} (h : |u| ≤ 2 ^ 59) : (BitVec.ofInt 64 u).toInt.natAbs ≤ 2 ^ 62 := by
@@ -119,13 +76,13 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (hf : (wordsVal s.mem base x L : Int) % ((2 ^ (64 * L) : Nat) : Int) = f % ((2 ^ (64 * L) : Nat) : Int))
     (hg : (wordsVal s.mem base y L : Int) % ((2 ^ (64 * L) : Nat) : Int) = g % ((2 ^ (64 * L) : Nat) : Int))
     (hfb : |f| ≤ p) (hgb : |g| ≤ p) (hp : p < 2 ^ (64 * (L - 1))) (hdiv : 2 ^ 59 ∣ u * f + v * g) :
-    WP isa (.block (linC w w' T x y U L L ++ shr59 dst T L)) s fun t =>
+    WP isa (.block (linR w w' T x y U L L ++ shr59 dst T L)) s fun t =>
       (wordsVal t.mem base dst L : Int) % ((2 ^ (64 * L) : Nat) : Int) =
         ((u * f + v * g) / 2 ^ 59) % ((2 ^ (64 * L) : Nat) : Int) ∧
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧
       Unch base [(T, 8 * L), (U, 8 * (L - 1)), (dst, 8 * L)] s.mem t.mem := by
   rw [WP.block_append_iff]
-  refine WP.mono (linCM_ok hs hw hw' (k := L) (K := L) (Nat.le_refl _) hL (by omega_using []) hx hy hT hU hTx hTy hUT hUx hUy
+  refine WP.mono (linR_ok hs hw hw' (k := L) (K := L) (Nat.le_refl _) hL (by omega_using []) hx hy hT hU hTx hTy hUT hUx hUy
     (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
     (by rw [hv]; exact coef_natAbs (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv)))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
@@ -151,7 +108,7 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     (hTm : T + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ T) (hUm : U + 8 * (M.n + 1) ≤ M.mo ∨ M.mo + 8 * M.n ≤ U)
     {a b : Int} (ha : (wordsVal s.mem base x M.n : Int) = a) (hb : (wordsVal s.mem base y M.n : Int) = b)
     (ha0 : |a| ≤ p) (hb0 : |b| ≤ p) :
-    WP isa (.block (linC w w' T x y U M.n (M.n + 1) ++ mredC M dst T U)) s fun t =>
+    WP isa (.block (linR w w' T x y U M.n (M.n + 1) ++ mredC M dst T U)) s fun t =>
       (wordsVal t.mem base dst M.n : Int) = Divstep.mred p M.minv.toNat (u * a + v * b) ∧
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧
       Unch base [(T, 8 * (M.n + 2)), (U, 8 * (M.n + 1)), (dst, 8 * M.n)] s.mem t.mem := by
@@ -159,7 +116,7 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hn0 := hM.n0
   rw [WP.block_append_iff]
   -- `omega` given the fact it needs: the context has eight disjunctions it would split.
-  refine WP.mono (linCM_ok hs hw hw' (k := M.n) (K := M.n + 1) (Nat.le_succ _) (by omega_using [hn2])
+  refine WP.mono (linR_ok hs hw hw' (k := M.n) (K := M.n + 1) (Nat.le_succ _) (by omega_using [hn2])
     (Nat.le_refl _) hx hy (by omega_using [hT]) (by omega_using [hU]) (by omega_using [hTx])
     (by omega_using [hTy]) (by omega_using [hUT]) (by omega_using [hUx]) (by omega_using [hUy])
     (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
@@ -348,8 +305,8 @@ tactic_template "inv_cover_omega" : tactic =>
 
 /-- Both halves of the update of `f`, `g` into `f'`, `g'`. -/
 abbrev fgHalves (P : InvCfg) : List Instr :=
-  (linC .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L) ++
-  (linC .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L)
+  (linR .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L) ++
+  (linR .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L)
 
 /-- The update of `f`, `g`. -/
 abbrev fgCode (P : InvCfg) : List Instr :=
@@ -435,8 +392,8 @@ tactic_template "inv_slotm_omega" : tactic =>
 
 /-- Both halves of the update of `a`, `b`, into `a'` and `b`. -/
 abbrev abHalves (P : InvCfg) : List Instr :=
-  (linC .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU) ++
-  (linC .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU)
+  (linR .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU) ++
+  (linR .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU)
 
 /-- The update of `a`, `b`. -/
 abbrev abCode (P : InvCfg) : List Instr := abHalves P ++ copy P.M.n P.sA P.sNF

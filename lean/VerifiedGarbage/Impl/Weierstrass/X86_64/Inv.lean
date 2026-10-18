@@ -23,10 +23,11 @@ depends on the numbers but through masks and `cmov`.
 
 The shift by five in the multi-word division uses `shl`. The model has no
 arithmetic right shift, so the mask of a word's sign is `0 - (x >> 63)`. The signed
-products of the matrix and the numbers are unsigned products by `mul`, less
-the number shifted by a word for a negative entry (`lin`), and since `and`
-clears the carry flag, the masked operands of a carry chain are copied out
-first (`maskCopy`). The multi-word sums are the wide Montgomery
+products of the matrix and the numbers are unsigned products by `mul` of the
+entry's magnitude and the number's words, each complemented for a negative
+entry, column by column in registers (`linR`), and since `and` clears the
+carry flag, the masked operands of a carry chain are copied out first
+(`maskCopy`). The multi-word sums are the wide Montgomery
 multiplication's rows (`memRow`, `chainW`). The registers are those of
 `pow` (`rbx` and the multiplication's for 4 words: `rax`, `rcx`, `rdx`,
 `rbp`, `r8`–`r13`), and the batches' count in `r14`, which the callers free
@@ -138,22 +139,10 @@ def maskCopy (m : Reg) (dst src : Nat) : Nat → List Instr
   | k + 1 => [.mov .r8 (.mem (sc src)), .alu .and .r8 (.reg m), .store (sc dst) .r8] ++
       maskCopy m (dst + 8) (src + 8) k
 
-/-- `[t] = w [x] + w' [y]`, signed, modulo `2^(64 K)` (`K` is `k` or
-`k + 1`): unsigned products (`memRow`, the multiplier in `rcx`), less
-`2^64 [x]` for a negative `w` and `2^64 [y]` for a negative `w'`, the masked
-words copied to `[U]` first; through `rax`, `rcx`, `rdx`, `rbp`, `r8`, `r13`. -/
-def lin (w w' : Reg) (t x y U k K : Nat) : List Instr :=
-  zeroWords K t ++
-  ([.mov .rcx (.reg w)] : List Instr) ++ memRow k t x ++ ((if k < K then [.store (sc (t + 8 * k)) .rbp] else []) : List Instr) ++
-  ([.mov .rcx (.reg w')] : List Instr) ++ memRow k t y ++
-  ((if k < K then [.mov .r8 (.mem (sc (t + 8 * k))), .alu .add .r8 (.reg .rbp), .store (sc (t + 8 * k)) .r8]
-    else []) : List Instr) ++
-  maskOf .r13 w ++ maskCopy .r13 U x (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U ++
-  maskOf .r13 w' ++ maskCopy .r13 U y (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U
+/-! ### In registers
 
-/-! ### In registers, for numbers of up to five words
-
-`linR`, the same combination as `lin` column by column: with `|w|` in `rcx`,
+`[t] = w [x] + w' [y]`, signed, modulo `2^(64 K)` (`K` is `k` or `k + 1`),
+column by column (`linR`): with `|w|` in `rcx`,
 `|w'|` in `rbp` and their signs' masks at `[U]`, `[U + 8]`, `w x ≡ |w| (x ⊕ mask) +
 (|w| & mask)` modulo `2^(64 K)` (`x ⊕ mask` word by word, `x`'s words past `k`
 zero); each column's two products are added to the accumulator `r8`, `r13`,
@@ -194,15 +183,11 @@ def linCols (T x y U : Nat) : Nat → List Instr
   | 0 => []
   | i + 1 => linCols T x y U i ++ linCol T x y U i
 
-/-- `lin`'s result in registers (`k ≤ K ≤ k + 1`, `3 ≤ K`), through `rax`, `rcx`,
+/-- `[T] = w [x] + w' [y]`, signed, modulo `2^(64 K)` (`k ≤ K ≤ k + 1`, `3 ≤ K`), through `rax`, `rcx`,
 `rdx`, `rbp`, `r8`, `r13` and `[U]`, `[U + 8]`. -/
 def linR (w w' : Reg) (T x y U k K : Nat) : List Instr :=
   absMask w .rcx U ++ absMask w' .rbp (U + 8) ++ linInit U ++ linCols T x y U k ++
     (if k < K then linColTop T U k else [])
-
-/-- `lin`, or `linR` for numbers of up to five words. -/
-def linC (w w' : Reg) (T x y U k K : Nat) : List Instr :=
-  if K ≤ 5 then linR w w' T x y U k K else lin w w' T x y U k K
 
 /-- `r8 *= 32`, by a left shift. -/
 def shl5 : List Instr := [.shift .shl .r8 5]
@@ -310,14 +295,14 @@ def words : List Instr :=
 
 /-- `(f, g) := (u f + v g, q f + r g) / 2^59`. -/
 def fgUpdate : List Instr :=
-  linC .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L ++
-  linC .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L ++
+  linR .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L ++
+  linR .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L ++
   copy P.L P.sF P.sNF ++ copy P.L P.sG P.sNG
 
 /-- `(a, b) := (u a + v b, q a + r b) / 2^64 mod p`; `a` staged in `f'`. -/
 def abUpdate : List Instr :=
-  linC .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU ++
-  linC .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU ++
+  linR .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU ++
+  linR .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU ++
   copy P.M.n P.sA P.sNF
 
 /-- The count of batches less one, its zero flag for the loop. -/
