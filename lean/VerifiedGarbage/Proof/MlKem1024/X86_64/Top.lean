@@ -15,7 +15,9 @@ meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Spec.MlKem.EncapsH
@@ -66,15 +68,6 @@ theorem ektWf1024 : EkF.EkTWf kem1024 where
   hcT := ⟨_, by taint_decide⟩
   ij := by decide +kernel
 
-/-- The implementations of `vg_mlkem1024_compress_encode` and `vg_mlkem1024_decode_decompress`. -/
-theorem ce1024I : ∀ cs : Codecs, CEImpl (ceN1024 cs) (ce1024 cs) Spec.MlKem1024.compressWidths
-  | .base => ceImpl1024
-  | .avx2 => ceImpl1024Y
-
-theorem dd1024I : ∀ cs : Codecs, DDImpl (ddN1024 cs) (dd1024 cs) Spec.MlKem1024.compressWidths
-  | .base => ddImpl1024
-  | .avx2 => ddImpl1024Y
-
 theorem ce1024_ctl : ∀ cs : Codecs, ctlOk (ce1024 cs) = true
   | .base => by decide +kernel
   | .avx2 => by decide +kernel
@@ -90,10 +83,6 @@ theorem ce1024_sp : ∀ cs : Codecs, (ce1024 cs).all (fun i => !isa.writesSp i) 
 theorem dd1024_sp : ∀ cs : Codecs, (dd1024 cs).all (fun i => !isa.writesSp i) = true
   | .base => Code.all_of_allInstrs (by decide +kernel)
   | .avx2 => Code.all_of_allInstrs (by decide +kernel)
-
-/-- The compressions it calls. -/
-theorem calls1024 : KemCalls kem1024 Spec.MlKem1024.compressWidths Spec.MlKem1024.compressWidths :=
-  ⟨ce1024I, dd1024I, by decide, by decide⟩
 
 /-- States satisfying the shared contracts' preconditions. -/
 def keyGen1024Sat : State where
