@@ -99,7 +99,7 @@ def sSrcLen : Nat := 72
 def sDst : Nat := 76
 def sDstLen : Nat := 80
 /-- The private-key operation's result. -/
-def sR : Nat := 84
+def sRes : Nat := 84
 /-- The mask `ok`. -/
 def sOk : Nat := 88
 
@@ -302,13 +302,13 @@ def privArgs : List Instr :=
 
 /-- The result to its slot; the flags of `k < 2 hLen + 2`. -/
 def decChk : List Instr :=
-  [sp0, st .r0 sR, ld .r0 (arg 4), mw .r1 (2 * H.D + 2), .dp .sub .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31),
+  [sp0, st .r0 sRes, ld .r0 (arg 4), mw .r1 (2 * H.D + 2), .dp .sub .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31),
     .cmp .r0 (.imm 0)]
 
 /-- `r0 := (r = 2) ? 2 : 0`, for `r` (in its slot) 0, 1 or 2: the top bit of
 `(r ⊕ 2) - 1`, doubled. -/
 def faultBit : List Instr :=
-  [ld .r1 sR, .dp .eor .r1 .r1 (.imm 2), .dp .sub .r1 .r1 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31),
+  [ld .r1 sRes, .dp .eor .r1 .r1 (.imm 2), .dp .sub .r1 .r1 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31),
     .mov .r0 (.shifted .r1 .lsl 1)]
 
 /-- `msg_len` (`r1`), and the length `r3` and zero (`r2`) to store there. -/
@@ -368,7 +368,7 @@ def shift : Prog isa := .seq (.block Impl.RsaPss.Arm.shInit) (.loop passOne .ne)
 /-- `ok`: all ones exactly when `r = 1` and `acc = 0` (each below `2^31`), to
 its slot. -/
 def okMask : List Instr :=
-  [sp0, ld .r0 sR, .dp .eor .r0 .r0 (.imm 1), .dp .sub .r0 .r0 (.imm 1), .mov .r0 (.shifted .r0 .lsr 31), ld .r1 sAcc,
+  [sp0, ld .r0 sRes, .dp .eor .r0 .r0 (.imm 1), .dp .sub .r0 .r0 (.imm 1), .mov .r0 (.shifted .r0 .lsr 31), ld .r1 sAcc,
     .dp .sub .r1 .r1 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31), .dp .and .r0 .r0 (.reg .r1), mw .r1 0,
     .dp .sub .r0 .r1 (.reg .r0), st .r0 sOk]
 
