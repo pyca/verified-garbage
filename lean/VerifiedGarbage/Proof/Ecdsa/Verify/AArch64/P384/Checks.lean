@@ -34,9 +34,7 @@ macro "reg_ct" rs:term : tactic => `(tactic|
 /-- The window method's slots, which the public NAF uses. -/
 abbrev Kq := winQ p384
 
-theorem add_checks {p q o : VG.Impl.Weierstrass.Pt} (hp : p = Kq.R ∧ q = Kq.E ∧ o = Kq.D ∨
-    p = Kq.D ∧ q = Kq.E ∧ o = Kq.R) : JacAddChecks Kq p q o := by
-  rcases hp with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;> exact {
+theorem add_checks : JacAddChecks Kq Kq.D Kq.E Kq.R := {
     zero := by
       intro a ha
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
@@ -48,11 +46,9 @@ theorem add_checks {p q o : VG.Impl.Weierstrass.Pt} (hp : p = Kq.R ∧ q = Kq.E 
     double := by reg_ct [.x0]
     infinity := by reg_ct [.x0] }
 
-theorem table_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (.seq (Jacobian.jacAdd Kq Kq.R Kq.E Kq.D)
-    (.block (copyPt Kq.M.n Kq.R Kq.D)) : Prog isa), clobbers i r = false := by
-  have h : (instrs (.seq (Jacobian.jacAdd Kq Kq.R Kq.E Kq.D) (.block (copyPt Kq.M.n Kq.R Kq.D)) : Prog isa)).all
-      (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false)) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
+theorem keep_of {c : Prog isa}
+    (h : (instrs c).all (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false)) = true) :
+    ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs c, clobbers i r = false := by
   intro r hr i hi
   have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -60,17 +56,25 @@ theorem table_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (.seq (Jacobian
   · exact hh.1
   · exact hh.2
 
+theorem dblu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (fprogB Kq.M (PubNaf.dbluOps Kq)),
+    clobbers i r = false :=
+  keep_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+
+theorem zaddu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (fprogB Kq.M (PubNaf.zadduOps Kq)),
+    clobbers i r = false :=
+  keep_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+
 theorem window_checks : PubNaf.WindowChecks Kq where
   table := {
-    dbl := by reg_ct [.x0]
     copyP := by reg_ct [.x0]
     ptr := by reg_ct [.x0]
     store := by reg_ct [.x0, .x20]
     set := by reg_ct [.x0, .x20]
-    add := add_checks (Or.inl ⟨rfl, rfl, rfl⟩)
-    copyD := by reg_ct [.x0]
+    dblu := by reg_ct [.x0]
+    zaddu := by reg_ct [.x0]
     bump := by reg_ct [.x0, .x19, .x20]
-    keep := table_keep }
+    keepD := dblu_keep
+    keep := zaddu_keep }
   infinity := by reg_ct [.x0]
   counter := by reg_ct [.x0]
   step := {
@@ -81,7 +85,7 @@ theorem window_checks : PubNaf.WindowChecks Kq where
       lookup := by reg_ct [.x0, .x2]
       sign := by reg_ct [.x0, .x19]
       neg := by reg_ct [.x0]
-      add := add_checks (Or.inr ⟨rfl, rfl, rfl⟩)
+      add := add_checks
       copy := by reg_ct [.x0] } }
   finish := by reg_ct [.x0]
 

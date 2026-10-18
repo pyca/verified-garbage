@@ -76,7 +76,7 @@ theorem pubNafPrep_ok (hc : CfgOk c) (hn6 : c.n ≤ 6) (hC : Law c.C) {base : Ad
       PubNaf.NafFixed (winQ c) c.C base t P (sv c base s V) ∧
       (∀ x ∈ winRo (winQ c), tmv c.C c.n base t x = tmv c.C c.n base s x) ∧
       t.sp = s.sp ∧ Unch base (winX c) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Fixed c base g t.mem := by
+      Fixed c base g t.mem ∧ tmv c.C c.n base t (winQ c).P.z = 1 := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -127,7 +127,7 @@ theorem pubNafPrep_ok (hc : CfgOk c) (hn6 : c.n ≤ 6) (hC : Law c.C) {base : Ad
     have hh := InvJ.of_rep hC hp
     simpa only [one, Lean.Grind.Semiring.mul_one] using hh
   refine ⟨hs₂, modP_of hc F₂.mp, ⟨hlt, F₂.zero, hj, fun i hi => p₂.digits i hi⟩, ?_, k₂.sp, U₂,
-    k₂.rd, k₂.wr, F₂⟩
+    k₂.rd, k₂.wr, F₂, one⟩
   intro x hx
   simp only [winRo, List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
@@ -136,7 +136,8 @@ theorem pubNafPrep_ok (hc : CfgOk c) (hn6 : c.n ≤ 6) (hC : Law c.C) {base : Ad
     tv (i := PY) (by decide) (by decide), tv (i := ONEP) (by decide) (by decide)]
 
 /-- `[v]Q` by the public NAF, into `R`. -/
-theorem pubNafMul_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C) {base : Addr}
+theorem pubNafMul_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C)
+    (hO : PrimeOrder c.C) (hn17 : 17 ≤ c.C.n) {base : Addr}
     {s : State} (hs : Scr s base size) {g : Reg → BitVec 64} (F : Fixed c base g s.mem)
     {P : Point c.C} (hP : onCurve c.C P = true)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
@@ -149,10 +150,11 @@ theorem pubNafMul_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : La
   have hk : sv c base s V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   apply WP.seq
   refine WP.mono (pubNafPrep_ok hc hn6 hC hs F hpx hpy hrep)
-    fun s₂ ⟨hs₂, hM₂, hF₂, _, _, U₂, rd₂, wr₂, _⟩ => ?_
+    fun s₂ ⟨hs₂, hM₂, hF₂, _, _, U₂, rd₂, wr₂, _, z₂⟩ => ?_
   refine WP.seq (WP.mono (PubNaf.window_ok (nafLayQ hc hn4 hn6) (unitMod_pow_two hc.p_odd (64 * c.n))
     hC hc.am3 hc.p_lt (hmont 1)
-    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hP hs₂ hM₂ hF₂ hk)
+    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hO hn17 hP hs₂ hM₂ hF₂
+    z₂ hk)
     fun s₃ ⟨S₃, L₃, R₃⟩ => h s₃ ?_)
   have U₃ := S₃.unch
   rw [winW_eq] at U₃

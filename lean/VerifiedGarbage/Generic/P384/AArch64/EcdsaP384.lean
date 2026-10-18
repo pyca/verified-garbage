@@ -66,7 +66,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`, reading the entry of each \
       digit of the public `u` directly rather than scanning its table), and `[v]Q` the \
       width-5 non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` \
-      recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q`, and for each digit from the top a \
+      recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q` built by co-Z arithmetic (a \
+      doubling of the affine `Q` giving `2Q` and `Q` at one `Z`, then seven additions of `2Q` \
+      sharing each sum's `Z`, never `±2Q` itself since the curve's order is prime), and for each digit from the top a \
       doubling in Jacobian coordinates and, for a digit other than 0, a complete Jacobian addition \
       of the entry it selects, read directly, with its `y` negated for a negative digit; the \
       products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`), converted \
@@ -78,6 +80,6 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       the time only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384
-    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.inv (Proof.P384.combOk7 h.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.prime h.inv (Proof.P384.combOk7 h.law) }]
 
 end VG.Generic.P384.AArch64.EcdsaP384

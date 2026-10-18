@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -197,9 +198,10 @@ theorem head_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafL
 /-- `[k]P` into `R`, projective, for `k < 2^(64 n)` whose digits are at `K.bits`. -/
 theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) (hpn : C.p < 2 ^ (64 * K.M.n))
-    (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
-    {P : Point C} (hP : onCurve C P = true) {s : State} (hs : Scr s base size)
-    (hM : ModOkA K.M size C.p s.mem base) (hF : NafFixed K C base s P k) (hk : k < 2 ^ (64 * K.M.n)) :
+    (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) (hO : PrimeOrder C)
+    (hn17 : 17 ≤ C.n) {P : Point C} (hP : onCurve C P = true) {s : State} (hs : Scr s base size)
+    (hM : ModOkA K.M size C.p s.mem base) (hF : NafFixed K C base s P k)
+    (hz1 : tmv C K.M.n base s K.P.z = 1) (hk : k < 2 ^ (64 * K.M.n)) :
     WP isa (PubNaf.window K) s fun t => NSt K C base size P s t ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base t K.R.x) (tmv C K.M.n base t K.R.y) (tmv C K.M.n base t K.R.z)
@@ -208,7 +210,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Na
   have hn0 := hW.n0
   have h6 := hL.n6
   rw [PubNaf.window]
-  refine WP.seq (WP.mono (table_ok hL hp hC hM3 hone_lt hP hs hM hF) fun s₁ S₁ => ?_)
+  refine WP.seq (WP.mono (table_ok hL hp hC hM3 hO hn17 hP hs hM hF hz1) fun s₁ S₁ => ?_)
   -- `D = O`, `x19 = 64 n`.
   apply WP.seq
   refine WP.mono (head_ok hL hone_lt hF S₁ hk) fun s₃ ⟨S₃, x₃, Dl₃, DJ₃⟩ => ?_

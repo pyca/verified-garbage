@@ -56,12 +56,14 @@ theorem verify_untouched : KeepsUntouched verifyP384 := by lit_decide
 
 theorem verify_keepsV : verifyP384.allInstrs keepsV = true := by lit_decide
 
-theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
+    (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (s : State)
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := pubNafVerify_ok (p384_ok hI) (by decide) (by decide) hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := pubNafVerify_ok (p384_ok hI) (by decide) (by decide) hL hO (by decide) hT
+    (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
 
 /-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
@@ -87,21 +89,23 @@ theorem jacPublic_of_spec {s₁ s₂ : State}
   · exact front.2
   · exact parts.2
 
-theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
+    (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     ConstantTime isa
       (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)).pre
       (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)).pub verifyP384 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
-  exact pubNafVerify_public_ct (p384_ok hI) (by decide) (by decide) hL hT verify_checks _ _ _ _ _ _
+  exact pubNafVerify_public_ct (p384_ok hI) (by decide) (by decide) hL hO (by decide) hT verify_checks _ _ _ _ _ _
     (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (jacPublic_of_spec pub) e₁ e₂
 
-theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
+    (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     Verified AArch64.target verifyP384
       (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)) := by
-  refine ⟨fun s hs => ?_, verify_ct hL hI hT, implies.sat⟩
-  obtain ⟨t, s', he, ha, hp⟩ := verify_a64 hL hI hT s (implies.pre _ hs)
+  refine ⟨fun s hs => ?_, verify_ct hL hO hI hT, implies.sat⟩
+  obtain ⟨t, s', he, ha, hp⟩ := verify_a64 hL hO hI hT s (implies.pre _ hs)
   exact ⟨t, s', he, ha, implies.post s s' hs hp⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64.P384
