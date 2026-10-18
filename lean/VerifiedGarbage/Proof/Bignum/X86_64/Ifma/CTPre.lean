@@ -153,13 +153,17 @@ theorem prep_chain (M : Mont) {sl : Nat} {p : UPub} {s : State} (h : PrepPre sl 
     hc₆.good (Nat.le_refl _) hwx2 (by omega) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hX₆.inv (by rw [hX₆.n, hX₆.one]; exact hX1)) fun _ h₇ => h₇.1.rdi⟩
 
-/-- `prep` is constant time. -/
-theorem prep_ct (M : Mont) (sl : Nat) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
+/-- `prep`'s start, up to `aXc := aT`. -/
+abbrev prepHead (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog isa) :=
+  ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ (redc mul Public.aR2 ++
+    (copyArr Public.aY aXc ++ (redc mul Public.aXm ++ (([mul aT Public.aY aXc] : List (Prog isa)) ++
+      copyArr aXc aT))))
+
+/-- `prep`'s start is constant time. -/
+theorem prepHead_ct (M : Mont) (sl : Nat) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov .rdi (.mem (hdr sl))]) hc).isSome = true) :
-    RelCT isa (Two (PrepPre sl)) (seqs (CrtIfma.prep M.mm sl)) fun _ _ => True := by
-  refine two_map id (fun _ _ h => prep_chain M h) ?_
-  rw [prep_eq]
+    RelCT isa (Two (PP0 M sl)) (seqs (prepHead M.mm sl)) (Two (PP6 M)) := by
   refine RelCT.seqs_app (by simp) (by simp [redc]) (ct_taint [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1, h₂.1]) hT (fun _ _ h => h.2) ?_)
   refine ct_steps (by simp [redc]) (by simp [copyArr]) xp (fun _ _ h => h.1) (fun _ _ h => h.2) hR2 ?_
@@ -168,8 +172,20 @@ theorem prep_ct (M : Mont) (sl : Nat) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT 
   refine ct_steps (by simp [redc]) (by simp) xp (fun _ _ h => h.1) (fun _ _ h => h.2) hXm ?_
   refine ct_steps (by simp) (by simp [copyArr]) UPub.pw (fun _ _ h => h.1) (fun _ _ h => h.2)
     (M.ct (by unfold MmUse; decide)) ?_
-  refine ct_steps (by simp [copyArr]) (by simp) UPub.pw (fun _ _ h => h.1) (fun _ _ h => h.2)
-    (copyArr_ct (by decide) (by decide) (by taint_decide)) ?_
+  exact two_post (two_map UPub.pw (fun _ _ h => h.1) (copyArr_ct (by decide) (by decide) (by taint_decide)))
+    fun _ _ h => h.2
+
+/-- `prep` is constant time. -/
+theorem prep_ct (M : Mont) (sl : Nat) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov .rdi (.mem (hdr sl))]) hc).isSome = true) :
+    RelCT isa (Two (PrepPre sl)) (seqs (CrtIfma.prep M.mm sl)) fun _ _ => True := by
+  refine two_map id (fun _ _ h => prep_chain M h) ?_
+  rw [prep_eq, show ∀ a b c d (e f : List (Prog isa)), a ++ (b ++ (c ++ (d ++ (e ++ (f ++
+      ([M.mm Public.aY Public.aY Public.aOne, .block [leave]] : List (Prog isa))))))) =
+      a ++ (b ++ (c ++ (d ++ (e ++ f)))) ++ [M.mm Public.aY Public.aY Public.aOne, .block [leave]] from
+    fun _ _ _ _ _ _ => by simp only [List.append_assoc]]
+  refine RelCT.seqs_app (by simp) (by simp) (RelCT.seq (prepHead_ct M sl hR2 hXm hT) ?_)
   exact ct_step UPub.pw (fun _ _ h => h.1) (fun _ _ h => h.2) (M.ct (by unfold MmUse; decide))
     (two_taint [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [show s₁.gpr .rdi = _ from h₁, h₂]) (by taint_decide))

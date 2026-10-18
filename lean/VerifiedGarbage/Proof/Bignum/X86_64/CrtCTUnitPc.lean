@@ -47,6 +47,32 @@ def PreAt (B : Addr) (Z : Nat) (P : Addr) (W : Nat) (rsp : Addr) (s : State) : P
 def UPrePc (sl : Nat) (E : UPubPc → State → Prop) (p : UPubPc) (s : State) : Prop :=
   UPre sl p.u s ∧ PreAt p.u.B p.u.Z p.P p.W p.rsp s ∧ p.d + p.u.wx ≤ p.W ∧ E p s
 
+/-- `loadPre`'s hypotheses in a prime's workspace, from `pre` outside the
+working space. -/
+theorem lpPre_sub {t : State} {B : Addr} {Z o w wx : Nat} {mx : BitVec 64} {P : Addr} {W d : Nat} {rsp : Addr}
+    (hc : SubCtx t B Z o w wx mx) (hp : PreSrc t B Z P W) (hdW : d + wx ≤ W) (hsp : t.gpr .rsp = rsp)
+    (hwx2 : 2 ≤ wx) (hwx : wx < 2 ^ 31) :
+    LpPre Public.aY ⟨off B o, slot wx 8, wx, P, d, rsp⟩ t := by
+  have hn := hc.scr.nowrap
+  have hhi := hc.hi
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hY := slot_le (w := wx) (show Public.aY < 8 by decide)
+  -- A byte outside the working space is past the prime's arrays.
+  have hfar : ∀ x : Addr, Z ≤ ofs B x → slot wx Public.aY + 8 * (wx + 2) ≤ ofs (off B o) x := fun x hx => by
+    rcases ofs_rebase B x (o := o) (by omega) with ⟨_, e⟩ | ⟨h, _⟩
+    · rw [e]; omega
+    · omega
+  refine ⟨⟨mx, hc.good, Nat.le_refl _, show 1 ≤ wx by omega, hwx, by decide, fun i hi => ?_, fun i hi b hb => ?_⟩,
+    hsp, hp.arg, hp.val⟩
+  · have hi' : i < wx := hi
+    show InRegions (t.rd ++ t.wr) (off P (8 * d + 8 * i)) 8
+    rw [show 8 * d + 8 * i = 8 * (d + i) by omega]; exact hp.rd _ (by omega)
+  · have hi' : i < wx := hi
+    show _ ∨ slot wx Public.aY + 8 * (wx + 2) ≤ ofs (off B o) (off P (8 * d + 8 * i) + _)
+    refine .inr (hfar _ ?_)
+    have := hp.out (d + i) (by omega) b hb
+    rwa [show 8 * (d + i) = 8 * d + 8 * i by omega] at this
+
 namespace CrtCTUnitPc
 
 open CrtCTQ
@@ -87,32 +113,13 @@ theorem enter_lp {sl : Nat} {E QX : UPubPc → State → Prop} (hX : ∀ p t, U1
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot p.u.w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot p.u.wx 8 := by unfold slot hdrBytes; omega
-  have hT := tabBytes_le_wsTab p.u.wx
-  have hY := slot_le (w := p.u.wx) (show Public.aY < 8 by decide)
-  -- A byte outside the working space is past the prime's arrays.
-  have hfar : ∀ x : Addr, p.u.Z ≤ ofs p.u.B x →
-      slot p.u.wx Public.aY + 8 * (p.u.wx + 2) ≤ ofs (off p.u.B p.u.o) x := fun x hx => by
-    rcases ofs_rebase p.u.B x (o := p.u.o) (by omega) with ⟨_, e⟩ | ⟨h, _⟩
-    · rw [e]; omega
-    · omega
   refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off p.u.B p.u.o ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega), hslv]) rfl)
     fun t ⟨⟨hdi, hm⟩, k⟩ => ?_
   have hc : SubCtx t p.u.B p.u.Z p.u.o p.u.w p.u.wx mx := SubCtx.mk' (hs.congr k.2.2) (by rw [hm]; exact hg.hdr)
     (by rw [hm]; exact hws) hdi hlo (hi_of_wsTab hhi)
-  have hp := hpre.congrK (by rw [hm]; exact InScr.refl _ _ _) k (by decide)
-  refine ⟨⟨⟨mx, hc.good, Nat.le_refl _, show 1 ≤ p.u.wx by omega, show p.u.wx < 2 ^ 31 by omega, by decide,
-    fun i hi => ?_, fun i hi b hb => ?_⟩,
-    (k.gpr (by decide)).trans hsp, hp.arg, hp.val⟩, hQ p s t hq hm k.2.1 k.2.2⟩
-  · have hi' : i < p.u.wx := hi
-    show InRegions (t.rd ++ t.wr) (off p.P (8 * p.d + 8 * i)) 8
-    rw [show 8 * p.d + 8 * i = 8 * (p.d + i) by omega]; exact hp.rd _ (by omega)
-  · have hi' : i < p.u.wx := hi
-    show _ ∨ slot p.u.wx Public.aY + 8 * (p.u.wx + 2) ≤ ofs (off p.u.B p.u.o) (off p.P (8 * p.d + 8 * i) + _)
-    refine .inr (hfar _ ?_)
-    have := hp.out (p.d + i) (by omega) b hb
-    rwa [show 8 * (p.d + i) = 8 * p.d + 8 * i by omega] at this
+  exact ⟨lpPre_sub hc (hpre.congrK (by rw [hm]; exact InScr.refl _ _ _) k (by decide)) hdW
+    ((k.gpr (by decide)).trans hsp) hwx2 (by omega), hQ p s t hq hm k.2.1 k.2.2⟩
 
 end CrtCTUnitPc
 

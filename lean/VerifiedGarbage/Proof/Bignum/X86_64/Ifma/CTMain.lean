@@ -57,11 +57,11 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- `pre_ok`'s hypotheses, after the checks. -/
 theorem prePre_of (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk True)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W) :
@@ -93,18 +93,18 @@ theorem prePre_of (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat} {op np 
 
 /-- `ifma`'s hypotheses, after `pre` (as `branchA2_ok` runs it). -/
 theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk True)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
     (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z)
     (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
       (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
-      (Spec.Rsa.os2ip xb) True True True) :
+      (Spec.Rsa.os2ip xb) ok ok ok) :
     IfPre l ⟨B, Z, (k + 7) / 8, offP ((k + 7) / 8), offQ ((k + 7) / 8) pl,
       offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W, dpp, dqp, pl, ql⟩ s₁ := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
@@ -165,12 +165,12 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
 
 /-- `post`'s hypotheses, after `ifma` (as `branchB_ok` runs it). -/
 theorem postPre_of (hl : LayOk l) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hd : IDone l s t₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
         (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk True)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W) :
@@ -243,46 +243,47 @@ theorem pre_apost (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : N
 /-! ## The stages of the IFMA branch -/
 
 /-- After the checks, with the sizes of the IFMA branch. -/
-def R3I (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
-  R3 p σ xb pb qb dpb dqb qib t ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W
+def R3I (ok : Prop) (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
+  R3o ok p σ xb pb qb dpb dqb qib t ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W
 
 /-- After `pre`. -/
-def RAp (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb _ _ qib t =>
+def RAp (ok : Prop) (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb _ _ qib t =>
   ∃ (minv mp mq : BitVec 64) (t₀ : State),
   CrtReady σ t₀ p.B p.Z p.w p.pl p.ql minv mp mq p.N (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
-    (p.mask xb pb qb qib) True ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W ∧
+    (p.mask xb pb qb qib) ok ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W ∧
   APost t₀ t p.B p.Z p.w (offP p.w) (offQ p.w p.pl) l.W minv mp mq p.N
     (if p.mask xb pb qb qib then Spec.Rsa.os2ip pb else 3) (if p.mask xb pb qb qib then Spec.Rsa.os2ip qb else 3)
-    (Spec.Rsa.os2ip xb) True True True
+    (Spec.Rsa.os2ip xb) ok ok ok
 
 /-- After `ifma`. -/
-def RID (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
+def RID (ok : Prop) (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
   ∃ (minv mp mq : BitVec 64),
   IDone l σ t p.B p.Z p.w (offP p.w) (offQ p.w p.pl) (offQ p.w p.pl + slot l.W 8 + wsTab l.W) minv mp mq p.N
     (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) p.dpp p.dqp p.qip p.pl p.ql dpb dqb
-    (p.mask xb pb qb qib) True ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W
+    (p.mask xb pb qb qib) ok ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W
 
 theorem preS_ct (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm) :
-    RelCT isa (Two (Stage (R3I l))) (seqs (CrtIfma.pre M.mm)) (Two (Stage (RAp l))) :=
-  stage_step ((pre_ct M hR2 hXm).mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
+    RelCT isa (Two (Stage (R3I True l))) (seqs (CrtIfma.pre M.mm)) (Two (Stage (RAp True l))) :=
+  stage_step ((pre_ct M hR2 hXm).mono (fun _ _ h => two_stage (ok := True) (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
     offQ p.w p.pl, l.W⟩ : PrePub)) (fun _ _ _ _ _ _ _ _ _ h hv ⟨⟨minv, _, _, hr⟩, hw, hp, hq⟩ =>
       ⟨minv, hr.nv, prePre_of hl h hv hr rfl hw hp hq⟩) h) fun _ _ h => h)
     fun _ _ _ _ _ _ _ _ t h hv ⟨⟨minv, mp, mq, hr⟩, hw, hp, hq⟩ =>
       WP.mono (pre_apost hl M h hv hr rfl hw hp hq) fun _ hA => ⟨minv, mp, mq, t, hr, hw, hp, hq, hA⟩
 
-theorem ifmaS_ct (hl : LayOk l) : RelCT isa (Two (Stage (RAp l))) (seqs (ifma l)) (Two (Stage (RID l))) :=
-  stage_step ((ifma_ct hl).mono (fun _ _ h => two_stage (fun p _ => (⟨p.B, p.Z, p.w, offP p.w, offQ p.w p.pl,
+theorem ifmaS_ct {ok : Prop} (hl : LayOk l) :
+    RelCT isa (Two (Stage (RAp ok l))) (seqs (ifma l)) (Two (Stage (RID ok l))) :=
+  stage_step ((ifma_ct hl).mono (fun _ _ h => two_stage (ok := ok) (fun p _ => (⟨p.B, p.Z, p.w, offP p.w, offQ p.w p.pl,
     offQ p.w p.pl + slot l.W 8 + wsTab l.W, p.dpp, p.dqp, p.pl, p.ql⟩ : IfPub))
     (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, _, hr, hw, hp, hq, hA⟩ =>
       ⟨minv, hA.2.1, ifPre_of hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) hA⟩) h) fun _ _ h => h)
     fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, _, hr, hw, hp, hq, hA⟩ =>
-      WP.mono (branchA2_ok hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) (fun _ _ => ⟨trivial, trivial⟩) hA) fun _ ⟨hd, _⟩ =>
+      WP.mono (branchA2_ok hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) (fun h _ => ⟨h, h⟩) hA) fun _ ⟨hd, _⟩ =>
         ⟨minv, mp, mq, hd, hw, hp, hq⟩
 
-theorem postS_ct (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : LoadCT aChunk sQinv sPlen)
+theorem postS_ct {ok : Prop} (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage (RID l))) (seqs (CrtIfma.post M.mm)) (Two (Stage R5)) :=
-  stage_step ((post_ct M hR2 hL).mono (fun _ _ h => two_stage (fun p _ => (⟨p.B, p.Z, p.w, offP p.w,
+    RelCT isa (Two (Stage (RID ok l))) (seqs (CrtIfma.post M.mm)) (Two (Stage (R5o ok))) :=
+  stage_step ((post_ct M hR2 hL).mono (fun _ _ h => two_stage (ok := ok) (fun p _ => (⟨p.B, p.Z, p.w, offP p.w,
     wsWords p.pl, offQ p.w p.pl, p.qip, p.pl⟩ : PostPub))
     (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hd, hw, hp, hq⟩ =>
       ⟨minv, hd.nv, postPre_of hl h hv hd rfl hw hp hq⟩) h) fun _ _ h => h)
@@ -290,14 +291,15 @@ theorem postS_ct (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : Loa
       WP.mono (branchB_ok hl M h hv hd rfl hw hp hq hpost) fun _ ⟨hp', _⟩ => ⟨minv, mp, mq, hp'⟩
 
 /-- After the sizes' check. -/
-def R3Z (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
-  R3 p σ xb pb qb dpb dqb qib t ∧
+def R3Z (ok : Prop) (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
+  R3o ok p σ xb pb qb dpb dqb qib t ∧
     t.zf = some (decide (p.w = 2 * l.W ∧ (p.pl + 7) / 8 = l.W ∧ (p.ql + 7) / 8 = l.W))
 
 theorem sizesT (hl : LayOk l) : TOk [.rdi] (.block (sizes l)) := by
   rcases hl with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
-theorem sizesS_ct (hl : LayOk l) : RelCT isa (Two (Stage R3)) (.block (sizes l)) (Two (Stage (R3Z l))) := by
+theorem sizesS_ct {ok : Prop} (hl : LayOk l) :
+    RelCT isa (Two (Stage (R3o ok))) (.block (sizes l)) (Two (Stage (R3Z ok l))) := by
   obtain ⟨_, hT⟩ := sizesT hl
   refine stage_step (two_taint [.rdi] (pins_eqs (fun p _ => p.B) fun p t h r hr => by
       obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, hr'⟩ := h
@@ -359,20 +361,20 @@ theorem sizesOf_layOf {w pl ql : Nat} (h : AnyOf w pl ql) : SizesOf (layOf w) w 
   · rw [show layOf w = lay4096 by rw [h.1, layOf_two (.inr (.inr rfl))]]; exact h
 
 /-- After `anySizes`. -/
-def R3A : StageRel := fun p σ xb pb qb dpb dqb qib t =>
-  R3 p σ xb pb qb dpb dqb qib t ∧ t.zf = some (decide (AnyOf p.w p.pl p.ql))
+def R3A (ok : Prop) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
+  R3o ok p σ xb pb qb dpb dqb qib t ∧ t.zf = some (decide (AnyOf p.w p.pl p.ql))
 
-theorem anySizes_ct : RelCT isa (Two (Stage R3)) CrtIfma.anySizes (Two (Stage R3A)) := by
-  have cond : ∀ {l : CLay} (p : CrtPub) (s₁ s₂ : State), Stage (R3Z l) p s₁ → Stage (R3Z l) p s₂ →
+theorem anySizes_ct {ok : Prop} : RelCT isa (Two (Stage (R3o ok))) CrtIfma.anySizes (Two (Stage (R3A ok))) := by
+  have cond : ∀ {l : CLay} (p : CrtPub) (s₁ s₂ : State), Stage (R3Z ok l) p s₁ → Stage (R3Z ok l) p s₂ →
       isa.eval .e s₁ = isa.eval .e s₂ := fun p s₁ s₂ h₁ h₂ => by
     obtain ⟨_, _, _, _, _, _, _, _, _, _, z₁⟩ := h₁
     obtain ⟨_, _, _, _, _, _, _, _, _, _, z₂⟩ := h₂
     simp only [eval, z₁, z₂]
   have drop : ∀ {l : CLay} {b : Bool} (x y : State),
-      Two (fun p s => Stage (R3Z l) p s ∧ isa.eval .e s = some b) x y → Two (Stage R3) x y :=
+      Two (fun p s => Stage (R3Z ok l) p s ∧ isa.eval .e s = some b) x y → Two (Stage (R3o ok)) x y :=
     fun _ _ h => two_mono (fun p s ⟨⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, _⟩, _⟩ =>
       ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr⟩) h
-  have hct : RelCT isa (Two (Stage R3)) CrtIfma.anySizes fun _ _ => True := by
+  have hct : RelCT isa (Two (Stage (R3o ok))) CrtIfma.anySizes fun _ _ => True := by
     unfold CrtIfma.anySizes
     refine RelCT.seq (sizesS_ct (Or.inl rfl)) (two_ite cond (VG.RelCT.block_nil fun _ _ _ => trivial) ?_)
     refine (RelCT.seq (sizesS_ct (Or.inr (Or.inl rfl))) (two_ite cond (VG.RelCT.block_nil fun _ _ _ => trivial)
@@ -381,10 +383,10 @@ theorem anySizes_ct : RelCT isa (Two (Stage R3)) CrtIfma.anySizes (Two (Stage R3
     WP.mono (anySizes_ok h hr) fun t' ⟨zf, hr', _⟩ => ⟨⟨minv, mp, mq, hr'⟩, zf⟩
 
 /-- `sizes l` after `pre`, with any condition `X` on the public data. -/
-theorem sizesAS_ct (hl : LayOk l) (X : CrtPub → Prop) :
-    RelCT isa (Two (Stage fun p σ xb pb qb dpb dqb qib t => AtLay RAp p σ xb pb qb dpb dqb qib t ∧ X p))
+theorem sizesAS_ct {ok : Prop} (hl : LayOk l) (X : CrtPub → Prop) :
+    RelCT isa (Two (Stage fun p σ xb pb qb dpb dqb qib t => AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ X p))
       (.block (sizes l)) (Two (Stage fun p σ xb pb qb dpb dqb qib t =>
-        (AtLay RAp p σ xb pb qb dpb dqb qib t ∧ X p) ∧ t.zf = some (decide (SizesOf l p.w p.pl p.ql)))) := by
+        (AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ X p) ∧ t.zf = some (decide (SizesOf l p.w p.pl p.ql)))) := by
   obtain ⟨_, hT⟩ := sizesT hl
   refine stage_step (two_taint [.rdi] (pins_eqs (fun p _ => p.B) fun p t h r hr => ?_) hT) ?_
   · obtain ⟨_, _, _, _, _, _, _, _, _, ⟨_, _, _, _, _, _, _, _, hA⟩, _⟩ := h
@@ -393,39 +395,39 @@ theorem sizesAS_ct (hl : LayOk l) (X : CrtPub → Prop) :
     exact WP.mono (sizesA_ok hl h hr hA) fun t' ⟨zf, a', _⟩ => ⟨⟨⟨minv, mp, mq, t₀, hr, hw, hp, hq, a'⟩, hX⟩, zf⟩
 
 /-- `RAp` of the layout of the sizes is that of the layout whose sizes they are. -/
-theorem rap_of {l : CLay} (hl : LayOk l) {p : CrtPub} {σ : State} {xb pb qb dpb dqb qib : List Byte} {t : State}
-    (h : AtLay RAp p σ xb pb qb dpb dqb qib t) (hs : SizesOf l p.w p.pl p.ql) :
-    RAp l p σ xb pb qb dpb dqb qib t := by
+theorem rap_of {ok : Prop} {l : CLay} (hl : LayOk l) {p : CrtPub} {σ : State} {xb pb qb dpb dqb qib : List Byte} {t : State}
+    (h : AtLay (RAp ok) p σ xb pb qb dpb dqb qib t) (hs : SizesOf l p.w p.pl p.ql) :
+    RAp ok l p σ xb pb qb dpb dqb qib t := by
   have e : layOf p.w = l := by rw [hs.1, layOf_two hl]
   unfold AtLay at h; rw [e] at h; exact h
 
 /-- `RAp` of the layout of the sizes: the key has its sizes. -/
-theorem sizes_of_rap {p : CrtPub} {σ : State} {xb pb qb dpb dqb qib : List Byte} {t : State}
-    (h : AtLay RAp p σ xb pb qb dpb dqb qib t) : SizesOf (layOf p.w) p.w p.pl p.ql := by
+theorem sizes_of_rap {ok : Prop} {p : CrtPub} {σ : State} {xb pb qb dpb dqb qib : List Byte} {t : State}
+    (h : AtLay (RAp ok) p σ xb pb qb dpb dqb qib t) : SizesOf (layOf p.w) p.w p.pl p.ql := by
   obtain ⟨_, _, _, _, _, hw, hp, hq, _⟩ := h
   obtain ⟨hW1, -⟩ := W_bounds (layOf_ok p.w)
   unfold wsWords at hp hq
   exact ⟨hw, by omega, by omega⟩
 
 /-- The vector code of `l`, for the states where the sizes are `l`'s. -/
-theorem ifmaL_ct (hl : LayOk l) (X : CrtPub → Prop)
-    (hX : ∀ p σ xb pb qb dpb dqb qib t, AtLay RAp p σ xb pb qb dpb dqb qib t → X p → SizesOf l p.w p.pl p.ql) :
-    RelCT isa (Two (Stage fun p σ xb pb qb dpb dqb qib t => AtLay RAp p σ xb pb qb dpb dqb qib t ∧ X p))
-      (seqs (ifma l)) (Two (Stage (AtLay RID))) :=
+theorem ifmaL_ct {ok : Prop} (hl : LayOk l) (X : CrtPub → Prop)
+    (hX : ∀ p σ xb pb qb dpb dqb qib t, AtLay (RAp ok) p σ xb pb qb dpb dqb qib t → X p → SizesOf l p.w p.pl p.ql) :
+    RelCT isa (Two (Stage fun p σ xb pb qb dpb dqb qib t => AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ X p))
+      (seqs (ifma l)) (Two (Stage (AtLay (RID ok)))) :=
   (ifmaS_ct hl).mono
     (fun _ _ h => two_mono (fun p s ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, h, hx⟩ =>
       ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, rap_of hl h (hX _ _ _ _ _ _ _ _ _ h hx)⟩) h)
     fun _ _ h => two_mono (fun p s ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, h⟩ => ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ,
       hv, by
         have e : layOf p.w = l := by obtain ⟨_, _, _, _, hw, _⟩ := h; rw [hw, layOf_two hl]
-        show RID (layOf p.w) p σ xb pb qb dpb dqb qib s
+        show RID ok (layOf p.w) p σ xb pb qb dpb dqb qib s
         rw [e]; exact h⟩) h
 
-theorem ifmaAny_ct : RelCT isa (Two (Stage (AtLay RAp))) CrtIfma.ifmaAny (Two (Stage (AtLay RID))) := by
+theorem ifmaAny_ct {ok : Prop} : RelCT isa (Two (Stage (AtLay (RAp ok)))) CrtIfma.ifmaAny (Two (Stage (AtLay (RID ok)))) := by
   have cond : ∀ {l : CLay} {X : CrtPub → Prop} (p : CrtPub) (s₁ s₂ : State),
-      Stage (fun p σ xb pb qb dpb dqb qib t => (AtLay RAp p σ xb pb qb dpb dqb qib t ∧ X p) ∧
+      Stage (fun p σ xb pb qb dpb dqb qib t => (AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ X p) ∧
         t.zf = some (decide (SizesOf l p.w p.pl p.ql))) p s₁ →
-      Stage (fun p σ xb pb qb dpb dqb qib t => (AtLay RAp p σ xb pb qb dpb dqb qib t ∧ X p) ∧
+      Stage (fun p σ xb pb qb dpb dqb qib t => (AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ X p) ∧
         t.zf = some (decide (SizesOf l p.w p.pl p.ql))) p s₂ →
       isa.eval .e s₁ = isa.eval .e s₂ := fun p s₁ s₂ h₁ h₂ => by
     obtain ⟨_, _, _, _, _, _, _, _, _, _, z₁⟩ := h₁
@@ -434,9 +436,9 @@ theorem ifmaAny_ct : RelCT isa (Two (Stage (AtLay RAp))) CrtIfma.ifmaAny (Two (S
   -- A branch's state: `X` and what the test said.
   have cont : ∀ {l : CLay} {X Y : CrtPub → Prop} {b : Bool},
       (∀ p, X p → (decide (SizesOf l p.w p.pl p.ql) = b) → Y p) → ∀ x y,
-      Two (fun p s => Stage (fun p σ xb pb qb dpb dqb qib t => (AtLay RAp p σ xb pb qb dpb dqb qib t ∧ X p) ∧
+      Two (fun p s => Stage (fun p σ xb pb qb dpb dqb qib t => (AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ X p) ∧
         t.zf = some (decide (SizesOf l p.w p.pl p.ql))) p s ∧ isa.eval .e s = some b) x y →
-      Two (Stage fun p σ xb pb qb dpb dqb qib t => AtLay RAp p σ xb pb qb dpb dqb qib t ∧ Y p) x y :=
+      Two (Stage fun p σ xb pb qb dpb dqb qib t => AtLay (RAp ok) p σ xb pb qb dpb dqb qib t ∧ Y p) x y :=
     fun hY _ _ h => two_mono (fun p s ⟨⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, ⟨h, hx⟩, hz⟩, he⟩ =>
       ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, h, hY p hx (by simp only [eval, hz, Option.some.injEq] at he; exact he)⟩) h
   unfold CrtIfma.ifmaAny
@@ -462,7 +464,7 @@ theorem ifmaAny_ct : RelCT isa (Two (Stage (AtLay RAp))) CrtIfma.ifmaAny (Two (S
 theorem ifmaPart_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
     (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage (AtLay R3I))) (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++ CrtIfma.post M.mm))
+    RelCT isa (Two (Stage (AtLay (R3I True)))) (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++ CrtIfma.post M.mm))
       (Two (Stage R5)) := by
   rw [List.append_assoc]
   refine RelCT.seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp)
