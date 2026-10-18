@@ -61,38 +61,6 @@ def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         Cbc.decrypt (invCipher (scheduleAt m schedule)) (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat))
     (writeArgs := true) (stack := stack)
 
-/-- `vg_sm4_cbc_encrypt` on every target. -/
-def cbcEncryptApi : Api where
-  module := "sm4_cbc"
-  name := "vg_sm4_cbc_encrypt"
-  sig := cbcSig
-  writeArgs := true
-  contracts := some fun A stack => cbcEncryptContract A stack
-  summary := "SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in \
-    place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, \
-    where `C₀` is the block at `*iv`, which is only read: a further call continues the message \
-    from `Cₙ`, the last block at `data` on return. `CIPH_K` is SM4 under the schedule written by \
-    `vg_sm4_expand_key`. No padding is added.\n\n\
-    Contract: `VG.Spec.Sm4.cbcEncryptContract`. Constant time: only the pointers and `n` may \
-    affect timing, not the schedule, the chaining value or the data."
-  safety := []
-
-/-- `vg_sm4_cbc_decrypt` on every target. -/
-def cbcDecryptApi : Api where
-  module := "sm4_cbc"
-  name := "vg_sm4_cbc_decrypt"
-  sig := cbcSig
-  writeArgs := true
-  contracts := some fun A stack => cbcDecryptContract A stack
-  summary := "SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in \
-    place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, \
-    where `C₀` is the block at `*iv`, which is only read: a further call continues the message \
-    from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No \
-    padding is removed.\n\n\
-    Contract: `VG.Spec.Sm4.cbcDecryptContract`. Constant time: only the pointers and `n` may \
-    affect timing, not the schedule, the chaining value or the data."
-  safety := []
-
 /-! ## Updating the chaining value -/
 
 /-- `vg_sm4_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize)`,

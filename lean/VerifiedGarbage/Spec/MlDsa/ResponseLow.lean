@@ -33,14 +33,4 @@ def subLowNormContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       r=if responseLowPass m w cs gamma2.toNat bound.toNat then 1 else 0)
     (writeArgs := true) (stack := stack)
 
-def subLowNormApi : Api where
-  module := "mldsa"
-  name := "vg_mldsa_signed_sub_low_norm"
-  sig := subLowNormSig
-  writeArgs := true
-  contracts := some fun A stack => subLowNormContract A stack
-  summary := "Decomposes a canonical polynomial minus a signed inverse-transform result and returns its strict low-part norm check."
-  safety := ["The first input must be canonical modulo 8380417; the second must have signed coefficients strictly between -8380417 and 16760834.",
-    "Gamma2 must be 95232 or 261888; the norm bound must be between 1 and 524288 inclusive."]
-
 end VG.Spec.MlDsa

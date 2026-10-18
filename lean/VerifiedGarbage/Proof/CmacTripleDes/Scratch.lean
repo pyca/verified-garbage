@@ -41,7 +41,7 @@ def updateScratchSig : Sig where
   params := [("schedule", .array false .u8 384), ("state", .array true .u8 8),
     ("data", .slice false (.array .u8 8) "n"), ("scratch", .array true .u64 80)]
 
-/-- `tdesUpdateContract`, whatever `scratch` is. -/
+/-- `vg_cmac_triple_des_update`'s contract (`tdesUpdatePost`), whatever `scratch` is. -/
 def updateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   updateScratchSig.contract A
     (post := fun schedule state data n _scratch => tdesUpdatePost A.ptrBits schedule state data n)
@@ -52,7 +52,7 @@ def finalizeScratchSig : Sig where
   params := [("key", .array false .u8 400), ("state", .array true .u8 8),
     ("last", .slice false .u8 "last_len"), ("scratch", .array true .u64 80)]
 
-/-- `tdesFinalizeContract`, whatever `scratch` is. -/
+/-- `vg_cmac_triple_des_finalize`'s contract (`tdesFinalizePre`, `tdesFinalizePost`), whatever `scratch` is. -/
 def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   finalizeScratchSig.contract A
     (pre := fun key state last lastLen _scratch => tdesFinalizePre A.ptrBits key state last lastLen)

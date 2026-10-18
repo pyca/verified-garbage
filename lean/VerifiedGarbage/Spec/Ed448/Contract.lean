@@ -241,21 +241,6 @@ def publicKeyApi : Api where
     timing."
   safety := [seedSafety, scratchSafety]
 
-def signApi : Api where
-  module := "ed448"
-  name := "vg_ed448_sign"
-  sig := signSig
-  writeArgs := true
-  contracts := some fun A stack => signContract A stack
-  summary := "Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for \
-    the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte \
-    private key at `seed`. Uses Ed448 with a context, not Ed448ph (no prehash); the context \
-    is empty for plain Ed448. Derives the public key from the private key. \
-    Contract: `VG.Spec.Ed448.signContract`. Constant time: only pointers and the context \
-    and message lengths may affect timing, not the private key, context or message \
-    contents."
-  safety := ["`ctxlen` must be at most 255.", seedSafety, scratchSafety]
-
 def signCachedApi : Api where
   module := "ed448"
   name := "vg_ed448_sign_cached"

@@ -337,20 +337,6 @@ def updateSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
     (post := fun state count data len _scratch => updateSPost A.ptrBits state count data len)
     (stack := stack)
 
-/-- `vg_blake2s_update_scratch` on every target. -/
-def updateSScratchApi : Api where
-  module := "blake2s"
-  name := "vg_blake2s_update_scratch"
-  sig := updateSScratchSig
-  contracts := some fun A stack => updateSScratchContract A stack
-  summary := "`vg_blake2s_update`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Blake2.updateSScratchContract`. Constant time: only the pointers, `count` \
-    and `len` may affect timing, not the state or the data."
-  safety := [
-    "`count` must be the exact length of the data so far (the key block included), and `count + \
-      len` less than 2⁶⁴.",
-    "The contents of `scratch` on return are unspecified."]
-
 /-- `vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32])`.
 `count` is public; `state` is left unspecified. -/
 def finalizeSSig : Sig where
@@ -396,19 +382,5 @@ def finalizeSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
   finalizeSScratchSig.contract A
     (post := fun state count out _scratch => finalizeSPost A.ptrBits state count out)
     (stack := stack)
-
-/-- `vg_blake2s_finalize_scratch` on every target. -/
-def finalizeSScratchApi : Api where
-  module := "blake2s"
-  name := "vg_blake2s_finalize_scratch"
-  sig := finalizeSScratchSig
-  contracts := some fun A stack => finalizeSScratchContract A stack
-  summary := "`vg_blake2s_finalize`, with its working space in `*scratch`.\n\n\
-    Contract: `VG.Spec.Blake2.finalizeSScratchContract`. Constant time: only the pointers and \
-    `count` may affect timing, not the state."
-  safety := [
-    "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
-    "The contents of `state` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Blake2
