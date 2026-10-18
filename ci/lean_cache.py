@@ -17,22 +17,21 @@ archive is `.lake/ltar/<build>/<Module>.ltar`, where `<build>` is its build
 directory relative to `.lake/` (`build`, or `packages/mathlib/.lake/build`).
 `.lake/ltar/index.json` records the dependency hash and output hashes of
 each archive's module: `pack` packs only the modules that changed since,
-and removes the archives of modules that no longer exist. It then writes a
-tar of `.lake/ltar` to stdout, whose first member, `.lake/ltar/files.tar`,
-is a tar of every other file in the directories (the outputs' `.hash`
-files, native libraries, Lake's checkouts of the dependencies).
+and removes the archives of modules that no longer exist. It writes every
+other file in the directories (the outputs' `.hash` files, native
+libraries, Lake's checkouts of the dependencies) to `.lake/ltar/files.tar`,
+then a tar of `.lake/ltar`, `files.tar` first, to stdout.
 
 It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 (`.github/actions/leantar`), which packs every module in one process at zstd
 level `--level` (default 5); the toolchain's own `leantar` takes half a
 CPU-second for each module.
 
-`store` updates the archives the same way, and writes the other files of
-the directories to `.lake/ltar/files.tar` rather than to stdout, so that
-`.lake/ltar` alone holds the build: CI's Actions cache keeps it, and each
-job that restores it runs `restore`, which extracts `files.tar` and unpacks
-every archive, keeping them, so that the build's next `store` packs only
-what changed. `pack`'s tar holds its own `files.tar` in place of `store`'s.
+`store` does the same but for the tar to stdout, so that `.lake/ltar`
+alone holds the build: CI's Actions cache keeps it, and each job that
+restores it runs `restore`, which extracts `files.tar` and unpacks every
+archive, keeping them, so that the build's next `store` packs only what
+changed.
 
 `unpack` extracts such a tar from stdin into the Lean project. `tar`
 extracts `files.tar` in the background, as `restore` does: its files are
@@ -167,17 +166,12 @@ def other_files(lean, roots, packed):
 
 
 def pack(lean, roots, jobs, level, tool, out):
-    paths = other_files(lean, roots, update(lean, roots, jobs, level, tool))
-    with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
-        subprocess.run(["tar", "-C", str(lean), "-cf", os.path.join(tmp, FILES), "--no-recursion",
-                        "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
-        out.flush()
-        # The tar of the other files first, as `.lake/ltar`'s `files.tar` in
-        # place of `store`'s, so that `unpack` extracts it while the archives
-        # unpack; then the archives.
-        subprocess.run(["tar", "-cf", "-", "-C", tmp, f"--transform=s,^{FILES}$,{LTAR / FILES},",
-                        FILES, "-C", str(lean), f"--exclude={LTAR / FILES}", str(LTAR)],
-                       stdout=out, check=True)
+    store(lean, roots, jobs, level, tool)
+    out.flush()
+    # `files.tar` first, so that `unpack` extracts it while the archives
+    # unpack.
+    subprocess.run(["tar", "-C", str(lean), "-cf", "-", str(LTAR / FILES), f"--exclude={LTAR / FILES}",
+                    str(LTAR)], stdout=out, check=True)
 
 
 def store(lean, roots, jobs, level, tool):

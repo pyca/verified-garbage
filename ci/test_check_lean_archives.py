@@ -187,7 +187,7 @@ class LeanArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "tar failed"):
             lean_cache.restore(target, 2, str(self.stub))
 
-    def test_pack_writes_its_own_files_tar_first(self):
+    def test_pack_writes_files_tar_first(self):
         lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
         data, _ = self.pack()
         with tarfile.open(fileobj=io.BytesIO(data)) as tar:
@@ -196,7 +196,7 @@ class LeanArchiveTests(unittest.TestCase):
         self.assertEqual(names[0], ".lake/ltar/files.tar")
         self.assertEqual(names.count(".lake/ltar/files.tar"), 1)
         self.assertIn(".lake/ltar/build/C.ltar", names)
-        # `pack`'s, of both directories, not `store`'s, of the build alone.
+        # Of both directories, replacing `store`'s, of the build alone.
         self.assertIn(".lake/packages/mathlib/Mathlib.lean", inner)
         self.assertIn(".lake/build/lib/libNative.so", inner)
         # Nothing but `.lake/ltar`.
