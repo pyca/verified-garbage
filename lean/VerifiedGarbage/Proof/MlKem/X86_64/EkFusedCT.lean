@@ -58,15 +58,15 @@ include F T
 
 theorem rho_tr : RelCT isa (R L (ProOut L)) (copy (sc oSB) (.r14, 384 * L.k) 32) fun _ _ => True := by
   obtain ⟨_, t⟩ := T.rT
-  exact rel2_of (trL F.toEcWf t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf p₁ p₂ pub h₁.ec h₂.ec
+  exact rel2_of (trL F.toEcWf t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf.toEcWfB p₁ p₂ pub h₁.ec h₂.ec
 
 theorem hz_tr : RelCT isa (R L (RI L)) (.block (hzero L)) fun _ _ => True := by
   obtain ⟨_, t⟩ := T.zT
-  exact rel2_of (trL F.toEcWf t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf p₁ p₂ pub h₁.ec h₂.ec
+  exact rel2_of (trL F.toEcWf t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf.toEcWfB p₁ p₂ pub h₁.ec h₂.ec
 
 theorem hcopy_tr : RelCT isa (R L fun σ s => FI L σ (nb L) s) (copy (sc oH) (sc (oHS L)) 32) fun _ _ => True := by
   obtain ⟨_, t⟩ := T.hcT
-  exact rel2_of (trL F.toEcWf t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf p₁ p₂ pub h₁.ec h₂.ec
+  exact rel2_of (trL F.toEcWf t) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf.toEcWfB p₁ p₂ pub h₁.ec h₂.ec
 
 end
 
@@ -114,7 +114,7 @@ theorem frag_tr (F : EkHWf L) (T : EkTWf L) {b : Prog isa} (hB : BatchHOk b) {i 
       seed4_eq h.2.1 (k := 2) (by decide), seed4_eq h.2.1 (k := 3) (by decide), seed4_eq h.2.2 (k := 0) (by decide),
       seed4_eq h.2.2 (k := 1) (by decide), seed4_eq h.2.2 (k := 2) (by decide), seed4_eq h.2.2 (k := 3) (by decide)]
   · rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
-    exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W p₁ p₂ pub h₁.ec h₂.ec, ⟨σ₁, p₁, h₁, rfl⟩,
+    exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W.toEcWfB p₁ p₂ pub h₁.ec h₂.ec, ⟨σ₁, p₁, h₁, rfl⟩,
       ⟨σ₂, p₂, h₂, (rho_pub pub).symm⟩⟩
 
 theorem frags_tr (F : EkHWf L) (T : EkTWf L) {b : Prog isa} (hB : BatchHOk b) :
@@ -136,7 +136,7 @@ theorem quadM_tr (v : Sample4Impl) (F : EkHWf L) {q : Nat} (hq : q < L.k * L.k /
       (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < L.k * L.k by omega); omega,
         by have := mod_lt_k (show 4 * q + t < L.k * L.k by omega); omega⟩) hc.1.1) ?_ fun _ _ _ => trivial
   rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
-  exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W p₁ p₂ pub h₁.ec h₂.ec,
+  exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W.toEcWfB p₁ p₂ pub h₁.ec h₂.ec,
     ⟨h₁.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩,
     ⟨by rw [h₂.sb, rho_pub pub], fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
 
@@ -166,7 +166,7 @@ theorem matH_tr (v : Sample4Impl) (F : EkHWf L) (T : EkTWf L) {b : Prog isa} (hB
 
 theorem hashesF_tr (F : EkHWf L) :
     RelCT isa (R L fun σ s => MI L σ (L.k * L.k) s) EncapsH.hashes fun _ _ => True :=
-  rel2_of (Encaps.hashes_trL F.toEcWf) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf p₁ p₂ pub h₁.ec h₂.ec
+  rel2_of (Encaps.hashes_trL F.toEcWf) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel F.toEcWf.toEcWfB p₁ p₂ pub h₁.ec h₂.ec
 
 /-- The rest of `K-PKE.Encrypt` if every `SampleNTT` succeeded, for a given `ρ`. -/
 theorem ifRestρ_tr (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KemWf L)
@@ -192,7 +192,7 @@ theorem ifRest_tr (v : Sample4Impl) (F : EkHWf L) {wc wd : List Nat} (K : KemCal
     (Q := fun _ _ => True) fun ρ => ifRestρ_tr v K W.toKemWf (C := Ek.ekCA W.toEcWfB) (Enc.encChk_spec W.enc)) ?_
     fun _ _ _ => trivial
   rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
-  exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W p₁ p₂ pub h₁.i.out.2.ec h₂.i.out.2.ec,
+  exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W.toEcWfB p₁ p₂ pub h₁.i.out.2.ec h₂.i.out.2.ec,
     ⟨_, _, _, rfl, Ek.EIn.any h₁.i, h₁.sb, h₁.m⟩, ⟨_, _, _, (rho_pub pub).symm, Ek.EIn.any h₂.i, h₂.sb, h₂.m⟩⟩
 
 end EkF

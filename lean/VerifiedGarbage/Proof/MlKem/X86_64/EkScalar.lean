@@ -151,7 +151,8 @@ abbrev R (L : Kem) (I : State → State → Prop) : State → State → Prop := 
 
 include W
 
-theorem ek_lrel {σ₁ σ₂ x y : State} (p₁ : (encK L).pre σ₁) (p₂ : (encK L).pre σ₂)
+omit W in
+theorem ek_lrel (W : EcWfB L) {σ₁ σ₂ x y : State} (p₁ : (encK L).pre σ₁) (p₂ : (encK L).pre σ₂)
     (pub : (encK L).pub σ₁ σ₂) (h₁ : EK L σ₁ x) (h₂ : EK L σ₂ y) : LRel (ecR L) (ecW L) x y := by
   obtain ⟨e1, e2, e3, e4, e5, e6, _⟩ := pub
   refine ⟨h₁.lay W p₁, h₂.lay W p₂, fa5 ?_ ?_ ?_ ?_ ?_, by rw [h₁.top.rsp, h₂.top.rsp, e6]⟩
@@ -175,7 +176,7 @@ theorem pro_tr : RelCT isa (R L fun σ s => s = σ) (.block Encaps.pro) fun _ _ 
 theorem hashes_tr :
     RelCT isa (R L fun σ s => EK L σ s ∧ bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ) ∧ s.gpr .r15 = 1)
       EncapsH.hashes fun _ _ => True :=
-  rel2_of (Encaps.hashes_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel W p₁ p₂ pub h₁.1 h₂.1
+  rel2_of (Encaps.hashes_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ek_lrel W.toEcWfB p₁ p₂ pub h₁.1 h₂.1
 
 omit W in
 theorem EIn.any {W : EcWfB L} {σ : State} {E : Ptr} {ek m r : List Byte} {s : State}
@@ -193,11 +194,11 @@ theorem encrypt_tr (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) :
   have i₁ : Enc.EIρ L (ekCA W.toEcWfB) (.r14, 0) (Enc.rhoE L (ekE L σ₁)) x := ⟨_, _, _, rfl, EIn.any h₁.1, h₁.2⟩
   have i₂ : Enc.EIρ L (ekCA W.toEcWfB) (.r14, 0) (Enc.rhoE L (ekE L σ₁)) y :=
     ⟨_, _, _, (rho_pub pub).symm, EIn.any h₂.1, h₂.2⟩
-  exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W p₁ p₂ pub h₁.1.out.2.ec h₂.1.out.2.ec, i₁, i₂⟩
+  exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W.toEcWfB p₁ p₂ pub h₁.1.out.2.ec h₂.1.out.2.ec, i₁, i₂⟩
 
 theorem out_tr : RelCT isa (R L (EncO W)) (out L) fun _ _ => True := by
   refine rel2_of (Q := LRel (ecR L) (ecW L)) ?_ fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
-    ek_lrel W p₁ p₂ pub h₁.out.2.ec h₂.out.2.ec
+    ek_lrel W.toEcWfB p₁ p₂ pub h₁.out.2.ec h₂.out.2.ec
   unfold out
   obtain ⟨_, oT₁⟩ := W.oT₁
   obtain ⟨_, oT₂⟩ := W.oT₂
