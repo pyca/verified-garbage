@@ -102,9 +102,8 @@ theorem primesKey_fst (hv : Spec.Rsa.modulusValid P.n P.K = true) {σ : State} (
   rw [hr]
   rcases gos P σ 100 with ⟨_ | ⟨p, q⟩, t⟩ <;> rfl
 
-theorem sub32_one {w y : Nat} (h1 : 1 ≤ y) (h2 : y < 2 ^ (32 * w)) : sub32 w y 1 = y - 1 := by
-  unfold sub32
-  rw [show y + 2 ^ (32 * w) - 1 = (y - 1) + 2 ^ (32 * w) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+theorem sub32_one {w y : Nat} (h1 : 1 ≤ y) (h2 : y < 2 ^ (32 * w)) : sub32 w y 1 = y - 1 :=
+  VG.Proof.Rsa.sub32_one h1 h2
 
 /-- The result: the factors if the last candidate gave them. -/
 theorem result_eq (hv : Spec.Rsa.modulusValid P.n P.K = true) (hn1 : 1 < P.n) (nl : P.n < 2 ^ (32 * P.w))

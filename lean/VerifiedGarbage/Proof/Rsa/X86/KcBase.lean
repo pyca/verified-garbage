@@ -9,12 +9,11 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
 
 /-! # The checks of an RSA key on i686: the state between the steps
 
-`Geo`: the working space (`B`, `Z` bytes) and the modulus' length `K`, which
+`Geo`: the working space (`B`, `Z` bytes) and native word width `w`, which
 two runs share; `Vals`: the numbers read, which they may not. `Stg g s₀ A
 live c s`: from the state `s₀` the checks start from, the steps so far wrote
 only the arrays and the header words they may, the arrays `live` hold `A`,
-and the mask is `c`. `StgD`: the same after a division, which leaves only
-`r8` of the working space's registers.
+and the mask is `c`. The workspace base stays in EDI throughout.
 -/
 
 @[expose] public section

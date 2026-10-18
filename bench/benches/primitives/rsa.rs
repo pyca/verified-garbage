@@ -8,7 +8,7 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["rsa"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -61,7 +61,7 @@ pub fn bench(c: &mut Criterion) {
 
 /// The loading of a private key from `(n, e, d, p, q, dP, dQ, qInv)`, from
 /// `(n, e, d, p, q)` and from `(n, e, d)`, and the check of a private key.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 fn keys(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -304,5 +304,5 @@ fn keys(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "arm")))]
 pub fn bench(_: &mut Criterion) {}

@@ -21,13 +21,8 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys
 theorem Arrs.upd1 {m m' : Mem} {B : BitVec 32} {v : Nat} {A : Nat → Nat} {live : List Nat}
     (h : Arrs m B v A live) {o x : Nat} {ds : List Nat} (k : Keep B v [o] ds m m')
     (hd : ∀ d ∈ ds, d + 4 ≤ hdr) (fit : ∀ j ∈ live, arr v j + S v ≤ 2 ^ 64)
-    (e : num m' B v o = x) : Arrs m' B v (upd A o x) (o :: live) := by
-  intro j hj
-  by_cases hjo : j = o
-  · subst hjo; rw [upd_self]; exact e
-  · have hj' : j ∈ live := (List.mem_cons.mp hj).resolve_left hjo
-    rw [upd_ne _ _ hjo, k.num (fun i hi ei => hjo (by simp at hi; subst hi; exact ei.symm)) hd (fit j hj')]
-    exact h j hj'
+    (e : num m' B v o = x) : Arrs m' B v (upd A o x) (o :: live) :=
+  VG.Proof.Rsa.KeyWorkspace.Arrs.upd1 h k hd fit e
 
 end VG.Proof.Rsa.Arm.Keys
 

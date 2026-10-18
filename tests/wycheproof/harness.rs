@@ -59,7 +59,12 @@ pub const HOST_WITHOUT_IFMA_VAR: &str = "VG_TEST_HOST_WITHOUT_IFMA";
 /// in one configuration ([`rsa_bits_signed`]). A CPU with AVX512_IFMA tests
 /// them all.
 #[cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 pub fn rsa_bits_tested(bits: usize) -> bool {
@@ -86,7 +91,12 @@ pub fn rsa_bits_signed(bits: usize) -> bool {
 
 /// Whether to test the RSA key with the modulus `n` (as [`rsa_bits_tested`]).
 #[cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 pub fn rsa_key_tested(n: &[u8]) -> bool {
@@ -97,7 +107,12 @@ pub fn rsa_key_tested(n: &[u8]) -> bool {
 /// Whether to test the RSA vector file `name`, whose name gives its keys'
 /// size, if it has one size (`rsa_oaep_3072_…`; as [`rsa_bits_tested`]).
 #[cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 pub fn rsa_file_tested(name: &str) -> bool {

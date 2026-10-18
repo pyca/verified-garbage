@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcStackSafety
+public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
+public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Public and private CRT RSA on baseline i686. -/
@@ -17,6 +19,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
+  Spec.Rsa.recoverPrimesApi.artifact X86.target {
+    code := Impl.Rsa.X86.Recover.code
+    verified := Proof.Rsa.X86.Recover.verified
+    spSafe := Proof.Rsa.X86.Recover.code_sp
+    stack := 20 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
     code := Impl.Rsa.X86.KeyCheck.code true
     verified := Proof.Rsa.X86.KeyCheck.verified true

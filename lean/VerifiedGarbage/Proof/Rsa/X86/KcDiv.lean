@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcOps
 
-/-! # The checks of an RSA key on i686: the divisions
+/-! # Division stages for i686 key validation
 
-`divSet_ok`: `divSet a d` sets up the division of `[a]` by `[d]`, after which
-`Div.code` leaves the quotient in `aVQ` and the remainder in `aVR` (`Stg`);
-`ctxDiv_ok`: `r7` and `r9` again, from `w` in the division's header.
+The fixed-offset division preserves the workspace base, tracked arrays,
+and accumulated acceptance mask.
 -/
 
 @[expose] public section

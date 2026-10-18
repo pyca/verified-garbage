@@ -3,7 +3,12 @@
 //! `(n, e, d, p, q)` or from `(n, e, d)`, and the check of a key: see the
 //! parent module.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
