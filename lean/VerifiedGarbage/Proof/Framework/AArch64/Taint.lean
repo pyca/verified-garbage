@@ -61,7 +61,7 @@ def stepFn : Instr → Step
   | .madd _ d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
   | .umaddl d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
   | .addImm _ d n _ | .subImm _ d n _ | .ror _ d n _ | .lsr _ d n _ | .lsl _ d n _ | .rev32 d n
-  | .rev d n => ⟨fun τ => some (set τ d (pub τ n))⟩
+  | .rev d n | .clz _ d n | .rbit _ d n => ⟨fun τ => some (set τ d (pub τ n))⟩
   | .addSp d _ | .movz _ d _ _ => ⟨fun τ => some (set τ d true)⟩
   | .movk _ d _ _ => ⟨fun τ => some (set τ d (pub τ d))⟩
   | .ldr _ t n _ | .ldrb t n _ => ⟨fun τ => if pub τ n then some (set τ t false) else none⟩
@@ -242,6 +242,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
+  | clz sz d n =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
+  | rbit sz d n =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | rev32 d n =>
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
