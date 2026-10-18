@@ -188,13 +188,12 @@ def storeMasked512 (s : State) (a : Addr) (k : BitVec 64) (v : BitVec 512) : Opt
 for byte `j`, from 0 to 63. -/
 def bOn (k : BitVec 64) : List Nat := (List.range 64).filter k.getLsbD
 
-/-- Load the bytes of the 64 at `a` that `k` enables, the others 0
-(zeroing-masking); faults unless each enabled byte may be read, and reads no
-other. -/
+/-- Load the 64 bytes at `a`, each byte that `k` does not enable read as 0
+(zeroing-masking: byte `j`, at `a + j`, is enabled by bit `j` of `k`); faults
+unless each enabled byte may be read, and reads no other. -/
 def loadMasked512B (s : State) (a : Addr) (k : BitVec 64) : Option (BitVec 512) :=
   if ∀ j ∈ bOn k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 j) 1 then
-    some ((List.range 64).foldr (fun j v => v <<< 8 ||| (if k.getLsbD j then
-      (s.mem.readW (a + BitVec.ofNat 64 j) 8).setWidth 512 else 0)) 0)
+    some (Mem.readW (fun x => if k.getLsbD (x - a).toNat then s.mem x else 0) a 512)
   else none
 
 /-- Store the bytes of `v` that `k` enables to the 64 bytes at `a`, leaving
