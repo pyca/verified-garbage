@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.CrtResult
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
@@ -36,16 +36,19 @@ structure QReady (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec
   qval : ok → Mk = true →
     wv t.mem (off B (offQ w pl)) (slot (wsWords ql) Public.aY) (wsWords ql) = C ^ Spec.Rsa.os2ip dqb % Q
 
-/-- `q`'s phase, from the checks. -/
-theorem qPart_ok (M : Mont) (E : CrtExpL M) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
+/-- `q`'s phase, from the checks, with `U` its start (right if `okY`). -/
+theorem qPartWith_ok (M : Mont) (E : CrtExpL M) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok okY : Prop} {U : List (Prog isa)}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
       (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
-    WP isa (seqs (qPhase M.mm E.code)) t₀ fun t => QReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb)
+      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) (hU : U ≠ []) (hY : ok → Mk = true → okY)
+    (hunit : WP isa (seqs U) t₀ (UnitPost t₀ B Z ((k + 7) / 8) minv mq (Spec.Rsa.os2ip nb)
+      (if Mk then Spec.Rsa.os2ip qb else 3) (offQ ((k + 7) / 8) pl) (wsWords ql) ok okY)) :
+    WP isa (seqs (U ++ ([M.mm Public.aY Public.aXm Public.aY] ++ (powSteps M.mm E.code sWsQ sDq sQlen ++
+      [M.mm Public.aY Public.aY Public.aOne, .block [leave]])))) t₀ fun t => QReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb)
       (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb Mk ok := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
@@ -69,11 +72,11 @@ theorem qPart_ok (M : Mont) (E : CrtExpL M) {s t₀ : State} {B : Addr} {Z k : N
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_using []
   have hwq := wsWords_le (len := ql) (w := (k + 7) / 8) (by omega_using [hql2]) (by omega_using [hk1])
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
-  refine WP.mono (qPhase_ok M E hr.good (by omega_using [hk1]) (by omega_using [hk2]) (by unfold offQ; omega_using [])
-      hZq hwq2 hwq hr.wsQ hr.qws
-    hr.nv hodd hN1 hr.xm hr.qxv hQ'.1 hQ'.2 (by rw [hh₀ _ (by decide) (by decide)]; exact h.hDq)
+  refine WP.mono (qPhaseWith_ok M E hU hr.good (by omega_using [hk1]) (by omega_using [hk2])
+      (by unfold offQ; omega_using []) hZq hwq2 hwq hr.wsQ
+    hr.nv hodd hr.xm hQ'.1 hQ'.2 (by rw [hh₀ _ (by decide) (by decide)]; exact h.hDq)
     (by rw [hh₀ _ (by decide) (by decide), h.dql]; exact h.hQl) (by rw [h.dql]; omega_using [hql1])
-    (by rw [h.dql]; omega_using [hk2, hql2]) (h.dq.congrK hr.iscr hr.keep))
+    (by rw [h.dql]; omega_using [hk2, hql2]) (h.dq.congrK hr.iscr hr.keep) hunit)
     fun t₁ ⟨hg₁, hwsq₁, hxq₁, hlt₁, hv₁, f₁, k₁⟩ => ?_
   have hz : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hn, hZ]
   have hloq : slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl := by unfold offQ; omega_using []
@@ -117,7 +120,34 @@ theorem qPart_ok (M : Mont) (E : CrtExpL M) {s t₀ : State} {B : Addr} {Z k : N
   · intro hok hm
     obtain ⟨_, hpq, _⟩ := hMk' hm
     simp only [hm, ↓reduceIte] at hv₁ hlt₁
-    rw [← Nat.mod_eq_of_lt hlt₁]; exact hv₁ hok ⟨P, by rw [← hpq, Nat.mul_comm]⟩
+    rw [← Nat.mod_eq_of_lt hlt₁]; exact hv₁ hok (hY hok hm) ⟨P, by rw [← hpq, Nat.mul_comm]⟩
+
+
+/-- `q`'s phase, from the checks. -/
+theorem qPart_ok (M : Mont) (E : CrtExpL M) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk ok)
+    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
+    WP isa (seqs (qPhase M.mm E.code)) t₀ fun t => QReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb)
+      (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb Mk ok := by
+  obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
+  obtain ⟨-, -, hQ'⟩ := mask_facts hMk hodd hPN hQN
+  have hk1 := h.k1
+  have hk2 := h.k2
+  have hql1 := h.ql1
+  have hql2 := h.ql2
+  have hZq := h.z
+  have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega
+  have hwq := wsWords_le (len := ql) (w := (k + 7) / 8) (by omega) (by omega)
+  rw [qPhase_eq]
+  exact qPartWith_ok M E h hv hr hMk (by simp [unitSteps]) (fun h _ => h)
+    (unitPhase_ok M hr.good (by omega) (by omega) (by unfold offQ; omega)
+      (by have := tabBytes_le_wsTab (wsWords ql); omega) hwq2 hwq (by decide) (by decide) (by decide) hr.wsQ hr.qws
+      hr.nv hodd hN1 hr.qxv hQ'.1 hQ'.2)
 
 /-- After `p`'s phase: `h` in `p`'s `aY`, `m_q` in `q`'s. -/
 structure PDone (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec 64) (C P Q QI : Nat)
@@ -141,16 +171,19 @@ structure PDone (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitVec 
   iscr : InScr B Z s.mem t.mem
   keep : Keep mmRegs s t
 
-/-- `p`'s phase, from `q`'s. -/
-theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
+/-- `p`'s phase, from `q`'s, with `U` its start (right if `okY`). -/
+theorem pPartWith_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok okY : Prop} {U : List (Prog isa)}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : QReady s t₁ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
       (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb Mk ok)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
-    WP isa (seqs (pPhase M.mm E.code)) t₁ fun t => PDone s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) (hU : U ≠ []) (hY : ok → Mk = true → okY)
+    (hunit : WP isa (seqs U) t₁ (UnitPost t₁ B Z ((k + 7) / 8) minv mp (Spec.Rsa.os2ip nb)
+      (if Mk then Spec.Rsa.os2ip pb else 3) (offP ((k + 7) / 8)) (wsWords pl) ok okY)) :
+    WP isa (seqs (U ++ (mqSteps M.mm ++ ([M.mm Public.aY Public.aXm Public.aY] ++
+      (powSteps M.mm E.code sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps M.mm)))))) t₁ fun t => PDone s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip xb)
       (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb Mk ok := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
@@ -176,10 +209,10 @@ theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : N
   have hwp := wsWords_le (len := pl) (w := (k + 7) / 8) (by omega_using [hpl2]) (by omega_using [hk1])
   have hwq := wsWords_le (len := ql) (w := (k + 7) / 8) (by omega_using [hql2]) (by omega_using [hwp2, hwp])
   have hh₁ : ∀ i < 32, hFixed i = true → word t₁.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
-  refine WP.mono (pPhase_ok M E (X := if Mk then P else 3) (c := Mk) (eb := dpb) (qib := qib)
-    (oq := offQ ((k + 7) / 8) pl) (wq := wsWords ql) hr.good (by omega_using [hk1]) (by omega_using [hk2])
+  refine WP.mono (pPhaseWith_ok M E (X := if Mk then P else 3) (c := Mk) (eb := dpb) (qib := qib)
+    (oq := offQ ((k + 7) / 8) pl) (wq := wsWords ql) hU hr.good (by omega_using [hk1]) (by omega_using [hk2])
     (show slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) from le_refl _) (by unfold offQ offP; omega_using []) hZq hwp2 hwp
-    (by omega_using [hwq2]) hwq hr.wsP hr.pws hr.wsQ hr.qws hr.nv hodd hN1 hr.xm hr.pxv hP'.1 hP'.2 hr.pmask
+    (by omega_using [hwq2]) hwq hr.wsP hr.wsQ hr.qws hr.nv hodd hr.xm hP'.1 hP'.2 hr.pmask
     (fun hm => by obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨Q, hpq.symm⟩)
     (by rw [hh₁ _ (by decide) (by decide)]; exact h.hDp)
     (by rw [hh₁ _ (by decide) (by decide), h.dpl]; exact h.hPl)
@@ -187,7 +220,7 @@ theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : N
     (by rw [hh₁ _ (by decide) (by decide)]; exact h.hQi)
     (by rw [h.qil, h.dpl]) (h.qi.congrK hr.iscr hr.keep)
     (by rw [h.qil]; unfold wsWords; omega_using [])
-    (fun hm => by obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte, hQIe]; exact hqi))
+    (fun hm => by obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte, hQIe]; exact hqi) hunit)
     fun t₂ ⟨hg₂, hwsp₂, hxp₂, hlt₂, hh₂, f₂, k₂⟩ => ?_
   have hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := le_refl _
   have hb₂ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word t₂.mem B (8 * i) = word t₁.mem B (8 * i) :=
@@ -214,13 +247,41 @@ theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : N
   · intro hok hm; rw [hqv₂ _ _ (by omega_using [hY8])]; exact hr.qval hok hm
   · intro hok hm
     have hq := hr.qval hok hm
-    obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh₂ hok hm
+    obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh₂ hok (hY hok hm) hm
     simp only [hm, ↓reduceIte] at ha hb hbP hh
     exact ⟨a, b, ha, by rw [hb, hq], hbP, by rw [hh, hQIe]⟩
   · intro i hi hf
     have h1 : i ≠ Crt.sD := by rintro rfl; revert hf; decide
     have h2 : i ≠ Public.sCnt := by rintro rfl; revert hf; decide
     rw [hb₂ i hi h1 h2, hh₁ i hi hf]
+
+
+/-- `p`'s phase, from `q`'s. -/
+theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool} {ok : Prop}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hr : QReady s t₁ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dqb Mk ok)
+    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :
+    WP isa (seqs (pPhase M.mm E.code)) t₁ fun t => PDone s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb Mk ok := by
+  obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
+  obtain ⟨-, hP', -⟩ := mask_facts hMk hodd hPN hQN
+  have hk1 := h.k1
+  have hk2 := h.k2
+  have hpl1 := h.pl1
+  have hpl2 := h.pl2
+  have hZq := h.z
+  have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega
+  have hwp := wsWords_le (len := pl) (w := (k + 7) / 8) (by omega) (by omega)
+  have hP8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega
+  rw [pPhase_eq]
+  exact pPartWith_ok M E h hv hr hMk (by simp [unitSteps]) (fun h _ => h)
+    (unitPhase_ok M hr.good (by omega) (by omega) (le_refl _)
+      (by have := tabBytes_le_wsTab (wsWords pl); unfold offQ offP at *; omega) hwp2 hwp (by decide) (by decide)
+      (by decide) hr.wsP hr.pws hr.nv hodd hN1 hr.pxv hP'.1 hP'.2)
 
 /-- `MainPost`, with the result's bytes only if `ok`. -/
 structure CrtPost (s t : State) (B : Addr) (Z k : Nat) (op : Addr) (r : Nat) (c : Bool) (ok : Prop) : Prop where

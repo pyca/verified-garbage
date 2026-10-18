@@ -56,6 +56,19 @@ theorem XVals.of_outside {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} 
   exact ⟨by rw [ho.wv (by omega) (by omega)]; exact h.n, by rw [ho.word (by omega) (by omega)]; exact h.inv,
     by rw [ho.wv (by omega) (by omega)]; exact h.one⟩
 
+/-- What the start of a prime's phase leaves, from `s`: `G` in the modulus'
+`Y` (right if `ok`) and, in the prime's, `R_X mod X` if `okY` and `X` divides
+`N`. -/
+abbrev UnitPost (s : State) (B : Addr) (Z w : Nat) (minv mx : BitVec 64) (N X o wx : Nat) (ok okY : Prop)
+    (t : State) : Prop :=
+  Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+  wv t.mem B (slot w Public.aY) w < N ∧
+  (ok → wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N) ∧
+  wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+  (okY → X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+  word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
+  Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t
+
 /-- The start of a prime's phase: `G = 2^(64 w_X (K + 1)) mod N` into the
 modulus' `Y`, and `step` setting the prime's `Y` (to `R_X mod X` if `okY`
 and `X` divides `N`). -/
