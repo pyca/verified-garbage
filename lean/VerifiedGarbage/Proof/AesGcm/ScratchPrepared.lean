@@ -13,13 +13,6 @@ import all Init.Data.Nat.Bitwise.Basic
 namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 
-/-- `initPreparedContract`, whatever `scratch` is. -/
-def initPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initPrecomputedScratchSig.contract A
-    (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
-    (post := fun key keyLen ctx _scratch => initPreparedPost A.ptrBits key keyLen ctx)
-    (writeArgs := true) (stack := stack)
-
 /-- `vg_aes_gcm_seal_prepared` with `work: *mut [u64; 320]`. -/
 abbrev sealPreparedScratchSig := sealPrecomputedScratchSig
 

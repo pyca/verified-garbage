@@ -410,14 +410,6 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
   else []
 
 def artifactsR (v : GcmVariant) : List Artifact := [
-  Spec.Gcm.initPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    notes := [initNoteP v.impl]
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.Prepared.init v.impl.callees)
-    stack := 2576
-    verified := initPrepared_framed v.impl
-    spSafe := X86_64.withStackScratch_spSafe_of (initPrepared_spSafe v.impl)
-    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
   Spec.Gcm.encryptBlocksPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := [blocksNoteP v.impl]
