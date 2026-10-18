@@ -37,7 +37,7 @@ theorem verifySized_spec {base : Addr} {size pLen qLen p q g y total rv sv : Nat
     (sValue : Spec.Dsa.decodeBE (signature.drop qLen) = sv) :
     WP isa (Entry.sized false pLen qLen) s fun sf =>
       (sf.gpr .eax).toNat = (if Spec.Dsa.verifyBytes pLen qLen key signature digest then 1 else 0) ∧
-      Keeps powerClob s sf ∧ Outside base 0 usedBytes s.mem sf.mem ∧
+      Keeps powerClob s sf ∧ StackOutside (s.gpr .esp) base usedBytes s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
   have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
@@ -49,7 +49,8 @@ theorem verifySized_spec {base : Addr} {size pLen qLen p q g y total rv sv : Nat
     refine ⟨by rw [V, rejected]; rfl,
       (K.mono (by decide)).trans (Kf.mono (by decide)), ?_, ?_⟩
     · rw [Of]
-      exact (shapeFrame_outside O).mono (by omega) (by decide)
+      intro a ha _
+      exact (shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega))
     · intro regs saved
       rw [Of]
       exact shapeFrame_saved O saved
@@ -80,7 +81,8 @@ theorem verifySized_spec {base : Addr} {size pLen qLen p q g y total rv sv : Nat
       digestValue mask valid keyLen sigLen keyValue rValue sValue (shape_digest_width valid).1)
       fun sf ⟨V, E⟩ => ?_
     exact ⟨V, (K.mono (by decide)).trans E.keeps,
-      ((shapeFrame_outside O).mono (by omega) (by decide)).trans (execution_outside E),
+      (fun a ha hstack => ((execution_outside E) a ha (by rw [K.1 .esp (by decide)]; exact hstack)).trans
+        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega)))) ,
       fun regs saved => E.saved (shapeFrame_saved O saved)⟩
 
 end VG.Proof.Dsa.X86

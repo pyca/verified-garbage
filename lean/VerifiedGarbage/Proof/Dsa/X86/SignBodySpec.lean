@@ -38,7 +38,7 @@ theorem signBody_spec {base : Addr} {size pLen qLen p q g y x k digestLen n : Na
       (sf.gpr .eax).toNat = Spec.Dsa.signStatus (Spec.Dsa.signBytes pLen qLen key nonce digest) ∧
       Spec.Rsa.bytesAt sf.mem (out.setWidth 64) (2 * qLen) =
         (Spec.Dsa.signBytes pLen qLen key nonce digest).getD (List.replicate (2 * qLen) 0) ∧
-      Keeps powerClob s0 sf ∧ OutputFrame base (out.setWidth 64) usedBytes (2 * qLen) s0.mem sf.mem ∧
+      Keeps powerClob s0 sf ∧ StackOutputFrame (s0.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s0.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s0.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
   have spec := signBytes_compute M.widths shape keyLen nonceLen keyValue nonceValue qBits (digest := digest)

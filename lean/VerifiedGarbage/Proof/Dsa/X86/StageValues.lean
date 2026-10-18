@@ -19,12 +19,12 @@ theorem StageResult.local_value {base : Addr} {s t : State} {size output len val
 
 theorem StageFrame.local_value_keep {base : Addr} {s t : State} {size output len d count : Nat}
     (F : StageFrame base s t output len) (hs : Scr s base size) (hc : 0 < count)
-    (hd : contextBytes 48 ≤ d) (hb : d + count ≤ size) (ho : output + len ≤ size)
+    (hd : contextBytes 48 ≤ d) (hb : d + count ≤ size) (ho : output + len ≤ size) (hused : d + count ≤ VG.Impl.Dsa.Layout.usedBytes)
     (hsep : d + count ≤ output ∨ output + len ≤ d) :
     Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem ((pointerValue base t (.local d)).setWidth 64) count) =
       Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.local d)).setWidth 64) count) := by
   rw [local_pointer (F.scr hs) hc hb, local_pointer hs hc hb,
-    F.local_bytes hd (by have := hs.nowrap; omega) (by have := hs.nowrap; omega) hsep]
+    F.local_bytes hd hused (by have := hs.nowrap; omega) hsep]
 
 theorem localStream {s : State} {base : Addr} {size offset len n : Nat}
     (hs : Scr s base size) (hlen : 0 < len) (hb : offset + len ≤ size) (hfar : contextBytes n ≤ offset) :

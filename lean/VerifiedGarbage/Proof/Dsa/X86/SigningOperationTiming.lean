@@ -19,7 +19,7 @@ theorem signingOperation_agrees {s t : State} (A : SigningABI s) (B : SigningABI
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa (Entry.operation true) s tr sf) (F : Exec isa (Entry.operation true) t ur tf) : tr = ur := by
   let L := signLayout s A
-  have LayoutEq := signLayout_eq A B args P Q
+  have LayoutEq := signLayout_eq A B args SP P Q
   have Size := args 10 (by decide)
   have Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 9 (by decide))
   have PL := args 4 (by decide)

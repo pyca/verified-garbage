@@ -37,10 +37,11 @@ theorem callPowerP_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
     RelCT isa (CallPair L) (Core.power L.pLen L.qLen .p a b output) (CallPair L) := by
   have W := L.lengths
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
-  · apply (corePower_relCT L.base L.size L.pLen L.qLen output .p a b L.saved
-    (by omega) (by omega) L.aligned.1 (by omega)).mono ?_ (fun _ _ h => h)
+  · apply (corePower_relCT L.base L.size L.pLen L.qLen output .p a b L.saved L.extent
+    (by omega) (by omega) L.aligned.1 (by omega) (by omega) L.aligned.2).mono ?_ (fun _ _ h => h)
     intro s t H
-    exact ⟨H.1.arithmeticP A B (by omega), H.2.arithmeticP A B (by omega), H.pointer P, H.pointer A, H.pointer B⟩
+    exact ⟨⟨H.1.arithmeticP A B (by omega), H.2.arithmeticP A B (by omega), H.pointer P, H.pointer A, H.pointer B⟩,
+      H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩
   · intro s R
     exact WP.mono (stagePowerP_ok R.moduli (R.operand A (by omega) (by omega))
       (R.operand B (by omega) (by omega)) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
@@ -51,10 +52,11 @@ theorem callPowerQ_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
     RelCT isa (CallPair L) (Core.power L.qLen L.qLen .q a b output) (CallPair L) := by
   have W := L.lengths
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
-  · apply (corePower_relCT L.base L.size L.qLen L.qLen output .q a b L.saved
-    (by omega) (by omega) L.aligned.2 (by omega)).mono ?_ (fun _ _ h => h)
+  · apply (corePower_relCT L.base L.size L.qLen L.qLen output .q a b L.saved L.extent
+    (by omega) (by omega) L.aligned.2 (by omega) (by omega) L.aligned.2).mono ?_ (fun _ _ h => h)
     intro s t H
-    exact ⟨H.1.arithmeticQ A B, H.2.arithmeticQ A B, H.pointer Q, H.pointer A, H.pointer B⟩
+    exact ⟨⟨H.1.arithmeticQ A B, H.2.arithmeticQ A B, H.pointer Q, H.pointer A, H.pointer B⟩,
+      H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩
   · intro s R
     exact WP.mono (stagePowerQ_ok R.moduli (R.operand A (by omega) (by omega))
       (R.operand B (by omega) (by omega)) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)

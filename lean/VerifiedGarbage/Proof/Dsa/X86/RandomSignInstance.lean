@@ -19,7 +19,7 @@ def signFn : SignFn where
   depth := by decide +kernel
 
 theorem randomSigning_verified :
-    Verified target (RandomSign.code signFn.name signFn.code) (Spec.Dsa.randomSignContract abi 144) :=
+    Verified target (RandomSign.code signFn.name signFn.code) (Spec.Dsa.randomSignContract abi 156) :=
   randomSign_verified signFn
 
 end VG.Proof.Dsa.X86

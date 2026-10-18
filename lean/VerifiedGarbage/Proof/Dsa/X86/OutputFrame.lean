@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.WriteScalar
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 
 /-! # Retaining scratch values while writing external signature bytes -/
 
@@ -11,6 +12,13 @@ open VG.Impl.Dsa.X86
 
 def OutputFrame (base out : Addr) (prefixSize len : Nat) (m m' : Mem) : Prop :=
   ∀ a, prefixSize ≤ ofs base a → len ≤ ofs out a → m' a = m a
+
+/-- External writes also account for the helper's argument and return stack. -/
+def StackOutputFrame (sp : BitVec 32) (base out : Addr) (prefixSize len : Nat) (m m' : Mem) : Prop :=
+  ∀ a, prefixSize ≤ ofs base a → len ≤ ofs out a → ¬ (callStack sp).Contains a 1 → m' a = m a
+
+def StackOutside (sp : BitVec 32) (base : Addr) (len : Nat) (m m' : Mem) : Prop :=
+  ∀ a, len ≤ ofs base a → ¬ (callStack sp).Contains a 1 → m' a = m a
 
 theorem OutputFrame.scratch_byte {base out : Addr} {prefixSize len size : Nat} {m m' : Mem}
     (F : OutputFrame base out prefixSize len m m') (apart : Region.Disjoint ⟨base, size⟩ ⟨out, len⟩)

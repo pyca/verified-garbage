@@ -24,7 +24,7 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : RandomSignABI s₁) (A₂
     (hk : Spec.Dsa.publicBytesLeak (rInput s₁).pLen (rInput s₁).qLen (rInput s₁).key =
       Spec.Dsa.publicBytesLeak (rInput s₂).pLen (rInput s₂).qLen (rInput s₂).key)
     (hr : Spec.Dsa.signStatus (callResult s₁ t₁) = Spec.Dsa.signStatus (callResult s₂ t₂)) :
-    (Spec.Dsa.signContract abi 20).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
+    (Spec.Dsa.signContract abi 32).pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
   sig_pub [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes]
   simp only [ce_arg A₁ h₁ C₁ rd wr (show 0 < 11 by decide),
     ce_arg A₁ h₁ C₁ rd wr (show 1 < 11 by decide),

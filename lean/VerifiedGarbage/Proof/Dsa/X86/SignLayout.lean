@@ -28,6 +28,7 @@ def signKey (s : State) : Spec.Dsa.Key := Spec.Dsa.publicKeyBytes (arg s 4).toNa
   (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat)
 
 def signLayout (s : State) (A : SigningABI s) : CallLayout where
+  sp := s.gpr .esp
   base := argumentPointer s 9
   size := (arg s 10).toNat * 8
   pLen := (arg s 4).toNat
@@ -56,15 +57,18 @@ theorem signingInstalled_ready {s t : State} (A : SigningABI s)
   have L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
     have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
   obtain ⟨Key, KeyBytes⟩ := I.input (by decide : (2, .p) ∈ Entry.signArguments) A.keyBound
-    (by rw [A.rd, A.wr]; simp) A.keyScratch
+    (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Nonce, _⟩ := I.input (by decide : (5, .nonce) ∈ Entry.signArguments) A.nonceBound
-    (by rw [A.rd, A.wr]; simp) A.nonceScratch
+    (by rw [A.rd, A.wr]; simp) A.nonceScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowNonce.symm)
   obtain ⟨D, _⟩ := I.input (by decide : (7, .digest) ∈ Entry.signArguments) A.digestBound
-    (by rw [A.rd, A.wr]; simp) A.digestScratch
+    (by rw [A.rd, A.wr]; simp) A.digestScratch A.room
+    (by rw [callStack_eq A.stackLow]; exact A.belowDigest.symm)
   obtain ⟨Qptr, Gptr, Yptr, Xptr⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Y, X, KeyValue⟩ := privateKey_buffers Key L.1 L.2
     (by have := A.keyLength; omega) KeyBytes Qptr Gptr Yptr Xptr
-  refine ⟨I.scr, ?_, ?_, ?_, ?_, congrArg BitVec.toNat (I.arguments (8, .digestLen) (by decide))⟩
+  refine ⟨I.keeps.1 .esp (by decide), I.scr, ?_, ?_, ?_, ?_, congrArg BitVec.toNat (I.arguments (8, .digestLen) (by decide))⟩
   · intro input hi
     simp only [signLayout, signInputs, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl

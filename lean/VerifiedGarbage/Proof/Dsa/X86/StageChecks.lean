@@ -67,7 +67,7 @@ theorem StageFrame.scalar_keep_mask {base : Addr} {size pLen qLen p q d : Nat} {
   have H := VG.Proof.Dsa.X86.Layout.scalar_bounds hd
   exact F.local_value_keep M.scr (by have := M.lengths; omega)
     (by change 7048 ≤ d; omega) (Nat.le_trans (M.scalarFit hd) M.extent)
-    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega)
+    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega) (M.scalarFit hd)
     (.inr (by change 8248 ≤ d; omega))
 
 theorem StageFrame.mask_keep {base : Addr} {s t : State} {output len : Nat}

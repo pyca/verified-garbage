@@ -22,6 +22,9 @@ structure Moduli (base : Addr) (size pLen qLen p q : Nat) (s : State) : Prop whe
   pOdd : p % 2 = 1
   qOdd : q % 2 = 1
 
+theorem Moduli.room {base : Addr} {size pLen qLen p q : Nat} {s : State}
+    (M : Moduli base size pLen qLen p q s) : Pow.Room (s.gpr .esp) base size := M.pBuffer.room
+
 theorem Moduli.lengths {base : Addr} {size pLen qLen p q : Nat} {s : State}
     (M : Moduli base size pLen qLen p q s) :
     128 ≤ pLen ∧ pLen ≤ 384 ∧ 20 ≤ qLen ∧ qLen ≤ 32 ∧ qLen ≤ pLen := by
@@ -67,10 +70,10 @@ theorem Moduli.valueBounds {base : Addr} {size pLen qLen p q : Nat} {s : State}
   exact ⟨P, Q⟩
 
 theorem Moduli.keep {base : Addr} {size pLen qLen p q : Nat} {s t : State} {rs : List Reg}
-    (M : Moduli base size pLen qLen p q s) (O : Outs base runRanges s.mem t.mem)
+    (M : Moduli base size pLen qLen p q s) (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem)
     (K : Keeps rs s t) (hdi : .edi ∉ rs) (hsp : .esp ∉ rs) : Moduli base size pLen qLen p q t := by
   refine ⟨M.scr.of_keeps K hdi hsp, M.extent, M.widths,
-    M.pBuffer.keep O K hdi (by decide), M.qBuffer.keep O K hdi (by decide),
+    M.pBuffer.keep O K hdi (by decide) hsp, M.qBuffer.keep O K hdi (by decide) hsp,
     ?_, ?_, M.pLarge, M.qLarge, M.pOdd, M.qOdd⟩
   · rw [M.pBuffer.value_keep O K hdi (by decide) M.extent, M.pValue]
   · rw [M.qBuffer.value_keep O K hdi (by decide) M.extent, M.qValue]

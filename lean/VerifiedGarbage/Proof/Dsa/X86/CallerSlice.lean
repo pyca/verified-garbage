@@ -21,11 +21,13 @@ theorem CallerBuffer.slice {s : State} {base : Addr} {size full offset count : N
     exact addr_eq fit
   have N : (pointerValue base s dest).toNat = (pointerValue base s source).toNat + offset := by
     rw [hp, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt off32, Nat.mod_eq_of_lt fit]
-  refine ⟨by rw [N]; omega, ?_, ?_⟩
+  refine ⟨B.room, by rw [N]; omega, ?_, ?_, ?_⟩
   · intro d k hd
     rw [P, Offset.add_add]
     exact B.read (offset + d) k (by omega)
   · rw [P]
     exact B.apart.sub_left (Offset.sub_base _ hb)
+  · rw [P]
+    exact B.stack.sub_left (Offset.sub_base _ hb)
 
 end VG.Proof.Dsa.X86
