@@ -51,8 +51,9 @@ def pConstruct (G : Stream) (pLen qLen : Nat) : Prog isa :=
 
 def pAttempt (G1 G256 : Stream) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (pLen qLen : Nat) : Prog isa :=
-  seqs [.block pAttemptArgs, pConstruct (if qLen = 20 then G1 else G256) pLen qLen,
-    pTest mul round pLen, .block searchReturn]
+  .seq (.block pAttemptArgs)
+    (.seq (.seq (pConstruct (if qLen = 20 then G1 else G256) pLen qLen) (pTest mul round pLen))
+      (.block searchReturn))
 
 def primeSearch (G1 G256 : Stream) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (pLen qLen : Nat) : Prog isa :=
