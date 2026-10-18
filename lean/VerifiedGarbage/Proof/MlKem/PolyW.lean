@@ -52,6 +52,42 @@ theorem polyIsW16_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p 
     (hd : ∀ r ∈ rs, (⟨p, 512⟩ : Region).Disjoint r) (h : PolyIsW 16 m p f) : PolyIsW 16 m' p f :=
   polyIsW16_congr (bytes_frame hf hd (by decide)) h
 
+theorem polyAtW16_congr {m m' : Mem} {p : Addr}
+    (h : ∀ k < 512, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) : polyAtW 16 m' p = polyAtW 16 m p :=
+  ext_getElem! fun i hi => by rw [polyAtW_get _ _ _ hi, polyAtW_get _ _ _ hi, coeffAtW16_congr h hi]
+
+/-- Polynomial `j` of `u16`s from `p` lies within the `512 l` bytes from `p`, for `j < l`. -/
+theorem w16_at {m m' : Mem} {p : Addr} {l : Nat}
+    (h : ∀ i < 512 * l, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) {j : Nat} (hj : j < l) :
+    ∀ k < 512, m' (p + BitVec.ofNat 64 (32 * 16 * j) + BitVec.ofNat 64 k) =
+      m (p + BitVec.ofNat 64 (32 * 16 * j) + BitVec.ofNat 64 k) := fun k hk => by
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact h _ (by omega)
+
+/-- The vector of `u16`s from `p`, in memory that agrees on its bytes. -/
+theorem vecAtW16_congr {m m' : Mem} {p : Addr} {l : Nat}
+    (h : ∀ i < 512 * l, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) : vecAtW 16 m' p l = vecAtW 16 m p l :=
+  List.map_congr_left fun _ hj => polyAtW16_congr (w16_at h (List.mem_range.mp hj))
+
+theorem vecReducedW16_congr {m m' : Mem} {p : Addr} {l : Nat}
+    (h : ∀ i < 512 * l, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
+    VecReducedW 16 m' p l ↔ VecReducedW 16 m p l :=
+  ⟨fun r _ hj i hi => by rw [← coeffAtW16_congr (w16_at h hj) hi]; exact r _ hj i hi,
+    fun r _ hj i hi => by rw [coeffAtW16_congr (w16_at h hj) hi]; exact r _ hj i hi⟩
+
+/-- The `k × k` matrix of `u16`s from `p`, in memory that agrees on its bytes. -/
+theorem matAtW16_congr {m m' : Mem} {p : Addr} {k : Nat}
+    (h : ∀ i < 512 * (k * k), m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
+    matAtW 16 m' p k = matAtW 16 m p k :=
+  List.map_congr_left fun r hr => vecAtW16_congr fun i hi => by
+    have hr := List.mem_range.mp hr
+    have : k * r + k ≤ k * k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left k hr
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+    exact h _ (by
+      rw [show 32 * 16 * (k * r) + i = 512 * (k * r) + i by omega]
+      have := Nat.mul_le_mul_left 512 this
+      omega)
+
 theorem vecAtW_length (w : Nat) (m : Mem) (p : Addr) (k : Nat) : (vecAtW w m p k).length = k := by
   simp [vecAtW]
 

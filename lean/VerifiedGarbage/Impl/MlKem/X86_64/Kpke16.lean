@@ -231,4 +231,21 @@ open Kpke16 in
 `A` and the code `mul` of `vg_mlkem*_keygen_mul` (reading `Â` as `u16`s). -/
 def kpkeKg (L : Kem) (A : Arith) (mul : Nat → Prog isa) : Prog isa := .seq (kpkeKgPre L mul) (kpkeKgPost L A)
 
+/-! ## Calls of the K-PKE functions -/
+
+/-- `vg_mlkem*_kpke_keygen_avx2(ek, dk, a, se, scratch)`. -/
+def Kem.kpkeKgAt (L : Kem) (ek dk a se z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi ek ++ lea .rsi dk ++ lea .rdx a ++ lea .rcx se ++ lea .r8 z))
+    (.call (L.p.fn "kpke_keygen" ++ "_avx2") (kpkeKg L .avx2 keygenMul16Y))
+
+/-- `vg_mlkem*_kpke_encrypt_avx2(ct, a, t, r, m, scratch)`. -/
+def Kem.kpkeEncAt (L : Kem) (ct a t r m z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi ct ++ lea .rsi a ++ lea .rdx t ++ lea .rcx r ++ lea .r8 m ++ lea .r9 z))
+    (.call (L.p.fn "kpke_encrypt" ++ "_avx2") (kpkeEnc L .avx2 encryptMul16Y))
+
+/-- `vg_mlkem*_kpke_decrypt_avx2(m, s, ct, scratch)`. -/
+def Kem.kpkeDecAt (L : Kem) (m s ct z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi m ++ lea .rsi s ++ lea .rdx ct ++ lea .rcx z))
+    (.call (L.p.fn "kpke_decrypt" ++ "_avx2") (kpkeDec L .avx2 Kpke16.dmInnerY))
+
 end VG.Impl.MlKem.X86_64
