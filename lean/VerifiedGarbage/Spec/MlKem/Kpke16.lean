@@ -86,10 +86,10 @@ def VecReducedW (w : Nat) (m : Mem) (p : Addr) (l : Nat) : Prop :=
 
 /-! ## Sampling -/
 
-/-- `vg_mlkem16_sample_ntt(seed: *const [u8; 34], a: *mut [u16; 256], scratch: *mut [u64; 256]) -> u32`. -/
+/-- `vg_mlkem16_sample_ntt(seed: *const [u8; 34], a: *mut [u16; 256], scratch: *mut [u64; 386]) -> u32`. -/
 def sampleNTT16Sig : Sig where
   params := [("seed", .array false .u8 34), ("a", .array true .u16 256),
-    ("scratch", .array true .u64 256)]
+    ("scratch", .array true .u64 386)]
   ret := some .u32
 
 /-- With the 34 bytes `B` at `seed`: writes `SampleNTT(B)` (Algorithm 7) to
@@ -104,10 +104,10 @@ def sampleNTT16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun seed _a _scratch m => (bytesAt m seed 34).map (·.toNat))
 
-/-- `vg_mlkem16_sample_ntt4(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1024]) -> u32`. -/
+/-- `vg_mlkem16_sample_ntt4(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1538]) -> u32`. -/
 def sampleNTT4_16Sig : Sig where
   params := [("seeds", .array false .u8 136), ("a", .array true .u16 1024),
-    ("scratch", .array true .u64 1024)]
+    ("scratch", .array true .u64 1538)]
   ret := some .u32
 
 /-- Polynomial `k` of four with 16-bit coefficients at `a`: from byte
@@ -145,11 +145,11 @@ def cbd2_16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
 
 /-! ## K-PKE -/
 
-/-- `ek: *mut [u8; 384k], dk: *mut [u8; 384k], a: *const [u16; 256k²], se: *mut [u16; 512k], scratch: *mut [u64; 2048]`. -/
+/-- `ek: *mut [u8; 384k], dk: *mut [u8; 384k], a: *const [u16; 256k²], se: *mut [u16; 512k], scratch: *mut [u64; 2560]`. -/
 def kpkeKeyGenSig (k : Nat) : Sig where
   params := [("ek", .array true .u8 (384 * k)), ("dk", .array true .u8 (384 * k)),
     ("a", .array false .u16 (256 * (k * k))), ("se", .array true .u16 (512 * k)),
-    ("scratch", .array true .u64 2048)]
+    ("scratch", .array true .u64 2560)]
 
 /-- Lines 16–20 of `K-PKE.KeyGen` (Algorithm 13), with the matrix `Â`
 reduced at `a` and the vectors `s` and `e` reduced at `se`, one after the
@@ -168,11 +168,11 @@ def kpkeKeyGenContract (k : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
     (writeArgs := true)
     (stack := stack)
 
-/-- `ct: *mut [u8; ctLen], a: *const [u16; 256k²], t: *const [u8; 384k], r: *mut [u16; 256(2k + 1)], m: *const [u8; 32], scratch: *mut [u64; 2048]`. -/
+/-- `ct: *mut [u8; ctLen], a: *const [u16; 256k²], t: *const [u8; 384k], r: *mut [u16; 256(2k + 1)], m: *const [u8; 32], scratch: *mut [u64; 2560]`. -/
 def Params.kpkeEncryptSig (p : Params) : Sig where
   params := [("ct", .array true .u8 p.ctLen), ("a", .array false .u16 (256 * (p.k * p.k))),
     ("t", .array false .u8 (384 * p.k)), ("r", .array true .u16 (256 * (2 * p.k + 1))),
-    ("m", .array false .u8 32), ("scratch", .array true .u64 2048)]
+    ("m", .array false .u8 32), ("scratch", .array true .u64 2560)]
 
 /-- Lines 2 and 18–23 of `K-PKE.Encrypt` (Algorithm 14), after sampling. The
 inputs are:
