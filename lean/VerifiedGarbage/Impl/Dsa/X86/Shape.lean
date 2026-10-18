@@ -30,7 +30,7 @@ def saveParity (n : Nat) : List Instr :=
 
 def combine : List Instr :=
   [.mov .eax (.mem (sc 32)), .alu .and .eax (.mem (sc 44)),
-    .mov .ebx (.mem (sc 48)), .alu .or .ebx (.mem (sc 52)), .alu .and .ebx (.mem (sc 36)),
+    .mov .ebx (.mem (sc 48)), .alu .or .ebx (.mem (sc 44)), .alu .or .ebx (.mem (sc 52)), .alu .and .ebx (.mem (sc 36)),
     .alu .or .eax (.reg .ebx), .mov .ebx (.mem (sc 40)), .alu .and .ebx (.mem (sc 52)),
     .alu .or .eax (.reg .ebx), .alu .and .eax (.mem (sc 56)),
     .store (sc (Layout.field .mask)) .eax]

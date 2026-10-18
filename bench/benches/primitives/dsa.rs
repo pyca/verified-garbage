@@ -19,6 +19,15 @@ mod vectors;
     target_arch = "aarch64",
     target_arch = "arm"
 ))]
+#[path = "../../../tests/dsa_legacy.rs"]
+mod legacy_vectors;
+
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
@@ -36,18 +45,25 @@ pub fn bench(c: &mut Criterion) {
         include_str!("../../../vectors/nist-cavp-dsa/SigGen.txt"),
         true,
     );
-    for (p_len, q_len) in [(128, 20), (256, 28), (256, 32), (384, 32)] {
-        let v = cases
-            .iter()
-            .find(|v| hex(&v["P"], 0).len() == p_len && hex(&v["Q"], 0).len() == q_len)
-            .unwrap();
-        let (p, q, g, y, x) = (
-            hex(&v["P"], p_len),
-            hex(&v["Q"], q_len),
-            hex(&v["G"], p_len),
-            hex(&v["Y"], p_len),
-            hex(&v["X"], q_len),
-        );
+    for (p_len, q_len) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] {
+        let (p, q, g, y, x) = if (p_len, q_len) == (256, 20) {
+            let (p, q, g) = legacy_vectors::parameters();
+            let mut x = vec![0; q_len];
+            x[q_len - 1] = 1;
+            (p, q, g.clone(), g, x)
+        } else {
+            let v = cases
+                .iter()
+                .find(|v| hex(&v["P"], 0).len() == p_len && hex(&v["Q"], 0).len() == q_len)
+                .unwrap();
+            (
+                hex(&v["P"], p_len),
+                hex(&v["Q"], q_len),
+                hex(&v["G"], p_len),
+                hex(&v["Y"], p_len),
+                hex(&v["X"], q_len),
+            )
+        };
         let key = PrivateKey::from_components(&p, &q, &g, &y, &x).unwrap();
         let ssl_key = PKey::from_dsa(
             Dsa::from_private_components(

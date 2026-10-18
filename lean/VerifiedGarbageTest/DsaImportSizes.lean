@@ -7,6 +7,10 @@ import VerifiedGarbage.TCB.Audit
 namespace VG.Test.DsaImportSizes
 open Spec.Dsa
 
+-- Existing contracts now adopt exactly the separately reviewed import policy.
+example (l n : Nat) : supportedSizes l n ↔ Import.sizesValid l n := Iff.rfl
+example (pLen qLen : Nat) : lengthsValid pLen qLen ↔ Import.lengthsValid pLen qLen := Iff.rfl
+
 -- Exactly the four FIPS pairs and the additional legacy pair are accepted.
 example (l n : Nat) : Import.sizesValid l n ↔
     (l, n) = (1024, 160) ∨ (l, n) = (2048, 160) ∨

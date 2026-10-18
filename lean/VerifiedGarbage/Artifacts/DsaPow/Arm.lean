@@ -26,6 +26,7 @@ open Proof.Dsa.Arm.Pow in
 def artifacts : List Artifact := [
   helper 16 5 (verified 16 5),
   helper 3 5 (verified 3 5),
+  helper 32 5 (verified 32 5),
   helper 32 7 (verified 32 7),
   helper 4 7 (verified 4 7),
   helper 32 8 (verified 32 8),

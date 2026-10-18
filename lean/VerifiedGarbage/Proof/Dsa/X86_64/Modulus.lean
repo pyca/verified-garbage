@@ -31,7 +31,7 @@ theorem ModulusSide.bounds (side : ModulusSide) (L : ExecutionLayout) :
   obtain ⟨hp2, hp48, hq2, hq48, hpLo, hpHi, hqHi, _⟩ := VG.Proof.Dsa.workspace_bounds L.lengths
   have hqa : qWorkspace ≤ activeBytes := by decide
   have hl : 1 ≤ L.pLen ∧ L.pLen < 2 ^ 31 ∧ 1 ≤ L.qLen ∧ L.qLen < 2 ^ 31 := by
-    rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
+    rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
   cases side
   · exact ⟨hp2, hp48, hpLo, by decide, Nat.le_trans hpHi hqa, hl.1, hl.2.1⟩
   · exact ⟨hq2, hq48, by decide, by decide, hqHi, hl.2.2.1, hl.2.2.2⟩

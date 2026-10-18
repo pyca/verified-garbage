@@ -20,8 +20,10 @@ impl PrivateKey {
     /// callers must assure domain primality separately.
     /// Available on x86-64 and AArch64.
     pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
-        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
-            || g.len() != p.len()
+        if !matches!(
+            (p.len(), q.len()),
+            (128, 20) | (256, 20 | 28 | 32) | (384, 32)
+        ) || g.len() != p.len()
             || x.len() != q.len()
         {
             return Err(Error::Length);
@@ -90,8 +92,10 @@ impl PrivateKey {
         g: &[u8],
         mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {
-        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
-            || g.len() != p.len()
+        if !matches!(
+            (p.len(), q.len()),
+            (128, 20) | (256, 20 | 28 | 32) | (384, 32)
+        ) || g.len() != p.len()
         {
             return Err(Error::Length);
         }

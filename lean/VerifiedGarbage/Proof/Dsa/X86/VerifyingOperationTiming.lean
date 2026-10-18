@@ -52,7 +52,7 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
     intro u v H
     refine ⟨verifyingInstalled_ready A H.1, ?_⟩
     simpa only [L, LayoutEq, DL] using verifyingInstalled_ready B H.2
-  have Dispatch := widthDispatch_relCT false [(128, 20), (256, 28), (256, 32), (384, 32)]
+  have Dispatch := widthDispatch_relCT false [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
     L.pLen L.qLen L.base L.size R (VG.X86.Taint.Agree (workspaceTaint false)) Invariant L.saved
     (supportedWidths_member A.lengths) (by decide) hp hq Sized
   have Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))

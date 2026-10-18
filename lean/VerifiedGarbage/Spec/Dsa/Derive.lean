@@ -96,7 +96,7 @@ def checkParametersApi : Api where
     q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic \
     consistency, not primality. All inputs are public. \
     Contract: `VG.Spec.Dsa.checkParametersContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).",
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "params_len must be 2*p_len + q_len.",
     "scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return."]
 
@@ -113,7 +113,7 @@ def deriveKeyApi : Api where
     primality. x must be a fresh uniform scalar the caller sampled. Timing may \
     depend on p, q, g and success, not otherwise on x. \
     Contract: `VG.Spec.Dsa.deriveKeyContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).",
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.",
     "scratch_len must be at least 16*p_len words. Scratch may contain secrets on return."]
 

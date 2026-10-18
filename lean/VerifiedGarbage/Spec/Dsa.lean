@@ -22,6 +22,8 @@ Primality is probable: acceptance does not prove that p and q are prime.
 
 Parameter generation chooses (1024,160), (2048,256), or (3072,256) for
 `generate_parameters(bits)`. Imported (2048,224) parameters are also accepted.
+Imported (2048,160) parameters are accepted for legacy interoperability; this
+additional pair is not one of the FIPS 186-4 §4.2 parameter sizes.
 1024-bit DSA is included for legacy interoperability. Seed hashing uses
 SHA-1 for N=160 and SHA-256 for N=256. Generator construction is A.2.1's
 unverifiable generation, with a separate random h tape (not the verifiable
@@ -79,9 +81,9 @@ decreasing_by omega
 /-- Bit length of an unsigned integer, with bitLength 0 = 0. -/
 def bitLength (n : Nat) : Nat := if n = 0 then 0 else n.log2 + 1
 
-/-- FIPS 186-4 §4.2's (L,N) pairs. -/
+/-- FIPS 186-4 §4.2's (L,N) pairs, plus (2048,160) for legacy imports. -/
 def supportedSizes (l n : Nat) : Prop :=
-  (l = 1024 ∧ n = 160) ∨ (l = 2048 ∧ (n = 224 ∨ n = 256)) ∨ (l = 3072 ∧ n = 256)
+  (l = 1024 ∧ n = 160) ∨ (l = 2048 ∧ (n = 160 ∨ n = 224 ∨ n = 256)) ∨ (l = 3072 ∧ n = 256)
 
 instance (l n : Nat) : Decidable (supportedSizes l n) := by
   unfold supportedSizes

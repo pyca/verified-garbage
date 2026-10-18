@@ -33,7 +33,8 @@ theorem workspaces_ok {s : State} {B pp qp : Addr} {Z : Nat} {p q : List Byte}
       Keep coreRegs s t := by
   obtain ⟨hp2, hp48, hq2, hq48, hpLo, hpHi, hqHi, _⟩ := VG.Proof.Dsa.workspace_bounds hlens
   have hlengths : 1 ≤ p.length ∧ p.length < 2 ^ 31 ∧ 1 ≤ q.length ∧ q.length < 2 ^ 31 := by
-    rcases hlens with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
+    unfold Spec.Dsa.lengthsValid at hlens
+    omega
   have hparent : pWorkspace ≤ Z := Nat.le_trans (by decide) hZ
   unfold SignVerify.workspaces seqs
   refine WP.seq (WP.mono (parent_ok hs hdi hparent) fun u ⟨hgu, hfu, hku⟩ => ?_)

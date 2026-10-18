@@ -14,6 +14,16 @@ open Lean Elab Command Spec.Dsa
 #guard generationLengthsValid 128 20
 #guard generationLengthsValid 256 32
 #guard generationLengthsValid 384 32
+-- The legacy import extension must not change parameter-generation policy.
+#guard supportedSizes 2048 160
+#guard lengthsValid 256 20
+#guard ¬supportedSizes 1024 224
+#guard ¬supportedSizes 3072 160
+#guard ¬lengthsValid 128 28
+#guard ¬lengthsValid 384 20
+#guard subgroupBits 2048 == some 256
+#guard ¬generationLengthsValid 256 20
+#guard generateParametersBytes 256 20 [] [] [] == none
 #guard ¬generationLengthsValid 256 28
 #guard lengthsValid 256 28
 #guard generateParametersBytes 256 28 [] [] [] == none
