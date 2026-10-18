@@ -40,21 +40,21 @@ theorem clearW_ok {s : State}
 
 end
 
-def computeW (terms : List (Nat × Nat)) : List Instr :=
-  Impl.MlKem.AArch64.DotW.clearW ++ terms.flatMap Impl.MlKem.AArch64.DotW.termW ++
+def computeW (bf bg : Reg) (terms : List (Nat × Nat)) : List Instr :=
+  Impl.MlKem.AArch64.DotW.clearW ++ terms.flatMap (Impl.MlKem.AArch64.DotW.termW bf bg) ++
     [.ldrq .v18 .x3 0, .ldrq .v28 .x3 16] ++
     Impl.MlKem.AArch64.DotW.finishR .v21 .v22 .v23 .v18 .v24 ++
     Impl.MlKem.AArch64.DotW.finishR .v25 .v26 .v27 .v28 .v24
 
-theorem computeW_ok {s : State} (terms : List (Nat × Nat))
+theorem computeW_ok {s : State} {rF rG : Reg} (terms : List (Nat × Nat))
     {F G : (Nat × Nat) → Nat → Nat} {Γ Γ' : Nat → Nat}
     (hc : VConsts s) (hn : terms.length ≤ 4)
-    (hin : ∀ fg ∈ terms, TermInputW s fg (F fg) (G fg))
+    (hin : ∀ fg ∈ terms, TermInputW s rF rG fg (F fg) (G fg))
     (hr : ∀ i < 2, InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (16 * i)) 16)
     (hg : Lanes (s.mem.read (s.gpr .x3 + BitVec.ofNat 64 0) 16) Γ)
     (hg' : Lanes (s.mem.read (s.gpr .x3 + BitVec.ofNat 64 16) 16) Γ')
     (bg : ∀ e < 4, Γ e < 3329) (bg' : ∀ e < 4, Γ' e < 3329) :
-    WP isa (.block (computeW terms)) s fun s' =>
+    WP isa (.block (computeW rF rG terms)) s fun s' =>
       Only [.x1, .x2] s s' ∧ VConsts s' ∧
       Lanes (s'.v .v21) (evenResult terms F G Γ) ∧ Lanes (s'.v .v23) (oddResult terms F G) ∧
       Lanes (s'.v .v25) (evenResult terms (fun fg => upper (F fg)) (fun fg => upper (G fg)) Γ') ∧
@@ -62,7 +62,7 @@ theorem computeW_ok {s : State} (terms : List (Nat × Nat))
   simp only [computeW, List.append_assoc]
   refine clearW_ok fun s₁ h₁ a₁ => ?_
   have k₁ := only_vchg h₁
-  have input₁ : ∀ fg ∈ terms, TermInputW s₁ fg (F fg) (G fg) :=
+  have input₁ : ∀ fg ∈ terms, TermInputW s₁ rF rG fg (F fg) (G fg) :=
     fun fg hf => (hin fg hf).keep (k₁.mono (by simp))
   rw [WP.block_append_iff]
   have z : ∀ e < 4, (zeroSums e).Bounded 0 := fun _ _ => by simp only [zeroSums, Sums.Bounded]; decide

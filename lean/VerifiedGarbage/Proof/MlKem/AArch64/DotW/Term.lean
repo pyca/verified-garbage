@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: a term
 
-`termW fg` (the pointers of `dot`, its loads, `gatherW` and `accumulateW`)
+`termW bf bg fg` (pointers to `bf` and `bg` plus the offsets `fg`, the loads of `dot`, `gatherW` and `accumulateW`)
 adds the products of the eight pairs of 16 coefficients of `F` and `G` to
 the sums of pairs `0 … 3` (`v21`–`v23`, as `dot`) and `4 … 7` (`v25`–`v27`):
 `fullTermW_ok`.
@@ -28,9 +28,40 @@ def accumulateW : List Instr :=
    .vop (.umlalH false .v23 .v6 .v20), .vop (.umlalH true .v27 .v6 .v20),
    .vop (.umlalH false .v23 .v7 .v19), .vop (.umlalH true .v27 .v7 .v19)]
 
-theorem termW_partition (fg : Nat × Nat) :
-    Impl.MlKem.AArch64.DotW.termW fg = pointers fg ++ (loads ++ gatherW ++ accumulateW) := by
-  simp only [Impl.MlKem.AArch64.DotW.termW, pointers, loads, gatherW, accumulateW,
+/-- `x1` and `x2` to the coefficients of a term: `bf` and `bg` plus its offsets, plus `x12`. -/
+def pointersW (bf bg : Reg) (fg : Nat × Nat) : List Instr :=
+  Impl.MlKem.AArch64.ptrTo .x1 bf fg.1 ++ Impl.MlKem.AArch64.ptrTo .x2 bg fg.2 ++ [.add .x .x1 .x1 .x12, .add .x .x2 .x2 .x12]
+
+theorem not_mem_x12 {r : Reg} (h : r ∉ clob) : r ∉ [Reg.x1, .x2] := fun e => h (by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at e
+  rcases e with rfl | rfl <;> decide)
+
+theorem pointersW_ok {s : State} {bf bg : Reg} {fg : Nat × Nat} (hbf : bf ∉ clob) (hbg : bg ∉ clob)
+    (hf : fg.1 < 65536) (hg : fg.2 < 65536) :
+    WP isa (.block (pointersW bf bg fg)) s fun s' =>
+      Only [.x1, .x2] s s' ∧ s'.v = s.v ∧
+      s'.gpr .x1 = s.gpr bf + BitVec.ofNat 64 fg.1 + s.gpr .x12 ∧
+      s'.gpr .x2 = s.gpr bg + BitVec.ofNat 64 fg.2 + s.gpr .x12 := by
+  have n1 : ∀ r, r ∉ clob → r ≠ .x1 := fun r h e => h (by rw [e]; decide)
+  have n2 : ∀ r, r ∉ clob → r ≠ .x2 := fun r h e => h (by rw [e]; decide)
+  refine WP.mono (WP.keepV (Q := fun s' => Only [.x1, .x2] s s' ∧
+    s'.gpr .x1 = s.gpr bf + BitVec.ofNat 64 fg.1 + s.gpr .x12 ∧
+    s'.gpr .x2 = s.gpr bg + BitVec.ofNat 64 fg.2 + s.gpr .x12) ?_ ?_) ?_
+  · simp only [pointersW, Impl.MlKem.AArch64.ptrTo]
+    split <;> split <;> rfl
+  · simp only [pointersW, List.append_assoc]
+    refine wp_ptrTo (n1 bf hbf).symm hf fun s₁ h₁ e₁ => wp_ptrTo (n2 bg hbg).symm hg fun s₂ h₂ e₂ =>
+      wp_add fun s₃ h₃ e₃ => wp_add fun s₄ h₄ e₄ => wp_nil ?_
+    refine ⟨(((h₁.trans h₂).trans h₃).trans h₄).mono, ?_, ?_⟩
+    · rw [h₄.get .x1, e₃, h₂.get .x1, e₁, h₂.get .x12, h₁.get .x12]
+    · rw [e₄, h₃.get .x2, e₂, h₁.get bg (by simpa using n1 bg hbg), h₃.get .x12, h₂.get .x12,
+        h₁.get .x12]
+  · intro s' h
+    exact ⟨h.1.1, h.2, h.1.2⟩
+
+theorem termW_partition (bf bg : Reg) (fg : Nat × Nat) :
+    Impl.MlKem.AArch64.DotW.termW bf bg fg = pointersW bf bg fg ++ (loads ++ gatherW ++ accumulateW) := by
+  simp only [Impl.MlKem.AArch64.DotW.termW, pointersW, loads, gatherW, accumulateW,
     List.append_assoc, List.cons_append, List.nil_append]
 
 /-- The sums of pairs `0 … 3` (`lo`, as `dot`'s `Accum`) and `4 … 7` (`hi`). -/
@@ -131,39 +162,41 @@ namespace VG.Proof.MlKem.AArch64.DotW
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem
 open VG.Proof.MlKem.AArch64.Dot
 
-/-- What a term needs: sixteen coefficients of each polynomial, at `x28` plus its offset
-plus `x12`. -/
-structure TermInputW (s : State) (fg : Nat × Nat) (F G : Nat → Nat) : Prop where
+/-- What a term needs: sixteen coefficients of each polynomial, at `bf` (or `bg`) plus its
+offset plus `x12`, base registers the loop keeps. -/
+structure TermInputW (s : State) (bf bg : Reg) (fg : Nat × Nat) (F G : Nat → Nat) : Prop where
+  baseF : bf ∉ clob
+  baseG : bg ∉ clob
   offF : fg.1 < 65536
   offG : fg.2 < 65536
   boundF : ∀ e < 16, F e < 3329
   boundG : ∀ e < 16, G e < 3329
-  valueF : ∀ e < 16, (coeffAtW 16 s.mem (s.gpr .x28 + BitVec.ofNat 64 fg.1 + s.gpr .x12) e).toNat = F e
-  valueG : ∀ e < 16, (coeffAtW 16 s.mem (s.gpr .x28 + BitVec.ofNat 64 fg.2 + s.gpr .x12) e).toNat = G e
+  valueF : ∀ e < 16, (coeffAtW 16 s.mem (s.gpr bf + BitVec.ofNat 64 fg.1 + s.gpr .x12) e).toNat = F e
+  valueG : ∀ e < 16, (coeffAtW 16 s.mem (s.gpr bg + BitVec.ofNat 64 fg.2 + s.gpr .x12) e).toNat = G e
   readF : ∀ i < 2, InRegions (s.rd ++ s.wr)
-    (s.gpr .x28 + BitVec.ofNat 64 fg.1 + s.gpr .x12 + BitVec.ofNat 64 (16 * i)) 16
+    (s.gpr bf + BitVec.ofNat 64 fg.1 + s.gpr .x12 + BitVec.ofNat 64 (16 * i)) 16
   readG : ∀ i < 2, InRegions (s.rd ++ s.wr)
-    (s.gpr .x28 + BitVec.ofNat 64 fg.2 + s.gpr .x12 + BitVec.ofNat 64 (16 * i)) 16
+    (s.gpr bg + BitVec.ofNat 64 fg.2 + s.gpr .x12 + BitVec.ofNat 64 (16 * i)) 16
 
-theorem TermInputW.keep {s s' : State} {fg : Nat × Nat} {F G : Nat → Nat}
-    (h : TermInputW s fg F G) (hk : Only [.x1, .x2] s s') : TermInputW s' fg F G := by
-  refine ⟨h.offF, h.offG, h.boundF, h.boundG, ?_, ?_, ?_, ?_⟩
-  · rw [hk.mem, hk.get .x28, hk.get .x12]; exact h.valueF
-  · rw [hk.mem, hk.get .x28, hk.get .x12]; exact h.valueG
-  · rw [hk.rd, hk.wr, hk.get .x28, hk.get .x12]; exact h.readF
-  · rw [hk.rd, hk.wr, hk.get .x28, hk.get .x12]; exact h.readG
+theorem TermInputW.keep {s s' : State} {bf bg : Reg} {fg : Nat × Nat} {F G : Nat → Nat}
+    (h : TermInputW s bf bg fg F G) (hk : Only [.x1, .x2] s s') : TermInputW s' bf bg fg F G := by
+  refine ⟨h.baseF, h.baseG, h.offF, h.offG, h.boundF, h.boundG, ?_, ?_, ?_, ?_⟩
+  · rw [hk.mem, hk.get bf (not_mem_x12 h.baseF), hk.get .x12]; exact h.valueF
+  · rw [hk.mem, hk.get bg (not_mem_x12 h.baseG), hk.get .x12]; exact h.valueG
+  · rw [hk.rd, hk.wr, hk.get bf (not_mem_x12 h.baseF), hk.get .x12]; exact h.readF
+  · rw [hk.rd, hk.wr, hk.get bg (not_mem_x12 h.baseG), hk.get .x12]; exact h.readG
 
 /-- The coefficients `8 … 15`. -/
 abbrev upper (F : Nat → Nat) : Nat → Nat := fun i => F (8 + i)
 
-theorem fullTermW_ok {s : State} {fg : Nat × Nat} {lo hi : Nat → Sums} {F G : Nat → Nat} {n : Nat}
-    (h : TermInputW s fg F G) (hc : VConsts s) (ha : AccumW s lo hi)
+theorem fullTermW_ok {s : State} {bf bg : Reg} {fg : Nat × Nat} {lo hi : Nat → Sums} {F G : Nat → Nat}
+    {n : Nat} (h : TermInputW s bf bg fg F G) (hc : VConsts s) (ha : AccumW s lo hi)
     (hlo : ∀ e < 4, (lo e).Bounded n) (hhi : ∀ e < 4, (hi e).Bounded n) (hn : n < 4) :
-    WP isa (.block (Impl.MlKem.AArch64.DotW.termW fg)) s fun s' =>
+    WP isa (.block (Impl.MlKem.AArch64.DotW.termW bf bg fg)) s fun s' =>
       Only [.x1, .x2] s s' ∧ VConsts s' ∧
         AccumW s' (advance lo F G) (advance hi (upper F) (upper G)) := by
   rw [termW_partition, WP.block_append_iff]
-  refine WP.mono (pointers_ok h.offF h.offG) fun s₁ ⟨h₁, v₁, e₁, e₂⟩ => ?_
+  refine WP.mono (pointersW_ok h.baseF h.baseG h.offF h.offG) fun s₁ ⟨h₁, v₁, e₁, e₂⟩ => ?_
   have hc₁ : VConsts s₁ := ⟨by rw [v₁]; exact hc.q, by rw [v₁]; exact hc.m⟩
   have ha₁ : AccumW s₁ lo hi := by simpa only [AccumW, Accum, v₁] using ha
   have nlo : ∀ e < 4, (advance lo F G e).Bounded (n + 1) := fun e he =>
@@ -176,14 +209,14 @@ theorem fullTermW_ok {s : State} {fg : Nat × Nat} {lo hi : Nat → Sums} {F G :
   refine loads_ok (fun i hi => by rw [h₁.rd, h₁.wr, e₁]; exact h.readF i hi)
     (fun i hi => by rw [h₁.rd, h₁.wr, e₂]; exact h.readG i hi) fun s₂ c₂ l0 l1 l4 l5 => ?_
   have f0 : HLanes (s₂.v .v0) F := by
-    rw [l0, e₁, h₁.mem, ← BitVec.add_zero (s.gpr .x28 + BitVec.ofNat 64 fg.1 + s.gpr .x12),
+    rw [l0, e₁, h₁.mem, ← BitVec.add_zero (s.gpr bf + BitVec.ofNat 64 fg.1 + s.gpr .x12),
       show (0#64 : BitVec 64) = BitVec.ofNat 64 (2 * 0) from rfl]
     exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueF e (by omega)
   have f1 : HLanes (s₂.v .v1) (upper F) := by
     rw [l1, e₁, h₁.mem, show BitVec.ofNat 64 16 = BitVec.ofNat 64 (2 * 8) from rfl]
     exact hlanes_coeffs _ _ 8 fun e he => h.valueF (8 + e) (by omega)
   have g0 : HLanes (s₂.v .v4) G := by
-    rw [l4, e₂, h₁.mem, ← BitVec.add_zero (s.gpr .x28 + BitVec.ofNat 64 fg.2 + s.gpr .x12),
+    rw [l4, e₂, h₁.mem, ← BitVec.add_zero (s.gpr bg + BitVec.ofNat 64 fg.2 + s.gpr .x12),
       show (0#64 : BitVec 64) = BitVec.ofNat 64 (2 * 0) from rfl]
     exact hlanes_coeffs _ _ 0 fun e he => by rw [Nat.zero_add]; exact h.valueG e (by omega)
   have g1 : HLanes (s₂.v .v5) (upper G) := by

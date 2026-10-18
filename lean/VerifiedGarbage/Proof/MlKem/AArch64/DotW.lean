@@ -6,8 +6,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Setup
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64
 
-`Impl.MlKem.AArch64.DotW.dotW out terms` writes `Σ F ∘ G` (`polySum`) with
-16-bit coefficients to `x28 + out` (`dotW_ok`).
+`Impl.MlKem.AArch64.DotW.dotW bo bf bg out terms` writes `Σ F ∘ G`
+(`polySum`) with 16-bit coefficients to `bo + out` (`dotW_ok`).
 -/
 
 @[expose] public section
@@ -17,17 +17,18 @@ namespace VG.Proof.MlKem.AArch64.DotW
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Impl.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Dot
 
-def setupW (out : Nat) : List Instr := ptrTo .x0 .x28 out ++ vconsts ++
+def setupW (bo : Reg) (out : Nat) : List Instr := ptrTo .x0 bo out ++ vconsts ++
   [.adrSym .x3 "VG_MLKEM_GAMMA", .movz .x .x11 16 0, .movz .x .x12 0 0]
 
-theorem setupW_ok {s : State} {out : Nat} (ho : out < 65536) (O : Nat → BitVec 16) :
-    WP isa (.block (setupW out)) s
-      (LoopInvW s (s.gpr .x28 + BitVec.ofNat 64 out) (s.syms "VG_MLKEM_GAMMA") O 0) := by
+theorem setupW_ok {s : State} {bo : Reg} (hbo : bo ≠ .x0) {out : Nat} (ho : out < 65536)
+    (O : Nat → BitVec 16) :
+    WP isa (.block (setupW bo out)) s
+      (LoopInvW s (s.gpr bo + BitVec.ofNat 64 out) (s.syms "VG_MLKEM_GAMMA") O 0) := by
   unfold setupW
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono_syms (wp_ptrTo' (d := .x0) (b := .x28) (s := s)
-    (Q := fun s' => Only [.x0] s s' ∧ s'.gpr .x0 = s.gpr .x28 + BitVec.ofNat 64 out)
-    (by decide) ho (fun _ hk hx => ⟨hk, hx⟩)) ?_
+  refine WP.mono_syms (wp_ptrTo' (d := .x0) (b := bo) (s := s)
+    (Q := fun s' => Only [.x0] s s' ∧ s'.gpr .x0 = s.gpr bo + BitVec.ofNat 64 out)
+    hbo.symm ho (fun _ hk hx => ⟨hk, hx⟩)) ?_
   intro s₁ h₁ sy₁
   rw [WP.block_append_iff]
   refine WP.mono_syms (Ntt.vconsts_ok s₁) ?_
@@ -47,20 +48,21 @@ theorem setupW_ok {s : State} {out : Nat} (ho : out < 65536) (O : Nat → BitVec
   · rw [e11]; rfl
   · rw [hm]; intro i _; rw [ite_eq_right (by omega)]
 
-theorem dotW_partition (out : Nat) (terms : List (Nat × Nat)) :
-    Impl.MlKem.AArch64.DotW.dotW out terms =
-      .seq (.block (setupW out)) (.loop (.block (Impl.MlKem.AArch64.DotW.bodyW terms)) (.nonzero .x .x11)) := by
+theorem dotW_partition (bo bf bg : Reg) (out : Nat) (terms : List (Nat × Nat)) :
+    Impl.MlKem.AArch64.DotW.dotW bo bf bg out terms =
+      .seq (.block (setupW bo out))
+        (.loop (.block (Impl.MlKem.AArch64.DotW.bodyW bf bg terms)) (.nonzero .x .x11)) := by
   simp only [Impl.MlKem.AArch64.DotW.dotW, setupW, List.append_assoc]
 
-theorem dotW_ok {s : State} {out : Nat} (ho : out < 65536) (terms : List (Nat × Nat))
-    {F G : (Nat × Nat) → Poly}
-    (hd : LoopDataW s (s.gpr .x28 + BitVec.ofNat 64 out) (s.syms "VG_MLKEM_GAMMA") terms
+theorem dotW_ok {s : State} {bo bf bg : Reg} (hbo : bo ≠ .x0) {out : Nat} (ho : out < 65536)
+    (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Poly}
+    (hd : LoopDataW s bf bg (s.gpr bo + BitVec.ofNat 64 out) (s.syms "VG_MLKEM_GAMMA") terms
       (polyValues F) (polyValues G) gammaValues) :
-    WP isa (Impl.MlKem.AArch64.DotW.dotW out terms) s fun s' =>
-      Keep clob s s' ∧ Frame [⟨s.gpr .x28 + BitVec.ofNat 64 out, 512⟩] s.mem s'.mem ∧
-      PolyIsW 16 s'.mem (s.gpr .x28 + BitVec.ofNat 64 out) (polySum terms F G) := by
+    WP isa (Impl.MlKem.AArch64.DotW.dotW bo bf bg out terms) s fun s' =>
+      Keep clob s s' ∧ Frame [⟨s.gpr bo + BitVec.ofNat 64 out, 512⟩] s.mem s'.mem ∧
+      PolyIsW 16 s'.mem (s.gpr bo + BitVec.ofNat 64 out) (polySum terms F G) := by
   rw [dotW_partition]
-  refine WP.seq (WP.mono (setupW_ok ho (resultW terms (polyValues F) (polyValues G) gammaValues))
+  refine WP.seq (WP.mono (setupW_ok hbo ho (resultW terms (polyValues F) (polyValues G) gammaValues))
     fun s₁ h₁ => ?_)
   refine WP.mono (loopW_ok hd h₁) fun s₂ h₂ => ?_
   refine ⟨h₂.keep, h₂.frame, h₂.out.polyIs (fun i hi => by omega) fun i hi => ?_⟩

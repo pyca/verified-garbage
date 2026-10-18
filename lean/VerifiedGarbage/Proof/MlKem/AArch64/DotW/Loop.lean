@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Core
 
 Sixteen iterations of 16 coefficients (`loopW_ok`), each one `dot`'s blocks
 `2c` and `2c + 1` (`stepW_ok`): `dotW out terms` writes `Σ F ∘ G` with 16-bit
-coefficients to `x28 + out` (`dotW_ok`).
+coefficients to `bo + out` (`dotW_ok`).
 -/
 
 @[expose] public section
@@ -25,23 +25,25 @@ theorem coeffAtW16_shift (m : Mem) (p : Addr) (j e : Nat) :
 
 /-- What the loop needs, from the state before it: the polynomials of each term, the output
 apart from them and from the table of `γ`. -/
-structure LoopDataW (s₀ : State) (p t : Addr) (terms : List (Nat × Nat))
+structure LoopDataW (s₀ : State) (bf bg : Reg) (p t : Addr) (terms : List (Nat × Nat))
     (F G : (Nat × Nat) → Nat → Nat) (Γ : Nat → Nat) : Prop where
+  baseF : bf ∉ clob
+  baseG : bg ∉ clob
   count : terms.length ≤ 4
   offF : ∀ fg ∈ terms, fg.1 < 65536
   offG : ∀ fg ∈ terms, fg.2 < 65536
   boundF : ∀ fg ∈ terms, ∀ i < 256, F fg i < 3329
   boundG : ∀ fg ∈ terms, ∀ i < 256, G fg i < 3329
   valueF : ∀ fg ∈ terms, ∀ i < 256,
-    (coeffAtW 16 s₀.mem (s₀.gpr .x28 + BitVec.ofNat 64 fg.1) i).toNat = F fg i
+    (coeffAtW 16 s₀.mem (s₀.gpr bf + BitVec.ofNat 64 fg.1) i).toNat = F fg i
   valueG : ∀ fg ∈ terms, ∀ i < 256,
-    (coeffAtW 16 s₀.mem (s₀.gpr .x28 + BitVec.ofNat 64 fg.2) i).toNat = G fg i
-  apartF : ∀ fg ∈ terms, (⟨p, 512⟩ : Region).Disjoint ⟨s₀.gpr .x28 + BitVec.ofNat 64 fg.1, 512⟩
-  apartG : ∀ fg ∈ terms, (⟨p, 512⟩ : Region).Disjoint ⟨s₀.gpr .x28 + BitVec.ofNat 64 fg.2, 512⟩
+    (coeffAtW 16 s₀.mem (s₀.gpr bg + BitVec.ofNat 64 fg.2) i).toNat = G fg i
+  apartF : ∀ fg ∈ terms, (⟨p, 512⟩ : Region).Disjoint ⟨s₀.gpr bf + BitVec.ofNat 64 fg.1, 512⟩
+  apartG : ∀ fg ∈ terms, (⟨p, 512⟩ : Region).Disjoint ⟨s₀.gpr bg + BitVec.ofNat 64 fg.2, 512⟩
   readF : ∀ fg ∈ terms, ∀ o, o + 16 ≤ 512 →
-    InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x28 + BitVec.ofNat 64 fg.1 + BitVec.ofNat 64 o) 16
+    InRegions (s₀.rd ++ s₀.wr) (s₀.gpr bf + BitVec.ofNat 64 fg.1 + BitVec.ofNat 64 o) 16
   readG : ∀ fg ∈ terms, ∀ o, o + 16 ≤ 512 →
-    InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x28 + BitVec.ofNat 64 fg.2 + BitVec.ofNat 64 o) 16
+    InRegions (s₀.rd ++ s₀.wr) (s₀.gpr bg + BitVec.ofNat 64 fg.2 + BitVec.ofNat 64 o) 16
   write : ∀ o, o + 16 ≤ 512 → InRegions s₀.wr (p + BitVec.ofNat 64 o) 16
   tableApart : (⟨p, 512⟩ : Region).Disjoint ⟨t, 512⟩
   tableRead : ∀ c < 32, InRegions (s₀.rd ++ s₀.wr) (t + BitVec.ofNat 64 (16 * c)) 16
@@ -70,30 +72,30 @@ theorem coeffAtW16_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {q
     coeffAtW 16 m' q i = coeffAtW 16 m q i :=
   hf.readW (r := ⟨q, 512⟩) (contains_off (show 2 * i + 16 / 8 ≤ 512 by omega) (by decide)) hd (by decide)
 
-theorem loop_inputW {s₀ s : State} {p t : Addr} {terms : List (Nat × Nat)}
+theorem loop_inputW {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat} {O : Nat → BitVec 16} {c : Nat}
-    (hd : LoopDataW s₀ p t terms F G Γ) (hc : c < 16) (h : LoopInvW s₀ p t O c s)
+    (hd : LoopDataW s₀ bf bg p t terms F G Γ) (hc : c < 16) (h : LoopInvW s₀ p t O c s)
     {fg : Nat × Nat} (hf : fg ∈ terms) :
-    TermInputW s fg (blockValues F (2 * c) fg) (blockValues G (2 * c) fg) := by
-  have addr (off : Nat) : s.gpr .x28 + BitVec.ofNat 64 off + s.gpr .x12 =
-      s₀.gpr .x28 + BitVec.ofNat 64 off + BitVec.ofNat 64 (2 * (16 * c)) := by
-    rw [h.keep.get .x28, h.x12, show 32 * c = 2 * (16 * c) by omega]
-  refine ⟨hd.offF fg hf, hd.offG fg hf, fun e he => hd.boundF fg hf _ (by omega),
+    TermInputW s bf bg fg (blockValues F (2 * c) fg) (blockValues G (2 * c) fg) := by
+  have addr (b : Reg) (hb : b ∉ clob) (off : Nat) : s.gpr b + BitVec.ofNat 64 off + s.gpr .x12 =
+      s₀.gpr b + BitVec.ofNat 64 off + BitVec.ofNat 64 (2 * (16 * c)) := by
+    rw [h.keep.get b hb, h.x12, show 32 * c = 2 * (16 * c) by omega]
+  refine ⟨hd.baseF, hd.baseG, hd.offF fg hf, hd.offG fg hf, fun e he => hd.boundF fg hf _ (by omega),
     fun e he => hd.boundG fg hf _ (by omega), fun e he => ?_, fun e he => ?_, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [addr, coeffAtW16_shift, coeffAtW16_frame h.frame (fun r hr => by
+  · rw [addr bf hd.baseF, coeffAtW16_shift, coeffAtW16_frame h.frame (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (hd.apartF fg hf).symm) (by omega), hd.valueF fg hf _ (by omega)]
     simp only [blockValues]; congr 1; omega
-  · rw [addr, coeffAtW16_shift, coeffAtW16_frame h.frame (fun r hr => by
+  · rw [addr bg hd.baseG, coeffAtW16_shift, coeffAtW16_frame h.frame (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (hd.apartG fg hf).symm) (by omega), hd.valueG fg hf _ (by omega)]
     simp only [blockValues]; congr 1; omega
-  · rw [h.keep.rd, h.keep.wr, addr, ptr_add]
+  · rw [h.keep.rd, h.keep.wr, addr bf hd.baseF, ptr_add]
     exact hd.readF fg hf _ (by omega)
-  · rw [h.keep.rd, h.keep.wr, addr, ptr_add]
+  · rw [h.keep.rd, h.keep.wr, addr bg hd.baseG, ptr_add]
     exact hd.readG fg hf _ (by omega)
 
-theorem loop_gammaW {s₀ s : State} {p t : Addr} {terms : List (Nat × Nat)}
+theorem loop_gammaW {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat} {O : Nat → BitVec 16} {c : Nat}
-    (hd : LoopDataW s₀ p t terms F G Γ) (hc : c < 16) (h : LoopInvW s₀ p t O c s) {i : Nat} (hi : i < 2) :
+    (hd : LoopDataW s₀ bf bg p t terms F G Γ) (hc : c < 16) (h : LoopInvW s₀ p t O c s) {i : Nat} (hi : i < 2) :
     Lanes (s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * i)) 16) (blockGamma Γ (2 * c + i)) := by
   rw [h.x3, ptr_add, h.frame.read (r := ⟨t, 512⟩) (contains_off (by omega) (by decide))
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.tableApart.symm) (by decide),
@@ -117,9 +119,9 @@ theorem resultW_toNat (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Nat �
   · simp only [evenResult]; omega
   · simp only [oddResult]; omega
 
-theorem bodyW_partition (terms : List (Nat × Nat)) :
-    Impl.MlKem.AArch64.DotW.bodyW terms =
-      computeW terms ++ Impl.MlKem.AArch64.DotW.storeW ++ Impl.MlKem.AArch64.DotW.bumpW := by
+theorem bodyW_partition (bf bg : Reg) (terms : List (Nat × Nat)) :
+    Impl.MlKem.AArch64.DotW.bodyW bf bg terms =
+      computeW bf bg terms ++ Impl.MlKem.AArch64.DotW.storeW ++ Impl.MlKem.AArch64.DotW.bumpW := by
   simp only [Impl.MlKem.AArch64.DotW.bodyW, computeW, List.append_assoc]
 
 theorem bumpW_ok (s : State) : WP isa (.block Impl.MlKem.AArch64.DotW.bumpW) s fun s' =>
@@ -142,11 +144,11 @@ theorem bumpW_ok (s : State) : WP isa (.block Impl.MlKem.AArch64.DotW.bumpW) s f
       by rw [e₄, h₃.get .x11, h₂.get .x11, h₁.get .x11]⟩
   · intro s' h; exact ⟨h.1.1, h.2, h.1.2⟩
 
-theorem stepW_ok {s₀ s : State} {p t : Addr} {terms : List (Nat × Nat)}
+theorem stepW_ok {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat} {c : Nat}
-    (hd : LoopDataW s₀ p t terms F G Γ) (hc : c < 16)
+    (hd : LoopDataW s₀ bf bg p t terms F G Γ) (hc : c < 16)
     (h : LoopInvW s₀ p t (resultW terms F G Γ) c s) :
-    WP isa (.block (Impl.MlKem.AArch64.DotW.bodyW terms)) s fun s' =>
+    WP isa (.block (Impl.MlKem.AArch64.DotW.bodyW bf bg terms)) s fun s' =>
       LoopInvW s₀ p t (resultW terms F G Γ) (c + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ c + 1 ≠ 16) := by
   rw [bodyW_partition, List.append_assoc, WP.block_append_iff]
   refine WP.mono (computeW_ok terms (Γ := blockGamma Γ (2 * c)) (Γ' := blockGamma Γ (2 * c + 1))
@@ -184,10 +186,10 @@ theorem stepW_ok {s₀ s : State} {p t : Addr} {terms : List (Nat × Nat)}
   · rw [e12, k₂.get .x12, k₁.get .x12, h.x12, ← BitVec.ofNat_add, show 32 * c + 32 = 32 * (c + 1) by omega]
   · rw [k₃.mem, show 16 * (c + 1) = 16 * c + 16 by omega]; exact o₂
 
-theorem loopW_ok {s₀ s : State} {p t : Addr} {terms : List (Nat × Nat)}
+theorem loopW_ok {s₀ s : State} {bf bg : Reg} {p t : Addr} {terms : List (Nat × Nat)}
     {F G : (Nat × Nat) → Nat → Nat} {Γ : Nat → Nat}
-    (hd : LoopDataW s₀ p t terms F G Γ) (h : LoopInvW s₀ p t (resultW terms F G Γ) 0 s) :
-    WP isa (.loop (.block (Impl.MlKem.AArch64.DotW.bodyW terms)) (.nonzero .x .x11)) s
+    (hd : LoopDataW s₀ bf bg p t terms F G Γ) (h : LoopInvW s₀ p t (resultW terms F G Γ) 0 s) :
+    WP isa (.loop (.block (Impl.MlKem.AArch64.DotW.bodyW bf bg terms)) (.nonzero .x .x11)) s
       (LoopInvW s₀ p t (resultW terms F G Γ) 16) :=
   count_loop (by decide) (LoopInvW s₀ p t (resultW terms F G Γ)) (fun _ hc _ hi => stepW_ok hd hc hi) h
 

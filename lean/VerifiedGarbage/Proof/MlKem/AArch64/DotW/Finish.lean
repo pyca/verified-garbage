@@ -17,12 +17,12 @@ namespace VG.Proof.MlKem.AArch64.DotW
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Impl.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Dot
 
-theorem termsW_ok (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Nat → Nat}
+theorem termsW_ok {bf bg : Reg} (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Nat → Nat}
     {s : State} {lo hi : Nat → Sums} {n : Nat}
     (hc : VConsts s) (ha : AccumW s lo hi) (hlo : ∀ e < 4, (lo e).Bounded n)
     (hhi : ∀ e < 4, (hi e).Bounded n) (hn : n + terms.length ≤ 4)
-    (hin : ∀ fg ∈ terms, TermInputW s fg (F fg) (G fg)) :
-    WP isa (.block (terms.flatMap Impl.MlKem.AArch64.DotW.termW)) s fun s' =>
+    (hin : ∀ fg ∈ terms, TermInputW s bf bg fg (F fg) (G fg)) :
+    WP isa (.block (terms.flatMap (Impl.MlKem.AArch64.DotW.termW bf bg))) s fun s' =>
       Only [.x1, .x2] s s' ∧ VConsts s' ∧
         AccumW s' (sumTerms terms F G lo) (sumTerms terms (fun fg => upper (F fg)) (fun fg => upper (G fg)) hi) := by
   induction terms generalizing s lo hi n with
