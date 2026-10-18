@@ -106,6 +106,34 @@ def artifacts : List Artifact := [
     stack := 8
     verified := Proof.Rsa.X86_64.Instances.crtIfma_verified
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
+  Spec.Rsa.privateCrtPrecomputedApi.artifact X86_64.target {
+    notes := ["`vg_rsa_private_crt`'s code, with `R² mod n` and each prime's `R_X mod X` copied from \
+        `pre` (its words at `n_len`'s words, then at twice them, then past `p`'s) instead of computed. \
+        Each value copied is masked by the borrow of its comparison with its modulus: it is zero unless it \
+        is below the modulus, so that a wrong `pre` never puts a number past the modulus in the arithmetic."]
+    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
+      (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
+        Impl.Rsa.X86_64.Crt.tabSelect) true
+    stack := 8
+    verified := Proof.Rsa.X86_64.Instances.crtPre_verified },
+  Spec.Rsa.privateCrtPrecomputedApi.artifact X86_64.target {
+    suffix := "_adx"
+    notes := ["`vg_rsa_private_crt_adx`'s code, with the values from `pre` as \
+        `vg_rsa_private_crt_precomputed` takes them."]
+    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
+      (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
+        Impl.Rsa.X86_64.Crt.tabSelectV) true
+    stack := 8
+    verified := Proof.Rsa.X86_64.Instances.crtPreAdx_verified
+    features := ["avx", "avx2", "bmi2", "adx"] },
+  Spec.Rsa.privateCrtPrecomputedApi.artifact X86_64.target {
+    suffix := "_ifma"
+    notes := ["`vg_rsa_private_crt_ifma`'s code, with the values from `pre` as \
+        `vg_rsa_private_crt_precomputed` takes them."]
+    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm true
+    stack := 8
+    verified := Proof.Rsa.X86_64.Instances.crtPreIfma_verified
+    features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
   Spec.Rsa.crtValuesApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; then the \
         checks (`p q = n`, as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p) = 1`) give a \

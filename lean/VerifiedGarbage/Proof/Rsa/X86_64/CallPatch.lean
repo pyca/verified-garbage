@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPcContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
@@ -42,6 +43,17 @@ theorem crt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtCont
   simp only [crtContract, State.patch_gpr] at hp ⊢
   rw [patch_mem, written_overlay hm]
   exact hp
+
+theorem crtPc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtPcContract.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) (hp : crtPcContract.post s b) :
+    crtPcContract.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  have hn : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hl, -⟩ := hs
+  have hm := Clear.miss_wr hc (by rw [hwr]; simp) hn (Nat.le_of_eq hl.symm)
+  simp only [crtPcContract, State.patch_gpr] at hp ⊢
+  intro hok
+  rw [patch_mem, written_overlay hm]
+  exact hp hok
 
 theorem rp_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : rpContract.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) (hp : rpContract.post s b) :

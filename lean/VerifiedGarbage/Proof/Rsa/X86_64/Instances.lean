@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPcVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VerifiedPc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
@@ -79,6 +81,40 @@ theorem crtIfma_verified :
     (Proof.Bignum.X86_64.Ifma.code_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) (by decide +kernel)
       (by decide +kernel) (by decide +kernel))
     (Proof.Bignum.X86_64.Ifma.code_constantTime Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
+
+theorem crtPre_verified :
+    Verified target (Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
+      (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
+        Impl.Rsa.X86_64.Crt.tabSelect) true)
+      (Spec.Rsa.privateCrtPrecomputedContract abi 8) :=
+  crtPc_call_verified (by decide +kernel)
+    (Proof.Bignum.X86_64.crtPcCode_correct Proof.Bignum.X86_64.Mont.fnBase
+      (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
+      (by decide +kernel))
+    (Proof.Bignum.X86_64.crtPcCode_constantTime Proof.Bignum.X86_64.Mont.fnBase
+      (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
+      (Proof.Bignum.X86_64.CrtExpL.w4S_ct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy))
+
+theorem crtPreAdx_verified :
+    Verified target (Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
+      (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
+        Impl.Rsa.X86_64.Crt.tabSelectV) true)
+      (Spec.Rsa.privateCrtPrecomputedContract abi 8) :=
+  crtPc_call_verified (by decide +kernel)
+    (Proof.Bignum.X86_64.crtPcCode_correct Proof.Bignum.X86_64.Mont.fnAdx
+      (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
+      (by decide +kernel))
+    (Proof.Bignum.X86_64.crtPcCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx
+      (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
+      (Proof.Bignum.X86_64.CrtExpL.w5S_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx))
+
+theorem crtPreIfma_verified :
+    Verified target (Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm true)
+      (Spec.Rsa.privateCrtPrecomputedContract abi 8) :=
+  crtPc_call_verified (by lit_decide)
+    (Proof.Bignum.X86_64.Ifma.codePc_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel)
+      (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (Proof.Bignum.X86_64.Ifma.codePc_constantTime Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
 
 theorem crtValues_verified :
     Verified target (Impl.Rsa.X86_64.Keys.CrtValues.code)
