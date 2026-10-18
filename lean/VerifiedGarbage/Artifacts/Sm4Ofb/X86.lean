@@ -20,8 +20,8 @@ def note : String :=
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact X86.target {
     notes := [note]
-    code := Impl.StackScratch.X86.withStackScratchWiped 1472 4 362 Impl.Sm4.X86.ofb
-    stack := 1472
+    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofb
+    stack := 1516
     verified := Proof.Sm4.X86.Fb.ofb_framed }]
 
 end VG.Artifacts.Sm4Ofb.X86
