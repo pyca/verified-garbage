@@ -131,6 +131,16 @@ theorem coeffAtW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame 
   · show coeffAtW 16 m' p i = coeffAtW 16 m p i
     exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)
 
+/-- A polynomial in a region the frame does not write. -/
+theorem polyAtW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) : polyAtW (cw w16) m' p = polyAtW (cw w16) m p := by
+  simp only [polyAtW]
+  exact Vector.ext fun i hi => by simp only [Vector.getElem_ofFn, coeffAtW_frame hf hd hi]
+
+theorem reducedW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (hr : ReducedW (cw w16) m p) : ReducedW (cw w16) m' p :=
+  fun i hi => by rw [coeffAtW_frame hf hd hi]; exact hr i hi
+
 /-- The coefficients at `p`: the first `t` of them are `G`'s, the others `old`'s. -/
 def CoeffsUpToW (w16 : Bool) (m : Mem) (p : Addr) (t : Nat) (G old : Nat → BitVec (cw w16)) : Prop :=
   ∀ i < 256, coeffAtW (cw w16) m p i = if i < t then G i else old i

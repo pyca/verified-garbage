@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+public import VerifiedGarbage.Proof.MlKem.CoeffW
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 
@@ -36,15 +37,26 @@ def allOk (P : KemLay) (s₀ : State) (n : Nat) : Prop :=
 
 instance (s₀ : State) (n : Nat) : Decidable (allOk P s₀ n) := by unfold allOk; infer_instance
 
-/-- After `n` entries of `Â`. -/
-structure BInv (P : KemLay) (s₀ : State) (n : Nat) (s : State) : Prop where
+/-- Entry `e` of `Â`, at `s`, stored with 16-bit coefficients (`w16`) or 32-bit ones. -/
+abbrev aAtW (w16 : Bool) (s₀ : State) (m : Mem) (e : Nat) : Poly :=
+  polyAtW (cw w16) m (kA s₀ 3 + BitVec.ofNat 64 (AH + 1024 * e))
+
+/-- `BInv` with `Â` stored with 16-bit coefficients (`w16`) or 32-bit ones. -/
+structure BInvW (w16 : Bool) (P : KemLay) (s₀ : State) (n : Nat) (s : State) : Prop where
   kb : KB P s₀ s
   rho : bytesAt s.mem (kA s₀ 3 + BitVec.ofNat 64 SB) 32 = rhoK P s₀
   sig : bytesAt s.mem (kA s₀ 3 + BitVec.ofNat 64 SG) 32 = KPke.kgSigma P.params (dB s₀)
   acc : s.gpr .x24 = if allOk P s₀ n then 1 else 0
-  red : ∀ e < n, Reduced s.mem (kA s₀ 3 + BitVec.ofNat 64 (AH + 1024 * e))
+  red : ∀ e < n, ReducedW (cw w16) s.mem (kA s₀ 3 + BitVec.ofNat 64 (AH + 1024 * e))
   res : ∀ e < n, sampleNTT 280 (matSeed (rhoK P s₀) (e / P.k) (e % P.k)) = none ∨
-    sampleNTT 280 (matSeed (rhoK P s₀) (e / P.k) (e % P.k)) = some (aAt s₀ s.mem e)
+    sampleNTT 280 (matSeed (rhoK P s₀) (e / P.k) (e % P.k)) = some (aAtW w16 s₀ s.mem e)
+
+/-- After `n` entries of `Â`. -/
+abbrev BInv := BInvW false
+
+theorem BInv.toW {s₀ s : State} {n : Nat} (h : BInv P s₀ n s) : BInvW false P s₀ n s := h
+
+theorem BInvW.ofW {s₀ s : State} {n : Nat} (h : BInvW false P s₀ n s) : BInv P s₀ n s := h
 
 theorem BInv.zero {s₀ s : State} (h : AfterA P s₀ s) : BInv P s₀ 0 s :=
   ⟨h.kb, h.rho, h.sig, by rw [h.x24, ite_eq_left (show allOk P s₀ 0 from fun e he => absurd he (Nat.not_lt_zero e))],
@@ -138,7 +150,7 @@ theorem setup_ok {s₀ : State} (hp : Pre P s₀) {i j : Nat} (hi : i < P.k) (hj
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (f (by decide)) (f (by decide)) (by decide)) (by decide)]
     exact h.sig
-  · rw [aAt, polyAt_frame f₇ (ae he)]; exact h.res e he
+  · rw [aAtW, polyAtW_frame f₇ (ae he)]; exact h.res e he
   · refine seed_eq (by rw [bytesAt_congr sd]; exact h.rho) ?_ ?_
     · rw [m₇, ptr_add, writeW8_apply, ite_eq_right (addr_ne _ (by decide) (by decide) (by decide)),
         writeW8_apply, ite_eq_left rfl, e₁]
@@ -226,12 +238,12 @@ theorem call_ok {s₀ : State} (hp : Pre P s₀) {i j : Nat} (hi : i < P.k) (hj 
       rw [ite_eq_right hA', ite_eq_right hA]
   · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
     · exact reduced_frame fr (ae he) (h.b.red e he)
-    · rw [h₉.mem]; simpa only [aOff] using r₈
+    · rw [h₉.mem]; show Reduced _ _; simpa only [aOff] using r₈
   · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
-    · rw [aAt, polyAt_frame fr (ae he)]; exact h.b.res e he
-    · rw [hke.1, hke.2, aAt, h₉.mem]
+    · rw [aAtW, polyAtW_frame fr (ae he)]; exact h.b.res e he
+    · rw [hke.1, hke.2, aAtW, h₉.mem]
       rcases o₈ with ⟨-, h2⟩ | ⟨-, h2⟩
-      · exact .inr (by simpa only [aOff] using h2)
+      · exact .inr (show _ = some (polyAt _ _) by simpa only [aOff] using h2)
       · exact .inl h2
 
 theorem sample_step {s₀ : State} (hp : Pre P s₀) {i j : Nat} (hi : i < P.k) (hj : j < P.k) {s : State}

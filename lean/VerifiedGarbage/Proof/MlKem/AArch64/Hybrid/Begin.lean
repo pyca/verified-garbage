@@ -20,16 +20,16 @@ namespace VG.Proof.MlKem.AArch64.Hybrid
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
-open VG.Proof.MlKem.AArch64.Paired (Context stepWrites Progress accepted seedState shakeStream
+open VG.Proof.MlKem.AArch64.Paired (Context stepWrites Progress ProgressW accepted seedState shakeStream
   initialCode initialRegions initial_ok pair_frame)
 open VG.Proof.Sha3 (iterF)
 open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Proof.MlKem (polyRegion)
 
-def begin3Code (L : KemLay) (sb ss a b i oa ob : Nat) : Prog isa :=
+def begin3Code (L : KemLay) (sb ss a b i oa ob : Nat) (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
     (.seq (Impl.MlKem.AArch64.Hybrid.squeeze3 L i)
-      (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob)))
+      (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs3 : List Reg := startRegs3 ++ [.x9, .x16] ++
   [.x0, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x22, .x23]
@@ -49,15 +49,17 @@ structure HashInput (L : KemLay) (p outA outB table e st : Addr) (s : State) : P
 /-- The writes of a hashing pair. -/
 def pairWrites3 (p a b st sp : Addr) : List Region := stepWrites p a b ++ [stR st, frame sp]
 
-structure Begin3Post (L : KemLay) (A B : Spec.Sha3.State) (p a b c e st : Addr) (E : List Byte) (i : Nat)
+structure Begin3PostW (w16 : Bool) (L : KemLay) (A B : Spec.Sha3.State) (p a b c e st : Addr) (E : List Byte) (i : Nat)
     (s t : State) : Prop where
   keep : Keep beginRegs3 s t
   frame : Frame (pairWrites3 p a b st s.sp) s.mem t.mem
   saved : Noise.Saved p s t.mem
-  progress : Progress A B 3 p a b c t
+  progress : ProgressW w16 A B 3 p a b c t
   flag : (t.gpr .x6).toNat = if (accepted A 3).length = 256 ∧ (accepted B 3).length = 256 then 1 else 0
   hash : stateAt t.mem st = hstate E (3 * i + 3)
   ek : bytesAt t.mem e L.ekLen = E
+
+abbrev Begin3Post := Begin3PostW false
 
 theorem Context.frame3 {s t : State} {p a b c st sp : Addr} (h : Context p a b c s)
     (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hf : Frame [⟨p, 2048⟩, stR st, frame sp] s.mem t.mem)
@@ -74,19 +76,19 @@ theorem Context.frame3 {s t : State} {p a b c st sp : Addr} (h : Context p a b c
     · exact tS
     · exact tF)
 
-theorem begin3_ok (L : KemLay) {s : State} {p seed outA outB table e st : Addr} {E : List Byte}
+theorem begin3_ok {w16 : Bool} (L : KemLay) {s : State} {p seed outA outB table e st : Addr} {E : List Byte}
     {sb ss a b i oa ob : Nat}
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0) (hoa : oa < 65536) (hob : ob < 65536)
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : HashInput L p outA outB table e st s)
     (hb : 136 * (3 * i + 2) < L.ekLen) (h8 : L.ekLen % 8 = 0) (hlim : L.ekLen ≤ 4096)
     (hash : stateAt s.mem st = hstate E (3 * i)) (hE : bytesAt s.mem e L.ekLen = E) :
-    WP isa (begin3Code L sb ss a b i oa ob) s
-      (Begin3Post L (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E i s) := by
+    WP isa (begin3Code L sb ss a b i oa ob w16) s
+      (Begin3PostW w16 L (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E i s) := by
   have ctx := h.context
   have combined := WP.mono_syms (start3_ok (a := a) (b := b) L hss hsb h8b h.ptr h.seedPtr h.readable h.separate
     hh.lay hh.h25 hh.h28 hb h8 hlim hash hE)
-    (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob)) u
-      (Begin3Post L (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E i s))
+    (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
+      (Begin3PostW w16 L (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E i s))
     (fun u ⟨ku, fu, svu, u19, pu, buA, buB, hu, eu⟩ sy => by
       have cu : Context p outA outB table u := Context.frame3 ctx ku.rd ku.wr fu hh.tS hh.tF
       refine WP.seq (WP.mono_syms (Rej8.constants_ok u (by
@@ -114,8 +116,8 @@ theorem begin3_ok (L : KemLay) {s : State} {p seed outA outB table e st : Addr} 
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 904) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-      have ea := ctv.env (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-      have eb := ctv.env (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+      have ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+      have eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
       have pv := pair_frame pu fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.base_disjoint p (by decide) (by decide))

@@ -75,20 +75,20 @@ def squeeze3 (L : KemLay) (i : Nat) : Prog isa :=
   .seq (step3 L (3 * i)) (.seq (step3 L (3 * i + 1)) (step3 L (3 * i + 2)))
 
 /-- `Paired.pair` (encapsulation) with `squeeze3` for the three main squeezes. -/
-def pair3 (L : KemLay) (a i : Nat) : Prog isa :=
+def pair3 (L : KemLay) (a i : Nat) (w16 : Bool := false) : Prog isa :=
   seqs [.block (Paired.init SB SS a (a+1) L.k), squeeze3 L i, .block Rej8.rejConsts,
-    Paired.reject 400 (AH+1024*a) .x22,
+    Paired.reject 400 (AH+1024*a) .x22 w16,
     .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-    Paired.reject 904 (AH+1024*(a+1)) .x23,
+    Paired.reject 904 (AH+1024*(a+1)) .x23 w16,
     .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
-    .ite (.zero .x .x6) Paired.extraPair (.block []),
+    .ite (.zero .x .x6) (Paired.extraPair w16) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 
 /-- The encapsulation matrix: the first `hashPairs` pairs absorb `ek`. -/
-def matrixH (L : KemLay) : Prog isa :=
+def matrixH (L : KemLay) (w16 : Bool := false) : Prog isa :=
   seqs (((List.range (L.k*L.k/2)).map fun i =>
-      if i < hashPairs L then pair3 L (2*i) i else Paired.pair L false (2*i)) ++
-    (if L.k*L.k%2=1 then [Paired.lastSample L false] else []))
+      if i < hashPairs L then pair3 L (2*i) i w16 else Paired.pair L false (2*i) w16) ++
+    (if L.k*L.k%2=1 then [Paired.lastSample L false w16] else []))
 
 /-- The prologue, `m`, the all-zero third state and `ρ`. -/
 def startH (L : KemLay) : Prog isa :=

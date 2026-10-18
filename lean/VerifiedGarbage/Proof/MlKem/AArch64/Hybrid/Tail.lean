@@ -136,8 +136,8 @@ theorem tailH_ok (hash : FixedHash.HashFn)
   refine ⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩
   · rw [far34 (o := SB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hB.rho
   · rw [k₄.cs _ (by decide) (by decide), x24₃]; exact hB.acc
-  · intro e he; exact reduced_frame f14 (farA e he) (hB.red e he)
-  · intro e he; rw [polyAt_frame f14 (farA e he)]; exact hB.res e he
+  · intro e he; exact reducedW_frame f14 (farA e he) (hB.red e he)
+  · intro e he; rw [polyAtW_frame f14 (farA e he)]; exact hB.res e he
   · rw [far34 (o := MB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hm
 
 end VG.Proof.MlKem.AArch64.Hybrid
