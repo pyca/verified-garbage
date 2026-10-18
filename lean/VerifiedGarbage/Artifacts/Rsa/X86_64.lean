@@ -140,10 +140,9 @@ def artifacts : List Artifact := [
         `n` as `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
         of the private key is computed whatever its outcome and and'ed into a mask: the comparisons by \
         a subtraction's borrow over `w` words, `p q = n` by a product of the two, and each remainder \
-        by restoring division with masked subtraction. The checks of `d e` process `64 (w + 2)` \
-        bits over modulus-width numbers. The CRT checks reuse the loader's bounded-quotient \
-        reductions over factor-width numbers: 64 bits for `e dP` and `e dQ`, and \
-        `64 ⌈q_len / 8⌉` bits for `q qInv`."]
+        by restoring division with masked subtraction over factor-width numbers. The checks of `d e` \
+        process `64 (⌈other_factor_len / 8⌉ + 1)` bits, using the bound from `d < n = p q`. \
+        The CRT checks process 64 bits for `e dP` and `e dQ`, and `64 ⌈q_len / 8⌉` bits for `q qInv`."]
     code := Impl.Rsa.X86_64.CheckKey.code
     verified := Proof.Rsa.X86_64.Instances.checkKey_verified },
   Spec.Rsa.checkCrtKeyApi.artifact X86_64.target {

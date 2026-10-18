@@ -70,4 +70,27 @@ theorem keyValid_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = t
     · rintro ⟨-, -, -, h, -⟩; exact absurd h hpq
     · rintro ⟨-, h, -⟩; exact absurd h hpq
 
+/-- Full-exponent remainders need only be correct when the preceding range
+and factor-product checks succeed. -/
+theorem keyValid_bounded_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = true) (he : exponentValid e = true)
+    (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) {Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq : Nat}
+    (hMp : 0 < p → Mp = p - 1) (hMq : 0 < q → Mq = q - 1)
+    (hR1 : 2 ≤ p → d < n → p * q = n → Rp1 = e * d % Mp) (hR2 : 0 < p → dP < Mp → Rp2 = e * dP % Mp)
+    (hR3 : 2 ≤ q → d < n → q * p = n → Rq1 = e * d % Mq) (hR4 : 0 < q → dQ < Mq → Rq2 = e * dQ % Mq)
+    (hR5 : 0 < p → qInv < p → Rpq = qInv * q % p) :
+    keyValid k n e d p q dP dQ qInv = keyBits n d p q dP dQ qInv Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq := by
+  by_cases hd : d < n
+  · by_cases hpq : p * q = n
+    · have hn : 256 ^ (k - 1) ≤ n := by
+        simp only [modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hm
+        exact hm.2
+      have hp2 := factor_ge_two hpq hq hn
+      have hqp : q * p = n := by rw [Nat.mul_comm]; exact hpq
+      have hq2 := factor_ge_two hqp hp hn
+      exact keyValid_parts hm he hp hq hMp hMq (fun _ => hR1 hp2 hd hpq) hR2
+        (fun _ => hR3 hq2 hd hqp) hR4 hR5
+    · have hf : (p * q == n) = false := by simpa only [beq_eq_false_iff_ne] using hpq
+      simp only [keyValid, keyBits, hf, hpq, decide_false, Bool.and_false, Bool.false_and]
+  · simp only [keyValid, keyBits, hd, decide_false, Bool.and_false, Bool.false_and]
+
 end VG.Proof.Rsa
