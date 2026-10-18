@@ -1675,6 +1675,626 @@ ret
     )
 }
 
+/// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. This is what `vg_aes_gcm_init_prepared` writes for the key, without the key or its expansion. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// Uses VPCLMULQDQ: `H'`–`H'¹⁶` as the stitched loops on 256-bit registers compute them, two in each register, already prepared, then each pair times `H'¹⁶` twice, eight independent multiplications at a time, for `H'¹⁷`–`H'⁴⁸`. No calls and no stack.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"movabs rax, 579005069656919567
+movq xmm0, rax
+movabs rax, 283686952306183
+movq xmm12, rax
+punpcklqdq xmm0, xmm12
+movabs rax, 0
+movq xmm1, rax
+movabs rax, -4467570830351532032
+movq xmm12, rax
+punpcklqdq xmm1, xmm12
+movdqu xmm7, XMMWORD PTR [rdi+240]
+pshufb xmm7, xmm0
+movabs rax, 1
+movq xmm13, rax
+movabs rax, -4467570830351532032
+movq xmm12, rax
+punpcklqdq xmm13, xmm12
+movabs rax, -1
+movq xmm14, rax
+punpcklqdq xmm14, xmm14
+movdqa xmm3, xmm7
+psllq xmm3, 1
+movdqa xmm11, xmm7
+psrlq xmm11, 63
+pslldq xmm11, 8
+por xmm3, xmm11
+pshufd xmm11, xmm7, 255
+psrld xmm11, 31
+paddd xmm11, xmm14
+pandn xmm11, xmm13
+pxor xmm3, xmm11
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+movdqa xmm11, xmm3
+pclmulqdq xmm11, xmm3, 0
+pxor xmm8, xmm11
+movdqa xmm11, xmm3
+pclmulqdq xmm11, xmm3, 17
+pxor xmm10, xmm11
+movdqa xmm11, xmm3
+pclmulqdq xmm11, xmm3, 1
+pxor xmm9, xmm11
+movdqa xmm11, xmm3
+pclmulqdq xmm11, xmm3, 16
+pxor xmm9, xmm11
+movdqa xmm11, xmm9
+psrldq xmm11, 8
+pxor xmm10, xmm11
+pslldq xmm9, 8
+pxor xmm8, xmm9
+movdqa xmm11, xmm8
+pclmulqdq xmm11, xmm1, 16
+pshufd xmm8, xmm8, 78
+pxor xmm8, xmm11
+movdqa xmm11, xmm8
+pclmulqdq xmm11, xmm1, 16
+pshufd xmm8, xmm8, 78
+pxor xmm8, xmm11
+movdqa xmm4, xmm10
+pxor xmm4, xmm8
+vinserti128 ymm0, ymm0, xmm0, 1
+vinserti128 ymm1, ymm1, xmm1, 1
+vmovdqa xmm2, xmm2
+vinserti128 ymm12, ymm4, xmm3, 1
+vinserti128 ymm7, ymm4, xmm4, 1
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm12, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm13, ymm10, ymm8
+vinserti128 ymm7, ymm13, xmm13, 1
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm12, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm14, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm13, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm15, ymm10, ymm8
+vinserti128 ymm7, ymm15, xmm15, 1
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm15, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm3, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm14, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm4, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm13, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm5, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm12, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm6, ymm10, ymm8
+vmovdqu YMMWORD PTR [rdi+256], ymm12
+vmovdqu YMMWORD PTR [rdi+288], ymm13
+vmovdqu YMMWORD PTR [rdi+320], ymm14
+vmovdqu YMMWORD PTR [rdi+352], ymm15
+vmovdqu YMMWORD PTR [rdi+384], ymm6
+vmovdqu YMMWORD PTR [rdi+416], ymm5
+vmovdqu YMMWORD PTR [rdi+448], ymm4
+vmovdqu YMMWORD PTR [rdi+480], ymm3
+vinserti128 ymm7, ymm3, xmm3, 1
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm3, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm3, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm3, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm3, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm3, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm4, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm4, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm4, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm4, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm4, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm5, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm5, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm5, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm5, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm5, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm6, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm6, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm6, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm6, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm6, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm15, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm15, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm14, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm14, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm13, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm13, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm12, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm12, ymm10, ymm8
+vmovdqu YMMWORD PTR [rdi+512], ymm12
+vmovdqu YMMWORD PTR [rdi+544], ymm13
+vmovdqu YMMWORD PTR [rdi+576], ymm14
+vmovdqu YMMWORD PTR [rdi+608], ymm15
+vmovdqu YMMWORD PTR [rdi+640], ymm6
+vmovdqu YMMWORD PTR [rdi+672], ymm5
+vmovdqu YMMWORD PTR [rdi+704], ymm4
+vmovdqu YMMWORD PTR [rdi+736], ymm3
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm3, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm3, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm3, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm3, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm3, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm4, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm4, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm4, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm4, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm4, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm5, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm5, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm5, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm5, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm5, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm6, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm6, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm6, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm6, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm6, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm15, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm15, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm15, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm14, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm14, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm14, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm13, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm13, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm13, ymm10, ymm8
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpclmulqdq ymm11, ymm12, ymm7, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm12, ymm7, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm12, ymm10, ymm8
+vmovdqu YMMWORD PTR [rdi+768], ymm12
+vmovdqu YMMWORD PTR [rdi+800], ymm13
+vmovdqu YMMWORD PTR [rdi+832], ymm14
+vmovdqu YMMWORD PTR [rdi+864], ymm15
+vmovdqu YMMWORD PTR [rdi+896], ymm6
+vmovdqu YMMWORD PTR [rdi+928], ymm5
+vmovdqu YMMWORD PTR [rdi+960], ymm4
+vmovdqu YMMWORD PTR [rdi+992], ymm3
+vzeroupper
+ret
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
