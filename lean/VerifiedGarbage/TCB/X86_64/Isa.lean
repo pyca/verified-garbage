@@ -153,6 +153,7 @@ Modelling choices:
 * MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
   the multiplies of the model but `mul` and `mulx` (`pmuludq`, `vpmuludq`,
   `pmullw`, `vpmullw`, `pmulhw`, `vpmulhw`, `pmaddwd`, `vpmaddwd`,
+  `pmulhrsw`, `vpmulhrsw`,
   `vpmadd52luq` and `vpmadd52huq`), although on Intel's DOIT
   list, may take up to a cycle longer to retire for specific data values
   unless MXCSR holds `0x1FBF` (Intel, "MXCSR Configuration Dependent Timing", and
@@ -389,7 +390,8 @@ inductive Instr
 (x86-64-v1, which includes SSE and SSE2: System V AMD64 psABI,
 "Micro-Architecture Levels"), named as Rust's target features. SDM Vol. 2,
 the "CPUID Feature Flag" column of each instruction's opcode table: SSSE3
-for PSHUFB and PALIGNR (`66 0F 38 00 /r`, `66 0F 3A 0F /r ib`), SHA for
+for PSHUFB, PALIGNR and PMULHRSW (`66 0F 38 00 /r`, `66 0F 3A 0F /r ib`,
+`66 0F 38 0B /r`), SSE4_1 for PBLENDW (`66 0F 3A 0E /r ib`), SHA for
 SHA256RNDS2, SHA256MSG1 and SHA256MSG2 (`NP 0F 38 CB /r`, `NP 0F 38 CC /r`,
 `NP 0F 38 CD /r`) and for SHA1RNDS4, SHA1NEXTE, SHA1MSG1 and SHA1MSG2
 (`NP 0F 3A CC /r ib`, `NP 0F 38 C8 /r`, `NP 0F 38 C9 /r`, `NP 0F 38 CA /r`); AES for AESENC, AESENCLAST, AESDEC, AESDECLAST, AESIMC
@@ -397,12 +399,13 @@ and AESKEYGENASSIST (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`,
 `66 0F 38 DF /r`, `66 0F 38 DB /r`, `66 0F 3A DF /r ib`); PCLMULQDQ for
 PCLMULQDQ (`66 0F 3A 44 /r ib`); SSE2 for MOVQ xmm, r64 (`66 REX.W 0F 6E /r`),
 PAND, PANDN, PADDQ, PMULUDQ, PSLLQ, PSRLQ, PSLLDQ, PSRLDQ and PCMPEQD
-(`66 0F 76 /r`); AVX for the
+(`66 0F 76 /r`), PMADDWD (`66 0F F5 /r`) and PCMPGTW (`66 0F 65 /r`); AVX for the
 VEX.128 forms of the lane-wise instructions (e.g. `VEX.128.66.0F.WIG FE /r`
-VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD), for VMOVDQA, VMOVDQU (both
+VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD) and of VPBLENDW
+(`VEX.128.66.0F3A.WIG 0E /r ib`), for VMOVDQA, VMOVDQU (both
 lengths), VMOVQ and VZEROUPPER; AVX2 for their VEX.256 forms (e.g.
-`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD) and
-for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
+`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD,
+`VEX.256.66.0F3A.WIG 0E /r ib` VPBLENDW) and for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
 VINSERTI128, VEXTRACTI128 and VBROADCASTI128 at any length; AVX for VPMOVMSKB reg, xmm1
 (`VEX.128.66.0F.WIG D7 /r`) and AVX2 for VPMOVMSKB reg, ymm1
 (`VEX.256.66.0F.WIG D7 /r`) and VPERMD (`VEX.256.66.0F38.W0 36 /r`). LDMXCSR and STMXCSR (SSE,
@@ -469,7 +472,8 @@ AVX and AVX512F requirements also ensure the vector state is enabled,
 following the model's existing feature convention. -/
 def Instr.requires : Instr → List String
   | .zop (.zbinH .vaesenc ..) | .zop (.zbinH .vaesenclast ..) => ["vaes", "avx512f"]
-  | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
+  | .xop (.bin .pshufb ..) | .xop (.palignr ..) | .xop (.bin .pmulhrsw ..) => ["ssse3"]
+  | .xop (.pblendw ..) => ["sse4.1"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..) | .xop (.sha256rnds2 ..) => ["sha"]
   | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..) | .xop (.bin .sha1nexte ..)
   | .xop (.sha1rnds4 ..) => ["sha"]
@@ -487,10 +491,10 @@ def Instr.requires : Instr → List String
   | .vop (.vpclmulqdq .l128 ..) => ["pclmulqdq", "avx"]
   | .vop (.vpclmulqdq .l256 ..) => ["vpclmulqdq", "avx"]
   | .vop (.vbin _ .l256 ..) | .vbinLoad _ .l256 .. | .vop (.vshift _ .l256 ..)
-  | .vop (.vpshufd .l256 ..) | .vop (.vpalignr .l256 ..) => ["avx2"]
+  | .vop (.vpshufd .l256 ..) | .vop (.vpalignr .l256 ..) | .vop (.vpblendw .l256 ..) => ["avx2"]
   | .vop (.vbin _ .l128 ..) | .vbinLoad _ .l128 .. | .vop (.vshift _ .l128 ..)
   | .vop (.vpshufd .l128 ..)
-  | .vop (.vpalignr .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
+  | .vop (.vpalignr .l128 ..) | .vop (.vpblendw .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. => ["avx"]
   | .vop (.vpblendd ..) | .vop (.vvar ..) | .vop (.vpbroadcastd ..) | .vop (.vpbroadcastq ..)
   | .vop (.vpermq ..) | .vop (.vpermd ..) | .vop (.vperm2i128 ..) | .vop (.vinserti128 ..) | .vop (.vextracti128 ..)
