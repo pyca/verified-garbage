@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
@@ -67,10 +67,21 @@ def kem1024 : Kem where
   ddN := ddN1024
   dd := dd1024
 
-abbrev keyGen1024 (c : Callee4) : Prog isa := kemKeyGen kem1024 c
-abbrev encapsH1024 (c : Callee4) : Prog isa := kemEncapsH kem1024 c
+/-- ML-KEM-1024's layout with 16-bit polynomials: `Â` 8192 bytes from 4096,
+the others (at most 4608 bytes) from 12288, and the K-PKE functions' working
+space (20480 bytes) from 16896. -/
+def kem1024w : Kem16 where
+  L := kem1024
+  oA := 4096
+  oR := 12288
+  oZ := 16896
+  oW := 16896
+  oPR := 25088
+
+abbrev keyGen1024 (c : Callee4) : Prog isa := kemKeyGenSel kem1024w c
+abbrev encapsH1024 (c : Callee4) : Prog isa := kemEncapsHSel kem1024w c
 abbrev encaps1024 (c : Callee4) : Prog isa := kemEncaps kem1024 c
-abbrev decaps1024 (c : Callee4) : Prog isa := kemDecaps kem1024 c
+abbrev decaps1024 (c : Callee4) : Prog isa := kemDecapsSel kem1024w c
 abbrev checkEk1024 : Prog isa := checkEkK 4
 
 end VG.Impl.MlKem1024.X86_64

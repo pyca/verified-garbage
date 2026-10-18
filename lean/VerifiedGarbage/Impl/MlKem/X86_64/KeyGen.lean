@@ -72,7 +72,5 @@ open KeyGen in
 def kemKeyGen (L : Kem) (c : Callee4) : Prog isa :=
   .seq (.block pro) (.seq (gRho L) (.seq (L.samples c) (.seq (ifOk (rest L c)) (.block topEpi))))
 
-/-- `vg_mlkem768_keygen`. -/
-abbrev keyGen (c : Callee4) : Prog isa := kemKeyGen kem768 c
 
 end VG.Impl.MlKem.X86_64

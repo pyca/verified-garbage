@@ -9,6 +9,10 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
+public import VerifiedGarbage.Artifacts.MlKem.X86_64
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives -/
@@ -18,6 +22,23 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.MlKem1024.X86_64
 
 def artifacts : List Artifact := [
+  Spec.MlKem1024.kpkeKeyGenApi.artifact X86_64.target {
+    notes := Artifacts.MlKem.X86_64.kpkeNotes ["vg_mlkem_encode12_avx2"]
+    code := Impl.MlKem.X86_64.kpkeKg Impl.MlKem1024.X86_64.kem1024 .avx2 Impl.MlKem.X86_64.keygenMul16Y
+    verified := Proof.MlKem1024.X86_64.kpkeKg1024Y_verified
+    features := ["avx", "avx2"] },
+  Spec.MlKem1024.kpkeEncryptApi.artifact X86_64.target {
+    notes := Artifacts.MlKem.X86_64.kpkeNotes ["vg_mlkem_decode12_avx2", "vg_mlkem_add_avx2",
+      "vg_mlkem1024_compress_encode_avx2", "vg_mlkem1024_decode_decompress_avx2"]
+    code := Impl.MlKem.X86_64.kpkeEnc Impl.MlKem1024.X86_64.kem1024 .avx2 Impl.MlKem.X86_64.encryptMul16Y
+    verified := Proof.MlKem1024.X86_64.kpkeEnc1024Y_verified
+    features := ["avx", "avx2"] },
+  Spec.MlKem1024.kpkeDecryptApi.artifact X86_64.target {
+    notes := Artifacts.MlKem.X86_64.kpkeNotes ["vg_mlkem_decode12_avx2", "vg_mlkem_sub_avx2",
+      "vg_mlkem1024_compress_encode_avx2", "vg_mlkem1024_decode_decompress_avx2"]
+    code := Impl.MlKem.X86_64.kpkeDec Impl.MlKem1024.X86_64.kem1024 .avx2 Impl.MlKem.X86_64.Kpke16.dmInnerY
+    verified := Proof.MlKem1024.X86_64.kpkeDec1024Y_verified
+    features := ["avx", "avx2"] },
   Spec.MlKem1024.encryptMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
         `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once \

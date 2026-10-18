@@ -101,6 +101,27 @@ def kemDecaps16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (K.L.kpkeDecAt (sc oM) (.rbp, 0) (.r14, 0) (sc K.oZ)) (.seq (hashes K.L)
     (.seq (Top16.encrypt K c p (.rbp, 384 * K.L.k) (sc oCT16)) (.seq (selectAt oCT16 K.L.ctLen) (.block topEpi)))))
 
+/-! ## The top-level functions of each implementation
+
+An implementation of `vg_mlkem_sample_ntt4` with a 16-bit one (`Callee4.s16`,
+with AVX2) runs the top-level functions with 16-bit polynomials; the
+baseline, those with polynomials of `u32`s. -/
+
+def kemKeyGenSel (K : Kem16) (c : Callee4) : Prog isa :=
+  match c.s16 with
+  | some p => kemKeyGen16 K c p
+  | none => kemKeyGen K.L c
+
+def kemEncapsHSel (K : Kem16) (c : Callee4) : Prog isa :=
+  match c.s16 with
+  | some p => kemEncapsH16 K c p
+  | none => kemEncapsH K.L c
+
+def kemDecapsSel (K : Kem16) (c : Callee4) : Prog isa :=
+  match c.s16 with
+  | some p => kemDecaps16 K c p
+  | none => kemDecaps K.L c
+
 /-- ML-KEM-768's layout: `Â` 4608 bytes from 4096, the others (at most
 3584 bytes) from 8704, and the K-PKE functions' working space (20480 bytes)
 from 12288, the end of `scratch`. -/
@@ -111,5 +132,12 @@ def kem768w : Kem16 where
   oZ := 12288
   oW := 12288
   oPR := 20480
+
+/-- `vg_mlkem768_keygen`. -/
+abbrev keyGen (c : Callee4) : Prog isa := kemKeyGenSel kem768w c
+/-- `vg_mlkem768_encaps_h`. -/
+abbrev encapsH (c : Callee4) : Prog isa := kemEncapsHSel kem768w c
+/-- `vg_mlkem768_decaps`. -/
+abbrev decaps (c : Callee4) : Prog isa := kemDecapsSel kem768w c
 
 end VG.Impl.MlKem.X86_64

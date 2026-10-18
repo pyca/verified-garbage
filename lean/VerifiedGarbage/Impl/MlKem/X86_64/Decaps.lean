@@ -93,7 +93,5 @@ def kemDecaps (L : Kem) (c : Callee4) : Prog isa :=
   .seq (.block pro) (.seq (decrypt L c.arith) (.seq (hashes L) (.seq (encrypt L c (.rbp, 384 * L.k))
     (.seq (select L) (.block topEpi)))))
 
-/-- `vg_mlkem768_decaps`. -/
-abbrev decaps (c : Callee4) : Prog isa := kemDecaps kem768 c
 
 end VG.Impl.MlKem.X86_64
