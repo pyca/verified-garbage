@@ -68,9 +68,11 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       width-5 non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` \
       recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q` built by co-Z arithmetic (a \
       doubling of the affine `Q` giving `2Q` and `Q` at one `Z`, then seven additions of `2Q` \
-      sharing each sum's `Z`, never `±2Q` itself since the curve's order is prime), and for each digit from the top a \
+      sharing each sum's `Z`, never `±2Q` itself since the curve's order is prime), each entry's `Z²` and \
+      `Z³` kept next to the table, and for each digit from the top a \
       doubling in Jacobian coordinates and, for a digit other than 0, a complete Jacobian addition \
-      of the entry it selects, read directly, with its `y` negated for a negative digit; the \
+      of the entry it selects, read directly, with its `y` negated for a negative digit and its \
+      `Z²` and `Z³` read rather than computed; the \
       products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`), converted \
       to projective coordinates and added to `[u]G` by the complete formulas of Renes, Costello \
       and Batina for `a = -3`. The result is the conjunction of the checks (the key, \

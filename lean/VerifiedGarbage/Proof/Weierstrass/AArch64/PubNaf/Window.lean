@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 /-!
 # The public NAF multiplication
 
-The table (`table_ok`), `D = O` and the top digit, then `64 n` iterations
+The table (`table_ok`), the `Z²` and `Z³` of its entries (`cacheTo_ok`),
+`D = O` and the top digit, then `64 n` iterations
 (`step_ok`) from `R = [r_{j+1}]P` to `R = [r_j]P`, for the residuals `r_j` of
 the recoding (`Naf5.residual`), so that `R = [r_0]P = [k]P` in Jacobian
 coordinates; then `R` in projective coordinates (`finish_ok`): `window_ok`.
