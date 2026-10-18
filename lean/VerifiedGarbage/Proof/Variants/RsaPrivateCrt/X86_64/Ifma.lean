@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Adx
+public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
@@ -36,7 +36,7 @@ def variant : CrtImpl where
   pcOk := pc_call_ok Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
   pcCt := pc_call_ct Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
   pcMx := by decide +kernel
-  pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Adx.variant
+  pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
   pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
