@@ -14,7 +14,7 @@ import all Init.Data.Nat.Bitwise.Basic
 `EP`: what two runs share (the frame's base `B`, the pointers, the lengths
 and the public key's bytes `nB` and `eB`), and its layout (`EP.lay`), with
 the 3440 bytes below the frame that the call of `vg_rsa_private_checked`
-uses. `In D P σ`: the state `σ` the body starts from (`in_of_pre`).
+uses. `In P σ`: the state `σ` the body starts from (`in_of_pre`).
 -/
 
 @[expose] public section
@@ -123,7 +123,7 @@ end In
 abbrev stackBytes : Nat := 56 + frameBytes + 3440
 
 /-- The shared contract, with that stack. -/
-abbrev spec (H G : Spec.Mgf1.Hash) : Contract isa := Spec.RsaOaep.decryptContract H G abi stackBytes
+abbrev spec (h g : OHash) : Contract isa := Spec.RsaOaep.decryptContract h.G g.G abi stackBytes
 
 /-- The public parameters of an entry state. -/
 def ep (s : State) : EP where
@@ -153,7 +153,7 @@ theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 76 (ep s).argv [(ep s).N, (ep s).E, (ep s).PP, (ep s).QQ, (ep s).DP,
       (ep s).DQ, (ep s).QI, (ep s).LAB, (ep s).CT] [(ep s).OUT, (ep s).ML, (ep s).SCR] s 3440 := rfl
 
-theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) : In (ep s) (entered frameBytes s) := by
+theorem in_of_pre {h' g : OHash} {s : State} (h : (spec h' g).pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argRegs, reduceClassify, Loc.val] at h
   obtain ⟨hsp, hsa, hrd, hwr, oM, oN, oE, oP, oQ, oDP, oDQ, oQI, oL, oC, oS, oA, mN, mE, mP, mQ, mDP, mDQ, mQI, mL,
     mC, mS, mA, nS, eS, pS, qS, dpS, dqS, qiS, lS, cS, sA, kO, kM, kN, kE, kP, kQ, kDP, kDQ, kQI, kL, kC, kS, kA, fO,
