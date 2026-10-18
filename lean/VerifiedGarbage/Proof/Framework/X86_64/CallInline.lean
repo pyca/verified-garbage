@@ -209,6 +209,48 @@ theorem storeMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) (v : Bi
     rw [foldl_qwrites_patch hc _ _ hi]
   · rw [ite_eq_right hi, ite_eq_right hi]; rfl
 
+/-- Folds with functions equal on the list's elements are equal. -/
+theorem foldr_mem_congr {α β : Type} {f g : α → β → β} {b : β} :
+    ∀ {l : List α}, (∀ x ∈ l, ∀ y, f x y = g x y) → l.foldr f b = l.foldr g b
+  | [], _ => rfl
+  | x :: l, h => by
+    simp only [List.foldr_cons]
+    rw [foldr_mem_congr fun x hx => h x (List.mem_cons_of_mem _ hx), h x List.mem_cons_self]
+
+theorem loadMasked512B_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
+    (s.patch H hv u).loadMasked512B a k = s.loadMasked512B a k := by
+  simp only [State.loadMasked512B, State.patch]
+  by_cases hi : ∀ j ∈ State.bOn k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 j) 1
+  · -- As for `loadMasked512_patch`, not `cases` on the bit and `rfl`.
+    have hq : ∀ j ∈ List.range 64, ∀ v : BitVec 512,
+        v <<< 8 ||| (if k.getLsbD j then ((overlay H hv s.mem).readW (a + BitVec.ofNat 64 j) 8).setWidth 512
+          else 0) =
+        v <<< 8 ||| (if k.getLsbD j then (s.mem.readW (a + BitVec.ofNat 64 j) 8).setWidth 512 else 0) :=
+      fun j hj _ => congrArg _ (ite_congr rfl (fun hk => congrArg _ (overlay_readW (by decide) fun _ hx =>
+        hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨hj, hk⟩)) hx)) fun _ => rfl)
+    simp only [foldr_mem_congr hq]
+  · simp only [hi, ↓reduceIte]
+
+theorem foldl_bwrites_patch (hc : Clear H s) {a : Addr} (f : Nat → BitVec 8) :
+    ∀ (l : List Nat), (∀ j ∈ l, InRegions s.wr (a + BitVec.ofNat 64 j) 1) → ∀ m : Mem,
+      l.foldl (fun m j => m.writeW (a + BitVec.ofNat 64 j) (f j)) (overlay H hv m) =
+        overlay H hv (l.foldl (fun m j => m.writeW (a + BitVec.ofNat 64 j) (f j)) m)
+  | [], _, _ => rfl
+  | j :: l, hl, m => by
+    simp only [List.foldl_cons]
+    rw [overlay_writeW fun x hx => hc.miss wr_mem (hl j List.mem_cons_self) hx]
+    exact foldl_bwrites_patch hc f l (fun j h => hl j (List.mem_cons_of_mem _ h)) _
+
+theorem storeMasked512B_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) (v : BitVec 512) :
+    (s.patch H hv u).storeMasked512B a k v = (s.storeMasked512B a k v).map (State.patch H hv u) := by
+  unfold State.storeMasked512B
+  rw [show (s.patch H hv u).wr = s.wr from rfl]
+  by_cases hi : ∀ j ∈ State.bOn k, InRegions s.wr (a + BitVec.ofNat 64 j) 1
+  · rw [ite_eq_left hi, ite_eq_left hi, Option.map_some]
+    simp only [State.patch]
+    rw [foldl_bwrites_patch hc _ _ hi]
+  · rw [ite_eq_right hi, ite_eq_right hi]; rfl
+
 theorem readSrc_patch (hc : Clear H s) (src : Src) : readSrc (s.patch H hv u) src = readSrc s src := by
   cases src with
   | mem m => exact load64_patch hc _
@@ -290,6 +332,11 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
       loadMasked512_patch hc]; rfl
   | kStore m k r => exact storeMasked512_patch hc _ _ _
+  | kLoad8 k d m =>
+    simp only [exec, Option.map_map]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
+      loadMasked512B_patch hc]; rfl
+  | kStore8 m k r => exact storeMasked512B_patch hc _ _ _
   | evMadd52Load hi d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl

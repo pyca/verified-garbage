@@ -12,8 +12,10 @@ VPSRLQ, VPBROADCASTQ and VMOVDQA64, on an Intel Xeon (Cascade Lake), and
 of VPRORQ and VPERMQ (immediate forms) and the EVEX.256 and EVEX.128 forms of
 VPRORQ, on an Intel Xeon (Emerald Rapids); `kmovw k1, eax` and the masked
 VMOVDQU64 load and store of `kLoad` and `kStore`, on an Intel Xeon with
-AVX-512F, with the 64 bytes at the end of a page followed by one mapped
-`PROT_NONE`, where the masked-off quadwords do not fault; and the
+AVX-512F, and `kmovq k1, rbx` and the masked VMOVDQU8 load and store of
+`kLoad8` and `kStore8`, in C inline assembly on an Intel Xeon (Emerald
+Rapids), each with the 64 bytes at the end of a page followed by one mapped
+`PROT_NONE`, where the masked-off elements do not fault; and the
 embedded-broadcast forms, run as the printed strings in Rust naked
 functions), and is compared with the model's result on the same inputs.
 -/
@@ -243,6 +245,32 @@ def kst (k : BitVec 64) (disp : Int) : Option (BitVec 512) :=
 #guard addrs (.kLoad .rax .xmm5 { base := .rdi, disp := 8 }) (sk 0x1234FFA5) == [0x108, 0xA5]
 #guard addrs (.kStore { base := .rdi } .rax .xmm1) (sk 0x07) == [0x100, 0x07]
 
+/-- `zmm5` after `kmovq k1, rax; vmovdqu8 zmm5 {k1}{z}, ZMMWORD PTR [rdi+disp]`. -/
+def kld8 (k : BitVec 64) (disp : Int) : Option (BitVec 512) :=
+  (exec (.kLoad8 .rax .xmm5 { base := .rdi, disp := disp }) (sk k)).map (·.zmm .xmm5)
+
+/-- The 64 bytes at `0x200` after `kmovq k1, rax; vmovdqu8 ZMMWORD PTR
+[rdi+disp] {k1}, zmm1`. -/
+def kst8 (k : BitVec 64) (disp : Int) : Option (BitVec 512) :=
+  (exec (.kStore8 { base := .rdi, disp := disp } .rax .xmm1) (sk k)).map (·.mem.readW 0x200 512)
+
+#guard kld8 0xF0F05A5A0123FFFF 0 == some 0x0badf00d00000000deadbeef00000000009900bbcc00ee00001100334400660000000000000000780000e1000000a5b489abcdef01234567fedcba9876543210#512
+-- Bit 63 of the mask enables byte 63.
+#guard kld8 0x8000000000000001 0 == some 0x0b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010#512
+#guard kld8 0xFFFFFFFFFFFFFFFF 0 == some A
+-- The masked-off bytes may lie outside the regions, and are not read.
+#guard kld8 0xFFFFFF 40 == some 0x000000000000000000000000000000000000000000000000000000000000000000000000000000000badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff#512
+#guard (kld8 0x1FFFFFF 40).isNone
+#guard kld8 0 1000 == some 0
+#guard kst8 0x0123456789ABCDEF 0x100 == some 0x00000000000000f00000aa000000cccc00e1000000a5008700579b000068ace001000000890000efde00be00ca00babeffff0000800000007fffff0012345678#512
+#guard kst8 0x8000000000000001 0x100 == some 0x0f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000078#512
+#guard kst8 0xFFFFFF 0x128 == some 0xdeadbeefcafebabeffffffff800000007fffffff1234567800000000000000000000000000000000000000000000000000000000000000000000000000000000#512
+#guard (kst8 0x1FFFFFF 0x128).isNone
+#guard kst8 0 0x1000 == some 0
+-- They leak the address and the whole mask.
+#guard addrs (.kLoad8 .rax .xmm5 { base := .rdi, disp := 8 }) (sk 0x1234FFA5) == [0x108, 0x1234FFA5]
+#guard addrs (.kStore8 { base := .rdi } .rax .xmm1) (sk 0x8000000000000007) == [0x100, 0x8000000000000007]
+
 /-- `zmm5` after `op zmm5, zmm1, QWORD PTR [rdi+disp]{1to8}`, where memory
 holds `A`. -/
 def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
@@ -291,6 +319,10 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
   ["kmovw k1, ecx", "vmovdqu64 zmm3 {k1}{z}, ZMMWORD PTR [rdx+64]"]
 #guard printer.instr (.kStore { base := .rdx, disp := 64 } .r10 .xmm15) ==
   ["kmovw k1, r10d", "vmovdqu64 ZMMWORD PTR [rdx+64] {k1}, zmm15"]
+#guard printer.instr (.kLoad8 .rcx .xmm3 { base := .rdx, disp := 64 }) ==
+  ["kmovq k1, rcx", "vmovdqu8 zmm3 {k1}{z}, ZMMWORD PTR [rdx+64]"]
+#guard printer.instr (.kStore8 { base := .rdx, disp := 64 } .r10 .xmm15) ==
+  ["kmovq k1, r10", "vmovdqu8 ZMMWORD PTR [rdx+64] {k1}, zmm15"]
 #guard printer.instr (.vbroadcasti32x4 .xmm1 { base := .rdi, disp := 48 }) ==
   ["vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+48]"]
 #guard printer.instr (.zbcst .vpmuludq .xmm5 .xmm1 { base := .rdi, disp := 13 }) ==
@@ -319,6 +351,8 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard isa.requires (.vbroadcasti32x4 .xmm0 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.kLoad .rax .xmm0 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.kStore { base := .rdi } .rax .xmm0) == ["avx512f"]
+#guard isa.requires (.kLoad8 .rax .xmm0 { base := .rdi }) == ["avx512bw"]
+#guard isa.requires (.kStore8 { base := .rdi } .rax .xmm0) == ["avx512bw"]
 #guard isa.requires (.zbcst .vpmuludq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcst .vpandq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcst .vporq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]

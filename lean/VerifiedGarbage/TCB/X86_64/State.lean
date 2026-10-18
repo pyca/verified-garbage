@@ -184,6 +184,27 @@ def storeMasked512 (s : State) (a : Addr) (k : BitVec 64) (v : BitVec 512) : Opt
     some { s with mem := (qOn k).foldl (fun m j => m.writeW (qAddr a j) (v.extractLsb' (64 * j) 64)) s.mem }
   else none
 
+/-- The bytes of a 64-byte access that the mask `k` enables: bit `j` of `k`
+for byte `j`, from 0 to 63. -/
+def bOn (k : BitVec 64) : List Nat := (List.range 64).filter k.getLsbD
+
+/-- Load the bytes of the 64 at `a` that `k` enables, the others 0
+(zeroing-masking); faults unless each enabled byte may be read, and reads no
+other. -/
+def loadMasked512B (s : State) (a : Addr) (k : BitVec 64) : Option (BitVec 512) :=
+  if ∀ j ∈ bOn k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 j) 1 then
+    some ((List.range 64).foldr (fun j v => v <<< 8 ||| (if k.getLsbD j then
+      (s.mem.readW (a + BitVec.ofNat 64 j) 8).setWidth 512 else 0)) 0)
+  else none
+
+/-- Store the bytes of `v` that `k` enables to the 64 bytes at `a`, leaving
+the others unchanged (merging-masking); faults unless each enabled byte may
+be written, and writes no other. -/
+def storeMasked512B (s : State) (a : Addr) (k : BitVec 64) (v : BitVec 512) : Option State :=
+  if ∀ j ∈ bOn k, InRegions s.wr (a + BitVec.ofNat 64 j) 1 then
+    some { s with mem := (bOn k).foldl (fun m j => m.writeW (a + BitVec.ofNat 64 j) (v.extractLsb' (8 * j) 8)) s.mem }
+  else none
+
 /-- Lane `i` (bits `128i+127:128i`, for `i` 0 or 1) of an AVX register. -/
 def lane (s : State) (r : XReg) (i : Nat) : BitVec 128 := if i = 0 then s.xmm r else s.ymmHi r
 

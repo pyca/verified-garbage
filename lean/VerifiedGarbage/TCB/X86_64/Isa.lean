@@ -112,22 +112,23 @@ Modelling choices:
   0–15 (Intel SDM Vol. 2, "VZEROUPPER").
 * The opmask registers `k0`–`k7` (SDM Vol. 1, Chapter 15) are not modelled.
   The only masked instructions are the masked 512-bit moves `kLoad` and
-  `kStore`, each of which the model treats as one instruction together with
-  the `kmovw k1, r32` before it that sets its mask, as `push` is the
-  sequence of a frame's pushes: no modelled instruction reads `k1`
+  `kStore` (of quadwords) and `kLoad8` and `kStore8` (of bytes), each of
+  which the model treats as one instruction together with the `kmovw k1,
+  r32` (`kmovq k1, r64` for the bytes) before it that sets its mask, as
+  `push` is the sequence of a frame's pushes: no modelled instruction reads `k1`
   otherwise, and only these write it. The value they leave in `k1` is
   never read, and the opmask registers are caller-saved (System V AMD64
   psABI §3.2.1, Figure 3.4: `%k0`–`%k7`, "No" under "callee-saved"), so the
-  model need not know it. A masked move accesses exactly the quadwords its
-  mask enables: the others are neither read nor written, and may be
-  outside the permitted regions, as their faults are suppressed (SDM Vol. 2,
+  model need not know it. A masked move accesses exactly the quadwords (or
+  bytes) its mask enables: the others are neither read nor written, and may
+  be outside the permitted regions, as their faults are suppressed (SDM Vol. 2,
   "MOVDQU,VMOVDQU8/16/32/64", whose EVEX forms have the exceptions of Type
   E4.nb, Vol. 2A §2.8, Table 2-49, which suppress the memory faults of the
   elements whose mask bit is 0). Where an
-  access is and which quadwords it enables can affect its timing (a
-  masked-off quadword on an unmapped page may take a microcode assist), so
-  it leaks both: its address and the mask, bits 7:0 of the register it
-  moves to `k1` (`addrs`).
+  access is and which quadwords (or bytes) it enables can affect its timing
+  (a masked-off element on an unmapped page may take a microcode assist), so
+  it leaks both: its address and the mask, bits 7:0 (bits 63:0 for the
+  bytes) of the register it moves to `k1` (`addrs`).
   No SSE, AVX or AVX-512 instruction has a memory operand except the
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
   `vbroadcasti128`/`vbroadcasti32x4`, the `vmovdqu64` loads and stores
@@ -135,8 +136,8 @@ Modelling choices:
   embedded-broadcast forms `zbcst` (`m64bcst`), the second source of
   `vbinLoad` (`xmm3/m128` or `ymm3/m256`), the 256-bit second
   source of `vpmadd52Load` and `evMadd52Load` (`m256`), and the masked
-  moves `kLoad` and `kStore` (`m512`), which (like every VEX or
-  EVEX memory operand but those of the aligned moves) need no alignment, so
+  moves `kLoad`, `kStore`, `kLoad8` and `kStore8` (`m512`), which (like
+  every VEX or EVEX memory operand but those of the aligned moves) need no alignment, so
   no alignment fault needs modelling.
 * MXCSR (SDM Vol. 1 §10.2.3) is modelled as a 32-bit value that only
   `ldmxcsr` and `stmxcsr` access: no other modelled instruction reads or
@@ -354,6 +355,16 @@ inductive Instr
   quadwords of `src` that bits 7:0 of `mask` enable, stored to the 64 bytes
   at `dst`. -/
   | kStore (dst : MemOp) (mask : Reg) (src : XReg)
+  /-- `kmovq k1, r64` (`VEX.L0.F2.0F.W1 92 /r`), then `vmovdqu8 zmm1 {k1}{z},
+  ZMMWORD PTR [src]` (`EVEX.512.F2.0F.W0 6F /r`), with zeroing-masking: the
+  bytes of the 64 at `src` that bits 63:0 of `mask` enable, the others
+  zero. -/
+  | kLoad8 (mask : Reg) (dst : XReg) (src : MemOp)
+  /-- `kmovq k1, r64` (`VEX.L0.F2.0F.W1 92 /r`), then `vmovdqu8 ZMMWORD PTR
+  [dst] {k1}, zmm1` (`EVEX.512.F2.0F.W0 7F /r`), with merging-masking: the
+  bytes of `src` that bits 63:0 of `mask` enable, stored to the 64 bytes at
+  `dst`. -/
+  | kStore8 (dst : MemOp) (mask : Reg) (src : XReg)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -463,7 +474,9 @@ VPBROADCASTQ `EVEX.256.66.0F38.W1 59 /r`, VMOVDQU64 `EVEX.256.F3.0F.W1 6F
 VPMADD52LUQ and VPMADD52HUQ of any register. AVX512F for KMOVW k1, r32
 (`VEX.L0.0F.W0 92 /r`) and for the EVEX.512 VMOVDQU64 load and store with
 a write mask (`EVEX.512.F3.0F.W1 6F /r`, `7F /r`), and so for `kLoad` and
-`kStore`.
+`kStore`. AVX512BW for KMOVQ k1, r64 (`VEX.L0.F2.0F.W1 92 /r`) and for the
+EVEX.512 VMOVDQU8 load and store with a write mask (`EVEX.512.F2.0F.W0 6F
+/r`, `7F /r`), and so for `kLoad8` and `kStore8`.
 
 Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "AESDEC",
 "AESDECLAST", "PCLMULQDQ", "PSHUFB", "PSLLDQ" and "PSRLDQ", opcode tables'
@@ -521,6 +534,7 @@ def Instr.requires : Instr → List String
   | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. =>
     ["avx512f"]
   | .kLoad .. | .kStore .. => ["avx512f"]
+  | .kLoad8 .. | .kStore8 .. => ["avx512bw"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
@@ -711,6 +725,20 @@ def exec : Instr → State → Option State
     s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
       (v.extractLsb' 384 128)
   | .kStore m k r, s => s.storeMasked512 (s.ea m) (s.gpr k) (s.zmm r)
+  -- SDM Vol. 2, "KMOVW/KMOVB/KMOVQ/KMOVD—Move From and to Mask Registers"
+  -- (`KMOVQ k1, r64`): `DEST := SRC[63:0]`, so `k1[j]` is bit `j` of
+  -- `mask`; "Flags Affected: None". Then "MOVDQU,VMOVDQU8/16/32/64",
+  -- VMOVDQU8 (EVEX encoded versions, load-form), with `KL = 64`, `VL = 512`
+  -- and zeroing-masking: `FOR j := 0 TO KL-1; i := j * 8; IF k1[j] THEN
+  -- DEST[i+7:i] := SRC[i+7:i] ELSE DEST[i+7:i] := 0`, and the store-form,
+  -- merging-masking: `IF k1[j] THEN DEST[i+7:i] := SRC[i+7:i] ELSE
+  -- *DEST[i+7:i] remains unchanged*`. No alignment is required, and a
+  -- masked-off byte is not accessed (its faults are suppressed: see the
+  -- opmask registers above).
+  | .kLoad8 k d m, s => (s.loadMasked512B (s.ea m) (s.gpr k)).map fun v =>
+    s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
+      (v.extractLsb' 384 128)
+  | .kStore8 m k r, s => s.storeMasked512B (s.ea m) (s.gpr k) (s.zmm r)
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -784,6 +812,7 @@ def addrs : Instr → State → List Addr
   -- opmask registers above), as a number, so that every run of an
   -- instruction makes the same number of observations.
   | .kLoad k _ m, s | .kStore m k _, s => [s.ea m, (s.gpr k).setWidth 8 |>.setWidth 64]
+  | .kLoad8 k _ m, s | .kStore8 m k _, s => [s.ea m, s.gpr k]
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -895,7 +924,7 @@ def Instr.dst : Instr → Option Reg
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
 abbrev isa : ISA where
