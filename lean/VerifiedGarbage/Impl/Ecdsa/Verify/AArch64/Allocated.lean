@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.P256.EcdhDouble
+public import VerifiedGarbage.Impl.P256.VerifyTable
 
 /-! Public P-256 verification with register-allocated point and inversion arithmetic. -/
 
@@ -33,9 +34,11 @@ def cachedOps : CachedJac.Ops where
   tail := VerifyAllocated.program .jacTail
   double := P256Joint.cachedOps.double
 
+/-- The odd multiples of `Q` by co-Z arithmetic, which leaves their cached
+powers too. -/
 def ops : Joint.Ops where
-  table := P256Joint.ops.table
-  cache := P256Joint.ops.cache
+  table := VerifyTable.build
+  cache := .block []
   digitQ := CachedJac.digit K cachedOps
   double := EcdhDouble.program
   mixedAdd := mixedAdd
