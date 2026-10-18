@@ -25,7 +25,7 @@ theorem exec_zvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i 
     | exact execCmov_vec h
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl⟩)
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
-    | (simp only [State.store64, State.store8, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
+    | (simp only [State.store64, State.store8, State.store16, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
     | (unfold execAlu at h
        simp only [Option.bind_eq_some_iff] at h
        obtain ⟨b, -, h⟩ := h
