@@ -95,6 +95,14 @@ theorem store16_widen (hc : Covers s.wr wr) {a : Addr} {v : BitVec 16} (h : s.st
   cases h
   simp only [State.store16, State.withRegions_wr, hc _ _ hi, ite_true]; rfl
 
+theorem load16_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) {a : Addr} {v : BitVec 16}
+    (h : s.load16 a = some v) : (s.withRegions rd wr).load16 a = some v := by
+  simp only [State.load16] at h
+  split at h <;> [rename_i hi; cases h]
+  simp only [State.load16, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, hc _ _ hi,
+    ite_true]
+  exact h
+
 theorem load128_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) {a : Addr} {v : BitVec 128}
     (h : s.load128 a = some v) : (s.withRegions rd wr).load128 a = some v := by
   simp only [State.load128] at h
@@ -161,6 +169,11 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     obtain ⟨v, hv, rfl⟩ := h
     simp only [exec]
     rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load8_widen hc hv]; rfl
+  | movzx16 d m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [exec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load16_widen hc hv]; rfl
   | store m r => exact store64_widen hw h
   | store32 m r => exact store32_widen hw h
   | store8 m r => exact store8_widen hw h

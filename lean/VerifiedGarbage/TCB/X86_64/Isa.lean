@@ -242,6 +242,8 @@ inductive Instr
   | andn (dst src1 src2 : Reg)
   /-- `movzx r32, BYTE PTR [src]`: the byte, zero-extended into the 64-bit register. -/
   | movzx8 (dst : Reg) (src : MemOp)
+  /-- `movzx r32, WORD PTR [src]`: the word, zero-extended into the 64-bit register. -/
+  | movzx16 (dst : Reg) (src : MemOp)
   /-- `mov BYTE PTR [dst], r8`: the low byte of `src`. -/
   | store8 (dst : MemOp) (src : Reg)
   /-- `mov WORD PTR [dst], r16`: the low 16 bits of `src`. -/
@@ -542,6 +544,12 @@ def exec : Instr → State → Option State
   | .rorx d r n, s => execRorx d r n s
   | .andn d a b, s => some (execAndn d a b s)
   | .movzx8 d m, s => (s.load8 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
+  -- SDM Vol. 2, "MOVZX—Move With Zero-Extend", `MOVZX r32, r/m16` (0F B7 /r):
+  -- `DEST := ZeroExtend(SRC)`, the source the 2 bytes at the address,
+  -- little-endian (SDM Vol. 1 §1.3.1), and the 32-bit result zero-extended to
+  -- 64 bits (SDM Vol. 1 §3.4.1.1); no alignment is required and no flags are
+  -- affected.
+  | .movzx16 d m, s => (s.load16 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
   | .store8 m r, s => s.store8 (s.ea m) ((s.gpr r).setWidth 8)
   -- SDM Vol. 2, "MOV—Move", `MOV r/m16, r16` (66 89 /r): `DEST := SRC`,
   -- the source the register's low 16 bits (AX, CX, …, R8W–R15W; SDM Vol. 1
@@ -717,6 +725,7 @@ def addrs : Instr → State → List Addr
   | .rorx .., _ => []
   | .andn .., _ => []
   | .movzx8 _ m, s => [s.ea m]
+  | .movzx16 _ m, s => [s.ea m]
   | .store8 m _, s => [s.ea m]
   | .store16 m _, s => [s.ea m]
   | .bswap _, _ => []
@@ -859,7 +868,7 @@ one (the pop of a frame also moves `rsp`, as the push does): `mul` writes
 two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
-  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .xop _

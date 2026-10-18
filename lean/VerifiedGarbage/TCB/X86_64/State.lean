@@ -125,6 +125,10 @@ def load8 (s : State) (a : Addr) : Option Byte :=
 def store8 (s : State) (a : Addr) (v : Byte) : Option State :=
   if InRegions s.wr a 1 then some { s with mem := s.mem.writeW a v } else none
 
+/-- Load 2 bytes, faulting if not permitted. -/
+def load16 (s : State) (a : Addr) : Option (BitVec 16) :=
+  if InRegions (s.rd ++ s.wr) a 2 then some (s.mem.readW a 16) else none
+
 /-- Store 2 bytes, faulting if not permitted. -/
 def store16 (s : State) (a : Addr) (v : BitVec 16) : Option State :=
   if InRegions s.wr a 2 then some { s with mem := s.mem.writeW a v } else none

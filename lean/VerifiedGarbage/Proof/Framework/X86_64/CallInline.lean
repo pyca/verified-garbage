@@ -110,6 +110,11 @@ theorem load8_patch (hc : Clear H s) (a : Addr) : (s.patch H hv u).load8 a = s.l
   have := hc.miss (fun _ h => h) hi (x := a) (by simp)
   simp only [overlay, this, ite_false]
 
+theorem load16_patch (hc : Clear H s) (a : Addr) : (s.patch H hv u).load16 a = s.load16 a := by
+  simp only [State.load16, State.patch]
+  by_cases hi : InRegions (s.rd ++ s.wr) a 2 <;> simp only [hi, ite_true, ite_false]
+  rw [overlay_readW (by decide) fun x hx => hc.miss (fun _ h => h) hi hx]
+
 theorem load128_patch (hc : Clear H s) (a : Addr) : (s.patch H hv u).load128 a = s.load128 a := by
   simp only [State.load128, State.patch]
   by_cases hi : InRegions (s.rd ++ s.wr) a 16 <;> simp only [hi, ite_true, ite_false]
@@ -229,6 +234,7 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
   | mov d src => simp only [exec, readSrc_patch hc, Option.map_map]; rfl
   | mov32 d src => simp only [exec, readSrc32_patch hc, Option.map_map]; rfl
   | movzx8 d m => simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load8_patch hc]; rfl
+  | movzx16 d m => simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load16_patch hc]; rfl
   | store m r => exact store64_patch hc _ _
   | store32 m r => exact store32_patch hc _ _
   | store8 m r => exact store8_patch hc _ _
@@ -360,6 +366,7 @@ def Instr.rspFree : Instr → Bool
   | .movqR d _ => d != .rsp
   | .movdquLoad _ m | .movdquStore m _ => m.noRsp
   | .movzx8 d m => d != .rsp && m.noRsp
+  | .movzx16 d m => d != .rsp && m.noRsp
   | .store8 m r => m.noRsp && r != .rsp
   | .store16 m r => m.noRsp && r != .rsp
   | .leaSym d _ => d != .rsp
@@ -539,6 +546,10 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
     simp only [exec, Option.map_map]; rw [ea_setRsp hi.2]
     simp only [Function.comp_def, setReg_setRsp hi.1]; rfl
+  | movzx16 d m =>
+    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_map]; rw [ea_setRsp hi.2]
+    simp only [Function.comp_def, setReg_setRsp hi.1]; rfl
   | store8 m r =>
     simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
     simp only [exec, ea_setRsp hi.1, setRsp_gpr hi.2, store8_setRsp]
@@ -574,7 +585,7 @@ theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rs
   case mulx => simp only [addrs]; rw [srcAddrs_setRsp hi.2]
   case store => simp only [addrs]; rw [ea_setRsp hi.1]
   case movdquLoad | movdquStore | vbinLoad | vmovdquStore => simp only [addrs]; rw [ea_setRsp hi]
-  case movzx8 => simp only [addrs]; rw [ea_setRsp hi.2]
+  case movzx8 | movzx16 => simp only [addrs]; rw [ea_setRsp hi.2]
   case store8 | store16 => simp only [addrs]; rw [ea_setRsp hi.1]
   all_goals first | rfl | simp at hi
 

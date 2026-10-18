@@ -502,7 +502,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
-  | movzx8 d m =>
+  | movzx8 d m | movzx16 d m =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
