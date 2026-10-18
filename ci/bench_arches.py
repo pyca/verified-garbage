@@ -216,7 +216,7 @@ CPU_FEATURES = {
         "avx,avx2,avx512f,avx512vl",
         "none",
     ],
-    "aarch64": ["neon", "sha3", "none"],
+    "aarch64": ["neon", "aes", "sha3", "none"],
     "x86": ["aes", "pclmulqdq,ssse3", "none"],
 }
 

@@ -15,6 +15,6 @@ Rust's `aes` feature.
 
 namespace VG.Variants.AesGcm.AArch64.Aes
 
-def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes⟩
+def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes, false⟩
 
 end VG.Variants.AesGcm.AArch64.Aes

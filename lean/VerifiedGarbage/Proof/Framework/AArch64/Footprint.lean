@@ -41,7 +41,7 @@ def winMask : List (Nat × Nat) → Nat
   | [] => 0
   | (b, l) :: ws => range b l ||| winMask ws
 
-def Bnd.toFp (U : Bnd) : Fp := ⟨U.gr, U.gw, U.vr, U.vw, U.cr, U.cw, winMask U.rd, winMask U.wr⟩
+def Bnd.toFp (U : Bnd) : Fp := ⟨U.gr, U.gw, U.vr, U.vw, U.cr, U.cw, winMask U.rd, winMask U.wr, false⟩
 
 def Bnd.union (U V : Bnd) : Bnd :=
   ⟨U.gr ||| V.gr, U.gw ||| V.gw, U.vr ||| V.vr, U.vw ||| V.vw, U.cr || V.cr, U.cw || V.cw,
@@ -63,12 +63,13 @@ def memIn (U : Bnd) : Instr → Bool
   | .strq _ _ off => inWin off 16 U.wr
   | _ => true
 
-/-- The instruction has a footprint, within the bound. -/
+/-- The instruction has a footprint, within the bound (which reads memory
+only at offsets from the base). -/
 def fpIn (xb : Reg) (U : Bnd) (i : Instr) : Bool :=
   match fp xb i with
   | none => false
   | some F => subM F.gr U.gr && subM F.gw U.gw && subM F.vr U.vr && subM F.vw U.vw &&
-      (!F.cr || U.cr) && (!F.cw || U.cw) && memIn U i
+      (!F.cr || U.cr) && (!F.cw || U.cw) && memIn U i && !F.ma
 
 /-! ## Soundness -/
 
@@ -100,6 +101,7 @@ theorem fp_mem {i : Instr} {F : Fp} (hf : fp xb i = some F) {U : Bnd} (hm : memI
     · cases hf
       exact ⟨winMask_bit hm, fun k hk => by simp at hk⟩
     · cases hf
+      exact ⟨fun k hk => by simp at hk, fun k hk => by simp at hk⟩
   | str sz t n off =>
     simp only [fp] at hf
     split at hf
@@ -112,6 +114,7 @@ theorem fp_mem {i : Instr} {F : Fp} (hf : fp xb i = some F) {U : Bnd} (hm : memI
     · cases hf
       exact ⟨winMask_bit hm, fun k hk => by simp at hk⟩
     · cases hf
+      exact ⟨fun k hk => by simp at hk, fun k hk => by simp at hk⟩
   | strq t n off =>
     simp only [fp] at hf
     split at hf
@@ -135,10 +138,10 @@ theorem fpIn_sub {U : Bnd} {i : Instr} (h : fpIn xb U i = true) : ∃ F, fp xb i
   | some F =>
     rw [hf] at h
     simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
-    obtain ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩ := h
+    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := h
     obtain ⟨m1, m2⟩ := fp_mem hf h7
     refine ⟨F, rfl, ⟨fun _ => subM_bit h1, fun _ => subM_bit h2, fun _ => subM_bit h3,
-      fun _ => subM_bit h4, fun hc => ?_, fun hc => ?_, m1, m2⟩⟩
+      fun _ => subM_bit h4, fun hc => ?_, fun hc => ?_, m1, m2, fun ha => by rw [ha] at h8; cases h8⟩⟩
     · rcases h5 with h5 | h5
       · rw [hc] at h5; cases h5
       · exact h5
@@ -250,40 +253,32 @@ theorem fpIn_reloc {ws : List (Nat × Nat)} (hs : sepB (ws.map Prod.fst) = true)
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
-      exact ⟨h.1, inWin_reloc (by cases sz <;> decide) hs hr h.2⟩
-    · unfold fpIn at h
-      simp only [fp, hn, ite_false] at h
-      cases h
+      exact ⟨⟨h.1.1, inWin_reloc (by cases sz <;> decide) hs hr h.1.2⟩, h.2⟩
+    · simp [fpIn, fp, hn] at h
   | str sz t n off =>
     show fpIn xb (U.reloc ws) (.str sz t n (relocOff ws off)) = true
     by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
-      exact ⟨h.1, inWin_reloc (by cases sz <;> decide) hs hw h.2⟩
-    · unfold fpIn at h
-      simp only [fp, hn, ite_false] at h
-      cases h
+      exact ⟨⟨h.1.1, inWin_reloc (by cases sz <;> decide) hs hw h.1.2⟩, h.2⟩
+    · simp [fpIn, fp, hn] at h
   | ldrq t n off =>
     show fpIn xb (U.reloc ws) (.ldrq t n (relocOff ws off)) = true
     by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
-      exact ⟨h.1, inWin_reloc (by decide) hs hr h.2⟩
-    · unfold fpIn at h
-      simp only [fp, hn, ite_false] at h
-      cases h
+      exact ⟨⟨h.1.1, inWin_reloc (by decide) hs hr h.1.2⟩, h.2⟩
+    · simp [fpIn, fp, hn] at h
   | strq t n off =>
     show fpIn xb (U.reloc ws) (.strq t n (relocOff ws off)) = true
     by_cases hn : n = xb
     · subst hn
       unfold fpIn at h ⊢
       simp only [fp, ite_true, memIn, Bool.and_eq_true] at h ⊢
-      exact ⟨h.1, inWin_reloc (by decide) hs hw h.2⟩
-    · unfold fpIn at h
-      simp only [fp, hn, ite_false] at h
-      cases h
+      exact ⟨⟨h.1.1, inWin_reloc (by decide) hs hw h.1.2⟩, h.2⟩
+    · simp [fpIn, fp, hn] at h
   | _ => exact h
 
 /-- Code at any slots, as code at the probe slots with its offsets moved, is within the bound
@@ -334,8 +329,9 @@ theorem fpIn_union_left {U V : Bnd} {i : Instr} (h : fpIn xb U i = true) : fpIn 
   | some F =>
     rw [hf] at h
     simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h ⊢
-    obtain ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩ := h
-    refine ⟨⟨⟨⟨⟨⟨subM_union_left h1, subM_union_left h2⟩, subM_union_left h3⟩, subM_union_left h4⟩, ?_⟩, ?_⟩, ?_⟩
+    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := h
+    refine ⟨⟨⟨⟨⟨⟨⟨subM_union_left h1, subM_union_left h2⟩, subM_union_left h3⟩, subM_union_left h4⟩, ?_⟩, ?_⟩, ?_⟩,
+      h8⟩
     · rcases h5 with h5 | h5
       · exact .inl h5
       · exact .inr (by simp [Bnd.union, h5])
@@ -351,8 +347,9 @@ theorem fpIn_union_right {U V : Bnd} {i : Instr} (h : fpIn xb V i = true) : fpIn
   | some F =>
     rw [hf] at h
     simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h ⊢
-    obtain ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩ := h
-    refine ⟨⟨⟨⟨⟨⟨subM_union_right h1, subM_union_right h2⟩, subM_union_right h3⟩, subM_union_right h4⟩, ?_⟩, ?_⟩, ?_⟩
+    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := h
+    refine ⟨⟨⟨⟨⟨⟨⟨subM_union_right h1, subM_union_right h2⟩, subM_union_right h3⟩, subM_union_right h4⟩, ?_⟩, ?_⟩, ?_⟩,
+      h8⟩
     · rcases h5 with h5 | h5
       · exact .inl h5
       · exact .inr (by simp [Bnd.union, h5])
