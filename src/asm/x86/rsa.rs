@@ -900190,3 +900190,188 @@ ret
 .p2align 6",
     )
 }
+
+/// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
+///
+/// Computes the private candidate using `vg_rsa_private_crt`, checks it by public re-exponentiation using `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, and releases it only under the acceptance mask. All three calls and the comparison follow a fixed schedule. The frame's candidate buffer is overwritten with zeros.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq` or `qinv` (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 3368 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push ebx
+push ebp
+push esi
+push edi
+lea esp, [esp-3328]
+mov eax, esp
+add eax, 128
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esp+3352]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+3356]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+3360]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+3372]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esp+3376]
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esp+3380]
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esp+3384]
+mov DWORD PTR [esp+28], eax
+mov eax, DWORD PTR [esp+3388]
+mov DWORD PTR [esp+32], eax
+mov eax, DWORD PTR [esp+3392]
+mov DWORD PTR [esp+36], eax
+mov eax, DWORD PTR [esp+3396]
+mov DWORD PTR [esp+40], eax
+mov eax, DWORD PTR [esp+3400]
+mov DWORD PTR [esp+44], eax
+mov eax, DWORD PTR [esp+3404]
+mov DWORD PTR [esp+48], eax
+mov eax, DWORD PTR [esp+3408]
+mov DWORD PTR [esp+52], eax
+mov eax, DWORD PTR [esp+3412]
+mov DWORD PTR [esp+56], eax
+mov eax, DWORD PTR [esp+3416]
+mov DWORD PTR [esp+60], eax
+mov eax, DWORD PTR [esp+3420]
+mov DWORD PTR [esp+64], eax
+mov eax, DWORD PTR [esp+3424]
+mov DWORD PTR [esp+68], eax
+call {vg_rsa_private_crt}
+mov DWORD PTR [esp+80], eax
+mov eax, esp
+add eax, 1152
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esp+3360]
+add eax, 7
+shr eax, 3
+add eax, eax
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+3356]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+3360]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+3420]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esp+3424]
+mov DWORD PTR [esp+20], eax
+call {vg_rsa_public_precompute}
+mov DWORD PTR [esp+84], eax
+mov eax, DWORD PTR [esp+3348]
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esp+3352]
+mov DWORD PTR [esp+4], eax
+mov eax, esp
+add eax, 1152
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+3360]
+add eax, 7
+shr eax, 3
+add eax, eax
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+3364]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esp+3368]
+mov DWORD PTR [esp+20], eax
+mov eax, esp
+add eax, 128
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esp+3376]
+mov DWORD PTR [esp+28], eax
+mov eax, DWORD PTR [esp+3420]
+mov DWORD PTR [esp+32], eax
+mov eax, DWORD PTR [esp+3424]
+mov DWORD PTR [esp+36], eax
+call {vg_rsa_public_precomputed_checked}
+and eax, DWORD PTR [esp+80]
+and eax, DWORD PTR [esp+84]
+and eax, 1
+mov ebx, eax
+mov esi, DWORD PTR [esp+3348]
+mov edi, DWORD PTR [esp+3372]
+mov ecx, DWORD PTR [esp+3360]
+mov ebp, 0
+20:
+movzx eax, BYTE PTR [esi]
+movzx edx, BYTE PTR [edi]
+xor eax, edx
+or ebp, eax
+add esi, 1
+add edi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 20b
+mov eax, 0
+sub eax, ebp
+or eax, ebp
+shr eax, 31
+xor eax, 1
+mov edx, ebx
+and edx, eax
+mov ebp, 0
+sub ebp, edx
+mov edx, ebp
+mov ebp, 0
+sub ebp, ebx
+mov ebx, 2
+sub ebx, eax
+and ebx, ebp
+mov edi, DWORD PTR [esp+3348]
+mov esi, esp
+add esi, 128
+mov ecx, DWORD PTR [esp+3360]
+21:
+movzx eax, BYTE PTR [esi]
+and eax, edx
+mov BYTE PTR [edi], al
+mov eax, 0
+mov BYTE PTR [esi], al
+add esi, 1
+add edi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 21b
+mov eax, ebx
+lea esp, [esp+3328]
+mov edi, DWORD PTR [esp]
+mov ebp, DWORD PTR [esp+8]
+mov esi, DWORD PTR [esp+4]
+pop ebx
+pop ebx
+pop ebx
+pop ebx
+ret
+.p2align 6",
+        vg_rsa_private_crt = sym super::rsa::vg_rsa_private_crt,
+        vg_rsa_public_precompute = sym super::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+    )
+}
