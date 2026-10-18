@@ -204,9 +204,6 @@ def rowMulEg (ld : Nat → List Instr) (j : Nat) : List Instr :=
   ld j ++ [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))] ++
     toY vbaseL
 
-/-- `rowMulEg` of the `u32`s from `f = rsi + o j`. -/
-def rowMulEY (o j : Nat) : List Instr := rowMulEg (rowLdY o) j
-
 /-- A block of row `k` to an accumulator: its `k` products summed in `ymm11`
 and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and stored to
 the accumulator at `rdi`; `rsi` moves `st` bytes on. -/
@@ -215,9 +212,6 @@ def rowBodyEg (ld : Nat → List Instr) (st : BitVec 32) (k : Nat) : List Instr 
     toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++
     [.vmovdquStore .l256 (at_ .rdi 0) .xmm11, .vmovdquStore .l256 (at_ .rdi 32) .xmm12,
       .alu .add .rsi (.imm st), .alu .add .rdx (.imm 64), .alu .add .rdi (.imm 64), .alu .add .r8 (.imm 32)]
-
-/-- `rowBodyEg` of the `u32`s. -/
-def rowBodyEY (o k : Nat) : List Instr := rowBodyEg (rowLdY o) 128 k
 
 /-- The accumulator at `rdi` of the `k` products of the polynomials `ld`
 loads from `f = rsi` (`st` bytes a block) and the accumulators from

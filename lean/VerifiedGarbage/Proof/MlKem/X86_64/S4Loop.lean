@@ -91,9 +91,6 @@ structure LVW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop wh
   lat : LAtW w16 σ s₀ K b t s
   vc : (Lt σ K (b + t)).length < 249 → VC s
 
-/-- `LVW` with 32-bit coefficients. -/
-abbrev LV := LVW false
-
 theorem setup_eq (K : Nat) (w16 : Bool) : setup K w16 = [.mov .rsi (.reg .rbx),
     .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * K))), .mov32 .rdi (.imm 0), .mov .rbp (.reg .r13),
     .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * K))), .mov32 .r10 (.imm 21)] := rfl

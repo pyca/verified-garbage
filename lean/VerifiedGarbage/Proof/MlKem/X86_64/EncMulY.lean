@@ -58,11 +58,6 @@ theorem hi_dis_yA {C : Addr} {j : Nat} (hj : j < 4) : (hiR C).Disjoint (sR (yA C
 theorem cs_of {rs : List Reg} (h : ∀ r ∈ calleeSaved, r ∉ rs) {a b : State} (kk : Keep rs a b) :
     ∀ r ∈ calleeSaved, b.gpr r = a.gpr r := fun r hr => kk.gpr (h r hr)
 
-theorem a_addr (p : Addr) (k i j : Nat) :
-    p + BitVec.ofNat 64 (1024 * i) + BitVec.ofNat 64 (1024 * k * j) = p + BitVec.ofNat 64 (1024 * (k * j + i)) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact congrArg (p + BitVec.ofNat 64 ·) (by rw [Nat.mul_assoc]; omega)
-
 section
 variable {k : Nat} {s₀ : State} {aR : Addr → Region} {aRed : Mem → Addr → Prop}
   {aMat : Mem → Addr → List (List Poly)} (hp : (encMulKA k aR aRed aMat).pre s₀) (hk : k ≤ 4)

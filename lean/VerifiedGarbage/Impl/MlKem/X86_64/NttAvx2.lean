@@ -153,7 +153,4 @@ def yepi : Prog isa :=
 /-- `NTT` in two passes on registers (`NttRegs.lean`), in place. -/
 def nttAvx2 : Prog isa := withMxcsr .rsi oMx (nttR NttR.passBsRdi)
 
-/-- `NTT⁻¹` in two passes on registers (`NttRegs.lean`), in place. -/
-def nttInvAvx2 : Prog isa := withMxcsr .rsi oMx (nttIR NttR.passIBsU32)
-
 end VG.Impl.MlKem.X86_64

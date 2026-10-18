@@ -374,17 +374,6 @@ theorem kpkeDecAt_tr {L : Kem} (hK : KpkeOk L) {m s ct z : Ptr} (hs : NA s) (hc 
 
 /-! ## In a layout -/
 
-section
-variable {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay rbs wbs s) {ws : List (Ptr × Nat)} {p : Ptr}
-include L
-
-theorem Lay.keepPolyW {f : Poly} (hP : PPostB s s' ws) (hc : keepB (rbs ++ wbs) ws p 512 = true)
-    (h : PolyIsW 16 s.mem (pa s p) f) : PolyIsW 16 s'.mem (pa s' p) f := by
-  rw [hP.pa (keepB_cs hc)]
-  exact polyIsW16_frame hP.frame (L.fdisj hc) h
-
-end
-
 /-- The layout of a call of `vg_mlkem*_kpke_keygen`. -/
 def kpChk (bs wbs : List (Reg × Nat)) (L : Kem) (ek dk a se z : Ptr) : Bool :=
   wrOk bs wbs ek (384 * L.k) && wrOk bs wbs dk (384 * L.k) && rdOk bs a (512 * (L.k * L.k)) &&
