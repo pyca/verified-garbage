@@ -106,6 +106,31 @@ theorem crtPcCode_fin {s t₁ t₂ t : State} (c : CrtCtx s) (h : CrtHeadPost s 
   · obtain ⟨hZx, hne⟩ := c.hret b hb
     rw [hp.frame _ hZx hne, hm, h.inScr _ hZx]
 
+/-- `pre` holding the key's precomputed values gives them in memory, at any
+state with the same memory outside the working space. -/
+theorem preVals_of {s : State} {m : Mem}
+    (hpre : PreSrc s (stackArg s 10) ((stackArg s 11).toNat * 8) (stackArg s 12) (stackArg s 13).toNat)
+    (hW : (stackArg s 13).toNat = Spec.Rsa.privatePrecomputedWords (s.gpr .rcx).toNat (stackArg s 1).toNat
+      (stackArg s 3).toNat)
+    (hi : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem m)
+    (hpo : Spec.Rsa.privatePreOk s.mem (s.gpr .rdx) (s.gpr .rcx).toNat (stackArg s 0) (stackArg s 1).toNat
+      (stackArg s 2) (stackArg s 3).toNat (stackArg s 12) (stackArg s 13).toNat) :
+    PreVals m (stackArg s 12) (((s.gpr .rcx).toNat + 7) / 8) (wsWords (stackArg s 1).toNat)
+      (wsWords (stackArg s 3).toNat) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)) := by
+  have hW' : 2 * (((s.gpr .rcx).toNat + 7) / 8) + wsWords (stackArg s 1).toNat + wsWords (stackArg s 3).toNat ≤
+      (stackArg s 13).toNat := by
+    rw [hW]; unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.primeWords
+      Spec.Rsa.modulusWords wsWords; omega
+  obtain ⟨-, -, h1, h2, h3⟩ := privatePre_vals (bytesAt_length _ _ _) (by
+    have := hpo; unfold Spec.Rsa.privatePreOk at this; rw [this, hW, bytesAt_length, bytesAt_length]
+    unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; rfl)
+  rw [bytesAt_length] at h2 h3
+  rw [bytesAt_length] at h3
+  exact ⟨by rw [hpre.wv_eq hi (by omega)]; exact h1, by rw [hpre.wv_eq hi (by omega)]; exact h2,
+    by rw [hpre.wv_eq hi (by omega)]; exact h3⟩
+
 /-- `vg_rsa_private_crt_precomputed` with Montgomery multiplication `M`, given
 that its code never loads MXCSR (which the registration file evaluates). -/
 theorem crtPcCode_correct (M : Mont) (E : CrtExpL M)
@@ -144,14 +169,7 @@ theorem crtPcCode_correct (M : Mont) (E : CrtExpL M)
         (stackArg s 13).toNat := by
       rw [hW]; unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.primeWords
         Spec.Rsa.modulusWords wsWords; omega
-    refine WP.mono (crtMainPc_ok M E hpre₂ hv hp₂ hW') fun t ⟨Mk, hp, hiff⟩ => crtPcCode_fin c h₁ hm₂ k₂ hp
-      (fun hpo => ?_) (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
-    obtain ⟨-, -, h1, h2, h3⟩ := privatePre_vals (bytesAt_length _ _ _) (by
-      have := hpo; unfold Spec.Rsa.privatePreOk at this; rw [this, hW, bytesAt_length, bytesAt_length]
-      unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; rfl)
-    rw [bytesAt_length] at h2 h3
-    rw [bytesAt_length] at h3
-    exact ⟨by rw [hpre.wv_eq i₂ (by omega)]; exact h1, by rw [hpre.wv_eq i₂ (by omega)]; exact h2,
-      by rw [hpre.wv_eq i₂ (by omega)]; exact h3⟩
+    exact WP.mono (crtMainPc_ok M E hpre₂ hv hp₂ hW') fun t ⟨Mk, hp, hiff⟩ => crtPcCode_fin c h₁ hm₂ k₂ hp
+      (preVals_of hpre hW i₂) (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
 
 end VG.Proof.Bignum.X86_64
