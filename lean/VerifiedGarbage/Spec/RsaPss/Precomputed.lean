@@ -66,7 +66,7 @@ def verifyPrecomputedApi : Api where
     values, the result is unspecified; memory safety and the timing guarantee \
     still apply. Timing may additionally depend on the contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`."
-  safety := verifySafety H G ++
+  safety := verifySafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be signature verification's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]
