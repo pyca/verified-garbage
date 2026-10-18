@@ -4,6 +4,10 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 public import VerifiedGarbage.Proof.Gcm.Poly
 meta import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Proof.Gcm.Powers
+meta import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
@@ -267,6 +271,26 @@ theorem x_φ_hInv (h : BitVec 128) :
   split_ifs with hb
   · rw [x_φ_xInv, hb]; simp only [bit, ↓reduceIte, map_one]
   · rw [φ_zero, Bool.not_eq_true] at *; rw [hb]; simp only [mul_zero, add_zero, bit, Bool.false_eq_true, ↓reduceIte, map_zero]
+
+/-- The prepared form of `Hⁿ` (`Spec.Gcm.preparedPower`) is `Hⁿ · x⁻¹`. -/
+theorem x_φ_prepared (H : Spec.Gcm.Block) (n : Nat) :
+    x * φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H n)) = φ H ^ n := by
+  have e := x_φ_hInv (Spec.Gcm.hpow H n)
+  rw [φ_hpow] at e
+  exact e
+
+/-- `x` cancels: a block `v` with `x · v = Hⁿ` is `Hⁿ · x⁻¹`, prepared. -/
+theorem eq_prepared {v H : Spec.Gcm.Block} {n : Nat} (h : x * φ v = φ H ^ n) :
+    v = Spec.Gcm.preparedPower (Spec.Gcm.hpow H n) := by
+  apply φ_inj
+  have u := x_φ_prepared H 0
+  rw [pow_zero] at u
+  have e := h.trans (x_φ_prepared H n).symm
+  calc φ v = φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H 0)) * (x * φ v) := by
+        rw [← mul_assoc, mul_comm _ x, u, one_mul]
+    _ = φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H 0)) * (x * φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H n))) := by
+        rw [e]
+    _ = φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H n)) := by rw [← mul_assoc, mul_comm _ x, u, one_mul]
 
 end VG.Proof.Gcm.X86_64.Pclmul
 

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather

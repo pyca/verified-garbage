@@ -299,23 +299,7 @@ open VG.Proof.Gcm.X86_64.Stitch (setupG_ok' storesK_ok in_sub_int)
 open VG.Proof.Gcm.X86_64.Vpclmul (vinsB_ok)
 open VG.Impl.Gcm.X86_64.Stitch (setupG storesK pregs)
 open VG.Impl.Gcm.X86_64.Prepare (prepare)
-
-/-! ## The prepared form -/
-
-theorem x_φ_prepared (H : Block) (n : Nat) : x * φ (Spec.Gcm.preparedPower (hpow H n)) = φ H ^ n := by
-  have e := Pclmul.x_φ_hInv (hpow H n)
-  rw [φ_hpow] at e
-  exact e
-
-/-- `x` cancels: a block `v` with `x · v = Hⁿ` is `Hⁿ · x⁻¹`, prepared. -/
-theorem eq_prepared {v H : Block} {n : Nat} (h : x * φ v = φ H ^ n) : v = Spec.Gcm.preparedPower (hpow H n) := by
-  apply φ_inj
-  have u := x_φ_prepared H 0
-  rw [pow_zero] at u
-  have e := h.trans (x_φ_prepared H n).symm
-  calc φ v = φ (Spec.Gcm.preparedPower (hpow H 0)) * (x * φ v) := by rw [← mul_assoc, mul_comm _ x, u, one_mul]
-    _ = φ (Spec.Gcm.preparedPower (hpow H 0)) * (x * φ (Spec.Gcm.preparedPower (hpow H n))) := by rw [e]
-    _ = φ (Spec.Gcm.preparedPower (hpow H n)) := by rw [← mul_assoc, mul_comm _ x, u, one_mul]
+open VG.Proof.Gcm.X86_64.Pclmul (eq_prepared)
 
 theorem pregs_rev : ∀ i (h : i < pregs.reverse.length), pregs.reverse[i] = preg16 (7 - i)
   | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | 3, _ => rfl | 4, _ => rfl | 5, _ => rfl | 6, _ => rfl
@@ -347,11 +331,7 @@ theorem vzu_ok (s : State) :
 pairs 0–23 of the context at `C`, nothing else written. -/
 theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
     (hwrap : (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64) :
-    WP isa prepare s₀ fun s =>
-      (∀ k < 24, ∀ l < 2, s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
-        Spec.Gcm.preparedPower (hpow (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (2 * k + 2 - l))) ∧
-      Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 768⟩] s₀.mem s.mem ∧
-      (∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
+    WP isa prepare s₀ (PrepOk s₀) := by
   set C := s₀.gpr .rdi with hC
   set H := Spec.Gcm.ctxH s₀.mem C with hH
   have hk : InRegions (s₀.rd ++ s₀.wr) C 256 := by
@@ -449,66 +429,7 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   · rw [rd, rd₇, f₆.rd, rd₅, f₄.rd, f₃.rd, rd₂, rd₁]
   · rw [wr, wr₇, wr₆]
 
-/-! ## The contract -/
-
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) :
-    Spec.Aes.bytesAt m' p n = Spec.Aes.bytesAt m p n := by
-  simp only [Spec.Aes.bytesAt]
-  apply List.map_congr_left
-  intro i hi
-  exact hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
-
-theorem correct {s₀ : State} (hp : prepareX86_64.pre s₀) :
-    WP isa prepare s₀ fun s => gprPreserved s₀ s ∧ prepareX86_64.post s₀ s := by
-  obtain ⟨_, hwr, hwrap, hret⟩ := hp
-  have hw : InRegions s₀.wr (s₀.gpr .rdi) 1024 := by
-    rw [hwr]; exact ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  refine WP.mono (prepare_ok hw hwrap) fun s ⟨pw, fr, g, _, _⟩ => ?_
-  set C := s₀.gpr .rdi
-  have keep : Spec.Aes.bytesAt s.mem C 256 = Spec.Aes.bytesAt s₀.mem C 256 :=
-    bytesAt_frame fr (fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
-  have hH : Spec.Gcm.ctxH s.mem C = Spec.Gcm.ctxH s₀.mem C := by
-    simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
-    rw [bytesAt_frame fr (fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact (Offset.disjoint C (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide)) (by decide)
-        (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
-  refine ⟨⟨fun r hr => g r (by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, keep, fun k hk => ?_⟩
-  · exact fr.readW (Region.contains_self _ _) (fun r hr => by
-      obtain rfl := List.mem_singleton.mp hr
-      exact hret.sub_right (Offset.sub_base C (by decide))) (by decide)
-  · rw [hH]
-    have p0 := pw k hk 0 (by decide)
-    have p1 := pw k hk 1 (by decide)
-    rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
-    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
-    exact ⟨p0, p1⟩
-
-theorem prepare_correct (s : State) (hs : prepareX86_64.pre s) :
-    ∃ t s', Exec isa prepare s t s' ∧ abiPreserved s s' ∧ prepareX86_64.post s s' := by
-  obtain ⟨t, s', he, h⟩ := correct hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
-
-/-- A state meeting `prepareContract`'s precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 1024⟩]
-
 theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
-  Verified.of_correct prepare_correct prepare_ct (by
-    sig_implies [Spec.Gcm.prepareContract, Spec.Gcm.prepareSig, Spec.Gcm.preparePost, prepareX86_64,
-      X86_64.abi, X86_64.argRegs] [satState] using satState)
+  verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel) prepare_ct
 
 end VG.Proof.Gcm.X86_64.Prepare
