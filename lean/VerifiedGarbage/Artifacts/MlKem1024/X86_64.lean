@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
@@ -44,17 +41,6 @@ def artifacts : List Artifact := [
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .sse 4
     verified := Proof.MlKem.X86_64.encMulSse4_verified },
-  Spec.MlKem1024.encryptMulApi.artifact X86_64.target {
-    suffix := "_avx2"
-    notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
-        `vg_mlkem_multiply_ntts_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 registers: the `NTT`s \
-        first, as 16-bit words in the order the products read them, then each output's products summed in \
-        16-bit words and its `NTT⁻¹`. It sets MXCSR to `0x1FBF` once around all its multiplications \
-        (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."]
-    code := Impl.MlKem.X86_64.encryptMulY 4
-    verified := Proof.MlKem.X86_64.encMulY4_verified
-    features := ["avx", "avx2"] },
   Spec.MlKem1024.decryptMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
         `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once \
@@ -75,14 +61,6 @@ def artifacts : List Artifact := [
   Spec.MlKem1024.decodeDecompressApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.decodeDecompress1024
     verified := Proof.MlKem1024.X86_64.decodeDecompress1024_verified },
-  Spec.MlKem1024.compressEncodeApi.artifact X86_64.target {
-    suffix := "_avx2"
-    notes := ["The function compresses eight coefficients at a time in AVX2 registers, multiplying by sums of \
-        shifts, and packs them with `vpsllvd`, `vpsllvq`, `vpshufb` and `vpor`. It writes only the `len` bytes \
-        of `*out`."]
-    code := Impl.MlKem1024.X86_64.compressEncode1024Avx2
-    verified := Proof.MlKem1024.X86_64.compressEncode1024Y_verified
-    features := ["avx", "avx2"] },
   Spec.MlKem1024.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.checkEk1024
     verified := Proof.MlKem1024.X86_64.checkEk1024_verified }]
