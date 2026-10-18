@@ -514,8 +514,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -718,8 +717,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -761,8 +759,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -907,8 +904,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -950,8 +946,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -1108,8 +1103,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -1222,8 +1216,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -1372,8 +1365,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -1415,8 +1407,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -1576,8 +1567,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -1619,8 +1609,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -2239,8 +2228,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -2985,8 +2973,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3028,8 +3015,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3174,8 +3160,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3217,8 +3202,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3375,8 +3359,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3489,8 +3472,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3639,8 +3621,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3682,8 +3663,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3843,8 +3823,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -3886,8 +3865,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -4439,8 +4417,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -4968,8 +4945,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -5141,8 +5117,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -5184,8 +5159,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -5330,8 +5304,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -5373,8 +5346,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -5938,8 +5910,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6105,8 +6076,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6148,8 +6118,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6294,8 +6263,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6337,8 +6305,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6573,8 +6540,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6616,8 +6582,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6808,8 +6773,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -6922,8 +6886,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -7122,8 +7085,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -7165,8 +7127,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -7373,8 +7334,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -7416,8 +7376,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -7565,8 +7524,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -7608,8 +7566,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -8134,8 +8091,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -8307,8 +8263,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -8350,8 +8305,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -8496,8 +8450,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -8539,8 +8492,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9104,8 +9056,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9271,8 +9222,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9314,8 +9264,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9460,8 +9409,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9503,8 +9451,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9739,8 +9686,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9782,8 +9728,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -9974,8 +9919,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10088,8 +10032,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10288,8 +10231,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10331,8 +10273,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10539,8 +10480,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10582,8 +10522,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10731,8 +10670,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10774,8 +10712,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -10969,8 +10906,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11012,8 +10948,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11158,8 +11093,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11201,8 +11135,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11350,8 +11283,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11453,8 +11385,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11496,8 +11427,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11642,8 +11572,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11685,8 +11614,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11844,8 +11772,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -11927,8 +11854,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -20428,8 +20354,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -20602,8 +20527,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -20645,8 +20569,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -20972,8 +20895,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21015,8 +20937,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21236,8 +21157,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21279,8 +21199,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21439,8 +21358,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21482,8 +21400,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21797,8 +21714,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -21840,8 +21756,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -22266,8 +22181,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16
@@ -22309,8 +22223,7 @@ add r8, r8, r7, lsr #16
 and r5, r8, r9
 mul r4, r10, r6
 add r4, r4, r8, lsr #16
-mul r3, r1, r6
-add r3, r3, r5
+mla r3, r1, r6, r5
 add r4, r4, r3, lsr #16
 and r7, r7, r9
 add r3, r7, r3, lsl #16

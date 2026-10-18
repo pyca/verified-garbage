@@ -22,10 +22,11 @@ the scalar's halves in `r1` and `r10`. -/
 def rowLow : List Instr :=
   [.mul .r7 .r1 .r2, .mul .r8 .r10 .r2, .dp .add .r8 .r8 (.shifted .r7 .lsr 16)]
 
-/-- The high product and second cross product (`crossProduct`). -/
+/-- The high product and second cross product (`crossProduct`), the latter
+accumulated by one `mla`. -/
 def rowCross : List Instr :=
   [.dp .and .r5 .r8 (.reg .r9), .mul .r4 .r10 .r6, .dp .add .r4 .r4 (.shifted .r8 .lsr 16),
-   .mul .r3 .r1 .r6, .dp .add .r3 .r3 (.reg .r5)]
+   .mla .r3 .r1 .r6 .r5]
 
 /-- `r4:r3 = x * r2`, from the input word's halves and `wideMul`'s partial
 products. -/
