@@ -183,17 +183,30 @@ theorem parametersRejected_ok {p : ParametersInput} {original s : State} (h : Pa
   exact ⟨hret, fun i hi => (hsave i hi).trans (hs.saved i hi),
     by rw [hmem]; exact hs.frame, (hs.keep.trans hk).mono (by decide)⟩
 
-theorem parametersSuccess_ok (M : Mont) (Sq : MontS) {p : ParametersInput} {original st : State}
-    (h : ParametersPre p original)
+/-- After the workspaces: the domain's operands, with the public value g. -/
+structure ParametersOperands (L : ExecutionLayout) (p : ParametersInput) (s : State) : Prop where
+  generator : OperandBytes s L.base usedBytes Core.generator p.gb
+  publicValue : OperandBytes s L.base usedBytes Core.publicValue p.gb
+  subgroup : OperandBytes s L.base usedBytes ⟨.input .q, .qLen⟩ p.qb
+
+def ParametersInitialized (p : ParametersInput) (original : State)
+    (hp : original.gpr .rdx = BitVec.ofNat 64 p.pLen)
+    (hq : original.gpr .rcx = BitVec.ofNat 64 p.qLen) (s : State) : Prop :=
+  ∃ pi qi,
+    Ready ((p.layout original hp hq).withInverses pi qi) s ∧
+    ParametersOperands ((p.layout original hp hq).withInverses pi qi) p s ∧
+    word s.mem p.base Field.mask.offset = mask true ∧
+    (∀ i < 6, word s.mem p.base (8 * i) = original.gpr (saved.getD i .rax)) ∧
+    InScr p.base usedBytes original.mem s.mem ∧ Keep coreRegs original s
+
+theorem parametersInitialize_ok {p : ParametersInput} {original st : State} (h : ParametersPre p original)
     (hs : ParametersShapePost p original h.pLength h.qLength st) (ha : p.accepted = true) :
-    WP isa (seqs [SignVerify.workspaces, Checks.signingKey Sq.mm M.mm, .block SignVerify.result]) st
-      (ParametersPost p original) := by
+    WP isa SignVerify.workspaces st (ParametersInitialized p original h.pLength h.qLength) := by
   let L := p.layout original h.pLength h.qLength
-  obtain ⟨hsize, hpo, hqo⟩ := p.shapeFacts ha
-  obtain ⟨hp1, hq255, _⟩ := VG.Proof.Dsa.supported_bounds hsize
+  obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
   obtain ⟨hps, hqs, _⟩ := h.sources hs.frame hs.keep
-  refine WP.seq (WP.mono (workspacesReady_ok (L := L) hs.scratch hs.rdi hs.fields hps hqs
-    p.pbLength p.qbLength rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_)
+  refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.rdi hs.fields hps hqs
+    p.pbLength p.qbLength rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_
   let L' := L.withInverses pi qi
   have hr' : Ready L' t := hr
   have hframe : InScr p.base usedBytes original.mem t.mem :=
@@ -202,27 +215,48 @@ theorem parametersSuccess_ok (M : Mont) (Sq : MontS) {p : ParametersInput} {orig
   obtain ⟨_, hqs', hgs'⟩ := h.sources hframe (hkeep.mono (by decide))
   have hpl : L'.fields .pLen = BitVec.ofNat 64 p.gb.length := by
     rw [p.gbLength]; exact h.pLength
-  have hg := hr'.inputOperand .g .pLen (by decide) (by decide) hgs' hpl
-  have hy := hr'.inputOperand .y .pLen (by decide) (by decide) hgs' hpl
-  have hq := hr'.inputOperand .q .qLen (by decide) (by decide) hqs'
-    (by rw [p.qbLength]; exact h.qLength)
-  have hpf : L'.modulus ≤ 256 ^ L'.pLen := by
-    have hh := VG.Proof.Dsa.decodeBE_lt p.pb; rw [p.pbLength] at hh; exact Nat.le_of_lt hh
-  have hqf : L'.subgroup ≤ 256 ^ L'.qLen := by
-    have hh := VG.Proof.Dsa.decodeBE_lt p.qb; rw [p.qbLength] at hh; exact Nat.le_of_lt hh
-  have hmask : word t.mem L'.base Field.mask.offset = mask true :=
-    hm.trans ((hs.fields .mask).trans (congrArg mask ha))
-  refine WP.seq (WP.mono (signingKey_ok M Sq hr' hp1 hq255 hpo hqo hpf hqf hg hy hq
-    p.gbLength p.gbLength p.qbLength rfl hmask) fun u ⟨hu, hmu, _, hfu, hku⟩ => ?_)
+  refine ⟨pi, qi, hr', ⟨hr'.inputOperand .g .pLen (by decide) (by decide) hgs' hpl,
+    hr'.inputOperand .y .pLen (by decide) (by decide) hgs' hpl,
+    hr'.inputOperand .q .qLen (by decide) (by decide) hqs' (by rw [p.qbLength]; exact h.qLength)⟩,
+    hm.trans ((hs.fields .mask).trans (congrArg mask ha)),
+    fun i hi => (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi),
+    hframe, hkeep.mono (by decide)⟩
+
+/-- The signer's checks of the domain, with g as the public value. -/
+theorem parametersBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {p : ParametersInput} {s : State}
+    (hr : Ready L s) (ho : ParametersOperands L p s)
+    (hp : 1 < L.modulus) (hq : 255 < L.subgroup) (hpo : L.modulus % 2 = 1) (hqo : L.subgroup % 2 = 1)
+    (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
+    (hgl : p.gb.length = L.pLen) (hql : p.qb.length = L.qLen) (hqv : Spec.Dsa.decodeBE p.qb = L.subgroup)
+    (hm : word s.mem L.base Field.mask.offset = mask true) :
+    WP isa (.seq (Checks.signingKey Sq.mm M.mm) (.block SignVerify.result)) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (signingKeyAccepted L p.gb p.gb true).toNat ∧
+      (∀ i < 6, t.gpr (saved.getD i .rax) = word s.mem L.base (8 * i)) ∧
+      Outside L.base 128 (usedBytes - 128) s.mem t.mem ∧ Keep coreRegs s t := by
+  refine WP.seq (WP.mono (signingKey_ok M Sq hr hp hq hpo hqo hpf hqf ho.generator ho.publicValue
+    ho.subgroup hgl hgl hql hqv hm) fun u ⟨hu, hmu, _, hfu, hku⟩ => ?_)
   refine WP.mono (result_ok hu.scratch hu.parent.rdi (by decide) hmu) fun v ⟨hret, hsave, hmem, hkv⟩ => ?_
-  refine ⟨?_, ?_, ?_, ((hkeep.trans hku).trans hkv).mono (by decide)⟩
-  · rw [hret, p.check_eq, ha, Bool.true_and]
-    exact toNat_ofNat_if _
-  · intro i hi
-    exact (hsave i hi).trans ((hfu.word (Or.inl (by omega)) (by omega)).trans
-      ((hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi)))
-  · rw [hmem]
-    exact hframe.trans (InScr.of_outside hfu (by decide))
+  exact ⟨hret, fun i hi => (hsave i hi).trans (hfu.word (Or.inl (by omega)) (by omega)),
+    by rw [hmem]; exact hfu, (hku.trans hkv).mono (by decide)⟩
+
+theorem parametersSuccess_ok (M : Mont) (Sq : MontS) {p : ParametersInput} {original st : State}
+    (h : ParametersPre p original)
+    (hs : ParametersShapePost p original h.pLength h.qLength st) (ha : p.accepted = true) :
+    WP isa (seqs [SignVerify.workspaces, Checks.signingKey Sq.mm M.mm, .block SignVerify.result]) st
+      (ParametersPost p original) := by
+  obtain ⟨hsize, hpo, hqo⟩ := p.shapeFacts ha
+  obtain ⟨hp1, hq255, _⟩ := VG.Proof.Dsa.supported_bounds hsize
+  refine WP.seq (WP.mono (parametersInitialize_ok h hs ha) fun t ⟨pi, qi, hr, ho, hm, hsv, hframe, hkeep⟩ => ?_)
+  have hpf : Spec.Dsa.decodeBE p.pb ≤ 256 ^ p.pLen := by
+    have hh := VG.Proof.Dsa.decodeBE_lt p.pb; rw [p.pbLength] at hh; exact Nat.le_of_lt hh
+  have hqf : Spec.Dsa.decodeBE p.qb ≤ 256 ^ p.qLen := by
+    have hh := VG.Proof.Dsa.decodeBE_lt p.qb; rw [p.qbLength] at hh; exact Nat.le_of_lt hh
+  refine WP.mono (parametersBody_ok M Sq hr ho hp1 hq255 hpo hqo hpf hqf p.gbLength p.qbLength rfl hm)
+    fun v ⟨hret, hsave, hfu, hkv⟩ => ?_
+  refine ⟨?_, fun i hi => (hsave i hi).trans (hsv i hi),
+    hframe.trans (InScr.of_outside hfu (by decide)), (hkeep.trans hkv).mono (by decide)⟩
+  rw [hret, p.check_eq, ha, Bool.true_and]
+  exact toNat_ofNat_if _
 
 theorem parametersMain_ok (M : Mont) (Sq : MontS) {p : ParametersInput} {s0 : State} (h : ParametersPre p s0) :
     WP isa (Generate.checkParameters Sq.mm M.mm) s0 (ParametersPost p s0) := by
