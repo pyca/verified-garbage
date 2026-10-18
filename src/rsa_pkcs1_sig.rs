@@ -10,7 +10,10 @@
 //! lengths, but not on the hash value or the private key. On a CPU with BMI2
 //! and ADX, `vg_rsa_pkcs1_sign_adx` does the same with the faster Montgomery
 //! multiplication; on one with AVX512_IFMA and AVX512VL too,
-//! `vg_rsa_pkcs1_sign_ifma` (see [`crate::rsa`]).
+//! `vg_rsa_pkcs1_sign_ifma` (see [`crate::rsa`]). On x86-64 these are
+//! `vg_rsa_pkcs1_sign_precomputed` and its variants (contract
+//! `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`), which take the private
+//! key's precomputed values (see [`crate::rsa`]).
 //!
 //! [`verify`] is the verified `vg_rsa_pkcs1_verify_precomputed` (contract
 //! `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`), which accepts a signature exactly
@@ -36,13 +39,16 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::rsa_pkcs1_sig::vg_rsa_pkcs1_sign;
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
+    vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_verify_precomputed,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_recover_precomputed_ifma,
-    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_sign_precomputed, vg_rsa_pkcs1_sign_precomputed_adx,
+    vg_rsa_pkcs1_sign_precomputed_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
     vg_rsa_pkcs1_verify_precomputed_ifma,
 };
 use crate::cpu::detected;
@@ -132,13 +138,31 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
     let k = key.n.len();
     let mut out = vec![0; k];
     let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+    let r = sign_into(key, digest, hash, &mut out, &mut scratch);
+    // `PrivateKey::from_crt` checked the key and the length of `digest` is
+    // checked above, so a refusal means the encoding does not fit.
+    match r {
+        1 => Ok(out),
+        2 => Err(Error::Fault),
+        _ => Err(Error::ModulusTooShort),
+    }
+}
+
+/// `vg_rsa_pkcs1_sign` (or its precomputed form, with the key's values) of
+/// `digest` into `out` (`n_len` bytes), in `scratch` (`scratch_words(n_len)`
+/// words): its result.
+#[cfg(not(target_arch = "x86_64"))]
+fn sign_into(
+    key: &PrivateKey,
+    digest: &[u8],
+    hash: Hash,
+    out: &mut [u8],
+    scratch: &mut [u64],
+) -> u32 {
+    let k = key.n.len();
+    assert!(out.len() == k && scratch.len() == scratch_words(k));
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_sign,
-        // `select` chose them because the CPU has the features they need.
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_rsa_pkcs1_sign_adx,
-        #[cfg(target_arch = "x86_64")]
-        Backend::Ifma => vg_rsa_pkcs1_sign_ifma,
     };
     // SAFETY: each pointer is valid for its length (`out` for writes,
     // `scratch` too), and none overlaps another or wraps around, as they are
@@ -147,7 +171,7 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
     // `out_len = n_len` and `scratch_len = 16 n_len + 32`; and the CPU has the
     // features of the function `select` chose.
-    let r = unsafe {
+    unsafe {
         f(
             out.as_mut_ptr(),
             k,
@@ -171,13 +195,61 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
             scratch.as_mut_ptr(),
             scratch.len(),
         )
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+fn sign_into(
+    key: &PrivateKey,
+    digest: &[u8],
+    hash: Hash,
+    out: &mut [u8],
+    scratch: &mut [u64],
+) -> u32 {
+    let k = key.n.len();
+    assert!(out.len() == k && scratch.len() == scratch_words(k));
+    let pre = key.pre(scratch);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_rsa_pkcs1_sign_precomputed,
+        // `select` chose them because the CPU has the features they need.
+        Backend::Adx => vg_rsa_pkcs1_sign_precomputed_adx,
+        Backend::Ifma => vg_rsa_pkcs1_sign_precomputed_ifma,
     };
-    // `PrivateKey::from_crt` checked the key and the length of `digest` is
-    // checked above, so a refusal means the encoding does not fit.
-    match r {
-        1 => Ok(out),
-        2 => Err(Error::Fault),
-        _ => Err(Error::ModulusTooShort),
+    // SAFETY: each pointer is valid for its length (`out` for writes,
+    // `scratch` too), and none overlaps another or wraps around, as they are
+    // distinct Rust allocations; `PrivateKey::from_crt` gives
+    // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
+    // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
+    // `out_len = n_len` and `scratch_len = 16 n_len + 32`; `pre`, which
+    // `vg_rsa_private_precompute` wrote for the key, has
+    // `privatePrecomputedWords(n_len, p_len, q_len)` words; and the CPU has
+    // the features of the function `select` chose.
+    unsafe {
+        f(
+            out.as_mut_ptr(),
+            k,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            hash as u32,
+            digest.as_ptr(),
+            digest.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+            pre.as_ptr(),
+            pre.len(),
+        )
     }
 }
 

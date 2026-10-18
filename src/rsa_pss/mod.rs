@@ -8,7 +8,9 @@
 //! it passes the check against the public exponent, as BoringSSL's
 //! `RSA_sign_pss_mgf1` does. Its timing may depend on the public key, the hash
 //! function and the lengths, but not on the hash value, the salt or the
-//! private key.
+//! private key. On x86-64 it is `vg_rsa_pss_<H>_mgf1_<H>_sign_precomputed`
+//! (contract `VG.Spec.RsaPss.signPrecomputedContract`), which takes the
+//! private key's precomputed values (see [`crate::rsa`]).
 //!
 //! [`verify`] is the verified `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed` (contract
 //! `VG.Spec.RsaPss.verifyPrecomputedContract`): RSAVP1, then EMSA-PSS-VERIFY (RFC 8017
@@ -128,7 +130,8 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
-/// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
+/// `vg_rsa_pss_<H>_mgf1_<H>_sign_precomputed`'s signature, for `N`-byte hash
+/// values.
 #[cfg(target_arch = "x86_64")]
 type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut u8,
@@ -151,6 +154,8 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *const u8,
     usize,
     *mut u64,
+    usize,
+    *const u64,
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
@@ -350,9 +355,10 @@ pub fn verify(
     r == 1
 }
 
-/// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_sign` that this CPU can run, on the
-/// key, the hash value (as long as `H`'s values), the salt, the
-/// modulus-long `out` and the working space.
+/// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_sign` (on x86-64,
+/// `vg_rsa_pss_<H>_mgf1_<H>_sign_precomputed`, with the key's values) that
+/// this CPU can run, on the key, the hash value (as long as `H`'s values),
+/// the salt, the modulus-long `out` and the working space.
 fn call_sign<const N: usize>(
     f: SignFn<N>,
     out: &mut [u8],
@@ -363,6 +369,8 @@ fn call_sign<const N: usize>(
 ) -> u32 {
     let digest: &[u8; N] = digest.try_into().unwrap();
     assert!(out.len() == key.n.len() && scratch.len() == scratch_words(key.n.len()));
+    #[cfg(target_arch = "x86_64")]
+    let pre = key.pre(scratch);
     // SAFETY: each pointer is valid for its length (`out` for writes,
     // `scratch` too, `digest` for the hash function's values), and none
     // overlaps another or wraps around, as they are distinct Rust
@@ -370,8 +378,40 @@ fn call_sign<const N: usize>(
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len` and `dq_len = q_len`; `out_len = n_len` and
     // `scratch_len = 16 n_len + 1056`; and the CPU has the features of the
-    // function `functions` chose.
-    unsafe {
+    // function `functions` chose; on x86-64, `pre`, which
+    // `vg_rsa_private_precompute` wrote for the key, has
+    // `privatePrecomputedWords(n_len, p_len, q_len)` words.
+    #[cfg(target_arch = "x86_64")]
+    let r = unsafe {
+        f(
+            out.as_mut_ptr(),
+            out.len(),
+            key.n.as_ptr(),
+            key.n.len(),
+            key.e.as_ptr(),
+            key.e.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            digest,
+            salt.as_ptr(),
+            salt.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+            pre.as_ptr(),
+            pre.len(),
+        )
+    };
+    // SAFETY: as above, without `pre`.
+    #[cfg(not(target_arch = "x86_64"))]
+    let r = unsafe {
         f(
             out.as_mut_ptr(),
             out.len(),
@@ -395,7 +435,8 @@ fn call_sign<const N: usize>(
             scratch.as_mut_ptr(),
             scratch.len(),
         )
-    }
+    };
+    r
 }
 
 /// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed` that this CPU can run, on the

@@ -16,8 +16,11 @@
 //! faster Montgomery multiplication.
 //!
 //! [`decrypt`] is the verified `vg_rsa_pkcs1_decrypt` (contract
-//! `VG.Spec.RsaPkcs1Enc.decryptContract`), which computes the encoded
-//! message with `vg_rsa_private_checked`, as
+//! `VG.Spec.RsaPkcs1Enc.decryptContract`; on x86-64,
+//! `vg_rsa_pkcs1_decrypt_precomputed`, contract
+//! `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`, which takes the private
+//! key's precomputed values), which computes the encoded message with
+//! `vg_rsa_private_checked` (or its precomputed form), as
 //! [`PrivateKey::private_op`] does, and **never reports an invalid
 //! padding**: for a ciphertext whose padding is not valid it returns a
 //! message derived from the private exponent `d` and the ciphertext (with
@@ -46,16 +49,20 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(not(target_arch = "x86_64"))]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
-    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
-    vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
-    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
+    vg_rsa_pkcs1_decrypt_precomputed, vg_rsa_pkcs1_decrypt_precomputed_crt_adx,
+    vg_rsa_pkcs1_decrypt_precomputed_crt_ifma, vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2,
+    vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx,
+    vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma,
+    vg_rsa_pkcs1_decrypt_precomputed_sha256_shani,
+    vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx,
+    vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma, vg_rsa_pkcs1_encrypt_precomputed_adx,
     vg_rsa_pkcs1_encrypt_precomputed_ifma,
 };
 use crate::cpu::detected;
@@ -187,7 +194,7 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
     out
 }
 
-/// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
+/// The type of the implementations of `vg_rsa_pkcs1_decrypt_precomputed`.
 #[cfg(target_arch = "x86_64")]
 type DecryptFn = unsafe extern "sysv64" fn(
     *mut u8,
@@ -212,6 +219,8 @@ type DecryptFn = unsafe extern "sysv64" fn(
     *const u8,
     usize,
     *mut u64,
+    usize,
+    *const u64,
     usize,
 ) -> u32;
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
@@ -242,27 +251,37 @@ type DecryptFn = unsafe extern "C" fn(
     usize,
 ) -> u32;
 
-/// The implementation of `vg_rsa_pkcs1_decrypt` for the implementations of
-/// SHA-256 and of the private-key operation chosen.
+/// The implementation of `vg_rsa_pkcs1_decrypt` (on x86-64,
+/// `vg_rsa_pkcs1_decrypt_precomputed`) for the implementations of SHA-256
+/// and of the private-key operation chosen.
 fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
     match (sha, crt) {
+        #[cfg(not(target_arch = "x86_64"))]
         (Sha256Backend::Scalar, Backend::Baseline) => vg_rsa_pkcs1_decrypt,
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_pkcs1_decrypt_crt_adx,
+        (Sha256Backend::Scalar, Backend::Baseline) => vg_rsa_pkcs1_decrypt_precomputed,
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_pkcs1_decrypt_crt_ifma,
+        (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_pkcs1_decrypt_precomputed_crt_adx,
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_shani,
+        (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_pkcs1_decrypt_precomputed_crt_ifma,
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::ShaNi, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
+        (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_pkcs1_decrypt_precomputed_sha256_shani,
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::ShaNi, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
+        (Sha256Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_adx
+        }
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Avx2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_avx2,
+        (Sha256Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_pkcs1_decrypt_precomputed_sha256_shani_crt_ifma
+        }
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Avx2, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx,
+        (Sha256Backend::Avx2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2,
         #[cfg(target_arch = "x86_64")]
-        (Sha256Backend::Avx2, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
+        (Sha256Backend::Avx2, Backend::Adx) => vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_adx,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_pkcs1_decrypt_precomputed_sha256_avx2_crt_ifma
+        }
         #[cfg(target_arch = "aarch64")]
         (Sha256Backend::Sha2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_sha2,
     }
@@ -298,16 +317,52 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
     let mut out = vec![0u8; k];
     let mut len = [0u64; 1];
     let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+    #[cfg(target_arch = "x86_64")]
+    let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out`, `len` and
     // `scratch` for writes), and none overlaps another or wraps around, as
     // they are distinct Rust allocations; `PrivateKey::from_crt` and the
     // checks above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
-    // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
-    // implementations of SHA-256 and of the private-key operation that
-    // `Sha256Backend::select` and `Backend::select` chose, which are those
-    // of `f`.
+    // and `scratch_len = 16 n_len + 32`; on x86-64, `pre`, which
+    // `vg_rsa_private_precompute` wrote for the key, has
+    // `privatePrecomputedWords(n_len, p_len, q_len)` words; and the CPU has
+    // the features of the implementations of SHA-256 and of the private-key
+    // operation that `Sha256Backend::select` and `Backend::select` chose,
+    // which are those of `f`.
+    #[cfg(target_arch = "x86_64")]
+    let r = unsafe {
+        f(
+            out.as_mut_ptr(),
+            k,
+            &mut len,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            d.as_ptr(),
+            d.len(),
+            ciphertext.as_ptr(),
+            k,
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+            pre.as_ptr(),
+            pre.len(),
+        )
+    };
+    // SAFETY: as above, without `pre`.
+    #[cfg(not(target_arch = "x86_64"))]
     let r = unsafe {
         f(
             out.as_mut_ptr(),

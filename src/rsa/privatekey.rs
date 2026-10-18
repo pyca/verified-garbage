@@ -9,14 +9,18 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(target_arch = "x86_64")]
+use super::privpre::PrivatePrecomputed;
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::rsa::vg_rsa_private_checked;
 use crate::arch::rsa::{
-    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
-    vg_rsa_recover_primes,
+    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_recover_primes,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
-    vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma, vg_rsa_recover_primes_adx,
+    vg_rsa_private_checked_precomputed, vg_rsa_private_checked_precomputed_adx,
+    vg_rsa_private_checked_precomputed_ifma, vg_rsa_recover_primes_adx,
 };
 use crate::cpu::detected;
 
@@ -33,6 +37,10 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 /// An RSA private key in the Chinese remainder form `(p, q, dP, dQ, qInv)`
 /// of RFC 8017 §3.2, with its public key `(n, e)` and its private exponent
 /// `d`. Its private values are wiped when it is dropped.
+///
+/// On x86-64, the values its operations take (`R_p mod p`, `R_q mod q` and
+/// those of `n`) are computed at its first private operation and kept, as
+/// [`PublicKey`](super::PublicKey) keeps those of `n`.
 pub struct PrivateKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
@@ -42,6 +50,8 @@ pub struct PrivateKey {
     pub(crate) dp: Vec<u8>,
     pub(crate) dq: Vec<u8>,
     pub(crate) qinv: Vec<u8>,
+    #[cfg(target_arch = "x86_64")]
+    pre: PrivatePrecomputed,
 }
 
 impl fmt::Debug for PrivateKey {
@@ -116,6 +126,8 @@ impl PrivateKey {
             dp,
             dq,
             qinv,
+            #[cfg(target_arch = "x86_64")]
+            pre: PrivatePrecomputed::new(),
         };
         if key.crt_valid() {
             Ok(key)
@@ -295,6 +307,14 @@ impl PrivateKey {
         key
     }
 
+    /// The key's precomputed values (`VG.Spec.Rsa.privatePrecompute`),
+    /// computed in `scratch` (at least `scratch_words(n_len)` words, which
+    /// then hold the key's values) at its first private operation.
+    #[cfg(target_arch = "x86_64")]
+    pub(crate) fn pre(&self, scratch: &mut [u64]) -> &[u64] {
+        self.pre.get(&self.n, &self.p, &self.q, scratch)
+    }
+
     /// The length of the modulus in bytes, which is that of every input and
     /// output.
     pub fn modulus_len(&self) -> usize {
@@ -375,13 +395,25 @@ impl PrivateKey {
             return Err(Error::InvalidLength);
         }
         let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+        let r = self.checked(input, out, &mut scratch);
+        // `PrivateKey::from_crt` checked `e` and the key, so a refusal means
+        // the input is not below the modulus.
+        match r {
+            1 => Ok(()),
+            2 => Err(Error::Fault),
+            _ => Err(Error::InputOutOfRange),
+        }
+    }
+
+    /// `vg_rsa_private_checked` (or its precomputed form, with the key's
+    /// values) on `input`, of `n_len` bytes, into `out`, of `n_len` bytes,
+    /// in `scratch` (`scratch_words(n_len)` words): its result.
+    #[cfg(not(target_arch = "x86_64"))]
+    fn checked(&self, input: &[u8], out: &mut [u8], scratch: &mut [u64]) -> u32 {
+        let k = self.n.len();
+        assert!(input.len() == k && out.len() == k && scratch.len() == scratch_words(k));
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_private_checked,
-            // `select` chose them because the CPU has the features they need.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_private_checked_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_private_checked_ifma,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
@@ -389,9 +421,8 @@ impl PrivateKey {
         // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
         // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
         // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
-        // `scratch_len = 16 n_len + 32`; and the CPU has the features of the
-        // function `select` chose.
-        let r = unsafe {
+        // `scratch_len = 16 n_len + 32`.
+        unsafe {
             f(
                 out.as_mut_ptr(),
                 k,
@@ -414,13 +445,55 @@ impl PrivateKey {
                 scratch.as_mut_ptr(),
                 scratch.len(),
             )
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    fn checked(&self, input: &[u8], out: &mut [u8], scratch: &mut [u64]) -> u32 {
+        let k = self.n.len();
+        assert!(input.len() == k && out.len() == k && scratch.len() == scratch_words(k));
+        let pre = self.pre(scratch);
+        let f = match Backend::select(detected()) {
+            Backend::Baseline => vg_rsa_private_checked_precomputed,
+            // `select` chose them because the CPU has the features they need.
+            Backend::Adx => vg_rsa_private_checked_precomputed_adx,
+            Backend::Ifma => vg_rsa_private_checked_precomputed_ifma,
         };
-        // `PrivateKey::from_crt` checked `e` and the key, so a refusal means
-        // the input is not below the modulus.
-        match r {
-            1 => Ok(()),
-            2 => Err(Error::Fault),
-            _ => Err(Error::InputOutOfRange),
+        // SAFETY: each pointer is valid for its length (`out` for writes,
+        // `scratch` too), and none overlaps another or wraps around, as they
+        // are distinct Rust allocations; `PrivateKey::from_crt` and the check
+        // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
+        // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
+        // `dp_len = qinv_len = p_len`, `dq_len = q_len`,
+        // `scratch_len = 16 n_len + 32`, and `pre`, which
+        // `vg_rsa_private_precompute` wrote for the key, has
+        // `privatePrecomputedWords(n_len, p_len, q_len)` words; and the CPU has
+        // the features of the function `select` chose.
+        unsafe {
+            f(
+                out.as_mut_ptr(),
+                k,
+                self.n.as_ptr(),
+                k,
+                self.e.as_ptr(),
+                self.e.len(),
+                input.as_ptr(),
+                k,
+                self.p.as_ptr(),
+                self.p.len(),
+                self.q.as_ptr(),
+                self.q.len(),
+                self.dp.as_ptr(),
+                self.dp.len(),
+                self.dq.as_ptr(),
+                self.dq.len(),
+                self.qinv.as_ptr(),
+                self.qinv.len(),
+                scratch.as_mut_ptr(),
+                scratch.len(),
+                pre.as_ptr(),
+                pre.len(),
+            )
         }
     }
 }

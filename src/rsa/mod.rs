@@ -36,6 +36,16 @@
 //! computing the two exponentiations of a 2048-, 3072- or 4096-bit key with
 //! primes of half its size at once, in 256-bit vector registers.
 //!
+//! On x86-64, a private key's first private operation (of this module or of
+//! a padding scheme's) runs the verified `vg_rsa_private_precompute`
+//! (contract `VG.Spec.Rsa.privatePrecomputeContract`), which computes what
+//! the operation needs of the key (the modulus' values, `R_p mod p` and
+//! `R_q mod q`) once for the key, and the operations are then the
+//! `_precomputed` forms of the functions above, which take those values:
+//! `vg_rsa_private_checked_precomputed` (contract
+//! `VG.Spec.Rsa.privateCheckedPrecomputedContract`) and its `_adx` and
+//! `_ifma` variants. Loading a key only checks it, as before.
+//!
 //! A private key can also be loaded from its modulus, its exponents and its
 //! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
 //! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
@@ -81,14 +91,18 @@ use crate::arch::rsa::vg_rsa_public_precomputed_checked;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+    VG_RSA_PRIVATE_CHECKED_PRECOMPUTED_ADX_FEATURES,
+    VG_RSA_PRIVATE_CHECKED_PRECOMPUTED_IFMA_FEATURES, VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES,
+    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
     vg_rsa_public_precomputed_checked_adx, vg_rsa_public_precomputed_checked_ifma,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
+use crate::arch::rsa_pkcs1_sig::{
+    VG_RSA_PKCS1_SIGN_PRECOMPUTED_ADX_FEATURES, VG_RSA_PKCS1_SIGN_PRECOMPUTED_IFMA_FEATURES,
+};
 use crate::cpu::{Features, detected};
 
 /// The implementations of `vg_rsa_public_precompute`,
@@ -118,13 +132,15 @@ impl Backend {
         let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
+            && f.contains(VG_RSA_PRIVATE_CHECKED_PRECOMPUTED_ADX_FEATURES)
             && f.contains(VG_RSA_RECOVER_PRIMES_ADX_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES)
+            && f.contains(VG_RSA_PKCS1_SIGN_PRECOMPUTED_ADX_FEATURES)
             && f.contains(VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES);
         if adx
             && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
+            && f.contains(VG_RSA_PRIVATE_CHECKED_PRECOMPUTED_IFMA_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
+            && f.contains(VG_RSA_PKCS1_SIGN_PRECOMPUTED_IFMA_FEATURES)
         {
             Backend::Ifma
         } else if adx {
@@ -322,6 +338,7 @@ impl PublicKey {
 
 mod privatekey;
 pub use privatekey::PrivateKey;
+mod privpre;
 
 #[cfg(test)]
 pub(crate) mod tests {

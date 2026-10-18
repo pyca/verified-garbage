@@ -10,16 +10,21 @@
     feature = "alloc"
 ))]
 
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::vg_rsa_pss_sha512_256_mgf1_sha512_256_sign;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed as vg_rsa_pss_sha512_256_mgf1_sha512_256_sign;
+use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::{
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_CRT_ADX_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_CRT_IFMA_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_AVX2_CRT_ADX_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_AVX2_CRT_IFMA_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_AVX2_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_SHANI_CRT_ADX_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_SHANI_CRT_IFMA_FEATURES,
-    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_SHANI_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_CRT_ADX_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_CRT_IFMA_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_AVX2_CRT_ADX_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_AVX2_CRT_IFMA_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_AVX2_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_SHANI_CRT_ADX_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_SHANI_CRT_IFMA_FEATURES,
+    VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_SHANI_FEATURES,
     VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES,
     VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES,
     VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_AVX2_FEATURES,
@@ -28,14 +33,14 @@ use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::{
     VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_SHANI_FEATURES,
     VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_SHANI_RSA_ADX_FEATURES,
     VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_SHANI_RSA_IFMA_FEATURES,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_crt_adx,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_crt_ifma,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_avx2,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_avx2_crt_adx,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_avx2_crt_ifma,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_shani,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_shani_crt_adx,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_shani_crt_ifma,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_crt_adx,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_crt_ifma,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_avx2,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_avx2_crt_adx,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_avx2_crt_ifma,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_shani,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_shani_crt_adx,
+    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_shani_crt_ifma,
     vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_rsa_adx,
     vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_rsa_ifma,
     vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_avx2,
@@ -52,10 +57,6 @@ use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::{
     vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_sha3,
     vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_sha3,
 };
-use crate::arch::rsa_pss_sha512_256_mgf1_sha512_256::{
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_sign,
-    vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed,
-};
 use crate::hashes::sha512_256::Sha512_256Backend;
 
 super::pss_hash!(32, Sha512_256Backend {
@@ -64,26 +65,26 @@ super::pss_hash!(32, Sha512_256Backend {
         sign: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign [],
         verify_adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_rsa_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES],
         verify_ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_rsa_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES],
-        adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_crt_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_CRT_ADX_FEATURES],
-        ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_crt_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_CRT_IFMA_FEATURES],
+        adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_crt_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_CRT_ADX_FEATURES],
+        ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_crt_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_CRT_IFMA_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     ShaNi => {
         verify: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_shani [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_SHANI_FEATURES],
-        sign: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_shani [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_SHANI_FEATURES],
+        sign: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_shani [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_SHANI_FEATURES],
         verify_adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_shani_rsa_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_SHANI_RSA_ADX_FEATURES],
         verify_ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_shani_rsa_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_SHANI_RSA_IFMA_FEATURES],
-        adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_shani_crt_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_SHANI_CRT_ADX_FEATURES],
-        ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_shani_crt_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_SHANI_CRT_IFMA_FEATURES],
+        adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_shani_crt_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_SHANI_CRT_ADX_FEATURES],
+        ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_shani_crt_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_SHANI_CRT_IFMA_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     Avx2 => {
         verify: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_avx2 [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_AVX2_FEATURES],
-        sign: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_avx2 [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_AVX2_FEATURES],
+        sign: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_avx2 [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_AVX2_FEATURES],
         verify_adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_avx2_rsa_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_AVX2_RSA_ADX_FEATURES],
         verify_ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_verify_precomputed_sha512_256_avx2_rsa_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_VERIFY_PRECOMPUTED_SHA512_256_AVX2_RSA_IFMA_FEATURES],
-        adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_avx2_crt_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_AVX2_CRT_ADX_FEATURES],
-        ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_sha512_256_avx2_crt_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_SHA512_256_AVX2_CRT_IFMA_FEATURES],
+        adx: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_avx2_crt_adx [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_AVX2_CRT_ADX_FEATURES],
+        ifma: vg_rsa_pss_sha512_256_mgf1_sha512_256_sign_precomputed_sha512_256_avx2_crt_ifma [VG_RSA_PSS_SHA512_256_MGF1_SHA512_256_SIGN_PRECOMPUTED_SHA512_256_AVX2_CRT_IFMA_FEATURES],
     },
     #[cfg(target_arch = "aarch64")]
     Sha3 => {
