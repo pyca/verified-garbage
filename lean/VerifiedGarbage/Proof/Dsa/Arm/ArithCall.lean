@@ -25,10 +25,9 @@ theorem mulBody_noCalls (n : Nat) : (mulBody n).noCalls = true := by
   simp only [mulBody, contextSetup, ordinaryMul, Dynamic.mul, rowD, digitRowD, mulRowD, csubD, Dynamic.zeros,
     ptrLoop, one, powerTwo, addD, addDigits, Code.noCalls, Bool.and_self]
 
-theorem doubles_noCalls (n : Nat) : ∀ k, (doubles n k).noCalls = true
-  | 0 => rfl
-  | k + 1 => by
-    simp only [doubles, Code.noCalls, doubles_noCalls n k, addD, addDigits, csubD, ptrLoop, Bool.and_self]
+theorem doubles_noCalls (n k : Nat) : (doubles n k).noCalls = true := by
+  unfold doubles
+  split <;> simp only [countedDouble, addDigits, csubD, ptrLoop, Code.noCalls, Bool.and_self]
 
 theorem reduceBody_noCalls (n : Nat) : (reduceBody n).noCalls = true := by
   simp only [reduceBody, contextSetup, reduceStream, streamStep, reduceStep, addD, addDigits,

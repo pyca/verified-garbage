@@ -172,9 +172,11 @@ theorem reduceHead_relCT (input : Pointer) (count : Core.Count) :
       (erased_relCT (c₀ := .block (Core.countEnd (.field .p))) (VG.Taint.hintOf taint T0
         (.block (Core.countEnd (.field .p)))) rfl (wsT_noBase _ _) rfl))
 
-theorem doubles_eraseOff (n : Nat) : ∀ k, Code.eraseOff (doubles n k) = Code.eraseOff (doubles 1 k)
-  | 0 => rfl
-  | k + 1 => by simp only [doubles, eraseOff_seq, addD_eraseOff, doubles_eraseOff n k]
+theorem doubles_eraseOff (n k : Nat) : Code.eraseOff (doubles n k) = Code.eraseOff (doubles 1 k) := by
+  unfold doubles
+  split
+  · rfl
+  · rfl
 
 theorem streamHead_eraseOff (k : Nat) :
     Code.eraseOff (@Code.block Instr Cond (([.ldrb .r4 .r11 0] : List Instr) ++ ptr .r10 k ++

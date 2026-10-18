@@ -13,10 +13,18 @@ byte, as the x86 code does. The source pointer is in `r11` and its end in
 namespace VG.Impl.Dsa.Arm
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic
 
-/-- `k` modular doublings of the result slot. -/
-def doubles (n : Nat) : Nat → Prog isa
-  | 0 => .block []
-  | k + 1 => .seq (addD (contextMod n) (accS n) (resS n) (resS n) (resS n)) (doubles n k)
+/-- Double the residue while carrying a public counter from `r1` to `r0`.
+The addition does not use `r1`; conditional subtraction does not use `r0`. -/
+def countedDouble (n : Nat) : Prog isa :=
+  .seq (addDigits (contextMod n) (accS n) (resS n) (resS n)) <|
+  .seq (.block [.mov .r0 (.reg .r1)]) (csubD (contextMod n) (accS n) (resS n))
+
+/-- `k` modular doublings of the result slot, for `k < 2¹⁶`. -/
+def doubles (n k : Nat) : Prog isa :=
+  if k = 0 then .block [] else
+    .seq (.block [.movw .r0 (BitVec.ofNat 16 k)])
+      (.loop (.seq (.block [.mov .r1 (.reg .r0)])
+        (.seq (countedDouble n) (.block [.subs .r0 .r0 (.imm 1)]))) .ne)
 
 /-- Append a byte to the residue; the product slot holds the byte as a
 zero-padded integer. The modulus exceeds 255. -/
