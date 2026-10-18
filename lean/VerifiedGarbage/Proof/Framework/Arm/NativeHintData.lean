@@ -130,6 +130,7 @@ def step (τ : T) : Instr → Option T
   | .movt d _ => some { τ with regs := set τ d (pub τ d), bases := kill τ d }
   | .rev d m => some { τ with regs := set τ d (pub τ m), bases := kill τ d }
   | .mul d n m => some { τ with regs := set τ d (pub τ n && pub τ m), bases := kill τ d }
+  | .mla d n m a => some { τ with regs := set τ d (pub τ n && pub τ m && pub τ a), bases := kill τ d }
   | .ldr t n off =>
     if pub τ n then some { τ with regs := set τ t (slotPub τ n off 4), bases := kill τ t } else none
   | .str t n off => storeStep τ n off 4 (pub τ t)

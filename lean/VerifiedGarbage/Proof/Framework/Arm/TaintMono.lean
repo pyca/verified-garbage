@@ -471,6 +471,10 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢; cases hs
     refine ⟨_, rfl, h.upd (set_mono hw d fun hp => ?_) h.flags (h.killM d)⟩
     simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
+  | mla d n m a =>
+    simp only [step, Option.some.injEq] at hs ⊢; cases hs
+    refine ⟨_, rfl, h.upd (set_mono hw d fun hp => ?_) h.flags (h.killM d)⟩
+    simp only [Bool.and_eq_true] at hp ⊢; exact ⟨⟨hw.pubM hp.1.1, hw.pubM hp.1.2⟩, hw.pubM hp.2⟩
   | ldr t n off =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hn; cases hs]

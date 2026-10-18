@@ -395,7 +395,8 @@ def sampleArm : Prog Arm.isa :=
         .dp .add .r1 .r1 (.imm 64), .dp .sub .r4 .r5 (.reg .r6),
         .dp .and .r7 .r8 (.reg .lr), .dp .orr .r9 .r10 (.reg .r11),
         .dp .eor .r12 .r12 (.shifted .r8 .ror 11),
-        .movw .r12 0x2f98, .movt .r12 0x428a, .rev .r12 .r12,
+        .movw .r12 0x2f98, .movt .r12 0x428a, .rev .r12 .r12, .mul .r3 .r4 .r5,
+        .mla .r6 .r7 .r8 .r9,
         .ldr .r12 .r1 60, .str .lr .r3 100, .ldrb .r5 .r6 4095, .strb .lr .r7 3, .ldrSp .r4 8,
         .subs .r2 .r2 (.imm 1)]) .ne))
 
@@ -416,6 +417,8 @@ def sampleArm : Prog Arm.isa :=
   "movw r12, #12184",
   "movt r12, #17034",
   "rev r12, r12",
+  "mul r3, r4, r5",
+  "mla r6, r7, r8, r9",
   "ldr r12, [r1, #60]",
   "str lr, [r3, #100]",
   "ldrb r5, [r6, #4095]",
@@ -428,6 +431,14 @@ def sampleArm : Prog Arm.isa :=
   "21:",
   "bx lr"
 ]
+
+-- `mla` writes the low 32 bits of `n * m + a` to its register alone, flags
+-- unchanged: (2³² − 1)² + 5 = 2⁶⁴ − 2³³ + 6, whose low word is 6.
+#guard match Arm.exec (.mla .r0 .r1 .r1 .r2)
+    { gpr := fun r => if r = .r1 then 0xffffffff else if r = .r2 then 5 else 17, sp := 4096,
+      n := true, z := false, c := true, v := false, mem := fun _ => 0, rd := [], wr := [] } with
+  | none => false
+  | some s => s.gpr .r0 == 6 && s.gpr .r1 == 0xffffffff && s.gpr .r3 == 17 && s.n && !s.z && s.c && !s.v
 
 #guard Arm.encodable 0xff000000 && Arm.encodable 0x3fc && !Arm.encodable 0x101 && !Arm.encodable 0x1fe00
 

@@ -184,6 +184,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   | adrSym => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | rev => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | mul => exact base (fun _ _ _ => by simp) hs e₁ e₂
+  | mla => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | addSp => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | alloc | free => simp only [exec, reduceCtorEq] at e₁
 

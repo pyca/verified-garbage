@@ -41,7 +41,7 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 register). -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
-  | .addSp d _ | .mul d _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
+  | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
   | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none
 
 section
