@@ -88,7 +88,7 @@ theorem nafLayQ (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) :
   win := winLayQ hc
   al := winAQ hc
   n4 := hn4
-  n6 := hn6
+  n6 := by change c.n ≤ 9; omega
   digits := by show 64 * c.n + 1 ≤ 4 * (16 * c.n + 1); omega
   rxy := by
     show c.sl RY = c.sl RX + 8 * c.n
