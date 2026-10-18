@@ -145,11 +145,11 @@ def cbd2_16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
 
 /-! ## K-PKE -/
 
-/-- `ek: *mut [u8; 384k], dk: *mut [u8; 384k], a: *const [u16; 256k²], se: *mut [u16; 512k], scratch: *mut [u64; 512]`. -/
+/-- `ek: *mut [u8; 384k], dk: *mut [u8; 384k], a: *const [u16; 256k²], se: *mut [u16; 512k], scratch: *mut [u64; 2048]`. -/
 def kpkeKeyGenSig (k : Nat) : Sig where
   params := [("ek", .array true .u8 (384 * k)), ("dk", .array true .u8 (384 * k)),
     ("a", .array false .u16 (256 * (k * k))), ("se", .array true .u16 (512 * k)),
-    ("scratch", .array true .u64 512)]
+    ("scratch", .array true .u64 2048)]
 
 /-- Lines 16–20 of `K-PKE.KeyGen` (Algorithm 13), with the matrix `Â`
 reduced at `a` and the vectors `s` and `e` reduced at `se`, one after the
@@ -168,11 +168,11 @@ def kpkeKeyGenContract (k : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
     (writeArgs := true)
     (stack := stack)
 
-/-- `ct: *mut [u8; ctLen], a: *const [u16; 256k²], t: *const [u8; 384k], r: *mut [u16; 256(2k + 1)], m: *const [u8; 32], scratch: *mut [u64; 512]`. -/
+/-- `ct: *mut [u8; ctLen], a: *const [u16; 256k²], t: *const [u8; 384k], r: *mut [u16; 256(2k + 1)], m: *const [u8; 32], scratch: *mut [u64; 2048]`. -/
 def Params.kpkeEncryptSig (p : Params) : Sig where
   params := [("ct", .array true .u8 p.ctLen), ("a", .array false .u16 (256 * (p.k * p.k))),
     ("t", .array false .u8 (384 * p.k)), ("r", .array true .u16 (256 * (2 * p.k + 1))),
-    ("m", .array false .u8 32), ("scratch", .array true .u64 512)]
+    ("m", .array false .u8 32), ("scratch", .array true .u64 2048)]
 
 /-- Lines 2 and 18–23 of `K-PKE.Encrypt` (Algorithm 14), after sampling. The
 inputs are:
@@ -204,10 +204,10 @@ def Params.kpkeEncryptContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat :
     (writeArgs := true)
     (stack := stack)
 
-/-- `m: *mut [u8; 32], s: *const [u8; 384k], ct: *const [u8; ctLen], scratch: *mut [u64; 512]`. -/
+/-- `m: *mut [u8; 32], s: *const [u8; 384k], ct: *const [u8; ctLen], scratch: *mut [u64; 2048]`. -/
 def Params.kpkeDecryptSig (p : Params) : Sig where
   params := [("m", .array true .u8 32), ("s", .array false .u8 (384 * p.k)),
-    ("ct", .array false .u8 p.ctLen), ("scratch", .array true .u64 512)]
+    ("ct", .array false .u8 p.ctLen), ("scratch", .array true .u64 2048)]
 
 /-- `K-PKE.Decrypt` (Algorithm 15): writes `kpkeDecrypt` of the decryption
 key `dk_PKE` at `s` (`384k` bytes, decoded modulo `q`) and the ciphertext
