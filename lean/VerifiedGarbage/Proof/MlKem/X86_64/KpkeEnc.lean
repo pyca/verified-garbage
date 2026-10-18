@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
 public import VerifiedGarbage.Proof.MlKem.X86_64.Widen
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
+public import VerifiedGarbage.Proof.MlKem.X86_64.Add16
 import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 
@@ -15,8 +16,8 @@ pointers, the saved registers, and that only `scratch` and `ct` change),
 and the steps: the prologue, each polynomial primitive inline (`KT.step`
 keeps `KT` across one that writes only below the saved registers or to
 `ct`), the product (the code of `vg_mlkem*_encrypt_mul` reading `Â` as
-`u16`s, inline), and the epilogue. Polynomials of `u16`s become `u32`s
-with `vunpack` (`widenIn_ok`).
+`u16`s, inline), and the epilogue. `y` becomes `u32`s with `vunpack`
+(`widenIn_ok`); `e₁` and `e₂` are added as `u16`s (`add16In_ok`).
 -/
 
 @[expose] public section
@@ -620,8 +621,8 @@ omit E in
 theorem pa_r15 {s : State} (h : KT L σ s) (o : Nat) : pa s (.r15, o) = σ.gpr .rdi + BitVec.ofNat 64 o := by
   simp only [pa, h.r15]
 
-theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
-    (hnA : A.add.noCalls = true) (hnC : (L.ce A.codecs).noCalls = true) {i : Nat} (hi : i < L.k) {s : State}
+theorem u_ok {A : Arith} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
+    (hnC : (L.ce A.codecs).noCalls = true) {i : Nat} (hi : i < L.k) {s : State}
     (h : EU L σ i s) : WP isa (uE L A i) s (EU L σ (i + 1)) := by
   have hkt := h.kt
   have hk4 : L.k ≤ 4 := by rcases W.k34 with e | e <;> omega
@@ -629,43 +630,27 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   have hdu := W.du
   have bnd := Decaps.uSlice_le L hi
   have bR : 512 * (L.k + i) + 512 ≤ 512 * (2 * L.k + 1) := by omega
-  -- `e₁[i]`
+  -- `u[i]`
   have e1 : pa s ((.r13, 512 * (L.k + i)) : Ptr) = σ.gpr .rcx + BitVec.ofNat 64 (512 * (L.k + i)) := by
     simp only [pa, hkt.r13]
-  have eE := pa_q hkt (3 * L.k + 1)
-  unfold uE
-  refine WP.seq (WP.mono (widenIn_ok (b := (.r13, 512 * (L.k + i))) (f := eP L) (F := rW σ (L.k + i)) (by omega)
-    (by simp only [oQ]; omega) (by simp)
-    (by rw [e1]; exact hkt.rW E (by omega))
-    (by rw [e1, eE]; exact (E.rS.symm.sub_left (qScr (by omega))).sub_right (Offset.sub_base _ bR))
-    (by rw [e1, eE]
-        exact covers_append (covers_one (inR E hkt bR)) (covers_one (inS' E hkt (by simp only [oQ, kScrE]; omega))))
-    (by rw [eE]; exact covers_one (inS E hkt (by simp only [oQ, kScrE]; omega)))) fun s1 ⟨hP1, hq1⟩ => ?_)
-  rw [eE] at hP1 hq1
-  have kt1 := hkt.step E hP1 fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact .inl (qSub (by omega))
-  have dQ : ∀ {a : Nat}, a < 14 → a ≠ 3 * L.k + 1 →
-      ∀ r ∈ [pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ (3 * L.k + 1)))], (pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ a))).Disjoint r :=
-    fun ha hne r hr => by rw [List.mem_singleton] at hr; subst hr; exact qDisj E ha (by omega) hne
-  have hw1 := h.keepW hP1 (i := i) (by omega) (dQ (by omega) (by omega)) (Nat.le_refl _)
-  -- `u[i]`
-  have eF := pa_q kt1 (2 * L.k + i)
-  have eG := pa_q kt1 (3 * L.k + 1)
-  have HA : AccHi (qP (2 * L.k + i)) (eP L) s1 :=
-    { off := ⟨by simp only [oQ]; omega, by simp only [oQ]; omega⟩
-      redF := by rw [eF]; exact hw1.1
-      redG := by rw [eG]; exact hq1.1
-      d := by rw [eF, eG]; exact qDisj E (by omega) (by omega) (by omega)
-      rF := by rw [retR_eq kt1, eF]; exact E.xS.sub_right (qScr (by omega))
-      rG := by rw [retR_eq kt1, eG]; exact E.xS.sub_right (qScr (by omega))
+  have eF := pa_q hkt (2 * L.k + i)
+  have hw0 := h.w i (by omega) (Nat.le_refl _)
+  have hR := hkt.rW E (i := L.k + i) (by omega)
+  have HA : Add16Hi (qP (2 * L.k + i)) (.r13, 512 * (L.k + i)) s :=
+    { off := ⟨by simp only [oQ]; omega, by omega⟩
+      redF := by rw [eF]; exact hw0.1
+      redG := by rw [e1]; exact hR.1
+      d := by rw [eF, e1]; exact (E.rS.symm.sub_left (qScr (by omega))).sub_right (Offset.sub_base _ bR)
+      rF := by rw [retR_eq hkt, eF]; exact E.xS.sub_right (qScr (by omega))
+      rG := by rw [retR_eq hkt, e1]; exact E.xR.sub_right (Offset.sub_base _ bR)
       c := by
-        rw [eF, eG]
-        exact covers_append (covers_one (inS' E kt1 (by simp only [oQ, kScrE]; omega)))
-          (covers_one (inS' E kt1 (by simp only [oQ, kScrE]; omega)))
-      w := by rw [eF]; exact covers_one (inS E kt1 (by simp only [oQ, kScrE]; omega)) }
-  refine WP.seq (WP.mono (accIn_ok hA.add.ok hnA (g := eP L) (by simp) HA) fun s2 ⟨hP2, hq2⟩ => ?_)
-  rw [eF, eG, hw1.2, hq1.2] at hq2
+        rw [eF, e1]
+        exact covers_append (covers_one (inR E hkt bR)) (covers_one (inS' E hkt (by simp only [oQ, kScrE]; omega)))
+      w := by rw [eF]; exact covers_one (inS E hkt (by simp only [oQ, kScrE]; omega)) }
+  refine WP.seq (WP.mono (add16In_ok (by simp) HA) fun s2 ⟨hP2, hq2⟩ => ?_)
+  rw [eF, e1, hw0.2, hR.2] at hq2
   rw [eF] at hP2
-  have kt2 := kt1.step E hP2 fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact .inl (qSub (by omega))
+  have kt2 := hkt.step E hP2 fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact .inl (qSub (by omega))
   -- to `ct`
   have eQ := pa_q kt2 (2 * L.k + i)
   have eO := pa_r15 kt2 (32 * L.du * i)
@@ -691,8 +676,7 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
     rw [List.mem_singleton] at hr; subst hr
     exact (E.cS.symm.sub_left (qScr ha)).sub_right (Offset.sub_base _ bnd)
   refine ⟨kt3, fun i' hi' hn => ?_, fun i' hi' => ?_⟩
-  · refine polyIs_frame hP3.frame (dC (by omega)) (polyIs_frame hP2.frame ?_ (polyIs_frame hP1.frame
-      (dQ (by omega) (by omega)) (h.w i' hi' (by omega))))
+  · refine polyIs_frame hP3.frame (dC (by omega)) (polyIs_frame hP2.frame ?_ (h.w i' hi' (by omega)))
     intro r hr; rw [List.mem_singleton] at hr; subst hr
     exact qDisj E (by omega) (by omega) (by omega)
   · rcases (by omega : i' < i ∨ i' = i) with hi'' | rfl
@@ -705,7 +689,7 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
         rw [List.mem_singleton] at hr; subst hr
         exact (E.cS.sub_left (Offset.sub_base _ bnd')).sub_right (qScr ha)
       rw [bytesAt_frame hP3.frame (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dj) (by omega),
-        bytesAt_frame hP2.frame (dq (by omega)) (by omega), bytesAt_frame hP1.frame (dq (by omega)) (by omega)]
+        bytesAt_frame hP2.frame (dq (by omega)) (by omega)]
       exact h.u i' hi''
     · exact hq3
 
@@ -775,33 +759,38 @@ theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
     simp only [Kem.ctLen, Params.ctLen, Kem.du, Kem.dv, Kem.k]; rw [Nat.mul_add, ← Nat.mul_assoc]
   have bR : 512 * (2 * L.k) + 512 ≤ 512 * (2 * L.k + 1) := by omega
   have e3 : 2 * L.k + L.k = 3 * L.k := by omega
-  -- `e₂`
+  -- `NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂`
   have e1 : pa s ((.r13, 512 * (2 * L.k)) : Ptr) = σ.gpr .rcx + BitVec.ofNat 64 (512 * (2 * L.k)) := by
     simp only [pa, hkt.r13]
-  have eE := pa_q hkt (3 * L.k + 1)
-  unfold vE
-  refine WP.seq (WP.mono (widenIn_ok (b := (.r13, 512 * (2 * L.k))) (f := eP L) (F := rW σ (2 * L.k)) (by omega)
-    (by simp only [oQ]; omega) (by simp)
-    (by rw [e1]; exact hkt.rW E (by omega))
-    (by rw [e1, eE]; exact (E.rS.symm.sub_left (qScr (by omega))).sub_right (Offset.sub_base _ bR))
-    (by rw [e1, eE]
-        exact covers_append (covers_one (inR E hkt bR)) (covers_one (inS' E hkt (by simp only [oQ, kScrE]; omega))))
-    (by rw [eE]; exact covers_one (inS E hkt (by simp only [oQ, kScrE]; omega)))) fun s1 ⟨hP1, hq1⟩ => ?_)
-  rw [eE] at hP1 hq1
-  have kt1 := hkt.step E hP1 fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact .inl (qSub (by omega))
-  have hw1 := h.keepW hP1 (i := L.k) (by omega) (fun r hr => by
-    rw [List.mem_singleton] at hr; subst hr; exact qDisj E (by omega) (by omega) (by omega)) (Nat.le_refl _)
-  rw [e3] at hw1
-  have hu1 : ∀ i < L.k, bytesAt s1.mem (σ.gpr .rdi + BitVec.ofNat 64 (32 * L.du * i)) (32 * L.du) =
+  have eF := pa_q hkt (3 * L.k)
+  have hw0 := h.w L.k (by omega) (Nat.le_refl _)
+  rw [e3] at hw0
+  have hR := hkt.rW E (i := 2 * L.k) (by omega)
+  have HA2 : Add16Hi (qP (3 * L.k)) (.r13, 512 * (2 * L.k)) s :=
+    { off := ⟨by simp only [oQ]; omega, by omega⟩
+      redF := by rw [eF]; exact hw0.1
+      redG := by rw [e1]; exact hR.1
+      d := by rw [eF, e1]; exact (E.rS.symm.sub_left (qScr (by omega))).sub_right (Offset.sub_base _ bR)
+      rF := by rw [retR_eq hkt, eF]; exact E.xS.sub_right (qScr (by omega))
+      rG := by rw [retR_eq hkt, e1]; exact E.xR.sub_right (Offset.sub_base _ bR)
+      c := by
+        rw [eF, e1]
+        exact covers_append (covers_one (inR E hkt bR)) (covers_one (inS' E hkt (by simp only [oQ, kScrE]; omega)))
+      w := by rw [eF]; exact covers_one (inS E hkt (by simp only [oQ, kScrE]; omega)) }
+  have dQ : ∀ {a b : Nat}, a < 14 → b < 14 → a ≠ b →
+      ∀ r ∈ [pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ b))], (pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ a))).Disjoint r :=
+    fun ha hb hne r hr => by rw [List.mem_singleton] at hr; subst hr; exact qDisj E ha hb hne
+  have dC : ∀ {a : Nat}, a < 14 → ∀ i < L.k, ∀ r ∈ [pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ a))],
+      Region.Disjoint ⟨σ.gpr .rdi + BitVec.ofNat 64 (32 * L.du * i), 32 * L.du⟩ r := fun ha i hi r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact (E.cS.sub_left (Offset.sub_base _ (Decaps.uSlice_le L hi))).sub_right (qScr ha)
+  refine WP.seq (WP.mono (add16In_ok (by simp) HA2) fun s2 ⟨hP2, hq2⟩ => ?_)
+  rw [eF, e1, hw0.2, hR.2] at hq2
+  rw [eF] at hP2
+  have kt2 := hkt.step E hP2 fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact .inl (qSub (by omega))
+  have hu2 : ∀ i < L.k, bytesAt s2.mem (σ.gpr .rdi + BitVec.ofNat 64 (32 * L.du * i)) (32 * L.du) =
       compressEncode L.du (add ((prods L σ).getD i zero) (rW σ (L.k + i))) := fun i hi => by
-    have bi := Decaps.uSlice_le L hi
-    rw [bytesAt_frame hP1.frame (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr
-      exact (E.cS.sub_left (Offset.sub_base _ bi)).sub_right (qScr (by omega))) (by omega)]
-    exact h.u i hi
-  -- `NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂`
-  have eF := pa_q kt1 (3 * L.k)
-  have eG := pa_q kt1 (3 * L.k + 1)
+    rw [bytesAt_frame hP2.frame (dC (by omega) i hi) (by omega)]; exact h.u i hi
   have HA : ∀ {s : State}, KT L σ s → Reduced s.mem (σ.gpr .r9 + BitVec.ofNat 64 (oQ (3 * L.k))) →
       Reduced s.mem (σ.gpr .r9 + BitVec.ofNat 64 (oQ (3 * L.k + 1))) → AccHi (qP (3 * L.k)) (eP L) s :=
     fun {s} kt rf rg =>
@@ -816,20 +805,6 @@ theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
         exact covers_append (covers_one (inS' E kt (by simp only [oQ, kScrE]; omega)))
           (covers_one (inS' E kt (by simp only [oQ, kScrE]; omega)))
       w := by rw [pa_q kt]; exact covers_one (inS E kt (by simp only [oQ, kScrE]; omega)) }
-  have dQ : ∀ {a b : Nat}, a < 14 → b < 14 → a ≠ b →
-      ∀ r ∈ [pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ b))], (pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ a))).Disjoint r :=
-    fun ha hb hne r hr => by rw [List.mem_singleton] at hr; subst hr; exact qDisj E ha hb hne
-  have dC : ∀ {a : Nat}, a < 14 → ∀ i < L.k, ∀ r ∈ [pR (σ.gpr .r9 + BitVec.ofNat 64 (oQ a))],
-      Region.Disjoint ⟨σ.gpr .rdi + BitVec.ofNat 64 (32 * L.du * i), 32 * L.du⟩ r := fun ha i hi r hr => by
-    rw [List.mem_singleton] at hr; subst hr
-    exact (E.cS.sub_left (Offset.sub_base _ (Decaps.uSlice_le L hi))).sub_right (qScr ha)
-  refine WP.seq (WP.mono (accIn_ok hA.add.ok hnA (g := eP L) (by simp) (HA kt1 hw1.1 hq1.1)) fun s2 ⟨hP2, hq2⟩ => ?_)
-  rw [eF, eG, hw1.2, hq1.2] at hq2
-  rw [eF] at hP2
-  have kt2 := kt1.step E hP2 fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact .inl (qSub (by omega))
-  have hu2 : ∀ i < L.k, bytesAt s2.mem (σ.gpr .rdi + BitVec.ofNat 64 (32 * L.du * i)) (32 * L.du) =
-      compressEncode L.du (add ((prods L σ).getD i zero) (rW σ (L.k + i))) := fun i hi => by
-    rw [bytesAt_frame hP2.frame (dC (by omega) i hi) (by omega)]; exact hu1 i hi
   -- `μ`
   have eB : pa s2 ((.r14, 0) : Ptr) = σ.gpr .r8 + BitVec.ofNat 64 0 := by simp only [pa, kt2.r14]
   have eE2 := pa_q kt2 (3 * L.k + 1)
@@ -917,7 +892,7 @@ theorem post_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : K
     WP isa (kpkeEncPost L A) s fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
   have E := ep hp
   refine WP.seq (WP.mono (seqR_ok (I := fun i s => EU L σ i s) L.k 0
-    (fun i _ hi s h => u_ok E hA K W hnA hnC (by omega) h) s h) fun s₅ h₅ => ?_)
+    (fun i _ hi s h => u_ok E K W hnC (by omega) h) s h) fun s₅ h₅ => ?_)
   rw [Nat.zero_add] at h₅
   exact WP.seq (WP.mono (v_ok E hA K W hnA hnC hnD h₅) fun s₆ ⟨kt₆, hm₆⟩ =>
     WP.mono (epi_ok E kt₆) fun s₇ ⟨hg, hm⟩ => ⟨hg, by show bytesAt _ _ _ = _; rw [hm]; exact hm₆⟩)

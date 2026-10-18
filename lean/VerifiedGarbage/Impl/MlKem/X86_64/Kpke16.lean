@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
 public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+public import VerifiedGarbage.Impl.MlKem.X86_64.Arith16
 
 /-!
 # ML-KEM on x86-64: K-PKE in one call, with 16-bit polynomials
@@ -152,24 +153,27 @@ def prodE (mul : Nat → Prog isa) : Prog isa :=
 /-- `f += g`, inline. -/
 def addIn (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) A.add
 
-/-- The polynomial for `e₁[i]`, `e₂` and `μ`. -/
+/-- The polynomial for `μ`. -/
 abbrev eP (L : Kem) : Ptr := qP (3 * L.k + 1)
+
+/-- `f += g`, inline, with `g` of `u16`s. -/
+def add16In (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) add16Y
 
 /-- `u[i] = NTT⁻¹(Â^⊺ ∘ ŷ)[i] + e₁[i]`, and `ByteEncode_{d_u}(Compress_{d_u}(u[i]))` to `c₁`. -/
 def uE (i : Nat) : Prog isa :=
-  .seq (widenIn (.r13, 512 * (L.k + i)) (eP L)) (.seq (addIn A (qP (2 * L.k + i)) (eP L))
+  .seq (add16In (qP (2 * L.k + i)) (.r13, 512 * (L.k + i)))
     (.seq (.block (lea .rdi (qP (2 * L.k + i)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 L.du))] ++
       lea .rdx (.r15, 32 * L.du * i) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.du)))]))
-      (L.ce A.codecs)))
+      (L.ce A.codecs))
 
 /-- `v = NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂ + μ`, and `ByteEncode_{d_v}(Compress_{d_v}(v))` to `c₂`. -/
 def vE : Prog isa :=
-  .seq (widenIn (.r13, 512 * (2 * L.k)) (eP L)) (.seq (addIn A (qP (3 * L.k)) (eP L))
+  .seq (add16In (qP (3 * L.k)) (.r13, 512 * (2 * L.k)))
     (.seq (.seq (.block (lea .rdi (.r14, 0) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 (32 * 1))),
         .mov32 .rdx (.imm (BitVec.ofNat 32 1))] ++ lea .rcx (eP L))) A.codecs.dd) (.seq (addIn A (qP (3 * L.k)) (eP L))
       (.seq (.block (lea .rdi (qP (3 * L.k)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 L.dv))] ++
         lea .rdx (.r15, 32 * L.du * L.k) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.dv)))]))
-        (L.ce A.codecs)))))
+        (L.ce A.codecs))))
 
 /-- The prologue, `t̂`, `y` and the products, with the code `mul` of the products. -/
 def kpkeEncPre (mul : Nat → Prog isa) : Prog isa :=
