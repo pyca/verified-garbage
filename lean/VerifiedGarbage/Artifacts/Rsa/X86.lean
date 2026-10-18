@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
+public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
+public import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Public and private CRT RSA on baseline i686. -/
@@ -13,6 +15,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
+  Spec.Rsa.crtValuesApi.artifact X86.target {
+    code := Impl.Rsa.X86.CrtValues.code
+    verified := Proof.Rsa.X86.CrtValues.verified
+    spSafe := Proof.Rsa.X86.CrtValues.code_sp
+    stack := 20 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
     code := Impl.Bignum.X86.Crt.code
     verified := Proof.Bignum.X86.Crt.verified

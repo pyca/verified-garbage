@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 
 /-! # Equality of two arrays of the working space, as a slot -/
@@ -11,9 +12,7 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum
 open VG.Proof.X25519.Arm
 
 /-- The borrow of a subtraction: whether `a < b`. -/
-theorem borrow_iff {x a b P β : Nat} (hv : x + b = a + P * β) (hx : x < P) (hβ : β ≤ 1) :
-    β = 0 ↔ b ≤ a := by
-  rcases (by omega : β = 0 ∨ β = 1) with rfl | rfl <;> simp only [Nat.mul_zero, Nat.mul_one] at hv <;> omega
+alias borrow_iff := VG.Proof.Rsa.borrow_iff
 
 theorem eqS_ok {s : State} {B : BitVec 32} {Z w N d a b t : Nat} (h : Ws s B Z w N)
     (ht : t < N) (ha : a < N) (hb : b < N) (hN : N ≤ 256) (hta : t ≠ a) (htb : t ≠ b)
