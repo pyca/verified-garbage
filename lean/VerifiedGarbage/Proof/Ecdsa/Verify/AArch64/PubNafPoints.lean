@@ -27,7 +27,8 @@ theorem pubNafPoints_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c
 /-- `[u]G + [v]Q`, `[v]Q` by the public NAF, into `R`. -/
 theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hM : Mid c s₀ base g s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    (hC : Law c.C) (hO : PrimeOrder c.C) (hn17 : 17 ≤ c.C.n)
+    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
     (hTP : TblPre c s₀ (s₀.syms c.tsym) base)
     (hQ₁ : ∀ X Y Z, Rep c.C X Y Z (mul (sv c base s U) (G c.C)) → Q₁ 0 X Y Z)
     {P : Point c.C} (hP : onCurve c.C P = true)
@@ -98,7 +99,7 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
     fun hi hl => by
       show toM _ _ (sv c base s₃ _) = toM _ _ (sv c base s _)
       rw [W₃ hi hl]
-  refine pubNafMul_ok hc hn4 hn6 hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
+  refine pubNafMul_ok hc hn4 hn6 hC hO hn17 hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
         exact hrep) fun s₅ W => ?_

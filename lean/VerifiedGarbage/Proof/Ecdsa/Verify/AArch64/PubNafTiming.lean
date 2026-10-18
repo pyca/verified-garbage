@@ -69,6 +69,7 @@ theorem NafWinPublic.fields {base : Addr} {P : Point c.C} {k : Nat} {s t : State
 
 /-- The recoding of `v` and `[v]Q` use only the public `v` and `Q`. -/
 theorem pubNafMul_relCT (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C)
+    (hO : PrimeOrder c.C) (hn17 : 17 ≤ c.C.n)
     (hprep : PubNaf.PrepChecks (winQ c) (c.sl V)) (hwin : PubNaf.WindowChecks (winQ c))
     {base : Addr} {P : Point c.C} {k : Nat} (hP : onCurve c.C P = true) :
     RelCT isa (NafWinPublic c base P k)
@@ -88,10 +89,10 @@ theorem pubNafMul_relCT (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC :
     (sl_le c h7 (i := V) (by decide)) (sl_mod8 c _) (by omega_arith)
     (by show c.sl WB + (64 * c.n + 1) ≤ size; omega_arith) hprep _ _ _ _ _ _
     ⟨hp.left.scr, hp.right.scr, hp.sp, hp.left.scalar.trans hp.right.scalar.symm⟩ ps pt).1
-  obtain ⟨_, _, xs, ss, ms, Fs, vs, sps, -, -, -, -⟩ :=
+  obtain ⟨_, _, xs, ss, ms, Fs, vs, sps, -, -, -, -, zs⟩ :=
     pubNafPrep_ok hc hn6 hC hp.left.scr fs hp.left.px hp.left.py hp.left.rep
   obtain ⟨_, rfl⟩ := Exec.det ps xs
-  obtain ⟨_, _, xt, st, mt, Ft, vt, spt, -, -, -, -⟩ :=
+  obtain ⟨_, _, xt, st, mt, Ft, vt, spt, -, -, -, -, -⟩ :=
     pubNafPrep_ok hc hn6 hC hp.right.scr ft hp.right.px hp.right.py hp.right.rep
   obtain ⟨_, rfl⟩ := Exec.det pt xt
   rw [hp.left.scalar] at Fs
@@ -107,7 +108,7 @@ theorem pubNafMul_relCT (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC :
     rw [← hp.left.scalar]; exact wordsVal_lt _ _ _ _
   obtain ⟨hw, post⟩ := PubNaf.window_relCT (nafLayQ hc hn4 hn6) (unitMod_pow_two hc.p_odd (64 * c.n))
     hC hc.am3 hc.p_lt (hmont 1) (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl)
-    hwin hP hk _ _ _ _ _ _ ⟨pair, ⟨ss, ms, Fs⟩, ⟨st, mt, Ft⟩⟩ ws wt
+    hwin hO hn17 hP hk zs _ _ _ _ _ _ ⟨pair, ⟨ss, ms, Fs⟩, ⟨st, mt, Ft⟩⟩ ws wt
   exact ⟨by rw [he, hw], post⟩
 
 /-- What the comb and `save` leave for the recoding of `v`. -/
@@ -208,6 +209,7 @@ structure PubNafVerifyChecks (c : Cfg) : Prop where
 lookups on the public `v` and key: the verifier leaks nothing more than the
 contract's public inputs. -/
 theorem pubNafVerify_public_ct (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C)
+    (hO : PrimeOrder c.C) (hn17 : 17 ≤ c.C.n)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) (checks : PubNafVerifyChecks c) :
     ConstantTime isa (VPre c) (JacPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
@@ -262,7 +264,7 @@ theorem pubNafVerify_public_ct (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6
       change Rep _ _ _ _ (peerPt c _ _ _)
       rw [pub.peerPoint]; exact ms₂.peer_rep hc hC
     · exact vs₂.v.trans ((mid_publicV ms₂).trans pub.v.symm)
-  obtain ⟨hwTrace, tailpub⟩ := pubNafMul_relCT hc hn4 hn6 hC checks.prep checks.window hp
+  obtain ⟨hwTrace, tailpub⟩ := pubNafMul_relCT hc hn4 hn6 hC hO hn17 checks.prep checks.window hp
     _ _ _ _ _ _ wins ew₁ ew₂
   have hfTrace := checks.tail _ _ _ _ _ _ trivial trivial tailpub ef₁ ef₂
   rw [et₁, et₂, ht, hh.1, hsTrace, hwTrace, hfTrace]

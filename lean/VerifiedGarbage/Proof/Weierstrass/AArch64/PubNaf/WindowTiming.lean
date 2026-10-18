@@ -140,7 +140,9 @@ the slots read only, the same point and the same digits leak the same trace. -/
 theorem window_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) (hc : WindowChecks K)
-    {P : Point C} (hP : onCurve C P = true) (hk : k < 2 ^ (64 * K.M.n)) {E : Nat → Fe C} :
+    (hO : PrimeOrder C) (hn17 : 17 ≤ C.n)
+    {P : Point C} (hP : onCurve C P = true) (hk : k < 2 ^ (64 * K.M.n)) {E : Nat → Fe C}
+    (hz1 : E K.P.z = 1) :
     RelCT isa (fun s t => FieldPair K.M base size C.p (· ∈ winSlots K) (winRo K) E s t ∧
         (Scr s base size ∧ ModOkA K.M size C.p s.mem base ∧ NafFixed K C base s P k) ∧
         (Scr t base size ∧ ModOkA K.M size C.p t.mem base ∧ NafFixed K C base t P k))
@@ -153,10 +155,13 @@ theorem window_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
   cases et with | seq f1 et => cases et with | seq f2 et => cases et with | seq f3 et =>
   cases et with | seq f4 f5 =>
   -- The table.
-  obtain ⟨tr1, E1, p1⟩ := table_relCT hL hp hone_lt hc.table _ _ _ _ _ _ pair e1 f1
-  obtain ⟨_, _, x1, S1⟩ := table_ok hL hp hC hM3 hone_lt hP hs₁ hM₁ hF₁
+  have hPz : K.P.z ∈ winRo K := by simp [winRo]
+  obtain ⟨tr1, E1, p1⟩ := table_relCT hL hp hc.table _ _ _ _ _ _ pair e1 f1
+  obtain ⟨_, _, x1, S1⟩ := table_ok hL hp hC hM3 hO hn17 hP hs₁ hM₁ hF₁
+    ((pair.left.val _ hPz).trans hz1)
   obtain ⟨_, rfl⟩ := Exec.det e1 x1
-  obtain ⟨_, _, y1, T1⟩ := table_ok hL hp hC hM3 hone_lt hP hs₂ hM₂ hF₂
+  obtain ⟨_, _, y1, T1⟩ := table_ok hL hp hC hM3 hO hn17 hP hs₂ hM₂ hF₂
+    ((pair.right.val _ hPz).trans hz1)
   obtain ⟨_, rfl⟩ := Exec.det f1 y1
   -- `D = O` and the count.
   obtain ⟨tr2, ⟨E2, p2⟩, a19, b19⟩ := head_relCT hL hone_lt hc _ _ _ _ _ _ p1 e2 f2
