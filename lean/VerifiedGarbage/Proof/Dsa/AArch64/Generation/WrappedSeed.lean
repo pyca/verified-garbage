@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -11,14 +11,6 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG.Proof.Bignum (Outside writeW_outside)
 open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Impl.RsaOaep.AArch64 VG.Proof.RsaOaep.AArch64
-
-private theorem exec_storeSp {s : State} {t : Reg} {off : Nat}
-    (ho : off % 8 = 0 ∧ off < 32768)
-    (h : InRegions s.wr (s.sp + BitVec.ofNat 64 off) 8) :
-    exec (.strSp t off) s =
-      some { s with mem := s.mem.writeW (s.sp + BitVec.ofNat 64 off) (s.gpr t) } := by
-  simp only [exec, ho, and_self, ite_true, State.store, h, Mem.writeW]
-  rfl
 
 theorem useWrappedSeed_ok {s : State} {F S op : Addr}
     (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
