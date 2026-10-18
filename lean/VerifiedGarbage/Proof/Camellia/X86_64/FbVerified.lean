@@ -44,8 +44,9 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
 `ofb_verified`, …: each is correct and constant time, by the taint analysis:
 the pointers, `rounds`, `n` and the stack pointer are public, and so is everything the
 code computes from them; the IV is secret. `ofb_framed`, … run them with
-their working space on the stack, zeroed on return: 3216 bytes, the 401
-words of the scratch buffer and 8 more.
+their working space on the stack, zeroed on return: 3280 bytes, the 409
+words of the scratch buffer and 8 more, below the 8 bytes the call of
+`vg_camellia_crypt_prepared` uses.
 -/
 
 @[expose] public section
@@ -60,13 +61,15 @@ def fbPre (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .rdi, 272⟩
   let iv : Region := ⟨s.gpr .rdx, 16⟩
   let data : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
-  let scratch : Region := ⟨s.gpr .r9, 8 * slots⟩
+  let scratch : Region := ⟨s.gpr .r9, 8 * 409⟩
   let ret : Region := ⟨s.gpr .rsp, 8⟩
+  let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩
   s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     ret.Disjoint iv ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
+    stk.Disjoint iv ∧ stk.Disjoint data ∧ stk.Disjoint scratch ∧ 8 ≤ (s.gpr .rsp).toNat ∧
     (s.gpr .rdi).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 8 * slots ≤ 2 ^ 64 ∧
+    (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 8 * 409 ≤ 2 ^ 64 ∧
     ((s.gpr .rsi).toNat = 18 ∨ (s.gpr .rsi).toNat = 24)
 
 /-- The public arguments. -/
@@ -114,8 +117,9 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre s₀) :
         (List.range (s₀.gpr .r8).toNat).map (Modes.fbOut mo 16 (ciphOf s₀) s₀.mem (s₀.gpr .rcx) (ivOf s₀)) ∧
       Spec.Aes.bytesAt s'.mem (s₀.gpr .rdx) 16 =
         Modes.fbIn mo 16 (ciphOf s₀) s₀.mem (s₀.gpr .rcx) (ivOf s₀) (s₀.gpr .r8).toNat := by
-  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB, hR⟩ := hp
-  have hwS : (⟨s₀.gpr .r9, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB, hR⟩ :=
+    hp
+  have hwS : (⟨s₀.gpr .r9, 8 * 409⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.fb_wp ((dirCoreSpec .encrypt).toBlock rfl) mo (r := ⟨.rdx, .rcx, .r8, .r9⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r9) (P := s₀.gpr .rdx) (D := s₀.gpr .rcx) (n := (s₀.gpr .r8).toNat)
@@ -123,16 +127,26 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre s₀) :
     rfl rfl rfl rfl ⟨hwS, fitB⟩
     (by rw [hwr]; simp) (by rw [hwr]; simp) dVS dDS dVD fitD
     ⟨s₀.gpr .rdi, rfl, by apply BitVec.eq_of_toNat_eq; simp, hR, rfl, by rw [hrd]; simp, fitK,
-      fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), Modes.X86_64.keepsIv_of_scal (by lit_decide)⟩)
+      fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKS, hst, fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dTS⟩
+    ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), Modes.X86_64.keepsIv_of_scal (by lit_decide)⟩
+    (hstk := .inr ⟨hst, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dTV
+      · exact dTD
+      · exact dTS⟩))
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ =>
     ⟨⟨hcs, ?_⟩, by rw [encCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
-  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+  rw [stkList_dirCore] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
   · exact dRS
   · exact dRD
   · exact dRV
+  · exact VG.Offset.base_disjoint_below _ (by decide)
 
 theorem ofb_wp {s₀ : State} (hp : ofbX86_64.pre s₀) :
     WP isa ofb s₀ fun s' => gprPreserved s₀ s' ∧ ofbX86_64.post s₀ s' :=
@@ -156,16 +170,16 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX86_64.pre s₀) :
 
 def fbTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], flags := false,
-    lens := [16, 0, 8 * slots], bases := [(.r9, 2, 0)] }
+    lens := [16, 0, 8 * 409], bases := [(.r9, 2, 0)] }
 
 theorem fbTaint_wf (s : State) (hs : fbPre s) : Taint.Wf fbTaint s := by
-  obtain ⟨_, hwr, _, _, _, dVD, dVS, dDS, _, _, _, _, fitV, fitD, fitB, _⟩ := hs
+  obtain ⟨_, hwr, _, _, _, dVD, dVS, dDS, _, _, _, _, _, _, _, _, fitV, fitD, fitB, _⟩ := hs
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
     · exact List.Forall₂.cons (by change 16 ≤ 16; omega)
         (List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .r8).toNat; omega)
-        (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega) List.Forall₂.nil))
+        (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -178,7 +192,7 @@ theorem fbTaint_wf (s : State) (hs : fbPre s) : Taint.Wf fbTaint s := by
       rcases hr with rfl | rfl | rfl
       · change 16 ≤ 2 ^ 64; omega
       · change 16 * (s.gpr .r8).toNat ≤ 2 ^ 64; omega
-      · change 8 * slots ≤ 2 ^ 64; rw [slots_eq]; omega
+      · change 8 * 409 ≤ 2 ^ 64; omega
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
     subst p
@@ -221,7 +235,7 @@ def fbSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 272⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 401⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 409⟩]
 
 /-- A state satisfying the precondition of the contracts on the stack. -/
 def fbFrameSat : State where
@@ -236,23 +250,11 @@ def fbFrameSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
 
-/-- What is public at the core's loop of pairs of rounds (as `pairTaint`,
-with the IV's region first, and the IV's address in `xmm15`). -/
-def fbPairTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdx, .rsp, .rsi, .rdi, .r8, .r9], flags := true, lens := [16, 0, 8 * slots],
-    bases := [(.r9, 2, 0), (.rdx, 2, 8 * tailSlot)],
-    slots := [(2, 8 * endSlot, 8), (2, 8 * countSlot, 8), (2, 8 * dataSlot, 8)], xregs := .ofList [.xmm15] }
-
-/-! The loop of pairs of rounds, which the three modes run, analysed once, as a summary. -/
-
-taint_summary fbPairSum : taintS fbPairTaint (.block pairBody)
-
 theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint ofb h).isSome = true)
-  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
 
 theorem ofb_verified :
-    Verified X86_64.target ofb (Proof.Camellia.ofbScratchContract X86_64.abi slots) :=
+    Verified X86_64.target ofb (Proof.Camellia.ofbScratchContract X86_64.abi 409 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := ofb_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by lit_decide) he hg, hpost⟩)
@@ -261,16 +263,15 @@ theorem ofb_verified :
       Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Spec.Camellia.ofbPost, ofbX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem ofbFrameSat_pre : ∃ s, (Spec.Camellia.ofbContract X86_64.abi 3216).pre s := by
+theorem ofbFrameSat_pre : ∃ s, (Spec.Camellia.ofbContract X86_64.abi 3288).pre s := by
   implies_sat [Spec.Camellia.ofbContract, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre,
     Spec.Camellia.ofbPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint cfbEncrypt h).isSome = true)
-  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
 
 theorem cfbEncrypt_verified :
-    Verified X86_64.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract X86_64.abi slots) :=
+    Verified X86_64.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract X86_64.abi 409 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbEncrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by lit_decide) he hg, hpost⟩)
@@ -279,16 +280,15 @@ theorem cfbEncrypt_verified :
       Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Spec.Camellia.cfbEncryptPost, cfbEncX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cfbEncryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbEncryptContract X86_64.abi 3216).pre s := by
+theorem cfbEncryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbEncryptContract X86_64.abi 3288).pre s := by
   implies_sat [Spec.Camellia.cfbEncryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
     Spec.Camellia.cfbEncryptPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint cfbDecrypt h).isSome = true)
-  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
 
 theorem cfbDecrypt_verified :
-    Verified X86_64.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract X86_64.abi slots) :=
+    Verified X86_64.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract X86_64.abi 409 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩)
@@ -297,40 +297,40 @@ theorem cfbDecrypt_verified :
       Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Spec.Camellia.cfbDecryptPost, cfbDecX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cfbDecryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbDecryptContract X86_64.abi 3216).pre s := by
+theorem cfbDecryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbDecryptContract X86_64.abi 3288).pre s := by
   implies_sat [Spec.Camellia.cfbDecryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
     Spec.Camellia.cfbDecryptPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 ofb)
-      (Spec.Camellia.ofbContract X86_64.abi 3216) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ofb)
+      (Spec.Camellia.ofbContract X86_64.abi 3288) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 401) (pre := Spec.Camellia.ofbPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3216) (by rw [← Proof.Camellia.ofbScratchContract_eq]; exact ofb_verified)
+    (n := 409) (pre := Spec.Camellia.ofbPre X86_64.abi.ptrBits)
+    (post := Spec.Camellia.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) (by rw [← Proof.Camellia.ofbScratchContract_eq]; exact ofb_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat_pre
 
 /-- CFB128 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 cfbEncrypt)
-      (Spec.Camellia.cfbEncryptContract X86_64.abi 3216) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cfbEncrypt)
+      (Spec.Camellia.cfbEncryptContract X86_64.abi 3288) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 401) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.cfbEncryptPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3216) (by rw [← Proof.Camellia.cfbEncScratchContract_eq]; exact cfbEncrypt_verified)
+    (n := 409) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
+    (post := Spec.Camellia.cfbEncryptPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) (by rw [← Proof.Camellia.cfbEncScratchContract_eq]; exact cfbEncrypt_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat_pre
 
 /-- CFB128 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 cfbDecrypt)
-      (Spec.Camellia.cfbDecryptContract X86_64.abi 3216) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cfbDecrypt)
+      (Spec.Camellia.cfbDecryptContract X86_64.abi 3288) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 401) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.cfbDecryptPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3216) (by rw [← Proof.Camellia.cfbDecScratchContract_eq]; exact cfbDecrypt_verified)
+    (n := 409) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
+    (post := Spec.Camellia.cfbDecryptPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) (by rw [← Proof.Camellia.cfbDecScratchContract_eq]; exact cfbDecrypt_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecryptFrameSat_pre
 
