@@ -98,8 +98,11 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's)" ++
       (if adx then ", their `_adx` forms," else "") ++ " which cover infinity, equal points and \
       opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for \
-      `a = -3`, with `Z' = 2YZ` as a direct product, into a temporary point copied back to the \
-      accumulator; on six words no register values are forwarded between field operations. The final comparison squares the Jacobian Z \
+      `a = -3`, with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is \
+      read for the last time before it is written, so no copy" ++
+      (if adx then ", and its small multiples are fused into three steps `C a - D b mod p` \
+        (s2n-bignum's sequence)" else "") ++ "; on six words no register values are forwarded \
+      between field operations. The final comparison squares the Jacobian Z \
       coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has \
       `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
       conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
