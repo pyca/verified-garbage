@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -166,10 +167,10 @@ theorem finish_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Na
 /-- `D = O` and the count of the digits after the top one. -/
 theorem head_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
     (hone_lt : K.one < C.p) {P : Point C} {s₀ s₁ : State} (hF : NafFixed K C base s₀ P k)
-    (S₁ : NSt K C base size P s₀ s₁) (hk : k < 2 ^ (64 * K.M.n)) :
+    (S₁ : NSt K C base size P s₀ s₁) (hc : CacheOk K C base s₁) (hk : k < 2 ^ (64 * K.M.n)) :
     WP isa (.block (Jacobian.infinity K K.D ++
         ([.movz .x .x19 (BitVec.ofNat 16 (64 * K.M.n)) 0] : List Instr))) s₁ fun s₃ =>
-      NSt K C base size P s₀ s₃ ∧ s₃.gpr .x19 = BitVec.ofNat 64 (64 * K.M.n) ∧
+      NSt K C base size P s₀ s₃ ∧ CacheOk K C base s₃ ∧ s₃.gpr .x19 = BitVec.ofNat 64 (64 * K.M.n) ∧
       (∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₃.mem base x K.M.n < C.p) ∧
       InvJ C (tmv C K.M.n base s₃ K.D.x) (tmv C K.M.n base s₃ K.D.y)
         (tmv C K.M.n base s₃ K.D.z) (mul (2 * Naf5.residual k (64 * K.M.n + 1)) P) := by
@@ -193,7 +194,7 @@ theorem head_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafL
       (tmv C K.M.n base s₃ K.D.z) (mul (2 * Naf5.residual k (64 * K.M.n + 1)) P) := by
     rw [t₃, t₃, t₃, hz, Nat.mul_zero, show mul 0 P = .infinity by rw [Spec.Weierstrass.mul]; simp]
     exact DJ
-  exact ⟨S₃, x₃, Dl₃, DJ₃⟩
+  exact ⟨S₃, CacheUpTo.ofMem k₃.mem (CacheOk.unch hW hL.cache hc U₂ S₁.scr.nowrap), x₃, Dl₃, DJ₃⟩
 
 /-- `[k]P` into `R`, projective, for `k < 2^(64 n)` whose digits are at `K.bits`. -/
 theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
@@ -202,28 +203,46 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Na
     (hn17 : 17 ≤ C.n) {P : Point C} (hP : onCurve C P = true) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base) (hF : NafFixed K C base s P k)
     (hz1 : tmv C K.M.n base s K.P.z = 1) (hk : k < 2 ^ (64 * K.M.n)) :
-    WP isa (PubNaf.window K) s fun t => NSt K C base size P s t ∧
+    WP isa (PubNaf.window K) s fun t => Scr t base size ∧ KeepRegs (nafClob K.M.n) s t ∧
+      Unch base (winW K ++ cacheW K) s.mem t.mem ∧ ModOkA K.M size C.p t.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base t K.R.x) (tmv C K.M.n base t K.R.y) (tmv C K.M.n base t K.R.z)
         (mul k P) := by
   have hW := hL.win
   have hn0 := hW.n0
   have h6 := hL.n6
+  have hn := hs.nowrap
   rw [PubNaf.window]
   refine WP.seq (WP.mono (table_ok hL hp hC hM3 hO hn17 hP hs hM hF hz1) fun s₁ S₁ => ?_)
+  -- The cache, from which the loop goes on.
+  refine WP.seq (WP.mono (cacheTo_ok hL hp S₁.scr S₁.mod S₁.tbl 8 (Nat.le_refl _))
+    fun s₂ ⟨sc₂, k₂, U₂, M₂, T₂, C₂⟩ => ?_)
+  have U₀₂ : Unch base (winW K ++ cacheW K) s.mem s₂.mem := (S₁.unch.trans U₂).mono fun w hw => by
+    simp only [List.mem_append] at hw ⊢
+    rcases hw with hw | hw | hw
+    · exact Or.inl hw
+    · exact Or.inr hw
+    · exact Or.inl (loopW_sub K w hw)
+  have F₂ := hF.rebase hL U₀₂ hn
+  have S₂ : NSt K C base size P s₂ s₂ := ⟨sc₂, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, M₂, T₂⟩
   -- `D = O`, `x19 = 64 n`.
   apply WP.seq
-  refine WP.mono (head_ok hL hone_lt hF S₁ hk) fun s₃ ⟨S₃, x₃, Dl₃, DJ₃⟩ => ?_
+  refine WP.mono (head_ok hL hone_lt F₂ S₂ C₂ hk) fun s₃ ⟨S₃, C₃, x₃, Dl₃, DJ₃⟩ => ?_
   apply WP.seq
-  refine WP.mono (digit_ok hL hp hC hM3 hone_lt hP S₃ hF (j := 64 * K.M.n) (by omega) x₃ Dl₃ DJ₃)
+  refine WP.mono (digit_ok hL hp hC hM3 hone_lt hP S₃ F₂ C₃ (j := 64 * K.M.n) (by omega) x₃ Dl₃ DJ₃)
     fun s₄ I₄ => ?_
   apply WP.seq
-  refine countLoop_ok (Inv := fun j t => NInv K C base size P s t j (Naf5.residual k j))
+  refine countLoop_ok (Inv := fun j t => NInv K C base size P s₂ t j (Naf5.residual k j))
     (n := 64 * K.M.n) (by omega) (fun j t hj1 hjn hI => ?_) (fun t hI => ?_) (by omega) I₄
   · have e : j - 1 + 1 = j := by omega
-    refine WP.mono (step_ok hL hp hC hM3 hone_lt hP hF (j := j - 1) (by omega) (by rw [e]; exact hI))
+    refine WP.mono (step_ok hL hp hC hM3 hone_lt hP F₂ (j := j - 1) (by omega) (by rw [e]; exact hI))
       fun t' h' => ⟨h', h'.x19⟩
-  · refine WP.mono (finish_ok hL hp hC hpn hone_lt hone hF hI.st hI.rlt hI.r) fun t' ⟨S', l', r'⟩ => ?_
-    exact ⟨S', l', by rw [Naf5.residual_zero] at r'; exact r'⟩
+  · refine WP.mono (finish_ok hL hp hC hpn hone_lt hone F₂ hI.st hI.rlt hI.r) fun t' ⟨S', l', r'⟩ => ?_
+    refine ⟨S'.scr, S₁.keep.trans (k₂.trans S'.keep), (U₀₂.trans S'.unch).mono fun w hw => ?_, S'.mod, l',
+      by rw [Naf5.residual_zero] at r'; exact r'⟩
+    simp only [List.mem_append] at hw ⊢
+    rcases hw with hw | hw
+    · exact hw
+    · exact Or.inl hw
 
 end VG.Proof.Weierstrass.AArch64.PubNaf
