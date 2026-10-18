@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-theorem copyDigest_ok {s : State} {rp op : Addr} {bs : List Byte}
-    (hlen : bs.length = 20 ∨ bs.length = 32)
+theorem copyBytes_ok {s : State} {rp op : Addr} {bs : List Byte}
+    (hlen : 2 ≤ bs.length ∧ bs.length ≤ 1024)
     (hrp : s.gpr .rsi = rp) (hop : s.gpr .rdi = op)
     (hn : s.gpr .rcx = BitVec.ofNat 64 bs.length)
     (hbits : s.gpr .rdx = BitVec.ofNat 64 (8 * bs.length))
@@ -33,5 +33,20 @@ theorem copyDigest_ok {s : State} {rp op : Addr} {bs : List Byte}
   | cons b bs =>
     change (b &&& BitVec.allOnes 8) :: bs = b :: bs
     rw [BitVec.and_allOnes]
+
+theorem copyDigest_ok {s : State} {rp op : Addr} {bs : List Byte}
+    (hlen : bs.length = 20 ∨ bs.length = 32)
+    (hrp : s.gpr .rsi = rp) (hop : s.gpr .rdi = op)
+    (hn : s.gpr .rcx = BitVec.ofNat 64 bs.length)
+    (hbits : s.gpr .rdx = BitVec.ofNat 64 (8 * bs.length))
+    (hrd : ∀ i < bs.length, InRegions (s.rd ++ s.wr) (off rp i) 1)
+    (hwr : ∀ i < bs.length, InRegions s.wr (off op i) 1)
+    (hbytes : ∀ i < bs.length, s.mem (off rp i) = bs.getD i 0)
+    (hsep : ∀ i < bs.length, ∀ j < bs.length, off rp i ≠ off op j) :
+    WP isa Impl.Ffdh.X86_64.ParameterCandidate.witnessCut s fun t =>
+      Spec.Rsa.bytesAt t.mem op bs.length = bs ∧
+      (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧
+      Keep [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] s t := by
+  exact copyBytes_ok (by omega) hrp hop hn hbits hrd hwr hbytes hsep
 
 end VG.Proof.Dsa.X86_64.Generation
