@@ -41,7 +41,6 @@ namespace VG.Proof.Pbkdf2.Md.AArch64.Sha256
 open VG.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Sha256.AArch64 (Compress)
-open VG.Impl.MdStream.AArch64 (out32)
 
 /-- SHA-256's functions. -/
 def hash (v : Compress) : Hash where
@@ -232,7 +231,7 @@ def stream : List StreamFn := [
     verified := Proof.Sha256.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha256.digest256Api
-    code := Proof.Sha256.AArch64.oneShotWith (out32 8 true) Spec.Sha256.H0 v.name v.code
+    code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.out256 Spec.Sha256.H0 v.name v.code
     contract := Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack
     stack := Proof.Sha256.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies
