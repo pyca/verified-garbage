@@ -54,14 +54,14 @@ def verifyPrecomputedApi : Api where
   sig := verifyPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => verifyPrecomputedContract A stack
-  summary := verifyApi.summary ++ "\n\n\
+  summary := verifySummary ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     returns exactly the result specified above. If `pre` does not hold those \
     values, the result is unspecified; memory safety and the timing guarantee \
     still apply. Timing may additionally depend on the contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`."
-  safety := verifyApi.safety ++
+  safety := verifySafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be signature verification's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]
@@ -105,14 +105,14 @@ def recoverPrecomputedApi : Api where
   sig := recoverPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => recoverPrecomputedContract A stack
-  summary := recoverApi.summary ++ "\n\n\
+  summary := recoverSummary ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     writes and returns exactly what is specified above. If `pre` does not hold \
     those values, what it writes and returns is unspecified; memory safety \
     still applies.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`."
-  safety := recoverApi.safety ++
+  safety := recoverSafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be recovery's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]

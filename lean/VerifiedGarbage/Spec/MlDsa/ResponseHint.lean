@@ -38,14 +38,4 @@ def hintNormContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         if normRq [signedPolyAt m ct]<gamma2.toNat then 4294967296 else 0))
     (writeArgs := true) (stack := stack)
 
-def hintNormApi : Api where
-  module := "mldsa"
-  name := "vg_mldsa_signed_hint_norm"
-  sig := hintNormSig
-  writeArgs := true
-  contracts := some fun A stack => hintNormContract A stack
-  summary := "Creates hints from decomposed signed low and high parts and a signed challenge product, returning hint count and strict norm validity."
-  safety := ["Gamma2 must be 95232 or 261888; the low/high inputs must be an exact decomposition for that Gamma2.",
-    "Challenge-product coefficients must be signed integers strictly between -8380417 and 16760834."]
-
 end VG.Spec.MlDsa

@@ -198,30 +198,6 @@ def cryptBlock (k : Schedule) : Direction → Block → Block
   | .encrypt => encryptBlock k
   | .decrypt => decryptBlock k
 
-/-- `vg_triple_des_crypt_block(schedule, data, scratch, decrypt: usize)`. -/
-def cryptBlockSig : Sig where
-  params := blockSig.params ++ [("decrypt", .int .usize true)]
-
-def cryptBlockContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlockSig.contract A
-    (pre := fun _schedule _data _scratch decrypt _ => decrypt.toNat ≤ 1)
-    (post := fun schedule data _scratch decrypt m m' _ =>
-      blockAt m' data = cryptBlock (scheduleAt m schedule) (directionOf decrypt.toNat) (blockAt m data))
-    (stack := stack)
-
-def cryptBlockApi : Api where
-  module := "triple_des"
-  name := "vg_triple_des_crypt_block"
-  sig := cryptBlockSig
-  contracts := some fun A stack => cryptBlockContract A stack
-  summary := "Triple DES block encryption (`decrypt = 0`) or decryption (`decrypt = 1`) \
-    (FIPS 46-3): what `vg_triple_des_encrypt_block` and `vg_triple_des_decrypt_block` do, for \
-    implementations that share one body between them. Transforms the 8 bytes at `data` in \
-    place under the three DES schedules at `schedule`.\n\n\
-    Contract: `VG.Spec.TripleDes.cryptBlockContract`. Constant time: only pointers and \
-    `decrypt` may affect timing, not the schedule or data, including S-box inputs."
-  safety := ["The contents of `scratch` on return are unspecified.", "`decrypt` must be 0 or 1."]
-
 /-- `vg_triple_des_ecb(schedule, data, n, decrypt: usize)`. -/
 def ecbDirSig : Sig where
   params := ecbSig.params ++ [("decrypt", .int .usize true)]
@@ -233,20 +209,5 @@ def ecbDirContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       blocksAt m' data n.toNat =
         ecb (scheduleAt m schedule) (directionOf decrypt.toNat) (blocksAt m data n.toNat))
     (writeArgs := true) (stack := stack)
-
-def ecbDirApi : Api where
-  module := "triple_des"
-  name := "vg_triple_des_ecb"
-  sig := ecbDirSig
-  writeArgs := true
-  contracts := some fun A stack => ecbDirContract A stack
-  summary := "Triple DES ECB encryption (`decrypt = 0`) or decryption (`decrypt = 1`) \
-    (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule \
-    written by `vg_triple_des_expand_key`: what `vg_triple_des_ecb_encrypt` and \
-    `vg_triple_des_ecb_decrypt` do, for implementations that share one body between them. \
-    For `n = 0`, no data is transformed.\n\n\
-    Contract: `VG.Spec.TripleDes.ecbDirContract`. Constant time: only pointers, `n` and \
-    `decrypt` may affect timing, not the schedule or data."
-  safety := ["`decrypt` must be 0 or 1."]
 
 end VG.Spec.TripleDes

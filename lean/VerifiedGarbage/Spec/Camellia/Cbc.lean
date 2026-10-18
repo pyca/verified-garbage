@@ -79,38 +79,6 @@ def cbcDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcSig.contract A (pre := cbcPre A.ptrBits) (post := cbcDecryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_camellia_cbc_encrypt` on every target. -/
-def cbcEncryptApi : Api where
-  module := "camellia_cbc"
-  name := "vg_camellia_cbc_encrypt"
-  sig := cbcSig
-  writeArgs := true
-  contracts := some fun A stack => cbcEncryptContract A stack
-  summary := "Camellia-CBC encryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in \
-    place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, \
-    where `C₀` is the block at `*iv`, which is only read: a further call continues the message \
-    from `Cₙ`, the last block at `data` on return. `CIPH_K` is Camellia with `rounds` rounds under \
-    the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added.\n\n\
-    Contract: `VG.Spec.Camellia.cbcEncryptContract`. Constant time: only the pointers, `rounds` \
-    and `n` may affect timing, not the subkeys, the chaining value or the data."
-  safety := ["`rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32)."]
-
-/-- `vg_camellia_cbc_decrypt` on every target. -/
-def cbcDecryptApi : Api where
-  module := "camellia_cbc"
-  name := "vg_camellia_cbc_decrypt"
-  sig := cbcSig
-  writeArgs := true
-  contracts := some fun A stack => cbcDecryptContract A stack
-  summary := "Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in \
-    place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, \
-    where `C₀` is the block at `*iv`, which is only read: a further call continues the message \
-    from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, \
-    as `vg_camellia_expand_key` writes them. No padding is removed.\n\n\
-    Contract: `VG.Spec.Camellia.cbcDecryptContract`. Constant time: only the pointers, `rounds` \
-    and `n` may affect timing, not the subkeys, the chaining value or the data."
-  safety := ["`rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32)."]
-
 /-! ## Updating the chaining value -/
 
 /-- `vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize)`,
