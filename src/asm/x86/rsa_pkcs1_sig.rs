@@ -2,6 +2,9444 @@
 //! Verified `rsa_pkcs1_sig` functions for `x86`.
 #![allow(dead_code)]
 
+/// RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, as BoringSSL's `RSA_verify` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` is `n_len` bytes, the integer `s` of `sig` (most significant byte first) is below `n`, and `s^e mod n` (as `n_len` bytes) is `0x00 0x01`, at least 8 bytes `0xff`, `0x00` and then exactly the DER encoding of the `DigestInfo` of `digest` (RFC 8017 §9.2 note 1), which must be as long as the hash function's values; and 0 otherwise, or if `n` or `e` is not such a number or `hash` names no hash function. That is, exactly when `s^e mod n` is EMSA-PKCS1-v1_5's encoding of `digest`: the signed `DigestInfo` is compared, never parsed. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.verifyContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e`, `digest` and `sig`.
+///
+/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it returns exactly the result specified above. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
+///
+/// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `sig` must be valid for reads of `sig_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `scratch` must not overlap `n`, `e`, `digest`, `sig` or `pre` (distinct Rust objects never do).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 2152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push ebx
+push ebp
+push esi
+push edi
+lea esp, [esp-2112]
+mov eax, DWORD PTR [esp+2164]
+cmp eax, DWORD PTR [esp+2136]
+jne 20f
+mov eax, esp
+add eax, 64
+mov DWORD PTR [esp], eax
+mov eax, DWORD PTR [esp+2136]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+2176]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+2180]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+2140]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esp+2144]
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esp+2160]
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esp+2136]
+mov DWORD PTR [esp+28], eax
+mov eax, DWORD PTR [esp+2168]
+mov DWORD PTR [esp+32], eax
+mov eax, DWORD PTR [esp+2172]
+mov DWORD PTR [esp+36], eax
+call {vg_rsa_public_precomputed_checked}
+mov DWORD PTR [esp+40], eax
+mov edi, esp
+add edi, 1088
+mov ecx, DWORD PTR [esp+2136]
+mov edx, DWORD PTR [esp+2148]
+mov esi, DWORD PTR [esp+2152]
+mov ebp, DWORD PTR [esp+2156]
+cmp edx, 0
+je 22f
+cmp edx, 1
+je 24f
+cmp edx, 2
+je 26f
+cmp edx, 3
+je 28f
+cmp edx, 4
+je 210f
+cmp edx, 5
+je 212f
+cmp edx, 6
+je 214f
+cmp edx, 7
+je 216f
+cmp edx, 8
+je 218f
+cmp edx, 9
+je 220f
+cmp edx, 10
+je 222f
+cmp edx, 11
+je 224f
+mov eax, 0
+jmp 225f
+224:
+mov ebx, 83
+mov eax, 64
+cmp ebp, eax
+jne 226f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 228f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+230:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 230b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 231f
+cmp edx, 1
+je 233f
+cmp edx, 2
+je 235f
+cmp edx, 3
+je 237f
+cmp edx, 4
+je 239f
+cmp edx, 5
+je 241f
+cmp edx, 6
+je 243f
+cmp edx, 7
+je 245f
+cmp edx, 8
+je 247f
+cmp edx, 9
+je 249f
+cmp edx, 10
+je 251f
+cmp edx, 11
+je 253f
+jmp 254f
+253:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+254:
+jmp 252f
+251:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+252:
+jmp 250f
+249:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+250:
+jmp 248f
+247:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+248:
+jmp 246f
+245:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+246:
+jmp 244f
+243:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+244:
+jmp 242f
+241:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+242:
+jmp 240f
+239:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+240:
+jmp 238f
+237:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+238:
+jmp 236f
+235:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+236:
+jmp 234f
+233:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+234:
+jmp 232f
+231:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+232:
+255:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 255b
+mov eax, 1
+jmp 229f
+228:
+mov eax, 0
+229:
+jmp 227f
+226:
+mov eax, 0
+227:
+225:
+jmp 223f
+222:
+mov ebx, 67
+mov eax, 48
+cmp ebp, eax
+jne 256f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 258f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+260:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 260b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 261f
+cmp edx, 1
+je 263f
+cmp edx, 2
+je 265f
+cmp edx, 3
+je 267f
+cmp edx, 4
+je 269f
+cmp edx, 5
+je 271f
+cmp edx, 6
+je 273f
+cmp edx, 7
+je 275f
+cmp edx, 8
+je 277f
+cmp edx, 9
+je 279f
+cmp edx, 10
+je 281f
+cmp edx, 11
+je 283f
+jmp 284f
+283:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+284:
+jmp 282f
+281:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+282:
+jmp 280f
+279:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+280:
+jmp 278f
+277:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+278:
+jmp 276f
+275:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+276:
+jmp 274f
+273:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+274:
+jmp 272f
+271:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+272:
+jmp 270f
+269:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+270:
+jmp 268f
+267:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+268:
+jmp 266f
+265:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+266:
+jmp 264f
+263:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+264:
+jmp 262f
+261:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+262:
+285:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 285b
+mov eax, 1
+jmp 259f
+258:
+mov eax, 0
+259:
+jmp 257f
+256:
+mov eax, 0
+257:
+223:
+jmp 221f
+220:
+mov ebx, 51
+mov eax, 32
+cmp ebp, eax
+jne 286f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 288f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+290:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 290b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 291f
+cmp edx, 1
+je 293f
+cmp edx, 2
+je 295f
+cmp edx, 3
+je 297f
+cmp edx, 4
+je 299f
+cmp edx, 5
+je 2101f
+cmp edx, 6
+je 2103f
+cmp edx, 7
+je 2105f
+cmp edx, 8
+je 2107f
+cmp edx, 9
+je 2109f
+cmp edx, 10
+je 2111f
+cmp edx, 11
+je 2113f
+jmp 2114f
+2113:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2114:
+jmp 2112f
+2111:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2112:
+jmp 2110f
+2109:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2110:
+jmp 2108f
+2107:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2108:
+jmp 2106f
+2105:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2106:
+jmp 2104f
+2103:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2104:
+jmp 2102f
+2101:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2102:
+jmp 2100f
+299:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2100:
+jmp 298f
+297:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+298:
+jmp 296f
+295:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+296:
+jmp 294f
+293:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+294:
+jmp 292f
+291:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+292:
+2115:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2115b
+mov eax, 1
+jmp 289f
+288:
+mov eax, 0
+289:
+jmp 287f
+286:
+mov eax, 0
+287:
+221:
+jmp 219f
+218:
+mov ebx, 47
+mov eax, 28
+cmp ebp, eax
+jne 2116f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2118f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2120:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2120b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2121f
+cmp edx, 1
+je 2123f
+cmp edx, 2
+je 2125f
+cmp edx, 3
+je 2127f
+cmp edx, 4
+je 2129f
+cmp edx, 5
+je 2131f
+cmp edx, 6
+je 2133f
+cmp edx, 7
+je 2135f
+cmp edx, 8
+je 2137f
+cmp edx, 9
+je 2139f
+cmp edx, 10
+je 2141f
+cmp edx, 11
+je 2143f
+jmp 2144f
+2143:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2144:
+jmp 2142f
+2141:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2142:
+jmp 2140f
+2139:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2140:
+jmp 2138f
+2137:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2138:
+jmp 2136f
+2135:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2136:
+jmp 2134f
+2133:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2134:
+jmp 2132f
+2131:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2132:
+jmp 2130f
+2129:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2130:
+jmp 2128f
+2127:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2128:
+jmp 2126f
+2125:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2126:
+jmp 2124f
+2123:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2124:
+jmp 2122f
+2121:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2122:
+2145:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2145b
+mov eax, 1
+jmp 2119f
+2118:
+mov eax, 0
+2119:
+jmp 2117f
+2116:
+mov eax, 0
+2117:
+219:
+jmp 217f
+216:
+mov ebx, 51
+mov eax, 32
+cmp ebp, eax
+jne 2146f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2148f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2150:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2150b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2151f
+cmp edx, 1
+je 2153f
+cmp edx, 2
+je 2155f
+cmp edx, 3
+je 2157f
+cmp edx, 4
+je 2159f
+cmp edx, 5
+je 2161f
+cmp edx, 6
+je 2163f
+cmp edx, 7
+je 2165f
+cmp edx, 8
+je 2167f
+cmp edx, 9
+je 2169f
+cmp edx, 10
+je 2171f
+cmp edx, 11
+je 2173f
+jmp 2174f
+2173:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2174:
+jmp 2172f
+2171:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2172:
+jmp 2170f
+2169:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2170:
+jmp 2168f
+2167:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2168:
+jmp 2166f
+2165:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2166:
+jmp 2164f
+2163:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2164:
+jmp 2162f
+2161:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2162:
+jmp 2160f
+2159:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2160:
+jmp 2158f
+2157:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2158:
+jmp 2156f
+2155:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2156:
+jmp 2154f
+2153:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2154:
+jmp 2152f
+2151:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2152:
+2175:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2175b
+mov eax, 1
+jmp 2149f
+2148:
+mov eax, 0
+2149:
+jmp 2147f
+2146:
+mov eax, 0
+2147:
+217:
+jmp 215f
+214:
+mov ebx, 47
+mov eax, 28
+cmp ebp, eax
+jne 2176f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2178f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2180:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2180b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2181f
+cmp edx, 1
+je 2183f
+cmp edx, 2
+je 2185f
+cmp edx, 3
+je 2187f
+cmp edx, 4
+je 2189f
+cmp edx, 5
+je 2191f
+cmp edx, 6
+je 2193f
+cmp edx, 7
+je 2195f
+cmp edx, 8
+je 2197f
+cmp edx, 9
+je 2199f
+cmp edx, 10
+je 2201f
+cmp edx, 11
+je 2203f
+jmp 2204f
+2203:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2204:
+jmp 2202f
+2201:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2202:
+jmp 2200f
+2199:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2200:
+jmp 2198f
+2197:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2198:
+jmp 2196f
+2195:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2196:
+jmp 2194f
+2193:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2194:
+jmp 2192f
+2191:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2192:
+jmp 2190f
+2189:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2190:
+jmp 2188f
+2187:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2188:
+jmp 2186f
+2185:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2186:
+jmp 2184f
+2183:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2184:
+jmp 2182f
+2181:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2182:
+2205:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2205b
+mov eax, 1
+jmp 2179f
+2178:
+mov eax, 0
+2179:
+jmp 2177f
+2176:
+mov eax, 0
+2177:
+215:
+jmp 213f
+212:
+mov ebx, 83
+mov eax, 64
+cmp ebp, eax
+jne 2206f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2208f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2210:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2210b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2211f
+cmp edx, 1
+je 2213f
+cmp edx, 2
+je 2215f
+cmp edx, 3
+je 2217f
+cmp edx, 4
+je 2219f
+cmp edx, 5
+je 2221f
+cmp edx, 6
+je 2223f
+cmp edx, 7
+je 2225f
+cmp edx, 8
+je 2227f
+cmp edx, 9
+je 2229f
+cmp edx, 10
+je 2231f
+cmp edx, 11
+je 2233f
+jmp 2234f
+2233:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2234:
+jmp 2232f
+2231:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2232:
+jmp 2230f
+2229:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2230:
+jmp 2228f
+2227:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2228:
+jmp 2226f
+2225:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2226:
+jmp 2224f
+2223:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2224:
+jmp 2222f
+2221:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2222:
+jmp 2220f
+2219:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2220:
+jmp 2218f
+2217:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2218:
+jmp 2216f
+2215:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2216:
+jmp 2214f
+2213:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2214:
+jmp 2212f
+2211:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2212:
+2235:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2235b
+mov eax, 1
+jmp 2209f
+2208:
+mov eax, 0
+2209:
+jmp 2207f
+2206:
+mov eax, 0
+2207:
+213:
+jmp 211f
+210:
+mov ebx, 67
+mov eax, 48
+cmp ebp, eax
+jne 2236f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2238f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2240:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2240b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2241f
+cmp edx, 1
+je 2243f
+cmp edx, 2
+je 2245f
+cmp edx, 3
+je 2247f
+cmp edx, 4
+je 2249f
+cmp edx, 5
+je 2251f
+cmp edx, 6
+je 2253f
+cmp edx, 7
+je 2255f
+cmp edx, 8
+je 2257f
+cmp edx, 9
+je 2259f
+cmp edx, 10
+je 2261f
+cmp edx, 11
+je 2263f
+jmp 2264f
+2263:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2264:
+jmp 2262f
+2261:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2262:
+jmp 2260f
+2259:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2260:
+jmp 2258f
+2257:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2258:
+jmp 2256f
+2255:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2256:
+jmp 2254f
+2253:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2254:
+jmp 2252f
+2251:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2252:
+jmp 2250f
+2249:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2250:
+jmp 2248f
+2247:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2248:
+jmp 2246f
+2245:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2246:
+jmp 2244f
+2243:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2244:
+jmp 2242f
+2241:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2242:
+2265:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2265b
+mov eax, 1
+jmp 2239f
+2238:
+mov eax, 0
+2239:
+jmp 2237f
+2236:
+mov eax, 0
+2237:
+211:
+jmp 29f
+28:
+mov ebx, 51
+mov eax, 32
+cmp ebp, eax
+jne 2266f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2268f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2270:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2270b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2271f
+cmp edx, 1
+je 2273f
+cmp edx, 2
+je 2275f
+cmp edx, 3
+je 2277f
+cmp edx, 4
+je 2279f
+cmp edx, 5
+je 2281f
+cmp edx, 6
+je 2283f
+cmp edx, 7
+je 2285f
+cmp edx, 8
+je 2287f
+cmp edx, 9
+je 2289f
+cmp edx, 10
+je 2291f
+cmp edx, 11
+je 2293f
+jmp 2294f
+2293:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2294:
+jmp 2292f
+2291:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2292:
+jmp 2290f
+2289:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2290:
+jmp 2288f
+2287:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2288:
+jmp 2286f
+2285:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2286:
+jmp 2284f
+2283:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2284:
+jmp 2282f
+2281:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2282:
+jmp 2280f
+2279:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2280:
+jmp 2278f
+2277:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2278:
+jmp 2276f
+2275:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2276:
+jmp 2274f
+2273:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2274:
+jmp 2272f
+2271:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2272:
+2295:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2295b
+mov eax, 1
+jmp 2269f
+2268:
+mov eax, 0
+2269:
+jmp 2267f
+2266:
+mov eax, 0
+2267:
+29:
+jmp 27f
+26:
+mov ebx, 47
+mov eax, 28
+cmp ebp, eax
+jne 2296f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2298f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2300:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2300b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2301f
+cmp edx, 1
+je 2303f
+cmp edx, 2
+je 2305f
+cmp edx, 3
+je 2307f
+cmp edx, 4
+je 2309f
+cmp edx, 5
+je 2311f
+cmp edx, 6
+je 2313f
+cmp edx, 7
+je 2315f
+cmp edx, 8
+je 2317f
+cmp edx, 9
+je 2319f
+cmp edx, 10
+je 2321f
+cmp edx, 11
+je 2323f
+jmp 2324f
+2323:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2324:
+jmp 2322f
+2321:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2322:
+jmp 2320f
+2319:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2320:
+jmp 2318f
+2317:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2318:
+jmp 2316f
+2315:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2316:
+jmp 2314f
+2313:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2314:
+jmp 2312f
+2311:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2312:
+jmp 2310f
+2309:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2310:
+jmp 2308f
+2307:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2308:
+jmp 2306f
+2305:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2306:
+jmp 2304f
+2303:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2304:
+jmp 2302f
+2301:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2302:
+2325:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2325b
+mov eax, 1
+jmp 2299f
+2298:
+mov eax, 0
+2299:
+jmp 2297f
+2296:
+mov eax, 0
+2297:
+27:
+jmp 25f
+24:
+mov ebx, 35
+mov eax, 20
+cmp ebp, eax
+jne 2326f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2328f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2330:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2330b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2331f
+cmp edx, 1
+je 2333f
+cmp edx, 2
+je 2335f
+cmp edx, 3
+je 2337f
+cmp edx, 4
+je 2339f
+cmp edx, 5
+je 2341f
+cmp edx, 6
+je 2343f
+cmp edx, 7
+je 2345f
+cmp edx, 8
+je 2347f
+cmp edx, 9
+je 2349f
+cmp edx, 10
+je 2351f
+cmp edx, 11
+je 2353f
+jmp 2354f
+2353:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2354:
+jmp 2352f
+2351:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2352:
+jmp 2350f
+2349:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2350:
+jmp 2348f
+2347:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2348:
+jmp 2346f
+2345:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2346:
+jmp 2344f
+2343:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2344:
+jmp 2342f
+2341:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2342:
+jmp 2340f
+2339:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2340:
+jmp 2338f
+2337:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2338:
+jmp 2336f
+2335:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2336:
+jmp 2334f
+2333:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2334:
+jmp 2332f
+2331:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2332:
+2355:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2355b
+mov eax, 1
+jmp 2329f
+2328:
+mov eax, 0
+2329:
+jmp 2327f
+2326:
+mov eax, 0
+2327:
+25:
+jmp 23f
+22:
+mov ebx, 34
+mov eax, 16
+cmp ebp, eax
+jne 2356f
+mov eax, ebx
+add eax, 11
+cmp ecx, eax
+jb 2358f
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, ecx
+sub eax, ebx
+sub eax, 3
+mov ebx, eax
+mov eax, 255
+2360:
+mov BYTE PTR [edi], al
+add edi, 1
+sub ebx, 1
+jne 2360b
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+cmp edx, 0
+je 2361f
+cmp edx, 1
+je 2363f
+cmp edx, 2
+je 2365f
+cmp edx, 3
+je 2367f
+cmp edx, 4
+je 2369f
+cmp edx, 5
+je 2371f
+cmp edx, 6
+je 2373f
+cmp edx, 7
+je 2375f
+cmp edx, 8
+je 2377f
+cmp edx, 9
+je 2379f
+cmp edx, 10
+je 2381f
+cmp edx, 11
+je 2383f
+jmp 2384f
+2383:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 10
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2384:
+jmp 2382f
+2381:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2382:
+jmp 2380f
+2379:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2380:
+jmp 2378f
+2377:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 7
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2378:
+jmp 2376f
+2375:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2376:
+jmp 2374f
+2373:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2374:
+jmp 2372f
+2371:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 81
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 64
+mov BYTE PTR [edi], al
+add edi, 1
+2372:
+jmp 2370f
+2369:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 65
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+2370:
+jmp 2368f
+2367:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 49
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+2368:
+jmp 2366f
+2365:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 45
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 96
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 1
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 101
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 28
+mov BYTE PTR [edi], al
+add edi, 1
+2366:
+jmp 2364f
+2363:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 33
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 9
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 43
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 14
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 3
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 26
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 20
+mov BYTE PTR [edi], al
+add edi, 1
+2364:
+jmp 2362f
+2361:
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 32
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 48
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 12
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 6
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 8
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 42
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 72
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 134
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 247
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 13
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 2
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 5
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 0
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 4
+mov BYTE PTR [edi], al
+add edi, 1
+mov eax, 16
+mov BYTE PTR [edi], al
+add edi, 1
+2362:
+2385:
+movzx eax, BYTE PTR [esi]
+mov BYTE PTR [edi], al
+add esi, 1
+add edi, 1
+sub ebp, 1
+jne 2385b
+mov eax, 1
+jmp 2359f
+2358:
+mov eax, 0
+2359:
+jmp 2357f
+2356:
+mov eax, 0
+2357:
+23:
+cmp eax, 0
+je 2386f
+mov esi, esp
+add esi, 64
+mov edi, esp
+add edi, 1088
+mov ecx, DWORD PTR [esp+2136]
+mov ebp, 0
+2388:
+movzx eax, BYTE PTR [esi]
+movzx edx, BYTE PTR [edi]
+xor eax, edx
+or ebp, eax
+add esi, 1
+add edi, 1
+sub ecx, 1
+cmp ecx, 0
+jne 2388b
+mov eax, 0
+sub eax, ebp
+or eax, ebp
+shr eax, 31
+xor eax, 1
+mov ecx, DWORD PTR [esp+40]
+and eax, ecx
+jmp 2387f
+2386:
+mov eax, 0
+2387:
+jmp 21f
+20:
+mov eax, 0
+21:
+lea esp, [esp+2112]
+mov edi, DWORD PTR [esp]
+mov ebp, DWORD PTR [esp+8]
+mov esi, DWORD PTR [esp+4]
+pop ebx
+pop ebx
+pop ebx
+pop ebx
+ret
+.p2align 6",
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+    )
+}
+
 /// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
