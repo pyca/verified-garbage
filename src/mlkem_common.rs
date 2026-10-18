@@ -101,8 +101,10 @@ impl Backend {
 /// extension and on x86-64 with AVX2 and AVX-512, with the features they
 /// need), its sizes, and the number of `SampleNTT` calls in
 /// each operation with the bound on the probability that one reaches its
-/// loop's bound (for the comments). On x86-64, encapsulation is `encaps_h`
-/// (and its instances), which takes the hash `H(ek)` the key keeps.
+/// loop's bound (for the comments). On x86-64, encapsulation with a key that
+/// keeps the hash `H(ek)` (one from key generation) is `encaps_h` (and its
+/// instances), which takes it; with one that does not (one from
+/// `from_bytes`), `encaps` (and its instances), which computes it.
 macro_rules! ml_kem {
     (
         name: $name:literal,
@@ -123,6 +125,8 @@ macro_rules! ml_kem {
         keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         encaps_h_avx2: ($encaps_h_avx2:path, $encaps_h_avx2_features:path),
         encaps_h_avx512: ($encaps_h_avx512:path, $encaps_h_avx512_features:path),
+        encaps_avx2: ($encaps_avx2:path, $encaps_avx2_features:path),
+        encaps_avx512: ($encaps_avx512:path, $encaps_avx512_features:path),
         decaps_avx2: ($decaps_avx2:path, $decaps_avx2_features:path),
         decaps_avx512: ($decaps_avx512:path, $decaps_avx512_features:path),
         ek: $ek:literal,
@@ -137,13 +141,15 @@ macro_rules! ml_kem {
         /// The features of the instances of key generation, encapsulation and
         /// decapsulation of each implementation but the baseline's.
         #[cfg(target_arch = "x86_64")]
-        const AVX2: &[$crate::cpu::Features] =
-            &[$keygen_avx2_features, $encaps_h_avx2_features, $decaps_avx2_features];
+        const AVX2: &[$crate::cpu::Features] = &[
+            $keygen_avx2_features, $encaps_h_avx2_features, $encaps_avx2_features, $decaps_avx2_features,
+        ];
         #[cfg(not(target_arch = "x86_64"))]
         const AVX2: &[$crate::cpu::Features] = &[];
         #[cfg(target_arch = "x86_64")]
-        const AVX512: &[$crate::cpu::Features] =
-            &[$keygen_avx512_features, $encaps_h_avx512_features, $decaps_avx512_features];
+        const AVX512: &[$crate::cpu::Features] = &[
+            $keygen_avx512_features, $encaps_h_avx512_features, $encaps_avx512_features, $decaps_avx512_features,
+        ];
         #[cfg(not(target_arch = "x86_64"))]
         const AVX512: &[$crate::cpu::Features] = &[];
         #[cfg(target_arch = "aarch64")]
@@ -171,13 +177,24 @@ macro_rules! ml_kem {
         type Scratch = [u64; $scratch];
 
         #[doc = concat!("An ", $name, " encapsulation key, which passed the check of FIPS 203 §7.2.")]
-        #[derive(Clone, PartialEq, Eq)]
+        #[derive(Clone)]
         pub struct $EncapsulationKey {
             bytes: [u8; $ek],
-            /// `H(ek)`, which encapsulation takes on x86-64.
+            /// `H(ek)`, which encapsulation takes on x86-64 when the key
+            /// keeps it (a key from key generation); without it (a key from
+            /// `from_bytes`), encapsulation computes it.
             #[cfg(target_arch = "x86_64")]
-            h: [u8; 32],
+            h: Option<[u8; 32]>,
         }
+
+        /// Two keys are equal if their bytes are (`h` is their hash, if kept).
+        impl PartialEq for $EncapsulationKey {
+            fn eq(&self, other: &Self) -> bool {
+                self.bytes == other.bytes
+            }
+        }
+
+        impl Eq for $EncapsulationKey {}
 
         impl core::fmt::Debug for $EncapsulationKey {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -204,7 +221,7 @@ macro_rules! ml_kem {
                     Ok($EncapsulationKey {
                         bytes: *bytes,
                         #[cfg(target_arch = "x86_64")]
-                        h: $crate::hashes::sha3::Sha3_256::digest(bytes),
+                        h: None,
                     })
                 } else {
                     Err(Error::InvalidKey)
@@ -251,34 +268,38 @@ macro_rules! ml_kem {
                 let mut ct = [0u8; $ct];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
-                // SAFETY: `self.bytes`, `self.h` (on x86-64), `m`, `key`,
-                // `ct` and `scratch` are valid for reads (and, for the last
-                // three, writes) of their sizes; they are distinct Rust
-                // objects, so they do not overlap each other or the stack, or
-                // wrap around the end of the address space. `self.bytes`
-                // passed the encapsulation key check, and `self.h` is its
-                // SHA3-256 hash `H(ek)`: `from_bytes` computes it, and the
-                // key generation writes it in the decapsulation key, from
-                // which `from_seed` takes it. The caller ensures the CPU has
-                // the features of `backend`.
+                // SAFETY: `self.bytes`, `h` (on x86-64), `m`, `key`, `ct` and
+                // `scratch` are valid for reads (and, for the last three,
+                // writes) of their sizes; they are distinct Rust objects, so
+                // they do not overlap each other or the stack, or wrap around
+                // the end of the address space. `self.bytes` passed the
+                // encapsulation key check, and `h`, if the key keeps it, is
+                // its SHA3-256 hash `H(ek)`: the key generation writes it in
+                // the decapsulation key, from which `from_seed` takes it. The
+                // caller ensures the CPU has the features of `backend`.
+                #[cfg(not(target_arch = "x86_64"))]
                 let r = unsafe {
                     match backend {
-                        #[cfg(not(target_arch = "x86_64"))]
                         Backend::Scalar => $encaps(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Scalar => $encaps_h(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3 => $encaps_x2_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3KeccakSha3 => {
                             $encaps_x2_sha3_keccak_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr())
                         }
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $encaps_h_avx2(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => {
-                            $encaps_h_avx512(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr())
-                        }
+                    }
+                };
+                // SAFETY: as above.
+                #[cfg(target_arch = "x86_64")]
+                let r = unsafe {
+                    let (ek, s) = (&self.bytes, scratch.as_mut_ptr());
+                    match (backend, &self.h) {
+                        (Backend::Scalar, Some(h)) => $encaps_h(ek, h, m, &mut key, &mut ct, s),
+                        (Backend::Scalar, None) => $encaps(ek, m, &mut key, &mut ct, s),
+                        (Backend::Avx2, Some(h)) => $encaps_h_avx2(ek, h, m, &mut key, &mut ct, s),
+                        (Backend::Avx2, None) => $encaps_avx2(ek, m, &mut key, &mut ct, s),
+                        (Backend::Avx512, Some(h)) => $encaps_h_avx512(ek, h, m, &mut key, &mut ct, s),
+                        (Backend::Avx512, None) => $encaps_avx512(ek, m, &mut key, &mut ct, s),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -352,7 +373,7 @@ macro_rules! ml_kem {
                     ek: $EncapsulationKey {
                         bytes: [0; $ek],
                         #[cfg(target_arch = "x86_64")]
-                        h: [0; 32],
+                        h: None,
                     },
                     dk: [0; $dk],
                 };
@@ -398,7 +419,11 @@ macro_rules! ml_kem {
                 // `H(ek)`, which the decapsulation key holds before `z`
                 // (FIPS 203 Algorithm 16).
                 #[cfg(target_arch = "x86_64")]
-                key.ek.h.copy_from_slice(&key.dk[$dk - 64..$dk - 32]);
+                {
+                    let mut h = [0u8; 32];
+                    h.copy_from_slice(&key.dk[$dk - 64..$dk - 32]);
+                    key.ek.h = Some(h);
+                }
                 Ok(key)
             }
 
@@ -469,6 +494,41 @@ macro_rules! ml_kem {
                     // NO-COVERAGE-END
                 }
                 Ok(key)
+            }
+        }
+
+        #[cfg(all(test, target_arch = "x86_64"))]
+        mod backend_tests {
+            use super::{Backend, $DecapsulationKey, $EncapsulationKey, AVX2, AVX512};
+
+            /// Each instance the CPU can run agrees with the baseline's, with
+            /// a key that keeps `H(ek)` (from key generation, encapsulating
+            /// with `encaps_h`) and with one that does not (from
+            /// `from_bytes`, encapsulating with `encaps`, which hashes it).
+            #[test]
+            fn kept_and_computed_hash_agree() {
+                let f = $crate::cpu::detected();
+                let backends = [
+                    (Backend::Scalar, true),
+                    (Backend::Avx2, f.contains(const { $crate::cpu::Features::all(AVX2) })),
+                    (Backend::Avx512, f.contains(const { $crate::cpu::Features::all(AVX512) })),
+                ];
+                for i in 0..2u8 {
+                    let seed: [u8; 64] = core::array::from_fn(|j| (j as u8).wrapping_mul(29) ^ i);
+                    let m: [u8; 32] = core::array::from_fn(|j| (j as u8).wrapping_mul(13) ^ i);
+                    let dk = $DecapsulationKey::from_seed(&seed).unwrap();
+                    let kept = dk.encapsulation_key();
+                    let computed = $EncapsulationKey::from_bytes(kept.as_bytes()).unwrap();
+                    assert!(kept.h.is_some() && computed.h.is_none() && &computed == kept);
+                    // SAFETY: the baseline needs no feature.
+                    let want = unsafe { kept.encapsulate_with(&m, Backend::Scalar) }.unwrap();
+                    for (backend, _) in backends.iter().filter(|b| b.1) {
+                        // SAFETY: the CPU has the features of `backend`'s instances.
+                        assert_eq!(unsafe { kept.encapsulate_with(&m, *backend) }.unwrap(), want);
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { computed.encapsulate_with(&m, *backend) }.unwrap(), want);
+                    }
+                }
             }
         }
 

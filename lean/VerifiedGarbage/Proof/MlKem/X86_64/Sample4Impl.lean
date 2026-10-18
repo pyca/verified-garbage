@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
+public import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 import Mathlib.Tactic.Conv
@@ -37,7 +38,10 @@ others call nothing).
 
 Each also comes with the computation of several outputs of `PRF₂` that its
 callers inline (`Callee4.prfs`): one at a time for the baseline, and four
-at a time with AVX2 for `vg_mlkem_sample_ntt4_avx2` (`Prfs.lean`).
+at a time with AVX2 for `vg_mlkem_sample_ntt4_avx2` (`Prfs.lean`); and, for
+those with AVX2, the fragment encapsulation inlines to sample three entries
+of the matrix while absorbing blocks of `ek` (`Callee4.batchH`,
+`Sample4.sampleH`), with its proofs (`BatchHOk`).
 -/
 
 @[expose] public section
@@ -45,6 +49,32 @@ at a time with AVX2 for `vg_mlkem_sample_ntt4_avx2` (`Prfs.lean`).
 namespace VG.Proof.MlKem.X86_64
 
 open VG VG.X86_64
+
+/-- What encapsulation needs of a fragment it inlines (`Callee4.batchH`):
+it meets `sampleHK`, in constant time, calls nothing, keeps MXCSR's control
+bits and never writes the stack pointer. -/
+structure BatchHOk (b : Prog isa) : Prop where
+  ok : ∀ s, sampleHK.pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ sampleHK.post s s'
+  ct : ConstantTime isa sampleHK.pre sampleHK.pub b
+  noCalls : b.noCalls = true
+  ctl : ctlOk b = true
+  sp : b.all (fun i => !isa.writesSp i) = true
+
+/-- The checks of every instruction of a fragment, at once. -/
+def BatchHOk.checks (b : Prog isa) : Bool :=
+  b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i)
+
+theorem BatchHOk.of_checks {b : Prog isa} (hv : ∀ s, sampleHK.pre s → ∃ t s', Exec isa b s t s' ∧
+    abiPreserved s s' ∧ sampleHK.post s s') (hct : ConstantTime isa sampleHK.pre sampleHK.pub b)
+    (h : BatchHOk.checks b = true) : BatchHOk b := by
+  simp only [BatchHOk.checks, Bool.and_eq_true] at h
+  exact ⟨hv, hct, h.1.1, h.1.2, Code.all_of_allInstrs h.2⟩
+
+theorem sampleH_checks (fast : Bool) : BatchHOk.checks (Impl.MlKem.X86_64.Sample4.sampleH fast) = true := by
+  cases fast <;> decide +kernel
+
+theorem sampleH_ok (fast : Bool) : BatchHOk (Impl.MlKem.X86_64.Sample4.sampleH fast) :=
+  .of_checks (SH.correct (fast := fast)) (SH.ct (fast := fast)) (sampleH_checks fast)
 
 /-- An implementation of `vg_mlkem_sample_ntt4` on x86-64. -/
 structure Sample4Impl where
@@ -74,6 +104,8 @@ structure Sample4Impl where
   /-- The polynomial arithmetic that goes with it is correct, constant
   time, and safe to call. -/
   arith : ArithOk callee.arith
+  /-- Its fragment for encapsulation, if any, is verified. -/
+  batchH : ∀ b, callee.batchH = some b → BatchHOk b
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -111,6 +143,7 @@ def scalar : Sample4Impl where
   prfs_ctl := prfsScalar_ctl
   prfs_sp := prfsScalar_sp
   arith := ArithOk.sse
+  batchH := fun _ h => nomatch h
   suffix := ""
   prfsDoc := "one at a time"
   features := []
@@ -131,6 +164,7 @@ def avx2 : Sample4Impl where
   prfs_ctl := prfsAvx2_ctl
   prfs_sp := prfsAvx2_sp
   arith := ArithOk.avx2
+  batchH := fun _ h => Option.some.inj h ▸ sampleH_ok false
   suffix := "_avx2"
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
@@ -151,6 +185,7 @@ def avx512 : Sample4Impl where
   prfs_ctl := prfsAvx2_ctl
   prfs_sp := prfsAvx2_sp
   arith := ArithOk.avx2
+  batchH := fun _ h => Option.some.inj h ▸ sampleH_ok true
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2", "avx512f", "avx512vl"]

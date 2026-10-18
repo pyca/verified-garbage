@@ -37,11 +37,13 @@
 //! `_x2_sha3_keccak_sha3` ones the SHA-3 extension's
 //! `vg_keccak_f1600_sha3`, faster on Apple's, on which they are chosen.
 //!
-//! On x86-64, encapsulation is `vg_mlkem768_encaps_h` (contract
-//! `encapsHContract`), which takes the hash `H(ek)` of the encapsulation key
-//! (FIPS 203 §4.1) rather than computing it each time: an
-//! [`EncapsulationKey768`] keeps it, computed when the key is checked or
-//! taken from the decapsulation key, which holds it.
+//! On x86-64, an [`EncapsulationKey768`] from key generation keeps the hash
+//! `H(ek)` of the key (FIPS 203 §4.1), which the decapsulation key holds,
+//! and encapsulation with it is `vg_mlkem768_encaps_h` (contract
+//! `encapsHContract`), which takes it rather than computing it each time.
+//! One from [`EncapsulationKey768::from_bytes`] does not, and encapsulation
+//! with it is `vg_mlkem768_encaps`, which computes it: with AVX2, in the fourth
+//! of the four Keccak states that sample the matrix three entries at a time.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -78,6 +80,8 @@ crate::mlkem_common::ml_kem! {
     keygen_avx512: (crate::arch::mlkem768::vg_mlkem768_keygen_avx512, crate::arch::mlkem768::VG_MLKEM768_KEYGEN_AVX512_FEATURES),
     encaps_h_avx2: (crate::arch::mlkem768::vg_mlkem768_encaps_h_avx2, crate::arch::mlkem768::VG_MLKEM768_ENCAPS_H_AVX2_FEATURES),
     encaps_h_avx512: (crate::arch::mlkem768::vg_mlkem768_encaps_h_avx512, crate::arch::mlkem768::VG_MLKEM768_ENCAPS_H_AVX512_FEATURES),
+    encaps_avx2: (crate::arch::mlkem768::vg_mlkem768_encaps_avx2, crate::arch::mlkem768::VG_MLKEM768_ENCAPS_AVX2_FEATURES),
+    encaps_avx512: (crate::arch::mlkem768::vg_mlkem768_encaps_avx512, crate::arch::mlkem768::VG_MLKEM768_ENCAPS_AVX512_FEATURES),
     decaps_avx2: (crate::arch::mlkem768::vg_mlkem768_decaps_avx2, crate::arch::mlkem768::VG_MLKEM768_DECAPS_AVX2_FEATURES),
     decaps_avx512: (crate::arch::mlkem768::vg_mlkem768_decaps_avx512, crate::arch::mlkem768::VG_MLKEM768_DECAPS_AVX512_FEATURES),
     ek: 1184,

@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
@@ -35,6 +37,20 @@ theorem kemWf768 : KemWf kem768 := by kem_wf
 theorem kgWf768 : KeyGen.KgWf kem768 := by kem_wf kemWf768
 theorem ecWf768 : Encaps.EcWf kem768 := by kem_wf kemWf768
 theorem dcWf768 : Decaps.DcWf kem768 := by kem_wf kemWf768
+theorem ekWf768 : Ek.EkWf kem768 := by kem_wf ecWf768
+theorem ekfWf768 : EkF.EkFWf kem768 := by kem_wf ecWf768
+theorem ekhWf768 : EkF.EkHWf kem768 := by kem_wf ekfWf768
+
+/-- The taint checks of the fused encapsulation's pieces. -/
+theorem ektWf768 : EkF.EkTWf kem768 where
+  rT := ⟨_, by taint_decide⟩
+  zT := ⟨_, by taint_decide⟩
+  hT := by
+    intro i hi
+    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768 = 3 by decide] at hi; omega
+    rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  hcT := ⟨_, by taint_decide⟩
+  ij := by decide +kernel
 
 /-- The compressions it calls. -/
 theorem calls768 : KemCalls kem768 compressWidths compressWidths := ⟨Codecs.ceI, Codecs.ddI, by decide, by decide⟩
@@ -95,6 +111,28 @@ theorem encapsH_verified (v : Sample4Impl) :
           | rfl
           | decide
           | exact Region.disjoint_of_sep (by decide) }
+
+theorem encaps_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem768 v.callee) = true := by
+  unfold kemEncaps
+  split
+  · s4_ctl v
+  · rename_i b hb
+    have hB := v.batchH b hb
+    ek_ctl v b hB
+
+theorem encaps_verified (v : Sample4Impl) :
+    Verified X86_64.target (kemEncaps kem768 v.callee) (Spec.MlKem.encapsContract X86_64.abi 32) :=
+  Verified.of_correct (kemEncaps_correct v ekWf768 ekhWf768 calls768 (encaps_ctl v))
+    (kemEncaps_ct v ekWf768 ekhWf768 ektWf768 calls768)
+    { pre := by sig_implies_pre [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+      post := by sig_implies_post [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768]
+      pub := by
+        intro s₁ s₂ _ _ h
+        sig_pub [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs] at h
+        obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
+        exact ⟨hdi, hsi, hdx, hcx, h8, hsp, map_toNat_inj hb⟩
+      sat := by sig_implies_sat [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [encapsSat]
+        using encapsSat 1184 1088 32768 }
 
 theorem decaps_verified (v : Sample4Impl) :
     Verified X86_64.target (kemDecaps kem768 v.callee) (Spec.MlKem.decapsContract X86_64.abi 32) :=
