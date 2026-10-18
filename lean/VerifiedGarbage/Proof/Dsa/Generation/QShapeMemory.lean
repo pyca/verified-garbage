@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.IntervalCases
 
 /-! Byte-level characterization shared by native subgroup candidate shapers. -/
 @[expose] public section
@@ -14,7 +13,8 @@ open VG VG.Proof.Bignum VG.Proof.Ffdh.ParameterCandidate
 theorem topByte_seven (b : Byte) : topByte 7 b = b ||| 128 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  interval_cases i <;> simp [topByte]
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+  rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [topByte]
 
 theorem qShape_memory {m : Mem} {op : Addr} {bs : List Byte}
     (hn : 2 ≤ bs.length) (hb : bs.length < 2 ^ 64)
