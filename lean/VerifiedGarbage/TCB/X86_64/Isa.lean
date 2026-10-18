@@ -476,7 +476,9 @@ VPMADD52LUQ and VPMADD52HUQ of any register. AVX512F for KMOVW k1, r32
 a write mask (`EVEX.512.F3.0F.W1 6F /r`, `7F /r`), and so for `kLoad` and
 `kStore`. AVX512BW for KMOVQ k1, r64 (`VEX.L0.F2.0F.W1 92 /r`) and for the
 EVEX.512 VMOVDQU8 load and store with a write mask (`EVEX.512.F2.0F.W0 6F
-/r`, `7F /r`), and so for `kLoad8` and `kStore8`.
+/r`, `7F /r`), and so for `kLoad8` and `kStore8`, which list AVX512F too:
+software must check AVX512F before any AVX-512 subset (SDM Vol. 1 §15.2,
+"Detection of AVX-512 Foundation Instructions", and §15.3).
 
 Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "AESDEC",
 "AESDECLAST", "PCLMULQDQ", "PSHUFB", "PSLLDQ" and "PSRLDQ", opcode tables'
@@ -534,7 +536,7 @@ def Instr.requires : Instr → List String
   | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. =>
     ["avx512f"]
   | .kLoad .. | .kStore .. => ["avx512f"]
-  | .kLoad8 .. | .kStore8 .. => ["avx512bw"]
+  | .kLoad8 .. | .kStore8 .. => ["avx512f", "avx512bw"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
