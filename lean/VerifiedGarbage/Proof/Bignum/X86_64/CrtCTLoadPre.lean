@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtLoadPre
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtLoadPre
 import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -94,16 +96,32 @@ theorem LpGood.of_outside {j : Nat} {p : LPub} {s t : State} {rs : List Reg} (h 
     (List.mem_singleton_self _) ho' (Nat.le_refl _) (Nat.le_refl _)).hdr hg.hdr⟩, h1, h2, h3, h4,
     fun i hi => by rw [k.2.1, k.2.2]; exact h5 i hi, h6⟩
 
-theorem loadPre_ct {α : Type} (π : α → LPub) {j : Nat} {po : List Instr} {Q : α → State → Prop}
+/-- `loadPre`'s first part: up to the modulus' array in `r10`. -/
+def lpHead (j : Nat) (po : List Instr) : List (Prog isa) := [
+  .seq (.block (([.mov .rsi (.mem (Crt.stk 13))] : List Instr) ++ po ++ ([.alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rsi (.reg .rax),
+    .mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))] : List Instr))) zeroAccLoop,
+  .block [.mov .rbx (.reg .r8)],
+  copyWords,
+  .block [.mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)]]
+
+/-- `loadPre`'s comparison and mask. -/
+def lpTail : List (Prog isa) := [
+  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
+  .block [.mov .r15 (.reg .rbp)],
+  wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .alu .and .rax (.reg .r15), .store (ix .rbx .r14) .rax]]
+
+theorem loadPre_split (j : Nat) (po : List Instr) : Crt.loadPre j po = lpHead j po ++ lpTail := rfl
+
+theorem loadPreHead_ct {α : Type} (π : α → LPub) {j : Nat} {po : List Instr} {Q : α → State → Prop}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rax, .rsi, .rdi]) (.block [.alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rsi (.reg .rax),
       .mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))]) hc).isSome = true)
     (hQ : ∀ a s t, Q a s → t.mem = s.mem → Keep [.rsi] s t → Q a t)
     (hpo : RelCT isa (Two fun a s => LpA j (π a) s ∧ Q a s) (.block po) (Two (LpB j))) :
-    RelCT isa (Two fun a s => LpPre j (π a) s ∧ Q a s) (seqs (Crt.loadPre j po)) fun _ _ => True := by
-  unfold Crt.loadPre
-  simp only [seqs]
+    RelCT isa (Two fun a s => LpPre j (π a) s ∧ Q a s) (seqs (lpHead j po)) (Two (LpF j)) := by
+  simp only [lpHead, seqs]
   refine RelCT.seq (R := Two (LpC j)) (RelCT.seq (R := Two (LpC j))
     (RelCT.block_append (RelCT.seq (RelCT.block_append (RelCT.seq ?_ hpo)) ?_)) ?_) ?_
   -- `pre` into `rsi`.
@@ -151,20 +169,20 @@ theorem loadPre_ct {α : Type} (π : α → LPub) {j : Nat} {po : List Instr} {Q
       ⟨hgd.of_outside ho (Nat.le_refl _) k (by decide), (k.gpr (by decide)).trans hsi,
         (k.gpr (by decide)).trans h8, (k.gpr (by decide)).trans h12⟩
   -- `rbx := r8`.
-  refine ct_taint [.r8] (Ψ := LpD j) (pins_of (fun p _ => off p.W (slot p.w j)) fun p s h r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.1) (by taint_decide) (fun p s h => ?_) ?_
+  refine RelCT.seq (two_piece [.r8] (Ψ := LpD j) (pins_of (fun p _ => off p.W (slot p.w j)) fun p s h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.1) (by taint_decide) fun p s h => ?_) ?_
   · obtain ⟨hgd, hsi, h8, h12⟩ := h
     exact WP.mono (WP.keep [.rbx] (Q := fun t => t.gpr .rbx = off p.W (slot p.w j) ∧ t.mem = s.mem)
       (by xrun [h8]) rfl) fun t ⟨⟨h1, hm⟩, k⟩ =>
       ⟨hgd.congr hm k (by decide), (k.gpr (by decide)).trans hsi, h1, (k.gpr (by decide)).trans h12⟩
   -- `[j] := pre`'s words.
-  refine ct_taint [.rsi, .rbx, .r12] (Ψ := LpE j) (pins_of (fun p r => if r = .rsi then off p.P (8 * p.d) else
+  refine RelCT.seq (two_piece [.rsi, .rbx, .r12] (Ψ := LpE j) (pins_of (fun p r => if r = .rsi then off p.P (8 * p.d) else
       if r = .rbx then off p.W (slot p.w j) else BitVec.ofNat 64 p.w) fun p s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact h.2.1
         · exact h.2.2.1
-        · exact h.2.2.2) (by taint_decide) (fun p s h => ?_) ?_
+        · exact h.2.2.2) (by taint_decide) fun p s h => ?_) ?_
   · obtain ⟨hgd, hsi, hbx, h12⟩ := h
     obtain ⟨minv, hg, hZ, hw, hw', hj, hrd, hsep⟩ := id hgd
     have sj := Nat.le_trans (slot_le (w := p.w) hj) hZ
@@ -175,23 +193,44 @@ theorem loadPre_ct {α : Type} (π : α → LPub) {j : Nat} {po : List Instr} {Q
       fun t ⟨_, _, ho, k⟩ => ⟨hgd.of_outside ho (by omega) k (by decide), (k.gpr (by decide)).trans hbx,
         (k.gpr (by decide)).trans h12⟩
   -- The modulus' array.
-  refine ct_taint [.rdi] (Ψ := LpF j) (pins_of (fun p _ => p.W) fun p s h r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.1.rdi) (by taint_decide) (fun p s h => ?_) ?_
-  · obtain ⟨hgd, hbx, h12⟩ := h
-    obtain ⟨minv, hg, hZ, -, -, -, -, -⟩ := id hgd
-    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.W (8 * i)) 8 := fun i hi =>
-      hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_arith)
-    exact WP.mono (WP.keep [.r10, .rbp] (Q := fun t => t.gpr .r10 = off p.W (slot p.w aN))
-      (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr aN) (by unfold sArr aN; omega_arith),
-        hg.hdr.harr aN (by decide)]) rfl) fun t ⟨h1, k⟩ =>
-      ⟨(k.gpr (by decide)).trans hbx, (k.gpr (by decide)).trans h12, h1, (k.gpr (by decide)).trans hg.rdi⟩
-  -- The comparison and the mask.
-  exact two_taint [.rbx, .r12, .r10] (pins_of (fun p r => if r = .rbx then off p.W (slot p.w j) else
-      if r = .r12 then BitVec.ofNat 64 p.w else off p.W (slot p.w aN)) fun p s h r hr => by
+  refine two_piece [.rdi] (pins_of (fun p _ => p.W) fun p s h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.1.rdi) (by taint_decide) fun p s h => ?_
+  obtain ⟨hgd, hbx, h12⟩ := h
+  obtain ⟨minv, hg, hZ, -, -, -, -, -⟩ := id hgd
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.W (8 * i)) 8 := fun i hi =>
+    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_arith)
+  exact WP.mono (WP.keep [.r10, .rbp] (Q := fun t => t.gpr .r10 = off p.W (slot p.w aN))
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr aN) (by unfold sArr aN; omega_arith),
+      hg.hdr.harr aN (by decide)]) rfl) fun t ⟨h1, k⟩ =>
+    ⟨(k.gpr (by decide)).trans hbx, (k.gpr (by decide)).trans h12, h1, (k.gpr (by decide)).trans hg.rdi⟩
+
+/-- The comparison and the mask, then `rest` reading only from the
+workspace. -/
+theorem lpTail_ct {j : Nat} {rest : List (Prog isa)} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rbx, .r12, .r10, .rdi]) (seqs (lpTail ++ rest)) hc).isSome = true) :
+    RelCT isa (Two (LpF j)) (seqs (lpTail ++ rest)) fun _ _ => True :=
+  two_taint [.rbx, .r12, .r10, .rdi] (pins_of (fun p r => if r = .rbx then off p.W (slot p.w j) else
+      if r = .r12 then BitVec.ofNat 64 p.w else if r = .r10 then off p.W (slot p.w aN) else p.W) fun p s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
+        rcases hr with rfl | rfl | rfl | rfl
         · exact h.1
         · exact h.2.1
-        · exact h.2.2.1) (by taint_decide)
+        · exact h.2.2.1
+        · exact h.2.2.2) hT
+
+/-- `loadPre j po` is constant time, given that `po` is, followed by `rest`
+reading only from the workspace. -/
+theorem loadPre_ct {α : Type} (π : α → LPub) {j : Nat} {po : List Instr} {Q : α → State → Prop}
+    {rest : List (Prog isa)} {hc hc' : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rax, .rsi, .rdi]) (.block [.alu .add .rax (.reg .rax),
+      .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rsi (.reg .rax),
+      .mov .r8 (.mem (hdr (sArr j))), .mov .r12 (.mem (hdr sW))]) hc).isSome = true)
+    (hT' : (taint.check (Taint.ofRegs [.rbx, .r12, .r10, .rdi]) (seqs (lpTail ++ rest)) hc').isSome = true)
+    (hQ : ∀ a s t, Q a s → t.mem = s.mem → Keep [.rsi] s t → Q a t)
+    (hpo : RelCT isa (Two fun a s => LpA j (π a) s ∧ Q a s) (.block po) (Two (LpB j))) :
+    RelCT isa (Two fun a s => LpPre j (π a) s ∧ Q a s) (seqs (Crt.loadPre j po ++ rest)) fun _ _ => True := by
+  rw [loadPre_split, List.append_assoc]
+  exact RelCT.seqs_append (by simp [lpHead]) (by simp [lpTail])
+    (RelCT.seq (loadPreHead_ct π hT hQ hpo) (lpTail_ct hT'))
 
 end VG.Proof.Bignum.X86_64
