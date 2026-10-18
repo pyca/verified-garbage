@@ -54,18 +54,4 @@ theorem doubleLoop_ok (s : State) {base : BitVec 32} {len w c : Nat}
   · refine ⟨0, by omega, hc, h, ?_, rfl, Frame.refl _ _, Rest.refl _ _⟩
     simp only [Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt h.operand]
 
-/-- Starting from one, 128*w doublings produce R-squared for R=2^(64*w). -/
-theorem r2_from_one (s : State) {base : BitVec 32} {len w : Nat}
-    (h : DoubleLoopReady base len w (128 * w) s) (countFits : 128 * w < 2 ^ 32)
-    (one : numAt s.mem (State.addr base) w 4 = 1) :
-    WP isa doubleLoop s fun t => DoubleLoopReady base len w 0 t ∧
-      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % numAt s.mem (State.addr base) w 0 ∧
-      numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have hw : 2 ≤ w := h.width ▸ h.layout.1
-  refine WP.mono (doubleLoop_ok s h (by omega) countFits) ?_
-  rintro t ⟨ready, value, modulus, frame, rest⟩
-  rw [one, Nat.mul_one] at value
-  exact ⟨ready, value, modulus, frame, rest⟩
-
 end VG.Proof.Bignum.Arm
