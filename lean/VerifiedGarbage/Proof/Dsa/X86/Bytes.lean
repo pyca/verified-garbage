@@ -47,7 +47,7 @@ theorem ebx_down {x e : BitVec 32} {j : Nat} (h : x + BitVec.ofNat 32 (4 * j) = 
   omega
 
 /-- Zero words from `[o + 4c]`. -/
-theorem zeroPad_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o c K : Nat}
+theorem zeroPadInline_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o c K : Nat}
     (hK : o + 4 * (c + K) ≤ size) :
     ∀ k ≤ K, WP isa (.block ((List.range k).flatMap fun j =>
       [.mov .eax (.imm 0), .store (sc (o + 4 * (c + j))) .eax])) s fun u =>
@@ -58,7 +58,7 @@ theorem zeroPad_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append (WP.mono (zeroPad_ok hs hK k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
+    refine WP.block_append (WP.mono (zeroPadInline_ok hs hK k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
     have hs₁ := hs.of_keeps k₁ (by decide)
     refine wp_movS (v := 0) rfl fun s₂ u₂ _ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
@@ -72,6 +72,28 @@ theorem zeroPad_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     · rw [O₂.w32 (by omega) (by omega), e₁ j h]
     · obtain rfl : j = k := by omega
       rw [m₃.mem, u₂.mem, w32_write_self, u₂.gpr]; rfl
+
+theorem zeroPad_ok {s : State} {base : Addr} {size o k : Nat}
+    (hs : Scr s base size) (hz : o + 4 * k ≤ size) :
+    WP isa (zeroPad o k) s fun t =>
+      (∀ j < k, w32 t.mem base (o + 4 * j) = 0) ∧
+      Keeps [.eax, .ebp, .edx] s t ∧ Outside base o (4 * k) s.mem t.mem := by
+  unfold zeroPad
+  split
+  · have H := zeroPadInline_ok hs (o := o) (c := 0) (K := k) (by omega) k (Nat.le_refl _)
+    simp only [Nat.zero_add, Nat.mul_zero, Nat.add_zero] at H
+    exact WP.mono H fun _ ⟨V, K, O⟩ => ⟨V, K.mono (by decide), O⟩
+  · refine WP.mono (zerosW_ok hs (by omega) hz) fun t ⟨O, V, K⟩ => ⟨?_, K, O⟩
+    intro j hj
+    have h := val32_append t.mem base o j (k - j)
+    rw [Nat.add_sub_of_le (by omega), V] at h
+    have hk : k - j = (k - j - 1) + 1 := by omega
+    rw [hk, val32] at h
+    have H : 2 ^ (32 * j) * (w32 t.mem base (o + 4 * j) +
+        2 ^ 32 * val32 t.mem base (o + 4 * j + 4) (k - j - 1)) = 0 := by omega
+    rcases Nat.mul_eq_zero.mp H with H | H
+    · exact absurd H (Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos _))
+    · omega
 
 theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat}
     (hs : Scr s base size) (ho : out + 8 * n ≤ size)
@@ -130,13 +152,13 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat}
           ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
   · intro t ⟨K, _, O, V⟩
     have ht := hs.of_keeps K (by decide)
-    refine WP.mono (zeroPad_ok ht (o := out) (c := len / 4) (K := 2 * n - len / 4) (by omega) _ (Nat.le_refl _))
+    refine WP.mono (zeroPad_ok ht (o := out + 4 * (len / 4)) (k := 2 * n - len / 4) (by omega))
       fun u ⟨e, K₂, O₂⟩ => ⟨?_, K.trans (K₂.mono (by decide)), ?_⟩
     · rw [wordsVal_eq_val32]
       refine VG.Proof.Weierstrass.val32_eq_ofBytes_len _ _ _ _ out (2 * n) len h4 (by omega) fun j hj => ?_
       rcases Nat.lt_or_ge j (len / 4) with h | h
       · rw [O₂.w32 (by omega) (by omega), V j h]
-      · rw [show j = len / 4 + (j - len / 4) by omega, e _ (by omega), ldWord32,
+      · rw [show j = len / 4 + (j - len / 4) by omega, show out + 4 * (len / 4 + (j - len / 4)) = out + 4 * (len / 4) + 4 * (j - len / 4) by omega, e _ (by omega), ldWord32,
           ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
     · exact (O.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
 
