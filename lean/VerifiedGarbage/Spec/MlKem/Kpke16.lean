@@ -86,10 +86,10 @@ def VecReducedW (w : Nat) (m : Mem) (p : Addr) (l : Nat) : Prop :=
 
 /-! ## Sampling -/
 
-/-- `vg_mlkem16_sample_ntt(seed: *const [u8; 34], a: *mut [u16; 256], scratch: *mut [u64; 386]) -> u32`. -/
+/-- `vg_mlkem16_sample_ntt(seed: *const [u8; 34], a: *mut [u16; 256], scratch: *mut [u64; 256]) -> u32`. -/
 def sampleNTT16Sig : Sig where
   params := [("seed", .array false .u8 34), ("a", .array true .u16 256),
-    ("scratch", .array true .u64 386)]
+    ("scratch", .array true .u64 256)]
   ret := some .u32
 
 /-- With the 34 bytes `B` at `seed`: writes `SampleNTT(B)` (Algorithm 7) to
@@ -104,10 +104,10 @@ def sampleNTT16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun seed _a _scratch m => (bytesAt m seed 34).map (·.toNat))
 
-/-- `vg_mlkem16_sample_ntt4(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1538]) -> u32`. -/
+/-- `vg_mlkem16_sample_ntt4(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1024]) -> u32`. -/
 def sampleNTT4_16Sig : Sig where
   params := [("seeds", .array false .u8 136), ("a", .array true .u16 1024),
-    ("scratch", .array true .u64 1538)]
+    ("scratch", .array true .u64 1024)]
   ret := some .u32
 
 /-- Polynomial `k` of four with 16-bit coefficients at `a`: from byte
