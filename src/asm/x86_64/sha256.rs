@@ -3040,11 +3040,8 @@ pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_compress_shani(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 70]) {
     core::arch::naked_asm!(
-        r"movabs rax, 289644378169868803
-movq xmm8, rax
-movabs rax, 868365760874482187
-movq xmm11, rax
-punpcklqdq xmm8, xmm11
+        r"lea rax, [rip + {VG_SHA256_SHANI_K}]
+movdqu xmm8, XMMWORD PTR [rax+256]
 movdqu xmm1, XMMWORD PTR [rdi]
 movdqu xmm2, XMMWORD PTR [rdi+16]
 pshufd xmm1, xmm1, 177
@@ -3053,623 +3050,166 @@ movdqa xmm7, xmm2
 punpcklqdq xmm7, xmm1
 punpckhqdq xmm2, xmm1
 movdqa xmm1, xmm7
-cmp rdx, 1
-je 20f
 test rdx, rdx
-je 22f
-movdqa xmm9, xmm1
-movdqa xmm10, xmm2
-movdqu xmm3, XMMWORD PTR [rsi]
-pshufb xmm3, xmm8
-movabs rax, 8158064640682241944
-movq xmm0, rax
-movabs rax, -1606136187322303537
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx], xmm0
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm4, XMMWORD PTR [rsi+16]
-pshufb xmm4, xmm8
-movabs rax, 6480981066509632091
-movq xmm0, rax
-movabs rax, -6116909922501295452
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+16], xmm0
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm5, XMMWORD PTR [rsi+32]
-pshufb xmm5, xmm8
-movabs rax, 1334009978109274776
-movq xmm0, rax
-movabs rax, 6128411470023722430
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+32], xmm0
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm6, XMMWORD PTR [rsi+48]
-pshufb xmm6, xmm8
-movabs rax, -9160688885620122252
-movq xmm0, rax
-movabs rax, -4495734319865919833
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+48], xmm0
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movabs rax, -1171420208383170111
-movq xmm0, rax
-movabs rax, 2597628982895680966
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+64], xmm0
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movabs rax, 5365058922554666095
-movq xmm0, rax
-movabs rax, 8573033837115779548
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+80], xmm0
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movabs rax, -6327057827470880430
-movq xmm0, rax
-movabs rax, -4658551843909851192
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+96], xmm0
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movabs rax, -3051310485054944269
-movq xmm0, rax
-movabs rax, 1452737877275992913
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+112], xmm0
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movabs rax, 3322285675184065157
-movq xmm0, rax
-movabs rax, 5996557280394112508
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+128], xmm0
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movabs rax, 8532644243977171796
-movq xmm0, rax
-movabs rax, -7894198244907759314
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+144], xmm0
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movabs rax, -6333637450904115039
-movq xmm0, rax
-movabs rax, -4076793798895891600
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+160], xmm0
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movabs rax, -2983346522951587815
-movq xmm0, rax
-movabs rax, 1182934259129529733
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+176], xmm0
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movabs rax, 2177327726902690070
-movq xmm0, rax
-movabs rax, 3796741972107491148
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+192], xmm0
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movabs rax, 5681478165690322099
-movq xmm0, rax
-movabs rax, 7507060719877933647
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+208], xmm0
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movabs rax, 8693463986056692462
-movq xmm0, rax
-movabs rax, -8302665152423495660
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+224], xmm0
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movabs rax, -6606660894350966790
-movq xmm0, rax
-movabs rax, -4147400797850065929
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-movdqu XMMWORD PTR [rcx+240], xmm0
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-paddd xmm1, xmm9
-paddd xmm2, xmm10
-add rsi, 64
-sub rdx, 1
-24:
-movdqa xmm9, xmm1
-movdqa xmm10, xmm2
-movdqu xmm3, XMMWORD PTR [rsi]
-pshufb xmm3, xmm8
-movdqu xmm0, XMMWORD PTR [rcx]
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm4, XMMWORD PTR [rsi+16]
-pshufb xmm4, xmm8
-movdqu xmm0, XMMWORD PTR [rcx+16]
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm5, XMMWORD PTR [rsi+32]
-pshufb xmm5, xmm8
-movdqu xmm0, XMMWORD PTR [rcx+32]
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm6, XMMWORD PTR [rsi+48]
-pshufb xmm6, xmm8
-movdqu xmm0, XMMWORD PTR [rcx+48]
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movdqu xmm0, XMMWORD PTR [rcx+64]
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movdqu xmm0, XMMWORD PTR [rcx+80]
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movdqu xmm0, XMMWORD PTR [rcx+96]
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movdqu xmm0, XMMWORD PTR [rcx+112]
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movdqu xmm0, XMMWORD PTR [rcx+128]
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movdqu xmm0, XMMWORD PTR [rcx+144]
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movdqu xmm0, XMMWORD PTR [rcx+160]
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movdqu xmm0, XMMWORD PTR [rcx+176]
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movdqu xmm0, XMMWORD PTR [rcx+192]
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movdqu xmm0, XMMWORD PTR [rcx+208]
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movdqu xmm0, XMMWORD PTR [rcx+224]
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movdqu xmm0, XMMWORD PTR [rcx+240]
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-paddd xmm1, xmm9
-paddd xmm2, xmm10
-add rsi, 64
-sub rdx, 1
-jne 24b
-jmp 23f
+je 20f
 22:
-23:
+movdqa xmm9, xmm1
+movdqa xmm10, xmm2
+movdqu xmm3, XMMWORD PTR [rsi]
+pshufb xmm3, xmm8
+movdqu xmm0, XMMWORD PTR [rax]
+paddd xmm0, xmm3
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+movdqu xmm4, XMMWORD PTR [rsi+16]
+pshufb xmm4, xmm8
+movdqu xmm0, XMMWORD PTR [rax+16]
+paddd xmm0, xmm4
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+movdqu xmm5, XMMWORD PTR [rsi+32]
+pshufb xmm5, xmm8
+movdqu xmm0, XMMWORD PTR [rax+32]
+paddd xmm0, xmm5
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+movdqu xmm6, XMMWORD PTR [rsi+48]
+pshufb xmm6, xmm8
+movdqu xmm0, XMMWORD PTR [rax+48]
+paddd xmm0, xmm6
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm3, xmm4
+movdqa xmm7, xmm6
+palignr xmm7, xmm5, 4
+paddd xmm3, xmm7
+sha256msg2 xmm3, xmm6
+movdqu xmm0, XMMWORD PTR [rax+64]
+paddd xmm0, xmm3
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm4, xmm5
+movdqa xmm7, xmm3
+palignr xmm7, xmm6, 4
+paddd xmm4, xmm7
+sha256msg2 xmm4, xmm3
+movdqu xmm0, XMMWORD PTR [rax+80]
+paddd xmm0, xmm4
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm5, xmm6
+movdqa xmm7, xmm4
+palignr xmm7, xmm3, 4
+paddd xmm5, xmm7
+sha256msg2 xmm5, xmm4
+movdqu xmm0, XMMWORD PTR [rax+96]
+paddd xmm0, xmm5
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm6, xmm3
+movdqa xmm7, xmm5
+palignr xmm7, xmm4, 4
+paddd xmm6, xmm7
+sha256msg2 xmm6, xmm5
+movdqu xmm0, XMMWORD PTR [rax+112]
+paddd xmm0, xmm6
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm3, xmm4
+movdqa xmm7, xmm6
+palignr xmm7, xmm5, 4
+paddd xmm3, xmm7
+sha256msg2 xmm3, xmm6
+movdqu xmm0, XMMWORD PTR [rax+128]
+paddd xmm0, xmm3
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm4, xmm5
+movdqa xmm7, xmm3
+palignr xmm7, xmm6, 4
+paddd xmm4, xmm7
+sha256msg2 xmm4, xmm3
+movdqu xmm0, XMMWORD PTR [rax+144]
+paddd xmm0, xmm4
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm5, xmm6
+movdqa xmm7, xmm4
+palignr xmm7, xmm3, 4
+paddd xmm5, xmm7
+sha256msg2 xmm5, xmm4
+movdqu xmm0, XMMWORD PTR [rax+160]
+paddd xmm0, xmm5
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm6, xmm3
+movdqa xmm7, xmm5
+palignr xmm7, xmm4, 4
+paddd xmm6, xmm7
+sha256msg2 xmm6, xmm5
+movdqu xmm0, XMMWORD PTR [rax+176]
+paddd xmm0, xmm6
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm3, xmm4
+movdqa xmm7, xmm6
+palignr xmm7, xmm5, 4
+paddd xmm3, xmm7
+sha256msg2 xmm3, xmm6
+movdqu xmm0, XMMWORD PTR [rax+192]
+paddd xmm0, xmm3
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm4, xmm5
+movdqa xmm7, xmm3
+palignr xmm7, xmm6, 4
+paddd xmm4, xmm7
+sha256msg2 xmm4, xmm3
+movdqu xmm0, XMMWORD PTR [rax+208]
+paddd xmm0, xmm4
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm5, xmm6
+movdqa xmm7, xmm4
+palignr xmm7, xmm3, 4
+paddd xmm5, xmm7
+sha256msg2 xmm5, xmm4
+movdqu xmm0, XMMWORD PTR [rax+224]
+paddd xmm0, xmm5
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+sha256msg1 xmm6, xmm3
+movdqa xmm7, xmm5
+palignr xmm7, xmm4, 4
+paddd xmm6, xmm7
+sha256msg2 xmm6, xmm5
+movdqu xmm0, XMMWORD PTR [rax+240]
+paddd xmm0, xmm6
+sha256rnds2 xmm2, xmm1, xmm0
+pshufd xmm0, xmm0, 14
+sha256rnds2 xmm1, xmm2, xmm0
+paddd xmm1, xmm9
+paddd xmm2, xmm10
+add rsi, 64
+sub rdx, 1
+jne 22b
 jmp 21f
 20:
-movdqa xmm9, xmm1
-movdqa xmm10, xmm2
-movdqu xmm3, XMMWORD PTR [rsi]
-pshufb xmm3, xmm8
-movabs rax, 8158064640682241944
-movq xmm0, rax
-movabs rax, -1606136187322303537
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm4, XMMWORD PTR [rsi+16]
-pshufb xmm4, xmm8
-movabs rax, 6480981066509632091
-movq xmm0, rax
-movabs rax, -6116909922501295452
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm5, XMMWORD PTR [rsi+32]
-pshufb xmm5, xmm8
-movabs rax, 1334009978109274776
-movq xmm0, rax
-movabs rax, 6128411470023722430
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-movdqu xmm6, XMMWORD PTR [rsi+48]
-pshufb xmm6, xmm8
-movabs rax, -9160688885620122252
-movq xmm0, rax
-movabs rax, -4495734319865919833
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movabs rax, -1171420208383170111
-movq xmm0, rax
-movabs rax, 2597628982895680966
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movabs rax, 5365058922554666095
-movq xmm0, rax
-movabs rax, 8573033837115779548
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movabs rax, -6327057827470880430
-movq xmm0, rax
-movabs rax, -4658551843909851192
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movabs rax, -3051310485054944269
-movq xmm0, rax
-movabs rax, 1452737877275992913
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movabs rax, 3322285675184065157
-movq xmm0, rax
-movabs rax, 5996557280394112508
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movabs rax, 8532644243977171796
-movq xmm0, rax
-movabs rax, -7894198244907759314
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movabs rax, -6333637450904115039
-movq xmm0, rax
-movabs rax, -4076793798895891600
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movabs rax, -2983346522951587815
-movq xmm0, rax
-movabs rax, 1182934259129529733
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm3, xmm4
-movdqa xmm7, xmm6
-palignr xmm7, xmm5, 4
-paddd xmm3, xmm7
-sha256msg2 xmm3, xmm6
-movabs rax, 2177327726902690070
-movq xmm0, rax
-movabs rax, 3796741972107491148
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm3
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm4, xmm5
-movdqa xmm7, xmm3
-palignr xmm7, xmm6, 4
-paddd xmm4, xmm7
-sha256msg2 xmm4, xmm3
-movabs rax, 5681478165690322099
-movq xmm0, rax
-movabs rax, 7507060719877933647
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm4
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm5, xmm6
-movdqa xmm7, xmm4
-palignr xmm7, xmm3, 4
-paddd xmm5, xmm7
-sha256msg2 xmm5, xmm4
-movabs rax, 8693463986056692462
-movq xmm0, rax
-movabs rax, -8302665152423495660
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm5
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-sha256msg1 xmm6, xmm3
-movdqa xmm7, xmm5
-palignr xmm7, xmm4, 4
-paddd xmm6, xmm7
-sha256msg2 xmm6, xmm5
-movabs rax, -6606660894350966790
-movq xmm0, rax
-movabs rax, -4147400797850065929
-movq xmm11, rax
-punpcklqdq xmm0, xmm11
-paddd xmm0, xmm6
-sha256rnds2 xmm2, xmm1, xmm0
-pshufd xmm0, xmm0, 14
-sha256rnds2 xmm1, xmm2, xmm0
-paddd xmm1, xmm9
-paddd xmm2, xmm10
-add rsi, 64
-sub rdx, 1
 21:
 movdqa xmm7, xmm1
 punpckhqdq xmm7, xmm2
@@ -3680,6 +3220,7 @@ movdqu XMMWORD PTR [rdi], xmm7
 movdqu XMMWORD PTR [rdi+16], xmm1
 ret
 .p2align 6",
+        VG_SHA256_SHANI_K = sym super::consts::VG_SHA256_SHANI_K,
     )
 }
 
