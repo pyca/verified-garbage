@@ -3001,6 +3001,7 @@ movabs rax, 579005069656919567
 vmovq xmm11, rax
 vpunpcklqdq xmm8, xmm8, xmm11
 vinserti128 ymm8, ymm8, xmm8, 1
+lea rax, [rip + {VG_SHA512_K}]
 vmovdqu ymm1, YMMWORD PTR [rdi]
 vmovdqu ymm2, YMMWORD PTR [rdi+32]
 vperm2i128 ymm7, ymm2, ymm1, 32
@@ -3014,68 +3015,28 @@ vmovdqa ymm9, ymm1
 vmovdqa ymm10, ymm2
 vmovdqu ymm3, YMMWORD PTR [rsi]
 vpshufb ymm3, ymm3, ymm8
-movabs rax, 4794697086780616226
-vmovq xmm0, rax
-movabs rax, 8158064640168781261
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -5349999486874862801
-vmovq xmm12, rax
-movabs rax, -1606136188198331460
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax]
 vpaddq ymm0, ymm0, ymm3
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
 vsha512rnds2 ymm1, ymm2, xmm0
 vmovdqu ymm4, YMMWORD PTR [rsi+32]
 vpshufb ymm4, ymm4, ymm8
-movabs rax, 4131703408338449720
-vmovq xmm0, rax
-movabs rax, 6480981068601479193
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -7908458776815382629
-vmovq xmm12, rax
-movabs rax, -6116909921290321640
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+32]
 vpaddq ymm0, ymm0, ymm4
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
 vsha512rnds2 ymm1, ymm2, xmm0
 vmovdqu ymm5, YMMWORD PTR [rsi+64]
 vpshufb ymm5, ymm5, ymm8
-movabs rax, -2880145864133508542
-vmovq xmm0, rax
-movabs rax, 1334009975649890238
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 2608012711638119052
-vmovq xmm12, rax
-movabs rax, 6128411473006802146
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+64]
 vpaddq ymm0, ymm0, ymm5
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
 vsha512rnds2 ymm1, ymm2, xmm0
 vmovdqu ymm6, YMMWORD PTR [rsi+96]
 vpshufb ymm6, ymm6, ymm8
-movabs rax, 8268148722764581231
-vmovq xmm0, rax
-movabs rax, -9160688886553864527
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -7215885187991268811
-vmovq xmm12, rax
-movabs rax, -4495734319001033068
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+96]
 vpaddq ymm0, ymm0, ymm6
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3085,17 +3046,7 @@ vperm2i128 ymm7, ymm5, ymm6, 33
 vpalignr ymm7, ymm7, ymm5, 8
 vpaddq ymm3, ymm3, ymm7
 vsha512msg2 ymm3, ymm6
-movabs rax, -1973867731355612462
-vmovq xmm0, rax
-movabs rax, -1171420211273849373
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 1135362057144423861
-vmovq xmm12, rax
-movabs rax, 2597628984639134821
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+128]
 vpaddq ymm0, ymm0, ymm3
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3105,17 +3056,7 @@ vperm2i128 ymm7, ymm6, ymm3, 33
 vpalignr ymm7, ymm7, ymm6, 8
 vpaddq ymm4, ymm4, ymm7
 vsha512msg2 ymm4, ymm3
-movabs rax, 3308224258029322869
-vmovq xmm0, rax
-movabs rax, 5365058923640841347
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 6679025012923562964
-vmovq xmm12, rax
-movabs rax, 8573033837759648693
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+160]
 vpaddq ymm0, ymm0, ymm4
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3125,17 +3066,7 @@ vperm2i128 ymm7, ymm3, ymm4, 33
 vpalignr ymm7, ymm7, ymm3, 8
 vpaddq ymm5, ymm5, ymm7
 vsha512msg2 ymm5, ymm4
-movabs rax, -7476448914759557205
-vmovq xmm0, rax
-movabs rax, -6327057829258317296
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -5763719355590565569
-vmovq xmm12, rax
-movabs rax, -4658551843659510044
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+192]
 vpaddq ymm0, ymm0, ymm5
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3145,17 +3076,7 @@ vperm2i128 ymm7, ymm4, ymm5, 33
 vpalignr ymm7, ymm7, ymm4, 8
 vpaddq ymm6, ymm6, ymm7
 vsha512msg2 ymm6, ymm5
-movabs rax, -4116276920077217854
-vmovq xmm0, rax
-movabs rax, -3051310485924567259
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 489312712824947311
-vmovq xmm12, rax
-movabs rax, 1452737877330783856
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+224]
 vpaddq ymm0, ymm0, ymm6
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3165,17 +3086,7 @@ vperm2i128 ymm7, ymm5, ymm6, 33
 vpalignr ymm7, ymm7, ymm5, 8
 vpaddq ymm3, ymm3, ymm7
 vsha512msg2 ymm3, ymm6
-movabs rax, 2861767655752347644
-vmovq xmm0, rax
-movabs rax, 3322285676063803686
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 5560940570517711597
-vmovq xmm12, rax
-movabs rax, 5996557281743188959
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+256]
 vpaddq ymm0, ymm0, ymm3
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3185,17 +3096,7 @@ vperm2i128 ymm7, ymm6, ymm3, 33
 vpalignr ymm7, ymm7, ymm6, 8
 vpaddq ymm4, ymm4, ymm7
 vsha512msg2 ymm4, ymm3
-movabs rax, 7280758554555802590
-vmovq xmm0, rax
-movabs rax, 8532644243296465576
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -9096487096722542874
-vmovq xmm12, rax
-movabs rax, -7894198246740708037
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+288]
 vpaddq ymm0, ymm0, ymm4
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3205,17 +3106,7 @@ vperm2i128 ymm7, ymm3, ymm4, 33
 vpalignr ymm7, ymm7, ymm3, 8
 vpaddq ymm5, ymm5, ymm7
 vsha512msg2 ymm5, ymm4
-movabs rax, -6719396339535248540
-vmovq xmm0, rax
-movabs rax, -6333637450476146687
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -4446306890439682159
-vmovq xmm12, rax
-movabs rax, -4076793802049405392
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+320]
 vpaddq ymm0, ymm0, ymm5
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3225,17 +3116,7 @@ vperm2i128 ymm7, ymm4, ymm5, 33
 vpalignr ymm7, ymm7, ymm4, 8
 vpaddq ymm6, ymm6, ymm7
 vsha512msg2 ymm6, ymm5
-movabs rax, -3345356375505022440
-vmovq xmm0, rax
-movabs rax, -2983346525034927856
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -860691631967231958
-vmovq xmm12, rax
-movabs rax, 1182934255886127544
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+352]
 vpaddq ymm0, ymm0, ymm6
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3245,17 +3126,7 @@ vperm2i128 ymm7, ymm5, ymm6, 33
 vpalignr ymm7, ymm7, ymm5, 8
 vpaddq ymm3, ymm3, ymm7
 vsha512msg2 ymm3, ymm6
-movabs rax, 1847814050463011016
-vmovq xmm0, rax
-movabs rax, 2177327727835720531
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 2830643537854262169
-vmovq xmm12, rax
-movabs rax, 3796741975233480872
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+384]
 vpaddq ymm0, ymm0, ymm3
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3265,17 +3136,7 @@ vperm2i128 ymm7, ymm6, ymm3, 33
 vpalignr ymm7, ymm7, ymm6, 8
 vpaddq ymm4, ymm4, ymm7
 vsha512msg2 ymm4, ymm3
-movabs rax, 4115178125766777443
-vmovq xmm0, rax
-movabs rax, 5681478168544905931
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 6601373596472566643
-vmovq xmm12, rax
-movabs rax, 7507060721942968483
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+416]
 vpaddq ymm0, ymm0, ymm4
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3285,17 +3146,7 @@ vperm2i128 ymm7, ymm3, ymm4, 33
 vpalignr ymm7, ymm7, ymm3, 8
 vpaddq ymm5, ymm5, ymm7
 vsha512msg2 ymm5, ymm4
-movabs rax, 8399075790359081724
-vmovq xmm0, rax
-movabs rax, 8693463985226723168
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -8878714635349349518
-vmovq xmm12, rax
-movabs rax, -8302665154208450068
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+448]
 vpaddq ymm0, ymm0, ymm5
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3305,17 +3156,7 @@ vperm2i128 ymm7, ymm4, ymm5, 33
 vpalignr ymm7, ymm7, ymm4, 8
 vpaddq ymm6, ymm6, ymm7
 vsha512msg2 ymm6, ymm5
-movabs rax, -8016688836872298968
-vmovq xmm0, rax
-movabs rax, -6606660893046293015
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -4685533653050689259
-vmovq xmm12, rax
-movabs rax, -4147400797238176981
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+480]
 vpaddq ymm0, ymm0, ymm6
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3325,17 +3166,7 @@ vperm2i128 ymm7, ymm5, ymm6, 33
 vpalignr ymm7, ymm7, ymm5, 8
 vpaddq ymm3, ymm3, ymm7
 vsha512msg2 ymm3, ymm6
-movabs rax, -3880063495543823972
-vmovq xmm0, rax
-movabs rax, -3348786107499101689
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, -1523767162380948706
-vmovq xmm12, rax
-movabs rax, -757361751448694408
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+512]
 vpaddq ymm0, ymm0, ymm3
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3345,17 +3176,7 @@ vperm2i128 ymm7, ymm6, ymm3, 33
 vpalignr ymm7, ymm7, ymm6, 8
 vpaddq ymm4, ymm4, ymm7
 vsha512msg2 ymm4, ymm3
-movabs rax, 500013540394364858
-vmovq xmm0, rax
-movabs rax, 748580250866718886
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 1242879168328830382
-vmovq xmm12, rax
-movabs rax, 1977374033974150939
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+544]
 vpaddq ymm0, ymm0, ymm4
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3365,17 +3186,7 @@ vperm2i128 ymm7, ymm3, ymm4, 33
 vpalignr ymm7, ymm7, ymm3, 8
 vpaddq ymm5, ymm5, ymm7
 vsha512msg2 ymm5, ymm4
-movabs rax, 2944078676154940804
-vmovq xmm0, rax
-movabs rax, 3659926193048069267
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 4368137639120453308
-vmovq xmm12, rax
-movabs rax, 4836135668995329356
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+576]
 vpaddq ymm0, ymm0, ymm5
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3385,17 +3196,7 @@ vperm2i128 ymm7, ymm4, ymm5, 33
 vpalignr ymm7, ymm7, ymm4, 8
 vpaddq ymm6, ymm6, ymm7
 vsha512msg2 ymm6, ymm5
-movabs rax, 5532061633213252278
-vmovq xmm0, rax
-movabs rax, 6448918945643986474
-vmovq xmm11, rax
-vpunpcklqdq xmm0, xmm0, xmm11
-movabs rax, 6902733635092675308
-vmovq xmm12, rax
-movabs rax, 7801388544844847127
-vmovq xmm11, rax
-vpunpcklqdq xmm12, xmm12, xmm11
-vinserti128 ymm0, ymm0, xmm12, 1
+vmovdqu ymm0, YMMWORD PTR [rax+608]
 vpaddq ymm0, ymm0, ymm6
 vsha512rnds2 ymm2, ymm1, xmm0
 vextracti128 xmm0, ymm0, 1
@@ -3417,6 +3218,7 @@ vmovdqu YMMWORD PTR [rdi+32], ymm1
 vzeroupper
 ret
 .p2align 6",
+        VG_SHA512_K = sym super::consts::VG_SHA512_K,
     )
 }
 
