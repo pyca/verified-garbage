@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
 /-!
-# BoringSSL's `RSA_check_key` on x86-64
+# Shared pieces for RSA key checking on x86-64
 
 `vg_rsa_check_key(n, n_len, e, e_len, d, d_len, p, p_len, q, q_len, dp,
 dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len)`: the first six
@@ -24,9 +24,12 @@ header's `sMask`, which is returned as 0 or 1 at the end.
 * `d e ≡ 1 (mod p - 1)` and the others: the product `x` of `d`, `dP` or
   `dQ` and `e` (`w + 2` words), or of `q` and `qInv` (`2 w + 2` words), is
   reduced modulo `m` (`p - 1`, `q - 1` or `p`) by restoring division
-  (`reduce`): from the top bit of `x` down, `r := 2 r + b mod m` (`dblIn`,
+  (`reduce` provides the full-width form): from the top bit of `x` down, `r := 2 r + b mod m` (`dblIn`,
   `vg_rsa_public`'s doubling with the bit as the carry into the low word),
   and `r` compared with 1 (`eqOne`).
+
+The drivers in `CheckKey.lean` and `CheckCrtKey.lean` use bounded-quotient,
+factor-width reductions in place of the full-width `reduce`.
 
 `p < n` and `q < n` need no computation: `p` and `q` are shorter than `n`,
 which is at least `256^(n_len - 1)`.
@@ -118,6 +121,17 @@ def mulE : List (Prog isa) := [
   zeroAccLoop,
   .block [.mov .rcx (.mem (hdr sEv)), .mov .r9 (.mem (hdr (sArr aX))), .mov .r8 (.mem (hdr (sArr aAcc)))],
   mulAddRow]
+
+/-- `e [aX]`, with the upper accumulator slot cleared too, so a bounded
+reduction can safely copy factor-width words even for padded factors. -/
+def mulEWide : List (Prog isa) := [Crt.zeroArr Public.aTmp] ++ mulE
+
+/-- Quotient width for `e d mod (X - 1)`: the other factor's word length
+plus one word. `d < X Y` and `X ≥ 2` imply `e d < 2 e Y (X - 1)`;
+`e < 2^33` leaves ample room in the extra word. -/
+def topD (sYlen : Nat) : List Instr :=
+  [.mov .r13 (.mem (hdr sYlen)), .alu .add .r13 (.imm 7), .shift .shr .r13 3,
+    .alu .add .r13 (.imm 1)]
 
 /-- `acc := [aX] [aR]` (`2 w + 2` words). -/
 def mulXR : List (Prog isa) :=

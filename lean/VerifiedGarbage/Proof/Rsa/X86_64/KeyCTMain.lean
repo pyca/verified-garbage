@@ -20,18 +20,31 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aOne sMask sN sK exit)
 
-theorem modChecks_ct {sX sXlen sDX : Nat} (hsXl : sXlen < 32) (nXl : sXlen ≠ sMask) (fl : KPub → Nat)
+theorem mulEWideK_ct : RelCT isa (Two KK) (seqs mulEWide) (Two KK) := by
+  unfold mulEWide
+  refine RelCT.seqs_append (by simp) (by simp [mulE]) (RelCT.seq ?_ mulEK_ct)
+  simpa only [seqs] using
+    (zeroArrK_ct (j := aTmp) (by decide) (by decide) (by decide) (by taint_decide)).mono
+      (fun _ _ h => h) (fun _ _ h => two_mono (fun _ _ h => h.1) h)
+
+theorem modChecks_ct {sX sXlen sDX sYlen : Nat} (hsXl : sXlen < 32) (nXl : sXlen ≠ sMask) (fl : KPub → Nat)
     (hX : ∀ p s, KS p s → word s.mem p.B (8 * sXlen) = BitVec.ofNat 64 (fl p) ∧ 1 ≤ fl p ∧ fl p ≤ 8 * p.w)
     (hM : RelCT isa (Two KK) (seqs (loadNum aM sX sXlen)) (Two KK))
     (hDX : RelCT isa (Two KK) (seqs (loadNum aX sDX sXlen)) (Two KK))
-    {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hsYl : sYlen < 32) (nYl : sYlen ≠ sMask) (fy : KPub → Nat)
+    (hY : ∀ p s, KS p s → word s.mem p.B (8 * sYlen) = BitVec.ofNat 64 (fy p) ∧ fy p ≤ 8 * p.w)
+    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (Impl.Rsa.X86_64.CheckCrtKey.lenWords sXlen ++
       Impl.Rsa.X86_64.CheckCrtKey.topE ++
       ([.mov .rax (.reg .r13), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .mov .rsi (.mem (hdr (sArr aAcc))), .alu .add .rsi (.reg .rax),
         .mov .rbx (.mem (hdr (sArr aR)))] : List Instr))) hc₁).isSome = true)
-    :
-    RelCT isa (Two KK) (seqs (modChecks sX sXlen sDX)) (Two KK) := by
+    (hTD : (taint.check (Taint.ofRegs [.rdi]) (.block (Impl.Rsa.X86_64.CheckCrtKey.lenWords sXlen ++
+      topD sYlen ++
+      ([.mov .rax (.reg .r13), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+        .alu .add .rax (.reg .rax), .mov .rsi (.mem (hdr (sArr aAcc))), .alu .add .rsi (.reg .rax),
+        .mov .rbx (.mem (hdr (sArr aR)))] : List Instr))) hc₂).isSome = true) :
+    RelCT isa (Two KK) (seqs (modChecks sX sXlen sDX sYlen)) (Two KK) := by
   unfold modChecks
   have hR : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
       Impl.Rsa.X86_64.CheckCrtKey.topE)) (Two KK) :=
@@ -42,12 +55,30 @@ theorem modChecks_ct {sX sXlen sDX : Nat} (hsXl : sXlen < 32) (nXl : sXlen ≠ s
         have := c.w2
         exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _) (by omega)
           (by omega)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
+  have hD : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
+      (topD sYlen))) (Two KK) :=
+    reduceTopK_ct fl (fun p => (fy p + 7) / 8 + 1) hsXl nXl hX
+      (fun p s h => by have := (hX p s h).2.2; have := (hY p s h).2; omega)
+      (fun p s h => by
+        obtain ⟨s₀, minv, N, c, hs⟩ := h
+        have := c.w2
+        obtain ⟨hL, hLw⟩ := hY p s₀ hs
+        exact topD_ok c.good c.hZ hsYl (by rw [c.hdr _ hsYl nYl]; exact hL) (by omega))
+      (fun p s h => by
+        obtain ⟨s₀, minv, N, c, hs⟩ := h
+        obtain ⟨a, c1, c2⟩ := hX p s₀ hs
+        obtain ⟨y, y2⟩ := hY p s₀ hs
+        have := c.w2
+        exact WP.mono (reduceTopK c (top := topD sYlen) (c := (fy p + 7) / 8 + 1) (Nx := 2 * p.w + 4) hsXl nXl a c1 c2
+          (fun t hg hh => topD_ok hg c.hZ hsYl
+            (by rw [hh _ hsYl, c.hdr _ hsYl nYl]; exact y) (by omega))
+          (by omega) (by omega) (by omega)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hTD
   refine kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
     (kk_app (by simp [loadNum]) (by simp [mulE]) (kk_app (by simp [loadNum]) (by simp [loadNum])
-    (kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [reduce])
-    (kk_app (by simp [loadNum]) (by simp [mulE]) (kk_app (by simp [loadNum]) (by simp [loadNum])
+    (kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
+    (kk_app (by simp [loadNum]) (by simp [mulEWide]) (kk_app (by simp [loadNum]) (by simp [loadNum])
     (kk_app (by simp [loadNum]) (by simp [ltMask]) (kk_app (by simp [loadNum]) (by simp [loadNum])
-    (kk_app (by simp [loadNum]) (by simp [decM]) hM decMK_ct) hDX) ltXM) ld_D) mulEK_ct) reduceEK_ct) eqOneK_ct) hDX)
+    (kk_app (by simp [loadNum]) (by simp [decM]) hM decMK_ct) hDX) ltXM) ld_D) mulEWideK_ct) hD) eqOneK_ct) hDX)
     mulEK_ct) hR) eqOneK_ct
 
 /-- `main` is constant time from `M0`. -/
@@ -62,9 +93,9 @@ theorem main_ct : RelCT isa (Two M0) main fun _ _ => True := by
       (by simp [mulXR, VG.Impl.Rsa.X86_64.Crt.zeroAccs]) (kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PX ld_QR)
       mulXRK_ct) eqCheckK_ct) ?_)
   refine RelCT.seqs_append (by simp [modChecks, loadNum]) (by simp [modChecks, loadNum]) (RelCT.seq
-    (modChecks_ct (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl1, h.pl2⟩) ld_PM ld_DP (by taint_decide)) ?_)
+    (modChecks_ct (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl1, h.pl2⟩) ld_PM ld_DP (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql2⟩) (by taint_decide) (by taint_decide)) ?_)
   refine RelCT.seqs_append (by simp [modChecks, loadNum]) (by simp [loadNum]) (RelCT.seq
-    (modChecks_ct (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql1, h.ql2⟩) ld_QM ld_DQ (by taint_decide)) ?_)
+    (modChecks_ct (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql1, h.ql2⟩) ld_QM ld_DQ (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl2⟩) (by taint_decide) (by taint_decide)) ?_)
   refine RelCT.seqs_append (by simp [loadNum]) (by simp) (RelCT.seq
     (kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
       (kk_app (by simp [loadNum]) (by simp [mulXR, VG.Impl.Rsa.X86_64.Crt.zeroAccs])

@@ -177,7 +177,7 @@ theorem main_eq : main = seqs (([.block VG.Impl.Rsa.X86_64.head, loadBE,
     .block [.mov32 .rax (.imm 0), .alu .sub .rax (.imm 1), .store (hdr sMask) .rax]] : List (Prog isa)) ++
     ((loadNum aX sD sDlen ++ ltMask aX aN) ++
     ((loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulXR ++ VG.Impl.Rsa.X86_64.Crt.eqCheck) ++
-    (modChecks sP sPlen sDP ++ (modChecks sQ sQlen sDQ ++
+    (modChecks sP sPlen sDP sQlen ++ (modChecks sQ sQlen sDQ sPlen ++
     ((loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
       loadNum aR sQ sQlen ++ mulXR ++ Impl.Rsa.X86_64.CheckCrtKey.reduceTop sPlen Impl.Rsa.X86_64.CheckCrtKey.topQ ++ eqOne) ++
     ([.block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)] :
@@ -219,13 +219,19 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {np pd pp pq pdp pdq pqi : Ad
     (by rw [hw sP (by decide) (by decide)]; exact hp.hP) (by rw [hw sPlen (by decide) (by decide)]; exact hp.hPl)
     (by rw [hw sDP (by decide) (by decide)]; exact hp.hDP) (by rw [hw sD (by decide) (by decide)]; exact hp.hD)
     (by rw [hw sDlen (by decide) (by decide)]; exact hp.hDl) (sr hp.srP) (sr hp.srDP) (sr hp.srD) hp.dpl hp.pl1
-    (by omega) hp.dl1 (by omega) (by rw [hE]; simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)) fun t₃ ⟨h₃, Mp, Rp1, Rp2, eMp, eR1, eR2, m₃⟩ => ?_)
+    (by omega) hp.dl1 (by omega) (by rw [hE]; simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)
+    (Y := Spec.Rsa.os2ip qb) (sYlen := sQlen) (by decide) (by decide)
+    (by rw [hw sQlen (by decide) (by decide)]; exact hp.hQl) (by omega)
+    (Nat.lt_of_lt_of_le (lt_of_os2ip qb) (pow_len_le qb.length))) fun t₃ ⟨h₃, Mp, Rp1, Rp2, eMp, eR1, eR2, m₃⟩ => ?_)
   refine wsa (by simp [modChecks, loadNum]) (by simp [loadNum]) (WP.mono (modChecks_ok h₃ m₃
     (sX := sQ) (sXlen := sQlen) (sDX := sDQ) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [hw sQ (by decide) (by decide)]; exact hp.hQ) (by rw [hw sQlen (by decide) (by decide)]; exact hp.hQl)
     (by rw [hw sDQ (by decide) (by decide)]; exact hp.hDQ) (by rw [hw sD (by decide) (by decide)]; exact hp.hD)
     (by rw [hw sDlen (by decide) (by decide)]; exact hp.hDl) (sr hp.srQ) (sr hp.srDQ) (sr hp.srD) hp.dql hp.ql1
-    (by omega) hp.dl1 (by omega) (by rw [hE]; simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)) fun t₄ ⟨h₄, Mq, Rq1, Rq2, eMq, eQ1, eQ2, m₄⟩ => ?_)
+    (by omega) hp.dl1 (by omega) (by rw [hE]; simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)
+    (Y := Spec.Rsa.os2ip pb) (sYlen := sPlen) (by decide) (by decide)
+    (by rw [hw sPlen (by decide) (by decide)]; exact hp.hPl) (by omega)
+    (Nat.lt_of_lt_of_le (lt_of_os2ip pb) (pow_len_le pb.length))) fun t₄ ⟨h₄, Mq, Rq1, Rq2, eMq, eQ1, eQ2, m₄⟩ => ?_)
   refine wsa (by simp [loadNum]) (by simp) (WP.mono (crtQInv_ok h₄ m₄
     (by rw [hw sP (by decide) (by decide)]; exact hp.hP) (by rw [hw sPlen (by decide) (by decide)]; exact hp.hPl)
     (by rw [hw sQ (by decide) (by decide)]; exact hp.hQ) (by rw [hw sQlen (by decide) (by decide)]; exact hp.hQl)
@@ -235,7 +241,7 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {np pd pp pq pdp pdq pqi : Ad
     ⟨?_, fun i hi => ?_, ?_, kk.2.1.trans (h₅.rd.trans rd₀), kk.2.2.trans (h₅.wr.trans wr₀),
       ((k₀.trans h₅.keep).trans kk).mono (by decide)⟩
   · rw [hE] at eR1 eR2 eQ1 eQ2
-    rw [hax, keyValid_parts hp.mv he
+    rw [hax, keyValid_bounded_parts hp.mv he
       (Nat.lt_of_lt_of_le (lt_of_os2ip pb) (Nat.pow_le_pow_right (by decide) (by omega)))
       (Nat.lt_of_lt_of_le (lt_of_os2ip qb) (Nat.pow_le_pow_right (by decide) (by omega)))
       eMp eMq eR1 eR2 eQ1 eQ2 eR]
