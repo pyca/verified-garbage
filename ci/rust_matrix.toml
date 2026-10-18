@@ -213,12 +213,15 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # vg_rsa_private_checked_ifma and each hash function's
 # implementations (and RSAES-OAEP decryption with SHA-1's SHA
 # extensions and SHA-512's baseline code).
-# Three shards: its RSA lines each run Wycheproof's RSA tests
-# under SDE, which take minutes on a runner without AVX-512, and
-# three times as long sharing a runner's cores.
+# Two shards: its RSA lines each run Wycheproof's RSA tests under
+# SDE, which take minutes on a runner without AVX-512, and longer
+# sharing a runner's cores. There, only the line without
+# VG_CPU_FEATURES signs with 3072- and 4096-bit keys
+# (tests/wycheproof/harness.rs), about half of each line's time, so
+# the other two RSA lines take about as long together as it alone.
 [[cpu]]
 chip = "icx"
-shards = 3
+shards = 2
 runs = """
 - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac chacha20 poly1305 cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu

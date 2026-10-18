@@ -660,7 +660,8 @@ jobs:
           # do not expose it), SDE emulates it for -icx and -dmr some thirty
           # times slower than the ADX code runs: the RSA tests then leave
           # out the 3072- and 4096-bit keys that its private-key code runs
-          # with but in one test (tests/wycheproof/harness.rs).
+          # with but in one test, in the line without VG_CPU_FEATURES
+          # (tests/wycheproof/harness.rs).
           if [ "${CPU%% *}" != native ] && ! grep -qw avx512ifma /proc/cpuinfo; then
             export VG_TEST_HOST_WITHOUT_IFMA=1
           fi
