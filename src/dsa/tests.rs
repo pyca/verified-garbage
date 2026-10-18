@@ -3,7 +3,7 @@ use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, 
 use alloc::{format, string::ToString};
 
 #[path = "../../tests/cavp/dsa_vectors.rs"]
-mod vectors;
+pub(super) mod vectors;
 use vectors::{hex, vectors};
 
 fn digest(hash: &str, msg: &[u8]) -> Vec<u8> {

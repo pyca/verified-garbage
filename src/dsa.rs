@@ -1,5 +1,5 @@
-//! DSA signing and verification of prehashed messages, with fixed-width
-//! big-endian `r || s` signatures (FIPS 186-4).
+//! DSA key generation, and signing and verification of prehashed messages,
+//! with fixed-width big-endian `r || s` signatures (FIPS 186-4).
 //!
 //! The verified operations check domain and key algebraic consistency and
 //! scalar ranges. As with this crate's RSA operations, they do not prove
@@ -32,8 +32,8 @@ use crate::arch::dsa::vg_dsa_sign;
 use crate::arch::dsa::vg_dsa_sign_adx;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random_adx,
-    vg_dsa_verify_adx,
+    VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
+    vg_dsa_sign_random_adx, vg_dsa_verify_adx,
 };
 use crate::arch::dsa::{vg_dsa_sign_random, vg_dsa_verify};
 use crate::cpu::{Features, detected};
@@ -51,6 +51,7 @@ impl Backend {
         #[cfg(target_arch = "x86_64")]
         if _features.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES)
             && _features.contains(VG_DSA_VERIFY_ADX_FEATURES)
+            && _features.contains(VG_DSA_GENERATE_KEY_ADX_FEATURES)
         {
             return Self::Adx;
         }
@@ -71,7 +72,7 @@ impl<T: Int> Drop for Secret<T> {
 pub enum Error {
     /// A component has an unsupported or inconsistent encoding width.
     Length,
-    /// The key is inconsistent, or bounded nonce/signature retries failed.
+    /// The domain or key is inconsistent, or bounded draws or retries failed.
     InvalidKeyOrNonce,
     /// The operating system's random number generator failed.
     Randomness,
@@ -81,7 +82,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::Length => "invalid DSA component length",
-            Self::InvalidKeyOrNonce => "invalid DSA key or exhausted nonce attempts",
+            Self::InvalidKeyOrNonce => "invalid DSA domain or key, or exhausted attempts",
             Self::Randomness => "the random number generator failed",
         })
     }
@@ -311,6 +312,8 @@ impl PrivateKey {
         result == 1
     }
 }
+
+mod keygen;
 
 #[cfg(test)]
 #[path = "dsa/tests.rs"]

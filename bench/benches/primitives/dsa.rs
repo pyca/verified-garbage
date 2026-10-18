@@ -1,5 +1,5 @@
-//! Prehashed DSA at every supported width, beside OpenSSL's equivalent.
-//! aws-lc-rs does not expose a DSA signing/verification API.
+//! DSA key generation and prehashed DSA at every supported width, beside
+//! OpenSSL's equivalent. aws-lc-rs does not expose a DSA API.
 use criterion::Criterion;
 
 pub const USES: &[&str] = &["dsa", "rsa_mont"];
@@ -162,6 +162,28 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        #[cfg(target_arch = "x86_64")]
+        {
+            let mut group = c.benchmark_group(format!("dsa_generate_key_q{}", q_len * 8));
+            group.bench_function(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    PrivateKey::generate(black_box(&p), black_box(&q), black_box(&g)).unwrap()
+                })
+            });
+            group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+                b.iter(|| {
+                    Dsa::from_pqg(
+                        BigNum::from_slice(black_box(&p)).unwrap(),
+                        BigNum::from_slice(black_box(&q)).unwrap(),
+                        BigNum::from_slice(black_box(&g)).unwrap(),
+                    )
+                    .unwrap()
+                    .generate_key()
+                    .unwrap()
+                })
+            });
+            group.finish();
+        }
     }
 }
 
