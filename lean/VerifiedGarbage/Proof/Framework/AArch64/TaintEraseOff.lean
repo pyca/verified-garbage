@@ -42,6 +42,7 @@ def Code.eraseOff : Prog isa → Prog isa
   | .ite c t e => .ite c (eraseOff t) (eraseOff e)
   | .loop b c => .loop (eraseOff b) c
   | .call n b => .call n (eraseOff b)
+  | .icall n => .icall n
   | .frame p b q => .frame p (eraseOff b) q
 
 namespace Taint
@@ -75,6 +76,7 @@ theorem check_eraseOff (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T)
     cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, iht, ihe]
   | loop b c ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
   | call n b ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
+  | icall n => cases h <;> rfl
   | frame p b q ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
 
 end Taint
@@ -97,6 +99,7 @@ theorem Code.allInstrs_eraseOff {p : Instr → Bool} (hp : ∀ i, p i.eraseOff =
   | ite c t e iht ihe => simp only [Code.eraseOff, Code.allInstrs, iht, ihe]
   | loop b c ih => simp only [Code.eraseOff, Code.allInstrs, ih]
   | call n b ih => simp only [Code.eraseOff, Code.allInstrs, ih]
+  | icall n => rfl
   | frame i b j ih => simp only [Code.eraseOff, Code.allInstrs, ih]
 
 theorem keepsV_eraseOff (i : Instr) : keepsV i.eraseOff = keepsV i := by

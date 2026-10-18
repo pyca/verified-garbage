@@ -28,6 +28,7 @@ def Code.mapBlocks {I C : Type} (f : I → I) : Code I C → Code I C
   | .ite c t e => .ite c (t.mapBlocks f) (e.mapBlocks f)
   | .loop b c => .loop (b.mapBlocks f) c
   | .call n b => .call n (b.mapBlocks f)
+  | .icall n => .icall n
   | .frame i b j => .frame i (b.mapBlocks f) j
 
 namespace Taint
@@ -180,6 +181,7 @@ theorem MapInv.check (hA : A.MapInv f P) (c : Prog M) :
         obtain ⟨τ₂, h₂, h₃⟩ := hs
         exact hA.ret_P ((ih τ₁ hb h₁).2 τ₂ h₂) h₃
     | _ => exact ⟨rfl, fun _ h => by cases h⟩
+  | icall n => intro τ h _; cases h <;> exact ⟨rfl, fun _ h => by cases h⟩
   | frame i b j ih =>
     intro τ h hτ
     cases h with
@@ -292,6 +294,7 @@ theorem MapInv.checkSum [Frame A] (hA : A.MapInv f P) (c : Prog M) :
         exact hA.ret_P ((ih τ₁ hb h₁).2 τ₂ h₂) h₃
     | sum k => exact ⟨rfl, fun _ h => by cases h⟩
     | _ => exact ⟨rfl, fun _ h => by cases h⟩
+  | icall n => intro τ h _; cases h <;> exact ⟨rfl, fun _ h => by cases h⟩
   | frame i b j ih =>
     intro τ h hτ
     cases h with

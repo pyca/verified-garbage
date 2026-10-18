@@ -34,6 +34,33 @@ inductive HReg
   | xmm24 | xmm25 | xmm26 | xmm27 | xmm28 | xmm29 | xmm30 | xmm31
   deriving DecidableEq, Repr, Inhabited
 
+/-- The registers, flags, MXCSR and memory: what code reads and writes, of
+the machine state (`State`), without what the model adds to describe a run
+(the regions it may access and the values it does not know). What a function
+does is a function of it (`State.funs`). -/
+structure Arch where
+  gpr : Reg → BitVec 64
+  cf : Option Bool
+  zf : Option Bool
+  sf : Option Bool
+  of : Option Bool
+  xmm : XReg → BitVec 128
+  ymmHi : XReg → BitVec 128
+  zmmHi : XReg → BitVec 256
+  ymmH : HReg → BitVec 256
+  zmmHiH : HReg → BitVec 256
+  mxcsr : BitVec 32
+  mem : Mem
+
+/-- What an address holds, if it holds a function (see "Indirect calls" in
+`TCB/Code.lean`): what the function does, from the registers and memory on
+its entry to those on its return and the leakage trace of its run (`none` if
+it faults or does not return), and the tables of constants it reads where
+the program's `static`s are (its `Artifact.consts`, as it was emitted). -/
+structure IcallFn where
+  run : Arch → Option (Arch × List Leak)
+  consts : List (String × List (BitVec 64))
+
 structure State where
   gpr : Reg → BitVec 64
   cf : Option Bool
@@ -64,6 +91,30 @@ structure State where
   unknowns : Nat → BitVec 64 := fun _ => 0
   /-- The address of each `static` the code can name (`leaSym`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
+  /-- The function at each address, if the address holds one (see
+  "Indirect calls" in `TCB/Code.lean`). -/
+  funs : Addr → Option IcallFn := fun _ => none
+
+/-- The registers, flags, MXCSR and memory of `s`. -/
+def State.arch (s : State) : Arch :=
+  { gpr := s.gpr, cf := s.cf, zf := s.zf, sf := s.sf, of := s.of, xmm := s.xmm, ymmHi := s.ymmHi,
+    zmmHi := s.zmmHi, ymmH := s.ymmH, zmmHiH := s.zmmHiH, mxcsr := s.mxcsr, mem := s.mem }
+
+/-- `s` with the registers, flags, MXCSR and memory `a`. -/
+def State.withArch (s : State) (a : Arch) : State :=
+  { s with
+    gpr := a.gpr
+    cf := a.cf
+    zf := a.zf
+    sf := a.sf
+    of := a.of
+    xmm := a.xmm
+    ymmHi := a.ymmHi
+    zmmHi := a.zmmHi
+    ymmH := a.ymmH
+    zmmHiH := a.zmmHiH
+    mxcsr := a.mxcsr
+    mem := a.mem }
 
 /-- A memory operand `[base + index * scale + disp]`. -/
 structure MemOp where

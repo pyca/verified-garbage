@@ -12,13 +12,14 @@ primitives: this directory verifies the primitives, not the Rust around them.
 VerifiedGarbage/
   TCB/          Trusted computing base: definitions only, Lean core only
     Mem.lean        byte-addressed memory, regions
-    Code.lean       structured programs, calls and stack frames, big-step semantics
-                    with leakage, constant time
+    Code.lean       structured programs, calls (direct, and indirect through a pointer)
+                    and stack frames, big-step semantics with leakage, constant time
     Print.lean      lowering of structured control flow to labels and branches, of
                     calls to call instructions, and of frames to push and pop
     Sig.lean        Rust signatures and calling conventions (`Abi`)
     Artifact.lean   Target, Contract, `Verified`, `Artifact`: what "verified" means;
-                    `Sig.contract`: the contract obligations a signature implies
+                    `Sig.contract`: the contract obligations a signature implies;
+                    `FnMeets`: what a contract requires of a function it is passed
     Registration.lean  `Api.artifact`: an `Artifact` made from an `Api` and only
                     what its implementation chooses (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every

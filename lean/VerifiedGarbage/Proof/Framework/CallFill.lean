@@ -35,6 +35,7 @@ def Code.fillHoles (n : String) (b : Prog M) : Prog M → Prog M
   | .call m body => match body with
     | .block [] => .call n b
     | body => .call m body
+  | .icall k => .icall k
   | .frame i x j => .frame i (fillHoles n b x) j
 
 end VG

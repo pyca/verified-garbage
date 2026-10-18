@@ -445,6 +445,11 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  -- The model has no indirect calls on this target.
+  icallTarget_with _ _ _ := rfl
+  fnAt_with _ _ _ := rfl
+  fn_widen h := by cases h
+  callOk_widen h := h.elim
 /-- Calls change no memory, and returns nothing. -/
 theorem callsKeepMem : regionModel.CallsKeepMem := fun _ _ _ _ hc hr =>
   ⟨(call_eq hc).2.2.2.1, by rw [ret_eq hr]⟩
@@ -485,7 +490,7 @@ theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, clobbers i r
       by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
     s'.gpr r = s.gpr r := by
   refine Exec.keep (fun s : State => s.gpr r) exec_gpr (fun hj hp hq hb => ?_) hc
-    (hn.imp id fun hl _ _ _ _ hc hr hb => ?_) h
+    (hn.imp id fun hl _ _ _ _ hc hr hb => ?_) (fun _ {_ _ _ _ _ _} {_} hf => by cases hf) h
   · obtain ⟨-, -, -, hg, -⟩ := push_eq hp
     rw [(pop_eq hq).2.2.2.1 r (dstOf_ne_of_clobbers hj), hb, hg]
   · rw [ret_eq hr, hb, (call_eq hc).2.2.2.2 r hl]

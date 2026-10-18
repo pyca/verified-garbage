@@ -17,10 +17,11 @@ Untrusted: this only changes how proofs are found; the kernel checks them.
 The tactics `TCB/Registration.lean` declares for the default proofs of a
 `Registration`, which a registration file imports this module for:
 
-* `of_sig` proves `ofSig`, `∃ pre post leak, contract = sig.contract A pre
-  post writeArgs stack leak`, by unfolding the head of `contract` until it is
-  `Sig.contract` (e.g. `nttInvContract A` to `inPlaceContract A nttInv` to
-  `Sig.contract A (inPlaceSig "f") …`), and then `⟨_, _, _, rfl⟩`, whose
+* `of_sig` proves `ofSig`, `∃ pre post leak fns, contract = sig.contract A
+  pre post writeArgs stack leak fns`, by unfolding the head of `contract`
+  until it is `Sig.contract` (e.g. `nttInvContract A` to `inPlaceContract A
+  nttInv` to `Sig.contract A (inPlaceSig "f") …`), and then
+  `⟨_, _, _, _, rfl⟩`, whose
   unification does not always find the arguments of `Sig.contract` itself.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64) by
@@ -57,11 +58,13 @@ elab_rules : tactic
   | `(tactic| of_sig) => do
     let g ← getMainGoal
     let ty ← instantiateMVars (← g.getType)
-    let some c := eqLhs ty | throwError "of_sig: the goal is not `∃ pre post leak, _ = _`: {ty}"
-    if c.hasLooseBVars then throwError "of_sig: the contract depends on `pre`, `post` or `leak`: {ty}"
+    let some c := eqLhs ty |
+      throwError "of_sig: the goal is not `∃ pre post leak fns, _ = _`: {ty}"
+    if c.hasLooseBVars then
+      throwError "of_sig: the contract depends on `pre`, `post`, `leak` or `fns`: {ty}"
     let c' ← toSigContract c
     setGoals [← g.replaceTargetDefEq (ty.replace fun e => if e == c then some c' else none)]
-    evalTactic (← `(tactic| exact ⟨_, _, _, rfl⟩))
+    evalTactic (← `(tactic| exact ⟨_, _, _, _, rfl⟩))
 
 /-- A free variable of `e` whose type is an enumeration (`Bool`, an
 `inductive` of constructors without fields). -/

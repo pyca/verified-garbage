@@ -121,11 +121,16 @@ fn check(name: &str) -> (usize, usize, usize) {
         let id = test.tc_id;
         let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
         let r = decrypt(key, ct, h, g, label);
+        // On x86-64 every pair of SHA-1 and SHA-2 functions is supported;
+        // on AArch64, MGF1 over the hash function itself or SHA-1.
+        #[cfg(target_arch = "aarch64")]
         if r == Err(Error::UnsupportedHash) {
             let e = encrypt(public, msg, h, g, label);
             assert_eq!(e, Err(Error::UnsupportedHash), "{name} tcId {id}");
             unsupported.add();
-        } else if test.result == Expectation::Invalid {
+            return;
+        }
+        if test.result == Expectation::Invalid {
             let e = if ct.len() == n.len() {
                 Error::Decryption
             } else {
@@ -160,6 +165,9 @@ fn rsa_oaep_test() {
         assert!(refused > 0 || name == "rsa_oaep_misc_test.json", "{name}");
         unsupported += u;
     }
+    #[cfg(target_arch = "x86_64")]
+    assert_eq!(unsupported, 0);
+    #[cfg(target_arch = "aarch64")]
     assert!(unsupported > 0);
 }
 
@@ -178,13 +186,17 @@ fn rsa_oaep_every_pair() {
     let file: TestFile<Group, Case> = harness::load(name);
     let (key, public) = keys(name, &file.test_groups[0].params.private_key);
     let k = public.modulus_len();
-    // Each hash function with MGF1 over itself and over SHA-1.
-    let mut pairs: Vec<(Hash, Hash)> = HASHES
+    // On x86-64, every pair; on AArch64, each hash function with MGF1 over
+    // itself and over SHA-1.
+    let pairs: Vec<(Hash, Hash)> = HASHES
         .iter()
-        .flat_map(|&(_, h)| [(h, h), (h, Hash::Sha1)])
+        .flat_map(|&(_, h)| HASHES.iter().map(move |&(_, g)| (h, g)))
+        .filter(|&(h, g)| cfg!(target_arch = "x86_64") || g == h || g == Hash::Sha1)
         .collect();
-    pairs.dedup();
-    assert_eq!(pairs.len(), 13);
+    assert_eq!(
+        pairs.len(),
+        if cfg!(target_arch = "x86_64") { 49 } else { 13 }
+    );
     for (h, g) in pairs {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
         let ct = encrypt(&public, &msg, h, g, b"label").unwrap();

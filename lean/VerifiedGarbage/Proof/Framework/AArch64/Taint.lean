@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.Icall
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.TCB.AArch64.Target

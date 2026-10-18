@@ -124,6 +124,13 @@ theorem Exec.syms {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
     simp only [isa, ret] at e₂
     split at e₂ <;> [cases e₂; cases e₂]
     subst e₁; exact ih
+  | icall hf e₁ e₃ _ e₂ =>
+    simp only [isa, call, Option.some.injEq] at e₁
+    simp only [isa, ret] at e₂
+    split at e₂ <;> [cases e₂; cases e₂]
+    subst e₁
+    obtain ⟨r, rfl⟩ := fn_withArch hf e₃
+    rfl
   | frame e₁ _ e₂ ih => exact (pop_syms e₂).trans (ih.trans (push_syms e₁))
 
 /-- The state after `c` names the same addresses of statics as before it. -/

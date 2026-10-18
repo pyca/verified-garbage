@@ -62,9 +62,18 @@ Modelling choices:
   which take secret data in `vg_sha512_compress_shani`: that they, like
   the `SHA1*` and `SHA256*` instructions it does list, take a time
   independent of their data is an assumption no vendor statement covers.
-* Calls (`call`) and returns (`ret`) are near and direct (SDM Vol. 2, "CALL",
-  "RET"). The return addresses are the next of the state's `unknowns`,
-  which nothing constrains (see `TCB/Code.lean`).
+* Calls (`call`) and returns (`ret`) are near (SDM Vol. 2, "CALL", "RET").
+  A call of a function (`Code.call`) is direct, of its symbol; an indirect
+  call (`Code.icall`) is `call r11`, of the address in `r11` (SDM Vol. 2,
+  "CALL", `FF /2`, "CALL r/m64": "Call near, absolute indirect, address given
+  in r/m64"; in 64-bit mode its operation is `tempRIP := DEST; Push(RIP);
+  RIP := tempRIP`, so `call` stores the return address as for a direct
+  call). The return addresses are the next of the state's `unknowns`, which
+  nothing constrains (see `TCB/Code.lean`). What the function at an address
+  does is the state's `funs` (see "Indirect calls" in `TCB/Code.lean`).
+  Not modelled: indirect branch tracking (CET), which would require the
+  called function to begin with `endbr64`; the Rust targets the crate
+  supports do not enable it for its code.
 * A `static` the code reads (`Artifact.consts`) is at the address
   `State.syms name`, where `name` is its name, which `leaSym` (`lea` of a
   RIP-relative operand, resolved by the linker) puts in a register. No
@@ -860,6 +869,36 @@ def Instr.dst : Instr → Option Reg
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
+def calleeSaved : List Reg := [.rbx, .rbp, .rsp, .r12, .r13, .r14, .r15]
+
+/-- Calling-convention obligations on return (see `TCB/X86_64/Target.lean`). -/
+def abiPreserved (s s' : State) : Prop :=
+  (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+  s'.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 ∧
+  s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+
+/-- What the function at the address `a` does (`State.funs`), on the state
+`s₁` on its entry: the registers, flags, MXCSR and memory on its return, with
+the rest of `s₁` (the regions it may access and the values the model does
+not know), and the leakage trace of its run. -/
+def fnAt (s : State) (a : Addr) : Option (State → Option (State × List Leak)) :=
+  (s.funs a).map fun f s₁ => (f.run s₁.arch).map fun r => (s₁.withArch r.1, r.2)
+
+/-- The tables of constants the function at the address `a` reads
+(`State.funs`), if `a` holds one. -/
+def fnConsts (s : State) (a : Addr) : List (String × List (BitVec 64)) :=
+  ((s.funs a).map (·.consts)).getD []
+
+/-- What a function called indirectly with `n` bytes of stack keeps, from its
+entry `s₁` (`rsp` at the return address) to its return `s₂` (before `ret`):
+the calling convention's obligations (`abiPreserved`), and every byte of
+memory outside the writable regions of `s₁` and the `n` bytes below its
+`rsp`. -/
+def callOk (n : Nat) (s₁ s₂ : State) : Prop :=
+  abiPreserved s₁ s₂ ∧
+  ∀ x, (∀ r ∈ s₁.wr, ¬ r.Contains x 1) →
+    ¬ (Region.mk (s₁.gpr .rsp - BitVec.ofNat 64 n) n).Contains x 1 → s₂.mem x = s₁.mem x
+
 abbrev isa : ISA where
   State := State
   Instr := Instr
@@ -879,5 +918,9 @@ abbrev isa : ISA where
   push := push
   pop := pop
   requires := Instr.requires
+  icallTarget s := s.gpr .r11
+  fnAt := fnAt
+  fnConsts := fnConsts
+  callOk := callOk
 
 end VG.X86_64

@@ -58,6 +58,7 @@ theorem keepsIv_loop {b : Prog isa} {cc : Cond} (hb : KeepsIv b) : KeepsIv (.loo
   | iteT => cases hp
   | iteF => cases hp
   | call => cases hp
+  | icall => cases hp
   | frame => cases hp
 
 theorem keepsIv_cbcEncBlock {c : Core} (h : KeepsIv c.crypt) : KeepsIv c.cbcEncBlock := by

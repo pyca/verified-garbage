@@ -61,6 +61,7 @@ def evaluate : Nat → Prog isa → Machine → Except String Machine
     let some again := isa.eval c next.state | throw "undefined loop condition"
     if again then evaluate fuel (.loop body c) next else pure next
   | _, .call .., _ => .error "unexpected call"
+  | _, .icall .., _ => .error "unexpected indirect call"
   | _, .frame .., _ => .error "unexpected frame"
 
 def put (words : Words) (address count value : Nat) : Words :=

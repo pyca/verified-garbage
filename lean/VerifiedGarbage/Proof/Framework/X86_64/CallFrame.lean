@@ -83,6 +83,7 @@ theorem x86_64Depth_zero : ∀ {c : Prog isa}, NoSp c → c.depth = 0 → c.x86_
       x86_64Depth_zero (fun i hi => h i (List.mem_append_right _ hi)) hd.2, Nat.max_self]
   | .loop b _, h, hd => x86_64Depth_zero (c := b) h hd
   | .call _ _, _, hd => by simp [Code.depth] at hd
+  | .icall _, _, hd => by simp [Code.depth] at hd
   | .frame i b _, h, hd => by
     have hi := h i (List.mem_cons_self ..)
     have hb : b.x86_64Depth = 0 :=
@@ -103,6 +104,7 @@ theorem x86_64Depth_noSp : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth = 8 * c.
   | .loop b _, h => x86_64Depth_noSp (c := b) h
   | .call _ b, h => by
     simp only [Code.x86_64Depth, Code.depth, x86_64Depth_noSp (c := b) h, Nat.mul_add, Nat.mul_one]
+  | .icall _, _ => rfl
   | .frame i b _, h => by
     have hi := h i (List.mem_cons_self ..)
     have hb : b.x86_64Depth = 8 * b.depth :=

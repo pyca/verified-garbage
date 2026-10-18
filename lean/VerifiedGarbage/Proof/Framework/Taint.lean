@@ -171,6 +171,7 @@ def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
   | τ, .loop body c => go c (hint chunkSize · body) loopFuel τ
   | τ, .call _ body =>
     (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
+  | _, .icall _ => none
   | τ, .frame i body j =>
     (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
 where
@@ -353,6 +354,9 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
         obtain ⟨ha₃, ha₃'⟩ := A.ret_sound ha₂ h₃ hr hr₂
         exact ⟨by rw [ha₁, ha₃], ha₃'⟩
     | _ => have h' : (none : Option A.T) = some τ' := h; cases h'
+  | icall =>
+    -- The analysis does not handle indirect calls.
+    cases hc <;> (have h' : (none : Option A.T) = some τ' := h; cases h')
   | @frame i j body _ _ _ _ _ hp₁ _ hq ih =>
     cases hc with
     | frame hb =>

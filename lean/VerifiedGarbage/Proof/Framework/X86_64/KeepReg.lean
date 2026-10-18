@@ -75,6 +75,7 @@ def check (r : Reg) : Prog isa → Abs → Option Abs
   | .ite _ c d, a => (check r c a).bind fun x => (check r d a).map (meet x)
   | .loop b _, a => (check r b a).bind fun x => bif le a x then some a else none
   | .call .., _ => none
+  | .icall _, _ => none
   | .frame .., _ => none
 
 /-- `r` ends `c` with the value it starts with. -/
@@ -268,6 +269,9 @@ theorem Exec.holds {r : Reg} {v : BitVec 64} {c : Prog isa} {s s' : State} {t : 
     · simp only [hle, Bool.cond_false, reduceCtorEq] at hb
     · exact ih₂ hc' ((ih₁ hx ha).mono hle)
   | call =>
+    intro a b hc
+    simp only [check, reduceCtorEq] at hc
+  | icall =>
     intro a b hc
     simp only [check, reduceCtorEq] at hc
   | frame =>

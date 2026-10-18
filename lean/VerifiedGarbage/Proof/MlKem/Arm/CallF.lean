@@ -26,6 +26,7 @@ def stackUse : Prog isa → Nat
   | .ite _ a b => max (stackUse a) (stackUse b)
   | .loop b _ => stackUse b
   | .call _ b => stackUse b
+  | .icall _ => 0
   | .frame (.push rs) b _ => 4 * rs.length + stackUse b
   | .frame (.alloc n) b _ => n + stackUse b
   | .frame _ b _ => stackUse b
@@ -141,6 +142,7 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     rw [ret_eq hr]
     have := ih (by rw [p₁]; exact hd)
     rwa [w₁, p₁, m₁] at this
+  | icall hf => cases hf
   | @frame i j b s₀ s₁ s₂ _ _ hp _ hq ih =>
     rw [pop_mem' hq]
     cases i with

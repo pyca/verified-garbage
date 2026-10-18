@@ -289,6 +289,7 @@ def ownRequires {I C : Type} (req : I → List String) : List String → Code I 
   | acc, .ite _ t e => ownRequires req (ownRequires req acc t) e
   | acc, .loop b _ => ownRequires req acc b
   | acc, .call _ _ => acc
+  | acc, .icall _ => acc
   | acc, .frame i b j => add (ownRequires req (add acc (req i)) b) (req j)
 where
   add (acc fs : List String) : List String :=
@@ -313,6 +314,7 @@ def ownFirstSome? {I C : Type} (f : I → Option String) : Code I C → Option S
   | .ite _ t e => ownFirstSome? f t <|> ownFirstSome? f e
   | .loop b _ => ownFirstSome? f b
   | .call _ _ => none
+  | .icall _ => none
   | .frame i b j => f i <|> ownFirstSome? f b <|> f j
 
 /-- A `some` of `f` over the instructions of `c`, and of the functions it
@@ -323,6 +325,25 @@ call whose value is the first call of the same function's is skipped
 (`distinctCalls`): that value is `none`, or the first call's was found. -/
 def firstSome? {I C : Type} (f : I → Option String) (c : Code I C) : Option String :=
   ownFirstSome? f c <|> (distinctCalls (ownFirstSome? f) c.calls).findSome? id
+
+/-- Whether `c` has an indirect call (`Code.icall`), but not the functions it
+calls. -/
+def ownHasIcall {I C : Type} : Code I C → Bool
+  | .block _ => false
+  | .seq a b => ownHasIcall a || ownHasIcall b
+  | .ite _ t e => ownHasIcall t || ownHasIcall e
+  | .loop b _ => ownHasIcall b
+  | .call _ _ => false
+  | .icall _ => true
+  | .frame _ b _ => ownHasIcall b
+
+/-- Whether `c`, or a function it calls, has an indirect call
+(`Code.icall`): `c` outside its calls (`ownHasIcall`), or the code of a call
+(`Code.calls`, which has every call, those in the code of a call too),
+skipping a call whose value is the first call of the same function's
+(`distinctCalls`). -/
+def hasIcall {I C : Type} (c : Code I C) : Bool :=
+  ownHasIcall c || (distinctCalls ownHasIcall c.calls).any id
 
 /-- `doc` with the paragraphs `notes` inserted before its `# Safety` section. -/
 def insertNotes (doc : String) : List String → String
@@ -475,6 +496,16 @@ def checkEncodable (p : Prepared) : Except String Unit :=
   match firstSome? a.target.printer.unencodable a.code with
   | none => pure ()
   | some e => throw s!"{a.target.name}: {a.name}: {e}"
+
+/-- The code of `p`'s artifact, and of the functions it calls, has no indirect
+call (`Code.icall`) unless the target's printer has an instruction for it
+(`Printer.icall`). -/
+def checkIcall (p : Prepared) : Except String Unit :=
+  let a := p.art
+  if a.target.printer.icall.isEmpty && hasIcall a.code then
+    throw s!"{a.target.name}: {a.name} calls a function indirectly, which the target's printer \
+      has no instruction for"
+  else pure ()
 
 /-- Every call in the code of `p`'s artifact, and in the code of the functions
 it calls, is of an artifact of `ps` of the same target whose printed code is
@@ -702,7 +733,8 @@ contract (`checkApi`), two artifacts of a target have the same name
 tables of constants are not as `checkConsts` requires, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
-(`checkEncodable`), its doc has no `# Safety` section at its end for what
+(`checkEncodable`) or an indirect call it has no instruction for
+(`checkIcall`), its doc has no `# Safety` section at its end for what
 `fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`). Each check of
 every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
@@ -724,6 +756,7 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar ps (checkConsts ps)
   forMPar ps checkFeatures
   forMPar ps checkEncodable
+  forMPar ps checkIcall
   forMPar as checkLayout
   forMPar as checkWritten
   return render ps fun a n => ((callee as a n).map (·.module)).getD ""

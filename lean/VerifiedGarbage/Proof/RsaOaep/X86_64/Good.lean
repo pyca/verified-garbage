@@ -10,8 +10,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 # RSAES-OAEP on x86-64: the pieces that keep `rsp`, MXCSR and the stack
 
 Each piece but the RSA operation's call is `Good` (`Stack.lean`): its
-instructions, and those of the streaming hash functions it calls, never
-write `rsp` or load MXCSR, and its calls nest at most two deep.
+instructions never write `rsp` or load MXCSR, the streaming hash functions
+it calls indirectly keep MXCSR's control bits, and its calls nest at most
+two deep.
 -/
 
 @[expose] public section
@@ -19,69 +20,74 @@ write `rsp` or load MXCSR, and its calls nest at most two deep.
 namespace VG.Proof.RsaOaep.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
-open VG.Impl.Mgf1.X86_64 (seqs round mgfXor xorOut)
-open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
-open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
+open VG.Impl.Mgf1.X86_64 (seqs round mgfXor xorOut initF updF finF)
 
-/-- What the pieces need of a hash function's streaming functions. -/
-structure HGood (H : Hash) : Prop where
-  init : H.initC.allInstrs okI = true
-  upd : H.updC.allInstrs okI = true
-  fin : H.finC.allInstrs okI = true
-  initD : H.initC.depth ≤ 1
-  updD : H.updC.depth ≤ 1
-  finD : H.finC.depth ≤ 1
+theorem initF_good (sl : Nat) : Good (initF sl) := ⟨rfl, rfl, by simp [initF, Code.depth, Impl.Mgf1.X86_64.fnStack]⟩
 
-theorem HGood.of {H : Hash} (hH : HashOK H) (K : Callees H) : HGood H :=
-  ⟨okI_all_of hH.initSp K.iMx, okI_all_of hH.updSp hH.updMx, okI_all_of hH.finSp hH.finMx, hH.initDepth,
-    hH.updDepth, hH.finDepth⟩
+theorem updF_good (sl : Nat) : Good (updF sl) := ⟨rfl, rfl, by simp [updF, Code.depth, Impl.Mgf1.X86_64.fnStack]⟩
 
-variable {H : Hash} (g : HGood H)
-include g
+theorem finF_good (sl : Nat) : Good (finF sl) := ⟨rfl, rfl, by simp [finF, Code.depth, Impl.Mgf1.X86_64.fnStack]⟩
 
-theorem hashLabel_good (o : Nat) : Good (hashLabel H.stream o) := by
-  have := g.initD; have := g.updD; have := g.finD
-  refine ⟨?_, ?_⟩
-  · simp only [hashLabel, seqs, Code.allInstrs, Hash.stream, g.init, g.upd, g.fin, Bool.and_true, Bool.true_and]
-    rfl
-  · simp only [hashLabel, seqs, Code.depth, Hash.stream, Nat.max_le]; omega
+theorem Good.seq {a b : Prog isa} (ha : Good a) (hb : Good b) : Good (.seq a b) :=
+  ⟨by simp only [Code.allInstrs, ha.1, hb.1, Bool.and_self],
+    by simp only [ctlOk, ha.2.1, hb.2.1, Bool.and_self, Bool.or_true],
+    by simp only [Code.depth, Nat.max_le]; exact ⟨ha.2.2, hb.2.2⟩⟩
 
-theorem mgfXor_good : Good (mgfXor lay H.stream) := by
-  have := g.initD; have := g.updD; have := g.finD
-  refine ⟨?_, ?_⟩
-  · simp only [mgfXor, round, xorOut, seqs, Code.allInstrs, Hash.stream, g.init, g.upd, g.fin, Bool.and_true,
-      Bool.true_and]
-    rfl
-  · simp only [mgfXor, round, xorOut, seqs, Code.depth, Hash.stream, Impl.Mgf1.X86_64.byteLoop, Nat.max_le]; omega
+theorem Good.block' {is : List Instr} (h : (Code.block is : Prog isa).allInstrs okI = true)
+    (hc : ctlOk (.block is) = true) : Good (.block is) :=
+  ⟨h, hc, by simp [Code.depth]⟩
 
-omit g in
-theorem block_good (is : List Instr) (h : (Code.block is : Prog isa).allInstrs okI = true) : Good (.block is) :=
-  ⟨h, by simp [Code.depth]⟩
+theorem hashLabel_good (o : Nat) : Good (hashLabel o) := by
+  unfold hashLabel seqs seqs seqs seqs seqs
+  exact .seq (.block' rfl rfl) (.seq (initF_good _) (.seq (.block' rfl rfl) (.seq (updF_good _)
+    (.seq (.block' rfl rfl) (finF_good _)))))
 
-omit g in
-theorem clearEm_good : Good clearEm := ⟨rfl, by simp [clearEm, Code.depth]⟩
+theorem xorOut_good : Good (xorOut lay) := ⟨rfl, rfl, by simp [xorOut, seqs, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 
-omit g in
-theorem putMsg_good : Good putMsg := ⟨rfl, by simp [putMsg, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+theorem mgfXor_good : Good (mgfXor lay) := by
+  have hr : Good (round lay) := by
+    unfold round seqs seqs seqs seqs seqs seqs seqs seqs seqs
+    exact .seq (.block' rfl rfl) (.seq (initF_good _) (.seq (.block' rfl rfl) (.seq (updF_good _)
+      (.seq (.block' rfl rfl) (.seq (updF_good _) (.seq (.block' rfl rfl) (.seq (finF_good _)
+        (.seq xorOut_good (.block' rfl rfl)))))))))
+  exact .seq (.block' rfl rfl) ⟨hr.1, by simp only [ctlOk]; exact hr.2.1, by simp only [Code.depth]; exact hr.2.2⟩
 
-omit g in
-theorem zeroOut_good : Good zeroOut := ⟨rfl, by simp [zeroOut, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+theorem block_good (is : List Instr) (h : (Code.block is : Prog isa).allInstrs okI = true)
+    (hc : ctlOk (.block is) = true) : Good (.block is) :=
+  ⟨h, hc, by simp [Code.depth]⟩
 
-omit g in
-theorem copySeed_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (copySeed H) :=
-  ⟨rfl, by simp [copySeed, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+theorem clearEm_good : Good clearEm := ⟨rfl, rfl, by simp [clearEm, Code.depth]⟩
 
-omit g in
-theorem copyLh_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (copyLh H) :=
-  ⟨rfl, by simp [copyLh, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+theorem putMsg_good : Good putMsg := ⟨rfl, rfl, by simp [putMsg, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 
-omit g in
-theorem dbArgs_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (.block (dbArgs H)) := ⟨rfl, by simp [Code.depth]⟩
+theorem zeroOut_good : Good zeroOut := ⟨rfl, rfl, by simp [zeroOut, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 
-omit g in
-theorem seedArgs_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (.block (seedArgs H)) := ⟨rfl, by simp [Code.depth]⟩
+theorem copySeed_good : Good copySeed :=
+  ⟨rfl, rfl, by simp [copySeed, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 
-omit g in
-theorem pubArgs_good : Good (.block pubArgs) := ⟨rfl, by simp [Code.depth]⟩
+theorem copyLh_good : Good copyLh :=
+  ⟨rfl, rfl, by simp [copyLh, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
+theorem dbArgs_good : Good (.block dbArgs) := ⟨rfl, rfl, by simp [Code.depth]⟩
+
+theorem seedArgs_good : Good (.block seedArgs) := ⟨rfl, rfl, by simp [Code.depth]⟩
+
+theorem pubArgs_good : Good (.block pubArgs) := ⟨rfl, rfl, by simp [Code.depth]⟩
+
+theorem lensH_good : Good (Impl.Dispatch.X86_64.chain (lens.map fun p => (p.1, .block (consts p.2)))) :=
+  ⟨by decide, by decide, by decide⟩
+
+theorem lensG_good : Good (Impl.Dispatch.X86_64.chain (lens.map fun p =>
+    (p.1, .block [.mov32 .rax (im p.2), .store (Impl.Mgf1.X86_64.sp sGD) .rax]))) :=
+  ⟨by decide, by decide, by decide⟩
+
+theorem selPrologue_good (jH jG : Nat) : Good (selPrologue jH jG) := by
+  unfold selPrologue seqs seqs seqs seqs
+  exact .seq (.block' rfl rfl) (.seq lensH_good (.seq (.block' rfl rfl) (.seq lensG_good (.block' rfl rfl))))
+
+theorem Good.all {c : Prog isa} (h : Good c) : c.all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_allInstrs (by
+    rw [Code.allInstrs_eq]
+    exact List.all_eq_true.mpr fun i hi => by rw [SpSafe.of_noSp h.noSp i hi]; rfl)
 
 end VG.Proof.RsaOaep.X86_64

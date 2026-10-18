@@ -138,7 +138,7 @@ theorem Exec.storeFrame {ok : Nat → Bool} {c : Prog isa} (hc : ∀ i ∈ instr
       rw [ret_eq hr, hb]
       obtain ⟨-, -, -, hm, hg⟩ := call_eq hcall
       unfold storeGet
-      rw [hm, hg _ (by decide)]) h
+      rw [hm, hg _ (by decide)]) (fun _ {_ _ _ _ _ _} {_} hf => by cases hf) h
   have e1 := congrArg Prod.fst e
   simp only [storeGet] at e1
   refine ⟨e1, fun a ha => ?_⟩

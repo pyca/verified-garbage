@@ -91,6 +91,7 @@ theorem keepsGpr_of_gprSafe {r : Reg} {c : Prog isa} (hc : gprSafe r c = true) :
   | loopExit _ _ ih => exact ih
   | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₂ hc).trans (ih₁ hc)
   | call => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
+  | icall => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
   | frame => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
 
 end VG.Proof.Modes.X86_64

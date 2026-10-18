@@ -37,6 +37,7 @@ def zImm : Prog isa → Prog isa
   | .ite c t e => .ite c (zImm t) (zImm e)
   | .loop b c => .loop (zImm b) c
   | .call n b => .call n (zImm b)
+  | .icall n => .icall n
   | .frame p b q => .frame p (zImm b) q
 
 theorem step_zImm (τ : VG.AArch64.Taint.T) (i : Instr) :
@@ -69,6 +70,7 @@ theorem check_zImm (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
     cases h <;> first | rfl | simp only [zImm, VG.Taint.check, iht, ihe]
   | loop b c ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
   | call n b ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
+  | icall n => cases h <;> rfl
   | frame p b q ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
 
 /-- The analysis of `c` from that of `c'`, which differs from it only in

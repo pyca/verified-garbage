@@ -36,13 +36,10 @@ the 128-byte red zone.
 
 namespace VG.X86_64
 
-def calleeSaved : List Reg := [.rbx, .rbp, .rsp, .r12, .r13, .r14, .r15]
-
-/-- Calling-convention obligations on return. -/
-def abiPreserved (s s' : State) : Prop :=
-  (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
-  s'.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 ∧
-  s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+/-! The calling-convention obligations on return are `abiPreserved`
+(`TCB/X86_64/Isa.lean`, which an indirect call's `callOk` also requires):
+the callee-saved registers `calleeSaved`, the return address at `[rsp]` and
+the control bits of MXCSR. -/
 
 /-- System V argument registers, in order. -/
 def argRegs : List Reg := [.rdi, .rsi, .rdx, .rcx, .r8, .r9]

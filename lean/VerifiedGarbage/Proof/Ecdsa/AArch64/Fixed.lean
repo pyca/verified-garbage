@@ -470,7 +470,7 @@ theorem invCall_ok {name : String} {body : Prog isa} {s : State} {base : Addr}
       Unch base (chainWc c) s.mem s'.mem ∧ R s.mem s'.mem := by
   have hnv : ∀ (r : VReg), ∀ i ∈ instrs (c.invFn body), vdstOf i ≠ some r := by
     intro r i hi e
-    have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
+    have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _) ▸ hv) i hi
     rw [e] at this; cases this
   rw [Cfg.invCall]
   refine WP.seq (WP.mono (keepLr_ok s) fun s₁ ⟨k₁, m₁, l₁⟩ => ?_)

@@ -13,6 +13,9 @@ conditional branches:
 * `call name body` ⟶  `<call> name` (the call instruction, e.g. `call` or
   `bl`, of the function `name`, which is emitted separately: see
   `VG.Rust.files`)
+* `icall n` ⟶  the call instruction of the address in the register
+  `ISA.icallTarget` names (`Printer.icall`, e.g. `call r11`); the emitter
+  refuses it on a target that has none (`Rust.checkIcall`)
 * an instruction naming a `static` (`Printer.symLines`) ⟶ lines with the
   page of its address or the offset in that page (`Line.sym`), which
   `VG.Rust.files` writes in the syntax of the object format
@@ -96,6 +99,10 @@ structure Printer (M : ISA) where
   /-- The mnemonic of the call instruction whose operand is a function's
   symbol (`ISA.call`), e.g. `call` or `bl`. -/
   call : String
+  /-- The lines of the call instruction of an indirect call (`Code.icall`),
+  calling the address in the register `ISA.icallTarget` names; empty on a
+  target without indirect calls. -/
+  icall : List String := []
   /-- The lines of an instruction that names a `static` (`Line.sym`); `none`
   for the others, whose lines are `instr`'s text. -/
   symLines : M.Instr → Option (List Line) := fun _ => none
@@ -152,6 +159,7 @@ def Printer.lower : Code M.Instr M.Cond → Nat → List Line × List Line × Na
     let (lb, kb, n) := lower body (n + 1)
     ([.text (lTop ++ ":")] ++ lb ++ [.text (P.branch c (lTop ++ "b"))], kb, n)
   | .call name _, n => ([.call name], [], n)
+  | .icall _, n => (P.icall.map .text, [], n)
   | .frame i body j, n =>
     let (lb, kb, n) := lower body n
     ((P.symLines i).getD ((P.instr i).map .text) ++ lb ++
@@ -165,6 +173,7 @@ def Printer.codeTables : Code M.Instr M.Cond → List (String × List (BitVec 64
   | .ite _ t e => codeTables t ++ codeTables e
   | .loop body _ => codeTables body
   | .call .. => []
+  | .icall _ => []
   | .frame i body j => P.tables i ++ codeTables body ++ P.tables j
 
 /-- The complete body of a function: the lowered code, the return, and the

@@ -107,6 +107,7 @@ theorem keepsIv_of_ivSafe {c : Prog isa} (hc : ivSafe c = true) : KeepsIv c := b
   | loopExit _ _ ih => exact ih
   | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₂ hc).trans (ih₁ hc)
   | call => intro hc; simp only [ivSafe, Bool.false_eq_true] at hc
+  | icall => intro hc; simp only [ivSafe, Bool.false_eq_true] at hc
   | frame => intro hc; simp only [ivSafe, Bool.false_eq_true] at hc
 
 end VG.Proof.Modes.X86_64

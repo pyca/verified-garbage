@@ -273,6 +273,7 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     rw [ret_eq hr]
     have := ih hd
     rwa [w₁, p₁, m₁] at this
+  | icall hf => cases hf
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     cases i <;> try { simp only [isa, push, reduceCtorEq] at hp }
     case push r =>

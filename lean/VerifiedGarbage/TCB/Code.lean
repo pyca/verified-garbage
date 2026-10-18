@@ -11,10 +11,12 @@ branch conditions.
 
 Programs are `Code`: straight-line blocks of real instructions glued together
 with structured control flow (`ite` and do-while `loop`), calls of other
-functions (`call`) and stack frames (`frame`). The printer
-(`TCB/Print.lean`) lowers the structured control flow to labels and
-conditional jumps, a call to a call instruction naming the function, which
-is emitted separately, and a frame to its push, its body and its pop.
+functions (`call`), calls of a function through a pointer (`icall`) and
+stack frames (`frame`). The printer (`TCB/Print.lean`) lowers the
+structured control flow to labels and conditional jumps, a call to a call
+instruction naming the function, which is emitted separately, an indirect
+call to a call instruction naming a register, and a frame to its push, its
+body and its pop.
 
 ## Calls
 
@@ -36,6 +38,34 @@ address. The stack pointer is only changed by calls and returns and by
 frames (`ISA.writesSp`, `Artifact.spSafe`), which are nested, so that the
 memory a call instruction or a push stores to is below the stack pointer on
 entry: never memory that the caller of the function uses.
+
+## Indirect calls
+
+`icall n` calls the function whose address is in a register the target
+fixes (`ISA.icallTarget`), which may use `n` bytes of stack below its
+return address. The model does not know the code at that address, so, as
+for return addresses, the machine state supplies it: `ISA.fnAt s a` is what
+the function at the address `a` does, a function from the state on its
+entry (just after the call instruction) to the state on its return and the
+leakage trace of its run, or `none` if `a` holds no function, and
+`ISA.fnConsts s a` the tables of constants it reads. It acts on the
+registers and memory only (not on the regions the state permits, nor on the
+other values the model does not know), as the machine does. Its semantics
+is that of the call instruction (`ISA.call`), then that function, then the
+function's return instruction (`ISA.ret`), and the leakage trace has the
+address called. The call faults unless the function returns in a state
+that the call allows (`ISA.callOk n`): with the callee-saved registers, the
+stack pointer and the return address the calling convention keeps, and
+memory changed only in the writable regions and in the `n` bytes of stack
+below the return address.
+
+So a run of code that calls a function indirectly depends on what the
+state says the function does, which a proof can only know from the
+caller's precondition: a contract states it of the functions its arguments
+point to with `FnMeets` (`TCB/Artifact.lean`), which says what any function
+verified against a given contract does, and so is a requirement on the
+caller, as the `# Safety` section of the function says: to pass only
+functions that are verified against that contract.
 
 ## Stack frames
 
@@ -123,6 +153,29 @@ structure ISA where
   (#UD), which `exec` does not model: `Artifact.features` makes their
   presence the caller's obligation instead. -/
   requires : Instr → List String
+  /-- The address an indirect call (`Code.icall`) calls: the register its
+  call instruction names. -/
+  icallTarget : State → Addr := fun _ => 0
+  /-- What the function at an address does, if the address holds one: from
+  the state on its entry, just after the call instruction, the state on its
+  return (before its return instruction) and the leakage trace of its run,
+  or `none` if it faults or does not return. The machine state supplies it,
+  as it supplies return addresses (see "Indirect calls" above). It changes
+  only the registers and memory of the state. A target without indirect
+  calls holds no function at any address. -/
+  fnAt : State → Addr → Option (State → Option (State × List Leak)) := fun _ _ => none
+  /-- The tables of constants (by name, each a list of 64-bit words) that the
+  function at an address reads where the program's `static`s are: those it
+  was emitted with (`Artifact.consts`). Like the function, they are what the
+  address holds, the same in every run of the program. -/
+  fnConsts : State → Addr → List (String × List (BitVec 64)) := fun _ _ => []
+  /-- What a function that an indirect call calls, which may use `n` bytes of
+  stack, must leave as it found, from the state `s₁` on its entry (just after
+  the call instruction) to the state `s₂` on its return (before its return
+  instruction): the callee-saved registers, the stack pointer and the return
+  address that the calling convention keeps, and memory except in the
+  writable regions of `s₁` and in the `n` bytes below its stack pointer. -/
+  callOk : Nat → State → State → Prop := fun _ _ _ => False
 
 /-- Structured code. -/
 inductive Code (I C : Type) where
@@ -134,6 +187,10 @@ inductive Code (I C : Type) where
   | loop (body : Code I C) (c : C)
   /-- A call of the function `name`, whose code is `body`. -/
   | call (name : String) (body : Code I C)
+  /-- A call of the function whose address is in the register
+  `ISA.icallTarget` names, which may use `stack` bytes of stack below its
+  return address. -/
+  | icall (stack : Nat)
   /-- `push; body; pop`: a stack frame around `body`. -/
   | frame (push : I) (body : Code I C) (pop : I)
 
@@ -154,16 +211,20 @@ def Code.all {I C : Type} (p : I → Bool) : Code I C → Bool
   | .ite _ t e => t.all p && e.all p
   | .loop b _ => b.all p
   | .call _ b => b.all p
+  | .icall _ => true
   | .frame i b j => p i && b.all p && p j
 
 /-- The features that the instructions of `c`, and of the functions it
-calls, require (`ISA.requires`), with repetitions. -/
+calls, require (`ISA.requires`), with repetitions. Not those of the
+functions it calls indirectly, which the model does not know: what a
+function requires of the functions it is passed is its caller's obligation. -/
 def Code.requires {I C : Type} (req : I → List String) : Code I C → List String
   | .block is => is.flatMap req
   | .seq a b => a.requires req ++ b.requires req
   | .ite _ t e => t.requires req ++ e.requires req
   | .loop b _ => b.requires req
   | .call _ b => b.requires req
+  | .icall _ => []
   | .frame i b j => req i ++ b.requires req ++ req j
 
 /-- The calls in `c`, and in the functions it calls: each function's name
@@ -174,6 +235,7 @@ def Code.calls {I C : Type} : Code I C → List (String × Code I C)
   | .ite _ t e => t.calls ++ e.calls
   | .loop b _ => b.calls
   | .call n b => (n, b) :: b.calls
+  | .icall _ => []
   | .frame _ b _ => b.calls
 
 variable (M : ISA)
@@ -206,6 +268,11 @@ inductive Exec : Prog M → M.State → List Leak → M.State → Prop
   | call {name body s s₁ s₂ s' t} :
       M.call s = some s₁ → Exec body s₁ t s₂ → M.ret s₁ s₂ = some s' →
       Exec (.call name body) s ((M.callAddrs s).map .addr ++ t ++ (M.retAddrs s₂).map .addr) s'
+  | icall {n s f s₁ s₂ s' t} :
+      M.fnAt s (M.icallTarget s) = some f → M.call s = some s₁ → f s₁ = some (s₂, t) →
+      M.callOk n s₁ s₂ → M.ret s₁ s₂ = some s' →
+      Exec (.icall n) s ((M.callAddrs s).map .addr ++ .addr (M.icallTarget s) :: t ++
+        (M.retAddrs s₂).map .addr) s'
   | frame {i j body s s₁ s₂ s' t} :
       M.push i s = some s₁ → Exec body s₁ t s₂ → M.pop j s₁ s₂ = some s' →
       Exec (.frame i body j) s ((M.addrs i s).map .addr ++ t ++ (M.addrs j s₂).map .addr) s'

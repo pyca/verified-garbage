@@ -25,32 +25,31 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp seqs mgfXor)
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
-open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
+open VG.Proof.HashFns (StreamingOK)
 
 /-- In the frame, with the argument slots as the prologue stored them. -/
 structure EW (s t : State) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
-  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 5) V W ∧ ArgsW s W
+  L : Lay t (fb s) (stackArg s 6)
+  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 6) V W ∧ ArgsW s W
 
 /-- Before MGF1, with its slots set. -/
 structure EWM (s t : State) (src srcLen dst dstLen : Nat) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
-  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 5) V W ∧ ArgsW s W ∧ MArgs W (stackArg s 5) src srcLen dst dstLen
+  L : Lay t (fb s) (stackArg s 6)
+  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 6) V W ∧ ArgsW s W ∧ MArgs W (stackArg s 6) src srcLen dst dstLen
 
 /-- The words of `vg_rsa_public_checked`'s stack arguments. -/
 def pw (s : State) : Nat → BitVec 64
-  | 0 => off (stackArg s 5) oEm
+  | 0 => off (stackArg s 6) oEm
   | 1 => s.gpr .rcx
-  | 2 => off (stackArg s 5) oRsa
-  | _ => stackArg s 6 - 1024
+  | 2 => off (stackArg s 6) oRsa
+  | _ => stackArg s 7 - 1024
 
 /-- Before the call of `vg_rsa_public_checked`, with its arguments. -/
 structure EWP (s t : State) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
+  L : Lay t (fb s) (stackArg s 6)
   w : ∀ i < 4, t.mem.readW (off (fb s) (8 * i)) 64 = pw s i
   rdi : t.gpr .rdi = s.gpr .rdi
   rsi : t.gpr .rsi = s.gpr .rcx
@@ -60,11 +59,11 @@ structure EWP (s t : State) : Prop where
   r9 : t.gpr .r9 = s.gpr .r9
 
 /-- The argument slots. -/
-def encKs : List Nat := [14, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+def encKs : List Nat := [14, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 37, 38, 39, 40, 41, 42, 43]
 
 theorem encKs_lt : ∀ k ∈ encKs, k < nW := by decide
 
-theorem encKs_iff {k : Nat} (h : k ∈ encKs) : k = 14 ∨ (21 ≤ k ∧ k ≤ 31) := by
+theorem encKs_iff {k : Nat} (h : k ∈ encKs) : k = 14 ∨ (21 ≤ k ∧ k ≤ 31) ∨ (37 ≤ k ∧ k ≤ 43) := by
   simp only [encKs, List.mem_cons, List.not_mem_nil, or_false] at h; omega
 
 section
@@ -97,7 +96,7 @@ theorem EW.words (h : EW s t) : ∀ k ∈ encKs, word t.mem (fb s) (8 * k) = enc
   obtain ⟨V, W, R, hW⟩ := h.rep
   intro k hk
   rw [R.fr k (encKs_lt k hk)]
-  exact hW k (encKs_iff hk)
+  exact hW k (by rcases encKs_iff hk with h | h | h <;> [exact .inl h; exact .inr (.inl h); exact .inr (.inr (.inl h))])
 
 omit hp in
 theorem EWM.ew {src srcLen dst dstLen : Nat} (h : EWM s t src srcLen dst dstLen) : EW s t :=
@@ -117,14 +116,16 @@ theorem ew_clearEm {t : State} (h : EW s t) : WP isa clearEm t (EW s) := by
   exact WP.mono (wp_good clearEm_good (clearEm_ok h.L R)) fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
     ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, W, R1, hW⟩
 
-theorem ew_copySeed {Hm : Stream} (hl : Hs.len = Hm.D) (hD : 0 < Hm.D) (hD64 : Hm.D ≤ 64) {t : State}
-    (h : EW s t) : WP isa (copySeed Hm) t (EW s) := by
+theorem ew_copySeed {D : Nat} (hl : Hs.len = D) (hDl : lenOf (selH s) = D) (hD : 0 < D) (hD64 : D ≤ 64)
+    {t : State} (h : EW s t) : WP isa copySeed t (EW s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, w31⟩ := hW.w
+  obtain ⟨-, -, w39, -⟩ := hW.sel
+  rw [hDl] at w39
   have hsl := hp.hsl; have hk2 := hp.k2; have wSd := hp.wSd
-  have hc : ∀ i < Hm.D, (⟨stackArg s 4, Hs.len⟩ : Region).Contains (stackArg s 4 + BitVec.ofNat 64 i) 1 :=
+  have hc : ∀ i < D, (⟨stackArg s 4, Hs.len⟩ : Region).Contains (stackArg s 4 + BitVec.ofNat 64 i) 1 :=
     fun i hi => Offset.contains_base (stackArg s 4) (d := i) (n := 1) (k := Hs.len) (by omega) (by omega)
-  exact WP.mono (wp_good (copySeed_good _) (copySeed_ok (H := Hm) h.L R w31 hD hD64
+  exact WP.mono (wp_good copySeed_good (copySeed_ok h.L R w31 w39 hD hD64
     (fun i hi => hp.rd_in h.he.rd (by simp [rdL]) (hc i hi))
     (fun i hi j hj => ne_of_disjoint hp.d_sd_scr (hc i hi) (Offset.contains_base _
       (by unfold oEm at *; omega) (by unfold oEm at *; omega)))))
@@ -133,28 +134,31 @@ theorem ew_copySeed {Hm : Stream} (hl : Hs.len = Hm.D) (hD : 0 < Hm.D) (hD64 : H
 
 /-- The label, where `hashLabel` finds it. -/
 theorem EW.lab {t : State} (h : EW s t) {W : Nat → BitVec 64} (hW : ArgsW s W) :
-    LabAt t (fb s) (stackArg s 5) W (stackArg s 0) (stackArg s 1).toNat := by
+    LabAt t (fb s) (stackArg s 6) W (stackArg s 0) (stackArg s 1).toNat := by
   obtain ⟨-, -, -, -, -, -, -, w27, w28, -⟩ := hW.w
   have hsl := hp.hsl
-  have sS : Region.Sub ⟨stackArg s 5, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega)
+  have sS : Region.Sub ⟨stackArg s 6, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega)
   exact ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 1).isLt,
     Covers.left (by rw [h.he.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
     hp.d_lb_scr.sub_right sS, hp.d_stk_lb.sub_left (ret_sub s)⟩
 
-theorem ew_hashLabel {Hm : Hash} (hH : HashOK Hm) (KH : Callees Hm) (mH : MgfLink Hm hH) {t : State}
-    (h : EW s t) :
-    WP isa (hashLabel Hm.stream oDig) t (EW s) := by
+theorem ew_hashLabel {T : Spec.HashFns.Streaming} {Hm : Spec.Mgf1.Hash} (hT : StreamingOK T Hm)
+    (fH : FnsOf s T 12) {t : State} (h : EW s t) : WP isa (hashLabel oDig) t (EW s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
-  exact WP.mono (wp_good (hashLabel_good (HGood.of hH KH) oDig)
-    (hashLabel_ok hH.stream (Hs := mH.G) mH.hash h.L R (h.lab hp hW) (Or.inl rfl)))
-    fun t3 ⟨⟨L3, rd3, wr3, cs3, V3, R3, _, _⟩, sp3, mx3, f3⟩ =>
+  obtain ⟨fn, -⟩ := hW.fn
+  exact WP.mono (wp_good (hashLabel_good oDig)
+    (hashLabel_ok hT fH (Hs := Hm) (congrFun hT.hash) h.he.here h.L R (h.lab hp hW) hp.wL
+      (hp.rdIn (r := ⟨stackArg s 0, (stackArg s 1).toNat⟩) (by simp [rdL])) fn (Or.inl rfl)))
+    fun t3 ⟨⟨L3, _, rd3, wr3, cs3, V3, R3, _, _⟩, sp3, mx3, f3⟩ =>
       ⟨h.he.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3, L3, V3, W, R3, hW⟩
 
 omit hp in
-theorem ew_copyLh {Hm : Stream} (hD : 0 < Hm.D) (hD64 : Hm.D ≤ 64) {t : State} (h : EW s t) :
-    WP isa (copyLh Hm) t (EW s) := by
+theorem ew_copyLh {D : Nat} (hDl : lenOf (selH s) = D) (hD : 0 < D) (hD64 : D ≤ 64) {t : State} (h : EW s t) :
+    WP isa copyLh t (EW s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
-  exact WP.mono (wp_good (copyLh_good _) (copyLh_ok (H := Hm) h.L R hD hD64))
+  obtain ⟨-, -, w39, -⟩ := hW.sel
+  rw [hDl] at w39
+  exact WP.mono (wp_good copyLh_good (copyLh_ok h.L R w39 hD hD64))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, W, R1, hW⟩
 
@@ -173,45 +177,53 @@ theorem ew_putMsg {D : Nat} (hk : 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .r
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, W, R1, hW⟩
 
 omit hp in
-theorem ew_dbArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr .rcx).toNat) {t : State}
-    (h : EW s t) : WP isa (.block (dbArgs Hm)) t fun t' =>
-      EWM s t' (oEm + 1) Hm.D (oEm + 1 + Hm.D) ((s.gpr .rcx).toNat - (Hm.D + 1)) := by
+theorem ew_dbArgs {D : Nat} (hDl : lenOf (selH s) = D) (hkD : D + 1 ≤ (s.gpr .rcx).toNat) {t : State}
+    (h : EW s t) : WP isa (.block dbArgs) t fun t' =>
+      EWM s t' (oEm + 1) D (oEm + 1 + D) ((s.gpr .rcx).toNat - (D + 1)) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
   obtain ⟨-, -, -, w23, -⟩ := hW.w
-  exact WP.mono (wp_good (dbArgs_good _) (dbArgs_ok (H := Hm) h.L R
-    (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hD hkD))
+  obtain ⟨-, -, w39, w40, -⟩ := hW.sel
+  rw [hDl] at w39 w40
+  exact WP.mono (wp_good dbArgs_good (dbArgs_ok h.L R
+    (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) w39 w40 hkD))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, _, R1,
         fun k hk => (mW_other (by omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
-theorem ew_seedArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr .rcx).toNat) {t : State}
-    (h : EW s t) : WP isa (.block (seedArgs Hm)) t fun t' =>
-      EWM s t' (oEm + 1 + Hm.D) ((s.gpr .rcx).toNat - (Hm.D + 1)) (oEm + 1) Hm.D := by
+theorem ew_seedArgs {D : Nat} (hDl : lenOf (selH s) = D) (hkD : D + 1 ≤ (s.gpr .rcx).toNat) {t : State}
+    (h : EW s t) : WP isa (.block seedArgs) t fun t' =>
+      EWM s t' (oEm + 1 + D) ((s.gpr .rcx).toNat - (D + 1)) (oEm + 1) D := by
   obtain ⟨V, W, R, hW⟩ := h.rep
   obtain ⟨-, -, -, w23, -⟩ := hW.w
-  exact WP.mono (wp_good (seedArgs_good _) (seedArgs_ok (H := Hm) h.L R
-    (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hD hkD))
+  obtain ⟨-, -, w39, w40, -⟩ := hW.sel
+  rw [hDl] at w39 w40
+  exact WP.mono (wp_good seedArgs_good (seedArgs_ok h.L R
+    (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) w39 w40 hkD))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, _, R1,
         fun k hk => (mW_other (by omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
-theorem ew_mgf {Gm : Hash} (hG : HashOK Gm) (KG : Callees Gm) (mG : MgfLink Gm hG) {src srcLen dst dstLen : Nat}
+theorem ew_mgf {T : Spec.HashFns.Streaming} {Gm : Spec.Mgf1.Hash} (hT : StreamingOK T Gm)
+    (fG : FnsOf s T 13) (eG : Spec.HashId.mgf1 (selG s) = some Gm) {src srcLen dst dstLen : Nat}
     (hf : MFit src srcLen dst dstLen) {t : State} (h : EWM s t src srcLen dst dstLen) :
-    WP isa (mgfXor lay Gm.stream) t (EW s) := by
+    WP isa (mgfXor lay) t (EW s) := by
   obtain ⟨V, W, R, hW, A⟩ := h.rep
-  exact WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
-    (valid_of_link hG mG) h.L R hf A))
-    fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
+  obtain ⟨-, -, -, -, -, -, w43⟩ := hW.sel
+  obtain ⟨-, fn⟩ := hW.fn
+  rw [← lenOf_eq hT eG] at w43
+  exact WP.mono (wp_good mgfXor_good (mgfXor_ok hT fG (Gs := Gm) (congrFun hT.hash) hT.len hT.valid h.he.here
+    h.L R hf A fn w43))
+    fun t1 ⟨⟨L1, _, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
-        rw [hW1 k (by rcases hk with rfl | hk <;> unfold nW frameBytes <;> omega) (by omega) (by omega)]
+        rw [hW1 k (by rcases hk with rfl | hk | hk | hk <;> unfold nW frameBytes <;> omega) (by omega) (by omega)]
         exact hW k hk⟩
 
 omit hp in
 theorem ew_pubArgs {t : State} (h : EW s t) : WP isa (.block pubArgs) t (EWP s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
-  exact WP.mono (wp_good pubArgs_good (pubArgs_ok h.L R fun k h1 h2 => hW k (.inr ⟨h1, by omega⟩)))
+  exact WP.mono (wp_good pubArgs_good (pubArgs_ok h.L R fun k h1 h2 => hW k (.inr (.inl ⟨h1, by omega⟩))))
     fun t1 ⟨⟨L1, k1, R1, hdi, hsi, hdx, hcx, h8, h9⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, fun i hi => by
         rw [R1.rd i rfl (by unfold nW frameBytes; omega)]

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.Icall
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.AArch64.Isa
@@ -278,6 +279,7 @@ theorem Exec.sp {c : Prog isa} {s s' : State} {t : List Leak} (h : VG.Exec isa c
   | call hc _ hr ih =>
     simp only [isa, call, ret, Option.some.injEq] at hc hr
     subst hc; obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp hr; cases h; exact ih
+  | icall hf => cases hf
   | frame hp _ hq ih =>
     obtain ⟨h₁, h₂⟩ := pop_sp hq
     obtain ⟨n, hn, hs⟩ := push_sp hp

@@ -57,6 +57,7 @@ def Code.eraseT : Prog isa → Prog isa
   | .ite c t e => .ite c (eraseT t) (eraseT e)
   | .loop b c => .loop (eraseT b) c
   | .call n b => .call n (eraseT b)
+  | .icall n => .icall n
   | .frame p b q => .frame p (eraseT b) q
 
 namespace Taint
@@ -114,6 +115,7 @@ theorem check_eraseT (τ : (taintS L).T) (c : Prog isa) (h : VG.Taint.Hint (tain
     cases h <;> first | rfl | simp only [Code.eraseT, VG.Taint.check, iht, ihe]
   | loop b c ih => cases h <;> first | rfl | simp only [Code.eraseT, VG.Taint.check, ih]
   | call n b ih => cases h <;> first | rfl | simp only [Code.eraseT, VG.Taint.check, ih]
+  | icall n => cases h <;> rfl
   | frame p b q ih => cases h <;> first | rfl | simp only [Code.eraseT, VG.Taint.check, ih]
 
 /-! ## Monotonicity -/

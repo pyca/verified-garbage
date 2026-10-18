@@ -40,6 +40,7 @@ def Code.eraseOff : Prog isa → Prog isa
   | .ite c t e => .ite c (eraseOff t) (eraseOff e)
   | .loop b c => .loop (eraseOff b) c
   | .call n b => .call n (eraseOff b)
+  | .icall n => .icall n
   | .frame p b q => .frame p (eraseOff b) q
 
 namespace Taint
@@ -187,6 +188,7 @@ theorem check_noBase : ∀ (c : Prog isa) {τ τ' : T} {hc : VG.Taint.Hint taint
       cases e
       exact check_noBase body (callStep_noBase h) hσ'
     | _ => cases e
+  | .icall _, _, _, hc, _, e => by cases hc <;> cases e
   | .frame p body q, τ, τ', hc, h, e => by
     cases hc with
     | frame hb => cases e
@@ -230,6 +232,7 @@ theorem check_eraseOff : ∀ (c : Prog isa) {τ : T} (hc : VG.Taint.Hint taint.T
         (some (callStep τ)).bind fun τ₁ => (taint.check τ₁ body hb).bind taint.ret
       rw [Option.bind_some, Option.bind_some, check_eraseOff body hb (callStep_noBase h)]
     | _ => rfl
+  | .icall _, _, hc, _ => by cases hc <;> rfl
   | .frame p body q, τ, hc, h => by
     cases hc <;> rfl
 

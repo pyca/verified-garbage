@@ -66,6 +66,7 @@ theorem ctlOk_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr
     simp only [ctlOk, iht h.1, ihe h.2, Bool.and_self]
   | loop _ _ ih => exact ih h
   | call _ _ ih => exact ih h
+  | icall _ => rfl
   | frame _ _ _ ih =>
     simp only [Code.allInstrs, Bool.and_eq_true] at h
     simp only [ctlOk, h.1.1, h.2, ih h.1.2, Bool.and_self]
@@ -83,6 +84,7 @@ theorem ctlC_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr 
     simp only [ctlC, iht h.1, ihe h.2, Bool.and_self]
   | loop _ _ ih => exact ih h
   | call _ _ _ => exact ctlOk_of_allInstrs h
+  | icall _ => rfl
   | frame _ _ _ ih =>
     simp only [Code.allInstrs, Bool.and_eq_true] at h
     simp only [ctlC, h.1.1, h.2, ih h.1.2, Bool.and_self]

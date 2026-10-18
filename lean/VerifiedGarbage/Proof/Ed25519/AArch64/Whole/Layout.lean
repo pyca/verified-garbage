@@ -140,6 +140,7 @@ theorem depth_zero_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch6
     simp only [Code.aarch64Depth, iht h.1, ihe h.2, Nat.max_self]
   | loop b _ ih => exact ih h
   | call _ b ih => exact ih h
+  | icall _ => simp [Code.noFrames] at h
   | frame _ _ _ => simp [Code.noFrames] at h
 
 theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth ≤ 1 := by

@@ -408,7 +408,7 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
     have hlen := P.lengthsA hW
     have hhq : (cfgOf P).hHigh = decide (P.Q = 64) := hHigh_q P hW
     simp only [Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs.eq_2,
-      Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW,
+      Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_7, hwd, hW,
       Bool.false_eq_true, ite_false, cfgOf_F, coreC_eq, hI, hU, hF, hK, hR, initCnt_nosp, Bool.and_true,
       Bool.true_and, hhq, fHo_q P hW]
     simp only [hl]
@@ -419,7 +419,7 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
     obtain ⟨-, -, hD, hB⟩ := P.sizesW hW
     have h7 := sh7 hW
     simp only [Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs.eq_2,
-      Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW, ite_true,
+      Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_7, hwd, hW, ite_true,
       cfgOf_F, coreC_eq, hI, hU, hF, hK, initCnt_nosp, Bool.and_true, Cfg.coreDigest, Cfg.keepV,
       Cfg.candTop, Cfg.conv]
     simp only [hw, hl, hsh, hn, hlen, h7, hD, hB, show (cfgOf P).hHigh = false from hHigh_wide P hW,

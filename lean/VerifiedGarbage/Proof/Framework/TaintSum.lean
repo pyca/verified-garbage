@@ -683,6 +683,7 @@ def hintSumA [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → 
     | some (k, post) => some (post, .sum k)
     | none => (A.call τ).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.ret τ₂).map (·, .call h)
+  | _, _, .icall _ => none
   | _, τ, .frame i body j => sumOr (findSumCode A same (.frame i body j) τ S 0) fun _ =>
     (A.push τ i).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.pop τ₂ j).map (·, .frame h)

@@ -143,6 +143,7 @@ theorem Exec.vec {c : Prog isa} {r : VReg} (hc : ∀ i ∈ instrs c, vdstOf i �
   | loopExit _ _ ih => exact ih hc
   | loopNext _ _ _ ih₁ ih₂ => rw [ih₂ hc, ih₁ hc]
   | call hc₁ _ hr ih => rw [ret_eq hr, ih hc, call_vec hc₁]
+  | icall hf => cases hf
   | frame hp _ hq ih =>
     rw [pop_vec hq, ih (fun i hi => hc i (by simp [instrs, hi])), push_vec hp]
 

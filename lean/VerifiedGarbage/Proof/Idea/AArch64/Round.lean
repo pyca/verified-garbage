@@ -98,14 +98,14 @@ theorem loads_run (s : State) (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (h
 
 theorem lsr_run (d n : Reg) (sh : Nat) (hsh : sh < 64) (s : State) :
     ∃ s', runBlock isa [.lsr .x d n sh] s = some s' ∧ s'.gpr d = s.gpr n >>> sh ∧ Keep [d] s s' := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, isa, Size.bits, hsh,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits, hsh,
     ↓reduceIte, BitVec.setWidth_eq, RegUpd.gpr_write, Option.some.injEq, exists_eq_left', true_and]
   keep_tac
 
 theorem addKey_run (r k : Reg) (hr : r ≠ .x15) (s : State) (hm : MaskOk s) :
     ∃ s', runBlock isa (addKey r k) s = some s' ∧
       s'.gpr r = (s.gpr r + s.gpr k) &&& 65535 ∧ Keep [r] s s' := by
-  simp only [addKey, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, isa, Size.bits,
+  simp only [addKey, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     BitVec.setWidth_eq, RegUpd.gpr_write, ↓reduceIte, Ne.symm hr, hm, Option.some.injEq,
     exists_eq_left', true_and]
   keep_tac
@@ -115,7 +115,7 @@ theorem mid_run (s : State) :
         some s' ∧
       s'.gpr .x14 = (s.gpr .x4 ^^^ s.gpr .x6) + s.gpr .x7 ∧ s'.gpr .x10 = s.gpr .x13 >>> 16 ∧
       Keep [.x14, .x10] s s' := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, isa, Size.bits,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     BitVec.setWidth_eq, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, Nat.reduceLT,
     Option.some.injEq, exists_eq_left', true_and]
   keep_tac
@@ -123,7 +123,7 @@ theorem mid_run (s : State) :
 theorem eor_run (d n m : Reg) (s : State) :
     ∃ s', runBlock isa [.logic .eor .x d n m] s = some s' ∧ s'.gpr d = s.gpr n ^^^ s.gpr m ∧
       Keep [d] s s' := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, isa, Size.bits,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     BitVec.setWidth_eq, RegUpd.gpr_write, ↓reduceIte, Option.some.injEq, exists_eq_left', true_and]
   keep_tac
 
@@ -137,7 +137,7 @@ theorem tail_run (s : State) (hm : MaskOk s) :
       s'.gpr .x5 = s.gpr .x4 ^^^ ((s.gpr .x7 + s.gpr .x14) &&& 65535) ∧
       s'.gpr .x6 = s.gpr .x6 ^^^ ((s.gpr .x7 + s.gpr .x14) &&& 65535) ∧
       Keep [.x3, .x4, .x5, .x6, .x7, .x14] s s' := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, isa, Size.bits,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     BitVec.setWidth_eq, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, Nat.reduceLT, hm,
     BitVec.ofNat_eq_ofNat, BitVec.add_zero, Option.some.injEq, exists_eq_left', true_and]
   keep_tac

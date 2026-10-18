@@ -9,8 +9,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 /-!
 # RSAES-OAEP on x86-64: the label's hash
 
-`hashLabel H o` writes the label's hash `H(label)` to `scratch + o`
-(`hashLabel_ok`): `init`, `update` with the label (from its slots, in the
+`hashLabel o` writes the label's hash `H(label)` to `scratch + o`, `H` the
+hash function whose streaming functions' addresses are in the slots from
+`sFnH` (`hashLabel_ok`): `init`, `update` with the label (from its slots, in the
 caller's memory), and `finalize`. The working space changes only within the
 hash function's ranges and the digest's 64 bytes at `o`.
 -/
@@ -24,10 +25,9 @@ open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Bignum (off word off_off)
 open VG.Proof.Bignum.X86_64 (Scr)
-open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
-open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK)
+open VG.Proof.HashFns (StreamingOK)
 
-variable {G : Stream} (hG : StreamOK G)
+variable {T : Spec.HashFns.Streaming} {Hh : Spec.Mgf1.Hash} (hT : StreamingOK T Hh)
 
 /-- Where the label is: its slots, and its bytes apart from our working
 space and the stack below the frame. -/
@@ -80,38 +80,50 @@ theorem labF_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
 /-- The ranges the label's hashing writes, with its digest at `o`. -/
 def labR (o : Nat) : List (Nat × Nat) := [(oSt, 256), (o, 64), (oW, 2048)]
 
-include hG in
-theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
+variable {stack : Nat} {e : State} {fi fu ff : Addr}
+
+include hT in
+/-- The label's hash with the hash function `G` whose streaming functions'
+addresses are in the slots from `sFnH` (words 45 to 47). -/
+theorem hashLabel_ok (hF : Fns stack e T fi fu ff) {Hs : Spec.Mgf1.Hash}
+    (hHh : ∀ x, Hs.hash x = T.S.H.hash x) {u : State} {F S : Addr} (hh : Here stack e u F S)
     (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lab : Addr} {labLen : Nat}
-    (A : LabAt u F S W lab labLen) {o : Nat} (ho : o = oDig ∨ o = oLh) :
-    WP isa (hashLabel G o) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+    (A : LabAt u F S W lab labLen) (hbd : lab.toNat + labLen ≤ 2 ^ 64)
+    (hcd : ∀ x, (⟨lab, labLen⟩ : Region).Contains x 1 → InRegions (e.rd ++ e.wr ++ abi.reserved stack e) x 1)
+    (hfn : W 45 = fi ∧ W 46 = fu ∧ W 47 = ff) {o : Nat} (ho : o = oDig ∨ o = oLh) :
+    WP isa (hashLabel o) u fun u' => Lay u' F S ∧ Here stack e u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       (∀ r ∈ calleeSaved, u'.gpr r = u.gpr r) ∧
       ∃ V', Rep u'.mem F S V' W ∧ (∀ x, ¬ inR (labR o) x → V' x = V x) ∧
-        ∀ i < G.D, V' (o + i) = (Hs.hash (Spec.Rsa.bytesAt u.mem lab labLen)).getD i 0 := by
-  obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hG
+        ∀ i < T.S.digestBytes, V' (o + i) = (Hs.hash (Spec.Rsa.bytesAt u.mem lab labLen)).getD i 0 := by
+  obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hT
   have hoo : oSt + 256 ≤ o ∧ o + 64 ≤ oW := by rcases ho with rfl | rfl <;> decide
   have hlen := A.len
   unfold hashLabel seqs seqs seqs seqs seqs
-  refine WP.seq (WP.mono (scr_ok L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u1 ⟨hdi1, hm1, k1⟩ => ?_)
+  refine WP.seq (WP.mono (WP.here rfl hh (scr_ok L (d := .rdi) (by decide) (o := oSt) (by decide)))
+    fun u1 ⟨⟨hdi1, hm1, k1⟩, hh1⟩ => ?_)
   have L1 : Lay u1 F S := L.congr (k1.gpr (by decide)) k1.2.2 (by rw [hm1])
   have R1 : Rep u1.mem F S V W := hm1 ▸ R
-  refine WP.seq (WP.mono (init_ok hG L1 R1 hdi1) fun u2 ⟨L2, rd2, wr2, cs2, R2, hF2, hr2⟩ => ?_)
+  refine WP.seq (WP.mono (initF_ok hT hF hh1 L1 R1 (j := 45) rfl (by decide) hfn.1 hdi1)
+    fun u2 ⟨L2, rd2, wr2, cs2, R2, hF2, hh2, hr2⟩ => ?_)
   obtain ⟨V2, R2, hV2, -⟩ := Rep.ex R2
   have A2 : LabAt u2 F S W lab labLen := A.congr (rd2.trans k1.2.1) (wr2.trans k1.2.2) rfl rfl
-  refine WP.seq (WP.mono (labA_ok L2 R2 A2) fun u3 ⟨hdi3, hsi3, hdx3, hcx3, h83, hm3, k3⟩ => ?_)
+  refine WP.seq (WP.mono (WP.here rfl hh2 (labA_ok L2 R2 A2))
+    fun u3 ⟨⟨hdi3, hsi3, hdx3, hcx3, h83, hm3, k3⟩, hh3⟩ => ?_)
   have L3 : Lay u3 F S := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep u3.mem F S V2 W := hm3 ▸ R2
   have A3 : LabAt u3 F S W lab labLen := A2.congr k3.2.1 k3.2.2 rfl rfl
-  refine WP.seq (WP.mono (updExt_ok hG L3 R3 A3.len A3.cov A3.dS A3.dK hdi3 hdx3 hcx3 h83)
-    fun u4 ⟨L4, rd4, wr4, cs4, R4, _, hr4⟩ => ?_)
+  refine WP.seq (WP.mono (updExtF_ok hT hF hh3 L3 R3 (j := 45) rfl (by decide) hfn.2.1 A3.len hbd hcd A3.dS
+      A3.dK hdi3 hdx3 hcx3 h83)
+    fun u4 ⟨L4, rd4, wr4, cs4, R4, _, hh4, hr4⟩ => ?_)
   have hR4 := hr4 [] (hm3 ▸ hr2) (by rw [hsi3]; rfl)
   rw [List.nil_append, hm3] at hR4
   obtain ⟨V4, R4, hV4, -⟩ := Rep.ex R4
-  refine WP.seq (WP.mono (labF_ok L4 R4 A.hll (o := o) (by rcases ho with rfl | rfl <;> decide))
-    fun u5 ⟨hdi5, hsi5, hdx5, hcx5, hm5, k5⟩ => ?_)
+  refine WP.seq (WP.mono (WP.here rfl hh4 (labF_ok L4 R4 A.hll (o := o) (by rcases ho with rfl | rfl <;> decide)))
+    fun u5 ⟨⟨hdi5, hsi5, hdx5, hcx5, hm5, k5⟩, hh5⟩ => ?_)
   have L5 : Lay u5 F S := L4.congr (k5.gpr (by decide)) k5.2.2 (by rw [hm5])
   have R5 : Rep u5.mem F S V4 W := hm5 ▸ R4
-  refine WP.mono (fin_ok hG L5 R5 (o := o) (Or.inr hoo) hdi5 hdx5 hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hr6⟩ => ?_
+  refine WP.mono (finF_ok hT hF hh5 L5 R5 (j := 45) rfl (by decide) hfn.2.2 (o := o) (Or.inr hoo) hdi5 hdx5
+    hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hh6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
   have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [hsi5, hlb])
@@ -122,12 +134,12 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
       (List.mem_range.mp hi)
     rcases List.mem_append.mp hr with hr | hr
     · simp only [regs, List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr
-      have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-      have hs : Region.Sub ⟨off S oSt, G.S⟩ ⟨S, oRsa⟩ := Offset.sub_base S h1
+      have h1 : oSt + T.S.stateBytes ≤ oRsa := by unfold oSt oRsa; omega
+      have hs : Region.Sub ⟨off S oSt, T.S.stateBytes⟩ ⟨S, oRsa⟩ := Offset.sub_base S h1
       exact A.dS.sub_right hs
     · rw [List.mem_singleton.mp hr]; exact A.dK.symm
   obtain ⟨V6, R6, hV6, hV6'⟩ := Rep.ex R6
-  refine ⟨L6, rd6.trans (k5.2.1.trans (rd4.trans (k3.2.1.trans (rd2.trans k1.2.1)))),
+  refine ⟨L6, hh6, rd6.trans (k5.2.1.trans (rd4.trans (k3.2.1.trans (rd2.trans k1.2.1)))),
     wr6.trans (k5.2.2.trans (wr4.trans (k3.2.2.trans (wr2.trans k1.2.2)))), fun r hr => ?_, V6, R6,
     fun x hx => ?_, fun i hi => ?_⟩
   · rw [cs6 r hr, keep_cs' k5 (cs_disj _ (by decide)) r hr, cs4 r hr, keep_cs' k3 (cs_disj _ (by decide)) r hr,

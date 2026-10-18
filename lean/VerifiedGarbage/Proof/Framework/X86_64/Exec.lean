@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Icall
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Proof.Framework.Block
 

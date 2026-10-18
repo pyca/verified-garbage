@@ -5,14 +5,17 @@ public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 /-!
 # MGF1 (RFC 8017 Appendix B.2.1) on x86-64
 
-`mgfXor`: `dst ⊕= MGF1(src, dstLen)` with a Merkle–Damgård hash function's
-streaming functions (an `Impl.Pbkdf2.Md.X86_64.Stream`: `init`, `update`,
-`finalize`), for a caller with a frame: the addresses and lengths are in
-the caller's frame slots, and the hash function's state, the counter, the
-digest and the working space of `update` and `finalize` in its working
-space (`scratch`, whose address is in a slot), at the offsets of a
-`Layout`. Every length is public, so this is code for any caller whose
-seed and mask lengths are public (RSAES-OAEP's, RSASSA-PSS's signing).
+`mgfXor`: `dst ⊕= MGF1(src, dstLen)` with a Merkle–Damgård hash function
+whose streaming functions (`init`, `update`, `finalize`) the caller was
+passed (`Spec/HashFns.lean`), for a caller with a frame: the addresses and
+lengths, the addresses of the three functions and the hash function's digest
+length `hLen` are in the caller's frame slots, and the hash function's
+state, the counter, the digest and the working space of `update` and
+`finalize` in its working space (`scratch`, whose address is in a slot), at
+the offsets of a `Layout`. Each call of a streaming function is an indirect
+call (`Code.icall`) of the address in its slot, loaded into `r11`. Every
+length and the functions' addresses are public, so this is code for any
+caller whose seed and mask lengths are public (RSAES-OAEP's).
 
 For each counter `c` from 0, while `done = c hLen` is below `dstLen`: the
 state is set by `init`, `update` absorbs `src` (`srcLen` bytes, from the
@@ -30,7 +33,6 @@ registers are used); the slots `sCtr` and `sDone` hold the counter and
 namespace VG.Impl.Mgf1.X86_64
 
 open VG.X86_64
-open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 
 /-! ## Operands and control -/
 
@@ -58,10 +60,11 @@ def byteLoop (body : List Instr) (n : Src) : Prog isa := .loop (.block (body ++ 
 /-! ## The layout -/
 
 /-- Where the caller keeps what `mgfXor` uses: the frame slots (offsets
-from `rsp`) of `scratch`, `src`, `srcLen`, `dst`, `dstLen`, the counter and
-`done`; and the offsets in `scratch` of the hash function's streaming state,
-the counter's four bytes, the digest, and the working space of `update` and
-`finalize`. -/
+from `rsp`) of `scratch`, `src`, `srcLen`, `dst`, `dstLen`, the counter,
+`done`, the addresses of the hash function's `init`, `update` and `finalize`
+(three slots from `sFns`) and its digest length `hLen`; and the
+offsets in `scratch` of the hash function's streaming state, the counter's
+four bytes, the digest, and the working space of `update` and `finalize`. -/
 structure Layout where
   sScr : Nat
   sSrc : Nat
@@ -70,12 +73,35 @@ structure Layout where
   sDstLen : Nat
   sCtr : Nat
   sDone : Nat
+  sFns : Nat
+  sD : Nat
   oSt : Nat
   oCtr : Nat
   oDig : Nat
   oW : Nat
 
-variable (L : Layout) (G : Stream)
+variable (L : Layout)
+
+/-! ## The calls -/
+
+/-- The address in the slot `sl` into `r11`. -/
+def ldFn (sl : Nat) : List Instr := [.mov .r11 (.mem (sp sl))]
+
+/-- The bytes of stack below its return address each streaming function may
+use (`Spec.HashFns.fnStack`). -/
+def fnStack : Nat := 8
+
+/-- `init` of the hash function whose functions' addresses are in the three
+slots from `sl`. -/
+def initF (sl : Nat) : Prog isa := .seq (.block (ldFn sl)) (.icall fnStack)
+
+/-- `update` of the hash function whose functions' addresses are in the
+three slots from `sl`. -/
+def updF (sl : Nat) : Prog isa := .seq (.block (ldFn (sl + 8))) (.icall fnStack)
+
+/-- `finalize` of the hash function whose functions' addresses are in the
+three slots from `sl`. -/
+def finF (sl : Nat) : Prog isa := .seq (.block (ldFn (sl + 16))) (.icall fnStack)
 
 /-- `d ← [scratch] + o`. -/
 def scr (d : Reg) (o : Nat) : List Instr :=
@@ -109,28 +135,28 @@ def finArgs : List Instr :=
 def xorHead : List Instr :=
   scr L .rcx L.oDig ++ [.mov .rdx (.mem (sp L.sDone)), .mov .rdi (.mem (sp L.sDst)), .alu .add .rdi (.reg .rdx),
     .mov .rax (.mem (sp L.sDstLen)), .alu .sub .rax (.reg .rdx),
-    .mov32 .r10 (.imm (BitVec.ofNat 32 G.D)), .alu .cmp .rax (.reg .r10)]
+    .mov .r10 (.mem (sp L.sD)), .alu .cmp .rax (.reg .r10)]
 
 /-- The first `min(hLen, dstLen - done)` bytes of the digest XORed into
 `dst + done`. -/
 def xorOut : Prog isa :=
-  seqs [.block (xorHead L G), .ite .b (.block [.mov .r10 (.reg .rax)]) (.block []), .block [.mov32 .r8 (.imm 0)],
+  seqs [.block (xorHead L), .ite .b (.block [.mov .r10 (.reg .rax)]) (.block []), .block [.mov32 .r8 (.imm 0)],
     byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdx (ix .rdi .r8), .alu .xor .rdx (.reg .rax),
       .store8 (ix .rdi .r8) .rdx] (.reg .r10)]
 
 /-- The next counter and `done`, and CF set while `done < dstLen`. -/
 def nextCtr : List Instr :=
   [.mov .rax (.mem (sp L.sCtr)), .alu .add .rax (.imm 1), .store (sp L.sCtr) .rax, .mov .rax (.mem (sp L.sDone)),
-    .alu .add .rax (.imm (BitVec.ofNat 32 G.D)), .store (sp L.sDone) .rax, .alu .cmp .rax (.mem (sp L.sDstLen))]
+    .alu .add .rax (.mem (sp L.sD)), .store (sp L.sDone) .rax, .alu .cmp .rax (.mem (sp L.sDstLen))]
 
 /-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`. -/
 def round : Prog isa :=
-  seqs [.block (initArgs L), .call G.initN G.initC, .block (updSrcArgs L), .call G.updN G.updC,
-    .block (updCtrArgs L), .call G.updN G.updC, .block (finArgs L), .call G.finN G.finC, xorOut L G,
-    .block (nextCtr L G)]
+  seqs [.block (initArgs L), initF L.sFns, .block (updSrcArgs L), updF L.sFns,
+    .block (updCtrArgs L), updF L.sFns, .block (finArgs L), finF L.sFns, xorOut L,
+    .block (nextCtr L)]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`. -/
 def mgfXor : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0), .store (sp L.sCtr) .rax, .store (sp L.sDone) .rax]) (.loop (round L G) .b)
+  .seq (.block [.mov32 .rax (.imm 0), .store (sp L.sCtr) .rax, .store (sp L.sDone) .rax]) (.loop (round L) .b)
 
 end VG.Impl.Mgf1.X86_64

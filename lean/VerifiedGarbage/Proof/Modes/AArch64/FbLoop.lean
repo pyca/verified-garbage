@@ -60,6 +60,7 @@ theorem keepsReg_of_regSafe {r : Reg} {c : Prog isa} (hc : regSafe r c = true) :
   | loopExit _ _ ih => exact ih
   | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₂ hc).trans (ih₁ hc)
   | call => intro hc; simp only [regSafe, Bool.false_eq_true] at hc
+  | icall => intro hc; simp only [regSafe, Bool.false_eq_true] at hc
   | frame => intro hc; simp only [regSafe, Bool.false_eq_true] at hc
 
 theorem KeepsReg.seq {r : Reg} {a b : Prog isa} (ha : KeepsReg r a) (hb : KeepsReg r b) :

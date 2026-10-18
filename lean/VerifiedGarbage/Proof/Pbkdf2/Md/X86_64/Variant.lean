@@ -40,11 +40,14 @@ namespace VG.Proof.Pbkdf2.Md.X86_64
 open VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-/-- `Code.allInstrs p` from `Code.all p`. -/
-theorem allInstrs_of_all {I C : Type} {p : I → Bool} {c : Code I C} (h : c.all p = true) :
+/-- `Code.allInstrs p` from `Code.all p`, and `p` of the instructions that stand
+for an indirect call (`IcallInstrs`). -/
+theorem allInstrs_of_all {I C : Type} [IcallInstrs I] {p : I → Bool} {c : Code I C}
+    (h : c.all p = true) (hi : (icallInstrs : List I).all p = true := by decide) :
     c.allInstrs p = true := by
   induction c with
   | block is => induction is <;> simp_all [Code.all, Code.allInstrs]
+  | icall _ => exact hi
   | _ => simp_all [Code.all, Code.allInstrs]
 
 /-- One of the streaming functions made with an implementation of a hash
@@ -58,9 +61,9 @@ structure StreamFn where
   contract : Contract X86_64.target.isa
   stack : Nat := 0
   verified : Verified X86_64.target code contract
-  ofSig : ∃ pre post leak,
-      contract = api.sig.contract X86_64.target.abi pre post api.writeArgs stack leak := by
-    exact ⟨_, _, _, rfl⟩
+  ofSig : ∃ pre post leak fns,
+      contract = api.sig.contract X86_64.target.abi pre post api.writeArgs stack leak fns := by
+    exact ⟨_, _, _, _, rfl⟩
   ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
 

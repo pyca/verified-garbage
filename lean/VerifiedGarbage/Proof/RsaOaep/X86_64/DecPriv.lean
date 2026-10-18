@@ -106,9 +106,9 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
   have ⟨r1, r2⟩ := rsaD_toNat hp
   have hk1 := hp.lv.1; have hk2 := hp.lv.2
   have hsl := hp.hsl; have wS := hp.wS
-  have e5 : decStack = 3560 := rfl
+  have e5 : decStack = 3672 := rfl
   have e6 : privStack = 3256 := rfl
-  have e7 : frameBytes = 296 := rfl
+  have e7 : frameBytes = 408 := rfl
   have hfb : fb s = off (kbD s) (8 + privStack) := fb_eqD s
   have sK : Region.Sub ⟨kbD s, privStack⟩ (stkD s) := Region.sub_prefix (by omega)
   have sR : Region.Sub ⟨off (kbD s) privStack, 8⟩ (stkD s) := Offset.sub_base _ (by omega)
@@ -213,8 +213,9 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
   have hdp := v.depth
   have e2 : privStack = 3256 := rfl
   have hF := fb_toNatD hp
-  refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega) (privD_pre hp h) hc hw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
+  refine WP.of_funs (WP.of_syms (WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega)
+    (privD_pre hp h) hc hw ?_))
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx hsy hfu
   rw [h.he.rsp] at hf
   have hf' : Frame (privWrD s ++ [below (fb s) (8 + privStack)]) t.mem s'.mem :=
     Frame.below_mono hf (by omega) (by have := hp.sp2; unfold frameBytes at *; omega)
@@ -257,15 +258,21 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
   have hkeep : ∀ {k : Nat}, k < nW → word s'.mem (fb s) (8 * k) = word t.mem (fb s) (8 * k) := fun hk =>
     hf'.readW (Region.contains_self _ _) (frame_apartD hp hk) (by decide)
   have hsp' : s'.gpr .rsp = fb s := (hcs .rsp (by decide)).trans h.he.rsp
-  refine ⟨⟨hsp', hrd.trans h.he.rd, hwr.trans h.he.wr, fun r hr hne => (hcs r hr).trans (h.he.cs r hr hne),
-    hmx.trans h.he.mx, h.he.fr.trans (hf'.sub fun r hr => ?_)⟩,
-    h.L.congr ((hcs .rsp (by decide))) hwr (by rw [slot_eq sScr 14 rfl, slot_eq sScr 14 rfl]; exact hkeep (by decide)),
-    ⟨fun _ _ => rfl, fun k hk => (hkeep hk).trans (h.R.fr k hk)⟩, ?_⟩
-  · simp only [privWrD, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  have hsub : ∀ r ∈ privWrD s ++ [below (fb s) (8 + privStack)], ∃ r' ∈ [stkD s, outR s, mlR s, scrD s],
+      Region.Sub r r' := fun r hr => by
+    simp only [privWrD, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨scrD s, by simp, emD_sub hp⟩
     · exact ⟨scrD s, by simp, rsaD_sub hp⟩
     · exact ⟨stkD s, by simp, below_subD s (le_refl _)⟩
+  have hown : Owned decStack s (privWrD s ++ [below (fb s) (8 + privStack)]) :=
+    ((stkO s).cons ((owned_one hp.owned (r := outR s) (by simp)).cons ((owned_one hp.owned (r := mlR s) (by simp)).cons
+      (owned_one hp.owned (r := scrD s) (by simp))))).of_sub hsub
+  refine ⟨⟨hsp', hrd.trans h.he.rd, hwr.trans h.he.wr, fun r hr hne => (hcs r hr).trans (h.he.cs r hr hne),
+    hmx.trans h.he.mx, h.he.fr.trans (hf'.sub hsub), h.he.world.step hfu hsy hf' hown, h.he.own, h.he.scr,
+    h.he.sp16⟩,
+    h.L.congr ((hcs .rsp (by decide))) hwr (by rw [slot_eq sScr 14 rfl, slot_eq sScr 14 rfl]; exact hkeep (by decide)),
+    ⟨fun _ _ => rfl, fun k hk => (hkeep hk).trans (h.R.fr k hk)⟩, ?_⟩
   · simp only [privOutD]
     rw [show (stackArg s 10).toNat = (stackArg s 2).toNat from hp.hqil,
       show (stackArg s 8).toNat = (stackArg s 4).toNat from hp.hdql] at hpost

@@ -44,6 +44,7 @@ def evaluate : Nat → Prog isa → State → Option State
     let s₁ ← isa.call s
     let s₂ ← evaluate fuel body s₁
     isa.ret s s₂
+  | _ + 1, .icall _, _ => none
   | fuel + 1, .frame push body pop, s => do
     let s₁ ← isa.push push s
     let s₂ ← evaluate fuel body s₁

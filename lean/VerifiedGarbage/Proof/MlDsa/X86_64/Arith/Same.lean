@@ -42,10 +42,12 @@ theorem Comp.ctlC : Comp ctlC ctlOk :=
 theorem Comp.all (q : Instr → Bool) : Comp (Code.allInstrs q) (Code.allInstrs q) :=
   ⟨fun _ _ => rfl, fun _ _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl, rfl⟩
 
-theorem Code.allInstrs_of_all {I C : Type} {q : I → Bool} {c : Code I C} (h : c.all q = true) :
+theorem Code.allInstrs_of_all {I C : Type} [IcallInstrs I] {q : I → Bool} {c : Code I C}
+    (h : c.all q = true) (hi : (icallInstrs : List I).all q = true := by decide) :
     c.allInstrs q = true := by
   induction c with
   | block is => induction is <;> simp_all [Code.all, Code.allInstrs]
+  | icall _ => exact hi
   | _ => simp_all [Code.all, Code.allInstrs]
 
 /-- `m` gives the same result on `c` and `c'`. -/
