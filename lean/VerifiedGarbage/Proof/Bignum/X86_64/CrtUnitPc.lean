@@ -28,7 +28,7 @@ theorem unitPhasePc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : 
     (hN : NVals s B w minv N ok) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
     (hpre : PreSrc s B Z P W) (hdW : d + wx ≤ W)
     (hpo : ∀ t : State, t.gpr .rdi = off B o → t.rd = s.rd → t.wr = s.wr →
-      Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem →
+      word t.mem (off B o) (8 * sLink) = B → Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem →
       WP isa (.block po) t fun t' => t'.gpr .rax = BitVec.ofNat 64 d ∧ t'.mem = t.mem ∧ Keep [.rax, .rdx] t t') :
     WP isa (seqs (Crt.gPow M.mm sl ++ ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
         Crt.loadPre Public.aY po ++ ([.block [leave]] : List (Prog isa)))) s fun t =>
@@ -57,6 +57,8 @@ theorem unitPhasePc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : 
     · omega
   refine WP.mono (loadPre_ok hg₂ (Nat.le_refl _) (by omega) (by omega) (by decide) (by decide) hp₂.arg hp₂.val
     (d := d) (fun t kt ot => hpo t ((kt.gpr (by decide)).trans hc₂.rdi) (kt.2.1.trans k₂.2.1) (kt.2.2.trans k₂.2.2)
+      (by rw [ot.word (.inl (by have := hdr_lt_slot wx Public.aY (show sLink < 32 by decide); omega))
+        (by unfold sLink sFn; omega)]; exact hc₂.link)
       (f₂.append (ot.to_x (by decide) hoL (List.mem_singleton_self _))))
     (fun i hi => by rw [show 8 * d + 8 * i = 8 * (d + i) by omega]; exact hp₂.rd _ (by omega))
     (fun i hi b hb => .inr (hfar _ (by
@@ -71,5 +73,29 @@ theorem unitPhasePc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : 
       (by unfold sMaskX sFn; omega), kt⟩
   have hlt : 2 ^ (64 * wx) % X < X := Nat.mod_lt _ (by omega)
   rw [hv, hok]; simp only [hlt, ↓reduceIte, Nat.mod_mod]
+
+/-- `offP`: `2 w`, `R_p mod p`'s offset in `pre`, from a prime's workspace. -/
+theorem offP_ok {t : State} {B : Addr} {o w : Nat} (hdi : t.gpr .rdi = off B o)
+    (hl1 : InRegions (t.rd ++ t.wr) (off (off B o) (8 * sLink)) 8) (hlk : word t.mem (off B o) (8 * sLink) = B)
+    (hl2 : InRegions (t.rd ++ t.wr) (off B (8 * sW)) 8) (hw : word t.mem B (8 * sW) = BitVec.ofNat 64 w) :
+    WP isa (.block Crt.offP) t fun t' =>
+      t'.gpr .rax = BitVec.ofNat 64 (2 * w) ∧ t'.mem = t.mem ∧ Keep [.rax, .rdx] t t' :=
+  WP.keep [.rax] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 (2 * w) ∧ t'.mem = t.mem)
+    (by xrun [Crt.offP, State.ea, hdr, ws, hdi, hdrOff, hl1, hlk, hl2, hw, Nat.two_mul, BitVec.ofNat_add]) rfl |>.mono
+      fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c.mono (by decide)⟩
+
+/-- `offQ`: `2 w + w_p`, `R_q mod q`'s offset in `pre`, from a prime's
+workspace. -/
+theorem offQ_ok {t : State} {B : Addr} {o op w wp : Nat} (hdi : t.gpr .rdi = off B o)
+    (hl1 : InRegions (t.rd ++ t.wr) (off (off B o) (8 * sLink)) 8) (hlk : word t.mem (off B o) (8 * sLink) = B)
+    (hl2 : InRegions (t.rd ++ t.wr) (off B (8 * sW)) 8) (hw : word t.mem B (8 * sW) = BitVec.ofNat 64 w)
+    (hl3 : InRegions (t.rd ++ t.wr) (off B (8 * sWsP)) 8) (hp : word t.mem B (8 * sWsP) = off B op)
+    (hl4 : InRegions (t.rd ++ t.wr) (off (off B op) (8 * sW)) 8)
+    (hwp : word t.mem (off B op) (8 * sW) = BitVec.ofNat 64 wp) :
+    WP isa (.block Crt.offQ) t fun t' =>
+      t'.gpr .rax = BitVec.ofNat 64 (2 * w + wp) ∧ t'.mem = t.mem ∧ Keep [.rax, .rdx] t t' :=
+  WP.keep [.rax, .rdx] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 (2 * w + wp) ∧ t'.mem = t.mem)
+    (by xrun [Crt.offQ, Crt.offP, List.cons_append, List.nil_append, State.ea, hdr, ws, hdi, hdrOff, hl1, hlk, hl2, hw, hl3, hp, hl4, hwp, Nat.two_mul,
+      BitVec.ofNat_add]) rfl |>.mono fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
 
 end VG.Proof.Bignum.X86_64
