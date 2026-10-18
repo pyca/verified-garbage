@@ -726,14 +726,20 @@ def tailKO (vl : Bool) (k : Nat) : Prog isa :=
 /-- After the whole chunks, with `rdx` the bytes left less 193: with 193 to
 256 left, `tailO` (12 blocks absorbed); with 257 to 384, `tail3O` (16);
 with 385 to 511, `tailKO` (24); otherwise `leaveO` (the prologue computed the
-keystream of 1 to 192 bytes left, `twoKs` or `fourKs`). -/
+keystream of 1 to 192 bytes left, `twoKs` or `fourKs`). The tails are out of
+line and `leaveO` falls through at its offset before them: the first test
+(193 to 511 left) has the length of the one it replaced, and the padding of
+`tailKO` keeps the code after the tails at its offset modulo 64 (Zen 3 and
+Zen 4 ran the chunks' code up to 2% slower when it moved). -/
 def restO (vl : Bool) : Prog isa :=
-  .seq (.block (padIns .rdx 8 ++
-    ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 193), .alu .cmp .rdx (.imm 64)] : List Instr)))
-  (.ite .b (tailO true 12)
-    (.seq (.block [.alu .cmp .rdx (.imm 192)])
-      (.ite .b (tail3O 16)
-        (.seq (.block [.alu .cmp .rdx (.imm 319)]) (.ite .b (tailKO vl 24) (.block leaveO))))))
+  .seq (.block (padIns .rdx 5 ++
+    ([.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 193), .alu .cmp .rdx (.imm 319)] : List Instr)))
+  (.ite .b
+    (.seq (.block [.alu .cmp .rdx (.imm 64)])
+      (.ite .b (tailO true 12)
+        (.seq (.block [.alu .cmp .rdx (.imm 192)])
+          (.ite .b (tail3O 16) (.seq (tailKO vl 24) (.block (padIns .rax 19)))))))
+    (.block leaveO))
 
 /-- The whole chunks of at least 512 bytes of data, decrypted and absorbed,
 and of 193 to 511 bytes after them the first blocks absorbed and the
@@ -765,17 +771,20 @@ wipe after `cryptO` covers only `ctx[672, 800)` past `fold` bytes); from
 chunks), from `ctx + 736` if the prologue did (`twoKs`, `fourKs`: 1 to 192
 after them) or `tail3O` or `tailKO` (257 to 511, then wiped), otherwise (none)
 by the implementation `x` of `vg_chacha20_xor` from the counter the chunks
-left. -/
+left. The call falls through at its offset before the tails were added, and
+the padding of the wipe keeps the code after the branches at its offset
+modulo 64. -/
 def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm 512)])
   (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
     (.seq (.seq (.block (restTest 193 64))
       (.ite .b (xorTail x.wide 128)
-        (.seq (.block (restTest 1 192))
-          (.ite .b (xorTail x.wide 736)
-            (.seq (.block (restTest 257 255))
-              (.ite .b (.seq (xorTail x.wide 736) (.seq (.block [.mov32 .rdx (.imm 576)]) (zeroKs x.wide)))
-                (.seq (.block restArgs) (.call x.name x.code))))))))
+        (.seq (.block (restTest 1 511))
+          (.ite .b
+            (.seq (xorTail x.wide 736) (.seq (.block (restTest 257 255))
+              (.ite .b (.seq (.block [.mov32 .rdx (.imm 576)])
+                (.seq (zeroKs x.wide) (.block (padIns .rax 3)))) (.block []))))
+            (.seq (.block restArgs) (.call x.name x.code))))))
       (.block (padIns .rax 20))))
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
