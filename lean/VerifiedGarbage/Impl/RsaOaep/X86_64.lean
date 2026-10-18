@@ -180,14 +180,18 @@ def fnSlots (j d : Nat) : List Instr :=
     .store (sp (d + 16)) .r10]
 
 /-- The selectors, the stack arguments `jH` and `jG`, to their slots, and
-the lengths of the hash functions they name to theirs; then the tables'
-words, the stack arguments `jG + 1` and `jG + 2`, to theirs. -/
-def selPrologue (jH jG : Nat) : Prog isa :=
+the lengths of the hash functions they name to theirs, by a dispatch over
+`ls` (numbers and digest lengths); then the tables' words, the stack
+arguments `jG + 1` and `jG + 2`, to theirs. -/
+def selPrologueWith (ls : List (Nat × Nat)) (jH jG : Nat) : Prog isa :=
   seqs [.block (argSlot jH sSelH),
-    Dispatch.X86_64.chain (lens.map fun (i, D) => (i, .block (consts D))),
+    Dispatch.X86_64.chain (ls.map fun (i, D) => (i, .block (consts D))),
     .block (argSlot jG sSelG),
-    Dispatch.X86_64.chain (lens.map fun (i, D) => (i, .block [.mov32 .rax (im D), .store (sp sGD) .rax])),
+    Dispatch.X86_64.chain (ls.map fun (i, D) => (i, .block [.mov32 .rax (im D), .store (sp sGD) .rax])),
     .block (fnSlots (jG + 1) sFnH ++ fnSlots (jG + 2) sFnG)]
+
+/-- `selPrologueWith` over `lens`. -/
+def selPrologue (jH jG : Nat) : Prog isa := selPrologueWith lens jH jG
 
 /-! ## Common pieces -/
 

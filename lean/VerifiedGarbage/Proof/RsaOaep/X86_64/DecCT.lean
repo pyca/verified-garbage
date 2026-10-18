@@ -341,7 +341,7 @@ theorem decMain_ct : RelCT isa (Two (DAt kH kG (DK TH.S.digestBytes))) decMain f
       (fun a t ⟨s, S, e, hk⟩ => dme_of sG (src := fun _ => oEm + 1 + TH.S.digestBytes)
         (srcLen := fun k => k - (TH.S.digestBytes + 1)) (dst := fun _ => oEm + 1)
         (dstLen := fun _ => TH.S.digestBytes) S (S.lenG hTG eG) e (dfit_seed hk (hk2 S.1) hD0))
-      (mgf_ct hTG 3 (Gs := Gh) (congrFun hTG.hash) hTG.len hTG.valid (.inr rfl)))
+      (mgf_ct hTG 3 (Gs := Gh) (congrFun hTG.hash) hTG.len hTG.valid (.inr (.inl rfl))))
     fun _ s t S h => WP.mono (dw_mgf hTG (S.fnsG sG) (by rw [S.2.2.2.1]; exact eG) (dfit_seed h.2 (hk2 S.1) hD0)
       h.1) fun _ e => ⟨e, h.2⟩) ?_
   -- `DB` unmasked.
@@ -357,7 +357,7 @@ theorem decMain_ct : RelCT isa (Two (DAt kH kG (DK TH.S.digestBytes))) decMain f
       (fun a t ⟨s, S, e, hk⟩ => dme_of sG (src := fun _ => oEm + 1) (srcLen := fun _ => TH.S.digestBytes)
         (dst := fun _ => oEm + 1 + TH.S.digestBytes) (dstLen := fun k => k - (TH.S.digestBytes + 1)) S
         (S.lenG hTG eG) e (dfit_db hk (hk2 S.1)))
-      (mgf_ct hTG 3 (Gs := Gh) (congrFun hTG.hash) hTG.len hTG.valid (.inr rfl)))
+      (mgf_ct hTG 3 (Gs := Gh) (congrFun hTG.hash) hTG.len hTG.valid (.inr (.inl rfl))))
     fun _ s t S h => WP.mono (dw_mgf hTG (S.fnsG sG) (by rw [S.2.2.2.1]; exact eG) (dfit_db h.2 (hk2 S.1)) h.1)
       fun _ e => ⟨e, h.2⟩) ?_
   -- The checks, and `T` shifted into the buffer.

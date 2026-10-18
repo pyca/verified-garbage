@@ -56,6 +56,9 @@ theorem block_good (is : List Instr) (h : (Code.block is : Prog isa).allInstrs o
     (hc : ctlOk (.block is) = true) : Good (.block is) :=
   ⟨h, hc, by simp [Code.depth]⟩
 
+/-- The shift of RSAES-OAEP's decryption, which RSASSA-PSS's verification uses too. -/
+theorem shift_good : Good shift := ⟨rfl, rfl, by simp [shift, shiftPass, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
 theorem clearEm_good : Good clearEm := ⟨rfl, rfl, by simp [clearEm, Code.depth]⟩
 
 theorem putMsg_good : Good putMsg := ⟨rfl, rfl, by simp [putMsg, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
@@ -81,9 +84,17 @@ theorem lensG_good : Good (Impl.Dispatch.X86_64.chain (lens.map fun p =>
     (p.1, .block [.mov32 .rax (im p.2), .store (Impl.Mgf1.X86_64.sp sGD) .rax]))) :=
   ⟨by decide, by decide, by decide⟩
 
-theorem selPrologue_good (jH jG : Nat) : Good (selPrologue jH jG) := by
-  unfold selPrologue seqs seqs seqs seqs
-  exact .seq (.block' rfl rfl) (.seq lensH_good (.seq (.block' rfl rfl) (.seq lensG_good (.block' rfl rfl))))
+/-- `selPrologueWith ls`, whose dispatches are `Good`. -/
+theorem selPrologueWith_good {ls : List (Nat × Nat)}
+    (hH : Good (Impl.Dispatch.X86_64.chain (ls.map fun p => (p.1, .block (consts p.2)))))
+    (hG : Good (Impl.Dispatch.X86_64.chain (ls.map fun p =>
+      (p.1, .block [.mov32 .rax (im p.2), .store (Impl.Mgf1.X86_64.sp sGD) .rax]))))
+    (jH jG : Nat) : Good (selPrologueWith ls jH jG) := by
+  unfold selPrologueWith seqs seqs seqs seqs
+  exact .seq (.block' rfl rfl) (.seq hH (.seq (.block' rfl rfl) (.seq hG (.block' rfl rfl))))
+
+theorem selPrologue_good (jH jG : Nat) : Good (selPrologue jH jG) :=
+  selPrologueWith_good lensH_good lensG_good jH jG
 
 theorem Good.all {c : Prog isa} (h : Good c) : c.all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (by

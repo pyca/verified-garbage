@@ -145,7 +145,7 @@ theorem RW.sub {m : Nat} {q : MQ} {c : Nat} {t : State} (h : RW stack T m q c t)
   ⟨h.words.1, fun k hk => h.words.2 k (hks k hk)⟩
 
 include hT in
-theorem round_ct (hn : n = 2 ∨ n = 3) :
+theorem round_ct (hn : n = 2 ∨ n = 3 ∨ n = 1) :
     RelCT isa (Two (P0 (stack := stack) (T := T) n)) (round lay) fun _ _ => True := by
   obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hT
   have c1 : oSt = 3072 := rfl
@@ -155,12 +155,12 @@ theorem round_ct (hn : n = 2 ∨ n = 3) :
   have c5 : oRsa = 8192 := rfl
   have ldT : ∀ d, d = sFnG ∨ d = sFnG + 8 ∨ d = sFnG + 16 →
       ∃ hc, (taint.check (frT [] [] n) (.block (ldFn d)) hc).isSome = true := by
-    rintro d (rfl | rfl | rfl) <;> rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rintro d (rfl | rfl | rfl) <;> rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   unfold round seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- `init`.
   refine RelCT.seq (two_pieceF (Ψ := P1 (stack := stack) (T := T) n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
     (fun a => mw T.S.digestBytes a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩)
     fun a t h => WP.mono (h.step rfl (scr_ok h.L (d := .rdi) (by decide) (o := oSt) (by decide))
       fun t' ⟨_, hm, k⟩ => ⟨k.gpr (by decide), k.2.2, hm⟩) fun t' ⟨⟨hdi, _⟩, h'⟩ => ⟨h', hdi⟩) ?_
   refine RelCT.seq (two_post (Ψ := P0 (stack := stack) (T := T) n)
@@ -175,7 +175,7 @@ theorem round_ct (hn : n = 2 ∨ n = 3) :
   -- `update` with `src`.
   refine RelCT.seq (two_pieceF (Ψ := P3 (stack := stack) (T := T) n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
     (fun a => mw T.S.digestBytes a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.rep
     exact WP.mono (h.step rfl (updSrc_ok h.L R A) fun t' ⟨_, _, _, _, _, hm, k⟩ => ⟨k.gpr (by decide), k.2.2, hm⟩)
       fun t' ⟨⟨hdi, hsi, hdx, hcx, h8, _⟩, h'⟩ => ⟨h', hdi, hsi, hdx, hcx, h8⟩
@@ -196,7 +196,7 @@ theorem round_ct (hn : n = 2 ∨ n = 3) :
   -- The counter, and `update` with it.
   refine RelCT.seq (two_pieceF (Ψ := P5 (stack := stack) (T := T) n) [] [14] (fun a => a.1.F) (fun a => a.1.ws)
     (fun a => mw T.S.digestBytes a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20, h48, h43⟩ := h.rep
     have := h.lt
     have := h.fit.dstB
@@ -217,7 +217,7 @@ theorem round_ct (hn : n = 2 ∨ n = 3) :
   -- `finalize`.
   refine RelCT.seq (two_pieceF (Ψ := P7 (stack := stack) (T := T) n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
     (fun a => mw T.S.digestBytes a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.rep
     exact WP.mono (h.step rfl (finA_ok h.L R A.hsl) fun t' ⟨_, _, _, _, hm, k⟩ => ⟨k.gpr (by decide), k.2.2, hm⟩)
       fun t' ⟨⟨hdi, hsi, hdx, hcx, _⟩, h'⟩ => ⟨h', hdi, hsi, hdx, hcx⟩
@@ -234,14 +234,14 @@ theorem round_ct (hn : n = 2 ∨ n = 3) :
   -- Into `dst`, and the next counter.
   refine RelCT.seq (two_pieceF (Ψ := P0 (stack := stack) (T := T) n) [] [14, 17, 18, 20, 43] (fun a => a.1.F)
     (fun a => a.1.ws) (fun a => mw T.S.digestBytes a.1 a.2) (fun a t h => h.sub (by decide)) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20, h48, h43⟩ := h.rep
     have := h.fit.fd
     exact WP.mono (Calls.wp rfl h.calls (xorOut_ok h.L R (dst := a.1.dst) (dstLen := a.1.dstLen)
       (done := a.2 * T.S.digestBytes) (by omega) hzD (by omega) A.hdst A.hdl h20 h43 h.lt))
       fun t' ⟨⟨L', k, R'⟩, hc'⟩ => h.after L' k.2.2 R' A h19 h20 h48 h43 hc'
   exact two_taintF [] [] (fun a => a.1.F) (fun a => a.1.ws) (fun a => mw T.S.digestBytes a.1 a.2)
-    (fun a t h => h.sub (by decide)) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+    (fun a t h => h.sub (by decide)) nopin (by decide) (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩)
 
 /-! ## MGF1 -/
 
@@ -285,13 +285,13 @@ theorem ML.rw {Gs : Spec.Mgf1.Hash} {q : MQ} {j : Nat} {t : State} (h : ML (stac
 include hT in
 /-- `dst ⊕= MGF1(src, dstLen)` in two runs with the same `MQ`. -/
 theorem mgf_ct {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = T.S.H.hash x) (hGl : Gs.len = T.S.digestBytes)
-    (hGv : Proof.Mgf1.Valid Gs) (hn : n = 2 ∨ n = 3) :
+    (hGv : Proof.Mgf1.Valid Gs) (hn : n = 2 ∨ n = 3 ∨ n = 1) :
     RelCT isa (Two (ME stack T n)) (mgfXor lay) fun _ _ => True := by
   have hD := (sizes hT).2.2.2.2
   unfold mgfXor
   refine RelCT.seq (two_pieceF (Ψ := fun q t => 0 < nR T.S.digestBytes q ∧ ML (stack := stack) (T := T) n Gs q 0 t)
     [] [] MQ.F MQ.ws (fun _ _ => 0) (fun q t h => ⟨h.fv, fun _ h => absurd h List.not_mem_nil⟩) nopin (by decide)
-    (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h => ?_) ?_
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h => ?_) ?_
   · obtain ⟨V, W, R, A, h48, h43⟩ := h.rep
     obtain ⟨e, hh, hF, hl⟩ := h.calls
     have hpos := h.fit.pos

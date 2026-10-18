@@ -15,6 +15,7 @@
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
+use crate::arch::md5::{vg_md5_finalize_scratch, vg_md5_init, vg_md5_update_scratch};
 use crate::arch::sha1::{
     VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES, VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES,
     vg_sha1_finalize_scratch, vg_sha1_finalize_scratch_shani, vg_sha1_init, vg_sha1_update_scratch,
@@ -35,6 +36,7 @@ use crate::arch::sha512::{
     vg_sha512_update_scratch, vg_sha512_update_scratch_avx2, vg_sha512_update_scratch_shani,
 };
 use crate::cpu::Features;
+use crate::hashes::md5::Md5Backend;
 use crate::hashes::sha1::Sha1Backend;
 use crate::hashes::sha224::Sha224Backend;
 use crate::hashes::sha256::Sha256Backend;
@@ -136,11 +138,19 @@ macro_rules! sha512_family {
 
 /// The table of `hash`'s streaming functions for the implementations a CPU
 /// with the features `f` runs best, or `None` for a hash function with no
-/// such functions (MD5, which no caller takes, and SHA-3). The functions
-/// need no CPU feature their backend was not chosen for (checked here, on
-/// every set of features in the tests).
+/// such functions (SHA-3). The functions need no CPU feature their backend
+/// was not chosen for (checked here, on every set of features in the
+/// tests).
 pub(crate) fn table(hash: Hash, f: Features) -> Option<Table> {
     let (fns, features) = match hash {
+        Hash::Md5 => match Md5Backend::select(f) {
+            Md5Backend::Scalar => entry!(
+                vg_md5_init,
+                vg_md5_update_scratch,
+                vg_md5_finalize_scratch,
+                []
+            ),
+        },
         Hash::Sha1 => match Sha1Backend::select(f) {
             Sha1Backend::Scalar => {
                 entry!(
@@ -166,9 +176,7 @@ pub(crate) fn table(hash: Hash, f: Features) -> Option<Table> {
         Hash::Sha512 => sha512_family!(Sha512Backend, f, vg_sha512_init),
         Hash::Sha512_224 => sha512_family!(Sha512_224Backend, f, vg_sha512_224_init),
         Hash::Sha512_256 => sha512_family!(Sha512_256Backend, f, vg_sha512_256_init),
-        Hash::Md5 | Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512 => {
-            return None;
-        }
+        Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512 => return None,
     };
     debug_assert!(f.contains(features), "{hash:?}");
     Some(Table {
@@ -183,7 +191,7 @@ mod tests {
 
     /// The functions of each table need no CPU feature that their backend
     /// was not chosen for (`table`'s check), on every set of features; and
-    /// only the SHA-1 and SHA-2 functions have tables.
+    /// only MD5, SHA-1 and the SHA-2 functions have tables.
     #[test]
     fn features() {
         for bits in 0..1u32 << crate::cpu::NAMES.len() {
@@ -206,11 +214,7 @@ mod tests {
                     Some(t) => assert_eq!(t.id, hash as usize),
                     None => assert!(matches!(
                         hash,
-                        Hash::Md5
-                            | Hash::Sha3_224
-                            | Hash::Sha3_256
-                            | Hash::Sha3_384
-                            | Hash::Sha3_512
+                        Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
                     )),
                 }
             }

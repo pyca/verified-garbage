@@ -17,11 +17,13 @@ use crate::hash_fns::{Table, table};
 use crate::rsa::{Backend, PrivateKey, PublicKey};
 
 /// The tables of the label's hash function `hash` and MGF1's `mgf1_hash`
-/// for this CPU's implementations, or `UnsupportedHash` if either has none.
+/// for this CPU's implementations, or `UnsupportedHash` if either is not
+/// SHA-1 or a SHA-2 function (`VG.Spec.RsaOaep.hashIds`): MD5, whose table
+/// RSASSA-PSS takes, or one with none.
 fn tables(hash: Hash, mgf1_hash: Hash) -> Result<(Table, Table), Error> {
     let f = detected();
     match (table(hash, f), table(mgf1_hash, f)) {
-        (Some(h), Some(g)) => Ok((h, g)),
+        (Some(h), Some(g)) if hash != Hash::Md5 && mgf1_hash != Hash::Md5 => Ok((h, g)),
         _ => Err(Error::UnsupportedHash),
     }
 }
@@ -49,7 +51,7 @@ pub(super) fn encrypt(
         |out, seed, scratch, pre| {
             // SAFETY: `encrypt_with`'s, and `seed_len` is the length of `hash`'s
             // values; `hash` and `mgf1_hash` are the numbers of SHA-1 or SHA-2
-            // functions (`table` has none for others), and `h.fns` and `g.fns`
+            // functions (`tables` refuses others), and `h.fns` and `g.fns`
             // their streaming functions, for implementations the CPU can run
             // (`table`); the CPU has the features of `f`, which `select` chose.
             unsafe {
@@ -97,7 +99,7 @@ pub(super) fn decrypt(
     };
     super::decrypt_with(key, ciphertext, |out, len, scratch| {
         // SAFETY: `decrypt_with`'s; `hash` and `mgf1_hash` are the numbers
-        // of SHA-1 or SHA-2 functions (`table` has none for others), and
+        // of SHA-1 or SHA-2 functions (`tables` refuses others), and
         // `h.fns` and `g.fns` their streaming functions, for implementations
         // the CPU can run (`table`); the CPU has the features of `f`, which
         // `select` chose.

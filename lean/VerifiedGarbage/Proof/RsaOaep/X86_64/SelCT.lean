@@ -40,19 +40,19 @@ theorem gd_taint : ∀ d < 65, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov3
 variable {α : Type}
 
 /-- The dispatch on `rax`, `kk a` in both runs, to `f` of each length of
-`lens`: constant time if each case is, from the states but for `rax` and the
+`ls`: constant time if each case is, from the states but for `rax` and the
 flags. -/
-theorem two_chain {kk : α → Nat} (hkk : ∀ a, kk a ∈ lens.map (·.1)) {f : Nat → Prog isa}
+theorem two_chainW {ls : List (Nat × Nat)} (hls : LensOK ls) {kk : α → Nat} (hkk : ∀ a, kk a ∈ ls.map (·.1)) {f : Nat → Prog isa}
     {Φ : α → State → Prop} (hax : ∀ a t, Φ a t → t.gpr .rax = BitVec.ofNat 64 (kk a)) {Q : State → State → Prop}
-    (hc : ∀ p ∈ lens, RelCT isa (Two fun a t => kk a = p.1 ∧ Mod Φ a t) (f p.2) Q) :
-    RelCT isa (Two Φ) (Impl.Dispatch.X86_64.chain (lens.map fun p => (p.1, f p.2))) Q := by
-  have hkeys : Proof.Dispatch.keys (lens.map fun p => (p.1, f p.2)) = lens.map (·.1) := by
+    (hc : ∀ p ∈ ls, RelCT isa (Two fun a t => kk a = p.1 ∧ Mod Φ a t) (f p.2) Q) :
+    RelCT isa (Two Φ) (Impl.Dispatch.X86_64.chain (ls.map fun p => (p.1, f p.2))) Q := by
+  have hkeys : Proof.Dispatch.keys (ls.map fun p => (p.1, f p.2)) = ls.map (·.1) := by
     simp only [Proof.Dispatch.keys, List.map_map]; rfl
   have hsel : ∀ {a t}, Φ a t → Proof.Dispatch.X86_64.sel t = kk a := fun {a t} h => by
-    have := lens_lt _ (hkk a)
+    have := hls.lt _ (hkk a)
     simp only [Proof.Dispatch.X86_64.sel, hax a t h, BitVec.toNat_ofNat]; omega
-  refine Proof.Dispatch.chain_relCT Proof.Dispatch.X86_64.tests (by rw [hkeys]; exact lens_lt)
-    (by rw [hkeys]; exact lens_nodup) (fun s₁ s₂ ⟨a, h₁, h₂⟩ => ⟨by rw [hsel h₁, hsel h₂], by
+  refine Proof.Dispatch.chain_relCT Proof.Dispatch.X86_64.tests (by rw [hkeys]; exact hls.lt)
+    (by rw [hkeys]; exact hls.nodup) (fun s₁ s₂ ⟨a, h₁, h₂⟩ => ⟨by rw [hsel h₁, hsel h₂], by
       rw [hkeys, hsel h₁]; exact hkk a⟩) fun k c hc' => ?_
   obtain ⟨p, hm, he⟩ := List.mem_map.mp hc'
   simp only [Prod.mk.injEq] at he
@@ -60,6 +60,12 @@ theorem two_chain {kk : α → Nat} (hkk : ∀ a, kk a ∈ lens.map (·.1)) {f :
   exact (hc p hm).mono (fun s₁ s₂ ⟨a₁, a₂, ⟨a, h₁, h₂⟩, hs₁, r₁, r₂, _, _⟩ =>
     ⟨a, ⟨(hsel h₁).symm.trans hs₁, a₁, h₁, r₁.mem, r₁.rd, r₁.wr, fun r _ => r₁.gpr r⟩,
       ⟨(hsel h₁).symm.trans hs₁, a₂, h₂, r₂.mem, r₂.rd, r₂.wr, fun r _ => r₂.gpr r⟩⟩) fun _ _ h => h
+
+theorem two_chain {kk : α → Nat} (hkk : ∀ a, kk a ∈ lens.map (·.1)) {f : Nat → Prog isa}
+    {Φ : α → State → Prop} (hax : ∀ a t, Φ a t → t.gpr .rax = BitVec.ofNat 64 (kk a)) {Q : State → State → Prop}
+    (hc : ∀ p ∈ lens, RelCT isa (Two fun a t => kk a = p.1 ∧ Mod Φ a t) (f p.2) Q) :
+    RelCT isa (Two Φ) (Impl.Dispatch.X86_64.chain (lens.map fun p => (p.1, f p.2))) Q :=
+  two_chainW lensOK hkk hax hc
 
 /-- A point of `selPrologue`: in the frame `F a`, with the selectors `kH a`
 and `kG a` the stack arguments `jH` and `jG`, readable, outside the frame,
@@ -149,13 +155,15 @@ theorem fns_ct {j k : Nat} {p : α → Addr}
     exact frame_wF hF (frame_wF hF (frame_wF hF (Frame.refl _ _) (by unfold frameBytes; omega) _)
       (by unfold frameBytes; omega) _) (by unfold frameBytes; omega) _
 
-/-- `selPrologue` in two runs with the same frame, selectors and tables. -/
-theorem selPro_ct (hkH : ∀ a, kH a ∈ lens.map (·.1)) (hkG : ∀ a, kG a ∈ lens.map (·.1))
+/-- `selPrologueWith ls` in two runs with the same frame, selectors and
+tables. -/
+theorem selProW_ct {ls : List (Nat × Nat)} (hls : LensOK ls) (hkH : ∀ a, kH a ∈ ls.map (·.1))
+    (hkG : ∀ a, kG a ∈ ls.map (·.1))
     (htH : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (argSlot jH sSelH)) hc).isSome = true)
     (htG : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (argSlot jG sSelG)) hc).isSome = true)
     (htFH : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem (arg (jG + 1)))]) hc).isSome = true)
     (htFG : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem (arg (jG + 2)))]) hc).isSome = true) :
-    RelCT isa (Two (SelPt F S jH jG kH kG pH pG)) (selPrologue jH jG) fun _ _ => True := by
+    RelCT isa (Two (SelPt F S jH jG kH kG pH pG)) (selPrologueWith ls jH jG) fun _ _ => True := by
   obtain ⟨_, htH⟩ := htH
   obtain ⟨_, htG⟩ := htG
   have pinP : ∀ {Ψ : α → State → Prop}, (∀ a t, Ψ a t → SelPt F S jH jG kH kG pH pG a t) → Pins Ψ [.rsp] :=
@@ -163,25 +171,25 @@ theorem selPro_ct (hkH : ∀ a, kH a ∈ lens.map (·.1)) (hkG : ∀ a, kG a ∈
   have pinM : ∀ {Ψ : α → State → Prop} {kk : α → Nat} (k : Nat),
       (∀ a t, Ψ a t → SelPt F S jH jG kH kG pH pG a t) → Pins (fun a t => kk a = k ∧ Mod Ψ a t) [.rsp] :=
     fun k h => selPins fun a t ⟨_, t₀, p, _, _, _, g⟩ => (g .rsp (by decide)).trans (h a t₀ p).L.rsp
-  unfold selPrologue seqs seqs seqs seqs
+  unfold selPrologueWith seqs seqs seqs seqs
   -- `hash` to its slot.
   refine RelCT.seq (two_post (Ψ := fun a t => SelPt F S jH jG kH kG pH pG a t ∧ t.gpr .rax = BitVec.ofNat 64 (kH a))
     (two_taint [.rsp] (pinP fun _ _ h => h) htH) fun a t h =>
       selArg_ok h h.inH (h.args _ (Frame.refl _ _)).1 (k := 37) (by decide) (by decide)) ?_
   -- Its lengths.
   refine RelCT.seq (two_post (Ψ := SelPt F S jH jG kH kG pH pG)
-    (two_chain hkH (f := fun D => .block (consts D)) (fun a t h => h.2) fun p hp =>
-      two_taint [.rsp] (pinM _ fun _ _ h => h.1) (consts_taint p.2 (by have := lens_le p hp; omega)))
+    (two_chainW hls hkH (f := fun D => .block (consts D)) (fun a t h => h.2) fun p hp =>
+      two_taint [.rsp] (pinM _ fun _ _ h => h.1) (consts_taint p.2 (by have := hls.le p hp; omega)))
     fun a t h => ?_) ?_
   · obtain ⟨⟨i, D⟩, hm, he⟩ := List.mem_map.mp (hkH a)
     simp only at he
     subst he
-    refine chainL_wp (f := fun D => .block (consts D)) hm h.2 fun s' hs' => ?_
+    refine chainLW_wp hls (f := fun D => .block (consts D)) hm h.2 fun s' hs' => ?_
     have p' := h.1.of_mod hs'.mem hs'.rd hs'.wr fun r _ => hs'.gpr r
     obtain ⟨V, W, R⟩ := p'.rep
     have hF := p'.L.Fw
     have G' := p'.L.geo
-    refine WP.mono (consts_ok p'.L.rsp p'.L.frScr (lens_le _ hm)) fun u ⟨k, m⟩ => ?_
+    refine WP.mono (consts_ok p'.L.rsp p'.L.frScr (hls.le _ hm)) fun u ⟨k, m⟩ => ?_
     have R' : Rep u.mem (F a) (S a) V (upd (upd (upd (upd W 39 (BitVec.ofNat 64 D)) 40 (BitVec.ofNat 64 (D + 1)))
         41 (BitVec.ofNat 64 (2 * D + 1))) 42 (BitVec.ofNat 64 (2 * D + 2))) := by
       rw [m]
@@ -197,17 +205,17 @@ theorem selPro_ct (hkH : ∀ a, kH a ∈ lens.map (·.1)) (hkG : ∀ a, kG a ∈
       selArg_ok h h.inG (h.args _ (Frame.refl _ _)).2 (k := 38) (by decide) (by decide)) ?_
   -- Its length.
   refine RelCT.seq (two_post (Ψ := SelPt F S jH jG kH kG pH pG)
-    (two_chain hkG (f := fun D => .block [.mov32 .rax (im D), .store (sp sGD) .rax]) (fun a t h => h.2)
-      fun p hp => two_taint [.rsp] (pinM _ fun _ _ h => h.1) (gd_taint p.2 (by have := lens_le p hp; omega)))
+    (two_chainW hls hkG (f := fun D => .block [.mov32 .rax (im D), .store (sp sGD) .rax]) (fun a t h => h.2)
+      fun p hp => two_taint [.rsp] (pinM _ fun _ _ h => h.1) (gd_taint p.2 (by have := hls.le p hp; omega)))
     fun a t h => ?_) ?_
   · obtain ⟨⟨i, D⟩, hm, he⟩ := List.mem_map.mp (hkG a)
     simp only at he
     subst he
-    refine chainL_wp (f := fun D => .block [.mov32 .rax (im D), .store (sp sGD) .rax]) hm h.2 fun s' hs' => ?_
+    refine chainLW_wp hls (f := fun D => .block [.mov32 .rax (im D), .store (sp sGD) .rax]) hm h.2 fun s' hs' => ?_
     have p' := h.1.of_mod hs'.mem hs'.rd hs'.wr fun r _ => hs'.gpr r
     obtain ⟨V, W, R⟩ := p'.rep
     have hF := p'.L.Fw
-    refine WP.mono (gd_ok p'.L.rsp p'.L.frScr (lens_le _ hm)) fun u ⟨k, m⟩ => ?_
+    refine WP.mono (gd_ok p'.L.rsp p'.L.frScr (hls.le _ hm)) fun u ⟨k, m⟩ => ?_
     refine p'.of_frame R (m ▸ R.wf p'.L.geo (k := 43) (by decide) _) (by simp [upd]) (k.gpr (by decide)) k.2.1 k.2.2 ?_
     rw [m]
     exact frame_wF hF (Frame.refl _ _) (by decide) _
@@ -216,5 +224,14 @@ theorem selPro_ct (hkH : ∀ a, kH a ∈ lens.map (·.1)) (hkG : ∀ a, kG a ∈
     ⟨_, by taint_decide⟩) ?_)
   exact (fns_ct (k := 48) (fun a t h => h.tG) (by decide) (by decide) htFG ⟨_, by taint_decide⟩).mono
     (fun _ _ h => h) fun _ _ _ => trivial
+
+/-- `selPrologue` in two runs with the same frame, selectors and tables. -/
+theorem selPro_ct (hkH : ∀ a, kH a ∈ lens.map (·.1)) (hkG : ∀ a, kG a ∈ lens.map (·.1))
+    (htH : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (argSlot jH sSelH)) hc).isSome = true)
+    (htG : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (argSlot jG sSelG)) hc).isSome = true)
+    (htFH : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem (arg (jG + 1)))]) hc).isSome = true)
+    (htFG : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem (arg (jG + 2)))]) hc).isSome = true) :
+    RelCT isa (Two (SelPt F S jH jG kH kG pH pG)) (selPrologue jH jG) fun _ _ => True :=
+  selProW_ct lensOK hkH hkG htH htG htFH htFG
 
 end VG.Proof.RsaOaep.X86_64

@@ -40,7 +40,6 @@ theorem scan_good : Good scan :=
   ⟨rfl, rfl, by simp [scan, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem clearBuf_good : Good clearBuf := ⟨rfl, rfl, by simp [clearBuf, Code.depth]⟩
 theorem copyT_good : Good copyT := ⟨rfl, rfl, by simp [copyT, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
-theorem shift_good : Good shift := ⟨rfl, rfl, by simp [shift, shiftPass, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem outLoop_good : Good outLoop := ⟨rfl, rfl, by simp [outLoop, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem decFail_good : Good decFail :=
   ⟨rfl, rfl, by simp [decFail, zeroOut, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩

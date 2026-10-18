@@ -38,6 +38,15 @@ theorem lens_lt : ∀ i ∈ lens.map (·.1), i < 2 ^ 31 := by decide
 theorem lens_len : ∀ p ∈ lens, p.2 = lenOf p.1 := by decide
 theorem lens_le : ∀ p ∈ lens, p.2 ≤ 64 := by decide
 
+/-- A list of numbers and digest lengths a dispatch chooses among: distinct
+keys below `2^31`, lengths at most 64. -/
+structure LensOK (ls : List (Nat × Nat)) : Prop where
+  nodup : (ls.map (·.1)).Nodup
+  lt : ∀ i ∈ ls.map (·.1), i < 2 ^ 31
+  le : ∀ p ∈ ls, p.2 ≤ 64
+
+theorem lensOK : LensOK lens := ⟨lens_nodup, lens_lt, lens_le⟩
+
 /-- With distinct keys, one value per key. -/
 theorem keys_unique {α : Type} {cs : List (Nat × α)} (hnd : (cs.map (·.1)).Nodup) {k : Nat} {a b : α}
     (h₁ : (k, a) ∈ cs) (h₂ : (k, b) ∈ cs) : a = b := by
@@ -51,24 +60,29 @@ theorem keys_unique {α : Type} {cs : List (Nat × α)} (hnd : (cs.map (·.1)).N
     · subst e₂; exact absurd (List.mem_map.mpr ⟨_, e₁, rfl⟩) hnd.1
     · exact ih hnd.2 e₁ e₂
 
-/-- The dispatch on `rax = k` to `f D` for each `(i, D)` of `lens`: `f D`
-for the `(k, D)` of `lens`, from a state that differs only in the flags. -/
-theorem chainL_wp {f : Nat → Prog isa} {k D : Nat} (hk : (k, D) ∈ lens) {t : State} {Q : State → Prop}
+/-- The dispatch on `rax = k` to `f D` for each `(i, D)` of `ls`: `f D`
+for the `(k, D)` of `ls`, from a state that differs only in the flags. -/
+theorem chainLW_wp {ls : List (Nat × Nat)} (hls : LensOK ls) {f : Nat → Prog isa} {k D : Nat} (hk : (k, D) ∈ ls) {t : State} {Q : State → Prop}
     (hax : t.gpr .rax = BitVec.ofNat 64 k) (h : ∀ s', FlagsOnly t s' → WP isa (f D) s' Q) :
-    WP isa (Impl.Dispatch.X86_64.chain (lens.map fun p => (p.1, f p.2))) t Q := by
-  have hkeys : Proof.Dispatch.keys (lens.map fun p => (p.1, f p.2)) = lens.map (·.1) := by
+    WP isa (Impl.Dispatch.X86_64.chain (ls.map fun p => (p.1, f p.2))) t Q := by
+  have hkeys : Proof.Dispatch.keys (ls.map fun p => (p.1, f p.2)) = ls.map (·.1) := by
     simp only [Proof.Dispatch.keys, List.map_map]; rfl
-  have hkm : k ∈ lens.map (·.1) := List.mem_map.mpr ⟨_, hk, rfl⟩
-  have hk31 := lens_lt k hkm
+  have hkm : k ∈ ls.map (·.1) := List.mem_map.mpr ⟨_, hk, rfl⟩
+  have hk31 := hls.lt k hkm
   have hsel : Proof.Dispatch.X86_64.sel t = k := by
     simp only [Proof.Dispatch.X86_64.sel, hax, BitVec.toNat_ofNat]; omega
-  refine Proof.Dispatch.chain_wp Proof.Dispatch.X86_64.tests _ (by rw [hkeys]; exact lens_lt)
-    (by rw [hkeys, hsel]; exact hkm) (by rw [hkeys]; exact lens_nodup) fun c hc s' hs' _ => ?_
+  refine Proof.Dispatch.chain_wp Proof.Dispatch.X86_64.tests _ (by rw [hkeys]; exact hls.lt)
+    (by rw [hkeys, hsel]; exact hkm) (by rw [hkeys]; exact hls.nodup) fun c hc s' hs' _ => ?_
   rw [hsel] at hc
   obtain ⟨⟨i, D'⟩, hm, he⟩ := List.mem_map.mp hc
   simp only [Prod.mk.injEq] at he
   obtain ⟨rfl, rfl⟩ := he
-  rw [keys_unique lens_nodup hm hk]; exact h s' hs'
+  rw [keys_unique hls.nodup hm hk]; exact h s' hs'
+
+theorem chainL_wp {f : Nat → Prog isa} {k D : Nat} (hk : (k, D) ∈ lens) {t : State} {Q : State → Prop}
+    (hax : t.gpr .rax = BitVec.ofNat 64 k) (h : ∀ s', FlagsOnly t s' → WP isa (f D) s' Q) :
+    WP isa (Impl.Dispatch.X86_64.chain (lens.map fun p => (p.1, f p.2))) t Q :=
+  chainLW_wp lensOK hk hax h
 
 /-- The slots `selPrologue` stores to, over `W`: the selectors `kH` and
 `kG`, `H`'s length `D` and the three lengths computed from it, and `G`'s
@@ -195,10 +209,11 @@ theorem fnSlots_ok {u : State} {F : Addr} (hsp : u.gpr .rsp = F) (hsc : Scr u F 
     (T.mono k₁.2.1 k₁.2.2 (by rw [m₁]; exact Frame.refl _ _)) ax hd) fun u' ⟨k₂, m₂⟩ =>
       ⟨(k₁.trans k₂).mono (by decide), by rw [m₂, m₁]⟩
 
-/-- `selPrologue`: the selectors to their slots, the lengths of the hash
-functions they name, `(kH, DH)` and `(kG, DG)` of `lens`, and the tables'
+/-- `selPrologueWith ls`: the selectors to their slots, the lengths of the
+hash functions they name, `(kH, DH)` and `(kG, DG)` of `ls`, and the tables'
 words. -/
-theorem selPro_ok {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ lens) (hkG : (kG, DG) ∈ lens)
+theorem selProW_ok {ls : List (Nat × Nat)} (hls : LensOK ls) {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ ls)
+    (hkG : (kG, DG) ∈ ls)
     {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W)
     {jH jG : Nat} (hinH : InRegions (u.rd ++ u.wr) (off F (frameBytes + 8 + 8 * jH)) 8)
     (hinG : InRegions (u.rd ++ u.wr) (off F (frameBytes + 8 + 8 * jG)) 8)
@@ -207,14 +222,14 @@ theorem selPro_ok {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ lens) (hkG : (kG, DG) 
         m'.readW (off F (frameBytes + 8 + 8 * jG)) 64 = BitVec.ofNat 64 kG)
     {pH pG : Addr} {h₀ h₁ h₂ g₀ g₁ g₂ : BitVec 64} (tH : TabAt u F (jG + 1) pH h₀ h₁ h₂)
     (tG : TabAt u F (jG + 2) pG g₀ g₁ g₂) :
-    WP isa (selPrologue jH jG) u fun u' => Lay u' F S ∧ Keep [.rax, .r10] u u' ∧
+    WP isa (selPrologueWith ls jH jG) u fun u' => Lay u' F S ∧ Keep [.rax, .r10] u u' ∧
       Rep u'.mem F S V (fnW (selW W kH kG DH DG) h₀ h₁ h₂ g₀ g₁ g₂) ∧
       Frame [⟨F, frameBytes⟩] u.mem u'.mem := by
   have G' := L.geo
   have hF := L.Fw
   have hsc := L.frScr
-  have hDH := lens_le _ hkH
-  have hDG := lens_le _ hkG
+  have hDH := hls.le _ hkH
+  have hDG := hls.le _ hkG
   -- `Scr` and the stack pointer, for a state keeping the registers and regions of `u`
   have scK : ∀ {rs} {t : State}, Keep rs u t → .rsp ∉ rs → t.gpr .rsp = F ∧ Scr t F frameBytes :=
     fun k hr => ⟨(k.gpr hr).trans L.rsp, Scr.of_mem (k.2.2 ▸ L.fr) (by omega)⟩
@@ -224,7 +239,7 @@ theorem selPro_ok {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ lens) (hkG : (kG, DG) 
       u2.mem = ((((u.mem.writeW (off F sSelH) (BitVec.ofNat 64 kH)).writeW (off F sHD) (BitVec.ofNat 64 DH)).writeW
         (off F sH1) (BitVec.ofNat 64 (DH + 1))).writeW (off F sH2) (BitVec.ofNat 64 (2 * DH + 1))).writeW
         (off F sH3) (BitVec.ofNat 64 (2 * DH + 2))) ?_ fun u2 ⟨L2, k2, m2⟩ => ?_)
-  · refine chainL_wp (f := fun D => .block (consts D)) hkH ax1 fun s' hs' => ?_
+  · refine chainLW_wp hls (f := fun D => .block (consts D)) hkH ax1 fun s' hs' => ?_
     have k' := (k1.trans (keep_of_flags hs')).mono (rs' := [.rax]) (by decide)
     obtain ⟨sp', sc'⟩ := scK k' (by decide)
     refine WP.mono (consts_ok sp' sc' hDH) fun u2 ⟨k2, m2⟩ => ?_
@@ -245,7 +260,7 @@ theorem selPro_ok {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ lens) (hkG : (kG, DG) 
     fun u3 ⟨k3, ax3, m3⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun (u4 : State) => Lay u4 F S ∧ Keep [.rax] u u4 ∧
       Rep u4.mem F S V (selW W kH kG DH DG) ∧ Frame [⟨F, frameBytes⟩] u.mem u4.mem)
-    (chainL_wp (f := fun D => .block [.mov32 .rax (im D), .store (sp sGD) .rax]) hkG ax3 fun s' hs' => ?_)
+    (chainLW_wp hls (f := fun D => .block [.mov32 .rax (im D), .store (sp sGD) .rax]) hkG ax3 fun s' hs' => ?_)
     fun u4 ⟨L4, k4, R4, f4⟩ => ?_)
   · have k' := (k3.trans (keep_of_flags hs')).mono (rs' := [.rax]) (by decide)
     have k13 := (k2.trans k').mono (rs' := [.rax]) (by decide)
@@ -281,5 +296,20 @@ theorem selPro_ok {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ lens) (hkG : (kG, DG) 
   refine ⟨L.of_rep' R R6 (by simp [fnW, selW, upd]) ((k16.gpr (by decide)).trans rfl) k16.2.2, k16, R6, ?_⟩
   rw [m6]
   exact frame_wF hF (frame_wF hF (frame_wF hF f5 (by decide) _) (by decide) _) (by decide) _
+
+/-- `selPrologue`, over `lens`. -/
+theorem selPro_ok {kH kG DH DG : Nat} (hkH : (kH, DH) ∈ lens) (hkG : (kG, DG) ∈ lens)
+    {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W)
+    {jH jG : Nat} (hinH : InRegions (u.rd ++ u.wr) (off F (frameBytes + 8 + 8 * jH)) 8)
+    (hinG : InRegions (u.rd ++ u.wr) (off F (frameBytes + 8 + 8 * jG)) 8)
+    (harg : ∀ m', Frame [⟨F, frameBytes⟩] u.mem m' →
+      m'.readW (off F (frameBytes + 8 + 8 * jH)) 64 = BitVec.ofNat 64 kH ∧
+        m'.readW (off F (frameBytes + 8 + 8 * jG)) 64 = BitVec.ofNat 64 kG)
+    {pH pG : Addr} {h₀ h₁ h₂ g₀ g₁ g₂ : BitVec 64} (tH : TabAt u F (jG + 1) pH h₀ h₁ h₂)
+    (tG : TabAt u F (jG + 2) pG g₀ g₁ g₂) :
+    WP isa (selPrologue jH jG) u fun u' => Lay u' F S ∧ Keep [.rax, .r10] u u' ∧
+      Rep u'.mem F S V (fnW (selW W kH kG DH DG) h₀ h₁ h₂ g₀ g₁ g₂) ∧
+      Frame [⟨F, frameBytes⟩] u.mem u'.mem :=
+  selProW_ok lensOK hkH hkG L R hinH hinG harg tH tG
 
 end VG.Proof.RsaOaep.X86_64

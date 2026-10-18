@@ -12,7 +12,6 @@ public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Pbkdf2.Scratch
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
@@ -112,15 +111,11 @@ structure MdHash where
   /-- The instance of the shared contracts. -/
   I : Spec.Hmac.Instance
   /-- What the proofs know of the hash function's code, and of the functions
-  it calls (for the callers that work at the level of its compression
-  function: RSASSA-PSS's, `Generic/MdHash/RsaPrivateCrt/X86_64/RsaPss.lean`). -/
+  it calls. -/
   ok : HashOK H
   K : Callees H
   /-- The hash function as RSA's padding takes it. -/
   mgf : MgfLink H ok
-  /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
-  hash function, once for each hash function. -/
-  pss : Proof.RsaPss.X86_64.PssChecks H.P H.D
   hmacInit : Verified X86_64.target H.hmacInit (I.initScratchContract X86_64.abi 16)
   hmacFin : Verified X86_64.target H.hmacFin (I.finalizeScratchContract X86_64.abi 16)
   iterate : Verified X86_64.target H.iterate (I.iterateContract X86_64.abi 8)
@@ -299,7 +294,7 @@ end MdHash
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
 need of it and the satisfiability of the shared contracts. -/
 def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (K : Callees H)
-    (mgf : MgfLink H hH) (pss : Proof.RsaPss.X86_64.PssChecks H.P H.D) (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
+    (mgf : MgfLink H hH) (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
     (hsI : ∃ s, (I.initScratchContract X86_64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s)
     (hsT : ∃ s, (I.iterateContract X86_64.abi 8).pre s)
@@ -318,7 +313,6 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   ok := hH
   K := K
   mgf := mgf
-  pss := pss
   hmacInit := MdHash.hmacInit_of hH C K hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C K hSH hW hsF
   iterate := MdHash.iterate_of hH C K hSH hW hsT

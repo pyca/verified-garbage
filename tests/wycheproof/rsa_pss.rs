@@ -3,10 +3,12 @@
 //! with the CRT keys of the RSAES decryption vectors
 //! (`rsa_pkcs1_*_test.json`).
 //!
-//! A group with MGF1 over the hash value's hash function is checked: a
-//! `valid` signature must verify with the group's salt length and with any,
-//! an `invalid` one must not verify with the group's. MGF1 over another hash
-//! function is not supported, so nothing verifies with it.
+//! A group is checked: a `valid` signature must verify with the group's
+//! salt length and with any, an `invalid` one must not verify with the
+//! group's. On AArch64 and ARMv7 MGF1 over another hash function than the
+//! hash value's is not supported, so nothing verifies with it; x86-64
+//! supports every pair, which `rsa_pss_every_pair` signs and verifies
+//! with.
 
 #![cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
@@ -19,6 +21,8 @@ use verified_garbage::hashes::{
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::{PrivateKey, PublicKey};
+#[cfg(not(target_arch = "x86_64"))]
+use verified_garbage::rsa_pss::Error;
 use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify};
 
 use super::harness::{self, Count, Expectation, Hex};
@@ -148,6 +152,7 @@ fn rsa_pss_test() {
             let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
             let ok = verify(key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
             let any = verify(key, sig, &d, h, mgf, SaltLength::Any);
+            #[cfg(not(target_arch = "x86_64"))]
             if mgf != h {
                 assert!(!ok && !any, "{name} tcId {id}");
                 return;
@@ -163,13 +168,14 @@ fn rsa_pss_test() {
             }
         });
         let (accepted, rejected) = (accepted.get(), rejected.get());
+        #[cfg(not(target_arch = "x86_64"))]
         if name.contains("mgf1sha1") {
             assert_eq!(accepted + rejected, 0, "{name}");
-        } else {
-            // The miscellaneous vectors are all valid.
-            let both = rejected > 0 || name.contains("misc");
-            assert!(accepted > 0 && both, "{name}");
+            continue;
         }
+        // The miscellaneous vectors are all valid.
+        let both = rejected > 0 || name.contains("misc");
+        assert!(accepted > 0 && both, "{name}");
     }
 }
 
@@ -215,4 +221,49 @@ fn rsa_pss_sign_test() {
             }
         });
     }
+}
+
+/// Every pair of hash functions the module supports (on x86-64 every pair,
+/// on AArch64 and ARMv7 MGF1 over the hash value's hash function), with the
+/// first CRT key of the 2048-bit decryption vectors: a signature with a salt
+/// of the hash value's length verifies with that length and with any, and
+/// not with MGF1 over another hash function; another pair is refused.
+#[test]
+fn rsa_pss_every_pair() {
+    require_vectors!();
+    let name = "rsa_pkcs1_2048_test.json";
+    let file = harness::load::<CrtGroup, MsgCase>(name);
+    let (private, public) = keys(name, &file.test_groups[0].params.private_key);
+    let msg = &file.test_groups[0].tests[0].case.msg.0;
+    let mut n = 0;
+    for &(_, h) in &HASHES {
+        let d = digest(h, msg);
+        for &(_, g) in &HASHES {
+            let r = sign(&private, &d, h, g, h.digest_len());
+            #[cfg(not(target_arch = "x86_64"))]
+            if g != h {
+                assert_eq!(r, Err(Error::UnsupportedMgf1Hash), "{h:?} {g:?}");
+                continue;
+            }
+            let sig = r.unwrap_or_else(|e| panic!("{h:?} {g:?}: {e}"));
+            let len = SaltLength::Len(h.digest_len());
+            assert!(verify(&public, &sig, &d, h, g, len), "{h:?} {g:?}");
+            assert!(
+                verify(&public, &sig, &d, h, g, SaltLength::Any),
+                "{h:?} {g:?}"
+            );
+            let other = if g == Hash::Sha1 {
+                Hash::Md5
+            } else {
+                Hash::Sha1
+            };
+            assert!(!verify(&public, &sig, &d, h, other, len), "{h:?} {g:?}");
+            n += 1;
+        }
+    }
+    #[cfg(target_arch = "x86_64")]
+    let pairs = 64;
+    #[cfg(not(target_arch = "x86_64"))]
+    let pairs = 8;
+    assert_eq!(n, pairs);
 }
