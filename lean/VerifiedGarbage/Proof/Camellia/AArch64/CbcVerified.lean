@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Camellia.AArch64.Link
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Link
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
@@ -14,6 +16,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -100,7 +104,7 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB, hR⟩ := hp
-  have hwS : (⟨s₀.gpr .x5, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : (⟨s₀.gpr .x5, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.cbcDecryptChained_wp ((dirCoreSpec .decrypt).toBlock rfl) (r := ⟨.x2, .x3, .x4, .x5⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x5) (P := s₀.gpr .x2) (D := s₀.gpr .x3) (n := (s₀.gpr .x4).toNat)
@@ -118,33 +122,34 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
   exact ⟨hdata, hiv⟩
 
 theorem cbcDecryptChained_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbcDecryptChained :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) cbcTaint_agree
-    (by taint_decide)
+  VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
+    (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)
 
 theorem cbcDecryptChained_correct (s : State) (hs : cbcDecAArch64.pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ cbcDecAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecryptChained_wp hs) (by lit_decide) (by lit_decide)
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcDecryptChained_keeps_x30 (cbcDecryptChained_wp hs)
   exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem cbcDecryptChained_verified :
-    Verified AArch64.target cbcDecryptChained (Proof.Camellia.cbcDecChainedScratchContract AArch64.abi slots) :=
+    Verified AArch64.target cbcDecryptChained (Proof.Camellia.cbcDecChainedScratchContract AArch64.abi (slots + 12)) :=
   Verified.of_correct cbcDecryptChained_correct cbcDecryptChained_ct (by
     sig_implies [Proof.Camellia.cbcDecChainedScratchContract, Proof.Camellia.cbcChainedScratchSig, Spec.Camellia.cbcChainedSig,
       Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcDecChainedPost, cbcDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots,
       tailSlot, savedSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3248).pre s := by
+theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3344).pre s := by
   implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre,
     Proof.Camellia.cbcDecChainedPost, AArch64.abi, AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 cbcDecryptChained)
-      (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3248) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 cbcDecryptChained)
+      (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3344) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 406) (pre := Proof.Camellia.cbcChainedPre AArch64.abi.ptrBits)
+    (n := 418) (pre := Proof.Camellia.cbcChainedPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3248) (by rw [← Proof.Camellia.cbcDecChainedScratchContract_eq]; exact cbcDecryptChained_verified)
+    (bytes := 3344) (by rw [← Proof.Camellia.cbcDecChainedScratchContract_eq]; exact cbcDecryptChained_verified)
     (by decide) (by decide) (by decide) (Proof.Camellia.cbcDecChainedPostOut_local _) cbcDecFrameSat_pre
 
 /-! ## Encryption -/
@@ -155,7 +160,7 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
       cbcEncAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB, hR⟩ := hp
-  have hwS : (⟨s₀.gpr .x5, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : (⟨s₀.gpr .x5, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp fbCoreSpec (r := ⟨.x2, .x3, .x4, .x5⟩)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x19)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
@@ -172,10 +177,9 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
     fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [fbCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
 
 theorem cbcEncryptChained_verified :
-    Verified AArch64.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract AArch64.abi slots) :=
+    Verified AArch64.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract AArch64.abi (slots + 12)) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcEncryptChained_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcEncryptChained_keeps_x30 (cbcEncryptChained_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
       fbTaint_agree (by taint_decide)) (by
@@ -183,18 +187,18 @@ theorem cbcEncryptChained_verified :
       Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcEncChainedPost, cbcEncAArch64, fbPre, fbPub,
       AArch64.abi, AArch64.argRegs, slots, tailSlot, savedSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3248).pre s := by
+theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3344).pre s := by
   implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre,
     Proof.Camellia.cbcEncChainedPost, AArch64.abi, AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- CFB128 encryption with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 cbcEncryptChained)
-      (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3248) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 cbcEncryptChained)
+      (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3344) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 406) (pre := Proof.Camellia.cbcChainedPre AArch64.abi.ptrBits)
+    (n := 418) (pre := Proof.Camellia.cbcChainedPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.cbcEncChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3248) (by rw [← Proof.Camellia.cbcEncChainedScratchContract_eq]; exact cbcEncryptChained_verified)
+    (bytes := 3344) (by rw [← Proof.Camellia.cbcEncChainedScratchContract_eq]; exact cbcEncryptChained_verified)
     (by decide) (by decide) (by decide) (Proof.Camellia.cbcEncChainedPostOut_local _) cbcEncFrameSat_pre
 
 end VG.Proof.Camellia.AArch64
