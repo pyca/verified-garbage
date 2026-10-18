@@ -114,11 +114,10 @@ theorem fastPeer_adx_checks : FastPrepChecks 6 (p384vx.sl V) p384vx.winBits 5 :=
 
 theorem fastGenerator_adx_checks : FastPrepChecks 6 (p384vx.sl U) 6400 7 := fastGenerator_checks
 
-theorem jointDouble_ct : ScratchCT (fprogB publicJoint.K.M (dblJMul publicJoint.K.S publicJoint.K.R publicJoint.K.D)).inline :=
+theorem jointDouble_ct : ScratchCT (jointDouble publicJoint.K).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem jointDouble_adx_ct :
-    ScratchCT (fprogB publicJointAdx.K.M (dblJMul publicJointAdx.K.S publicJointAdx.K.R publicJointAdx.K.D)).inline :=
+theorem jointDouble_adx_ct : ScratchCT (jointDoubleAdx publicJointAdx.K).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 end VG.Proof.P384.X86_64

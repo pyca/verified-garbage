@@ -19,8 +19,7 @@ checked once here, and both read them.
 namespace VG.Proof.P384.X86_64
 open VG VG.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 
-materialize_code jointDoubleAdxCode :=
-  fprogB publicJointAdx.K.M (dblJMul publicJointAdx.K.S publicJointAdx.K.R publicJointAdx.K.D)
+materialize_code jointDoubleAdxCode := jointDoubleAdx publicJointAdx.K
 materialize_code jointCacheAdxCode := Joint.cacheCode publicJointAdx
 
 end VG.Proof.P384.X86_64

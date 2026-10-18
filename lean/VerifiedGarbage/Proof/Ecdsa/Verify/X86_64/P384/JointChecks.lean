@@ -36,8 +36,10 @@ meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
 
 /-! Concrete timing checks and the doubler of P-384's baseline and ADX joint verification. -/
 
@@ -56,14 +58,14 @@ theorem joint_adx_mul_checks : JointMulChecks p384vx publicJointAdx :=
     joint_adx_infinity_ct,joint_adx_counter_ct,fastGenerator_adx_checks,fastPeer_adx_checks⟩
 
 theorem joint_doubler (hc : CfgOk p384v) (hC : Weierstrass.Law p384v.C) :
-    JointDoubler publicJoint p384v.C size (Joint.jacDouble publicJoint.K) :=
-  jacDouble_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
-    jointDouble_ct joint_cached_checks.copy
+    JointDoubler publicJoint p384v.C size (jointDouble publicJoint.K) :=
+  doubleIn_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
+    (by decide) jointDouble_ct
 
 theorem joint_adx_doubler (hc : CfgOk p384vx) (hC : Weierstrass.Law p384vx.C) :
-    JointDoubler publicJointAdx p384vx.C size (Joint.jacDouble publicJointAdx.K) :=
-  jacDouble_doubler joint_adx_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
-    jointDouble_adx_ct joint_adx_cached_checks.copy
+    JointDoubler publicJointAdx p384vx.C size (jointDoubleAdx publicJointAdx.K) :=
+  doubleCms_doubler joint_adx_add_layout (by decide +kernel) (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
+    (by decide) jointDouble_adx_ct
 
 /-- `jointPrefix p384v` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
