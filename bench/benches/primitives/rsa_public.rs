@@ -5,7 +5,12 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["rsa"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -116,5 +121,10 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+)))]
 pub fn bench(_: &mut Criterion) {}
