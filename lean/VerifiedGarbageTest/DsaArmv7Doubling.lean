@@ -3,7 +3,7 @@ import VerifiedGarbage.Impl.Dsa.Arm.Stream
 
 /-! Synthetic differential tests of the counted modular-doubling loop. -/
 namespace VG.Test.DsaArmv7Doubling
-open VG VG.Arm VG.Impl.Mont.Arm VG.Test.DsaArmv7Mont
+open VG VG.Arm VG.Impl.Mont.Arm.Dynamic VG.Test.DsaArmv7Mont
 
 def check (n modulus value count : Nat) : Except String Unit := do
   let base := 0x10000
