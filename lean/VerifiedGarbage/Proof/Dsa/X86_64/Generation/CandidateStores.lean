@@ -94,7 +94,7 @@ theorem candidateBuild_ok {s : State} {B xp qp pp ep : Addr} {Z w : Nat} {xb qb 
       let p := Spec.Rsa.os2ip xb + 1 - Spec.Rsa.os2ip xb % (2 * Spec.Rsa.os2ip qb)
       Spec.Rsa.bytesAt t.mem pp (8 * w) = Spec.Dsa.encodeBE (8 * w) p ∧
       Spec.Rsa.bytesAt t.mem ep (8 * w) = Spec.Dsa.encodeBE (8 * w) ((p - 1) / Spec.Rsa.os2ip qb) ∧
-      Ws t B Z w ∧
+      Ws t B Z w ∧ word t.mem B 160 = pp ∧
       Frame [⟨B, Z⟩, ⟨pp, 8 * w⟩, ⟨ep, 8 * w⟩] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Impl.Dsa.X86_64.Generation.candidateBuild
   refine WP.seq (WP.mono (candidateArithmetic_ok h hxp hxl hqp hql sx sq
@@ -112,8 +112,12 @@ theorem candidateBuild_ok {s : State} {B xp qp pp ep : Addr} {Z w : Nat} {xb qb 
     (by rw [uh (8 * Public.sMask) (by decide)]; exact hm)
     (fun i hi => by rw [ku.2.2]; exact hpw i hi)
     (fun i hi => by rw [ku.2.2]; exact hew i hi) hpo heo hpe)
-    fun t ⟨tp, te, ht, ft, _, kt⟩ => ?_
-  refine ⟨by rw [tp, up], by rw [te, ue], ht, ?_, (ku.trans kt).mono (by decide)⟩
+    fun t ⟨tp, te, ht, ft, wt, kt⟩ => ?_
+  refine ⟨by rw [tp, up], by rw [te, ue], ht, ?_, ?_, (ku.trans kt).mono (by decide)⟩
+  · rw [wt.word_eq (d := 160) (by
+      simp only [List.mem_singleton]; rintro r rfl; left; have := h.h256; omega)
+      (by decide : 160 + 8 ≤ 2 ^ 64), uh 160 (by decide)]
+    exact hp
   have fs : Frame [⟨B, Z⟩, ⟨pp, 8 * w⟩, ⟨ep, 8 * w⟩] s.mem u.mem := by
     intro a ha
     apply fu a

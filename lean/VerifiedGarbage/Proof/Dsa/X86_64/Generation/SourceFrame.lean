@@ -28,4 +28,14 @@ theorem source_of_work {s t : State} {B p : Addr} {Z : Nat} {bs : List Byte}
   · intro r hmem
     exact Or.inr (Nat.le_trans (hr r hmem) (h.out i hi))
 
+/-- Hashing and candidate construction preserve disjoint input tapes. -/
+theorem source_of_frame {s t : State} {B p : Addr} {Z : Nat} {bs : List Byte}
+    {rs : List Region} (h : Src s B Z p bs) (hf : Frame rs s.mem t.mem)
+    (hsep : ∀ r ∈ rs, (⟨p, bs.length⟩ : Region).Disjoint r)
+    (hlen : bs.length < 2 ^ 64) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : Src t B Z p bs := by
+  refine ⟨fun i hi => by rw [hrd, hwr]; exact h.rd i hi, ?_, h.out⟩
+  intro i hi
+  rw [hf _ (fun r hr hc => hsep r hr _ (Offset.contains_base p (by omega) (by omega)) hc)]
+  exact h.val i hi
+
 end VG.Proof.Dsa.X86_64.Generation

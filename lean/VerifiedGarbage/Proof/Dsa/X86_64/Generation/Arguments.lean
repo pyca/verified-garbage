@@ -14,12 +14,14 @@ open VG.Impl.Bignum.X86_64 VG.Impl.Dsa.X86_64.Generation
 open VG.Proof.RsaOaep.X86_64 (ea_sp)
 
 def argumentValue (W : Nat → BitVec 64) : ArgumentValue → BitVec 64
+  | .ones => BitVec.allOnes 64
   | .literal n => BitVec.ofNat 64 n
   | .frame k offset => W k + BitVec.ofNat 64 offset
 
 def argumentFits (a : HeaderArgument) : Prop :=
   16 ≤ a.destination ∧ a.destination < 32 ∧
     match a.value with
+    | .ones => True
     | .literal n => n < 2 ^ 31
     | .frame k offset => k < 37 ∧ offset < 2 ^ 31
 
@@ -39,6 +41,10 @@ theorem headerArgument_ok {s : State} {B F : Addr} {W : Nat → BitVec 64}
   have hv := ha.2.2
   refine WP.keep [.rax] ?_ (by rcases a with ⟨d, v⟩; cases v <;> rfl)
   cases he : a.value with
+  | ones =>
+    xrun [headerArgument, he, List.cons_append, List.nil_append, State.ea, hdr, hdrOff,
+      hdi, hB.st (d := 8 * a.destination) (by omega)]
+    rfl
   | literal n =>
     rw [he] at hv
     xrun [headerArgument, he, List.cons_append, List.nil_append, State.ea, hdr, hdrOff,

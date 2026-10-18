@@ -24,6 +24,7 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
     WP isa (Impl.Dsa.X86_64.Generation.pShape p.len p.count plen) s fun t =>
       let x := Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem op plen)
       x + 1 - x % (2 * q) = Spec.Dsa.pCandidate (8 * plen) (8 * p.len) q p.seed p.offset ∧
+      (x % 2 = 1 ∧ 2 ^ (8 * plen - 1) ≤ x ∧ x < 2 ^ (8 * plen)) ∧
       (∀ a, (∀ i < plen, a ≠ off op i) → t.mem a = s.mem a) ∧
       Keep [.rdi, .rsi, .rcx, .rdx, .rax, .r8, .r9, .r10, .r11] s t := by
   obtain ⟨V, R⟩ := hs.rep
@@ -52,12 +53,17 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
     (fun i hi j hj => hsep i (hbl ▸ hi) j (hbl ▸ hj)))
     fun t ⟨_, hx, hf, kt⟩ => ?_
   dsimp only
-  refine ⟨?_, ?_, (hk.trans kt).mono (by decide)⟩
+  rw [hbl] at hx
+  refine ⟨?_, ?_, ?_, (hk.trans kt).mono (by decide)⟩
   · change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) + 1 -
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) % (2 * q) = _
-    rw [hbl] at hx
     rw [hx]
     exact hash_shaped_candidate hs (by omega) rfl hroom hcount hhash hsize q
+  · change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) % 2 = 1 ∧
+      2 ^ (8 * plen - 1) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) ∧
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) < 2 ^ (8 * plen)
+    rw [hx]
+    exact VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * plen) (by omega) _
   · intro a ha
     rw [hf a (fun i hi => ha i (hbl ▸ hi)), hm]
 

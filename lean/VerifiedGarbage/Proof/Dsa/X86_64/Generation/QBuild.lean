@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native subgroup-candidate construction from a seed
@@ -26,12 +27,14 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep s.mem F S V W) (A : LabAt s F S W rp len) (hop : W 0 = op)
     (hout : ∀ i < len, InRegions s.wr (off op i) 1)
-    (hsep : ∀ i < len, ∀ j < len, off (off S oDig) i ≠ off op j) :
+    (hsep : ∀ i < len, ∀ j < len, off (off S oDig) i ≠ off op j)
+    (hbuf : HashBufferSeparate F S op len) :
     WP isa (Impl.Dsa.X86_64.Generation.qCandidate G1 G256) s fun t =>
       Spec.Rsa.bytesAt t.mem op len =
         Spec.Dsa.encodeBE len (Spec.Dsa.qCandidate (8 * len) (Spec.Rsa.bytesAt s.mem rp len)) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
-      Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem t.mem := by
+      Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem t.mem ∧
+      Lay t F S ∧ ∃ V', Rep t.mem F S V' W := by
   unfold Impl.Dsa.X86_64.Generation.qCandidate
   refine WP.seq (WP.mono (seedHash_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
     fun u ⟨Lu, rdu, wru, csu, hfu, V', Ru, _, hb⟩ => ?_)
@@ -55,8 +58,10 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
   refine WP.mono (qShape_ok hn (by rw [hhash]) hsi hdi (by rw [hhash]; exact hcx) hdx hread
     (fun i hi => by rw [hk.2.2, wru]; exact hout i (hhash ▸ hi)) hbytes
     (fun i hi j hj => hsep i (hhash ▸ hi) j (hhash ▸ hj))) fun t ⟨ho, hft, kt⟩ => ?_
+  have Rv : Rep v.mem F S V' W := hm ▸ Ru
+  have Rt := rep_of_external_write Rv hbuf (by simpa only [hhash] using hft)
   refine ⟨by simpa only [hhash] using ho, kt.2.1.trans (hk.2.1.trans rdu),
-    kt.2.2.trans (hk.2.2.trans wru), ?_, ?_⟩
+    kt.2.2.trans (hk.2.2.trans wru), ?_, ?_, ?_, ⟨V', Rt⟩⟩
   · intro r hr
     have hr1 : r ∉ [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -69,5 +74,7 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     rw [hft a (fun i hi he => ha ⟨op, len⟩ (by simp) (he ▸
       Offset.contains_base op (by rw [hhash] at hi; omega) (by omega))), hm]
     exact hfu a (fun r hr => ha r (by simp_all))
+  · exact lay_of_rep Lu Ru Rt rfl
+      ((kt.gpr (by decide)).trans (hk.gpr (by decide))) (kt.2.2.trans hk.2.2)
 
 end VG.Proof.Dsa.X86_64.Generation
