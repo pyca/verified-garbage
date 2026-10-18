@@ -27,11 +27,10 @@ def finishDomain (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (pLen 
 
 def seedAttempt (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (round : Prog isa) (pLen qLen : Nat) : Prog isa :=
-  .seq (.block (seedArguments qLen))
-    (.seq (subgroup G1 G256 mul round qLen)
-      (onSuccess (.seq (primeSearch G1 G256 mul round pLen qLen)
-        (onSuccess (.seq (generatorSearch sq mul pLen)
-          (onSuccess (finishDomain sq mul pLen qLen)))))))
+  .seq (.seq (.block (seedArguments qLen)) (subgroup G1 G256 mul round qLen))
+    (onSuccess (.seq (primeSearch G1 G256 mul round pLen qLen)
+      (onSuccess (.seq (generatorSearch sq mul pLen)
+        (onSuccess (finishDomain sq mul pLen qLen))))))
 
 def parameterSearch (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (round : Prog isa) (pLen qLen : Nat) : Prog isa :=
