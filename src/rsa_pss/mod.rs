@@ -519,7 +519,8 @@ macro_rules! pss_hash {
                     let crt = $crate::rsa::Backend::select(f);
                     $(
                         $(#[$attr])*
-                        if $backend::select(f) == $backend::$variant {
+                        {
+                            let selected = $backend::select(f) == $backend::$variant;
                             let v: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($vreq),*]),
                                 $(
@@ -527,7 +528,6 @@ macro_rules! pss_hash {
                                     $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => Features::all(&[$($vareq),*]),
                                 )?
                             };
-                            assert!(f.contains(v));
                             let s: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),
                                 $(
@@ -537,7 +537,10 @@ macro_rules! pss_hash {
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
                                 )?
                             };
-                            assert!(f.contains(s));
+                            // An assertion, not an `if`: on ARMv7 every hash has
+                            // one implementation, which every set of features
+                            // selects.
+                            assert!(!selected || (f.contains(v) && f.contains(s)));
                         }
                     )*
                 }

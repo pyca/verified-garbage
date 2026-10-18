@@ -202,10 +202,10 @@ fn rsa_oaep_every_pair() {
 #[test]
 fn rsa_shared_key_leases() {
     require_vectors!();
-    for bits in [2048, 3072, 4096] {
-        if !harness::rsa_bits_tested(bits) {
-            continue;
-        }
+    for bits in [2048, 3072, 4096]
+        .into_iter()
+        .filter(|&b| harness::rsa_bits_tested(b))
+    {
         let name = format!("rsa_pkcs1_{bits}_test.json");
         let file = harness::load::<Pkcs1Group, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {
