@@ -1237,7 +1237,13 @@ impl AesGcm {
         };
         let split = match self.backend {
             Backend::VaesVpclmulAvx512 => vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
-            Backend::VaesVpclmul => vg_aes_gcm_seal_split_prepared_vaes_vpclmul,
+            // The 256-bit one seals a last block that `src` starts and the
+            // second piece fills more slowly than the gathering does (a
+            // 1024-byte TLS record, of a 1023-byte payload: 22% slower), and
+            // every other shape faster.
+            Backend::VaesVpclmul if src.len() % 16 == 0 || src.len() % 16 + rest.len() < 16 => {
+                vg_aes_gcm_seal_split_prepared_vaes_vpclmul
+            }
             Backend::AesNiPclmulAvx => vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,
             Backend::Scalar
             | Backend::AesNi
@@ -1246,7 +1252,8 @@ impl AesGcm {
             | Backend::Vaes
             | Backend::Vpclmul
             | Backend::VaesPclmul
-            | Backend::AesNiVpclmul => return None,
+            | Backend::AesNiVpclmul
+            | Backend::VaesVpclmul => return None,
         };
         let ctx = self.powers.ctx.load(Ordering::Acquire);
         if ctx.is_null() {
