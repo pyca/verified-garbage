@@ -66,6 +66,18 @@ def kgTail : Prog isa :=
 /-- Key generation after `Â`, if every `SampleNTT` succeeded. -/
 def kgRest (c : Callee4) : Prog isa := .seq (noise K c (2 * K.L.k)) (kgTail K)
 
+/-- `ρ` to `SB`, from the key at `E`, and `Â`. -/
+def encMat (p : String × Prog isa) (E : Ptr) : Prog isa :=
+  .seq (copy (sc oSB) (E.1, E.2 + 384 * K.L.k) 32) (mat K p)
+
+/-- K-PKE.Encrypt after `Â`, of the key at `E` and the message at `M`, to `Cp`. -/
+def encRest (c : Callee4) (E Cp : Ptr) : Prog isa :=
+  .seq (noise K c (2 * K.L.k + 1)) (K.L.kpkeEncAt Cp (sc K.oA) E (sc K.oR) (sc oM) (sc K.oZ))
+
+/-- K-PKE.Encrypt of the key at `E` and the message at `M`, with the randomness at `G + 32`, to `Cp`. -/
+def encrypt (c : Callee4) (p : String × Prog isa) (E Cp : Ptr) : Prog isa :=
+  .seq (encMat K p E) (ifOk (encRest K c E Cp))
+
 end Top16
 
 open KeyGen Top16 in
