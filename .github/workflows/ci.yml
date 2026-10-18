@@ -303,6 +303,7 @@ jobs:
       - run: python3 ci/cpu_tests.py lint ci/rust_matrix.toml
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
       - run: python3 ci/check_mcdt.py
+      - run: python3 ci/check_aes_pairs.py
       - run: python3 ci/check_vectors.py
 
   # The Rust jobs' matrices (ci/rust_matrix.toml), narrowed to the
