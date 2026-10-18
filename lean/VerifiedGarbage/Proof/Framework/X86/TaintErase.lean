@@ -47,6 +47,7 @@ def Code.erase : Prog isa → Prog isa
   | .ite c t e => .ite c (erase t) (erase e)
   | .loop b c => .loop (erase b) c
   | .call n b => .call n b
+  | .icall n => .icall n
   | .frame p b q => .frame p b q
 
 namespace Taint
@@ -242,6 +243,7 @@ theorem check_erase (c : Prog isa) :
       rw [ih σ h hh.1 hh.2]
     | _ => rfl
   | call n b _ => intro τ h _ _; rfl
+  | icall n => intro τ h _ _; rfl
   | frame p b q _ => intro τ h _ _; rfl
 
 end Taint

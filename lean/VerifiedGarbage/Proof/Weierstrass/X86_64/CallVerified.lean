@@ -22,13 +22,14 @@ namespace VG.X86_64
 
 /-- Inlining moves the instructions of each function called into its
 caller. -/
-theorem _root_.VG.Code.allInstrs_inline {I C : Type} (p : I → Bool) :
+theorem _root_.VG.Code.allInstrs_inline {I C : Type} [IcallInstrs I] (p : I → Bool) :
     ∀ c : Code I C, c.inline.allInstrs p = c.allInstrs p
   | .block _ => rfl
   | .seq a b => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p a, Code.allInstrs_inline p b]
   | .ite _ t e => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p t, Code.allInstrs_inline p e]
   | .loop b _ => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p b]
   | .call _ _ => rfl
+  | .icall _ => rfl
   | .frame _ b _ => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p b]
 
 /-- `c` is verified against `k` if `c.inline` is correct and `c` constant

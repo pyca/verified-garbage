@@ -34,6 +34,7 @@ def Code.eraseImm : Prog isa → Prog isa
   | .ite c t e => .ite c (eraseImm t) (eraseImm e)
   | .loop b c => .loop (eraseImm b) c
   | .call n b => .call n (eraseImm b)
+  | .icall n => .icall n
   | .frame p b q => .frame p (eraseImm b) q
 
 namespace Taint
@@ -67,6 +68,7 @@ theorem check_eraseImm (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T)
     cases h <;> first | rfl | simp only [Code.eraseImm, VG.Taint.check, iht, ihe]
   | loop b c ih => cases h <;> first | rfl | simp only [Code.eraseImm, VG.Taint.check, ih]
   | call n b ih => cases h <;> first | rfl | simp only [Code.eraseImm, VG.Taint.check, ih]
+  | icall n => cases h <;> rfl
   | frame p b q ih => cases h <;> first | rfl | simp only [Code.eraseImm, VG.Taint.check, ih]
 
 end Taint
@@ -106,6 +108,7 @@ theorem Code.allInstrs_eraseImm {p : Instr → Bool} (hp : ∀ i, p i.eraseImm =
   | ite c t e iht ihe => simp only [Code.eraseImm, Code.allInstrs, iht, ihe]
   | loop b c ih => simp only [Code.eraseImm, Code.allInstrs, ih]
   | call n b ih => simp only [Code.eraseImm, Code.allInstrs, ih]
+  | icall n => rfl
   | frame i b j ih => simp only [Code.eraseImm, Code.allInstrs, ih]
 
 theorem keepsV_eraseImm (i : Instr) : keepsV i.eraseImm = keepsV i := by

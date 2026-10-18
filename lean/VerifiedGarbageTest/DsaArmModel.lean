@@ -65,6 +65,7 @@ def evaluate : Nat → Prog isa → Machine → Except String Machine
     let some again := isa.eval c m'.state | throw "undefined loop condition"
     if again then evaluate fuel (.loop body c) m' else pure m'
   | _, .call .., _ => .error "unexpected call in inline baseline model test"
+  | _, .icall .., _ => .error "unexpected indirect call in baseline model test"
   | _, .frame .., _ => .error "unexpected stack frame in baseline model test"
 
 end VG.Test.DsaArmModel

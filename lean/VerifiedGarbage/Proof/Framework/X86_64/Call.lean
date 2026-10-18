@@ -24,6 +24,7 @@ def Code.depth {I C : Type} : Code I C → Nat
   | .ite _ t e => max t.depth e.depth
   | .loop b _ => b.depth
   | .call _ b => b.depth + 1
+  | .icall n => (n + 7) / 8 + 1
   | .frame _ b _ => b.depth
 
 end VG
@@ -119,6 +120,25 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     have hcb : NoSp body := hc
     rw [(Exec.rdwr h₁).2, Exec.gpr hcb h₁] at f₂
     exact Frame.trans (ih₁ hc hd) f₂
+  | @icall n s₀ _ s₁ s₂ s₃ _ _ hc₁ _ hk hr =>
+    -- The return address, then what the function may write (`ISA.callOk`).
+    simp only [Code.depth] at hd ⊢
+    have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm
+    subst e₁
+    have hm : s₃.mem = s₂.mem := by
+      simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
+    have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * ((n + 7) / 8 + 1))]) s₀.mem
+        s₀.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_call _ (by omega) (by omega))
+    have f₁ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * ((n + 7) / 8 + 1))]) s₀.callEntry.mem
+        s₂.mem := by
+      intro x hx
+      refine hk.2 x (fun r hr => hx r (List.mem_append_left _ hr)) fun hc => ?_
+      apply hx _ (List.mem_append_right _ (List.mem_singleton_self _))
+      rw [State.callEntry_rsp] at hc
+      exact below_sub (a := n + 8) (by omega) (by omega) _ (below_callee _ _ _ hc)
+    rw [hm]; exact Frame.trans f₀ f₁
   | @frame i _ _ _ _ _ _ _ hp =>
     -- A frame's push writes `rsp`.
     have hi := hc i (List.mem_cons_self ..)

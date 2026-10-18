@@ -493,7 +493,7 @@ theorem checkFn_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
   have hnv : ∀ j < 6, ∀ i ∈ instrs (Impl.Ecdh.AArch64.Cfg.checkBody c),
       vdstOf i ≠ some (Impl.Ecdh.AArch64.Cfg.checkLane j).1 := by
     intro j hj i hi e
-    have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
+    have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _) ▸ hv) i hi
     rcases checkLane_v j hj with h | h | h <;> rw [e, h] at this <;> simp at this
   rw [Impl.Ecdh.AArch64.Cfg.checkFn]
   refine WP.seq (WP.mono (csaves_ok (Impl.Ecdh.AArch64.Cfg.checkKept c) 0 (s := s) (by omega))
@@ -559,12 +559,12 @@ theorem chkCall_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
   obtain ⟨hv, -, hnf⟩ := hc.check_fn hck
   have hv28 : ∀ i ∈ instrs (Impl.Ecdh.AArch64.Cfg.checkFn c), vdstOf i ≠ some .v28 := by
     intro i hi e
-    have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
+    have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _) ▸ hv) i hi
     rw [e] at this; simp at this
   have hkv : (Impl.Ecdh.AArch64.Cfg.checkFn c).allInstrs keepsV = true := by
     rw [Code.allInstrs_eq]
     exact List.all_eq_true.mpr fun i hi => by
-      have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
+      have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _) ▸ hv) i hi
       simp only [Bool.and_eq_true] at this
       exact this.2
   have hpres := checkKept_pres hc

@@ -37,6 +37,7 @@ def stackUse : Prog isa → Nat
   | .ite _ t e => max (stackUse t) (stackUse e)
   | .loop b _ => stackUse b
   | .call _ b => stackUse b + 4
+  | .icall _ => 0
   | .frame i b _ => stackUse b + frameBytes i
 
 /-- The `n` bytes below `sp`. -/
@@ -250,6 +251,7 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
         below_inner (k := 4) (Nat.le_refl _) hd⟩
+  | icall hf => cases hf
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     obtain ⟨e₁, w₁, hn, f₀⟩ := push_frame hp
     simp only [stackUse] at hd ⊢

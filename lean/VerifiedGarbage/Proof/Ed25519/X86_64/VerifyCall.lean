@@ -51,6 +51,7 @@ theorem ctlOk_inline : ∀ {c : Prog isa}, ctlOk c = true → ctlOk c.inline = t
     exact ⟨ctlOk_inline h.1, ctlOk_inline h.2⟩
   | .loop b _, h => ctlOk_inline (c := b) h
   | .call _ b, h => h
+  | .icall _, h => h
   | .frame i b j, h => by
     simp only [ctlOk, Bool.and_eq_true] at h
     simp only [Code.inline, ctlOk, Bool.and_eq_true]

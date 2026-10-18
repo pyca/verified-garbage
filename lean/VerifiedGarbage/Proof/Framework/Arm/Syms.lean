@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.Icall
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 
@@ -60,6 +61,7 @@ theorem Exec.syms {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
     simp only [isa, ret] at e₂
     split at e₂ <;> [cases e₂; cases e₂]
     subst e₁; exact ih
+  | icall hf => cases hf
   | frame e₁ _ e₂ ih => exact (pop_syms e₂).trans (ih.trans (push_syms e₁))
 
 /-- The state after `c` names the same addresses of statics as before it. -/

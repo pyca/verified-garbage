@@ -474,6 +474,11 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  -- The model has no indirect calls on this target.
+  icallTarget_with _ _ _ := rfl
+  fnAt_with _ _ _ := rfl
+  fn_widen h := by cases h
+  callOk_widen h := h.elim
 
 theorem execBlock_regions {is : List Instr} {s s' : State} {t : List Leak}
     (h : execBlock isa is s = some (s', t)) :
@@ -511,6 +516,7 @@ theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, Taint.clobbe
   | loopExit _ _ ih => exact ih hc
   | loopNext _ _ _ ih₁ ih₂ => rw [ih₂ hc, ih₁ hc]
   | call hp _ hq ih => exact call_ret_gpr hp hq (ih hc)
+  | icall hf => cases hf
   | frame hp _ hq ih =>
     exact frame_gpr (hc _ (by simp [instrs])) (hc _ (by simp [instrs])) hp hq
       (ih (fun i hi => hc i (by simp [instrs, hi])))

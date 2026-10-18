@@ -45,8 +45,8 @@ structure StreamFn where
   contract : Contract isa
   stack : Nat := 0
   verified : Verified X86.target code contract
-  ofSig : ∃ pre post leak,
-    contract = api.sig.contract X86.abi pre post api.writeArgs stack leak
+  ofSig : ∃ pre post leak fns,
+    contract = api.sig.contract X86.abi pre post api.writeArgs stack leak fns
   ofApi : contract = api.contract X86.abi stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
 

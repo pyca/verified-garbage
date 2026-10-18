@@ -54,6 +54,8 @@ def ctlOk : Prog isa → Bool
   | .ite _ t e => ctlOk t && ctlOk e
   | .loop b _ => ctlOk b
   | .call _ b => ctlOk b
+  -- A function called indirectly restores them (`ISA.callOk`).
+  | .icall _ => true
   | .frame i b j => !loadsMxcsr i && ctlOk b && !loadsMxcsr j
 
 /-- A check that implies `ctlOk` and composes like `Code.allInstrs`: `c`
@@ -64,6 +66,7 @@ def ctlC : Prog isa → Bool
   | .ite _ t e => ctlC t && ctlC e
   | .loop b _ => ctlC b
   | .call _ b => ctlOk b
+  | .icall _ => true
   | .frame i b j => !loadsMxcsr i && ctlC b && !loadsMxcsr j
 
 theorem ctlOk_of_ctlC {c : Prog isa} (h : ctlC c = true) : ctlOk c = true := by
@@ -77,6 +80,7 @@ theorem ctlOk_of_ctlC {c : Prog isa} (h : ctlC c = true) : ctlOk c = true := by
     simp only [ctlOk, iht h.1, ihe h.2, Bool.and_self]
   | loop _ _ ih => exact ih h
   | call _ _ _ => exact h
+  | icall _ => exact h
   | frame _ _ _ ih =>
     simp only [ctlC, Bool.and_eq_true] at h
     simp only [ctlOk, h.1.1, h.2, ih h.1.2, Bool.and_self]
@@ -172,6 +176,12 @@ theorem Exec.ctl {c : Prog isa} (hc : ctlOk c = true) {s s' : State} {t : List L
     split at hr <;> cases hr
     subst hc₁
     exact ih hc
+  | icall _ hc₁ _ hk hr =>
+    simp only [isa, call, Option.some.injEq] at hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    subst hc₁
+    exact hk.1.2.2
 
 /-- The calling-convention obligations of code that `ctlOk` accepts, from
 the others. -/

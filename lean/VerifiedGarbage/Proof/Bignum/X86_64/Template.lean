@@ -70,6 +70,7 @@ theorem allInstrs_inline (p : Instr → Bool) (c : Prog isa) : c.inline.allInstr
   | ite _ t e iht ihe => simp only [Code.inline, Code.allInstrs, iht, ihe]
   | loop b _ ih => simp only [Code.inline, Code.allInstrs, ih]
   | call _ _ _ => rfl
+  | icall _ => rfl
   | frame _ _ _ ih => simp only [Code.inline, Code.allInstrs, ih]
 
 /-- The arguments of a Montgomery multiplication do not write `rsp`. -/

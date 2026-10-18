@@ -78,6 +78,7 @@ theorem exec_zscal {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c
     simp only [isa, ret] at hr
     split at hr <;> cases hr
     exact ⟨a, b, c⟩
+  | icall => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
   | frame => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
 
 /-- Scalar code keeps the vector registers, `zmm` included. -/

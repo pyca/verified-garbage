@@ -35,6 +35,7 @@ def topAll (p : Instr → Bool) : Prog isa → Bool
   | .ite _ t e => topAll p t && topAll p e
   | .loop b _ => topAll p b
   | .call _ _ => true
+  | .icall _ => true
   | .frame i b j => p i && topAll p b && p j
 
 /-- Whether no instruction outside the functions `c` calls writes a register
@@ -87,8 +88,9 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
       obtain ⟨_, eb⟩ := straight_exec his e
       rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
     · rw [ret_eq hr', Exec.gpr (fun i hi => by
-          have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hb) i hi
+          have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _) ▸ hb) i hi
           simpa [keepsReg] using this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
+  | icall hf => cases hf
   | frame hp _ hq ih =>
     simp only [topAll, Bool.and_eq_true] at hc
     simp only [Code.calls] at hb
@@ -110,6 +112,7 @@ theorem untouched_keep {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec 
         simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨iha h.1, ihb h.2⟩
       | loop b _ ih => exact ih
       | call _ _ _ => intro _; rfl
+      | icall _ => intro _; rfl
       | frame i b j ih =>
         simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨⟨hpq i h.1.1, ih h.1.2⟩, hpq j h.2⟩
     exact this _ _ (fun i hi => keepsReg_of_untouched h hi) c hu

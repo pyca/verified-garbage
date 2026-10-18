@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.Icall
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
 

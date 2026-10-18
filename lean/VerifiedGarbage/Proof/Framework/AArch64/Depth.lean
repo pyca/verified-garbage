@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.Icall
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.Semantics
 
@@ -21,6 +22,7 @@ def Code.aarch64Depth : Prog AArch64.isa → Nat
   | .ite _ t e => max t.aarch64Depth e.aarch64Depth
   | .loop b _ => b.aarch64Depth
   | .call _ b => b.aarch64Depth
+  | .icall _ => 0
   | .frame i b _ => b.aarch64Depth + i.frameUnits
 
 end VG

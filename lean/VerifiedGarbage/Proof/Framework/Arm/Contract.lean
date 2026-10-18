@@ -1,6 +1,7 @@
 module
 
 public meta import Lean.Meta.Reduce
+public import VerifiedGarbage.Proof.Framework.Arm.Icall
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target

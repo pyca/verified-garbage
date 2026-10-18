@@ -66,6 +66,13 @@ theorem Exec.det {c : Prog M} {s s₁ s₂ : M.State} {t₁ t₂ : List Leak}
       obtain ⟨rfl, rfl⟩ := ih b
       rw [hr] at hr'; cases hr'
       exact ⟨rfl, rfl⟩
+  | icall hf hc hr _ hq => cases h₂ with
+    | icall hf' hc' hr' _ hq' =>
+      rw [hf] at hf'; cases hf'
+      rw [hc] at hc'; cases hc'
+      rw [hr] at hr'; cases hr'
+      rw [hq] at hq'; cases hq'
+      exact ⟨rfl, rfl⟩
   | frame hp _ hq ih => cases h₂ with
     | frame hp' b hq' =>
       rw [hp] at hp'; cases hp'
@@ -159,14 +166,25 @@ theorem ConstantTime.of_silent {Pre : M.State → Prop} {Pub : M.State → M.Sta
     ConstantTime M Pre Pub c :=
   .of_leakage (fun _ => []) h (fun _ _ _ _ _ => rfl)
 
+/-- Instructions that stand for what a function called indirectly
+(`Code.icall`) may change, for the analyses that read the instructions of
+code (`instrs`): on each ISA, instructions that write every register the
+calling convention lets a function change. -/
+class IcallInstrs (I : Type) where
+  icallInstrs : List I
+
+export IcallInstrs (icallInstrs)
+
 /-- The instructions of structured code (including the pushes and pops of
-its frames), and of the functions it calls. -/
-def instrs {I C : Type} : Code I C → List I
+its frames), and of the functions it calls; for an indirect call, the
+instructions that stand for what the function may change (`IcallInstrs`). -/
+def instrs {I C : Type} [IcallInstrs I] : Code I C → List I
   | .block is => is
   | .seq a b => instrs a ++ instrs b
   | .ite _ t e => instrs t ++ instrs e
   | .loop b _ => instrs b
   | .call _ b => instrs b
+  | .icall _ => icallInstrs
   | .frame i b j => i :: instrs b ++ [j]
 
 /-- Whether code calls no function and has no frame: whether it runs only
@@ -177,15 +195,18 @@ def Code.noCalls {I C : Type} : Code I C → Bool
   | .ite _ t e => t.noCalls && e.noCalls
   | .loop b _ => b.noCalls
   | .call _ _ => false
+  | .icall _ => false
   | .frame .. => false
 
-/-- Whether code, and the functions it calls, has no frame. -/
+/-- Whether code, and the functions it calls, has no frame (or calls no
+function indirectly, whose frames the model does not know). -/
 def Code.noFrames {I C : Type} : Code I C → Bool
   | .block _ => true
   | .seq a b => a.noFrames && b.noFrames
   | .ite _ t e => t.noFrames && e.noFrames
   | .loop b _ => b.noFrames
   | .call _ b => b.noFrames
+  | .icall _ => false
   | .frame .. => false
 
 /-- How deeply frames nest in `c` and the functions it calls. -/
@@ -195,6 +216,7 @@ def Code.fdepth {I C : Type} : Code I C → Nat
   | .ite _ t e => max t.fdepth e.fdepth
   | .loop b _ => b.fdepth
   | .call _ b => b.fdepth
+  | .icall _ => 0
   | .frame _ b _ => b.fdepth + 1
 
 theorem Code.noFrames_of_noCalls {I C : Type} {c : Code I C} (h : c.noCalls = true) :
@@ -205,15 +227,16 @@ theorem Code.noFrames_of_noCalls {I C : Type} {c : Code I C} (h : c.noCalls = tr
 much faster for the kernel to evaluate (`decide +kernel`). A block is walked
 with `List.rec`, which the kernel evaluates faster than `List.all` (compiled
 to `brecOn`). -/
-def Code.allInstrs {I C : Type} (p : I → Bool) : Code I C → Bool
+def Code.allInstrs {I C : Type} [IcallInstrs I] (p : I → Bool) : Code I C → Bool
   | .block is => List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) is
   | .seq a b => a.allInstrs p && b.allInstrs p
   | .ite _ t e => t.allInstrs p && e.allInstrs p
   | .loop b _ => b.allInstrs p
   | .call _ b => b.allInstrs p
+  | .icall _ => (icallInstrs : List I).all p
   | .frame i b j => p i && b.allInstrs p && p j
 
-theorem Code.allInstrs_eq {I C : Type} (p : I → Bool) (c : Code I C) :
+theorem Code.allInstrs_eq {I C : Type} [IcallInstrs I] (p : I → Bool) (c : Code I C) :
     c.allInstrs p = (instrs c).all p := by
   induction c with
   | block is => induction is <;> simp_all [allInstrs, instrs]
@@ -229,7 +252,8 @@ theorem Code.all_of_forall {I C : Type} {p : I → Bool} (h : ∀ i, p i = true)
 /-- `Code.all p` from `Code.allInstrs p`: for `Artifact.spSafe` on the other
 ISAs, `Code.all_of_allInstrs (by lit_decide)` has the kernel evaluate the
 faster `Code.allInstrs`. -/
-theorem Code.all_of_allInstrs {I C : Type} {p : I → Bool} {c : Code I C} (h : c.allInstrs p = true) :
+theorem Code.all_of_allInstrs {I C : Type} [IcallInstrs I] {p : I → Bool} {c : Code I C}
+    (h : c.allInstrs p = true) :
     c.all p = true := by
   induction c with
   | block is => induction is <;> simp_all [Code.all, Code.allInstrs]

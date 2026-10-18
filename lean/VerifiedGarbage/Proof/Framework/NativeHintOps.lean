@@ -66,6 +66,7 @@ def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
   | τ, .loop body c => go c (hint chunkSize · body) loopFuel τ
   | τ, .call _ body =>
     (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
+  | _, .icall _ => none
   | τ, .frame i body j =>
     (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
 where
@@ -111,6 +112,7 @@ def hintWeak (chunkSize : Nat) (w : A.T → A.T) : A.T → Prog M → Option (A.
   | τ, .call _ body =>
     (A.call τ).bind fun τ₁ => (hintWeak chunkSize w τ₁ body).bind fun (τ₂, h) =>
       (A.ret τ₂).map (·, .call h)
+  | _, .icall _ => none
   | τ, .frame i body j =>
     (A.push τ i).bind fun τ₁ => (hintWeak chunkSize w τ₁ body).bind fun (τ₂, h) =>
       (A.pop τ₂ j).map (·, .frame h)
@@ -149,6 +151,7 @@ def codeBeq {I C : Type} [BEq I] [BEq C] : Code I C → Code I C → Bool
   | .ite x a b, .ite y c d => x == y && codeBeq a c && codeBeq b d
   | .loop a x, .loop b y => x == y && codeBeq a b
   | .call n a, .call m b => n == m && codeBeq a b
+  | .icall a, .icall b => a == b
   | .frame i a j, .frame k b l => i == k && j == l && codeBeq a b
   | _, _ => false
 
@@ -243,6 +246,7 @@ def hintSumA (S : List A.Summary) (same : Prog M → Prog M → Bool) :
     | some (k, post) => some (post, .sum k)
     | none => (A.call τ).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.ret τ₂).map (·, .call h)
+  | _, _, .icall _ => none
   | _, τ, .frame i body j => sumOr (findSumCode A same (.frame i body j) τ S 0) fun _ =>
     (A.push τ i).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.pop τ₂ j).map (·, .frame h)

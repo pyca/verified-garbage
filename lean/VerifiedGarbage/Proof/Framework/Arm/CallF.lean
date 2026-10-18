@@ -28,6 +28,7 @@ def armStack : Prog isa → Nat
   | .ite _ t e => max (armStack t) (armStack e)
   | .loop b _ => armStack b
   | .call _ b => armStack b
+  | .icall _ => 0
   | .frame (.push rs) b _ => armStack b + 4 * rs.length
   | .frame (.alloc n) b _ => armStack b + n
   | .frame _ b _ => armStack b
@@ -142,6 +143,7 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     rw [ret_eq hr]
     have := ih (by rw [p₁]; exact hd)
     rwa [w₁, p₁, m₁] at this
+  | icall hf => cases hf
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     rw [pop_memA hq]
     cases i <;> simp only [isa, push, reduceCtorEq] at hp

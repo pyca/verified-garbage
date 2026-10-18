@@ -67,6 +67,7 @@ theorem Code.erase_inline (c : Prog isa) : (Code.erase c).inline = Code.erase c.
   | ite c t e iht ihe => show Code.ite c _ _ = Code.ite c _ _; rw [iht, ihe]
   | loop b c ih => exact congrArg (Code.loop · c) ih
   | call n b _ => rfl
+  | icall n => rfl
   | frame i b j ih => exact congrArg (Code.frame i · j) ih
 
 namespace Taint
@@ -340,6 +341,7 @@ theorem check_erase (r : Reg) (c : Prog isa) : ∀ a, check r (Code.erase c) a =
     show (check r (Code.erase b) a).bind _ = (check r b a).bind _
     rw [ih]
   | call _ _ _ => intro _; rfl
+  | icall _ => intro _; rfl
   | frame _ _ _ _ => intro _; rfl
 
 /-- `keeps` does not read displacements and immediates. -/
@@ -402,6 +404,7 @@ def checkN (r : Reg) : Prog isa → Abs → Option Abs
   | .ite _ c d, a => (checkN r c a).bind fun x => (checkN r d a).map fun y => (meet x y).norm
   | .loop b _, a => (checkN r b a).bind fun x => bif le a x then some a else none
   | .call .., _ => none
+  | .icall _, _ => none
   | .frame .., _ => none
 
 theorem checkN_eq (r : Reg) (c : Prog isa) : ∀ a, checkN r c a = check r c a := by
@@ -421,6 +424,7 @@ theorem checkN_eq (r : Reg) (c : Prog isa) : ∀ a, checkN r c a = check r c a :
     show (checkN r b a).bind _ = (check r b a).bind _
     rw [ih]
   | call _ _ _ => intro _; rfl
+  | icall _ => intro _; rfl
   | frame _ _ _ _ => intro _; rfl
 
 /-- `keeps` by `checkN`. -/

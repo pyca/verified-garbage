@@ -309,12 +309,12 @@ elab "sig_apply_check" : tactic => liftMetaTactic fun g => g.withContext do
   let s := t.appArg!
   let mut k := t.appFn!.appArg!
   for _ in [0:32] do
-    if k.isAppOfArity `VG.Sig.contract 8 then break
+    if k.isAppOfArity `VG.Sig.contract 9 then break
     let some k' ← unfoldDefinition? k | break
     k := k'.headBeta
-  unless k.isAppOfArity `VG.Sig.contract 8 do
-    throwError "sig_apply_check: not a contract built with `Sig.contract`"
-  let f := mkAppN (mkConst `VG.Sig.contract_pre_of_check) (k.getAppArgs.push s)
+  unless k.isAppOfArity `VG.Sig.contract 9 && k.appArg!.isAppOfArity ``Option.none 1 do
+    throwError "sig_apply_check: not a contract built with `Sig.contract` without `fns`"
+  let f := mkAppN (mkConst `VG.Sig.contract_pre_of_check) (k.getAppArgs.pop.push s)
   let .forallE _ hcTy (.forallE _ hTy _ _) _ ← whnfR (← inferType f)
     | throwError "sig_apply_check: unexpected type"
   let hc ← mkFreshExprSyntheticOpaqueMVar hcTy
@@ -370,11 +370,13 @@ elab "sig_and_intros" : tactic => do
     out := out ++ (← andIntros g)
   setGoals out
 
-/-- The arguments of `Sig.contract` that `k` unfolds to. -/
+/-- The arguments of `Sig.contract` that `k` unfolds to, but its `fns`, if it
+has none. -/
 def contractArgs? (k : Expr) : MetaM (Option (Array Expr)) := do
   let mut k := k
   for _ in [0:32] do
-    if k.isAppOfArity `VG.Sig.contract 8 then return some k.getAppArgs
+    if k.isAppOfArity `VG.Sig.contract 9 then
+      return if k.appArg!.isAppOfArity ``Option.none 1 then some k.getAppArgs.pop else none
     let some k' ← unfoldDefinition? k | return none
     k := k'.headBeta
   return none

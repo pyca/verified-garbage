@@ -28,6 +28,7 @@ theorem Code.aarch64Depth_fillHoles_le (n : String) (b e : Prog AArch64.isa) :
       | nil => exact Nat.le_add_left _ _
       | cons i is => exact Nat.le_add_right _ _
     | _ => exact Nat.le_add_right _ _
+  | icall _ => exact Nat.zero_le _
   | frame i x j ih =>
     simp only [Code.fillHoles, Code.aarch64Depth]
     omega

@@ -40,6 +40,7 @@ def evaluate : Nat → Prog isa → Machine → Except String Machine
     let next ← evaluate fuel body ⟨flatten entered words, words, m.instructions + 1⟩
     let some returned := isa.ret entered next.state | throw "return fault"
     return { next with state := returned }
+  | _ + 1, .icall _, _ => throw "unexpected indirect call"
   | fuel + 1, .frame push body pop, m => do
     -- This runner supports allocation frames, which do not store registers.
     match push with

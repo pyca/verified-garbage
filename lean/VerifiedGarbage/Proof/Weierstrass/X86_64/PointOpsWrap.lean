@@ -149,6 +149,7 @@ theorem Exec.xmm_of {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa 
     intro hv hn
     exact (ih₂ hv hn).trans (ih₁ hv hn)
   | call => intro _ hn; simp [Code.noCalls] at hn
+  | icall => intro _ hn; simp [Code.noCalls] at hn
   | frame => intro _ hn; simp [Code.noCalls] at hn
 
 /-- `wrap body` restores the registers it saves, if `body` writes no vector

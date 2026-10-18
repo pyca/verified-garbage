@@ -461,6 +461,18 @@ def callSample : Prog X86_64.isa :=
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 
 #guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+
+/-! An indirect call (`Code.icall`) is the call instruction of `r11` on
+x86-64, the only target with indirect calls; the code of the function it
+calls is not the model's, so it is in no `Code.calls`, and the emitter
+refuses code with one on the other targets (`Rust.checkIcall`). -/
+
+#guard printer.function (.seq (.block [.mov .r11 (.reg .rdi)]) (.icall 64) : Prog isa) == [
+  .text "mov r11, rdi", .text "call r11", .text "ret"]
+#guard (Code.calls (.seq (.call "vg_f" (.block [])) (.icall 64) : Prog isa)).map (·.1) == ["vg_f"]
+#guard Rust.hasIcall (.seq (.call "vg_f" (.icall 0)) (.block []) : Prog isa)
+#guard !Rust.hasIcall callSample
+#guard AArch64.printer.icall.isEmpty && X86.printer.icall.isEmpty && Arm.printer.icall.isEmpty
 #guard Rust.line Arm.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
   "        r\"mov rax, QWORD PTR [rdi]\",\n"

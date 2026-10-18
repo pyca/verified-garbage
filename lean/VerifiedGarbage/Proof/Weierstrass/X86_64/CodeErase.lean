@@ -30,6 +30,7 @@ theorem Code.allInstrs_mapBlocks {p : Instr → Bool} {f : Instr → Instr} (hp 
     simp only [Code.mapBlocks, Code.allInstrs, Code.allInstrs_mapBlocks hp t, Code.allInstrs_mapBlocks hp e]
   | .loop b _ => by simp only [Code.mapBlocks, Code.allInstrs, Code.allInstrs_mapBlocks hp b]
   | .call _ b => by simp only [Code.mapBlocks, Code.allInstrs, Code.allInstrs_mapBlocks hp b]
+  | .icall _ => rfl
   | .frame _ b _ => by simp only [Code.mapBlocks, Code.allInstrs, Code.allInstrs_mapBlocks hp b]
 
 theorem Code.noCalls_mapBlocks (f : Instr → Instr) : ∀ c : Prog isa, (c.mapBlocks f).noCalls = c.noCalls
@@ -38,6 +39,7 @@ theorem Code.noCalls_mapBlocks (f : Instr → Instr) : ∀ c : Prog isa, (c.mapB
   | .ite _ t e => by simp only [Code.mapBlocks, Code.noCalls, Code.noCalls_mapBlocks f t, Code.noCalls_mapBlocks f e]
   | .loop b _ => by simp only [Code.mapBlocks, Code.noCalls, Code.noCalls_mapBlocks f b]
   | .call _ _ => rfl
+  | .icall _ => rfl
   | .frame .. => rfl
 
 theorem Taint.clobbers_erase (r : Reg) (i : Instr) : Taint.clobbers i.erase r = Taint.clobbers i r := by
@@ -66,6 +68,7 @@ theorem Code.InlineOk_erase : ∀ c : Prog isa, (Code.erase c).InlineOk = c.Inli
   | .call _ b => by
     show ((b.mapBlocks Instr.erase).noCalls && (b.mapBlocks Instr.erase).allInstrs Instr.rspFree) = _
     rw [Code.noCalls_mapBlocks, Code.allInstrs_mapBlocks Instr.rspFree_erase]; rfl
+  | .icall _ => rfl
   | .frame .. => rfl
 
 end VG.X86_64

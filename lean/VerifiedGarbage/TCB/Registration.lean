@@ -58,8 +58,9 @@ structure Registration (api : Api) (target : Target) where
   verified : Verified target code contract
   ofApi : contract = api.contract (target.abi.withConsts consts) stack := by exact rfl
   /-- `Artifact.ofSig`. -/
-  ofSig : ∃ pre post leak,
-      contract = api.sig.contract (target.abi.withConsts consts) pre post api.writeArgs stack leak := by
+  ofSig : ∃ pre post leak fns,
+      contract = api.sig.contract (target.abi.withConsts consts) pre post api.writeArgs stack leak
+        fns := by
     of_sig
   /-- `Artifact.spSafe`. -/
   spSafe : code.all (fun i => !target.isa.writesSp i) = true := by sp_safe

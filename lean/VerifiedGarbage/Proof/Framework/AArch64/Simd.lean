@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.Icall
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Basic lane identities for AArch64 SIMD proofs. -/

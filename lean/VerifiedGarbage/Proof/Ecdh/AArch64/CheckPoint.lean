@@ -297,7 +297,7 @@ theorem check_correct (hc : BaseCfgOk c) {C : Spec.Weierstrass.CheckPoint.Curve}
   have hkv : (Impl.Ecdh.AArch64.Cfg.checkFn c).allInstrs keepsV = true := by
     rw [Code.allInstrs_eq]
     exact List.all_eq_true.mpr fun i hi => by
-      have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
+      have := List.all_eq_true.mp ((Code.allInstrs_eq (I := Instr) (C := Cond) _ _) ▸ hv) i hi
       simp only [Bool.and_eq_true] at this
       exact this.2
   obtain ⟨t, s', he, K, P⟩ := checkFn_ok hc hck hS (R := fun _ m' => C.post (s.gpr .x0) s.mem m')

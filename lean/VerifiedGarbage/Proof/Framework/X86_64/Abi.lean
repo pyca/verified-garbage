@@ -148,6 +148,7 @@ theorem Exec.mxcsr {c : Prog isa} (hc : ∀ i ∈ instrs c, loadsMxcsr i = false
     split at hr <;> cases hr
     subst hc₁
     exact ih hc
+  | icall => exact absurd (hc _ ldmxcsr_mem_icall) (by decide)
 
 /-- The calling-convention obligations other than MXCSR's: the callee-saved
 registers and the return address. -/

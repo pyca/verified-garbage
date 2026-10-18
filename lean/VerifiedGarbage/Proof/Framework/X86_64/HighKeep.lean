@@ -110,6 +110,7 @@ theorem HKeep.code {c : Prog isa} {s t : State} {tr : List Leak} (he : Exec isa 
   | loopExit _ _ ih => exact ih hn hi
   | loopNext _ _ _ ih₁ ih₂ => exact (ih₁ hn hi).trans (ih₂ hn hi)
   | call => simp [Code.noCalls] at hn
+  | icall => simp [Code.noCalls] at hn
   | frame => simp [Code.noCalls] at hn
 
 theorem WP.hkeepCode {c : Prog isa} {s : State} {Q : State → Prop}

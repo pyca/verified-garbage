@@ -213,6 +213,7 @@ theorem check_dom (names : List String) {c : Prog isa} {h : VG.Taint.Hint T} {τ
         if (analysis names).le inv σ' && (analysis names).condPub σ' cd then some σ' else none
       else none) = some σ₁
     rw [ite_eq_left hi', hb'', Option.bind_some, ite_eq_left hok']
+  | icall _ => cases h <;> simp only [VG.Taint.check, reduceCtorEq] at hc
   | call n body ih =>
     cases h <;> try (simp only [VG.Taint.check, reduceCtorEq] at hc; done)
     rename_i hb

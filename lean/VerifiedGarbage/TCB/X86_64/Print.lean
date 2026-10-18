@@ -349,6 +349,7 @@ def printer : Printer isa where
   jump l := s!"jmp {l}"
   ret := ["ret"]
   call := "call"
+  icall := ["call r11"]
   -- The static's RIP-relative address, which `TCB/Rust.lean` writes with
   -- its symbol; `asm` gives the same text, for reading.
   symLines

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Icall
 public import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.TCB.X86_64.Isa
 
@@ -172,6 +173,7 @@ structure Frame (b : Reg) (ix : Option Reg) (sc : Nat) (F : Fp) (s s' : State) :
   wr : s'.wr = s.wr
   unknowns : s'.unknowns = s.unknowns
   syms : s'.syms = s.syms
+  funs : s'.funs = s.funs
 
 /-! ## Bits -/
 
@@ -217,11 +219,11 @@ theorem testBit_or_right {a c i : Nat} (h : c.testBit i = true) : (a ||| c).test
 theorem state_ext {s t : State} (hg : s.gpr = t.gpr) (hc : s.flags = t.flags) (hx : s.xmm = t.xmm)
     (hy : s.ymmHi = t.ymmHi) (hz : s.zmmHi = t.zmmHi) (hyh : s.ymmH = t.ymmH) (hzh : s.zmmHiH = t.zmmHiH)
     (hmx : s.mxcsr = t.mxcsr) (hm : s.mem = t.mem) (hrd : s.rd = t.rd) (hwr : s.wr = t.wr)
-    (hu : s.unknowns = t.unknowns) (hsy : s.syms = t.syms) : s = t := by
+    (hu : s.unknowns = t.unknowns) (hsy : s.syms = t.syms) (hfn : s.funs = t.funs) : s = t := by
   cases s; cases t
-  simp only [State.flags, Prod.mk.injEq] at hg hc hx hy hz hyh hzh hmx hm hrd hwr hu hsy
+  simp only [State.flags, Prod.mk.injEq] at hg hc hx hy hz hyh hzh hmx hm hrd hwr hu hsy hfn
   obtain ⟨h1, h2, h3, h4⟩ := hc
-  subst hg h1 h2 h3 h4 hx hy hz hyh hzh hmx hm hrd hwr hu hsy; rfl
+  subst hg h1 h2 h3 h4 hx hy hz hyh hzh hmx hm hrd hwr hu hsy hfn; rfl
 
 theorem read_congr {m m' : Mem} {a : Addr} {n : Nat}
     (h : ∀ k < n, m (a + BitVec.ofNat 64 k) = m' (a + BitVec.ofNat 64 k)) : m.read a n = m'.read a n := by
@@ -291,7 +293,8 @@ theorem bAddr_of_gpr {s s' : State} (h : s'.gpr = s.gpr) : bAddr b ix sc s' = bA
 /-! ## Frames of the instructions' effects -/
 
 theorem Frame.refl (F : Fp) (s : State) : Frame b ix sc F s s :=
-  ⟨fun _ _ => rfl, fun _ _ => ⟨rfl, rfl, rfl⟩, fun _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  ⟨fun _ _ => rfl, fun _ _ => ⟨rfl, rfl, rfl⟩, fun _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl,
+    rfl⟩
 
 theorem Frame.trans {F : Fp} {s s₁ s₂ : State} (h₁ : Frame b ix sc F s s₁) (h₂ : Frame b ix sc F s₁ s₂)
     (hb : bAddr b ix sc s₁ = bAddr b ix sc s) : Frame b ix sc F s s₂ where
@@ -309,6 +312,7 @@ theorem Frame.trans {F : Fp} {s s₁ s₂ : State} (h₁ : Frame b ix sc F s s�
   wr := h₂.wr.trans h₁.wr
   unknowns := h₂.unknowns.trans h₁.unknowns
   syms := h₂.syms.trans h₁.syms
+  funs := h₂.funs.trans h₁.funs
 
 theorem Frame.setReg {F : Fp} {s : State} (d : Reg) (v : BitVec 64)
     (hd : F.gw.testBit d.ctorIdx = true) : Frame b ix sc F s (s.setReg d v) where
@@ -325,6 +329,7 @@ theorem Frame.setReg {F : Fp} {s : State} (d : Reg) (v : BitVec 64)
   wr := rfl
   unknowns := rfl
   syms := rfl
+  funs := rfl
 
 theorem Frame.setFlags {F : Fp} {s : State} (hc : F.cw = true) (c o z n : Option Bool) :
     Frame b ix sc F s (s.setFlags c o z n) where
@@ -339,6 +344,7 @@ theorem Frame.setFlags {F : Fp} {s : State} (hc : F.cw = true) (c o z n : Option
   wr := rfl
   unknowns := rfl
   syms := rfl
+  funs := rfl
 
 theorem Frame.arithReg {F : Fp} {s : State} {w : Nat} (d : Reg) (r : BitVec w) (c o : Bool) (v : BitVec 64)
     (hd : F.gw.testBit d.ctorIdx = true) (hc : F.cw = true) :
@@ -364,6 +370,7 @@ theorem Frame.setV {F : Fp} {s : State} (len : VLen) (d : XReg) (lo hi : BitVec 
   wr := rfl
   unknowns := rfl
   syms := rfl
+  funs := rfl
 
 theorem Frame.store {F : Fp} {s : State} {o n : Nat} (v : BitVec (8 * n))
     (hm : ∀ k, k < n → F.mw.testBit (o + k) = true) :
@@ -380,6 +387,7 @@ theorem Frame.store {F : Fp} {s : State} {o n : Nat} (v : BitVec (8 * n))
   wr := rfl
   unknowns := rfl
   syms := rfl
+  funs := rfl
 
 theorem writeW_eq (m : Mem) (a : Addr) {w : Nat} (v : BitVec w) :
     m.writeW a v = m.write a (w / 8) (v.setWidth (8 * (w / 8))) := rfl
@@ -928,6 +936,7 @@ theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp b ix sc i = some F) (hj : fp
       · rw [f2.wr, f1.wr, g2.wr, g1.wr]
       · rw [f2.unknowns, f1.unknowns, g2.unknowns, g1.unknowns]
       · rw [f2.syms, f1.syms, g2.syms, g1.syms]
+      · rw [f2.funs, f1.funs, g2.funs, g1.funs]
 
 
 /-! ## The instance -/

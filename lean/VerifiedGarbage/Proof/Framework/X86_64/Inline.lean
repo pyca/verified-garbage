@@ -744,6 +744,17 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
+  icallTarget_with _ _ _ := rfl
+  fnAt_with _ _ _ := rfl
+  fn_widen hf h := by
+    simp only [isa, fnAt, Option.map_eq_some_iff] at hf
+    obtain ⟨g, -, rfl⟩ := hf
+    obtain ⟨r, hr, e⟩ := Option.map_eq_some_iff.mp h
+    cases e
+    exact ⟨rfl, rfl, fun _ _ => by simp only [Option.map_eq_some_iff]; exact ⟨r, hr, rfl⟩⟩
+  callOk_widen h hw := ⟨h.1, fun x hx hs => h.2 x (fun r hr hc => by
+    obtain ⟨r', hr', hc'⟩ := hw x 1 ⟨r, hr, hc⟩
+    exact hx r' hr' hc') hs⟩
 
 theorem execBlock_regions {is : List Instr} {s s' : State} {t : List Leak}
     (h : execBlock isa is s = some (s', t)) : s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame s.wr s.mem s'.mem :=
@@ -773,7 +784,11 @@ theorem execBlock_gpr {is : List Instr} {r : Reg} (hc : ∀ i ∈ is, Taint.clob
 /-- A register that no instruction writes keeps its value. -/
 theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, Taint.clobbers i r = false)
     {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.gpr r = s.gpr r :=
-  Exec.keep (fun s : State => s.gpr r) (fun hi he => exec_gpr hi he) frame_gpr hc (.inr fun _ _ _ _ hc hr hb => call_ret_gpr hc hr hb) h
+  Exec.keep (fun s : State => s.gpr r) (fun hi he => exec_gpr hi he) frame_gpr hc
+    (.inr fun _ _ _ _ hc hr hb => call_ret_gpr hc hr hb)
+    (fun hall {n} {_ _ _ _ _} {_} _ hc _ hk hq => if hr : r ∈ calleeSaved then
+      call_ret_gpr hc hq (hk.1.1 r hr) else
+      absurd (hall _ (mov_mem_icall (n := n) hr)) (by simp [Taint.clobbers, Taint.dstOf])) h
 
 /-- A register that no instruction writes keeps its value, as a
 postcondition. -/

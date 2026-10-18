@@ -34,6 +34,7 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
   | .call _ b, h => by
     have := xdepth_le (c := b) h
     simp only [Code.x86_64Depth, Code.depth]; omega
+  | .icall _, _ => by simp only [Code.x86_64Depth, Code.depth]; omega
   | .frame i b j, h => by
     have hi := h i (List.mem_cons_self ..)
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_cons_of_mem _ (List.mem_append_left _ hx)))

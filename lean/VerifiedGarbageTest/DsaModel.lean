@@ -71,6 +71,7 @@ def evaluate : Nat → Prog isa → Machine → Except String Machine
     let some again := isa.eval c m'.state | throw "undefined loop condition"
     if again then evaluate fuel (.loop body c) m' else pure m'
   | _, .call .., _ => .error "unexpected call in inline baseline model test"
+  | _, .icall .., _ => .error "unexpected indirect call in baseline model test"
   | _, .frame .., _ => .error "unexpected stack frame in baseline model test"
 
 def wordBytes (n : Nat) : List Byte := (List.range 8).map fun i => BitVec.ofNat 8 (n >>> (8 * i))

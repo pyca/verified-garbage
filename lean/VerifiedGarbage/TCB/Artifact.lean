@@ -69,6 +69,81 @@ structure Contract (M : ISA) where
   pointers, but not keys or plaintexts). -/
   pub : M.State → M.State → Prop
 
+/-! ## Functions passed to a function
+
+A function may call a function its arguments point to (`Code.icall`): what
+that function does is the state's (`ISA.fnAt`), which a contract constrains
+only through `FnMeets`. A contract built by `Sig.contract` with `fns`
+requires it of the functions the arguments point to, in the memory on
+entry; so its function's `# Safety` section requires them to be functions
+verified against the contracts named there, which is what `FnMeets` says of
+them, as follows.
+
+`FnMeets A K n stack s a` says that in the state `s` the address `a` holds a
+function (`ISA.fnAt`) that, on every entry (just after the call
+instruction) satisfying `K`'s precondition under the calling convention `A`
+with `n` bytes of stack, in the same program (`Abi.sameWorld`: the same
+functions at every address, reading the same tables, and the same
+`static`s), returns (`ISA.callOk`:
+keeping what the calling convention keeps, and memory outside its writable
+regions and those `n` bytes of stack) in a state satisfying `K`'s
+postcondition, and whose leakage trace is the same from any two such entries
+that agree on public data (`K`'s `pub`). The function may read tables of
+constants, those the address holds with it (`ISA.fnConsts`, the function's
+`Artifact.consts`), which its contract (`Abi.withConsts`) assumes are in
+memory where the program's `static`s are; `FnMeets` says they are in the
+memory of `s`, where no writable region or stack of the caller (whose calls
+and frames use `stack` bytes) overlaps them, as for a Rust `static`. They
+are the same tables in every state of the same program, as the function is.
+It says this only of entries whose memory regions are the caller's
+(`Abi.within`): every byte the entry lets the function read or write is one
+that `s` lets the caller read or write, of the caller's stack, or of those
+tables. A caller can thus learn what the function does only by passing it
+memory of its own, which is all the function may then access.
+
+This is what any function verified against `K` under `A` with at most `n`
+bytes of stack does (`Verified`): its run from such an entry is the
+function's, which the machine runs on the registers and memory it is given
+(and on the program's code and `static`s, which no run changes). So a caller
+that passes only such functions meets `FnMeets`. -/
+
+/-- The states `s₁` and `s₂` are of the same program: the same functions at
+every address (`ISA.fnAt`), reading the same tables of constants
+(`ISA.fnConsts`), and the same addresses of the `static`s the code can name
+(`Abi.sym`), which no run changes. -/
+def Abi.sameWorld {M : ISA} (A : Abi M) (s₁ s₂ : M.State) : Prop :=
+  M.fnAt s₁ = M.fnAt s₂ ∧ M.fnConsts s₁ = M.fnConsts s₂ ∧ A.sym.elim True fun f => f s₁ = f s₂
+
+/-- The regions of the state `s₁` are within what the state `s` permits,
+for a function reading the tables of constants `cs`: every byte that `s₁`
+lets a function read or write is one that `s` lets it read or write, of the
+`stack` bytes of stack of `s` (`Abi.reserved`), or of a table of `cs` where
+the program's `static`s are. -/
+def Abi.within {M : ISA} (A : Abi M) (stack : Nat) (s : M.State)
+    (cs : List (String × List (BitVec 64))) (s₁ : M.State) : Prop :=
+  ∀ r ∈ A.rd s₁ ++ A.wr s₁, ∀ x, r.Contains x 1 →
+    InRegions (A.rd s ++ A.wr s ++ A.reserved stack s ++
+      A.sym.elim [] fun g => Abi.constRegions (g s) cs) x 1
+
+/-- In the state `s`, the address `a` holds a function that meets the
+contract `K` under the calling convention `A` with `n` bytes of stack, for a
+caller whose calls and frames use `stack` bytes of stack (see above). -/
+def FnMeets {M : ISA} (A : Abi M) (K : Abi M → Nat → Contract M) (n stack : Nat)
+    (s : M.State) (a : Addr) : Prop :=
+  ∃ f cs, M.fnAt s a = some f ∧ M.fnConsts s a = cs ∧
+    (match A.sym with
+      | none => cs = []
+      | some g => Abi.constsHeld (A.mem s) (g s) cs ∧
+        ∀ t ∈ Abi.constRegions (g s) cs, t.base.toNat + t.len ≤ 2 ^ A.ptrBits ∧
+          (∀ r ∈ A.wr s, t.Disjoint r) ∧ ∀ r ∈ A.reserved stack s, t.Disjoint r) ∧
+    (∀ s₁, A.sameWorld s₁ s → A.within stack s cs s₁ → (K (A.withConsts cs) n).pre s₁ →
+      ∃ s₂ t, f s₁ = some (s₂, t) ∧ M.callOk n s₁ s₂ ∧ (K (A.withConsts cs) n).post s₁ s₂) ∧
+    ∀ s₁ s₂ t₁ t₂ s₁' s₂', A.sameWorld s₁ s → A.sameWorld s₂ s →
+      A.within stack s cs s₁ → A.within stack s cs s₂ →
+      (K (A.withConsts cs) n).pre s₁ → (K (A.withConsts cs) n).pre s₂ →
+      (K (A.withConsts cs) n).pub s₁ s₂ → f s₁ = some (s₁', t₁) → f s₂ = some (s₂', t₂) →
+      t₁ = t₂
+
 /-- The contract of a function with signature `sig` under the calling
 convention `A`: the obligations the signature implies (see `TCB/Sig.lean`),
 the further precondition `pre` and the postcondition `post`, both stated on
@@ -95,11 +170,22 @@ entry (e.g. the sequence of table indices an algorithm reads, when the
 algorithm itself makes them depend on secrets). It is added to the public
 data, so two runs need identical leakage traces only if they agree on it:
 the function may reveal it through its timing, and nothing else secret.
-Every contract without `leak` is constant time in the usual sense. -/
+Every contract without `leak` is constant time in the usual sense.
+
+`fns`, if given, is what the function requires of the functions its
+arguments point to, which it may call (`Code.icall`): a precondition on the
+arguments and the memory on entry, given `impl`, for which `impl a K n`
+says that the address `a` holds a function that meets the contract `K` with
+`n` bytes of stack (`FnMeets`). Two runs then agree on the functions at
+every address and on the addresses of the `static`s (`Abi.sameWorld`): the
+code of the program is public. -/
 def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
     (pre : Curry (sig.words A.ptrBits) (Mem → Prop) := Curry.const (fun _ => True) _)
     (post : sig.Post A.ptrBits) (writeArgs : Bool := false) (stack : Nat := 0)
-    (leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat)) := none) : Contract M :=
+    (leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat)) := none)
+    (fns : Option (Curry (sig.words A.ptrBits)
+      (Mem → (Addr → (Abi M → Nat → Contract M) → Nat → Prop) → Prop)) := none) :
+    Contract M :=
   let ws := sig.words A.ptrBits
   let widths := ws.map (·.bits A.ptrBits)
   let pubs := sig.params.flatMap (·.2.pubs)
@@ -114,7 +200,10 @@ def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
         all.Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) ∧
         (∀ r ∈ A.reserved stack s, ∀ a ∈ all, r.Disjoint a.1) ∧
         (∀ a ∈ bufs, a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits) ∧
-        Curry.apply ws pre (vals s) (A.mem s)
+        match fns with
+        | none => Curry.apply ws pre (vals s) (A.mem s)
+        | some f => Curry.apply ws pre (vals s) (A.mem s) ∧
+          Curry.apply ws f (vals s) (A.mem s) fun a K n => FnMeets A K n stack s a
     post s s' := match A.args widths with
       | none => False
       | some vals => Curry.apply ws post (vals s) (A.mem s) (A.mem s')
@@ -122,9 +211,12 @@ def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
     pub s₁ s₂ := match A.args widths with
       | none => False
       | some vals =>
-        (match leak with
+        let pub := match fns with
           | none => A.pub s₁ s₂
-          | some f => A.pub s₁ s₂ ∧
+          | some _ => A.pub s₁ s₂ ∧ A.sameWorld s₁ s₂
+        (match leak with
+          | none => pub
+          | some f => pub ∧
             Curry.apply ws f (vals s₁) (A.mem s₁) = Curry.apply ws f (vals s₂) (A.mem s₂)) ∧
         (∀ i, pubs.getD i false = true →
           ((vals s₁).getD i 0).setWidth (widths.getD i 64) =
@@ -312,9 +404,9 @@ structure Artifact where
   arguments and writes the return value where the calling convention places
   them for `sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
-  ofSig : ∃ pre post leak,
-      contract = sig.contract (target.abi.withConsts consts) pre post writeArgs stack leak := by
-    exact ⟨_, _, _, rfl⟩
+  ofSig : ∃ pre post leak fns,
+      contract = sig.contract (target.abi.withConsts consts) pre post writeArgs stack leak fns := by
+    exact ⟨_, _, _, _, rfl⟩
   /-- The contract of the function on every target, which an artifact made
   from an `Api` (`{ api with … }`) takes from it with its `name` and `sig`
   (`Api.contracts`). The emitter refuses an artifact without one

@@ -32,12 +32,16 @@ def Code.x86_64Depth : Prog X86_64.isa → Nat
   | .ite _ t e => max t.x86_64Depth e.x86_64Depth
   | .loop b _ => b.x86_64Depth
   | .call _ b => b.x86_64Depth + 8
+  | .icall n => 8 * ((n + 7) / 8 + 1)
   | .frame i b _ => b.x86_64Depth + i.frameBytes
 
-/-- `Code.all p` holds of every instruction. -/
-theorem Code.all_instrs {I C : Type} {p : I → Bool} {c : Code I C} (h : c.all p = true) :
+/-- `Code.all p` holds of every instruction, if it holds of those that stand
+for an indirect call (`IcallInstrs`). -/
+theorem Code.all_instrs {I C : Type} [IcallInstrs I] {p : I → Bool} {c : Code I C}
+    (hi : ∀ i ∈ (icallInstrs : List I), p i = true) (h : c.all p = true) :
     ∀ i ∈ instrs c, p i = true := by
   induction c with
+  | icall _ => exact hi
   | block is => simpa [Code.all, instrs, List.all_eq_true] using h
   | seq a b iha ihb =>
     simp only [Code.all, Bool.and_eq_true] at h
@@ -68,7 +72,7 @@ its frames. -/
 abbrev SpSafe (c : Prog isa) : Prop := ∀ i ∈ instrs c, isa.writesSp i = false
 
 theorem SpSafe.of_all {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) : SpSafe c :=
-  fun i hi => by simpa using Code.all_instrs h i hi
+  fun i hi => by simpa using Code.all_instrs (by decide) h i hi
 
 /-- An instruction that does not write `rsp` keeps it. -/
 theorem exec_rsp {i : Instr} {s s' : State} (hw : isa.writesSp i = false) (h : exec i s = some s') :
@@ -98,7 +102,8 @@ theorem Exec.rsp {c : Prog isa} (hc : SpSafe c) {s s' : State} {t : List Leak}
     (h : Exec isa c s t s') : s'.gpr .rsp = s.gpr .rsp :=
   Exec.keep (fun s : State => s.gpr .rsp) (ok := fun i => isa.writesSp i = false)
     (fun hi he => exec_rsp hi he) (fun _ hp hq hb => frame_rsp hp hq hb) hc
-    (.inr fun _ _ _ _ hc hr hb => call_ret_gpr hc hr hb) h
+    (.inr fun _ _ _ _ hc hr hb => call_ret_gpr hc hr hb)
+    (fun _ {_ _ _ _ _ _} {_} _ hc _ hk hq => call_ret_gpr hc hq (hk.1.1 .rsp (by decide))) h
 
 /-- A frame's push takes `i.frameBytes` bytes below `rsp`, which become the
 head of the writable regions, and stores only within them. -/
@@ -195,5 +200,24 @@ theorem Exec.stackFrame {c : Prog isa} (hc : SpSafe c) {s s' : State} {t : List 
         · simp only [List.mem_singleton] at hr; subst hr
           exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_callee _ _⟩
     rw [hm]; exact Frame.trans f₀ f₁'
+  | @icall n s₀ _ s₁ s₂ s₃ _ _ hc₁ _ hk hr =>
+    -- The return address, then what the function may write (`ISA.callOk`).
+    simp only [Code.x86_64Depth] at hd ⊢
+    have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm
+    subst e₁
+    have hm : s₃.mem = s₂.mem := by
+      simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
+    have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * ((n + 7) / 8 + 1))]) s₀.mem
+        s₀.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_call _ (by omega) (by omega))
+    have f₁ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * ((n + 7) / 8 + 1))]) s₀.callEntry.mem
+        s₂.mem := by
+      intro x hx
+      refine hk.2 x (fun r hr => hx r (List.mem_append_left _ hr)) fun hc => ?_
+      apply hx _ (List.mem_append_right _ (List.mem_singleton_self _))
+      rw [State.callEntry_rsp] at hc
+      exact below_sub (a := n + 8) (by omega) (by omega) _ (below_callee _ _ _ hc)
+    rw [hm]; exact Frame.trans f₀ f₁
 
 end VG.X86_64

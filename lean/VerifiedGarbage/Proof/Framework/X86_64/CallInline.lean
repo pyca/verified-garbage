@@ -37,6 +37,7 @@ def Code.inline {I C : Type} : Code I C → Code I C
   | .ite c t e => .ite c t.inline e.inline
   | .loop b c => .loop b.inline c
   | .call _ b => b
+  | .icall n => .icall n
   | .frame i b j => .frame i b.inline j
 
 end VG
@@ -610,6 +611,7 @@ def _root_.VG.Code.InlineOk : Prog isa → Bool
   | .ite _ t e => t.InlineOk && e.InlineOk
   | .loop b _ => b.InlineOk
   | .call _ b => b.noCalls && b.allInstrs Instr.rspFree
+  | .icall _ => false
   | .frame .. => false
 
 /-- Inlined code whose calls call none calls none. -/
@@ -631,6 +633,7 @@ theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c
   | call _ b _ =>
     simp only [Code.InlineOk, Bool.and_eq_true] at h
     exact h.1
+  | icall _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
   | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
 
 /-- An instruction that neither reads nor writes `rsp` does not write it. -/
@@ -662,6 +665,7 @@ theorem _root_.VG.Code.clobbers_rsp_of_inlineOk {c : Prog isa} (h : c.InlineOk =
   | call _ b _ =>
     simp only [Code.InlineOk, Bool.and_eq_true, Code.allInstrs_eq, List.all_eq_true] at h
     exact fun i hi => Instr.clobbers_rsp_of_rspFree (h.2 i hi)
+  | icall _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
   | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
 
 /-- Code without calls is its own inlined form. -/
@@ -678,6 +682,7 @@ theorem _root_.VG.Code.inline_of_noCalls {c : Prog isa} (h : c.noCalls = true) :
     simp only [Code.noCalls] at h
     simp only [Code.inline, ih h]
   | call _ _ _ => simp only [Code.noCalls, Bool.false_eq_true] at h
+  | icall _ => simp only [Code.noCalls, Bool.false_eq_true] at h
   | frame _ _ _ _ => simp only [Code.noCalls, Bool.false_eq_true] at h
 
 /-- The leakage of a run of `c`, from that of `c.inline` (a prefix of
@@ -696,6 +701,7 @@ def liftT (h : Addr) : Nat → Prog isa → List Leak → Option (List Leak × L
       | .branch true :: r => (liftT h f (.loop b c) r).map fun (q : List Leak × List Leak) => (p.1 ++ .branch true :: q.1, q.2)
       | _ => none
   | f + 1, .call _ b, t => (liftT h f b t).map fun (p : List Leak × List Leak) => (.addr h :: (p.1 ++ [.addr h]), p.2)
+  | _ + 1, .icall _, _ => none
   | _ + 1, .frame .., _ => none
 
 /-- `ta` is the leakage `liftT` gives for `t`, with enough fuel, whatever follows. -/
@@ -749,6 +755,7 @@ theorem Exec.F {F : State → State} {c : Prog isa} (hc : c.noCalls = true)
   | loopExit _ hk ih => exact .loopExit (ih hc hF hs) ((hev _ _).trans hk)
   | loopNext h₁ hk _ ih₁ ih₂ => exact .loopNext (ih₁ hc hF hs) ((hev _ _).trans hk) (ih₂ hc hF (hs.of_exec h₁))
   | call => simp [Code.noCalls] at hc
+  | icall => simp [Code.noCalls] at hc
   | frame => simp [Code.noCalls] at hc
 
 /-- The leakage of code that calls nothing lifts to itself. -/
@@ -793,6 +800,7 @@ theorem Exec.lifts_self (h' : Addr) {c : Prog isa} (hc : c.noCalls = true) {s s'
     simp only [liftT, List.append_assoc, List.cons_append, h₁ f (by omega), Option.bind_some]
     rw [h₂ f (by omega) r]; rfl
   | call => simp [Code.noCalls] at hc
+  | icall => simp [Code.noCalls] at hc
   | frame => simp [Code.noCalls] at hc
 
 end
@@ -868,7 +876,7 @@ theorem loop_uninline {body : Prog isa} {k : Cond} {sp : Addr}
       b'.gpr .rsp = sp ∧ Lifts (sp - 8) (.loop body k) ta t := by
   generalize e : (Code.loop body.inline k : Prog isa) = L at h
   induction h generalizing hv u with
-  | block | seq | iteT | iteF | call | frame => cases e
+  | block | seq | iteT | iteF | call | icall | frame => cases e
   | @loopExit body' k' s s' t h₁ hk _ =>
     cases e
     obtain ⟨hv', u', ta, ha, hs', ⟨N, hl⟩⟩ := ih h₁ hb hsp hv u
@@ -928,6 +936,7 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
     simp only [Code.InlineOk] at hc
     simp only [Code.inline] at h
     exact loop_uninline (fun h₁ hb₁ hsp₁ hv₁ u₁ => ih hc h₁ hb₁ hsp₁ hv₁ u₁) h hb hsp hv u
+  | icall _ => simp only [Code.InlineOk, Bool.false_eq_true] at hc
   | call n body _ =>
     simp only [Code.InlineOk, Bool.and_eq_true] at hc
     obtain ⟨hn, hr⟩ := hc

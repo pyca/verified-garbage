@@ -70,6 +70,20 @@ structure RegionModel (M : ISA) where
     wr s₂ = wr s₁ ∧ rd s' = rd s₂ ∧ wr s' = (wr s₂).tail ∧
       ∀ r w, w.head? = (wr s₁).head? →
         M.pop j (withRegions s₁ r w) (withRegions s₂ r w) = some (withRegions s' r w.tail)
+  /-- The address an indirect call calls, and the functions at each
+  address, do not depend on the permissions. -/
+  icallTarget_with (s : M.State) (r w : List Region) :
+    M.icallTarget (withRegions s r w) = M.icallTarget s
+  fnAt_with (s : M.State) (r w : List Region) : M.fnAt (withRegions s r w) = M.fnAt s
+  /-- A function called indirectly keeps the permissions, and runs the same
+  with others. -/
+  fn_widen {s s₁ s₂ : M.State} {a : Addr} {f : M.State → Option (M.State × List Leak)}
+      {t : List Leak} : M.fnAt s a = some f → f s₁ = some (s₂, t) →
+    rd s₂ = rd s₁ ∧ wr s₂ = wr s₁ ∧ ∀ r w, f (withRegions s₁ r w) = some (withRegions s₂ r w, t)
+  /-- What an indirect call requires of its function holds with more
+  writable memory. -/
+  callOk_widen {n : Nat} {s₁ s₂ : M.State} {r w : List Region} : M.callOk n s₁ s₂ →
+    Covers (wr s₁) w → M.callOk n (withRegions s₁ r w) (withRegions s₂ r w)
 
 theorem execBlock_keep {α : Type} (get : M.State → α) {ok : M.Instr → Prop}
     (hexec : ∀ {i s s'}, ok i → M.exec i s = some s' → get s' = get s)
@@ -90,18 +104,24 @@ theorem execBlock_keep {α : Type} (get : M.State → α) {ok : M.Instr → Prop
     rw [ih (fun i hi => hc i (List.mem_cons_of_mem _ hi)) h2, hexec (hc i (List.mem_cons_self ..)) he]
 
 /-- A value `get` that every instruction satisfying `ok` keeps, that every
-frame whose pop satisfies `ok` restores, and (unless the code makes no call)
-that every call restores, is the same after code whose instructions all
-satisfy `ok`. -/
-theorem Exec.keep {α : Type} (get : M.State → α) {ok : M.Instr → Prop}
+frame whose pop satisfies `ok` restores, (unless the code makes no call)
+that every call restores, and that every indirect call keeps if the
+instructions standing for it (`IcallInstrs`) satisfy `ok`, is the same after
+code whose instructions all satisfy `ok`. -/
+theorem Exec.keep [IcallInstrs M.Instr] {α : Type} (get : M.State → α) {ok : M.Instr → Prop}
     (hexec : ∀ {i s s'}, ok i → M.exec i s = some s' → get s' = get s)
     (hframe : ∀ {i j s s₁ s₂ s'}, ok j → M.push i s = some s₁ → M.pop j s₁ s₂ = some s' →
       get s₂ = get s₁ → get s' = get s)
     {c : Prog M} (hc : ∀ i ∈ instrs c, ok i)
     (hcall : c.noCalls = true ∨ ∀ s s₁ s₂ s', M.call s = some s₁ → M.ret s₁ s₂ = some s' →
       get s₂ = get s₁ → get s' = get s)
+    (hicall : (∀ i ∈ (icallInstrs : List M.Instr), ok i) →
+      ∀ {n s f s₁ s₂ s'} {t : List Leak}, M.fnAt s (M.icallTarget s) = some f →
+        M.call s = some s₁ → f s₁ = some (s₂, t) → M.callOk n s₁ s₂ → M.ret s₁ s₂ = some s' →
+        get s' = get s)
     {s s' : M.State} {t : List Leak} (h : Exec M c s t s') : get s' = get s := by
   induction h with
+  | icall hf hc₁ hr hk hq => exact hicall (fun i hi => hc i (by simpa [instrs] using hi)) hf hc₁ hr hk hq
   | block h => exact execBlock_keep get hexec hc h
   | seq _ _ ih₁ ih₂ =>
     simp only [Code.noCalls, Bool.and_eq_true] at hcall
@@ -148,10 +168,13 @@ theorem execBlock_regions {is : List M.Instr} {s s' : M.State} {t : List Leak}
     exact ⟨hr'.trans hr, hw'.trans hw, hf.trans (hw ▸ hf')⟩
 
 /-- The permissions never change. -/
-theorem rdwr {c : Prog M} {s s' : M.State} {t : List Leak} (h : Exec M c s t s') :
-    R.rd s' = R.rd s ∧ R.wr s' = R.wr s := by
+theorem rdwr {c : Prog M} {s s' : M.State} {t : List Leak}
+    (h : Exec M c s t s') : R.rd s' = R.rd s ∧ R.wr s' = R.wr s := by
+  -- Any instructions stand for an indirect call: every instruction keeps the permissions.
+  letI : IcallInstrs M.Instr := ⟨[]⟩
   refine Prod.mk.inj (Exec.keep (fun s => (R.rd s, R.wr s)) (ok := fun _ => True)
-    (fun _ he => ?_) (fun _ hp hq e => ?_) (fun _ _ => trivial) (.inr fun _ _ _ _ hc hr e => ?_) h)
+    (fun _ he => ?_) (fun _ hp hq e => ?_) (fun _ _ => trivial) (.inr fun _ _ _ _ hc hr e => ?_)
+    (fun _ {_ _ _ _ _ _} {_} hf hc hr _ hq => ?_) h)
   · obtain ⟨r, w, -⟩ := R.exec_regions he; rw [r, w]
   · obtain ⟨f, r₁, w₁, -⟩ := R.push_widen hp
     obtain ⟨w₂, r₂, w₃, -⟩ := R.pop_widen hq
@@ -161,6 +184,11 @@ theorem rdwr {c : Prog M} {s s' : M.State} {t : List Leak} (h : Exec M c s t s')
     obtain ⟨r₂, w₂, -⟩ := R.ret_widen hr
     simp only [Prod.mk.injEq] at e ⊢
     rw [r₂, w₂, e.1, e.2, r₁, w₁]; exact ⟨rfl, rfl⟩
+  · obtain ⟨r₁, w₁, -⟩ := R.call_widen hc
+    obtain ⟨r₂, w₂, -⟩ := R.fn_widen hf hr
+    obtain ⟨r₃, w₃, -⟩ := R.ret_widen hq
+    simp only [Prod.mk.injEq]
+    rw [r₃, w₃, r₂, w₂, r₁, w₁]; exact ⟨rfl, rfl⟩
 
 /-- Calls and returns change no memory. -/
 def CallsKeepMem : Prop :=
@@ -198,6 +226,7 @@ theorem regions {c : Prog M} {s s' : M.State} {t : List Leak} (h : Exec M c s t 
     obtain ⟨r, w, f⟩ := ih hn (.inr hk)
     refine ⟨r₂.trans (r.trans r₁), w₂.trans (w.trans w₁), ?_⟩
     rw [m₂, ← m₁, ← w₁]; exact f
+  | icall => simp [Code.noFrames] at hn
   | frame => simp [Code.noFrames] at hn
 
 theorem execBlock_widen {is : List M.Instr} {s s' : M.State} {t : List Leak} {r w : List Region}
@@ -242,6 +271,13 @@ theorem widen {c : Prog M} {s s' : M.State} {t : List Leak} {r w : List Region}
     obtain ⟨-, -, hr'⟩ := R.ret_widen hr
     have := Exec.call (name := n) (hc' r w) (ih (by rwa [r₁, w₁]) (by rwa [w₁])) (hr' r w)
     rwa [R.callAddrs_with, R.retAddrs_with] at this
+  | icall hf hc₁ hr hk hq =>
+    obtain ⟨r₁, w₁, hc'⟩ := R.call_widen hc₁
+    obtain ⟨-, w₂, hr'⟩ := R.fn_widen hf hr
+    obtain ⟨-, -, hq'⟩ := R.ret_widen hq
+    have := Exec.icall (M := M) (by rw [R.fnAt_with, R.icallTarget_with]; exact hf) (hc' r w) (hr' r w)
+      (R.callOk_widen hk (by rwa [w₁])) (hq' r w)
+    rwa [R.callAddrs_with, R.retAddrs_with, R.icallTarget_with] at this
   | frame hp _ hq ih =>
     obtain ⟨f, r₁, w₁, hp'⟩ := R.push_widen hp
     obtain ⟨-, -, -, hq'⟩ := R.pop_widen hq
