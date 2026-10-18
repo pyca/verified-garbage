@@ -39,6 +39,12 @@ ldr x17, [x3, #24]
 ldr x21, [x3, #32]
 ldr x22, [x3, #40]
 movz x7, #0, lsl #0
+movz x8, #0, lsl #0
+movz x9, #0, lsl #0
+movz x10, #0, lsl #0
+movz x11, #0, lsl #0
+movz x12, #0, lsl #0
+movz x13, #0, lsl #0
 movz x14, #0, lsl #0
 movz x15, #0, lsl #0
 movz x6, #0, lsl #0
@@ -46,12 +52,20 @@ movz x23, #0, lsl #0
 movz x24, #0, lsl #0
 movz x25, #0, lsl #0
 ldr x1, [x27, #0]
-mul x8, x1, x4
-mul x9, x1, x5
-mul x10, x1, x16
-mul x11, x1, x17
-mul x12, x1, x21
-mul x13, x1, x22
+mul x2, x1, x4
+adds x8, x8, x2
+mul x2, x1, x5
+adcs x9, x9, x2
+mul x2, x1, x16
+adcs x10, x10, x2
+mul x2, x1, x17
+adcs x11, x11, x2
+mul x2, x1, x21
+adcs x12, x12, x2
+mul x2, x1, x22
+adcs x13, x13, x2
+umulh x2, x1, x22
+adcs x14, x14, x2
 umulh x2, x1, x4
 adds x9, x9, x2
 umulh x2, x1, x5
@@ -62,8 +76,7 @@ umulh x2, x1, x17
 adcs x12, x12, x2
 umulh x2, x1, x21
 adcs x13, x13, x2
-umulh x2, x1, x22
-adcs x14, x14, x2
+adcs x14, x14, x7
 ldr x1, [x27, #8]
 mul x2, x1, x4
 adds x9, x9, x2
@@ -363,17 +376,29 @@ ldr x21, [x27, #32]
 ldr x22, [x27, #40]
 movz x7, #0, lsl #0
 movz x8, #0, lsl #0
+movz x9, #0, lsl #0
+movz x10, #0, lsl #0
+movz x11, #0, lsl #0
+movz x12, #0, lsl #0
+movz x13, #0, lsl #0
 movz x14, #0, lsl #0
 movz x15, #0, lsl #0
 movz x6, #0, lsl #0
 movz x23, #0, lsl #0
 movz x24, #0, lsl #0
 movz x25, #0, lsl #0
-mul x9, x4, x5
-mul x10, x4, x16
-mul x11, x4, x17
-mul x12, x4, x21
-mul x13, x4, x22
+mul x2, x4, x5
+adds x9, x9, x2
+mul x2, x4, x16
+adcs x10, x10, x2
+mul x2, x4, x17
+adcs x11, x11, x2
+mul x2, x4, x21
+adcs x12, x12, x2
+mul x2, x4, x22
+adcs x13, x13, x2
+umulh x2, x4, x22
+adcs x14, x14, x2
 umulh x2, x4, x5
 adds x10, x10, x2
 umulh x2, x4, x16
@@ -382,8 +407,7 @@ umulh x2, x4, x17
 adcs x12, x12, x2
 umulh x2, x4, x21
 adcs x13, x13, x2
-umulh x2, x4, x22
-adcs x14, x14, x2
+adcs x14, x14, x7
 mul x2, x5, x16
 adds x11, x11, x2
 mul x2, x5, x17
