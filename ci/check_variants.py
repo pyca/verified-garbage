@@ -43,6 +43,21 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   declares in turn. (Code a macro expands only in its tests, from an
   argument passed outside them, is not found: name such functions only in
   the test.)
+* **Callers reach the best callee.** If a function `g` needs the CPU
+  features `F` (its `VG_<G>_FEATURES`, none for a baseline) and calls `f`,
+  and `f` has an implementation `f_<s>` whose features are more than those
+  of the one `g` calls but all in `F`, then some implementation of `g`
+  calls `f_<s>` (or one with still more features): otherwise no CPU ever
+  runs `f_<s>` under `g`, however many features it has. A choice made by
+  hand rather than by the generic registrations is what this catches
+  (`vg_rsa_private_checked_ifma` calling `vg_rsa_public_precomputed_checked_adx`,
+  its variant's `pubOp`, when `vg_rsa_public_precomputed_checked_ifma`
+  needs only its features). The implementation `g` calls need not be the
+  best itself: a caller generic over several interfaces has a variant for
+  each combination (`…_sha224_shani` calls SHA-1's baseline,
+  `…_sha224_shani_mgf1_shani` its `_shani`), and the Rust code chooses
+  among them. A variant calling the function it is a variant of is exempt,
+  as above.
 
 See "An optimized implementation reaches everything built on it" in
 CLAUDE.md.
@@ -60,6 +75,11 @@ FN = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 SYM = re.compile(r"\w+ = sym (?:\w+::)*(vg_\w+)")
+FEATURES = re.compile(
+    r"^pub\(crate\) const (VG_\w+)_FEATURES: crate::cpu::Features = "
+    r"crate::cpu::Features::of\(&\[(.*?)\]\);",
+    re.MULTILINE,
+)
 
 
 def functions():
@@ -70,6 +90,17 @@ def functions():
         for m in FN.finditer(path.read_text()):
             name, params, ret, body = m.groups()
             fns[name] = ((params, (ret or "").strip()), set(SYM.findall(body)))
+    return targets
+
+
+def features():
+    """For each target, the CPU features each generated function needs, by
+    its name (functions that need none are left out)."""
+    targets = {}
+    for path in sorted(ASM.glob("*/*.rs")):
+        feats = targets.setdefault(path.parent.name, {})
+        for m in FEATURES.finditer(path.read_text()):
+            feats[m.group(1).lower()] = frozenset(re.findall(r'"(\w+)"', m.group(2)))
     return targets
 
 
@@ -353,10 +384,11 @@ def production_rust(src):
         " ".join(strip_tests(toks[p])) for p in paths if p not in test_only
     )
 
-def check(targets, rust):
+def check(targets, rust, feats=None):
     errors = []
     for target, fns in sorted(targets.items()):
         var = variants(fns)
+        errors += best_callees(target, fns, var, (feats or {}).get(target, {}))
         by_base = {}
         for v, (base, suffix) in var.items():
             by_base.setdefault(base, []).append(suffix)
@@ -442,8 +474,43 @@ def check(targets, rust):
     return errors
 
 
+def best_callees(target, fns, var, feats):
+    """The errors of "Callers reach the best callee", for one target."""
+    def need(name):
+        return feats.get(name, frozenset())
+
+    family = {}
+    for name in fns:
+        family.setdefault(chain(var, name)[0], []).append(name)
+    errors, seen = [], set()
+    for caller, (_, callees) in sorted(fns.items()):
+        root = chain(var, caller)[0]
+        for callee in sorted(callees):
+            if callee not in fns:
+                continue
+            croot = chain(var, callee)[0]
+            if croot == root:
+                continue  # a variant calling its baseline
+            for better in sorted(family[croot]):
+                if not need(callee) < need(better) <= need(caller) or (root, better) in seen:
+                    continue
+                if any(
+                    any(f in fns[h][1] and need(f) >= need(better) for f in family[croot])
+                    for h in family[root]
+                ):
+                    continue
+                seen.add((root, better))
+                errors.append(
+                    f"{target}: {caller} (features {', '.join(sorted(need(caller))) or 'none'}) "
+                    f"calls {callee}, but no implementation of {root} calls {better}, which "
+                    f"needs only features {caller} has ({', '.join(sorted(need(better)))}): "
+                    f"call it from the implementation for those features"
+                )
+    return errors
+
+
 def main():
-    errors = check(functions(), production_rust(ROOT / "src"))
+    errors = check(functions(), production_rust(ROOT / "src"), features())
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

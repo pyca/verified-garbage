@@ -112,6 +112,48 @@ class Flow(unittest.TestCase):
 
 
 
+class BestCallee(unittest.TestCase):
+    # `f` has `f_a` (feature a) and `f_ab` (a and b); `g` has `g_ab`, which
+    # needs a and b.
+    BASE = {"vg_f": [], "vg_f_a": [], "vg_f_ab": [], "vg_g": ["vg_f"]}
+    FEATS = {"x": {"vg_f_a": frozenset("a"), "vg_f_ab": frozenset("ab"), "vg_g_ab": frozenset("ab")}}
+    RUST = "vg_g vg_g_ab vg_f_a"
+
+    def check(self, **calls):
+        return check_variants.best_callees("x", fns(dict(self.BASE, **calls))["x"],
+                                           check_variants.variants(fns(dict(self.BASE, **calls))["x"]),
+                                           self.FEATS["x"])
+
+    def test_calls_the_best(self):
+        self.assertEqual(self.check(vg_g_ab=["vg_f_ab"]), [])
+
+    def test_calls_a_lesser_variant(self):
+        errors = self.check(vg_g_ab=["vg_f_a"])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("x: vg_g_ab (features a, b) calls vg_f_a, but no implementation of vg_g "
+                      "calls vg_f_ab", errors[0])
+
+    def test_another_combination_calls_it(self):
+        # `g_ab` calls `f_a`, but `g_ab_x`, which needs no more, calls `f_ab`.
+        self.assertEqual(self.check(vg_g_ab=["vg_f_a"], vg_g_ab_x=["vg_f_ab"]), [])
+
+    def test_needs_more_than_the_caller(self):
+        # `f_ab` needs b, which `g_a` does not have.
+        feats = dict(self.FEATS["x"], vg_g_a=frozenset("a"))
+        calls = dict(self.BASE, vg_g_a=["vg_f_a"])
+        self.assertEqual(check_variants.best_callees("x", fns(calls)["x"],
+                                                     check_variants.variants(fns(calls)["x"]), feats), [])
+
+    def test_variant_calling_its_baseline(self):
+        # `f_ab` calls the baseline `f` for a tail: exempt.
+        self.assertEqual(self.check(vg_f_ab=["vg_f"], vg_g_ab=["vg_f_ab"]), [])
+
+    def test_through_check(self):
+        calls = dict(self.BASE, vg_g_ab=["vg_f_a"])
+        errors = check_variants.check(fns(calls), self.RUST, self.FEATS)
+        self.assertTrue(any("no implementation of vg_g calls vg_f_ab" in e for e in errors))
+
+
 class Qualified(unittest.TestCase):
     # A caller of two interfaces whose variants share the suffix `a`: `h`
     # (with `h_a`) and `f` (with `f_a`), its instances qualified by the tags

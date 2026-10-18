@@ -78,7 +78,10 @@ Lake rebuilds your changes and anything not yet cached.
   `ci/check_variants.py` checks the generated code: each caller of a
   function with a variant has that variant, which calls it or does its work
   itself but never calls the baseline (a helper needs none if its callers'
-  variants all do its work themselves), and each variant is used by the
+  variants all do its work themselves), some implementation of each caller
+  calls every implementation of its callee whose features the caller has
+  but the one it calls lacks (a variant chosen by hand, such as a field
+  naming the callee, still follows the features), and each variant is used by the
   Rust code outside its tests (never emit one only a test calls). There are
   no exceptions: never add a caller that calls only the baseline
   implementation, or a way to excuse one.
