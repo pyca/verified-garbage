@@ -325,10 +325,10 @@ theorem stream_wp (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) {st : State}
 /-- `vg_aes_gcm_seal_gather`: `fast` for a text shorter than `q` bytes (as
 `quick` sets `CF`), and otherwise `short` when
 `test` sets `CF` (to `go`), and otherwise `I`, `A`, `T` and `F`. -/
-theorem sealGatherG_wp {q : Nat} {quick fast test short : Prog isa} {go : Bool}
+theorem sealGatherG_wp {quick fast test short : Prog isa} {qgo go : Bool}
     (hquick : ∀ st, E2 s st → WP isa quick st fun st' =>
-      E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (L s < q)))
-    (hfast : L s < q → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s))
+      E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some qgo)
+    (hfast : qgo = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s))
     (htest : ∀ st, E2 s st → WP isa test st fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some go)
     (hshort : go = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa short st (Done s))
     (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
@@ -336,7 +336,7 @@ theorem sealGatherG_wp {q : Nat} {quick fast test short : Prog isa} {go : Bool}
   unfold sealGather gatherRest
   refine WP.seq (WP.mono (entry1_ok hp) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
     WP.seq (WP.mono (hquick _ h₂) fun σ ⟨E₀, r₀, c₀⟩ => ?_)))
-  refine WP.ite (decide (L s < q)) (by simp only [eval, c₀]) (fun e => hfast (by simpa using e) σ E₀ r₀)
+  refine WP.ite qgo (by simp only [eval, c₀]) (fun e => hfast e σ E₀ r₀)
     (fun _ => WP.seq (WP.mono (htest _ E₀) fun st ⟨E, r11, cf⟩ => ?_))
   exact WP.ite go (by simp only [eval, cf]) (fun e => hshort e st E r11) (fun _ => stream_wp hp I A T F E)
 

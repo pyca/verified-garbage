@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Tls
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
@@ -54,20 +54,21 @@ of the arguments, which two runs with the same public data agree on, and the
 code it runs then, with what correctness, constant time and the static facts
 need of them. -/
 structure ShortFn (M : CtxMode) where
-  q : Nat
   quick : Prog isa
+  qgo : State → Bool
+  hqgo : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → qgo s₀' = qgo s₀
   quickWp : ∀ {s : State}, SG M s → ∀ st, E2 s st → WP isa quick st fun st' =>
-    E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (L s < q))
+    E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (qgo s)
   quickRel : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' →
     RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) quick fun s₁ s₂ =>
-      (E2 s₀ s₁ ∧ s₁.gpr .r11 = W s₀ ∧ s₁.cf = some (decide (L s₀ < q))) ∧
-      (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (decide (L s₀' < q)))
+      (E2 s₀ s₁ ∧ s₁.gpr .r11 = W s₀ ∧ s₁.cf = some (qgo s₀)) ∧
+      (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (qgo s₀'))
   quickMx : quick.allInstrs (fun i => !loadsMxcsr i) = true
   quickSp : quick.all (fun i => !X86_64.isa.writesSp i) = true
   quickXd : quick.x86_64Depth ≤ 4888
   fast : Prog isa
-  fastWp : ∀ {s : State}, SG M s → L s < q → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s)
-  fastRel : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → L s₀ < q → ∀ {σ₁ σ₂ : State},
+  fastWp : ∀ {s : State}, SG M s → qgo s = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s)
+  fastRel : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → qgo s₀ = true → ∀ {σ₁ σ₂ : State},
     E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) fast TT
   fastMx : fast.allInstrs (fun i => !loadsMxcsr i) = true
   fastSp : fast.all (fun i => !X86_64.isa.writesSp i) = true
@@ -104,17 +105,18 @@ least `ts` bytes, and otherwise copied whole to the output and sealed there
 by `Se` (`vg_aes_gcm_seal`). -/
 def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (ht : t < 2 ^ 31) (hts : 1 ≤ ts)
     (htt : ts + 16 ≤ t) : ShortFn M where
-  q := ts
   quick := .block (quickTest ts)
+  qgo s := decide (L s < ts)
+  hqgo := fun _ _ pb => by simp only [pb.eL]
   quickWp := fun hp _ h => w_quick hp (by omega) h
   quickRel := fun hp hp' pb => quick_rel hp hp' pb (by omega)
   quickMx := rfl
   quickSp := rfl
   quickXd := Nat.zero_le _
   fast := copySeal Se.fn
-  fastWp := fun hp e st E r11 => sealShort_wp hp Se ht (by simp only [decide_eq_true_eq]; omega) st E r11
+  fastWp := fun hp e st E r11 => sealShort_wp hp Se ht (by simp only [decide_eq_true_eq] at e ⊢; omega) st E r11
   fastRel := fun hp hp' pb e _ _ E₁ r₁ E₂ r₂ => sealShort_rel Se hp hp' pb
-    (by simp only [decide_eq_true_eq]; omega) ht E₁ r₁ E₂ r₂
+    (by simp only [decide_eq_true_eq] at e ⊢; omega) ht E₁ r₁ E₂ r₂
   fastMx := by
     simp only [copySeal, gatherCopy, copy, Code.allInstrs, Se.mx, Bool.true_and, Bool.and_true]
     rfl
@@ -173,6 +175,35 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
       X86_64.Instr.frameBytes, List.length_cons, List.length_nil, Nat.max_le]
     omega
 
+/-- `ShortFn.ofBoth`, but a TLS record's text (`tlsTest long fill`) sealed
+from its first slice by `Sp` first, at any length. -/
+def ShortFn.ofTls {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) (long fill : Bool) {t ts : Nat} (ht : t < 2 ^ 31)
+    (hts : 1 ≤ ts) (htt : ts + 16 ≤ t) : ShortFn M :=
+  { ShortFn.ofBoth Se Sp ht hts htt with
+    quick := tlsTest long fill
+    qgo := tlsGo long fill
+    hqgo := fun _ _ pb => pb.eTls long fill
+    quickWp := fun hp _ h => tlsTest_wp hp long fill h
+    quickRel := fun hp hp' pb => tlsTest_rel hp hp' pb long fill
+    quickMx := tlsTest_mx long fill
+    quickSp := tlsTest_spAll long fill
+    quickXd := by rw [tlsTest_xdepth]; exact Nat.zero_le _
+    fast := copySplit Sp.fn
+    fastWp := fun hp e _ E r11 => copySplit_wp hp Sp (tls_sub hp e) E.1 r11 E.2.2.1 E.2.2.2.1
+    fastRel := fun hp hp' pb e _ _ E₁ r₁ E₂ r₂ => copySplit_rel hp hp' pb Sp (tls_sub hp e) E₁.1 r₁ E₁.2.2.1
+      E₁.2.2.2.1 E₂.1 r₂ E₂.2.2.1 E₂.2.2.2.1
+    fastMx := by
+      simp only [copySplit, gatherCopy, copy, Code.allInstrs, Sp.mx, Bool.true_and, Bool.and_true]
+      rfl
+    fastSp := by
+      simp only [copySplit, gatherCopy, copy, Code.all, Sp.spAll, Bool.true_and, Bool.and_true]
+      rfl
+    fastXd := by
+      have s₁ := Sp.xd
+      simp only [copySplit, gatherCopy, copy, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
+        List.length_nil, Nat.max_le]
+      omega }
+
 section
 variable {M : CtxMode} (Sh : ShortFn M) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
 
@@ -204,7 +235,7 @@ theorem sealGather_correct (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).
     ∃ tr s', Exec isa (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn) s tr s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.sealGatherPostG s s' := by
   have hp := SG.ofM hs
-  obtain ⟨tr, s', he, hg, hpo⟩ := sealGatherG_wp hp (go := Sh.go s) (fun _ h => Sh.quickWp hp _ h)
+  obtain ⟨tr, s', he, hg, hpo⟩ := sealGatherG_wp hp (qgo := Sh.qgo s) (go := Sh.go s) (fun _ h => Sh.quickWp hp _ h)
     (fun e st E r11 => Sh.fastWp hp e st E r11) (fun st h => Sh.testWp hp st h)
     (fun e st E r11 => Sh.wp hp e st E r11) I A T F
   exact ⟨tr, s', he, abiPreserved_of_exec (sealGather_mx Sh I A T F) he hg, hpo⟩
@@ -212,7 +243,7 @@ theorem sealGather_correct (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).
 theorem sealGather_ct :
     ConstantTime isa (Proof.AesGcm.sealGatherX86_64M M).pre Proof.AesGcm.sealGatherPub
       (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn) :=
-  sealGatherG_ct Sh.go Sh.hgo Sh.quickRel Sh.fastRel Sh.testRel Sh.rel I A T F
+  sealGatherG_ct Sh.qgo Sh.go Sh.hqgo Sh.hgo Sh.quickRel Sh.fastRel Sh.testRel Sh.rel I A T F
 
 end
 

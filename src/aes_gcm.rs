@@ -21,13 +21,17 @@
 //! [`AesGcm::encrypt`] encrypts out of place, from a plaintext in pieces (a
 //! list of slices, such as a record's header and payload, or a single one)
 //! into one output buffer. Usually this is one call of `vg_aes_gcm_seal_gather`
-//! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is.
-//! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD and a long
-//! plaintext, it is instead one call of `vg_aes_gcm_seal_split_prepared`
-//! (`VG.Spec.Gcm.sealSplitPreparedContract`) for one piece, or for a piece
-//! and a second one ending at most 16 bytes after the first's whole blocks
-//! (a TLS record and its content type), copied to the end of the output
-//! first.
+//! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is;
+//! with a prepared key, of `vg_aes_gcm_seal_gather_prepared`, which seals a
+//! TLS record (a 96-bit nonce, at most 16 bytes of AAD, and a piece and
+//! what ends at most 16 bytes after its whole blocks) from its first piece
+//! by `vg_aes_gcm_seal_split_prepared`
+//! (`VG.Spec.Gcm.sealSplitPreparedContract`). On 256-bit registers, a
+//! record of a multiple of 16 blocks from 2048 bytes on, whose last block
+//! the first piece starts and the second fills, is one call of
+//! `vg_aes_gcm_seal_split_prepared` for the first piece up to its last
+//! whole group of 16 blocks, the rest of it and the second piece copied to
+//! the end of the output first.
 //!
 //! # Tags
 //!
@@ -1169,70 +1173,40 @@ impl AesGcm {
         }
     }
 
-    /// `encrypt` of one long piece, or of a long piece and one that ends at
-    /// most 16 bytes after its whole blocks, with the key context with the
-    /// powers if it is ready: one call of `vg_aes_gcm_seal_split_prepared`,
-    /// after the second piece is copied to the end of `out`. For a 96-bit nonce and at most 16 bytes of
-    /// additional data (a TLS record), it absorbs the additional data with
-    /// the prepared `H` and takes no other call before the interleaved loop.
+    /// `encrypt` of a TLS record (a 96-bit nonce, at most 16 bytes of
+    /// additional data, and a payload and the content type) of a multiple
+    /// of 16 blocks from 2048 bytes on, whose last block the payload starts
+    /// and the content type fills, on 256-bit registers, with the key
+    /// context with the powers if it is ready: one call of
+    /// `vg_aes_gcm_seal_split_prepared` for the payload up to its last whole
+    /// group of 16 blocks (`cut`), after the rest of it and the content type
+    /// are copied to `out`, where it seals them as one group (2048 bytes:
+    /// 1–4% faster than the gathering; 4096: 6–8%; 16384: 2–5% faster than
+    /// sealing all the payload's whole blocks where they are, which
+    /// `seal_split` does in groups of 16 and then the last block alone).
+    /// The gathering takes every other message.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     #[inline(always)]
-    fn seal_split_prepared(
+    fn seal_cut_prepared(
         &self,
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Option<Block> {
-        use crate::arch::gcm::{
-            vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,
-            vg_aes_gcm_seal_split_prepared_vaes_vpclmul,
-            vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
-        };
-        // `seal_split` reads `src`'s whole blocks where they are, and ends
-        // without another call when at most 16 bytes are left after them:
-        // with a second piece, only for those shapes (a TLS record's
-        // payload and content type); the gathering takes the others.
-        if nonce.len() != 12 || aad.len() > 16 {
+        use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul;
+        if nonce.len() != 12 || aad.len() > 16 || out.len() < 2048 || !out.len().is_multiple_of(256)
+        {
             return None;
         }
-        let (src, rest): (&[u8], &[u8]) = match plaintext {
-            [a] => (a, &[]),
-            [a, b] if a.len() % 16 + b.len() <= 16 => (a, b),
-            _ => return None,
+        let [src, rest] = plaintext else {
+            return None;
         };
-        // A message of `POWERS_MIN_LEN` bytes or more whose first piece is
-        // shorter: the gathering's path for TLS records, which takes it
-        // whole, seals it faster (a 256-byte TLS record, of a 255-byte
-        // payload: 22% faster on Zen 3, with AES-NI and AVX).
-        if src.len() < POWERS_MIN_LEN && src.len() + rest.len() >= POWERS_MIN_LEN {
+        if src.len() % 16 == 0 || src.len() % 16 + rest.len() > 16 {
             return None;
         }
-        // A record of a multiple of 16 blocks whose last block `src` starts
-        // and the second piece fills.
-        let fills = src.len() % 16 != 0 && (src.len() + rest.len()) % 256 == 0;
         let split = match self.backend {
-            // On 512-bit registers from `POWERS_MIN_LEN` bytes on: the short
-            // path of the gathering is faster for less.
-            Backend::VaesVpclmulAvx512 if src.len() >= POWERS_MIN_LEN => {
-                vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512
-            }
-            // On 128- and 256-bit ones at any length, whose path for TLS
-            // records is faster than the others' at every length, but for a
-            // record of a multiple of 16 blocks whose last block `src` starts
-            // and the second piece fills, on 256-bit ones: `seal_split` seals
-            // `src`'s whole blocks in groups of 16 and then that block alone.
-            // Up to 1024 bytes the gathering, which seals blocks in whole
-            // groups, is faster (a 1024-byte TLS record, of a 1023-byte
-            // payload: 31–36%); from 2048 bytes on, `seal_split` of `src` up
-            // to its last whole group (`cut`) is, with the rest of the
-            // record sealed in place as one group (2048 bytes: 1–4% faster
-            // than the gathering; 4096: 6–8%; 16384: 2–5% faster than all of
-            // `src`'s whole blocks).
-            Backend::VaesVpclmul if !fills || src.len() + rest.len() >= 2048 => {
-                vg_aes_gcm_seal_split_prepared_vaes_vpclmul
-            }
-            Backend::AesNiPclmulAvx => vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,
+            Backend::VaesVpclmul => vg_aes_gcm_seal_split_prepared_vaes_vpclmul,
             Backend::Scalar
             | Backend::AesNi
             | Backend::Pclmul
@@ -1242,19 +1216,13 @@ impl AesGcm {
             | Backend::VaesPclmul
             | Backend::AesNiVpclmul
             | Backend::VaesVpclmulAvx512
-            | Backend::VaesVpclmul => return None,
+            | Backend::AesNiPclmulAvx => return None,
         };
         let ctx = self.powers.ctx.load(Ordering::Acquire);
         if ctx.is_null() {
             return None;
         }
-        // `seal_split` of `src` up to `cut`, the rest of it copied to `out`
-        // with the second piece and sealed there.
-        let cut = if fills && self.backend == Backend::VaesVpclmul {
-            src.len() / 256 * 256
-        } else {
-            src.len()
-        };
+        let cut = src.len() / 256 * 256;
         out[cut..src.len()].copy_from_slice(&src[cut..]);
         out[src.len()..].copy_from_slice(rest);
         let mut tag: Block = [0; 16];
@@ -1316,7 +1284,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(tag) = self.seal_split_prepared(nonce, aad, plaintext, out) {
+        if let Some(tag) = self.seal_cut_prepared(nonce, aad, plaintext, out) {
             return Ok(tag);
         }
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -1333,11 +1301,11 @@ impl AesGcm {
             d.write([p.as_ptr() as usize, p.len()]);
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
-        // Shorter messages, once the powers are ready, only on 512-bit
-        // registers, where the gathering's short path reads them.
+        // Shorter messages once the powers are ready: the gathering chooses
+        // its path for every shape itself (a TLS record's by
+        // `vg_aes_gcm_seal_split_prepared` from the first piece).
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if (out.len() >= POWERS_MIN_LEN
-            || self.backend == Backend::VaesVpclmulAvx512 && self.powers.short_ready())
+        if (out.len() >= POWERS_MIN_LEN || self.powers.short_ready())
             && let Some(tag) = self.seal_gather_prepared(nonce, aad, src, plaintext.len(), out)
         {
             return Ok(tag);
@@ -2715,12 +2683,14 @@ mod tests {
                             if len < 17 {
                                 continue;
                             }
-                            // One piece (`seal_split_prepared`; on 512-bit
-                            // registers from 256 bytes); a second of 1 byte
-                            // (the same, a TLS 1.3 record's content type),
-                            // none (the same, a TLS 1.2 record's), 16 bytes
-                            // (the same when the first ends on a block), or
-                            // 17; three; empty
+                            // One piece (the gathering's path for TLS
+                            // records; on 512-bit registers from 256
+                            // bytes); a second of 1 byte (the same, a TLS
+                            // 1.3 record's content type, or on 256-bit
+                            // registers `seal_cut_prepared`), none (the
+                            // same, a TLS 1.2 record's), 16 bytes (the same
+                            // when the first ends on a block), or 17;
+                            // three; empty
                             // pieces around and between them (which AArch64
                             // copies as it does the others); and as many
                             // pieces as `encrypt` takes.
@@ -2741,6 +2711,10 @@ mod tests {
                             for pieces in ways {
                                 actual.fill(0);
                                 let tag = warm.encrypt(nonce, aad, pieces, &mut actual).unwrap();
+                                assert_eq!((&actual, tag), (&want, want_tag));
+                                // A key without the powers yet.
+                                actual.fill(0);
+                                let tag = fresh.encrypt(nonce, aad, pieces, &mut actual).unwrap();
                                 assert_eq!((&actual, tag), (&want, want_tag));
                             }
                         }

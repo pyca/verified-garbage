@@ -260,6 +260,28 @@ def lenTestQ (q : Nat) (last : List Instr) : Prog isa :=
 /-- `CF` if the text takes the short path. -/
 def splitTest (t : Nat) : Prog isa := lenTestQ t (splitLast t)
 
+/-- `CF` if the text is a TLS record's, which `vg_aes_gcm_seal_split` seals
+fastest from its first slice (of length `a`, in `r10`; 0 if there is none):
+the nonce of 12 bytes, at most 16 bytes of additional data, at most 16 bytes
+of text after the whole blocks of the first slice, and the first slice at
+least 256 bytes long, if `long`, or else if the text is; and, if `fill`, not
+a multiple of 256 bytes whose last block the first slice starts and the
+slices after it fill. Each test leaves `r8` as it was or makes it nonzero
+(`r8` starts at `nonce_len - 12`); `CF` if it is still 0. -/
+def tlsLast (long fill : Bool) : List Instr :=
+  [.mov .r8 (.reg .rdx), .alu .sub .r8 (imm 12),
+    .mov .rax (.mem (at_ .r11 gAlen)), .alu .cmp .rax (imm 17), .cmov .ae .r8 (.reg .rax),
+    .mov .rax (.mem (at_ .r11 gLen)), .mov .r9 (.reg .r10), .alu .and .r9 (imm (2 ^ 32 - 16)),
+    .alu .sub .rax (.reg .r9), .alu .cmp .rax (imm 17), .cmov .ae .r8 (.reg .rax),
+    .mov .rax (.mem (at_ .r11 gLen)), .alu .or .rax (imm (if long then 256 else 0)), .shift .shr .rax 8,
+    .alu .cmp .r10 (imm 256), .cmov .ae .rax (.reg .r8), .alu .or .r8 (.reg .rax),
+    .mov .rax (.mem (at_ .r11 gLen)), .alu .and .rax (imm (if fill then 255 else 2 ^ 32 - 1)),
+    .alu .and .r10 (imm 15), .alu .test .rax (.reg .rax), .cmov .ne .r10 (.reg .r8), .alu .or .r8 (.reg .r10),
+    .alu .cmp .r8 (imm 1)]
+
+/-- `CF` if the text is a TLS record's (`tlsLast long fill`). -/
+def tlsTest (long fill : Bool) : Prog isa := lenTest (tlsLast long fill)
+
 /-- `CF` unless the first slice holds all the whole blocks and at least `ts`
 bytes (for `ts ≥ 1`). -/
 def selLast (ts : Nat) : List Instr :=

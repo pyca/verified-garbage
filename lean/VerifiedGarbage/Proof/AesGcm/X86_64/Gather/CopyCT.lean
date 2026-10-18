@@ -141,13 +141,14 @@ end
 bytes (as `quick` sets `CF`), and otherwise `short` when `test` sets `CF` (to
 `go` of the arguments, which two runs with the same public data agree on), is
 constant time, if `quick`, `fast`, `test` and `short` are. -/
-theorem sealGatherG_ct {M : CtxMode} {q : Nat} {quick fast test short : Prog isa} (go : State → Bool)
+theorem sealGatherG_ct {M : CtxMode} {quick fast test short : Prog isa} (qgo go : State → Bool)
+    (hqgo : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → qgo s₀' = qgo s₀)
     (hgo : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → go s₀' = go s₀)
     (hquick : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' →
       RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) quick fun s₁ s₂ =>
-        (E2 s₀ s₁ ∧ s₁.gpr .r11 = W s₀ ∧ s₁.cf = some (decide (L s₀ < q))) ∧
-        (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (decide (L s₀' < q))))
-    (hfast : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → L s₀ < q → ∀ {σ₁ σ₂ : State},
+        (E2 s₀ s₁ ∧ s₁.gpr .r11 = W s₀ ∧ s₁.cf = some (qgo s₀)) ∧
+        (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (qgo s₀')))
+    (hfast : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → qgo s₀ = true → ∀ {σ₁ σ₂ : State},
       E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) fast TT)
     (htest : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' →
       RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) test fun s₁ s₂ =>
@@ -163,15 +164,16 @@ theorem sealGatherG_ct {M : CtxMode} {q : Nat} {quick fast test short : Prog isa
   have hp' := SG.ofM h'
   have pb := Pub.of hq
   have eg := hgo hp hp' pb
+  have eq := hqgo hp hp' pb
   unfold sealGather gatherRest
   refine RelCT.seq (entry1_rel hp hp' pb) (RelCT.seq (entry2_rel hp hp' pb) (RelCT.seq (hquick hp hp' pb)
-    (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, pb.eL]) ?_
+    (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, eq]) ?_
       ((RelCT.seq (htest hp hp' pb)
         (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, eg]) ?_
           ((stream_rel hp hp' pb I A T F).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))).mono
         (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))))
   · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
-    have e : L s₀ < q := by simp only [eval, c₁] at ev; simpa using ev
+    have e : qgo s₀ = true := by simp only [eval, c₁] at ev; simpa using ev
     exact hfast hp hp' pb e E₁ r₁ E₂ r₂
   refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
   have e : go s₀ = true := by simp only [eval, c₁] at ev; simpa using ev
