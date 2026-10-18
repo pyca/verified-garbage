@@ -456,4 +456,14 @@ theorem em_vp (P : EP) :
     (VP.assoc (VP.seq (em4_vp h P) (VP.assoc (VP.seq (em5_vp h P) ((em6_vp h P).mono (fun _ _ h => h)
       fun σ s ⟨he0, he⟩ => ⟨he0, e5_emAt h he0.2.2 he⟩)))))))))
 
+/-! ## `EM` masked -/
+
+/-- `EM` masked, as the specification has it. -/
+abbrev emB (g : OHash) (P : EP) (σ : State) : List Byte :=
+  Proof.RsaOaep.emOf g.G h.H.D P.K P.ml (seedB h P σ) (lhB h P σ) (msgB P σ)
+
+/-- A state of the body with `EM` masked at `scratch + oEm`. -/
+abbrev E1 (g : OHash) (P : EP) (σ s : State) : Prop :=
+  E0 h P σ s ∧ ∀ i < P.K, emV P.scr s.mem i = (emB h g P σ).getD i 0
+
 end VG.Proof.RsaOaep.Arm.Enc
