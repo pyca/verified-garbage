@@ -26,6 +26,12 @@ def sample : Sig where
   count: usize) -> u64"
 #guard ({ params := [] } : Sig).rust == "()"
 
+-- `u16` elements: 2 bytes, printed as Rust's `u16`.
+#guard Elem.size .u16 == 2
+#guard (Elem.array .u16 256).size == 512
+#guard ({ params := [("p", .array true .u16 256), ("q", .slice false .u16 "n")] } : Sig).rust ==
+  "(p: *mut [u16; 256], q: *const u16, n: usize)"
+
 #guard (sample.words 64).map (·.bits 64) == [64, 32, 64, 64, 64, 64, 64, 64, 64, 64, 64]
 #guard (sample.words 32).map (·.bits 32) == [64, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
 
