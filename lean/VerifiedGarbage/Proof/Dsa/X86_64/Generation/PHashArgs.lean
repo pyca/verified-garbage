@@ -29,6 +29,26 @@ theorem seedInputArgs_ok {s : State} {F S rp op : Addr} {offset j : Nat}
   change BitVec.ofNat 64 offset + BitVec.signExtend 64 (BitVec.ofNat 32 j) = _
   rw [sx_ofNat hj, BitVec.ofNat_add]
 
+/-- Switch from the original seed to the wrapped-seed buffer without
+changing any other hash-frame slot or scratch byte. -/
+theorem useWrappedSeed_ok {s : State} {F S op : Addr}
+    (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep s.mem F S V W) (hop : W 3 = op) :
+    WP isa (.block Impl.Dsa.X86_64.Generation.useWrappedSeed) s fun t =>
+      Rep t.mem F S V (upd W 27 op) ∧
+      Outside F sLab 8 s.mem t.mem ∧ Keep [.rax] s t := by
+  refine WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.mem = s.mem.writeW (off F sLab) op) (by
+    xrun [Impl.Dsa.X86_64.Generation.useWrappedSeed, ea_sp, L.rsp,
+      L.ld (d := 24) (by decide), L.st (d := sLab) (by decide),
+      R.slot (d := 24) (k := 3) rfl (by decide) hop]) rfl)
+    fun t ⟨hm, hk⟩ => ?_
+  refine ⟨?_, ?_, hk⟩
+  · rw [hm]
+    exact R.wf L.geo (by decide : 27 < nW) op
+  · rw [hm]
+    exact writeW_outside _ _ _ (by decide)
+
 /-- Place each digest in descending contribution order. -/
 theorem hashCopyArgs_ok {s : State} {F S op : Addr} {len count j : Nat}
     (hlen : len = 20 ∨ len = 32) (hcount : count ≤ 11)

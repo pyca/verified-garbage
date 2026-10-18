@@ -30,10 +30,11 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     WP isa (Impl.Dsa.X86_64.Generation.qCandidate G1 G256) s fun t =>
       Spec.Rsa.bytesAt t.mem op len =
         Spec.Dsa.encodeBE len (Spec.Dsa.qCandidate (8 * len) (Spec.Rsa.bytesAt s.mem rp len)) ∧
-      t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) := by
+      t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
+      Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem t.mem := by
   unfold Impl.Dsa.X86_64.Generation.qCandidate
-  refine WP.seq (WP.mono (seedHash_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
-    fun u ⟨Lu, rdu, wru, csu, V', Ru, _, hb⟩ => ?_)
+  refine WP.seq (WP.mono (seedHash_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
+    fun u ⟨Lu, rdu, wru, csu, hfu, V', Ru, _, hb⟩ => ?_)
   refine WP.seq (WP.mono (qArgs_ok Lu Ru hop A.hll) fun v ⟨hdi, hsi, hcx, hdx, hm, hk⟩ => ?_)
   let seed := Spec.Rsa.bytesAt s.mem rp len
   have hhash : (Spec.Dsa.seedHash (8 * len) seed).length = len := by
@@ -53,16 +54,20 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     simp [Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD, hi]
   refine WP.mono (qShape_ok hn (by rw [hhash]) hsi hdi (by rw [hhash]; exact hcx) hdx hread
     (fun i hi => by rw [hk.2.2, wru]; exact hout i (hhash ▸ hi)) hbytes
-    (fun i hi j hj => hsep i (hhash ▸ hi) j (hhash ▸ hj))) fun t ⟨ho, _, kt⟩ => ?_
+    (fun i hi j hj => hsep i (hhash ▸ hi) j (hhash ▸ hj))) fun t ⟨ho, hft, kt⟩ => ?_
   refine ⟨by simpa only [hhash] using ho, kt.2.1.trans (hk.2.1.trans rdu),
-    kt.2.2.trans (hk.2.2.trans wru), ?_⟩
-  intro r hr
-  have hr1 : r ∉ [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] := by
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  have hr2 : r ∉ [.rdi, .rsi, .rcx, .rdx] := by
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  exact (kt.gpr hr1).trans ((hk.gpr hr2).trans (csu r hr))
+    kt.2.2.trans (hk.2.2.trans wru), ?_, ?_⟩
+  · intro r hr
+    have hr1 : r ∉ [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] := by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have hr2 : r ∉ [.rdi, .rsi, .rcx, .rdx] := by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    exact (kt.gpr hr1).trans ((hk.gpr hr2).trans (csu r hr))
+  · intro a ha
+    rw [hft a (fun i hi he => ha ⟨op, len⟩ (by simp) (he ▸
+      Offset.contains_base op (by rw [hhash] at hi; omega) (by omega))), hm]
+    exact hfu a (fun r hr => ha r (by simp_all))
 
 end VG.Proof.Dsa.X86_64.Generation

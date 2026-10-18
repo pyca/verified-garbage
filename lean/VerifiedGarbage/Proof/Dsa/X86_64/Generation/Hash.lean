@@ -73,6 +73,42 @@ theorem hashTest_ok {s : State} {F S : Addr} (L : Lay s F S)
   exact sub_beq_zero (BitVec.ofNat 64 len) 20
 
 /-- SHA selection, hashing, and preservation for a supported DSA seed width. -/
+theorem seedHash_frame_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
+    (h1 : Calls.StreamOK G1) (h256 : Calls.StreamOK G256)
+    (he1 : ∀ x, Spec.Mgf1.sha1.hash x = h1.SH.H.hash x)
+    (he256 : ∀ x, Spec.Mgf1.sha256.hash x = h256.SH.H.hash x)
+    (hs1 : ∀ x, (Spec.Mgf1.sha1.hash x).length = G1.D)
+    (hs256 : ∀ x, (Spec.Mgf1.sha256.hash x).length = G256.D)
+    (hd1 : G1.D = 20) (hd256 : G256.D = 32)
+    {s : State} {F S rp : Addr} {len : Nat} (hlen : len = 20 ∨ len = 32)
+    (L : Lay s F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep s.mem F S V W) (A : LabAt s F S W rp len) :
+    WP isa (Impl.Dsa.X86_64.Generation.seedHash G1 G256) s fun t =>
+      Lay t F S ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
+      Frame [⟨S, oRsa⟩, retR F] s.mem t.mem ∧
+      ∃ V', Rep t.mem F S V' W ∧ (∀ x, ¬ inR (labR oDig) x → V' x = V x) ∧
+        Spec.Rsa.bytesAt t.mem (off S oDig) len =
+          Spec.Dsa.seedHash (8 * len) (Spec.Rsa.bytesAt s.mem rp len) := by
+  unfold Impl.Dsa.X86_64.Generation.seedHash
+  refine WP.seq (WP.mono (hashTest_ok L R A.hll) fun u ⟨hz, hm, hk⟩ => ?_)
+  have Lu : Lay u F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
+  have Ru : Rep u.mem F S V W := hm ▸ R
+  have Au : LabAt u F S W rp len := A.congr hk.2.1 hk.2.2 rfl rfl
+  have hcs : ∀ r ∈ calleeSaved, u.gpr r = s.gpr r := by
+    intro r hr
+    exact hk.gpr (by intro h; simp only [List.mem_singleton] at h; subst r; simp [calleeSaved] at hr)
+  rcases hlen with rfl | rfl
+  · refine WP.ite true (by simp [eval, hz]) (fun _ => ?_) (fun h => Bool.noConfusion h)
+    refine WP.mono (hash_bytes_frame h1 he1 hs1 Lu Ru Au) fun t ⟨Lt, rd, wr, cs, hframe, V', Rt, hf, hb⟩ => ?_
+    refine ⟨Lt, rd.trans hk.2.1, wr.trans hk.2.2, fun r hr => (cs r hr).trans (hcs r hr), (by simpa only [hm] using hframe), V', Rt, hf, ?_⟩
+    simpa only [hd1, hm, Spec.Dsa.seedHash, Nat.reduceMul, beq_self_eq_true, ite_true, Spec.Mgf1.sha1] using hb
+  · refine WP.ite false (by simp [eval, hz]) (fun h => Bool.noConfusion h) (fun _ => ?_)
+    refine WP.mono (hash_bytes_frame h256 he256 hs256 Lu Ru Au) fun t ⟨Lt, rd, wr, cs, hframe, V', Rt, hf, hb⟩ => ?_
+    refine ⟨Lt, rd.trans hk.2.1, wr.trans hk.2.2, fun r hr => (cs r hr).trans (hcs r hr), (by simpa only [hm] using hframe), V', Rt, hf, ?_⟩
+    simpa only [hd256, hm, Spec.Dsa.seedHash, Nat.reduceMul, show (256 == 160) = false from rfl,
+      Bool.false_eq_true, ite_false, Spec.Mgf1.sha256] using hb
+
 theorem seedHash_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (h1 : Calls.StreamOK G1) (h256 : Calls.StreamOK G256)
     (he1 : ∀ x, Spec.Mgf1.sha1.hash x = h1.SH.H.hash x)
@@ -89,23 +125,7 @@ theorem seedHash_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
       ∃ V', Rep t.mem F S V' W ∧ (∀ x, ¬ inR (labR oDig) x → V' x = V x) ∧
         Spec.Rsa.bytesAt t.mem (off S oDig) len =
           Spec.Dsa.seedHash (8 * len) (Spec.Rsa.bytesAt s.mem rp len) := by
-  unfold Impl.Dsa.X86_64.Generation.seedHash
-  refine WP.seq (WP.mono (hashTest_ok L R A.hll) fun u ⟨hz, hm, hk⟩ => ?_)
-  have Lu : Lay u F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
-  have Ru : Rep u.mem F S V W := hm ▸ R
-  have Au : LabAt u F S W rp len := A.congr hk.2.1 hk.2.2 rfl rfl
-  have hcs : ∀ r ∈ calleeSaved, u.gpr r = s.gpr r := by
-    intro r hr
-    exact hk.gpr (by intro h; simp only [List.mem_singleton] at h; subst r; simp [calleeSaved] at hr)
-  rcases hlen with rfl | rfl
-  · refine WP.ite true (by simp [eval, hz]) (fun _ => ?_) (fun h => Bool.noConfusion h)
-    refine WP.mono (hash_bytes h1 he1 hs1 Lu Ru Au) fun t ⟨Lt, rd, wr, cs, V', Rt, hf, hb⟩ => ?_
-    refine ⟨Lt, rd.trans hk.2.1, wr.trans hk.2.2, fun r hr => (cs r hr).trans (hcs r hr), V', Rt, hf, ?_⟩
-    simpa only [hd1, hm, Spec.Dsa.seedHash, Nat.reduceMul, beq_self_eq_true, ite_true, Spec.Mgf1.sha1] using hb
-  · refine WP.ite false (by simp [eval, hz]) (fun h => Bool.noConfusion h) (fun _ => ?_)
-    refine WP.mono (hash_bytes h256 he256 hs256 Lu Ru Au) fun t ⟨Lt, rd, wr, cs, V', Rt, hf, hb⟩ => ?_
-    refine ⟨Lt, rd.trans hk.2.1, wr.trans hk.2.2, fun r hr => (cs r hr).trans (hcs r hr), V', Rt, hf, ?_⟩
-    simpa only [hd256, hm, Spec.Dsa.seedHash, Nat.reduceMul, show (256 == 160) = false from rfl,
-      Bool.false_eq_true, ite_false, Spec.Mgf1.sha256] using hb
+  exact WP.mono (seedHash_frame_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 hlen L R A)
+    fun _ ⟨Lt, rd, wr, cs, _, rest⟩ => ⟨Lt, rd, wr, cs, rest⟩
 
 end VG.Proof.Dsa.X86_64.Generation
