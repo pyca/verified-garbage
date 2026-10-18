@@ -25,8 +25,9 @@ theorem pShapeArgs_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count plen : Nat)
       WP isa (.block (Impl.Dsa.X86_64.Generation.pShapeArgs len count plen)) s
         (PShapeReady len count plen p) := by
     intro p s h
-    obtain ⟨V, R⟩ := h.1.1.rep
-    exact WP.mono (pShapeArgs_ok h.1.1.layout R rfl p.plan.output_slot hn hl)
+    obtain ⟨⟨W, hw, hs, _⟩, _⟩ := h
+    obtain ⟨V, R⟩ := hs.rep
+    exact WP.mono (pShapeArgs_ok hs.layout R (hw 0 (by decide)) ((hw 4 (by decide)).trans p.plan.output_slot) hn hl)
       fun _ ⟨a, b, c, d, _, _⟩ => ⟨a, b, c, d⟩
   apply two_post (hw := args)
   apply RelCT.block_append (M := isa) (l₁ :=
@@ -39,7 +40,9 @@ theorem pShapeArgs_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count plen : Nat)
   · intro p s t hs ht r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact hs.1.1.layout.rsp.trans ht.1.1.layout.rsp.symm
+    obtain ⟨⟨_, _, hs, _⟩, _⟩ := hs
+    obtain ⟨⟨_, _, ht, _⟩, _⟩ := ht
+    exact hs.layout.rsp.trans ht.layout.rsp.symm
   · intro p s h
     have total := args p s h
     change WP isa (.block
@@ -47,8 +50,9 @@ theorem pShapeArgs_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count plen : Nat)
         .alu .add .rsi (.imm (BitVec.ofNat 32 ((count + 1) * len - plen)))] ++
        [.mov .rdi (.mem (Impl.Mgf1.X86_64.sp 0)), .mov32 .rcx (.imm plen),
         .mov32 .rdx (.imm (BitVec.ofNat 32 (8 * plen)))])) s _ at total
+    obtain ⟨⟨_, _, hs, _⟩, _⟩ := h
     exact WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rsi] (WP.block_append_iff.mp total) rfl)
-      fun t ⟨_, hk⟩ => (hk.gpr (by decide)).trans h.1.1.layout.rsp
+      fun t ⟨_, hk⟩ => (hk.gpr (by decide)).trans hs.layout.rsp
   · exact two_taint [.rsp] (by
       intro p s t hs ht r hr
       simp only [List.mem_singleton] at hr

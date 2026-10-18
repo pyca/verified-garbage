@@ -22,12 +22,14 @@ theorem hashStep_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       (Two (ContributionBefore n H (k + 1) len count)) := by
   refine two_post (pHashOne_ct hG n hn H hmatch hsize k len count k hlen hc hk) ?_
   intro p s h
-  have hd' : G.D = p.plan.len := hd.trans h.2.1.symm
-  have hk' : k ≤ p.plan.count := by rw [h.2.2]; exact hk
-  have hw := hashStep_ok hG hmatch hsize hd' hk' h.1.1
-  rw [h.2.1, h.2.2] at hw
-  exact WP.mono hw fun t ⟨ht, _, wr, _, _⟩ =>
-    ⟨⟨ht, h.1.2.congr (ht.layout.rsp.trans h.1.1.layout.rsp.symm) wr⟩, h.2⟩
+  obtain ⟨⟨W, hw, hs, hf⟩, he⟩ := h
+  have hd' : G.D = p.plan.len := hd.trans he.1.symm
+  have hk' : k ≤ p.plan.count := by rw [he.2]; exact hk
+  have step := hashStep_ok (p := p.plan.withWords W hw) hG hmatch hsize hd' hk' hs
+  rw [show (p.plan.withWords W _).len = len from he.1,
+    show (p.plan.withWords W _).count = count from he.2] at step
+  exact WP.mono step fun t ⟨ht, _, wr, _, _⟩ =>
+    ⟨⟨W, hw, ht, hf.congr (ht.layout.rsp.trans hs.layout.rsp.symm) wr⟩, he⟩
 
 theorem hashPrefix_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash)

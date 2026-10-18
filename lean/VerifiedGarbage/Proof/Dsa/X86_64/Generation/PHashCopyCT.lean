@@ -13,7 +13,7 @@ open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64
 
 def PHashCopyBefore (len count : Nat) (p : PHashPublic) (s : State) : Prop :=
-  Lay s p.plan.F p.plan.S ∧ (∃ V, Rep s.mem p.plan.F p.plan.S V p.plan.W) ∧
+  Lay s p.plan.F p.plan.S ∧ (∃ V W, Rep s.mem p.plan.F p.plan.S V W ∧ W 4 = p.plan.output) ∧
     p.plan.len = len ∧ p.plan.count = count
 
 def PHashCopyReady (len count j : Nat) (p : PHashPublic) (s : State) : Prop :=
@@ -26,22 +26,25 @@ theorem pSeedHash_copyReady {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.Strea
     {n k len count j : Nat} {p : PHashPublic} {s : State} (hj : j ≤ count)
     (h : ContributionBefore n H k len count p s) :
     WP isa (Impl.Dsa.X86_64.Generation.pSeedHash G len j) s (PHashCopyBefore len count p) := by
+  obtain ⟨⟨W, hw, hs, _⟩, hlenEq, hcountEq⟩ := h
+  let q := p.plan.withWords W hw
   have hlen := p.plan.size.2.1
-  have hjp : j ≤ p.plan.count := by rw [h.2.2]; exact hj
+  have hjp : j ≤ p.plan.count := by rw [hcountEq]; exact hj
   have hj' : j < 2 ^ 31 := by omega_using [p.plan.count_le, hjp]
-  obtain ⟨V, R⟩ := h.1.1.rep
+  obtain ⟨V, R⟩ := hs.rep
   have hs := pSeedHash_ok hG hmatch hsize (show p.plan.len < 2 ^ 31 by omega) hj'
     (show p.plan.offset + j < 2 ^ 32 by omega_using [p.plan.carry, hjp])
-    h.1.1.layout R h.1.1.hashArgs p.plan.seed_slot p.plan.wrapped_slot p.plan.offset_slot
-    h.1.1.seedRead h.1.1.wrappedWrite (by
+    hs.layout R hs.hashArgs q.seed_slot q.wrapped_slot q.offset_slot
+    hs.seedRead hs.wrappedWrite (by
       intro i hi l hl he
       have a : Region.Contains ⟨p.plan.seedPtr, p.plan.len⟩ (off p.plan.seedPtr i) 1 :=
         Offset.contains_base _ (by omega) (by omega)
       have b : Region.Contains ⟨p.plan.wrapped, p.plan.len⟩ (off p.plan.wrapped l) 1 :=
         Offset.contains_base _ (by omega) (by omega)
       exact p.plan.seed_wrap _ (he ▸ a) b) p.plan.wrapped_sep
-  rw [h.2.1] at hs
-  exact WP.mono hs fun _ ⟨L, _, _, _, _, R', _⟩ => ⟨L, R', h.2⟩
+  rw [hlenEq] at hs
+  exact WP.mono hs fun _ ⟨L, _, _, _, _, ⟨V, R'⟩, _⟩ =>
+    ⟨L, ⟨V, W, R', q.output_slot⟩, hlenEq, hcountEq⟩
 
 theorem hashCopyArgs_ct (len count j : Nat) (hlen : len = 20 ∨ len = 32) (hc : count ≤ 11) :
     RelCT isa (Two (PHashCopyBefore len count))
@@ -53,8 +56,8 @@ theorem hashCopyArgs_ct (len count j : Nat) (hlen : len = 20 ∨ len = 32) (hc :
     subst r
     exact hs.1.rsp.trans ht.1.rsp.symm
   · intro p s h
-    obtain ⟨V, R⟩ := h.2.1
-    exact WP.mono (hashCopyArgs_ok (j := j) hlen hc h.1 R p.plan.output_slot)
+    obtain ⟨V, W, R, hout⟩ := h.2.1
+    exact WP.mono (hashCopyArgs_ok (j := j) hlen hc h.1 R hout)
       fun _ ⟨a, b, c, d, _, _⟩ => ⟨a, b, c, d⟩
 
 theorem pHashOne_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
