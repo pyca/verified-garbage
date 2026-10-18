@@ -1219,7 +1219,11 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Option<Block> {
-        use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512;
+        use crate::arch::gcm::{
+            vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,
+            vg_aes_gcm_seal_split_prepared_vaes_vpclmul,
+            vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
+        };
         // `seal_split` reads `src`'s whole blocks where they are, and ends
         // without another call when at most 16 bytes are left after them:
         // with a second piece, only for those shapes (a TLS record's
@@ -1234,6 +1238,14 @@ impl AesGcm {
         };
         let split = match self.backend {
             Backend::VaesVpclmulAvx512 => vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
+            // The 256-bit one seals a last block that `src` starts and the
+            // second piece fills more slowly than the gathering does (a
+            // 1024-byte TLS record, of a 1023-byte payload: 22% slower), and
+            // every other shape faster.
+            Backend::VaesVpclmul if src.len() % 16 == 0 || src.len() % 16 + rest.len() < 16 => {
+                vg_aes_gcm_seal_split_prepared_vaes_vpclmul
+            }
+            Backend::AesNiPclmulAvx => vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx,
             Backend::Scalar
             | Backend::AesNi
             | Backend::Pclmul
@@ -1242,8 +1254,7 @@ impl AesGcm {
             | Backend::Vpclmul
             | Backend::VaesPclmul
             | Backend::AesNiVpclmul
-            | Backend::VaesVpclmul
-            | Backend::AesNiPclmulAvx => return None,
+            | Backend::VaesVpclmul => return None,
         };
         let ctx = self.powers.ctx.load(Ordering::Acquire);
         if ctx.is_null() {
@@ -2690,19 +2701,21 @@ mod tests {
                             );
                             assert_eq!(actual, want);
                             // One piece (`seal_split_prepared` from 256
-                            // bytes on); a second of 1 byte (the same), 16
-                            // bytes (the same when the first ends on a
-                            // block), or 17; three; empty pieces around and
-                            // between them (which AArch64 copies as it does
-                            // the others); and as many pieces as `encrypt`
-                            // takes.
+                            // bytes on); a second of 1 byte (the same, a TLS
+                            // 1.3 record's content type), none (the same, a
+                            // TLS 1.2 record's), 16 bytes (the same when the
+                            // first ends on a block), or 17; three; empty
+                            // pieces around and between them (which AArch64
+                            // copies as it does the others); and as many
+                            // pieces as `encrypt` takes.
                             let (a, b) = plain.split_at(len - 17);
                             let (b, c) = b.split_at(1);
                             let many: alloc::vec::Vec<&[u8]> =
                                 plain.chunks(len.div_ceil(AesGcm::MAX_PIECES)).collect();
-                            let ways: [&[&[u8]]; 7] = [
+                            let ways: [&[&[u8]]; 8] = [
                                 &[&plain],
                                 &[&plain[..len - 1], &plain[len - 1..]],
+                                &[&plain, &[]],
                                 &[&plain[..len - 16], &plain[len - 16..]],
                                 &[a, &plain[len - 17..]],
                                 &[a, b, c],
