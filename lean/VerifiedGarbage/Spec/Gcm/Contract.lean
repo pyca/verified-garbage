@@ -42,7 +42,7 @@ lengths (which are public): the caller checks the key length and the number of
 rounds (the preconditions), and the lengths of §5.2.1.1 (`supported`), which
 GCM needs to be secure but which concern a whole message, which a streaming
 caller gives in pieces. Only the length of a received tag is checked by the
-function given the tag, which rejects a length §5.2.1.2 does not allow
+function given the tag, which rejects lengths outside 4 through 16 bytes
 (`tagLenOk`) as it rejects a wrong tag: a tag of 0 bytes would accept any
 message.
 
@@ -53,7 +53,7 @@ message.
   is AES-GCM with its key (`encryptWith_ctx`, `decryptWith_ctx`).
 * `vg_aes_gcm_seal` is GCM-AE (`encryptWith`) with a 16-byte tag, and
   `vg_aes_gcm_open` GCM-AD (`decryptWith`) with a tag of any length
-  §5.2.1.2 allows; `open` decrypts only if the tag is right, and otherwise
+  `tagLenOk` allows; `open` decrypts only if the tag is right, and otherwise
   leaves the data as it was. Whether the tag is right is public: `open` may
   leak it (it is the result), and nothing else secret.
 * The streaming functions, on a state that `vg_aes_gcm_stream_init` starts
@@ -329,7 +329,7 @@ def openSig : Sig where
   ret := some .u32
 
 /-- What `vg_aes_gcm_open` computes: GCM-AD (`decryptWith`) for a tag of
-`tagLen` bytes, if §5.2.1.2 allows that length, and `none` (FAIL) if not. -/
+`tagLen` bytes, if `tagLenOk` allows that length, and `none` (FAIL) if not. -/
 def openResult (ciph : Block → Block) (h : Block) (tagLen : Nat) (iv c a tag : List Byte) :
     Option (List Byte) :=
   if tagLenOk tagLen then decryptWith ciph h tagLen iv c a tag else none
@@ -341,7 +341,7 @@ def openPre (pb : Nat) : Curry (openSig.words pb) (Mem → Prop) :=
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
 received tag the `tag_len` bytes at `tag`: if `tag_len` is a tag length
-§5.2.1.2 allows and the tag is that of the `len` bytes of ciphertext at
+`tagLenOk` allows and the tag is that of the `len` bytes of ciphertext at
 `data` and the `aad_len` bytes of additional data at `aad`, with the IV the
 `nonce_len` bytes at `nonce` (GCM-AD, `decryptWith`), the result is 1 and
 the plaintext is at `data`; otherwise the result is 0 and the bytes at
@@ -366,8 +366,8 @@ def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
       then 1 else 0]
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag the `tag_len` bytes at `tag`: if `tag_len` is a tag
-length §5.2.1.2 allows and the tag is that of the `len` bytes of ciphertext
+received tag the `tag_len` bytes at `tag`: if `tag_len` is a
+supported tag length and the tag is that of the `len` bytes of ciphertext
 at `data` and the `aad_len` bytes of additional data at `aad`, with the IV
 the `nonce_len` bytes at `nonce` (GCM-AD, `decryptWith`), returns 1 and
 leaves the plaintext at `data`; otherwise returns 0 and leaves the bytes at
@@ -387,8 +387,8 @@ def openApi : Api where
   contracts := some fun A stack => openContract A stack
   summary := "AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key \
     context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the \
-    `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 \
-    (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of \
+    `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 \
+    and the tag is the first `tag_len` bytes of that of the `len` bytes of \
     ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the \
     `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise \
     returns 0, and the bytes at `data` are unchanged. The tags are compared without a \
@@ -650,7 +650,7 @@ received tag the `tag_len` bytes at `tag`: if the streaming state at
 `state` represents a message with the IV `iv`, additional data `a` of
 `aad_len` bytes and the ciphertext `c` of `text_len` bytes (both modulo
 2⁶⁴), and `T` is its 16-byte tag (`fullTag`): the result is 1 if `tag_len`
-is a length §5.2.1.2 allows and the received tag is the first `tag_len`
+is a supported length and the received tag is the first `tag_len`
 bytes of `T` (§7.2 step 8), and 0 otherwise. -/
 def streamVerifyPost (pb : Nat) : streamVerifySig.Post pb :=
   fun ctx rounds state aadLen textLen tag tagLen m _ r =>
@@ -668,7 +668,7 @@ received tag the `tag_len` bytes at `tag`: if the streaming state at
 `state` represents a message with the IV `iv`, additional data `a` of
 `aad_len` bytes and the ciphertext `c` of `text_len` bytes (both modulo
 2⁶⁴), and `T` is its 16-byte tag (`fullTag`): returns 1 if `tag_len` is a
-length §5.2.1.2 allows and the received tag is the first `tag_len` bytes of
+supported length and the received tag is the first `tag_len` bytes of
 `T` (§7.2 step 8), and 0 otherwise. -/
 def streamVerifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamVerifySig.contract A (pre := streamVerifyPre A.ptrBits) (post := streamVerifyPost A.ptrBits)
@@ -686,8 +686,8 @@ def streamVerifyApi : Api where
     §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` \
     rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state \
     `*state` represents a message with `aad_len` bytes of additional data and exactly \
-    `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 \
-    (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit \
+    `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 \
+    and the received tag is the first `tag_len` bytes of the message's 128-bit \
     tag, and 0 otherwise. The tags are compared without a branch.\n\n\
     Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, \
     `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or \

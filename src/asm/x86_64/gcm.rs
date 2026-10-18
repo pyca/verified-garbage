@@ -2889,7 +2889,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -2947,32 +2947,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -2986,7 +2974,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -2994,12 +2982,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -3007,12 +2995,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -3023,9 +3011,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -3050,8 +3038,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -3060,7 +3048,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -3086,7 +3074,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -3094,12 +3082,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -3107,12 +3095,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -3123,14 +3111,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -3151,9 +3139,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -3165,7 +3153,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -3173,12 +3161,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -3186,12 +3174,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -3202,9 +3190,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -3251,21 +3239,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -3275,21 +3263,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -3300,7 +3288,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -3312,7 +3300,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -3320,11 +3308,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -3343,19 +3331,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -3365,22 +3353,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -4642,7 +4630,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -4685,30 +4673,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -4716,32 +4692,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -4751,12 +4727,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -4767,9 +4743,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -4817,21 +4793,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -4840,10 +4816,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -6694,7 +6670,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -6752,32 +6728,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -6791,7 +6755,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -6799,12 +6763,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -6812,12 +6776,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -6828,9 +6792,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -6855,8 +6819,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -6865,7 +6829,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -6891,7 +6855,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -6899,12 +6863,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -6912,12 +6876,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -6928,14 +6892,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -6956,9 +6920,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -6970,7 +6934,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -6978,12 +6942,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -6991,12 +6955,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -7007,9 +6971,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -7056,21 +7020,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -7080,21 +7044,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -7105,7 +7069,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -7117,7 +7081,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -7125,11 +7089,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -7148,19 +7112,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -7170,22 +7134,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -8455,7 +8419,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -8498,30 +8462,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -8529,32 +8481,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -8564,12 +8516,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -8580,9 +8532,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -8630,21 +8582,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -8653,10 +8605,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -15973,7 +15925,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -16031,32 +15983,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -16070,7 +16010,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -16078,12 +16018,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -16091,12 +16031,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -16107,9 +16047,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -16134,8 +16074,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -16144,7 +16084,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -16170,7 +16110,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -16178,12 +16118,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -16191,12 +16131,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -16207,14 +16147,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -16235,9 +16175,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -16249,7 +16189,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -16257,12 +16197,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -16270,12 +16210,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -16286,9 +16226,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -16335,21 +16275,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -16359,21 +16299,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -16384,7 +16324,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -16396,7 +16336,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -16404,11 +16344,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -16427,19 +16367,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -16449,22 +16389,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -17734,7 +17674,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -17777,30 +17717,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -17808,32 +17736,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -17843,12 +17771,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -17859,9 +17787,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -17909,21 +17837,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -17932,10 +17860,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -31269,51 +31197,39 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 cmp rbp, 12
-jne 210f
+jne 26f
 mov rcx, QWORD PTR [r15+184]
 cmp rcx, 17
-jae 212f
+jae 28f
 mov rcx, QWORD PTR [r15+208]
 cmp rcx, 256
-jb 214f
+jb 210f
 mov eax, 1
-jmp 215f
-214:
-215:
-jmp 213f
-212:
-213:
 jmp 211f
 210:
 211:
+jmp 29f
+28:
+29:
+jmp 27f
+26:
+27:
 test rax, rax
-je 216f
+je 212f
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -31338,11 +31254,11 @@ mov QWORD PTR [r14+16], rax
 mov QWORD PTR [r14+24], rax
 mov rcx, QWORD PTR [r15+184]
 test rcx, rcx
-je 218f
+je 214f
 cmp rcx, 5
-je 220f
+je 216f
 cmp rcx, 16
-je 222f
+je 218f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -31350,12 +31266,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, QWORD PTR [r15+232]
 mov r10d, 0
-224:
+220:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 224b
+jne 220b
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -31401,8 +31317,8 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-jmp 223f
-222:
+jmp 219f
+218:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
 movabs rax, 579005069656919567
@@ -31449,9 +31365,9 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-223:
-jmp 221f
-220:
+219:
+jmp 217f
+216:
 mov rsi, QWORD PTR [r15+232]
 mov eax, DWORD PTR [rsi]
 movzx r10d, BYTE PTR [rsi+4]
@@ -31502,15 +31418,15 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-221:
-jmp 219f
-218:
-219:
+217:
+jmp 215f
+214:
+215:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 225f
+je 221f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -31531,9 +31447,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 226f
-225:
-226:
+jmp 222f
+221:
+222:
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -31548,7 +31464,7 @@ movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 227f
+je 223f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -31558,12 +31474,12 @@ mov rdx, r15
 add rdx, 1040
 mov rcx, QWORD PTR [r15+208]
 mov r10d, 0
-229:
+225:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 229b
+jne 225b
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -31572,8 +31488,8 @@ mov rax, QWORD PTR [r15+192]
 shl rax, 3
 bswap rax
 mov QWORD PTR [r15+536], rax
-jmp 228f
-227:
+jmp 224f
+223:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -31582,7 +31498,7 @@ mov rax, QWORD PTR [r15+192]
 shl rax, 3
 bswap rax
 mov QWORD PTR [r15+536], rax
-228:
+224:
 movdqu xmm5, XMMWORD PTR [r14]
 movdqu xmm7, XMMWORD PTR [r14+48]
 mov rdi, r13
@@ -31624,7 +31540,7 @@ movdqu xmm8, XMMWORD PTR [rdi+144]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 cmp rsi, 10
-je 230f
+je 226f
 movdqu xmm8, XMMWORD PTR [rdi+160]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
@@ -31632,19 +31548,19 @@ movdqu xmm8, XMMWORD PTR [rdi+176]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 cmp rsi, 12
-je 232f
+je 228f
 movdqu xmm8, XMMWORD PTR [rdi+192]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 movdqu xmm8, XMMWORD PTR [rdi+208]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
-jmp 233f
-232:
-233:
-jmp 231f
-230:
-231:
+jmp 229f
+228:
+229:
+jmp 227f
+226:
+227:
 movdqu xmm8, XMMWORD PTR [r10]
 aesenclast xmm5, xmm8
 aesenclast xmm7, xmm8
@@ -31657,7 +31573,7 @@ bswap esi
 mov DWORD PTR [r14+12], esi
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 234f
+je 230f
 movdqu xmm12, XMMWORD PTR [r14+16]
 pshufb xmm12, xmm0
 movdqu xmm7, XMMWORD PTR [r15+512]
@@ -31712,8 +31628,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-jmp 235f
-234:
+jmp 231f
+230:
 movdqu xmm12, XMMWORD PTR [r14+16]
 pshufb xmm12, xmm0
 movdqu xmm7, XMMWORD PTR [r15+528]
@@ -31754,7 +31670,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-235:
+231:
 mov rbx, QWORD PTR [r15+224]
 mov rsi, QWORD PTR [rsp+24]
 mov eax, 0
@@ -31764,21 +31680,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 236f
+je 232f
 mov r10d, 0
-238:
+234:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 238b
-jmp 237f
-236:
+jne 234b
+jmp 233f
+232:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-237:
+233:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -31788,21 +31704,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 239f
+je 235f
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
+jne 237b
+jmp 236f
+235:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-240:
+236:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -31813,7 +31729,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 242f
+je 238f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -31825,7 +31741,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 244f
+je 240f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -31833,11 +31749,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 245f
-244:
-245:
+jmp 241f
+240:
+241:
 test rbp, rbp
-je 246f
+je 242f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -31856,19 +31772,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-248:
+244:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 248b
-jmp 247f
-246:
-247:
+jne 244b
 jmp 243f
 242:
+243:
+jmp 239f
+238:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -31878,22 +31794,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 249f
+je 245f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 250f
-249:
-250:
-243:
+jmp 246f
+245:
+246:
+239:
 mov rax, QWORD PTR [r15+216]
-jmp 217f
-216:
+jmp 213f
+212:
 cmp rbp, 12
-je 251f
+je 247f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -31907,7 +31823,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 253f
+je 249f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -31915,12 +31831,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 254f
-253:
-254:
+jmp 250f
+249:
+250:
 mov rcx, rbp
 test rcx, rcx
-je 255f
+je 251f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -31928,12 +31844,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-257:
+253:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 257b
+jne 253b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -31944,9 +31860,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 256f
-255:
-256:
+jmp 252f
+251:
+252:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -31971,8 +31887,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 252f
-251:
+jmp 248f
+247:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -31981,7 +31897,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-252:
+248:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -32007,7 +31923,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 258f
+je 254f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -32015,12 +31931,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 259f
-258:
-259:
+jmp 255f
+254:
+255:
 mov rcx, rbp
 test rcx, rcx
-je 260f
+je 256f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -32028,12 +31944,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-262:
+258:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 262b
+jne 258b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -32044,14 +31960,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 261f
-260:
-261:
+jmp 257f
+256:
+257:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 263f
+je 259f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -32072,9 +31988,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 264f
-263:
-264:
+jmp 260f
+259:
+260:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -32086,7 +32002,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 265f
+je 261f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -32094,12 +32010,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 266f
-265:
-266:
+jmp 262f
+261:
+262:
 mov rcx, rbp
 test rcx, rcx
-je 267f
+je 263f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -32107,12 +32023,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-269:
+265:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 269b
+jne 265b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -32123,9 +32039,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 268f
-267:
-268:
+jmp 264f
+263:
+264:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -32172,21 +32088,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 270f
+je 266f
 mov r10d, 0
-272:
+268:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 272b
-jmp 271f
-270:
+jne 268b
+jmp 267f
+266:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-271:
+267:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -32196,21 +32112,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 273f
+je 269f
 mov r10d, 0
-275:
+271:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 275b
-jmp 274f
-273:
+jne 271b
+jmp 270f
+269:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-274:
+270:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -32221,7 +32137,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 276f
+je 272f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -32233,7 +32149,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 278f
+je 274f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -32241,11 +32157,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 279f
-278:
-279:
+jmp 275f
+274:
+275:
 test rbp, rbp
-je 280f
+je 276f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -32264,19 +32180,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-282:
+278:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 282b
-jmp 281f
-280:
-281:
+jne 278b
 jmp 277f
 276:
+277:
+jmp 273f
+272:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -32286,23 +32202,23 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 283f
+je 279f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 284f
-283:
-284:
-277:
+jmp 280f
+279:
+280:
+273:
 mov rax, QWORD PTR [r15+216]
-217:
-jmp 29f
-28:
+213:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -37711,7 +37627,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -37769,32 +37685,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -37808,7 +37712,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -37816,12 +37720,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -37829,12 +37733,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -37845,9 +37749,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -37872,8 +37776,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -37882,7 +37786,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -37908,7 +37812,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -37916,12 +37820,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -37929,12 +37833,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -37945,14 +37849,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -37973,9 +37877,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -37987,7 +37891,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -37995,12 +37899,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -38008,12 +37912,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -38024,9 +37928,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -38073,21 +37977,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -38097,21 +38001,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -38122,7 +38026,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -38134,7 +38038,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -38142,11 +38046,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -38165,19 +38069,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -38187,22 +38091,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_aesni}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -39472,7 +39376,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -39515,30 +39419,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -39546,32 +39438,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -39581,12 +39473,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -39597,9 +39489,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -39647,21 +39539,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -39670,10 +39562,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -41520,7 +41412,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -41578,32 +41470,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -41617,7 +41497,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -41625,12 +41505,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -41638,12 +41518,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -41654,9 +41534,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -41681,8 +41561,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -41691,7 +41571,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -41717,7 +41597,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -41725,12 +41605,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -41738,12 +41618,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -41754,14 +41634,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -41782,9 +41662,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -41796,7 +41676,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -41804,12 +41684,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -41817,12 +41697,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -41833,9 +41713,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -41882,21 +41762,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -41906,21 +41786,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -41931,7 +41811,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -41943,7 +41823,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -41951,11 +41831,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -41974,19 +41854,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -41996,22 +41876,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -43281,7 +43161,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -43324,30 +43204,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -43355,32 +43223,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -43390,12 +43258,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -43406,9 +43274,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -43456,21 +43324,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -43479,10 +43347,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -45314,7 +45182,7 @@ ret
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -45371,32 +45239,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -45410,7 +45266,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -45418,12 +45274,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -45431,12 +45287,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -45447,9 +45303,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -45474,8 +45330,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -45484,7 +45340,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -45510,7 +45366,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -45518,12 +45374,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -45531,12 +45387,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -45547,14 +45403,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -45575,9 +45431,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -45589,7 +45445,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -45597,12 +45453,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -45610,12 +45466,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -45626,9 +45482,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -45675,21 +45531,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -45699,21 +45555,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -45724,7 +45580,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -45736,7 +45592,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -45744,11 +45600,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -45767,19 +45623,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -45789,22 +45645,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -47051,7 +46907,7 @@ ret
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -47093,30 +46949,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -47124,32 +46968,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -47159,12 +47003,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -47175,9 +47019,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -47225,21 +47069,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -47248,10 +47092,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -49086,7 +48930,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -49144,32 +48988,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -49183,7 +49015,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -49191,12 +49023,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -49204,12 +49036,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -49220,9 +49052,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -49247,8 +49079,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -49257,7 +49089,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -49283,7 +49115,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -49291,12 +49123,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -49304,12 +49136,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -49320,14 +49152,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -49348,9 +49180,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -49362,7 +49194,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -49370,12 +49202,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -49383,12 +49215,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -49399,9 +49231,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -49448,21 +49280,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -49472,21 +49304,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -49497,7 +49329,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -49509,7 +49341,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -49517,11 +49349,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -49540,19 +49372,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -49562,22 +49394,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -50839,7 +50671,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -50882,30 +50714,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -50913,32 +50733,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -50948,12 +50768,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -50964,9 +50784,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -51014,21 +50834,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -51037,10 +50857,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -52891,7 +52711,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -52949,32 +52769,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -52988,7 +52796,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -52996,12 +52804,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -53009,12 +52817,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -53025,9 +52833,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -53052,8 +52860,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -53062,7 +52870,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -53088,7 +52896,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -53096,12 +52904,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -53109,12 +52917,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -53125,14 +52933,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -53153,9 +52961,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -53167,7 +52975,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -53175,12 +52983,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -53188,12 +52996,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -53204,9 +53012,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -53253,21 +53061,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -53277,21 +53085,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -53302,7 +53110,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -53314,7 +53122,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -53322,11 +53130,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -53345,19 +53153,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -53367,22 +53175,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -54652,7 +54460,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -54695,30 +54503,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -54726,32 +54522,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -54761,12 +54557,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -54777,9 +54573,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_pclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -54827,21 +54623,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -54850,10 +54646,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -58214,7 +58010,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -58272,32 +58068,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -58311,7 +58095,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -58319,12 +58103,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -58332,12 +58116,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -58348,9 +58132,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -58375,8 +58159,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -58385,7 +58169,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -58411,7 +58195,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -58419,12 +58203,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -58432,12 +58216,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -58448,14 +58232,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -58476,9 +58260,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -58490,7 +58274,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -58498,12 +58282,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -58511,12 +58295,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -58527,9 +58311,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -58576,21 +58360,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -58600,21 +58384,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -58625,7 +58409,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -58637,7 +58421,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -58645,11 +58429,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -58668,19 +58452,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -58690,22 +58474,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -59975,7 +59759,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -60018,30 +59802,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -60049,32 +59821,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -60084,12 +59856,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -60100,9 +59872,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -60150,21 +59922,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -60173,10 +59945,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -65757,51 +65529,39 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 cmp rbp, 12
-jne 210f
+jne 26f
 mov rcx, QWORD PTR [r15+184]
 cmp rcx, 17
-jae 212f
+jae 28f
 mov rcx, QWORD PTR [r15+208]
 cmp rcx, 256
-jb 214f
+jb 210f
 mov eax, 1
-jmp 215f
-214:
-215:
-jmp 213f
-212:
-213:
 jmp 211f
 210:
 211:
+jmp 29f
+28:
+29:
+jmp 27f
+26:
+27:
 test rax, rax
-je 216f
+je 212f
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -65826,11 +65586,11 @@ mov QWORD PTR [r14+16], rax
 mov QWORD PTR [r14+24], rax
 mov rcx, QWORD PTR [r15+184]
 test rcx, rcx
-je 218f
+je 214f
 cmp rcx, 5
-je 220f
+je 216f
 cmp rcx, 16
-je 222f
+je 218f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -65838,12 +65598,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, QWORD PTR [r15+232]
 mov r10d, 0
-224:
+220:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 224b
+jne 220b
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -65889,8 +65649,8 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-jmp 223f
-222:
+jmp 219f
+218:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
 movabs rax, 579005069656919567
@@ -65937,9 +65697,9 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-223:
-jmp 221f
-220:
+219:
+jmp 217f
+216:
 mov rsi, QWORD PTR [r15+232]
 mov eax, DWORD PTR [rsi]
 movzx r10d, BYTE PTR [rsi+4]
@@ -65990,15 +65750,15 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-221:
-jmp 219f
-218:
-219:
+217:
+jmp 215f
+214:
+215:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 225f
+je 221f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -66019,9 +65779,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 226f
-225:
-226:
+jmp 222f
+221:
+222:
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -66036,7 +65796,7 @@ movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 227f
+je 223f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -66046,12 +65806,12 @@ mov rdx, r15
 add rdx, 1040
 mov rcx, QWORD PTR [r15+208]
 mov r10d, 0
-229:
+225:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 229b
+jne 225b
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -66060,8 +65820,8 @@ mov rax, QWORD PTR [r15+192]
 shl rax, 3
 bswap rax
 mov QWORD PTR [r15+536], rax
-jmp 228f
-227:
+jmp 224f
+223:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -66070,7 +65830,7 @@ mov rax, QWORD PTR [r15+192]
 shl rax, 3
 bswap rax
 mov QWORD PTR [r15+536], rax
-228:
+224:
 movdqu xmm5, XMMWORD PTR [r14]
 movdqu xmm7, XMMWORD PTR [r14+48]
 mov rdi, r13
@@ -66112,7 +65872,7 @@ movdqu xmm8, XMMWORD PTR [rdi+144]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 cmp rsi, 10
-je 230f
+je 226f
 movdqu xmm8, XMMWORD PTR [rdi+160]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
@@ -66120,19 +65880,19 @@ movdqu xmm8, XMMWORD PTR [rdi+176]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 cmp rsi, 12
-je 232f
+je 228f
 movdqu xmm8, XMMWORD PTR [rdi+192]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 movdqu xmm8, XMMWORD PTR [rdi+208]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
-jmp 233f
-232:
-233:
-jmp 231f
-230:
-231:
+jmp 229f
+228:
+229:
+jmp 227f
+226:
+227:
 movdqu xmm8, XMMWORD PTR [r10]
 aesenclast xmm5, xmm8
 aesenclast xmm7, xmm8
@@ -66145,7 +65905,7 @@ bswap esi
 mov DWORD PTR [r14+12], esi
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 234f
+je 230f
 movdqu xmm12, XMMWORD PTR [r14+16]
 pshufb xmm12, xmm0
 movdqu xmm7, XMMWORD PTR [r15+512]
@@ -66200,8 +65960,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-jmp 235f
-234:
+jmp 231f
+230:
 movdqu xmm12, XMMWORD PTR [r14+16]
 pshufb xmm12, xmm0
 movdqu xmm7, XMMWORD PTR [r15+528]
@@ -66242,7 +66002,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-235:
+231:
 mov rbx, QWORD PTR [r15+224]
 mov rsi, QWORD PTR [rsp+24]
 mov eax, 0
@@ -66252,21 +66012,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 236f
+je 232f
 mov r10d, 0
-238:
+234:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 238b
-jmp 237f
-236:
+jne 234b
+jmp 233f
+232:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-237:
+233:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -66276,21 +66036,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 239f
+je 235f
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
+jne 237b
+jmp 236f
+235:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-240:
+236:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -66301,7 +66061,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 242f
+je 238f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -66313,7 +66073,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 244f
+je 240f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -66321,11 +66081,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 245f
-244:
-245:
+jmp 241f
+240:
+241:
 test rbp, rbp
-je 246f
+je 242f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -66344,19 +66104,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-248:
+244:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 248b
-jmp 247f
-246:
-247:
+jne 244b
 jmp 243f
 242:
+243:
+jmp 239f
+238:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -66366,22 +66126,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 249f
+je 245f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 250f
-249:
-250:
-243:
+jmp 246f
+245:
+246:
+239:
 mov rax, QWORD PTR [r15+216]
-jmp 217f
-216:
+jmp 213f
+212:
 cmp rbp, 12
-je 251f
+je 247f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -66395,7 +66155,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 253f
+je 249f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -66403,12 +66163,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 254f
-253:
-254:
+jmp 250f
+249:
+250:
 mov rcx, rbp
 test rcx, rcx
-je 255f
+je 251f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -66416,12 +66176,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-257:
+253:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 257b
+jne 253b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -66432,9 +66192,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 256f
-255:
-256:
+jmp 252f
+251:
+252:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -66459,8 +66219,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 252f
-251:
+jmp 248f
+247:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -66469,7 +66229,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-252:
+248:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -66495,7 +66255,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 258f
+je 254f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -66503,12 +66263,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 259f
-258:
-259:
+jmp 255f
+254:
+255:
 mov rcx, rbp
 test rcx, rcx
-je 260f
+je 256f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -66516,12 +66276,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-262:
+258:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 262b
+jne 258b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -66532,14 +66292,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 261f
-260:
-261:
+jmp 257f
+256:
+257:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 263f
+je 259f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -66560,9 +66320,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 264f
-263:
-264:
+jmp 260f
+259:
+260:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -66574,7 +66334,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 265f
+je 261f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -66582,12 +66342,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 266f
-265:
-266:
+jmp 262f
+261:
+262:
 mov rcx, rbp
 test rcx, rcx
-je 267f
+je 263f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -66595,12 +66355,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-269:
+265:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 269b
+jne 265b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -66611,9 +66371,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 268f
-267:
-268:
+jmp 264f
+263:
+264:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -66660,21 +66420,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 270f
+je 266f
 mov r10d, 0
-272:
+268:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 272b
-jmp 271f
-270:
+jne 268b
+jmp 267f
+266:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-271:
+267:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -66684,21 +66444,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 273f
+je 269f
 mov r10d, 0
-275:
+271:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 275b
-jmp 274f
-273:
+jne 271b
+jmp 270f
+269:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-274:
+270:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -66709,7 +66469,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 276f
+je 272f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -66721,7 +66481,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 278f
+je 274f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -66729,11 +66489,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 279f
-278:
-279:
+jmp 275f
+274:
+275:
 test rbp, rbp
-je 280f
+je 276f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -66752,19 +66512,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-282:
+278:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 282b
-jmp 281f
-280:
-281:
+jne 278b
 jmp 277f
 276:
+277:
+jmp 273f
+272:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -66774,23 +66534,23 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 283f
+je 279f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 284f
-283:
-284:
-277:
+jmp 280f
+279:
+280:
+273:
 mov rax, QWORD PTR [r15+216]
-217:
-jmp 29f
-28:
+213:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -72899,7 +72659,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -72959,37 +72719,25 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 cmp rbp, 12
-jne 210f
+jne 26f
 mov rcx, QWORD PTR [r15+184]
 or rcx, QWORD PTR [r15+208]
 cmp rcx, 512
-jae 212f
+jae 28f
 mov rcx, QWORD PTR [r15+184]
 add rcx, 15
 shr rcx, 4
@@ -72998,29 +72746,29 @@ add rdx, 15
 shr rdx, 4
 add rcx, rdx
 cmp rcx, 32
-jae 214f
+jae 210f
 mov rdx, QWORD PTR [r15+208]
 mov rcx, rdx
 shl rcx, 4
 add rcx, rdx
 add rcx, QWORD PTR [r15+184]
 cmp rcx, 17
-jb 216f
+jb 212f
 mov eax, 1
-jmp 217f
-216:
-217:
-jmp 215f
-214:
-215:
 jmp 213f
 212:
 213:
 jmp 211f
 210:
 211:
+jmp 29f
+28:
+29:
+jmp 27f
+26:
+27:
 test rax, rax
-je 218f
+je 214f
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -73180,7 +72928,7 @@ vinserti128 ymm1, ymm1, xmm1, 1
 vshufi32x4 zmm1, zmm1, zmm1, 68
 mov rax, QWORD PTR [r15+288]
 cmp rax, 5
-jb 220f
+jb 216f
 vbroadcasti32x4 zmm12, XMMWORD PTR [r11]
 vmovdqu32 zmm7, ZMMWORD PTR [r11]
 vpclmulqdq zmm8, zmm7, zmm12, 0
@@ -73196,7 +72944,7 @@ vpshufd zmm9, zmm9, 78
 vpternlogd zmm10, zmm9, zmm11, 150
 vmovdqu32 ZMMWORD PTR [r11+64], zmm10
 cmp rax, 9
-jb 222f
+jb 218f
 vbroadcasti32x4 zmm12, XMMWORD PTR [r11+64]
 vmovdqu32 zmm7, ZMMWORD PTR [r11]
 vpclmulqdq zmm8, zmm7, zmm12, 0
@@ -73225,7 +72973,7 @@ vpshufd zmm9, zmm9, 78
 vpternlogd zmm10, zmm9, zmm11, 150
 vmovdqu32 ZMMWORD PTR [r11+192], zmm10
 cmp rax, 17
-jb 224f
+jb 220f
 vbroadcasti32x4 zmm12, XMMWORD PTR [r11+192]
 vmovdqu32 zmm7, ZMMWORD PTR [r11]
 vpclmulqdq zmm8, zmm7, zmm12, 0
@@ -73279,15 +73027,15 @@ vpclmulqdq zmm11, zmm9, zmm1, 16
 vpshufd zmm9, zmm9, 78
 vpternlogd zmm10, zmm9, zmm11, 150
 vmovdqu32 ZMMWORD PTR [r11+448], zmm10
-jmp 225f
-224:
-225:
-jmp 223f
-222:
-223:
 jmp 221f
 220:
 221:
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+217:
 vpxord zmm2, zmm2, zmm2
 vmovdqu32 ZMMWORD PTR [r15+512], zmm2
 vmovdqu32 ZMMWORD PTR [r15+576], zmm2
@@ -73308,27 +73056,27 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 226f
-228:
+je 222f
+224:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 228b
-jmp 227f
-226:
-227:
+jne 224b
+jmp 223f
+222:
+223:
 cmp r10, rcx
-je 229f
-231:
+je 225f
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
-230:
+jne 227b
+jmp 226f
+225:
+226:
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -73361,7 +73109,7 @@ vshufi32x4 zmm15, zmm15, zmm15, 68
 mov r9, QWORD PTR [r15+280]
 add r9, 4
 shr r9, 2
-232:
+228:
 vpshufb zmm3, zmm14, zmm0
 vpaddd zmm14, zmm14, zmm15
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
@@ -73385,29 +73133,29 @@ vaesenc zmm3, zmm3, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm3, zmm3, zmm13
 cmp rsi, 10
-je 233f
+je 229f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm3, zmm3, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm3, zmm3, zmm13
 cmp rsi, 12
-je 235f
+je 231f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm3, zmm3, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm3, zmm3, zmm13
-jmp 236f
-235:
-236:
-jmp 234f
-233:
-234:
+jmp 232f
+231:
+232:
+jmp 230f
+229:
+230:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm3, zmm3, zmm13
 vmovdqu32 ZMMWORD PTR [rdx], zmm3
 add rdx, 64
 sub r9, 1
-jne 232b
+jne 228b
 mov rdi, QWORD PTR [r15+296]
 add rdi, QWORD PTR [r15+272]
 shl rdi, 4
@@ -73420,27 +73168,27 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 237f
-239:
+je 233f
+235:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 239b
-jmp 238f
-237:
-238:
+jne 235b
+jmp 234f
+233:
+234:
 cmp r10, rcx
-je 240f
-242:
+je 236f
+238:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 242b
-jmp 241f
-240:
-241:
+jne 238b
+jmp 237f
+236:
+237:
 mov rdi, QWORD PTR [r15+288]
 shl rdi, 4
 add rdi, r15
@@ -73464,7 +73212,7 @@ add r11, 1344
 vpxord zmm8, zmm8, zmm8
 vpxord zmm9, zmm9, zmm9
 vpxord zmm10, zmm10, zmm10
-243:
+239:
 vmovdqu32 zmm12, ZMMWORD PTR [r11+128]
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+128]
 vpshufb zmm7, zmm7, zmm0
@@ -73478,7 +73226,7 @@ vpternlogd zmm9, zmm11, zmm7, 150
 add rdx, 64
 sub r11, 64
 sub r9, 1
-jne 243b
+jne 239b
 vpclmulqdq zmm11, zmm8, zmm1, 16
 vpshufd zmm8, zmm8, 78
 vpternlogd zmm9, zmm8, zmm11, 150
@@ -73503,21 +73251,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 244f
+je 240f
 mov r10d, 0
-246:
+242:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 246b
-jmp 245f
-244:
+jne 242b
+jmp 241f
+240:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-245:
+241:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -73527,21 +73275,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 247f
+je 243f
 mov r10d, 0
-249:
+245:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 249b
-jmp 248f
-247:
+jne 245b
+jmp 244f
+243:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-248:
+244:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -73552,7 +73300,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 250f
+je 246f
 mov rdi, QWORD PTR [r15+296]
 add rdi, QWORD PTR [r15+272]
 shl rdi, 4
@@ -73567,74 +73315,74 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 252f
-254:
+je 248f
+250:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 254b
-jmp 253f
-252:
-253:
+jne 250b
+jmp 249f
+248:
+249:
 test rcx, 15
-je 255f
+je 251f
 test rcx, 12
-je 257f
+je 253f
 test rcx, 8
-je 259f
+je 255f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 add r10, 8
-jmp 260f
-259:
-260:
+jmp 256f
+255:
+256:
 test rcx, 4
-je 261f
+je 257f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 add r10, 4
-jmp 262f
-261:
-262:
-test rcx, 3
-je 263f
-265:
-movzx eax, BYTE PTR [rsi+r10*1]
-movzx r9d, BYTE PTR [rdx+r10*1]
-xor rax, r9
-mov BYTE PTR [rsi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 265b
-jmp 264f
-263:
-264:
 jmp 258f
 257:
-266:
+258:
+test rcx, 3
+je 259f
+261:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
 xor rax, r9
 mov BYTE PTR [rsi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 266b
-258:
-jmp 256f
-255:
-256:
-jmp 251f
-250:
+jne 261b
+jmp 260f
+259:
+260:
+jmp 254f
+253:
+262:
+movzx eax, BYTE PTR [rsi+r10*1]
+movzx r9d, BYTE PTR [rdx+r10*1]
+xor rax, r9
+mov BYTE PTR [rsi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 262b
+254:
+jmp 252f
 251:
+252:
+jmp 247f
+246:
+247:
 mov rax, QWORD PTR [r15+216]
-jmp 219f
-218:
+jmp 215f
+214:
 cmp rbp, 12
-je 267f
+je 263f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -73648,7 +73396,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 269f
+je 265f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -73656,12 +73404,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 270f
-269:
-270:
+jmp 266f
+265:
+266:
 mov rcx, rbp
 test rcx, rcx
-je 271f
+je 267f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -73669,12 +73417,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-273:
+269:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 273b
+jne 269b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -73685,9 +73433,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 272f
-271:
-272:
+jmp 268f
+267:
+268:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -73712,8 +73460,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 268f
-267:
+jmp 264f
+263:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -73722,7 +73470,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-268:
+264:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -73748,7 +73496,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 274f
+je 270f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -73756,12 +73504,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 275f
-274:
-275:
+jmp 271f
+270:
+271:
 mov rcx, rbp
 test rcx, rcx
-je 276f
+je 272f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -73769,12 +73517,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-278:
+274:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 278b
+jne 274b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -73785,14 +73533,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 277f
-276:
-277:
+jmp 273f
+272:
+273:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 279f
+je 275f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -73813,9 +73561,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 280f
-279:
-280:
+jmp 276f
+275:
+276:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -73827,7 +73575,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 281f
+je 277f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -73835,12 +73583,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 282f
-281:
-282:
+jmp 278f
+277:
+278:
 mov rcx, rbp
 test rcx, rcx
-je 283f
+je 279f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -73848,12 +73596,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-285:
+281:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 285b
+jne 281b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -73864,9 +73612,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 284f
-283:
-284:
+jmp 280f
+279:
+280:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -73913,21 +73661,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 286f
+je 282f
 mov r10d, 0
-288:
+284:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 288b
-jmp 287f
-286:
+jne 284b
+jmp 283f
+282:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-287:
+283:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -73937,21 +73685,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 289f
+je 285f
 mov r10d, 0
-291:
+287:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 291b
-jmp 290f
-289:
+jne 287b
+jmp 286f
+285:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-290:
+286:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -73962,7 +73710,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 292f
+je 288f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -73974,7 +73722,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 294f
+je 290f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -73982,11 +73730,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 295f
-294:
-295:
+jmp 291f
+290:
+291:
 test rbp, rbp
-je 296f
+je 292f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -74005,19 +73753,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-298:
+294:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 298b
-jmp 297f
-296:
-297:
+jne 294b
 jmp 293f
 292:
+293:
+jmp 289f
+288:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -74027,23 +73775,23 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 299f
+je 295f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2100f
-299:
-2100:
-293:
+jmp 296f
+295:
+296:
+289:
 mov rax, QWORD PTR [r15+216]
-219:
-jmp 29f
-28:
+215:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -75313,7 +75061,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -75356,30 +75104,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -75387,32 +75123,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -75422,12 +75158,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -75438,9 +75174,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -75488,21 +75224,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -75511,10 +75247,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -85909,37 +85645,25 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 cmp rbp, 12
-jne 210f
+jne 26f
 mov rcx, QWORD PTR [r15+184]
 or rcx, QWORD PTR [r15+208]
 cmp rcx, 512
-jae 212f
+jae 28f
 mov rcx, QWORD PTR [r15+184]
 add rcx, 15
 shr rcx, 4
@@ -85948,29 +85672,29 @@ add rdx, 15
 shr rdx, 4
 add rcx, rdx
 cmp rcx, 32
-jae 214f
+jae 210f
 mov rdx, QWORD PTR [r15+208]
 mov rcx, rdx
 shl rcx, 4
 add rcx, rdx
 add rcx, QWORD PTR [r15+184]
 cmp rcx, 17
-jb 216f
+jb 212f
 mov eax, 1
-jmp 217f
-216:
-217:
-jmp 215f
-214:
-215:
 jmp 213f
 212:
 213:
 jmp 211f
 210:
 211:
+jmp 29f
+28:
+29:
+jmp 27f
+26:
+27:
 test rax, rax
-je 218f
+je 214f
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -86031,27 +85755,27 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 220f
-222:
+je 216f
+218:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 222b
-jmp 221f
-220:
-221:
+jne 218b
+jmp 217f
+216:
+217:
 cmp r10, rcx
-je 223f
-225:
+je 219f
+221:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 225b
-jmp 224f
-223:
-224:
+jne 221b
+jmp 220f
+219:
+220:
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -86084,7 +85808,7 @@ vshufi32x4 zmm15, zmm15, zmm15, 68
 mov r9, QWORD PTR [r15+280]
 add r9, 4
 shr r9, 2
-226:
+222:
 vpshufb zmm3, zmm14, zmm0
 vpaddd zmm14, zmm14, zmm15
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
@@ -86108,29 +85832,29 @@ vaesenc zmm3, zmm3, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm3, zmm3, zmm13
 cmp rsi, 10
-je 227f
+je 223f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm3, zmm3, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm3, zmm3, zmm13
 cmp rsi, 12
-je 229f
+je 225f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm3, zmm3, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm3, zmm3, zmm13
-jmp 230f
-229:
-230:
-jmp 228f
-227:
-228:
+jmp 226f
+225:
+226:
+jmp 224f
+223:
+224:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm3, zmm3, zmm13
 vmovdqu32 ZMMWORD PTR [rdx], zmm3
 add rdx, 64
 sub r9, 1
-jne 226b
+jne 222b
 mov rdi, QWORD PTR [r15+296]
 add rdi, QWORD PTR [r15+272]
 shl rdi, 4
@@ -86143,27 +85867,27 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 231f
-233:
+je 227f
+229:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 233b
-jmp 232f
-231:
-232:
+jne 229b
+jmp 228f
+227:
+228:
 cmp r10, rcx
-je 234f
-236:
+je 230f
+232:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 236b
-jmp 235f
-234:
-235:
+jne 232b
+jmp 231f
+230:
+231:
 mov rdi, QWORD PTR [r15+288]
 shl rdi, 4
 add rdi, r15
@@ -86187,7 +85911,7 @@ add r11, 64
 vpxord zmm8, zmm8, zmm8
 vpxord zmm9, zmm9, zmm9
 vpxord zmm10, zmm10, zmm10
-237:
+233:
 vmovdqu32 zmm12, ZMMWORD PTR [r11+128]
 vshufi32x4 zmm12, zmm12, zmm12, 78
 vmovdqu32 zmm7, ZMMWORD PTR [rdx+128]
@@ -86202,7 +85926,7 @@ vpternlogd zmm9, zmm11, zmm7, 150
 add rdx, 64
 sub r11, 64
 sub r9, 1
-jne 237b
+jne 233b
 vpclmulqdq zmm11, zmm8, zmm1, 16
 vpshufd zmm8, zmm8, 78
 vpternlogd zmm9, zmm8, zmm11, 150
@@ -86227,21 +85951,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 238f
+je 234f
 mov r10d, 0
-240:
+236:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 240b
-jmp 239f
-238:
+jne 236b
+jmp 235f
+234:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-239:
+235:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -86251,21 +85975,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 241f
+je 237f
 mov r10d, 0
-243:
+239:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 243b
-jmp 242f
-241:
+jne 239b
+jmp 238f
+237:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-242:
+238:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -86276,7 +86000,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 244f
+je 240f
 mov rdi, QWORD PTR [r15+296]
 add rdi, QWORD PTR [r15+272]
 shl rdi, 4
@@ -86291,93 +86015,93 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 246f
-248:
+je 242f
+244:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 248b
-jmp 247f
-246:
-247:
+jne 244b
+jmp 243f
+242:
+243:
 test rcx, 15
-je 249f
+je 245f
 test rcx, 12
-je 251f
+je 247f
 test rcx, 8
-je 253f
+je 249f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 add r10, 8
-jmp 254f
-253:
-254:
+jmp 250f
+249:
+250:
 test rcx, 4
-je 255f
+je 251f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 add r10, 4
-jmp 256f
-255:
-256:
-test rcx, 3
-je 257f
-259:
-movzx eax, BYTE PTR [rsi+r10*1]
-movzx r9d, BYTE PTR [rdx+r10*1]
-xor rax, r9
-mov BYTE PTR [rsi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 259b
-jmp 258f
-257:
-258:
 jmp 252f
 251:
-260:
+252:
+test rcx, 3
+je 253f
+255:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
 xor rax, r9
 mov BYTE PTR [rsi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 260b
-252:
-jmp 250f
-249:
-250:
-jmp 245f
-244:
+jne 255b
+jmp 254f
+253:
+254:
+jmp 248f
+247:
+256:
+movzx eax, BYTE PTR [rsi+r10*1]
+movzx r9d, BYTE PTR [rdx+r10*1]
+xor rax, r9
+mov BYTE PTR [rsi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 256b
+248:
+jmp 246f
 245:
+246:
+jmp 241f
+240:
+241:
 mov rax, QWORD PTR [r15+216]
-jmp 219f
-218:
+jmp 215f
+214:
 mov eax, 0
 cmp rbp, 12
-jne 261f
+jne 257f
 mov rcx, QWORD PTR [r15+184]
 cmp rcx, 17
-jae 263f
+jae 259f
 mov rcx, QWORD PTR [r15+208]
 cmp rcx, 256
-jb 265f
+jb 261f
 mov eax, 1
-jmp 266f
-265:
-266:
-jmp 264f
-263:
-264:
 jmp 262f
 261:
 262:
+jmp 260f
+259:
+260:
+jmp 258f
+257:
+258:
 test rax, rax
-je 267f
+je 263f
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -86402,11 +86126,11 @@ mov QWORD PTR [r14+16], rax
 mov QWORD PTR [r14+24], rax
 mov rcx, QWORD PTR [r15+184]
 test rcx, rcx
-je 269f
+je 265f
 cmp rcx, 5
-je 271f
+je 267f
 cmp rcx, 16
-je 273f
+je 269f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -86414,12 +86138,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, QWORD PTR [r15+232]
 mov r10d, 0
-275:
+271:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 275b
+jne 271b
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -86465,8 +86189,8 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-jmp 274f
-273:
+jmp 270f
+269:
 mov rsi, QWORD PTR [r15+232]
 movdqu xmm7, XMMWORD PTR [rsi]
 movabs rax, 579005069656919567
@@ -86513,9 +86237,9 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-274:
-jmp 272f
-271:
+270:
+jmp 268f
+267:
 mov rsi, QWORD PTR [r15+232]
 mov eax, DWORD PTR [rsi]
 movzx r10d, BYTE PTR [rsi+4]
@@ -86566,15 +86290,15 @@ movdqa xmm2, xmm10
 pxor xmm2, xmm8
 pshufb xmm2, xmm0
 movdqu XMMWORD PTR [r14+16], xmm2
-272:
-jmp 270f
-269:
-270:
+268:
+jmp 266f
+265:
+266:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 276f
+je 272f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -86595,9 +86319,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 277f
-276:
-277:
+jmp 273f
+272:
+273:
 movabs rax, 579005069656919567
 movq xmm0, rax
 movabs rax, 283686952306183
@@ -86612,7 +86336,7 @@ movdqu xmm3, XMMWORD PTR [r13+272]
 movdqu xmm6, XMMWORD PTR [r13+256]
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 278f
+je 274f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -86622,12 +86346,12 @@ mov rdx, r15
 add rdx, 1040
 mov rcx, QWORD PTR [r15+208]
 mov r10d, 0
-280:
+276:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 280b
+jne 276b
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -86636,8 +86360,8 @@ mov rax, QWORD PTR [r15+192]
 shl rax, 3
 bswap rax
 mov QWORD PTR [r15+536], rax
-jmp 279f
-278:
+jmp 275f
+274:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -86646,7 +86370,7 @@ mov rax, QWORD PTR [r15+192]
 shl rax, 3
 bswap rax
 mov QWORD PTR [r15+536], rax
-279:
+275:
 vmovdqu xmm5, XMMWORD PTR [r14]
 vmovdqu xmm7, XMMWORD PTR [r14+48]
 vinserti128 ymm5, ymm5, xmm7, 1
@@ -86679,23 +86403,23 @@ vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 10
-je 281f
+je 277f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 vaesenc zmm5, zmm5, zmm13
 cmp rsi, 12
-je 283f
+je 279f
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 vaesenc zmm5, zmm5, zmm13
 vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 vaesenc zmm5, zmm5, zmm13
-jmp 284f
-283:
-284:
-jmp 282f
-281:
-282:
+jmp 280f
+279:
+280:
+jmp 278f
+277:
+278:
 vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 vaesenclast zmm5, zmm5, zmm13
 vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
@@ -86707,7 +86431,7 @@ bswap esi
 mov DWORD PTR [r14+12], esi
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 285f
+je 281f
 movdqu xmm12, XMMWORD PTR [r14+16]
 pshufb xmm12, xmm0
 movdqu xmm7, XMMWORD PTR [r15+512]
@@ -86762,8 +86486,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-jmp 286f
-285:
+jmp 282f
+281:
 movdqu xmm12, XMMWORD PTR [r14+16]
 pshufb xmm12, xmm0
 movdqu xmm7, XMMWORD PTR [r15+528]
@@ -86804,7 +86528,7 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15+112], xmm2
 vzeroupper
-286:
+282:
 mov rbx, QWORD PTR [r15+224]
 mov rsi, QWORD PTR [rsp+24]
 mov eax, 0
@@ -86814,21 +86538,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 287f
+je 283f
 mov r10d, 0
-289:
+285:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 289b
-jmp 288f
-287:
+jne 285b
+jmp 284f
+283:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-288:
+284:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -86838,21 +86562,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 290f
+je 286f
 mov r10d, 0
-292:
+288:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 292b
-jmp 291f
-290:
+jne 288b
+jmp 287f
+286:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-291:
+287:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -86863,7 +86587,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 293f
+je 289f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -86875,7 +86599,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 295f
+je 291f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -86883,11 +86607,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 296f
-295:
-296:
+jmp 292f
+291:
+292:
 test rbp, rbp
-je 297f
+je 293f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -86906,19 +86630,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-299:
+295:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 299b
-jmp 298f
-297:
-298:
+jne 295b
 jmp 294f
 293:
+294:
+jmp 290f
+289:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -86928,22 +86652,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 2100f
+je 296f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2101f
-2100:
-2101:
-294:
+jmp 297f
+296:
+297:
+290:
 mov rax, QWORD PTR [r15+216]
-jmp 268f
-267:
+jmp 264f
+263:
 cmp rbp, 12
-je 2102f
+je 298f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -86957,7 +86681,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2104f
+je 2100f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -86965,12 +86689,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2105f
-2104:
-2105:
+jmp 2101f
+2100:
+2101:
 mov rcx, rbp
 test rcx, rcx
-je 2106f
+je 2102f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -86978,12 +86702,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2108:
+2104:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2108b
+jne 2104b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -86994,9 +86718,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2107f
-2106:
-2107:
+jmp 2103f
+2102:
+2103:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -87021,8 +86745,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2103f
-2102:
+jmp 299f
+298:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -87031,7 +86755,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-2103:
+299:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -87057,7 +86781,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2109f
+je 2105f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -87065,12 +86789,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2110f
-2109:
-2110:
+jmp 2106f
+2105:
+2106:
 mov rcx, rbp
 test rcx, rcx
-je 2111f
+je 2107f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -87078,12 +86802,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2113:
+2109:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2113b
+jne 2109b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -87094,14 +86818,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2112f
-2111:
-2112:
+jmp 2108f
+2107:
+2108:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 2114f
+je 2110f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -87122,9 +86846,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 2115f
-2114:
-2115:
+jmp 2111f
+2110:
+2111:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -87136,7 +86860,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 2116f
+je 2112f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -87144,12 +86868,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2117f
-2116:
-2117:
+jmp 2113f
+2112:
+2113:
 mov rcx, rbp
 test rcx, rcx
-je 2118f
+je 2114f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -87157,12 +86881,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-2120:
+2116:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2120b
+jne 2116b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -87173,9 +86897,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 2119f
-2118:
-2119:
+jmp 2115f
+2114:
+2115:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -87222,21 +86946,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 2121f
+je 2117f
 mov r10d, 0
-2123:
+2119:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2123b
-jmp 2122f
-2121:
+jne 2119b
+jmp 2118f
+2117:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-2122:
+2118:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -87246,21 +86970,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 2124f
+je 2120f
 mov r10d, 0
-2126:
+2122:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2126b
-jmp 2125f
-2124:
+jne 2122b
+jmp 2121f
+2120:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-2125:
+2121:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -87271,7 +86995,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 2127f
+je 2123f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -87283,7 +87007,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 2129f
+je 2125f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -87291,11 +87015,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2130f
-2129:
-2130:
+jmp 2126f
+2125:
+2126:
 test rbp, rbp
-je 2131f
+je 2127f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -87314,19 +87038,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-2133:
+2129:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 2133b
-jmp 2132f
-2131:
-2132:
+jne 2129b
 jmp 2128f
 2127:
+2128:
+jmp 2124f
+2123:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -87336,24 +87060,24 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 2134f
+je 2130f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 2135f
-2134:
-2135:
-2128:
+jmp 2131f
+2130:
+2131:
+2124:
 mov rax, QWORD PTR [r15+216]
-268:
-219:
-jmp 29f
-28:
+264:
+215:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -91369,7 +91093,7 @@ ret
 /// The CPU features `vg_aes_gcm_open_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -91427,32 +91151,20 @@ mov rbx, QWORD PTR [rsp+32]
 mov QWORD PTR [r15+224], rbx
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 cmp rbp, 12
-je 210f
+je 26f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -91466,7 +91178,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 212f
+je 28f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -91474,12 +91186,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 213f
-212:
-213:
+jmp 29f
+28:
+29:
 mov rcx, rbp
 test rcx, rcx
-je 214f
+je 210f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -91487,12 +91199,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-216:
+212:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 216b
+jne 212b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -91503,9 +91215,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 215f
-214:
-215:
+jmp 211f
+210:
+211:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -91530,8 +91242,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 211f
-210:
+jmp 27f
+26:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -91540,7 +91252,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-211:
+27:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -91566,7 +91278,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 217f
+je 213f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -91574,12 +91286,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 218f
-217:
-218:
+jmp 214f
+213:
+214:
 mov rcx, rbp
 test rcx, rcx
-je 219f
+je 215f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -91587,12 +91299,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-221:
+217:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 221b
+jne 217b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -91603,14 +91315,14 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 220f
-219:
-220:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 222f
+je 218f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -91631,9 +91343,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 223f
-222:
-223:
+jmp 219f
+218:
+219:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -91645,7 +91357,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 224f
+je 220f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -91653,12 +91365,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 225f
-224:
-225:
+jmp 221f
+220:
+221:
 mov rcx, rbp
 test rcx, rcx
-je 226f
+je 222f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -91666,12 +91378,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-228:
+224:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 228b
+jne 224b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -91682,9 +91394,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 227f
-226:
-227:
+jmp 223f
+222:
+223:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -91731,21 +91443,21 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 229f
+je 225f
 mov r10d, 0
-231:
+227:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
-jmp 230f
-229:
+jne 227b
+jmp 226f
+225:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-230:
+226:
 mov eax, 0
 mov QWORD PTR [r15+240], rax
 mov QWORD PTR [r15+248], rax
@@ -91755,21 +91467,21 @@ mov rsi, r15
 add rsi, 112
 mov rcx, rbx
 cmp rcx, 16
-je 232f
+je 228f
 mov r10d, 0
-234:
+230:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 234b
-jmp 233f
-232:
+jne 230b
+jmp 229f
+228:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-233:
+229:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -91780,7 +91492,7 @@ mov eax, 0
 adc eax, 0
 mov QWORD PTR [r15+216], rax
 test rax, rax
-je 235f
+je 231f
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -91792,7 +91504,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 237f
+je 233f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -91800,11 +91512,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32}
-jmp 238f
-237:
-238:
+jmp 234f
+233:
+234:
 test rbp, rbp
-je 239f
+je 235f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -91823,19 +91535,19 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-241:
+237:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 241b
-jmp 240f
-239:
-240:
+jne 237b
 jmp 236f
 235:
+236:
+jmp 232f
+231:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -91845,22 +91557,22 @@ sub rcx, rax
 shr rax, 4
 mov r8, rax
 test rax, rax
-je 242f
+je 238f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32}
-jmp 243f
-242:
-243:
-236:
+jmp 239f
+238:
+239:
+232:
 mov rax, QWORD PTR [r15+216]
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]
@@ -93130,7 +92842,7 @@ ret
 /// The CPU features `vg_aes_gcm_stream_verify_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -93173,30 +92885,18 @@ mov QWORD PTR [r15+224], rbx
 mov rsi, r9
 mov ecx, 0
 cmp rbx, 4
-je 20f
-jmp 21f
-20:
-mov ecx, 1
-21:
-cmp rbx, 8
-je 22f
+jb 20f
+cmp rbx, 17
+jb 22f
 jmp 23f
 22:
 mov ecx, 1
 23:
-cmp rbx, 12
-jb 24f
-cmp rbx, 17
-jb 26f
-jmp 27f
-26:
-mov ecx, 1
-27:
-jmp 25f
-24:
-25:
+jmp 21f
+20:
+21:
 test rcx, rcx
-je 28f
+je 24f
 mov eax, 0
 mov QWORD PTR [r15+256], rax
 mov QWORD PTR [r15+264], rax
@@ -93204,32 +92904,32 @@ mov rdi, r15
 add rdi, 256
 mov rcx, rbx
 cmp rcx, 16
-je 210f
+je 26f
 mov r10d, 0
-212:
+28:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 212b
-jmp 211f
-210:
+jne 28b
+jmp 27f
+26:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-211:
+27:
 mov rbx, QWORD PTR [r15+192]
 mov rax, QWORD PTR [r15+184]
 test rbx, rbx
-je 213f
-jmp 214f
-213:
+je 29f
+jmp 210f
+29:
 mov rbx, rax
-214:
+210:
 and rbx, 15
 test rbx, rbx
-je 215f
+je 211f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -93239,12 +92939,12 @@ mov rsi, r14
 add rsi, 32
 mov rcx, rbx
 mov r10d, 0
-217:
+213:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
+jne 213b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -93255,9 +92955,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 216f
-215:
-216:
+jmp 212f
+211:
+212:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -93305,21 +93005,21 @@ mov rsi, r15
 add rsi, 0
 mov rcx, rbx
 cmp rcx, 16
-je 218f
+je 214f
 mov r10d, 0
-220:
+216:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 220b
-jmp 219f
-218:
+jne 216b
+jmp 215f
+214:
 mov rax, QWORD PTR [rsi]
 mov r10, QWORD PTR [rsi+8]
 mov QWORD PTR [rdi], rax
 mov QWORD PTR [rdi+8], r10
-219:
+215:
 mov rax, QWORD PTR [r15+240]
 xor rax, QWORD PTR [r15+256]
 mov rdx, QWORD PTR [r15+248]
@@ -93328,10 +93028,10 @@ or rax, rdx
 cmp rax, 1
 mov eax, 0
 adc eax, 0
-jmp 29f
-28:
+jmp 25f
+24:
 mov eax, 0
-29:
+25:
 mov rbx, QWORD PTR [r15+128]
 mov rbp, QWORD PTR [r15+136]
 mov r12, QWORD PTR [r15+144]

@@ -49,10 +49,6 @@
 //! one key. These application-level restrictions are the caller's responsibility.
 //! Shorter tags provide less protection against forgery.
 //!
-//! For the extension lengths, one-shot decryption makes an extra streaming
-//! pass over a bounded scratch buffer to compute the full tag, then checks
-//! the received prefix before modifying the caller's ciphertext.
-//!
 //! The functions are emitted once for each implementation of AES
 //! (`vg_aes_expand_key` and `vg_aes_ctr32`) and of `vg_ghash` they call,
 //! which have the same contracts: on x86-64, CPUs with AES-NI and SSSE3 run
@@ -1155,33 +1151,10 @@ impl AesGcm {
         tag: &[u8; N],
     ) -> Result<(), Error> {
         assert_tag_length!(N);
-        if matches!(N, 5..=7 | 9..=11) {
-            // The verified open accepts only the standard's tag lengths.
-            // Supply the missing suffix from a full tag computed over the
-            // ciphertext, so its full-length comparison checks precisely
-            // the received prefix. The caller's buffer stays untouched
-            // until that check succeeds.
-            add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-            let mut stream = Stream::<true>::new(self, nonce)?;
-            stream.update_aad(aad)?;
-            let mut scratch = [0u8; 1024];
-            for chunk in data.chunks(scratch.len()) {
-                scratch[..chunk.len()].copy_from_slice(chunk);
-                let result = stream.update(&mut scratch[..chunk.len()]);
-                zeroize(&mut scratch);
-                result?;
-            }
-            let mut full = stream.finish();
-            full[..N].copy_from_slice(tag);
-            let result = self.open(nonce, aad, data, &full);
-            zeroize(&mut full);
-            result
-        } else {
-            self.open(nonce, aad, data, tag)
-        }
+        self.open(nonce, aad, data, tag)
     }
 
-    /// GCM-AD (§7.2) with `tag`, of a length §5.2.1.2 allows (which the
+    /// GCM-AD (§7.2) with `tag`, of a length between 4 and 16 (which the
     /// callers check at compile time; `vg_aes_gcm_open` rejects any other).
     fn open(&self, nonce: &[u8], aad: &[u8], data: &mut [u8], tag: &[u8]) -> Result<(), Error> {
         check_nonce(nonce)?;
@@ -1630,7 +1603,7 @@ impl AesGcm {
         let mut pw = new_powers();
         let open_store = fns.open_store;
         // SAFETY: as in `seal_store`, with the received tag `tag` valid for
-        // reads of its length, one §5.2.1.2 allows, as `open_store` needs
+        // reads of its length, between 4 and 16, as `open_store` needs
         // (`open`'s callers check it at compile time).
         let ok = unsafe {
             open_store(
@@ -1883,7 +1856,7 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
     }
 }
 
-impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
+impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
     fn finish(mut self) -> Block {
         let f = instance!(self.key.backend, vg_aes_gcm_stream_finish,
@@ -1917,16 +1890,6 @@ impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
     fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
-        if matches!(tag.len(), 5..=7 | 9..=11) {
-            let mut full = self.finish();
-            let matches = crate::ct::eq(&full[..tag.len()], tag);
-            zeroize(&mut full);
-            return if matches {
-                Ok(())
-            } else {
-                Err(Error::TagMismatch)
-            };
-        }
         let f = instance!(self.key.backend, vg_aes_gcm_stream_verify,
             x86_64: [vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_pclmul,
                 vg_aes_gcm_stream_verify_aesni_pclmul],
@@ -3130,7 +3093,7 @@ mod tests {
         }
     }
 
-    /// Empty messages, partial blocks, and both sides of the scratch boundary.
+    /// Empty messages, partial blocks, and prepared-context boundaries.
     fn truncated_boundaries<const N: usize>() {
         let key = [3u8; 32];
         let nonce = [4u8; 13];
@@ -3140,7 +3103,10 @@ mod tests {
             let k = AesGcm::new(&key[..key_len]).unwrap();
             for nonce_len in [12, 13] {
                 let nonce = &nonce[..nonce_len];
-                for len in [0, 1, 15, 16, 17, 1023, 1024, 1025, 2057] {
+                for len in [
+                    0, 1, 15, 16, 17, 127, 128, 255, 256, 257, 511, 512, 513, 1023, 1024, 1025,
+                    2057,
+                ] {
                     let aad = &aad[..if len % 2 == 0 { 0 } else { aad.len() }];
                     let mut ct = msg;
                     let full = k.encrypt_in_place(nonce, aad, &mut ct[..len]).unwrap();

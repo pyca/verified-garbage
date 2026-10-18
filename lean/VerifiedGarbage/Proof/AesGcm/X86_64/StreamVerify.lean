@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify`
 
-Untrusted: everything here is checked by Lean. A tag length §5.2.1.2 does
+Untrusted: everything here is checked by Lean. A tag length `tagLenOk` does
 not allow gives 0; any other pads the received tag, read from `tag`
 (`recv`), computes the tag (`finTag 0`) and compares (`cmp 0`), without a
 branch.
@@ -271,7 +271,7 @@ theorem streamVerify_run (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamVeri
         let T := tagOf s₃.mem Ctx St (s.gpr .rsi).toNat (s.gpr .rcx) (s.gpr .r8) x
         if Spec.Gcm.tagLenOk t ∧ T.take t = bytesAt s₃.mem Tp t then s₄.gpr .rax = 1 else s₄.gpr .rax = 0))
     (WP.ite (!Spec.Gcm.tagLenOk t) (eval_e hz₃) (fun hbad => ?_) (fun hok => ?_)) fun s₄ h₄ => ?_)
-  · -- A length §5.2.1.2 does not allow.
+  · -- A length `tagLenOk` does not allow.
     have hbad' : Spec.Gcm.tagLenOk t = false := by simpa using hbad
     refine WP.run (Q := fun s₄ => s₄.gpr .rax = 0 ∧ (∀ r, r ≠ .rax → s₄.gpr r = s₃.gpr r) ∧ s₄.mem = s₃.mem ∧
         s₄.rd = s₃.rd ∧ s₄.wr = s₃.wr)
@@ -286,7 +286,7 @@ theorem streamVerify_run (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamVeri
   · -- An allowed length.
     have hok' : Spec.Gcm.tagLenOk t = true := by simpa using hok
     have hb : 1 ≤ t ∧ t ≤ 16 := by
-      simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok'
+      simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok'
       omega
     refine WP.mono (verifyCheck_ok v L he₃ hR₃ hA₃ hT₃ htl₃ hbx₃ hb.1 hb.2 hsi₃
       hTr₃ dTW hx)

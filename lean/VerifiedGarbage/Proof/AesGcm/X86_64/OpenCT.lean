@@ -192,7 +192,7 @@ theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog
   have hS := (E.aadPre C X hNp hnl hal hR).1
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have hb : 1 ≤ t ∧ t ≤ 16 := by
-    simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
+    simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
     omega
   have hlt := C.data.ok.lt
   refine WP.seq (WP.mono ha fun s₃ Mi => ?_)
@@ -424,7 +424,7 @@ theorem openBody_relOf {s₀ s₀' : State} {Ctx W SP A D : Addr} {n t : Nat} {m
         simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2.1, h.2.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun _ _ h => h.2) (fun _ h => hK h) (fun _ h => hK h)
   refine RelCT.seq a (rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) ?_ ?_)
-  · -- A length §5.2.1.2 does not allow.
+  · -- A length `tagLenOk` does not allow.
     exact (rel_env (by decide) (fun _ _ h => ⟨h.1.2.1.1.1.env, h.1.2.2.1.1.env⟩)
       (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.1.1.env h.1.2.2.1.1.env)
         ⟨_, by taint_decide⟩)).mono (fun _ _ h => h) fun _ _ h => h.2

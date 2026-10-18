@@ -18,8 +18,8 @@ a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, `vg_ghash`), with its
 unchanged postcondition, that also writes to a 128-byte buffer the powers of
 the hash subkey that it computes for its own GHASH. `vg_aes_gcm_seal_store_powers`
 and `vg_aes_gcm_open_store_powers` require the lengths of a TLS record (a
-12-byte nonce, at most 16 bytes of additional data and, for `open`, a tag
-length §5.2.1.2 allows: `storePowersOk`), the calls whose GHASH computes the
+12-byte nonce, at most 16 bytes of additional data and, for `open`, a
+supported tag length: `storePowersOk`), the calls whose GHASH computes the
 powers. A caller uses it for the call that first needs
 them; every other call takes the plain functions or the `*_with_powers`
 ones, which read the key context and the powers through two pointers, so
@@ -127,7 +127,7 @@ def openStorePowersPost (pb : Nat) : openStorePowersSig.Post pb :=
     openPost pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r ∧
       Powers8Repr m' pw (ctxH m ctx)
 
-/-- `openPre`, `storePowersOk` and a tag length §5.2.1.2 allows (`tagLenOk`),
+/-- `openPre`, `storePowersOk` and a supported tag length (`tagLenOk`),
 `openStorePowersPost`, and what `openContract` may leak. -/
 def openStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openStorePowersSig.contract A
@@ -148,7 +148,7 @@ def openStorePowersApi : Api where
   summary := storePowersSummary "vg_aes_gcm_open" "openStorePowersContract" ++
     " It writes the powers whether or not the tag matches: they depend only on the key."
   safety := openApi.safety ++ [storePowersSafety,
-    "`tag_len` must be 4, 8, 12, 13, 14, 15 or 16 (`VG.Spec.Gcm.tagLenOk`)."]
+    "`tag_len` must be between 4 and 16 (`VG.Spec.Gcm.tagLenOk`)."]
 
 /-- `vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16])`:
 `sealSig` and the powers' buffer. -/

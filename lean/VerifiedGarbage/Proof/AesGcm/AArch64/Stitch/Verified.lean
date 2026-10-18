@@ -46,7 +46,7 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) 
     Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Fast.openFastP, Impl.AesGcm.AArch64.Fast.openRunWithP,
     Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front,
     Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, openRest, openMain, oneCrypt, cryptAl, crArgs,
-    tagLenOk, tlTest, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
+    tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
     crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, List.nil_append, v.ctr.keepsV,
     v.gh.keepsV, htb, hcl, Bool.and_true, Bool.true_and] <;> decide +kernel
