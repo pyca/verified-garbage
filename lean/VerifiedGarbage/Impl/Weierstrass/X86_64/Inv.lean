@@ -7,18 +7,20 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
 `[acc] = [base]^(p - 2)` for a prime `p` (`InvCfg.inv`), as the inverse of
 `[base]` (zero for zero) by Bernstein–Yang divsteps in batches of `N = 59`
-(`Proof/Divstep/Alg.lean`'s `invRun`), then one Montgomery multiplication by
+(`Proof/Divstep/TcS.lean`'s `invRunS`), then one Montgomery multiplication by
 a constant: the algorithm of `Impl/Weierstrass/AArch64/Inv.lean`. Nothing
 depends on the numbers but through masks and `cmov`.
 
 * `f`, `g`: `n + 1` words each (two's complement), from `(p, x)`.
-* `a`, `b`: `n` words each in `[0, p)`, from `(0, 1)`; `f ≡ x a K`,
-  `g ≡ x b K` modulo `p`.
+* `a`, `b`: `n + 1` words each (two's complement) in `(-p, 2p)`, from
+  `(0, 1)`; `f ≡ x a K`, `g ≡ x b K` modulo `p`.
 * a batch: from `d` in `rbx` and the low words of `f` and `g`, `N`
   divsteps in packed chunks (`words`) give the matrix `(u, v, q, r)` in
   `r9`–`r12`; `(f, g) := (u f + v g, q f + r g) / 2^N` exactly,
-  `(a, b) := (u a + v b, q a + r b) / 2^64 mod p`.
-* the end: `f = ±1`, `res = ±a ≡ x⁻¹ 2^(-5 B)`, and `acc = res C / R` for
+  `(a, b) := (u a + v b, q a + r b) / 2^64` by one word of Montgomery
+  reduction (`mredS`), which stays in `(-p, 2p)` as `|u| + |v| ≤ 2^N`.
+* the end: `a` into `[0, p)` (`normC`), `f = ±1`, `res = ±a ≡ x⁻¹ 2^(-5 B)`,
+  and `acc = res C / R` for
   `C = 2^(5 B) R³ mod p`.
 
 The shift by five in the multi-word division uses `shl`. The model has no
@@ -234,14 +236,17 @@ def addIfNeg (M : Mod) (t U : Nat) : List Instr :=
 def subP (M : Mod) (t U : Nat) : List Instr :=
   [.mov .r13 (.imm (-1))] ++ maskCopy .r13 U M.mo M.n ++ chainW .sub .sbb (M.n + 1) (t + 8) (t + 8) U
 
-/-- `[dst] = mred [t]` (`n` words; `[t]` of `n + 1` words, signed, with room
-for one more): `[t] += k p` for `k = t₀ m mod 2^64` (`[t]` sign-extended to
-`n + 2` words), then `r =` words `1 … n + 1` brought into `[0, p)`: plus `p`
-if negative, less `p`, and plus `p` if that is negative, `p` (with a zero
-word on top) copied to `[U]` under the mask each time. -/
-def mredC (M : Mod) (dst t U : Nat) : List Instr :=
-  kOf M t ++ sextTop M t ++ memRow M.n t M.mo ++ carry2 (t + 8 * M.n) ++ zeroTop U M.n ++
-  addIfNeg M t U ++ subP M t U ++ addIfNeg M t U ++ copy M.n dst (t + 8)
+/-- `[dst] = mredRaw [t]` (`n + 1` words, signed; `[t]` of `n + 1` words, signed,
+with room for one more): `[t] += k p` for `k = t₀ m mod 2^64` (`[t]`
+sign-extended to `n + 2` words), then its words `1 … n + 1`. -/
+def mredS (M : Mod) (dst t : Nat) : List Instr :=
+  kOf M t ++ sextTop M t ++ memRow M.n t M.mo ++ carry2 (t + 8 * M.n) ++ copy (M.n + 1) dst (t + 8)
+
+/-- `[t + 8]` (`n + 1` words, signed, in `(-p, 2p)`) brought into `[0, p)`:
+plus `p` if negative, less `p`, and plus `p` if that is negative, `p` (with
+a zero word on top) copied to `[U]` under the mask each time. -/
+def normC (M : Mod) (t U : Nat) : List Instr :=
+  zeroTop U M.n ++ addIfNeg M t U ++ subP M t U ++ addIfNeg M t U
 
 /-! ## The configuration -/
 
@@ -263,14 +268,14 @@ variable (P : InvCfg)
 /-- Words of `f`, `g` (`n + 1`). -/
 def L : Nat := P.M.n + 1
 
-/-- The slots (byte offsets): `f`, `g`, `a`, `b`, the staging `f'`, `g'`, the
-temporary `t` (`n + 2` words), the masked operands `U` (`n + 1`), and the
-constant `C` (in `f'`'s place); a word past them is unused. -/
+/-- The slots (byte offsets): `f`, `g`, `a`, `b`, the staging `f'`, `g'` (`n + 1`
+words each), the temporary `t` (`n + 2` words), the signs' masks `U` (`n`
+words, two of them used), and the constant `C` (in `f'`'s place). -/
 def sF : Nat := P.tbl
 def sG : Nat := P.tbl + 8 * P.L
 def sA : Nat := P.tbl + 16 * P.L
-def sB : Nat := P.sA + 8 * P.M.n
-def sNF : Nat := P.sB + 8 * P.M.n
+def sB : Nat := P.sA + 8 * P.L
+def sNF : Nat := P.sB + 8 * P.L
 def sNG : Nat := P.sNF + 8 * P.L
 def sT : Nat := P.sNG + 8 * P.L
 def sU : Nat := P.sT + 8 * (P.M.n + 2)
@@ -281,7 +286,7 @@ def sC : Nat := P.sNF
 def init : List Instr :=
   [.mov32 .rbx (.imm 1), .mov32 .r14 (.imm (BitVec.ofNat 32 P.B))] ++
   copy P.M.n P.sF P.M.mo ++ zeroTop P.sF P.M.n ++ copy P.M.n P.sG P.base ++ zeroTop P.sG P.M.n ++
-  zeroWords P.M.n P.sA ++ zeroWords P.M.n P.sB ++ [.mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
+  zeroWords P.L P.sA ++ zeroWords P.L P.sB ++ [.mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
 
 /-- A batch's start: the low words of `f`, `g` into `[sT]`, `[sT + 8]`, and `rbx = ~d`. -/
 def batchStart : List Instr :=
@@ -299,11 +304,12 @@ def fgUpdate : List Instr :=
   linR .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L ++
   copy P.L P.sF P.sNF ++ copy P.L P.sG P.sNG
 
-/-- `(a, b) := (u a + v b, q a + r b) / 2^64 mod p`; `a` staged in `f'`. -/
+/-- `(a, b) := (u a + v b, q a + r b) / 2^64`, congruent modulo `p`, in `(-p, 2p)`;
+`a` staged in `f'`. -/
 def abUpdate : List Instr :=
-  linR .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU ++
-  linR .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU ++
-  copy P.M.n P.sA P.sNF
+  linR .r9 .r10 P.sT P.sA P.sB P.sU P.L P.L ++ mredS P.M P.sNF P.sT ++
+  linR .r11 .r12 P.sT P.sA P.sB P.sU P.L P.L ++ mredS P.M P.sB P.sT ++
+  copy P.L P.sA P.sNF
 
 /-- The count of batches less one, its zero flag for the loop. -/
 def batchEnd : List Instr := [.alu .sub .r14 (.imm 1)]
@@ -311,9 +317,10 @@ def batchEnd : List Instr := [.alu .sub .r14 (.imm 1)]
 /-- A batch. -/
 def batch : Prog isa := .block (P.words ++ P.fgUpdate ++ P.abUpdate ++ batchEnd)
 
-/-- The end: `f = ±1`; `[C] = C` if `f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. -/
+/-- The end: `a` into `[0, p)` (`g'` the masked operand); `f = ±1`; `[C] = C` if
+`f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. -/
 def finish : List Instr :=
-  [.mov .rdx (.mem (sc P.sF))] ++ maskOf .rcx .rdx ++
+  normC P.M (P.sA - 8) P.sNG ++ [.mov .rdx (.mem (sc P.sF))] ++ maskOf .rcx .rdx ++
   ((List.range P.M.n).flatMap fun i =>
     [.movImm64 .rax (BitVec.ofNat 64 (P.C >>> (64 * i))), .movImm64 .rdx (BitVec.ofNat 64 (P.Cn >>> (64 * i))),
       .alu .xor .rdx (.reg .rax), .alu .and .rdx (.reg .rcx), .alu .xor .rax (.reg .rdx),

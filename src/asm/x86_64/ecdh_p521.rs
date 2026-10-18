@@ -2856,8 +2856,8 @@ mov QWORD PTR [rdi+4672], r8
 mov QWORD PTR [rdi+4680], r8
 mov QWORD PTR [rdi+4688], r8
 mov QWORD PTR [rdi+4696], r8
-mov r8d, 0
 mov QWORD PTR [rdi+4704], r8
+mov r8d, 0
 mov QWORD PTR [rdi+4712], r8
 mov QWORD PTR [rdi+4720], r8
 mov QWORD PTR [rdi+4728], r8
@@ -2866,19 +2866,21 @@ mov QWORD PTR [rdi+4744], r8
 mov QWORD PTR [rdi+4752], r8
 mov QWORD PTR [rdi+4760], r8
 mov QWORD PTR [rdi+4768], r8
+mov QWORD PTR [rdi+4776], r8
+mov QWORD PTR [rdi+4784], r8
 mov r8d, 1
-mov QWORD PTR [rdi+4704], r8
+mov QWORD PTR [rdi+4712], r8
 217:
 mov rax, QWORD PTR [rdi+4472]
-mov QWORD PTR [rdi+4936], rax
+mov QWORD PTR [rdi+4952], rax
 mov rax, QWORD PTR [rdi+4552]
-mov QWORD PTR [rdi+4944], rax
+mov QWORD PTR [rdi+4960], rax
 xor rbx, -1
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -3123,33 +3125,33 @@ sub rbp, 16384
 shl r13, 17
 shr r13, 48
 sub r13, 16384
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4952]
 mul r8
-mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4960]
 mul rcx
+add rax, QWORD PTR [rdi+4968]
+shr rax, 15
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4952]
+mul r13
+mov QWORD PTR [rdi+4952], rax
+mov rax, QWORD PTR [rdi+4960]
+mul rbp
 add rax, QWORD PTR [rdi+4952]
 shr rax, 15
+mov QWORD PTR [rdi+4960], rax
+mov rax, QWORD PTR [rdi+4968]
 mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4936]
-mul r13
-mov QWORD PTR [rdi+4936], rax
-mov rax, QWORD PTR [rdi+4944]
-mul rbp
-add rax, QWORD PTR [rdi+4936]
-shr rax, 15
-mov QWORD PTR [rdi+4944], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4936], rax
 mov r9, r8
 mov r10, rcx
 mov r11, r13
 mov r12, rbp
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -3394,27 +3396,27 @@ sub rbp, 16384
 shl r13, 17
 shr r13, 48
 sub r13, 16384
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4952]
 mul r8
-mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4960]
 mul rcx
+add rax, QWORD PTR [rdi+4968]
+shr rax, 15
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4952]
+mul r13
+mov QWORD PTR [rdi+4952], rax
+mov rax, QWORD PTR [rdi+4960]
+mul rbp
 add rax, QWORD PTR [rdi+4952]
 shr rax, 15
+mov QWORD PTR [rdi+4960], rax
+mov rax, QWORD PTR [rdi+4968]
 mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4936]
-mul r13
-mov QWORD PTR [rdi+4936], rax
-mov rax, QWORD PTR [rdi+4944]
-mul rbp
-add rax, QWORD PTR [rdi+4936]
-shr rax, 15
-mov QWORD PTR [rdi+4944], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4936], rax
 mov rax, r13
 mul r9
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r9
 mov r9, rax
@@ -3423,11 +3425,11 @@ mul r11
 add r9, rax
 mov rax, rbp
 mul r11
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r11, rax
 mov rax, r13
 mul r10
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r10
 mov r10, rax
@@ -3436,13 +3438,13 @@ mul r12
 add r10, rax
 mov rax, rbp
 mul r12
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r12, rax
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -3687,27 +3689,27 @@ sub rbp, 16384
 shl r13, 17
 shr r13, 48
 sub r13, 16384
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4952]
 mul r8
-mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4960]
 mul rcx
+add rax, QWORD PTR [rdi+4968]
+shr rax, 15
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4952]
+mul r13
+mov QWORD PTR [rdi+4952], rax
+mov rax, QWORD PTR [rdi+4960]
+mul rbp
 add rax, QWORD PTR [rdi+4952]
 shr rax, 15
+mov QWORD PTR [rdi+4960], rax
+mov rax, QWORD PTR [rdi+4968]
 mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4936]
-mul r13
-mov QWORD PTR [rdi+4936], rax
-mov rax, QWORD PTR [rdi+4944]
-mul rbp
-add rax, QWORD PTR [rdi+4936]
-shr rax, 15
-mov QWORD PTR [rdi+4944], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4936], rax
 mov rax, r13
 mul r9
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r9
 mov r9, rax
@@ -3716,11 +3718,11 @@ mul r11
 add r9, rax
 mov rax, rbp
 mul r11
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r11, rax
 mov rax, r13
 mul r10
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r10
 mov r10, rax
@@ -3729,13 +3731,13 @@ mul r12
 add r10, rax
 mov rax, rbp
 mul r12
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r12, rax
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -3966,7 +3968,7 @@ shr r13, 48
 sub r13, 16384
 mov rax, r13
 mul r9
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r9
 mov r9, rax
@@ -3975,11 +3977,11 @@ mul r11
 add r9, rax
 mov rax, rbp
 mul r11
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r11, rax
 mov rax, r13
 mul r10
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r10
 mov r10, rax
@@ -3988,14 +3990,14 @@ mul r12
 add r10, rax
 mov rax, rbp
 mul r12
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r12, rax
 xor rbx, -1
 mov rax, r9
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r9
 xor rcx, rdx
 sub rcx, rdx
@@ -4003,158 +4005,146 @@ mov rax, r10
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r10
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4472]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4552]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4480]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4560]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4488]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4568]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4496]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4480]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4576]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4560]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4504]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4488]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4584]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4568]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4512]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4496]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4592]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4576]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4520]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4504]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4600]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4584]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4528]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4512]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4608]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4592]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4536]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4520]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4616]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4600]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4544]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4528]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4624]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4608]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
-mov r8, QWORD PTR [rdi+4944]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4776], rax
-mov rax, QWORD PTR [rdi+4944]
-mov r8, QWORD PTR [rdi+4952]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4784], rax
+mov rax, QWORD PTR [rdi+4536]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4616]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4544]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4624]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
 mov rax, QWORD PTR [rdi+4952]
 mov r8, QWORD PTR [rdi+4960]
 shr rax, 59
@@ -4197,7 +4187,19 @@ shr rax, 59
 shl r8, 5
 add rax, r8
 mov QWORD PTR [rdi+4840], rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rax, QWORD PTR [rdi+5008]
+mov r8, QWORD PTR [rdi+5016]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4848], rax
+mov rax, QWORD PTR [rdi+5016]
+mov r8, QWORD PTR [rdi+5024]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4856], rax
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
@@ -4207,12 +4209,12 @@ mov rax, rdx
 shr rax, 59
 shl r8, 5
 add rax, r8
-mov QWORD PTR [rdi+4848], rax
+mov QWORD PTR [rdi+4864], rax
 mov rax, r11
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r11
 xor rcx, rdx
 sub rcx, rdx
@@ -4220,158 +4222,146 @@ mov rax, r12
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r12
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4472]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4552]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4480]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4560]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4488]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4568]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4496]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4480]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4576]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4560]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4504]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4488]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4584]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4568]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4512]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4496]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4592]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4576]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4520]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4504]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4600]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4584]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4528]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4512]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4608]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4592]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4536]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4520]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4616]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4600]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4544]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4528]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4624]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4608]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
-mov r8, QWORD PTR [rdi+4944]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4856], rax
-mov rax, QWORD PTR [rdi+4944]
-mov r8, QWORD PTR [rdi+4952]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4864], rax
+mov rax, QWORD PTR [rdi+4536]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4616]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4544]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4624]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
 mov rax, QWORD PTR [rdi+4952]
 mov r8, QWORD PTR [rdi+4960]
 shr rax, 59
@@ -4414,7 +4404,19 @@ shr rax, 59
 shl r8, 5
 add rax, r8
 mov QWORD PTR [rdi+4920], rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rax, QWORD PTR [rdi+5008]
+mov r8, QWORD PTR [rdi+5016]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4928], rax
+mov rax, QWORD PTR [rdi+5016]
+mov r8, QWORD PTR [rdi+5024]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4936], rax
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
@@ -4424,52 +4426,52 @@ mov rax, rdx
 shr rax, 59
 shl r8, 5
 add rax, r8
-mov QWORD PTR [rdi+4928], rax
-mov rax, QWORD PTR [rdi+4776]
-mov QWORD PTR [rdi+4472], rax
-mov rax, QWORD PTR [rdi+4784]
-mov QWORD PTR [rdi+4480], rax
+mov QWORD PTR [rdi+4944], rax
 mov rax, QWORD PTR [rdi+4792]
-mov QWORD PTR [rdi+4488], rax
+mov QWORD PTR [rdi+4472], rax
 mov rax, QWORD PTR [rdi+4800]
-mov QWORD PTR [rdi+4496], rax
+mov QWORD PTR [rdi+4480], rax
 mov rax, QWORD PTR [rdi+4808]
-mov QWORD PTR [rdi+4504], rax
+mov QWORD PTR [rdi+4488], rax
 mov rax, QWORD PTR [rdi+4816]
-mov QWORD PTR [rdi+4512], rax
+mov QWORD PTR [rdi+4496], rax
 mov rax, QWORD PTR [rdi+4824]
-mov QWORD PTR [rdi+4520], rax
+mov QWORD PTR [rdi+4504], rax
 mov rax, QWORD PTR [rdi+4832]
-mov QWORD PTR [rdi+4528], rax
+mov QWORD PTR [rdi+4512], rax
 mov rax, QWORD PTR [rdi+4840]
-mov QWORD PTR [rdi+4536], rax
+mov QWORD PTR [rdi+4520], rax
 mov rax, QWORD PTR [rdi+4848]
-mov QWORD PTR [rdi+4544], rax
+mov QWORD PTR [rdi+4528], rax
 mov rax, QWORD PTR [rdi+4856]
-mov QWORD PTR [rdi+4552], rax
+mov QWORD PTR [rdi+4536], rax
 mov rax, QWORD PTR [rdi+4864]
-mov QWORD PTR [rdi+4560], rax
+mov QWORD PTR [rdi+4544], rax
 mov rax, QWORD PTR [rdi+4872]
-mov QWORD PTR [rdi+4568], rax
+mov QWORD PTR [rdi+4552], rax
 mov rax, QWORD PTR [rdi+4880]
-mov QWORD PTR [rdi+4576], rax
+mov QWORD PTR [rdi+4560], rax
 mov rax, QWORD PTR [rdi+4888]
-mov QWORD PTR [rdi+4584], rax
+mov QWORD PTR [rdi+4568], rax
 mov rax, QWORD PTR [rdi+4896]
-mov QWORD PTR [rdi+4592], rax
+mov QWORD PTR [rdi+4576], rax
 mov rax, QWORD PTR [rdi+4904]
-mov QWORD PTR [rdi+4600], rax
+mov QWORD PTR [rdi+4584], rax
 mov rax, QWORD PTR [rdi+4912]
-mov QWORD PTR [rdi+4608], rax
+mov QWORD PTR [rdi+4592], rax
 mov rax, QWORD PTR [rdi+4920]
-mov QWORD PTR [rdi+4616], rax
+mov QWORD PTR [rdi+4600], rax
 mov rax, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4608], rax
+mov rax, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4616], rax
+mov rax, QWORD PTR [rdi+4944]
 mov QWORD PTR [rdi+4624], rax
 mov rax, r9
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r9
 xor rcx, rdx
 sub rcx, rdx
@@ -4477,157 +4479,159 @@ mov rax, r10
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r10
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4632]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4704]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4640]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4712]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4648]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4720]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4656]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4640]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4728]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4720]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4664]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4648]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4736]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4728]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4672]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4656]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4744]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4736]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4680]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4664]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4752]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4744]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4688]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4672]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4760]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4752]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4696]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4680]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4768]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4760]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4688]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4768]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4696]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4776]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4704]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4784]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4952]
 movabs rcx, 1
 mul rcx
 mov rcx, rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
 sub rax, r8
 mov r8, rax
-mov QWORD PTR [rdi+5016], r8
+mov QWORD PTR [rdi+5032], r8
 mov ebp, 0
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 mov rax, QWORD PTR [rdi+64]
 mul rcx
 add rax, rbp
@@ -4635,8 +4639,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4952], r8
+mov r8, QWORD PTR [rdi+4960]
 mov rax, QWORD PTR [rdi+72]
 mul rcx
 add rax, rbp
@@ -4644,8 +4648,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
+mov QWORD PTR [rdi+4960], r8
+mov r8, QWORD PTR [rdi+4968]
 mov rax, QWORD PTR [rdi+80]
 mul rcx
 add rax, rbp
@@ -4653,8 +4657,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
+mov QWORD PTR [rdi+4968], r8
+mov r8, QWORD PTR [rdi+4976]
 mov rax, QWORD PTR [rdi+88]
 mul rcx
 add rax, rbp
@@ -4662,8 +4666,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
+mov QWORD PTR [rdi+4976], r8
+mov r8, QWORD PTR [rdi+4984]
 mov rax, QWORD PTR [rdi+96]
 mul rcx
 add rax, rbp
@@ -4671,8 +4675,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
+mov QWORD PTR [rdi+4984], r8
+mov r8, QWORD PTR [rdi+4992]
 mov rax, QWORD PTR [rdi+104]
 mul rcx
 add rax, rbp
@@ -4680,8 +4684,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
+mov QWORD PTR [rdi+4992], r8
+mov r8, QWORD PTR [rdi+5000]
 mov rax, QWORD PTR [rdi+112]
 mul rcx
 add rax, rbp
@@ -4689,8 +4693,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
+mov QWORD PTR [rdi+5000], r8
+mov r8, QWORD PTR [rdi+5008]
 mov rax, QWORD PTR [rdi+120]
 mul rcx
 add rax, rbp
@@ -4698,8 +4702,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
+mov QWORD PTR [rdi+5008], r8
+mov r8, QWORD PTR [rdi+5016]
 mov rax, QWORD PTR [rdi+128]
 mul rcx
 add rax, rbp
@@ -4707,203 +4711,13 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
+mov QWORD PTR [rdi+5016], r8
+mov r8, QWORD PTR [rdi+5024]
 add r8, rbp
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+5024], r8
+mov r8, QWORD PTR [rdi+5032]
 adc r8, 0
-mov QWORD PTR [rdi+5016], r8
-mov r8d, 0
-mov QWORD PTR [rdi+5096], r8
-mov rdx, QWORD PTR [rdi+5016]
-mov r13, rdx
-shr r13, 63
-mov eax, 0
-sub rax, r13
-mov r13, rax
-mov r8, QWORD PTR [rdi+64]
-and r8, r13
-mov QWORD PTR [rdi+5024], r8
-mov r8, QWORD PTR [rdi+72]
-and r8, r13
 mov QWORD PTR [rdi+5032], r8
-mov r8, QWORD PTR [rdi+80]
-and r8, r13
-mov QWORD PTR [rdi+5040], r8
-mov r8, QWORD PTR [rdi+88]
-and r8, r13
-mov QWORD PTR [rdi+5048], r8
-mov r8, QWORD PTR [rdi+96]
-and r8, r13
-mov QWORD PTR [rdi+5056], r8
-mov r8, QWORD PTR [rdi+104]
-and r8, r13
-mov QWORD PTR [rdi+5064], r8
-mov r8, QWORD PTR [rdi+112]
-and r8, r13
-mov QWORD PTR [rdi+5072], r8
-mov r8, QWORD PTR [rdi+120]
-and r8, r13
-mov QWORD PTR [rdi+5080], r8
-mov r8, QWORD PTR [rdi+128]
-and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov r13, -1
-mov r8, QWORD PTR [rdi+64]
-and r8, r13
-mov QWORD PTR [rdi+5024], r8
-mov r8, QWORD PTR [rdi+72]
-and r8, r13
-mov QWORD PTR [rdi+5032], r8
-mov r8, QWORD PTR [rdi+80]
-and r8, r13
-mov QWORD PTR [rdi+5040], r8
-mov r8, QWORD PTR [rdi+88]
-and r8, r13
-mov QWORD PTR [rdi+5048], r8
-mov r8, QWORD PTR [rdi+96]
-and r8, r13
-mov QWORD PTR [rdi+5056], r8
-mov r8, QWORD PTR [rdi+104]
-and r8, r13
-mov QWORD PTR [rdi+5064], r8
-mov r8, QWORD PTR [rdi+112]
-and r8, r13
-mov QWORD PTR [rdi+5072], r8
-mov r8, QWORD PTR [rdi+120]
-and r8, r13
-mov QWORD PTR [rdi+5080], r8
-mov r8, QWORD PTR [rdi+128]
-and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-sub r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-sbb r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-sbb r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-sbb r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-sbb r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-sbb r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-sbb r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-sbb r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-sbb r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-sbb r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rdx, QWORD PTR [rdi+5016]
-mov r13, rdx
-shr r13, 63
-mov eax, 0
-sub rax, r13
-mov r13, rax
-mov r8, QWORD PTR [rdi+64]
-and r8, r13
-mov QWORD PTR [rdi+5024], r8
-mov r8, QWORD PTR [rdi+72]
-and r8, r13
-mov QWORD PTR [rdi+5032], r8
-mov r8, QWORD PTR [rdi+80]
-and r8, r13
-mov QWORD PTR [rdi+5040], r8
-mov r8, QWORD PTR [rdi+88]
-and r8, r13
-mov QWORD PTR [rdi+5048], r8
-mov r8, QWORD PTR [rdi+96]
-and r8, r13
-mov QWORD PTR [rdi+5056], r8
-mov r8, QWORD PTR [rdi+104]
-and r8, r13
-mov QWORD PTR [rdi+5064], r8
-mov r8, QWORD PTR [rdi+112]
-and r8, r13
-mov QWORD PTR [rdi+5072], r8
-mov r8, QWORD PTR [rdi+120]
-and r8, r13
-mov QWORD PTR [rdi+5080], r8
-mov r8, QWORD PTR [rdi+128]
-and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rax, QWORD PTR [rdi+4944]
-mov QWORD PTR [rdi+4776], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4784], rax
 mov rax, QWORD PTR [rdi+4960]
 mov QWORD PTR [rdi+4792], rax
 mov rax, QWORD PTR [rdi+4968]
@@ -4918,11 +4732,17 @@ mov rax, QWORD PTR [rdi+5000]
 mov QWORD PTR [rdi+4832], rax
 mov rax, QWORD PTR [rdi+5008]
 mov QWORD PTR [rdi+4840], rax
+mov rax, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4848], rax
+mov rax, QWORD PTR [rdi+5024]
+mov QWORD PTR [rdi+4856], rax
+mov rax, QWORD PTR [rdi+5032]
+mov QWORD PTR [rdi+4864], rax
 mov rax, r11
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r11
 xor rcx, rdx
 sub rcx, rdx
@@ -4930,157 +4750,159 @@ mov rax, r12
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r12
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4632]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4704]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4640]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4712]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4648]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4720]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4656]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4640]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4728]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4720]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4664]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4648]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4736]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4728]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4672]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4656]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4744]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4736]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4680]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4664]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4752]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4744]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4688]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4672]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4760]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4752]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4696]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4680]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4768]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4760]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4688]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4768]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4696]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4776]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4704]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4784]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4952]
 movabs rcx, 1
 mul rcx
 mov rcx, rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
 sub rax, r8
 mov r8, rax
-mov QWORD PTR [rdi+5016], r8
+mov QWORD PTR [rdi+5032], r8
 mov ebp, 0
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 mov rax, QWORD PTR [rdi+64]
 mul rcx
 add rax, rbp
@@ -5088,8 +4910,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4952], r8
+mov r8, QWORD PTR [rdi+4960]
 mov rax, QWORD PTR [rdi+72]
 mul rcx
 add rax, rbp
@@ -5097,8 +4919,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
+mov QWORD PTR [rdi+4960], r8
+mov r8, QWORD PTR [rdi+4968]
 mov rax, QWORD PTR [rdi+80]
 mul rcx
 add rax, rbp
@@ -5106,8 +4928,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
+mov QWORD PTR [rdi+4968], r8
+mov r8, QWORD PTR [rdi+4976]
 mov rax, QWORD PTR [rdi+88]
 mul rcx
 add rax, rbp
@@ -5115,8 +4937,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
+mov QWORD PTR [rdi+4976], r8
+mov r8, QWORD PTR [rdi+4984]
 mov rax, QWORD PTR [rdi+96]
 mul rcx
 add rax, rbp
@@ -5124,8 +4946,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
+mov QWORD PTR [rdi+4984], r8
+mov r8, QWORD PTR [rdi+4992]
 mov rax, QWORD PTR [rdi+104]
 mul rcx
 add rax, rbp
@@ -5133,8 +4955,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
+mov QWORD PTR [rdi+4992], r8
+mov r8, QWORD PTR [rdi+5000]
 mov rax, QWORD PTR [rdi+112]
 mul rcx
 add rax, rbp
@@ -5142,8 +4964,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
+mov QWORD PTR [rdi+5000], r8
+mov r8, QWORD PTR [rdi+5008]
 mov rax, QWORD PTR [rdi+120]
 mul rcx
 add rax, rbp
@@ -5151,8 +4973,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
+mov QWORD PTR [rdi+5008], r8
+mov r8, QWORD PTR [rdi+5016]
 mov rax, QWORD PTR [rdi+128]
 mul rcx
 add rax, rbp
@@ -5160,16 +4982,58 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-add r8, rbp
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, 0
 mov QWORD PTR [rdi+5016], r8
+mov r8, QWORD PTR [rdi+5024]
+add r8, rbp
+mov QWORD PTR [rdi+5024], r8
+mov r8, QWORD PTR [rdi+5032]
+adc r8, 0
+mov QWORD PTR [rdi+5032], r8
+mov rax, QWORD PTR [rdi+4960]
+mov QWORD PTR [rdi+4712], rax
+mov rax, QWORD PTR [rdi+4968]
+mov QWORD PTR [rdi+4720], rax
+mov rax, QWORD PTR [rdi+4976]
+mov QWORD PTR [rdi+4728], rax
+mov rax, QWORD PTR [rdi+4984]
+mov QWORD PTR [rdi+4736], rax
+mov rax, QWORD PTR [rdi+4992]
+mov QWORD PTR [rdi+4744], rax
+mov rax, QWORD PTR [rdi+5000]
+mov QWORD PTR [rdi+4752], rax
+mov rax, QWORD PTR [rdi+5008]
+mov QWORD PTR [rdi+4760], rax
+mov rax, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4768], rax
+mov rax, QWORD PTR [rdi+5024]
+mov QWORD PTR [rdi+4776], rax
+mov rax, QWORD PTR [rdi+5032]
+mov QWORD PTR [rdi+4784], rax
+mov rax, QWORD PTR [rdi+4792]
+mov QWORD PTR [rdi+4632], rax
+mov rax, QWORD PTR [rdi+4800]
+mov QWORD PTR [rdi+4640], rax
+mov rax, QWORD PTR [rdi+4808]
+mov QWORD PTR [rdi+4648], rax
+mov rax, QWORD PTR [rdi+4816]
+mov QWORD PTR [rdi+4656], rax
+mov rax, QWORD PTR [rdi+4824]
+mov QWORD PTR [rdi+4664], rax
+mov rax, QWORD PTR [rdi+4832]
+mov QWORD PTR [rdi+4672], rax
+mov rax, QWORD PTR [rdi+4840]
+mov QWORD PTR [rdi+4680], rax
+mov rax, QWORD PTR [rdi+4848]
+mov QWORD PTR [rdi+4688], rax
+mov rax, QWORD PTR [rdi+4856]
+mov QWORD PTR [rdi+4696], rax
+mov rax, QWORD PTR [rdi+4864]
+mov QWORD PTR [rdi+4704], rax
+sub r14, 1
+jne 217b
 mov r8d, 0
-mov QWORD PTR [rdi+5096], r8
-mov rdx, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4944], r8
+mov rdx, QWORD PTR [rdi+4704]
 mov r13, rdx
 shr r13, 63
 mov eax, 0
@@ -5177,120 +5041,120 @@ sub rax, r13
 mov r13, rax
 mov r8, QWORD PTR [rdi+64]
 and r8, r13
-mov QWORD PTR [rdi+5024], r8
+mov QWORD PTR [rdi+4872], r8
 mov r8, QWORD PTR [rdi+72]
 and r8, r13
-mov QWORD PTR [rdi+5032], r8
+mov QWORD PTR [rdi+4880], r8
 mov r8, QWORD PTR [rdi+80]
 and r8, r13
-mov QWORD PTR [rdi+5040], r8
+mov QWORD PTR [rdi+4888], r8
 mov r8, QWORD PTR [rdi+88]
 and r8, r13
-mov QWORD PTR [rdi+5048], r8
+mov QWORD PTR [rdi+4896], r8
 mov r8, QWORD PTR [rdi+96]
 and r8, r13
-mov QWORD PTR [rdi+5056], r8
+mov QWORD PTR [rdi+4904], r8
 mov r8, QWORD PTR [rdi+104]
 and r8, r13
-mov QWORD PTR [rdi+5064], r8
+mov QWORD PTR [rdi+4912], r8
 mov r8, QWORD PTR [rdi+112]
 and r8, r13
-mov QWORD PTR [rdi+5072], r8
+mov QWORD PTR [rdi+4920], r8
 mov r8, QWORD PTR [rdi+120]
 and r8, r13
-mov QWORD PTR [rdi+5080], r8
+mov QWORD PTR [rdi+4928], r8
 mov r8, QWORD PTR [rdi+128]
 and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
+mov QWORD PTR [rdi+4936], r8
+mov r8, QWORD PTR [rdi+4632]
+add r8, QWORD PTR [rdi+4872]
+mov QWORD PTR [rdi+4632], r8
+mov r8, QWORD PTR [rdi+4640]
+adc r8, QWORD PTR [rdi+4880]
+mov QWORD PTR [rdi+4640], r8
+mov r8, QWORD PTR [rdi+4648]
+adc r8, QWORD PTR [rdi+4888]
+mov QWORD PTR [rdi+4648], r8
+mov r8, QWORD PTR [rdi+4656]
+adc r8, QWORD PTR [rdi+4896]
+mov QWORD PTR [rdi+4656], r8
+mov r8, QWORD PTR [rdi+4664]
+adc r8, QWORD PTR [rdi+4904]
+mov QWORD PTR [rdi+4664], r8
+mov r8, QWORD PTR [rdi+4672]
+adc r8, QWORD PTR [rdi+4912]
+mov QWORD PTR [rdi+4672], r8
+mov r8, QWORD PTR [rdi+4680]
+adc r8, QWORD PTR [rdi+4920]
+mov QWORD PTR [rdi+4680], r8
+mov r8, QWORD PTR [rdi+4688]
+adc r8, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4688], r8
+mov r8, QWORD PTR [rdi+4696]
+adc r8, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4696], r8
+mov r8, QWORD PTR [rdi+4704]
+adc r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4704], r8
 mov r13, -1
 mov r8, QWORD PTR [rdi+64]
 and r8, r13
-mov QWORD PTR [rdi+5024], r8
+mov QWORD PTR [rdi+4872], r8
 mov r8, QWORD PTR [rdi+72]
 and r8, r13
-mov QWORD PTR [rdi+5032], r8
+mov QWORD PTR [rdi+4880], r8
 mov r8, QWORD PTR [rdi+80]
 and r8, r13
-mov QWORD PTR [rdi+5040], r8
+mov QWORD PTR [rdi+4888], r8
 mov r8, QWORD PTR [rdi+88]
 and r8, r13
-mov QWORD PTR [rdi+5048], r8
+mov QWORD PTR [rdi+4896], r8
 mov r8, QWORD PTR [rdi+96]
 and r8, r13
-mov QWORD PTR [rdi+5056], r8
+mov QWORD PTR [rdi+4904], r8
 mov r8, QWORD PTR [rdi+104]
 and r8, r13
-mov QWORD PTR [rdi+5064], r8
+mov QWORD PTR [rdi+4912], r8
 mov r8, QWORD PTR [rdi+112]
 and r8, r13
-mov QWORD PTR [rdi+5072], r8
+mov QWORD PTR [rdi+4920], r8
 mov r8, QWORD PTR [rdi+120]
 and r8, r13
-mov QWORD PTR [rdi+5080], r8
+mov QWORD PTR [rdi+4928], r8
 mov r8, QWORD PTR [rdi+128]
 and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-sub r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-sbb r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-sbb r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-sbb r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-sbb r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-sbb r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-sbb r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-sbb r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-sbb r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-sbb r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rdx, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4936], r8
+mov r8, QWORD PTR [rdi+4632]
+sub r8, QWORD PTR [rdi+4872]
+mov QWORD PTR [rdi+4632], r8
+mov r8, QWORD PTR [rdi+4640]
+sbb r8, QWORD PTR [rdi+4880]
+mov QWORD PTR [rdi+4640], r8
+mov r8, QWORD PTR [rdi+4648]
+sbb r8, QWORD PTR [rdi+4888]
+mov QWORD PTR [rdi+4648], r8
+mov r8, QWORD PTR [rdi+4656]
+sbb r8, QWORD PTR [rdi+4896]
+mov QWORD PTR [rdi+4656], r8
+mov r8, QWORD PTR [rdi+4664]
+sbb r8, QWORD PTR [rdi+4904]
+mov QWORD PTR [rdi+4664], r8
+mov r8, QWORD PTR [rdi+4672]
+sbb r8, QWORD PTR [rdi+4912]
+mov QWORD PTR [rdi+4672], r8
+mov r8, QWORD PTR [rdi+4680]
+sbb r8, QWORD PTR [rdi+4920]
+mov QWORD PTR [rdi+4680], r8
+mov r8, QWORD PTR [rdi+4688]
+sbb r8, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4688], r8
+mov r8, QWORD PTR [rdi+4696]
+sbb r8, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4696], r8
+mov r8, QWORD PTR [rdi+4704]
+sbb r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4704], r8
+mov rdx, QWORD PTR [rdi+4704]
 mov r13, rdx
 shr r13, 63
 mov eax, 0
@@ -5298,99 +5162,61 @@ sub rax, r13
 mov r13, rax
 mov r8, QWORD PTR [rdi+64]
 and r8, r13
-mov QWORD PTR [rdi+5024], r8
+mov QWORD PTR [rdi+4872], r8
 mov r8, QWORD PTR [rdi+72]
 and r8, r13
-mov QWORD PTR [rdi+5032], r8
+mov QWORD PTR [rdi+4880], r8
 mov r8, QWORD PTR [rdi+80]
 and r8, r13
-mov QWORD PTR [rdi+5040], r8
+mov QWORD PTR [rdi+4888], r8
 mov r8, QWORD PTR [rdi+88]
 and r8, r13
-mov QWORD PTR [rdi+5048], r8
+mov QWORD PTR [rdi+4896], r8
 mov r8, QWORD PTR [rdi+96]
 and r8, r13
-mov QWORD PTR [rdi+5056], r8
+mov QWORD PTR [rdi+4904], r8
 mov r8, QWORD PTR [rdi+104]
 and r8, r13
-mov QWORD PTR [rdi+5064], r8
+mov QWORD PTR [rdi+4912], r8
 mov r8, QWORD PTR [rdi+112]
 and r8, r13
-mov QWORD PTR [rdi+5072], r8
+mov QWORD PTR [rdi+4920], r8
 mov r8, QWORD PTR [rdi+120]
 and r8, r13
-mov QWORD PTR [rdi+5080], r8
+mov QWORD PTR [rdi+4928], r8
 mov r8, QWORD PTR [rdi+128]
 and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rax, QWORD PTR [rdi+4944]
-mov QWORD PTR [rdi+4704], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4712], rax
-mov rax, QWORD PTR [rdi+4960]
-mov QWORD PTR [rdi+4720], rax
-mov rax, QWORD PTR [rdi+4968]
-mov QWORD PTR [rdi+4728], rax
-mov rax, QWORD PTR [rdi+4976]
-mov QWORD PTR [rdi+4736], rax
-mov rax, QWORD PTR [rdi+4984]
-mov QWORD PTR [rdi+4744], rax
-mov rax, QWORD PTR [rdi+4992]
-mov QWORD PTR [rdi+4752], rax
-mov rax, QWORD PTR [rdi+5000]
-mov QWORD PTR [rdi+4760], rax
-mov rax, QWORD PTR [rdi+5008]
-mov QWORD PTR [rdi+4768], rax
-mov rax, QWORD PTR [rdi+4776]
-mov QWORD PTR [rdi+4632], rax
-mov rax, QWORD PTR [rdi+4784]
-mov QWORD PTR [rdi+4640], rax
-mov rax, QWORD PTR [rdi+4792]
-mov QWORD PTR [rdi+4648], rax
-mov rax, QWORD PTR [rdi+4800]
-mov QWORD PTR [rdi+4656], rax
-mov rax, QWORD PTR [rdi+4808]
-mov QWORD PTR [rdi+4664], rax
-mov rax, QWORD PTR [rdi+4816]
-mov QWORD PTR [rdi+4672], rax
-mov rax, QWORD PTR [rdi+4824]
-mov QWORD PTR [rdi+4680], rax
-mov rax, QWORD PTR [rdi+4832]
-mov QWORD PTR [rdi+4688], rax
-mov rax, QWORD PTR [rdi+4840]
-mov QWORD PTR [rdi+4696], rax
-sub r14, 1
-jne 217b
+mov QWORD PTR [rdi+4936], r8
+mov r8, QWORD PTR [rdi+4632]
+add r8, QWORD PTR [rdi+4872]
+mov QWORD PTR [rdi+4632], r8
+mov r8, QWORD PTR [rdi+4640]
+adc r8, QWORD PTR [rdi+4880]
+mov QWORD PTR [rdi+4640], r8
+mov r8, QWORD PTR [rdi+4648]
+adc r8, QWORD PTR [rdi+4888]
+mov QWORD PTR [rdi+4648], r8
+mov r8, QWORD PTR [rdi+4656]
+adc r8, QWORD PTR [rdi+4896]
+mov QWORD PTR [rdi+4656], r8
+mov r8, QWORD PTR [rdi+4664]
+adc r8, QWORD PTR [rdi+4904]
+mov QWORD PTR [rdi+4664], r8
+mov r8, QWORD PTR [rdi+4672]
+adc r8, QWORD PTR [rdi+4912]
+mov QWORD PTR [rdi+4672], r8
+mov r8, QWORD PTR [rdi+4680]
+adc r8, QWORD PTR [rdi+4920]
+mov QWORD PTR [rdi+4680], r8
+mov r8, QWORD PTR [rdi+4688]
+adc r8, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4688], r8
+mov r8, QWORD PTR [rdi+4696]
+adc r8, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4696], r8
+mov r8, QWORD PTR [rdi+4704]
+adc r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4704], r8
 mov rdx, QWORD PTR [rdi+4472]
 mov rcx, rdx
 shr rcx, 63
@@ -5402,18 +5228,6 @@ movabs rdx, -1
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
-mov QWORD PTR [rdi+4776], rax
-movabs rax, 0
-movabs rdx, -1
-xor rdx, rax
-and rdx, rcx
-xor rax, rdx
-mov QWORD PTR [rdi+4784], rax
-movabs rax, 0
-movabs rdx, -1
-xor rdx, rax
-and rdx, rcx
-xor rax, rdx
 mov QWORD PTR [rdi+4792], rax
 movabs rax, 0
 movabs rdx, -1
@@ -5421,8 +5235,8 @@ xor rdx, rax
 and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4800], rax
-movabs rax, 16777216
-movabs rdx, -16777217
+movabs rax, 0
+movabs rdx, -1
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
@@ -5433,8 +5247,8 @@ xor rdx, rax
 and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4816], rax
-movabs rax, 0
-movabs rdx, -1
+movabs rax, 16777216
+movabs rdx, -16777217
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
@@ -5446,15 +5260,27 @@ and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4832], rax
 movabs rax, 0
-movabs rdx, 511
+movabs rdx, -1
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4840], rax
+movabs rax, 0
+movabs rdx, -1
+xor rdx, rax
+and rdx, rcx
+xor rax, rdx
+mov QWORD PTR [rdi+4848], rax
+movabs rax, 0
+movabs rdx, 511
+xor rdx, rax
+and rdx, rcx
+xor rax, rdx
+mov QWORD PTR [rdi+4856], rax
 mov r9d, 0
 mov r10d, 0
 mov r11d, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r9, rax
@@ -5462,13 +5288,13 @@ adc r10, rdx
 adc r11, 0
 mov QWORD PTR [rdi+4024], r9
 mov r9d, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r10, rax
@@ -5476,19 +5302,19 @@ adc r11, rdx
 adc r9, 0
 mov QWORD PTR [rdi+4032], r10
 mov r10d, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r11, rax
@@ -5496,25 +5322,25 @@ adc r9, rdx
 adc r10, 0
 mov QWORD PTR [rdi+4040], r11
 mov r11d, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r9, rax
@@ -5522,31 +5348,31 @@ adc r10, rdx
 adc r11, 0
 mov QWORD PTR [rdi+4048], r9
 mov r9d, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r10, rax
@@ -5554,37 +5380,37 @@ adc r11, rdx
 adc r9, 0
 mov QWORD PTR [rdi+4056], r10
 mov r10d, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r11, rax
@@ -5592,43 +5418,43 @@ adc r9, rdx
 adc r10, 0
 mov QWORD PTR [rdi+4064], r11
 mov r11d, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r9, rax
@@ -5636,49 +5462,49 @@ adc r10, rdx
 adc r11, 0
 mov QWORD PTR [rdi+4072], r9
 mov r9d, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r10, rax
@@ -5686,55 +5512,55 @@ adc r11, rdx
 adc r9, 0
 mov QWORD PTR [rdi+4080], r10
 mov r10d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4632]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4776]
+mov rcx, QWORD PTR [rdi+4792]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r11, rax
@@ -5748,49 +5574,49 @@ adc r9, rdx
 adc r10, 0
 mov QWORD PTR [rdi+4088], r11
 mov r11d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4640]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4784]
+mov rcx, QWORD PTR [rdi+4800]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r9, rax
@@ -5804,43 +5630,43 @@ adc r10, rdx
 adc r11, 0
 mov QWORD PTR [rdi+4024], r9
 mov r9d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4648]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4792]
+mov rcx, QWORD PTR [rdi+4808]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r10, rax
@@ -5854,37 +5680,37 @@ adc r11, rdx
 adc r9, 0
 mov QWORD PTR [rdi+4032], r10
 mov r10d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4656]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4800]
+mov rcx, QWORD PTR [rdi+4816]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r11, rax
@@ -5898,31 +5724,31 @@ adc r9, rdx
 adc r10, 0
 mov QWORD PTR [rdi+4040], r11
 mov r11d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4664]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4808]
+mov rcx, QWORD PTR [rdi+4824]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r9, rax
@@ -5936,25 +5762,25 @@ adc r10, rdx
 adc r11, 0
 mov QWORD PTR [rdi+4048], r9
 mov r9d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4672]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r10, rax
 adc r11, rdx
 adc r9, 0
-mov rcx, QWORD PTR [rdi+4816]
+mov rcx, QWORD PTR [rdi+4832]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r10, rax
@@ -5968,19 +5794,19 @@ adc r11, rdx
 adc r9, 0
 mov QWORD PTR [rdi+4056], r10
 mov r10d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4680]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r11, rax
 adc r9, rdx
 adc r10, 0
-mov rcx, QWORD PTR [rdi+4824]
+mov rcx, QWORD PTR [rdi+4840]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r11, rax
@@ -5994,13 +5820,13 @@ adc r9, rdx
 adc r10, 0
 mov QWORD PTR [rdi+4064], r11
 mov r11d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4688]
 mul rcx
 add r9, rax
 adc r10, rdx
 adc r11, 0
-mov rcx, QWORD PTR [rdi+4832]
+mov rcx, QWORD PTR [rdi+4848]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r9, rax
@@ -6014,7 +5840,7 @@ adc r10, rdx
 adc r11, 0
 mov QWORD PTR [rdi+4072], r9
 mov r9d, 0
-mov rcx, QWORD PTR [rdi+4840]
+mov rcx, QWORD PTR [rdi+4856]
 mov rax, QWORD PTR [rdi+4696]
 mul rcx
 add r10, rax
@@ -16493,8 +16319,8 @@ mov QWORD PTR [rdi+4672], r8
 mov QWORD PTR [rdi+4680], r8
 mov QWORD PTR [rdi+4688], r8
 mov QWORD PTR [rdi+4696], r8
-mov r8d, 0
 mov QWORD PTR [rdi+4704], r8
+mov r8d, 0
 mov QWORD PTR [rdi+4712], r8
 mov QWORD PTR [rdi+4720], r8
 mov QWORD PTR [rdi+4728], r8
@@ -16503,19 +16329,21 @@ mov QWORD PTR [rdi+4744], r8
 mov QWORD PTR [rdi+4752], r8
 mov QWORD PTR [rdi+4760], r8
 mov QWORD PTR [rdi+4768], r8
+mov QWORD PTR [rdi+4776], r8
+mov QWORD PTR [rdi+4784], r8
 mov r8d, 1
-mov QWORD PTR [rdi+4704], r8
+mov QWORD PTR [rdi+4712], r8
 217:
 mov rax, QWORD PTR [rdi+4472]
-mov QWORD PTR [rdi+4936], rax
+mov QWORD PTR [rdi+4952], rax
 mov rax, QWORD PTR [rdi+4552]
-mov QWORD PTR [rdi+4944], rax
+mov QWORD PTR [rdi+4960], rax
 xor rbx, -1
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -16760,33 +16588,33 @@ sub rbp, 16384
 shl r13, 17
 shr r13, 48
 sub r13, 16384
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4952]
 mul r8
-mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4960]
 mul rcx
+add rax, QWORD PTR [rdi+4968]
+shr rax, 15
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4952]
+mul r13
+mov QWORD PTR [rdi+4952], rax
+mov rax, QWORD PTR [rdi+4960]
+mul rbp
 add rax, QWORD PTR [rdi+4952]
 shr rax, 15
+mov QWORD PTR [rdi+4960], rax
+mov rax, QWORD PTR [rdi+4968]
 mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4936]
-mul r13
-mov QWORD PTR [rdi+4936], rax
-mov rax, QWORD PTR [rdi+4944]
-mul rbp
-add rax, QWORD PTR [rdi+4936]
-shr rax, 15
-mov QWORD PTR [rdi+4944], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4936], rax
 mov r9, r8
 mov r10, rcx
 mov r11, r13
 mov r12, rbp
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -17031,27 +16859,27 @@ sub rbp, 16384
 shl r13, 17
 shr r13, 48
 sub r13, 16384
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4952]
 mul r8
-mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4960]
 mul rcx
+add rax, QWORD PTR [rdi+4968]
+shr rax, 15
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4952]
+mul r13
+mov QWORD PTR [rdi+4952], rax
+mov rax, QWORD PTR [rdi+4960]
+mul rbp
 add rax, QWORD PTR [rdi+4952]
 shr rax, 15
+mov QWORD PTR [rdi+4960], rax
+mov rax, QWORD PTR [rdi+4968]
 mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4936]
-mul r13
-mov QWORD PTR [rdi+4936], rax
-mov rax, QWORD PTR [rdi+4944]
-mul rbp
-add rax, QWORD PTR [rdi+4936]
-shr rax, 15
-mov QWORD PTR [rdi+4944], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4936], rax
 mov rax, r13
 mul r9
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r9
 mov r9, rax
@@ -17060,11 +16888,11 @@ mul r11
 add r9, rax
 mov rax, rbp
 mul r11
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r11, rax
 mov rax, r13
 mul r10
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r10
 mov r10, rax
@@ -17073,13 +16901,13 @@ mul r12
 add r10, rax
 mov rax, rbp
 mul r12
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r12, rax
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -17324,27 +17152,27 @@ sub rbp, 16384
 shl r13, 17
 shr r13, 48
 sub r13, 16384
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4952]
 mul r8
-mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4960]
 mul rcx
+add rax, QWORD PTR [rdi+4968]
+shr rax, 15
+mov QWORD PTR [rdi+4968], rax
+mov rax, QWORD PTR [rdi+4952]
+mul r13
+mov QWORD PTR [rdi+4952], rax
+mov rax, QWORD PTR [rdi+4960]
+mul rbp
 add rax, QWORD PTR [rdi+4952]
 shr rax, 15
+mov QWORD PTR [rdi+4960], rax
+mov rax, QWORD PTR [rdi+4968]
 mov QWORD PTR [rdi+4952], rax
-mov rax, QWORD PTR [rdi+4936]
-mul r13
-mov QWORD PTR [rdi+4936], rax
-mov rax, QWORD PTR [rdi+4944]
-mul rbp
-add rax, QWORD PTR [rdi+4936]
-shr rax, 15
-mov QWORD PTR [rdi+4944], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4936], rax
 mov rax, r13
 mul r9
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r9
 mov r9, rax
@@ -17353,11 +17181,11 @@ mul r11
 add r9, rax
 mov rax, rbp
 mul r11
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r11, rax
 mov rax, r13
 mul r10
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r10
 mov r10, rax
@@ -17366,13 +17194,13 @@ mul r12
 add r10, rax
 mov rax, rbp
 mul r12
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r12, rax
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 and r8, 32767
 movabs rax, 2147483648
 add r8, rax
-mov r13, QWORD PTR [rdi+4944]
+mov r13, QWORD PTR [rdi+4960]
 and r13, 32767
 movabs rax, 140737488355328
 add r13, rax
@@ -17603,7 +17431,7 @@ shr r13, 48
 sub r13, 16384
 mov rax, r13
 mul r9
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r9
 mov r9, rax
@@ -17612,11 +17440,11 @@ mul r11
 add r9, rax
 mov rax, rbp
 mul r11
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r11, rax
 mov rax, r13
 mul r10
-mov QWORD PTR [rdi+4952], rax
+mov QWORD PTR [rdi+4968], rax
 mov rax, r8
 mul r10
 mov r10, rax
@@ -17625,14 +17453,14 @@ mul r12
 add r10, rax
 mov rax, rbp
 mul r12
-add rax, QWORD PTR [rdi+4952]
+add rax, QWORD PTR [rdi+4968]
 mov r12, rax
 xor rbx, -1
 mov rax, r9
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r9
 xor rcx, rdx
 sub rcx, rdx
@@ -17640,158 +17468,146 @@ mov rax, r10
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r10
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4472]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4552]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4480]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4560]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4488]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4568]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4496]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4480]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4576]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4560]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4504]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4488]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4584]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4568]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4512]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4496]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4592]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4576]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4520]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4504]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4600]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4584]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4528]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4512]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4608]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4592]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4536]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4520]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4616]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4600]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4544]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4528]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4624]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4608]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
-mov r8, QWORD PTR [rdi+4944]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4776], rax
-mov rax, QWORD PTR [rdi+4944]
-mov r8, QWORD PTR [rdi+4952]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4784], rax
+mov rax, QWORD PTR [rdi+4536]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4616]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4544]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4624]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
 mov rax, QWORD PTR [rdi+4952]
 mov r8, QWORD PTR [rdi+4960]
 shr rax, 59
@@ -17834,7 +17650,19 @@ shr rax, 59
 shl r8, 5
 add rax, r8
 mov QWORD PTR [rdi+4840], rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rax, QWORD PTR [rdi+5008]
+mov r8, QWORD PTR [rdi+5016]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4848], rax
+mov rax, QWORD PTR [rdi+5016]
+mov r8, QWORD PTR [rdi+5024]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4856], rax
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
@@ -17844,12 +17672,12 @@ mov rax, rdx
 shr rax, 59
 shl r8, 5
 add rax, r8
-mov QWORD PTR [rdi+4848], rax
+mov QWORD PTR [rdi+4864], rax
 mov rax, r11
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r11
 xor rcx, rdx
 sub rcx, rdx
@@ -17857,158 +17685,146 @@ mov rax, r12
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r12
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4472]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4552]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4480]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4560]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4488]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4568]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4496]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4480]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4576]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4560]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4504]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4488]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4584]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4568]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4512]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4496]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4592]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4576]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4520]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4504]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4600]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4584]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4528]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4512]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4608]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4592]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4536]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4520]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4616]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4600]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4544]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4528]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4624]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4608]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
-mov r8, QWORD PTR [rdi+4944]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4856], rax
-mov rax, QWORD PTR [rdi+4944]
-mov r8, QWORD PTR [rdi+4952]
-shr rax, 59
-shl r8, 5
-add rax, r8
-mov QWORD PTR [rdi+4864], rax
+mov rax, QWORD PTR [rdi+4536]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4616]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4544]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4624]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
 mov rax, QWORD PTR [rdi+4952]
 mov r8, QWORD PTR [rdi+4960]
 shr rax, 59
@@ -18051,7 +17867,19 @@ shr rax, 59
 shl r8, 5
 add rax, r8
 mov QWORD PTR [rdi+4920], rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rax, QWORD PTR [rdi+5008]
+mov r8, QWORD PTR [rdi+5016]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4928], rax
+mov rax, QWORD PTR [rdi+5016]
+mov r8, QWORD PTR [rdi+5024]
+shr rax, 59
+shl r8, 5
+add rax, r8
+mov QWORD PTR [rdi+4936], rax
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
@@ -18061,52 +17889,52 @@ mov rax, rdx
 shr rax, 59
 shl r8, 5
 add rax, r8
-mov QWORD PTR [rdi+4928], rax
-mov rax, QWORD PTR [rdi+4776]
-mov QWORD PTR [rdi+4472], rax
-mov rax, QWORD PTR [rdi+4784]
-mov QWORD PTR [rdi+4480], rax
+mov QWORD PTR [rdi+4944], rax
 mov rax, QWORD PTR [rdi+4792]
-mov QWORD PTR [rdi+4488], rax
+mov QWORD PTR [rdi+4472], rax
 mov rax, QWORD PTR [rdi+4800]
-mov QWORD PTR [rdi+4496], rax
+mov QWORD PTR [rdi+4480], rax
 mov rax, QWORD PTR [rdi+4808]
-mov QWORD PTR [rdi+4504], rax
+mov QWORD PTR [rdi+4488], rax
 mov rax, QWORD PTR [rdi+4816]
-mov QWORD PTR [rdi+4512], rax
+mov QWORD PTR [rdi+4496], rax
 mov rax, QWORD PTR [rdi+4824]
-mov QWORD PTR [rdi+4520], rax
+mov QWORD PTR [rdi+4504], rax
 mov rax, QWORD PTR [rdi+4832]
-mov QWORD PTR [rdi+4528], rax
+mov QWORD PTR [rdi+4512], rax
 mov rax, QWORD PTR [rdi+4840]
-mov QWORD PTR [rdi+4536], rax
+mov QWORD PTR [rdi+4520], rax
 mov rax, QWORD PTR [rdi+4848]
-mov QWORD PTR [rdi+4544], rax
+mov QWORD PTR [rdi+4528], rax
 mov rax, QWORD PTR [rdi+4856]
-mov QWORD PTR [rdi+4552], rax
+mov QWORD PTR [rdi+4536], rax
 mov rax, QWORD PTR [rdi+4864]
-mov QWORD PTR [rdi+4560], rax
+mov QWORD PTR [rdi+4544], rax
 mov rax, QWORD PTR [rdi+4872]
-mov QWORD PTR [rdi+4568], rax
+mov QWORD PTR [rdi+4552], rax
 mov rax, QWORD PTR [rdi+4880]
-mov QWORD PTR [rdi+4576], rax
+mov QWORD PTR [rdi+4560], rax
 mov rax, QWORD PTR [rdi+4888]
-mov QWORD PTR [rdi+4584], rax
+mov QWORD PTR [rdi+4568], rax
 mov rax, QWORD PTR [rdi+4896]
-mov QWORD PTR [rdi+4592], rax
+mov QWORD PTR [rdi+4576], rax
 mov rax, QWORD PTR [rdi+4904]
-mov QWORD PTR [rdi+4600], rax
+mov QWORD PTR [rdi+4584], rax
 mov rax, QWORD PTR [rdi+4912]
-mov QWORD PTR [rdi+4608], rax
+mov QWORD PTR [rdi+4592], rax
 mov rax, QWORD PTR [rdi+4920]
-mov QWORD PTR [rdi+4616], rax
+mov QWORD PTR [rdi+4600], rax
 mov rax, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4608], rax
+mov rax, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4616], rax
+mov rax, QWORD PTR [rdi+4944]
 mov QWORD PTR [rdi+4624], rax
 mov rax, r9
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r9
 xor rcx, rdx
 sub rcx, rdx
@@ -18114,157 +17942,159 @@ mov rax, r10
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r10
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4632]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4704]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4640]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4712]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4648]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4720]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4656]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4640]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4728]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4720]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4664]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4648]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4736]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4728]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4672]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4656]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4744]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4736]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4680]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4664]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4752]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4744]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4688]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4672]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4760]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4752]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4696]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4680]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4768]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4760]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4688]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4768]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4696]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4776]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4704]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4784]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4952]
 movabs rcx, 1
 mul rcx
 mov rcx, rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
 sub rax, r8
 mov r8, rax
-mov QWORD PTR [rdi+5016], r8
+mov QWORD PTR [rdi+5032], r8
 mov ebp, 0
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 mov rax, QWORD PTR [rdi+64]
 mul rcx
 add rax, rbp
@@ -18272,8 +18102,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4952], r8
+mov r8, QWORD PTR [rdi+4960]
 mov rax, QWORD PTR [rdi+72]
 mul rcx
 add rax, rbp
@@ -18281,8 +18111,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
+mov QWORD PTR [rdi+4960], r8
+mov r8, QWORD PTR [rdi+4968]
 mov rax, QWORD PTR [rdi+80]
 mul rcx
 add rax, rbp
@@ -18290,8 +18120,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
+mov QWORD PTR [rdi+4968], r8
+mov r8, QWORD PTR [rdi+4976]
 mov rax, QWORD PTR [rdi+88]
 mul rcx
 add rax, rbp
@@ -18299,8 +18129,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
+mov QWORD PTR [rdi+4976], r8
+mov r8, QWORD PTR [rdi+4984]
 mov rax, QWORD PTR [rdi+96]
 mul rcx
 add rax, rbp
@@ -18308,8 +18138,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
+mov QWORD PTR [rdi+4984], r8
+mov r8, QWORD PTR [rdi+4992]
 mov rax, QWORD PTR [rdi+104]
 mul rcx
 add rax, rbp
@@ -18317,8 +18147,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
+mov QWORD PTR [rdi+4992], r8
+mov r8, QWORD PTR [rdi+5000]
 mov rax, QWORD PTR [rdi+112]
 mul rcx
 add rax, rbp
@@ -18326,8 +18156,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
+mov QWORD PTR [rdi+5000], r8
+mov r8, QWORD PTR [rdi+5008]
 mov rax, QWORD PTR [rdi+120]
 mul rcx
 add rax, rbp
@@ -18335,8 +18165,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
+mov QWORD PTR [rdi+5008], r8
+mov r8, QWORD PTR [rdi+5016]
 mov rax, QWORD PTR [rdi+128]
 mul rcx
 add rax, rbp
@@ -18344,203 +18174,13 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
+mov QWORD PTR [rdi+5016], r8
+mov r8, QWORD PTR [rdi+5024]
 add r8, rbp
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+5024], r8
+mov r8, QWORD PTR [rdi+5032]
 adc r8, 0
-mov QWORD PTR [rdi+5016], r8
-mov r8d, 0
-mov QWORD PTR [rdi+5096], r8
-mov rdx, QWORD PTR [rdi+5016]
-mov r13, rdx
-shr r13, 63
-mov eax, 0
-sub rax, r13
-mov r13, rax
-mov r8, QWORD PTR [rdi+64]
-and r8, r13
-mov QWORD PTR [rdi+5024], r8
-mov r8, QWORD PTR [rdi+72]
-and r8, r13
 mov QWORD PTR [rdi+5032], r8
-mov r8, QWORD PTR [rdi+80]
-and r8, r13
-mov QWORD PTR [rdi+5040], r8
-mov r8, QWORD PTR [rdi+88]
-and r8, r13
-mov QWORD PTR [rdi+5048], r8
-mov r8, QWORD PTR [rdi+96]
-and r8, r13
-mov QWORD PTR [rdi+5056], r8
-mov r8, QWORD PTR [rdi+104]
-and r8, r13
-mov QWORD PTR [rdi+5064], r8
-mov r8, QWORD PTR [rdi+112]
-and r8, r13
-mov QWORD PTR [rdi+5072], r8
-mov r8, QWORD PTR [rdi+120]
-and r8, r13
-mov QWORD PTR [rdi+5080], r8
-mov r8, QWORD PTR [rdi+128]
-and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov r13, -1
-mov r8, QWORD PTR [rdi+64]
-and r8, r13
-mov QWORD PTR [rdi+5024], r8
-mov r8, QWORD PTR [rdi+72]
-and r8, r13
-mov QWORD PTR [rdi+5032], r8
-mov r8, QWORD PTR [rdi+80]
-and r8, r13
-mov QWORD PTR [rdi+5040], r8
-mov r8, QWORD PTR [rdi+88]
-and r8, r13
-mov QWORD PTR [rdi+5048], r8
-mov r8, QWORD PTR [rdi+96]
-and r8, r13
-mov QWORD PTR [rdi+5056], r8
-mov r8, QWORD PTR [rdi+104]
-and r8, r13
-mov QWORD PTR [rdi+5064], r8
-mov r8, QWORD PTR [rdi+112]
-and r8, r13
-mov QWORD PTR [rdi+5072], r8
-mov r8, QWORD PTR [rdi+120]
-and r8, r13
-mov QWORD PTR [rdi+5080], r8
-mov r8, QWORD PTR [rdi+128]
-and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-sub r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-sbb r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-sbb r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-sbb r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-sbb r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-sbb r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-sbb r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-sbb r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-sbb r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-sbb r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rdx, QWORD PTR [rdi+5016]
-mov r13, rdx
-shr r13, 63
-mov eax, 0
-sub rax, r13
-mov r13, rax
-mov r8, QWORD PTR [rdi+64]
-and r8, r13
-mov QWORD PTR [rdi+5024], r8
-mov r8, QWORD PTR [rdi+72]
-and r8, r13
-mov QWORD PTR [rdi+5032], r8
-mov r8, QWORD PTR [rdi+80]
-and r8, r13
-mov QWORD PTR [rdi+5040], r8
-mov r8, QWORD PTR [rdi+88]
-and r8, r13
-mov QWORD PTR [rdi+5048], r8
-mov r8, QWORD PTR [rdi+96]
-and r8, r13
-mov QWORD PTR [rdi+5056], r8
-mov r8, QWORD PTR [rdi+104]
-and r8, r13
-mov QWORD PTR [rdi+5064], r8
-mov r8, QWORD PTR [rdi+112]
-and r8, r13
-mov QWORD PTR [rdi+5072], r8
-mov r8, QWORD PTR [rdi+120]
-and r8, r13
-mov QWORD PTR [rdi+5080], r8
-mov r8, QWORD PTR [rdi+128]
-and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rax, QWORD PTR [rdi+4944]
-mov QWORD PTR [rdi+4776], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4784], rax
 mov rax, QWORD PTR [rdi+4960]
 mov QWORD PTR [rdi+4792], rax
 mov rax, QWORD PTR [rdi+4968]
@@ -18555,11 +18195,17 @@ mov rax, QWORD PTR [rdi+5000]
 mov QWORD PTR [rdi+4832], rax
 mov rax, QWORD PTR [rdi+5008]
 mov QWORD PTR [rdi+4840], rax
+mov rax, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4848], rax
+mov rax, QWORD PTR [rdi+5024]
+mov QWORD PTR [rdi+4856], rax
+mov rax, QWORD PTR [rdi+5032]
+mov QWORD PTR [rdi+4864], rax
 mov rax, r11
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5024], rdx
+mov QWORD PTR [rdi+5040], rdx
 mov rcx, r11
 xor rcx, rdx
 sub rcx, rdx
@@ -18567,157 +18213,159 @@ mov rax, r12
 shr rax, 63
 mov edx, 0
 sub rdx, rax
-mov QWORD PTR [rdi+5032], rdx
+mov QWORD PTR [rdi+5048], rdx
 mov rbp, r12
 xor rbp, rdx
 sub rbp, rdx
 mov r8, rcx
-and r8, QWORD PTR [rdi+5024]
+and r8, QWORD PTR [rdi+5040]
 mov rax, rbp
-and rax, QWORD PTR [rdi+5032]
+and rax, QWORD PTR [rdi+5048]
 add r8, rax
 mov r13d, 0
 mov rax, QWORD PTR [rdi+4632]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4704]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4640]
-xor rax, QWORD PTR [rdi+5024]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
 mov rax, QWORD PTR [rdi+4712]
-xor rax, QWORD PTR [rdi+5032]
-mul rbp
-add r8, rax
-adc r13, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, r13
-mov r13d, 0
-mov rax, QWORD PTR [rdi+4648]
-xor rax, QWORD PTR [rdi+5024]
-mul rcx
-add r8, rax
-adc r13, rdx
-mov rax, QWORD PTR [rdi+4720]
-xor rax, QWORD PTR [rdi+5032]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4952], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4656]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4640]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4728]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4720]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4960], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4664]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4648]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4736]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4728]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4968], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4672]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4656]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4744]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4736]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4976], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4680]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4664]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4752]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4744]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4984], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4688]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4672]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4760]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4752]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+4992], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4696]
-xor rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4680]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+4768]
-xor rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4760]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5000], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+5024]
+mov rax, QWORD PTR [rdi+4688]
+xor rax, QWORD PTR [rdi+5040]
 mul rcx
 add r8, rax
 adc r13, rdx
-mov rax, QWORD PTR [rdi+5032]
+mov rax, QWORD PTR [rdi+4768]
+xor rax, QWORD PTR [rdi+5048]
 mul rbp
 add r8, rax
 adc r13, rdx
 mov QWORD PTR [rdi+5008], r8
 mov r8, r13
 mov r13d, 0
-mov rax, QWORD PTR [rdi+4936]
+mov rax, QWORD PTR [rdi+4696]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4776]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5016], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4704]
+xor rax, QWORD PTR [rdi+5040]
+mul rcx
+add r8, rax
+adc r13, rdx
+mov rax, QWORD PTR [rdi+4784]
+xor rax, QWORD PTR [rdi+5048]
+mul rbp
+add r8, rax
+adc r13, rdx
+mov QWORD PTR [rdi+5024], r8
+mov r8, r13
+mov r13d, 0
+mov rax, QWORD PTR [rdi+4952]
 movabs rcx, 1
 mul rcx
 mov rcx, rax
-mov rdx, QWORD PTR [rdi+5008]
+mov rdx, QWORD PTR [rdi+5024]
 mov r8, rdx
 shr r8, 63
 mov eax, 0
 sub rax, r8
 mov r8, rax
-mov QWORD PTR [rdi+5016], r8
+mov QWORD PTR [rdi+5032], r8
 mov ebp, 0
-mov r8, QWORD PTR [rdi+4936]
+mov r8, QWORD PTR [rdi+4952]
 mov rax, QWORD PTR [rdi+64]
 mul rcx
 add rax, rbp
@@ -18725,8 +18373,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4936], r8
-mov r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4952], r8
+mov r8, QWORD PTR [rdi+4960]
 mov rax, QWORD PTR [rdi+72]
 mul rcx
 add rax, rbp
@@ -18734,8 +18382,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
+mov QWORD PTR [rdi+4960], r8
+mov r8, QWORD PTR [rdi+4968]
 mov rax, QWORD PTR [rdi+80]
 mul rcx
 add rax, rbp
@@ -18743,8 +18391,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
+mov QWORD PTR [rdi+4968], r8
+mov r8, QWORD PTR [rdi+4976]
 mov rax, QWORD PTR [rdi+88]
 mul rcx
 add rax, rbp
@@ -18752,8 +18400,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
+mov QWORD PTR [rdi+4976], r8
+mov r8, QWORD PTR [rdi+4984]
 mov rax, QWORD PTR [rdi+96]
 mul rcx
 add rax, rbp
@@ -18761,8 +18409,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
+mov QWORD PTR [rdi+4984], r8
+mov r8, QWORD PTR [rdi+4992]
 mov rax, QWORD PTR [rdi+104]
 mul rcx
 add rax, rbp
@@ -18770,8 +18418,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
+mov QWORD PTR [rdi+4992], r8
+mov r8, QWORD PTR [rdi+5000]
 mov rax, QWORD PTR [rdi+112]
 mul rcx
 add rax, rbp
@@ -18779,8 +18427,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
+mov QWORD PTR [rdi+5000], r8
+mov r8, QWORD PTR [rdi+5008]
 mov rax, QWORD PTR [rdi+120]
 mul rcx
 add rax, rbp
@@ -18788,8 +18436,8 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
+mov QWORD PTR [rdi+5008], r8
+mov r8, QWORD PTR [rdi+5016]
 mov rax, QWORD PTR [rdi+128]
 mul rcx
 add rax, rbp
@@ -18797,16 +18445,58 @@ adc rdx, 0
 add r8, rax
 adc rdx, 0
 mov rbp, rdx
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-add r8, rbp
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, 0
 mov QWORD PTR [rdi+5016], r8
+mov r8, QWORD PTR [rdi+5024]
+add r8, rbp
+mov QWORD PTR [rdi+5024], r8
+mov r8, QWORD PTR [rdi+5032]
+adc r8, 0
+mov QWORD PTR [rdi+5032], r8
+mov rax, QWORD PTR [rdi+4960]
+mov QWORD PTR [rdi+4712], rax
+mov rax, QWORD PTR [rdi+4968]
+mov QWORD PTR [rdi+4720], rax
+mov rax, QWORD PTR [rdi+4976]
+mov QWORD PTR [rdi+4728], rax
+mov rax, QWORD PTR [rdi+4984]
+mov QWORD PTR [rdi+4736], rax
+mov rax, QWORD PTR [rdi+4992]
+mov QWORD PTR [rdi+4744], rax
+mov rax, QWORD PTR [rdi+5000]
+mov QWORD PTR [rdi+4752], rax
+mov rax, QWORD PTR [rdi+5008]
+mov QWORD PTR [rdi+4760], rax
+mov rax, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4768], rax
+mov rax, QWORD PTR [rdi+5024]
+mov QWORD PTR [rdi+4776], rax
+mov rax, QWORD PTR [rdi+5032]
+mov QWORD PTR [rdi+4784], rax
+mov rax, QWORD PTR [rdi+4792]
+mov QWORD PTR [rdi+4632], rax
+mov rax, QWORD PTR [rdi+4800]
+mov QWORD PTR [rdi+4640], rax
+mov rax, QWORD PTR [rdi+4808]
+mov QWORD PTR [rdi+4648], rax
+mov rax, QWORD PTR [rdi+4816]
+mov QWORD PTR [rdi+4656], rax
+mov rax, QWORD PTR [rdi+4824]
+mov QWORD PTR [rdi+4664], rax
+mov rax, QWORD PTR [rdi+4832]
+mov QWORD PTR [rdi+4672], rax
+mov rax, QWORD PTR [rdi+4840]
+mov QWORD PTR [rdi+4680], rax
+mov rax, QWORD PTR [rdi+4848]
+mov QWORD PTR [rdi+4688], rax
+mov rax, QWORD PTR [rdi+4856]
+mov QWORD PTR [rdi+4696], rax
+mov rax, QWORD PTR [rdi+4864]
+mov QWORD PTR [rdi+4704], rax
+sub r14, 1
+jne 217b
 mov r8d, 0
-mov QWORD PTR [rdi+5096], r8
-mov rdx, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4944], r8
+mov rdx, QWORD PTR [rdi+4704]
 mov r13, rdx
 shr r13, 63
 mov eax, 0
@@ -18814,120 +18504,120 @@ sub rax, r13
 mov r13, rax
 mov r8, QWORD PTR [rdi+64]
 and r8, r13
-mov QWORD PTR [rdi+5024], r8
+mov QWORD PTR [rdi+4872], r8
 mov r8, QWORD PTR [rdi+72]
 and r8, r13
-mov QWORD PTR [rdi+5032], r8
+mov QWORD PTR [rdi+4880], r8
 mov r8, QWORD PTR [rdi+80]
 and r8, r13
-mov QWORD PTR [rdi+5040], r8
+mov QWORD PTR [rdi+4888], r8
 mov r8, QWORD PTR [rdi+88]
 and r8, r13
-mov QWORD PTR [rdi+5048], r8
+mov QWORD PTR [rdi+4896], r8
 mov r8, QWORD PTR [rdi+96]
 and r8, r13
-mov QWORD PTR [rdi+5056], r8
+mov QWORD PTR [rdi+4904], r8
 mov r8, QWORD PTR [rdi+104]
 and r8, r13
-mov QWORD PTR [rdi+5064], r8
+mov QWORD PTR [rdi+4912], r8
 mov r8, QWORD PTR [rdi+112]
 and r8, r13
-mov QWORD PTR [rdi+5072], r8
+mov QWORD PTR [rdi+4920], r8
 mov r8, QWORD PTR [rdi+120]
 and r8, r13
-mov QWORD PTR [rdi+5080], r8
+mov QWORD PTR [rdi+4928], r8
 mov r8, QWORD PTR [rdi+128]
 and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
+mov QWORD PTR [rdi+4936], r8
+mov r8, QWORD PTR [rdi+4632]
+add r8, QWORD PTR [rdi+4872]
+mov QWORD PTR [rdi+4632], r8
+mov r8, QWORD PTR [rdi+4640]
+adc r8, QWORD PTR [rdi+4880]
+mov QWORD PTR [rdi+4640], r8
+mov r8, QWORD PTR [rdi+4648]
+adc r8, QWORD PTR [rdi+4888]
+mov QWORD PTR [rdi+4648], r8
+mov r8, QWORD PTR [rdi+4656]
+adc r8, QWORD PTR [rdi+4896]
+mov QWORD PTR [rdi+4656], r8
+mov r8, QWORD PTR [rdi+4664]
+adc r8, QWORD PTR [rdi+4904]
+mov QWORD PTR [rdi+4664], r8
+mov r8, QWORD PTR [rdi+4672]
+adc r8, QWORD PTR [rdi+4912]
+mov QWORD PTR [rdi+4672], r8
+mov r8, QWORD PTR [rdi+4680]
+adc r8, QWORD PTR [rdi+4920]
+mov QWORD PTR [rdi+4680], r8
+mov r8, QWORD PTR [rdi+4688]
+adc r8, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4688], r8
+mov r8, QWORD PTR [rdi+4696]
+adc r8, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4696], r8
+mov r8, QWORD PTR [rdi+4704]
+adc r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4704], r8
 mov r13, -1
 mov r8, QWORD PTR [rdi+64]
 and r8, r13
-mov QWORD PTR [rdi+5024], r8
+mov QWORD PTR [rdi+4872], r8
 mov r8, QWORD PTR [rdi+72]
 and r8, r13
-mov QWORD PTR [rdi+5032], r8
+mov QWORD PTR [rdi+4880], r8
 mov r8, QWORD PTR [rdi+80]
 and r8, r13
-mov QWORD PTR [rdi+5040], r8
+mov QWORD PTR [rdi+4888], r8
 mov r8, QWORD PTR [rdi+88]
 and r8, r13
-mov QWORD PTR [rdi+5048], r8
+mov QWORD PTR [rdi+4896], r8
 mov r8, QWORD PTR [rdi+96]
 and r8, r13
-mov QWORD PTR [rdi+5056], r8
+mov QWORD PTR [rdi+4904], r8
 mov r8, QWORD PTR [rdi+104]
 and r8, r13
-mov QWORD PTR [rdi+5064], r8
+mov QWORD PTR [rdi+4912], r8
 mov r8, QWORD PTR [rdi+112]
 and r8, r13
-mov QWORD PTR [rdi+5072], r8
+mov QWORD PTR [rdi+4920], r8
 mov r8, QWORD PTR [rdi+120]
 and r8, r13
-mov QWORD PTR [rdi+5080], r8
+mov QWORD PTR [rdi+4928], r8
 mov r8, QWORD PTR [rdi+128]
 and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-sub r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-sbb r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-sbb r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-sbb r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-sbb r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-sbb r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-sbb r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-sbb r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-sbb r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-sbb r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rdx, QWORD PTR [rdi+5016]
+mov QWORD PTR [rdi+4936], r8
+mov r8, QWORD PTR [rdi+4632]
+sub r8, QWORD PTR [rdi+4872]
+mov QWORD PTR [rdi+4632], r8
+mov r8, QWORD PTR [rdi+4640]
+sbb r8, QWORD PTR [rdi+4880]
+mov QWORD PTR [rdi+4640], r8
+mov r8, QWORD PTR [rdi+4648]
+sbb r8, QWORD PTR [rdi+4888]
+mov QWORD PTR [rdi+4648], r8
+mov r8, QWORD PTR [rdi+4656]
+sbb r8, QWORD PTR [rdi+4896]
+mov QWORD PTR [rdi+4656], r8
+mov r8, QWORD PTR [rdi+4664]
+sbb r8, QWORD PTR [rdi+4904]
+mov QWORD PTR [rdi+4664], r8
+mov r8, QWORD PTR [rdi+4672]
+sbb r8, QWORD PTR [rdi+4912]
+mov QWORD PTR [rdi+4672], r8
+mov r8, QWORD PTR [rdi+4680]
+sbb r8, QWORD PTR [rdi+4920]
+mov QWORD PTR [rdi+4680], r8
+mov r8, QWORD PTR [rdi+4688]
+sbb r8, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4688], r8
+mov r8, QWORD PTR [rdi+4696]
+sbb r8, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4696], r8
+mov r8, QWORD PTR [rdi+4704]
+sbb r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4704], r8
+mov rdx, QWORD PTR [rdi+4704]
 mov r13, rdx
 shr r13, 63
 mov eax, 0
@@ -18935,99 +18625,61 @@ sub rax, r13
 mov r13, rax
 mov r8, QWORD PTR [rdi+64]
 and r8, r13
-mov QWORD PTR [rdi+5024], r8
+mov QWORD PTR [rdi+4872], r8
 mov r8, QWORD PTR [rdi+72]
 and r8, r13
-mov QWORD PTR [rdi+5032], r8
+mov QWORD PTR [rdi+4880], r8
 mov r8, QWORD PTR [rdi+80]
 and r8, r13
-mov QWORD PTR [rdi+5040], r8
+mov QWORD PTR [rdi+4888], r8
 mov r8, QWORD PTR [rdi+88]
 and r8, r13
-mov QWORD PTR [rdi+5048], r8
+mov QWORD PTR [rdi+4896], r8
 mov r8, QWORD PTR [rdi+96]
 and r8, r13
-mov QWORD PTR [rdi+5056], r8
+mov QWORD PTR [rdi+4904], r8
 mov r8, QWORD PTR [rdi+104]
 and r8, r13
-mov QWORD PTR [rdi+5064], r8
+mov QWORD PTR [rdi+4912], r8
 mov r8, QWORD PTR [rdi+112]
 and r8, r13
-mov QWORD PTR [rdi+5072], r8
+mov QWORD PTR [rdi+4920], r8
 mov r8, QWORD PTR [rdi+120]
 and r8, r13
-mov QWORD PTR [rdi+5080], r8
+mov QWORD PTR [rdi+4928], r8
 mov r8, QWORD PTR [rdi+128]
 and r8, r13
-mov QWORD PTR [rdi+5088], r8
-mov r8, QWORD PTR [rdi+4944]
-add r8, QWORD PTR [rdi+5024]
-mov QWORD PTR [rdi+4944], r8
-mov r8, QWORD PTR [rdi+4952]
-adc r8, QWORD PTR [rdi+5032]
-mov QWORD PTR [rdi+4952], r8
-mov r8, QWORD PTR [rdi+4960]
-adc r8, QWORD PTR [rdi+5040]
-mov QWORD PTR [rdi+4960], r8
-mov r8, QWORD PTR [rdi+4968]
-adc r8, QWORD PTR [rdi+5048]
-mov QWORD PTR [rdi+4968], r8
-mov r8, QWORD PTR [rdi+4976]
-adc r8, QWORD PTR [rdi+5056]
-mov QWORD PTR [rdi+4976], r8
-mov r8, QWORD PTR [rdi+4984]
-adc r8, QWORD PTR [rdi+5064]
-mov QWORD PTR [rdi+4984], r8
-mov r8, QWORD PTR [rdi+4992]
-adc r8, QWORD PTR [rdi+5072]
-mov QWORD PTR [rdi+4992], r8
-mov r8, QWORD PTR [rdi+5000]
-adc r8, QWORD PTR [rdi+5080]
-mov QWORD PTR [rdi+5000], r8
-mov r8, QWORD PTR [rdi+5008]
-adc r8, QWORD PTR [rdi+5088]
-mov QWORD PTR [rdi+5008], r8
-mov r8, QWORD PTR [rdi+5016]
-adc r8, QWORD PTR [rdi+5096]
-mov QWORD PTR [rdi+5016], r8
-mov rax, QWORD PTR [rdi+4944]
-mov QWORD PTR [rdi+4704], rax
-mov rax, QWORD PTR [rdi+4952]
-mov QWORD PTR [rdi+4712], rax
-mov rax, QWORD PTR [rdi+4960]
-mov QWORD PTR [rdi+4720], rax
-mov rax, QWORD PTR [rdi+4968]
-mov QWORD PTR [rdi+4728], rax
-mov rax, QWORD PTR [rdi+4976]
-mov QWORD PTR [rdi+4736], rax
-mov rax, QWORD PTR [rdi+4984]
-mov QWORD PTR [rdi+4744], rax
-mov rax, QWORD PTR [rdi+4992]
-mov QWORD PTR [rdi+4752], rax
-mov rax, QWORD PTR [rdi+5000]
-mov QWORD PTR [rdi+4760], rax
-mov rax, QWORD PTR [rdi+5008]
-mov QWORD PTR [rdi+4768], rax
-mov rax, QWORD PTR [rdi+4776]
-mov QWORD PTR [rdi+4632], rax
-mov rax, QWORD PTR [rdi+4784]
-mov QWORD PTR [rdi+4640], rax
-mov rax, QWORD PTR [rdi+4792]
-mov QWORD PTR [rdi+4648], rax
-mov rax, QWORD PTR [rdi+4800]
-mov QWORD PTR [rdi+4656], rax
-mov rax, QWORD PTR [rdi+4808]
-mov QWORD PTR [rdi+4664], rax
-mov rax, QWORD PTR [rdi+4816]
-mov QWORD PTR [rdi+4672], rax
-mov rax, QWORD PTR [rdi+4824]
-mov QWORD PTR [rdi+4680], rax
-mov rax, QWORD PTR [rdi+4832]
-mov QWORD PTR [rdi+4688], rax
-mov rax, QWORD PTR [rdi+4840]
-mov QWORD PTR [rdi+4696], rax
-sub r14, 1
-jne 217b
+mov QWORD PTR [rdi+4936], r8
+mov r8, QWORD PTR [rdi+4632]
+add r8, QWORD PTR [rdi+4872]
+mov QWORD PTR [rdi+4632], r8
+mov r8, QWORD PTR [rdi+4640]
+adc r8, QWORD PTR [rdi+4880]
+mov QWORD PTR [rdi+4640], r8
+mov r8, QWORD PTR [rdi+4648]
+adc r8, QWORD PTR [rdi+4888]
+mov QWORD PTR [rdi+4648], r8
+mov r8, QWORD PTR [rdi+4656]
+adc r8, QWORD PTR [rdi+4896]
+mov QWORD PTR [rdi+4656], r8
+mov r8, QWORD PTR [rdi+4664]
+adc r8, QWORD PTR [rdi+4904]
+mov QWORD PTR [rdi+4664], r8
+mov r8, QWORD PTR [rdi+4672]
+adc r8, QWORD PTR [rdi+4912]
+mov QWORD PTR [rdi+4672], r8
+mov r8, QWORD PTR [rdi+4680]
+adc r8, QWORD PTR [rdi+4920]
+mov QWORD PTR [rdi+4680], r8
+mov r8, QWORD PTR [rdi+4688]
+adc r8, QWORD PTR [rdi+4928]
+mov QWORD PTR [rdi+4688], r8
+mov r8, QWORD PTR [rdi+4696]
+adc r8, QWORD PTR [rdi+4936]
+mov QWORD PTR [rdi+4696], r8
+mov r8, QWORD PTR [rdi+4704]
+adc r8, QWORD PTR [rdi+4944]
+mov QWORD PTR [rdi+4704], r8
 mov rdx, QWORD PTR [rdi+4472]
 mov rcx, rdx
 shr rcx, 63
@@ -19039,18 +18691,6 @@ movabs rdx, -1
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
-mov QWORD PTR [rdi+4776], rax
-movabs rax, 0
-movabs rdx, -1
-xor rdx, rax
-and rdx, rcx
-xor rax, rdx
-mov QWORD PTR [rdi+4784], rax
-movabs rax, 0
-movabs rdx, -1
-xor rdx, rax
-and rdx, rcx
-xor rax, rdx
 mov QWORD PTR [rdi+4792], rax
 movabs rax, 0
 movabs rdx, -1
@@ -19058,8 +18698,8 @@ xor rdx, rax
 and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4800], rax
-movabs rax, 16777216
-movabs rdx, -16777217
+movabs rax, 0
+movabs rdx, -1
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
@@ -19070,8 +18710,8 @@ xor rdx, rax
 and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4816], rax
-movabs rax, 0
-movabs rdx, -1
+movabs rax, 16777216
+movabs rdx, -16777217
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
@@ -19083,16 +18723,28 @@ and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4832], rax
 movabs rax, 0
-movabs rdx, 511
+movabs rdx, -1
 xor rdx, rax
 and rdx, rcx
 xor rax, rdx
 mov QWORD PTR [rdi+4840], rax
-add rdi, 4776
-mov rdx, QWORD PTR [rdi-144]
+movabs rax, 0
+movabs rdx, -1
+xor rdx, rax
+and rdx, rcx
+xor rax, rdx
+mov QWORD PTR [rdi+4848], rax
+movabs rax, 0
+movabs rdx, 511
+xor rdx, rax
+and rdx, rcx
+xor rax, rdx
+mov QWORD PTR [rdi+4856], rax
+add rdi, 4792
+mov rdx, QWORD PTR [rdi-160]
 xor eax, eax
 mulx r8, rax, QWORD PTR [rdi]
-mov QWORD PTR [rdi-752], rax
+mov QWORD PTR [rdi-768], rax
 mulx r9, rax, QWORD PTR [rdi+8]
 adcx r8, rax
 mulx r10, rax, QWORD PTR [rdi+16]
@@ -19110,12 +18762,12 @@ adcx r14, rax
 mulx rbp, rax, QWORD PTR [rdi+64]
 adcx r15, rax
 adc rbp, 0
-mov rdx, QWORD PTR [rdi-136]
+mov rdx, QWORD PTR [rdi-152]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r8, rax
 adcx r9, rcx
-mov QWORD PTR [rdi-744], r8
+mov QWORD PTR [rdi-760], r8
 mov r8d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r9, rax
@@ -19143,12 +18795,12 @@ adox rbp, rax
 adcx r8, rcx
 mov eax, 0
 adox r8, rax
-mov rdx, QWORD PTR [rdi-128]
+mov rdx, QWORD PTR [rdi-144]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r9, rax
 adcx r10, rcx
-mov QWORD PTR [rdi-736], r9
+mov QWORD PTR [rdi-752], r9
 mov r9d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r10, rax
@@ -19176,12 +18828,12 @@ adox r8, rax
 adcx r9, rcx
 mov eax, 0
 adox r9, rax
-mov rdx, QWORD PTR [rdi-120]
+mov rdx, QWORD PTR [rdi-136]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r10, rax
 adcx r11, rcx
-mov QWORD PTR [rdi-728], r10
+mov QWORD PTR [rdi-744], r10
 mov r10d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r11, rax
@@ -19209,12 +18861,12 @@ adox r9, rax
 adcx r10, rcx
 mov eax, 0
 adox r10, rax
-mov rdx, QWORD PTR [rdi-112]
+mov rdx, QWORD PTR [rdi-128]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r11, rax
 adcx r12, rcx
-mov QWORD PTR [rdi-720], r11
+mov QWORD PTR [rdi-736], r11
 mov r11d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r12, rax
@@ -19242,12 +18894,12 @@ adox r10, rax
 adcx r11, rcx
 mov eax, 0
 adox r11, rax
-mov rdx, QWORD PTR [rdi-104]
+mov rdx, QWORD PTR [rdi-120]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r12, rax
 adcx r13, rcx
-mov QWORD PTR [rdi-712], r12
+mov QWORD PTR [rdi-728], r12
 mov r12d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r13, rax
@@ -19275,12 +18927,12 @@ adox r11, rax
 adcx r12, rcx
 mov eax, 0
 adox r12, rax
-mov rdx, QWORD PTR [rdi-96]
+mov rdx, QWORD PTR [rdi-112]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r13, rax
 adcx r14, rcx
-mov QWORD PTR [rdi-704], r13
+mov QWORD PTR [rdi-720], r13
 mov r13d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r14, rax
@@ -19308,12 +18960,12 @@ adox r12, rax
 adcx r13, rcx
 mov eax, 0
 adox r13, rax
-mov rdx, QWORD PTR [rdi-88]
+mov rdx, QWORD PTR [rdi-104]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r14, rax
 adcx r15, rcx
-mov QWORD PTR [rdi-696], r14
+mov QWORD PTR [rdi-712], r14
 mov r14d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox r15, rax
@@ -19341,12 +18993,12 @@ adox r13, rax
 adcx r14, rcx
 mov eax, 0
 adox r14, rax
-mov rdx, QWORD PTR [rdi-80]
+mov rdx, QWORD PTR [rdi-96]
 xor eax, eax
 mulx rcx, rax, QWORD PTR [rdi]
 adox r15, rax
 adcx rbp, rcx
-mov QWORD PTR [rdi-688], r15
+mov QWORD PTR [rdi-704], r15
 mov r15d, 0
 mulx rcx, rax, QWORD PTR [rdi+8]
 adox rbp, rax
@@ -19374,7 +19026,7 @@ adox r14, rax
 adcx r15, rcx
 mov eax, 0
 adox r15, rax
-add rdi, -752
+add rdi, -768
 mov edx, 512
 xor eax, eax
 cmp rax, -1
