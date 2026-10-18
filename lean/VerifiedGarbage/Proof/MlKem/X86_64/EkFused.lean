@@ -158,18 +158,18 @@ theorem matH_ok (v : Sample4Impl) (F : EkHWf L) {b : Prog isa} (hb : BatchHOk b)
 /-- `m` to `M` and `G(m ‖ H(ek))`, keeping the matrix. -/
 theorem hashesF_ok (F : EkHWf L) {σ : State} (hp : (encK L).pre σ) {s : State} (h : MI L σ (L.k * L.k) s) :
     WP isa EncapsH.hashes s
-      (Enc.EB L (Ek.ekC F.toEcWf σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 (L.k * L.k)) := by
+      (Enc.EB L (Ek.ekC F.toEcWf.toEcWfB σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 (L.k * L.k)) := by
   have W := F.toEcWf
   have L₀ := h.ec.lay W hp
   have hg := F.gK
   simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range] at hg
-  refine WP.mono (Ek.hashes_okP W hp h.ec h.h) fun s' ⟨hP, h15, hi⟩ =>
+  refine WP.mono (Ek.hashes_okP W.toEcWfB hp h.ec h.h) fun s' ⟨hP, h15, hi⟩ =>
     ⟨hi, by rw [L₀.keepBytes hP hg.1]; exact h.sb, ⟨by rw [h15]; exact h.mat.r15,
       fun e he f hf => L₀.keepPoly hP (hg.2 e he) (h.mat.mat e he f hf)⟩⟩
 
 /-- The rest of `K-PKE.Encrypt`, if every `SampleNTT` succeeded. -/
 theorem ifRest_ok (v : Sample4Impl) (F : EkHWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {σ s : State}
-    (h : Enc.EB L (Ek.ekC F.toEcWf σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 (L.k * L.k) s) :
+    (h : Enc.EB L (Ek.ekC F.toEcWf.toEcWfB σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 (L.k * L.k) s) :
     WP isa (ifOk (Encrypt.rest L v.callee (.r14, 0))) s (Ek.EncO F.toEcWf σ) := by
   have hc := Enc.encChk_spec F.toEcWf.enc
   refine ifOk_ok (fun s₁ hP hne => Enc.rest_ok v K F.toEcWf.toKemWf hc
@@ -188,7 +188,7 @@ theorem kemEncapsF_correct (v : Sample4Impl) {L : Kem} (F : EkHWf L) {wc wd : Li
   have hB := v.batchH b hb
   unfold kemEncaps at hctl ⊢
   rw [hb] at hctl ⊢
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W₀ hp) fun s₁ h₁ =>
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W₀.toEcWfB hp) fun s₁ h₁ =>
     WP.seq (WP.mono (matH_ok v F hB hp h₁) fun s₂ h₂ =>
       WP.seq (WP.mono (hashesF_ok F hp h₂) fun s₃ h₃ =>
         WP.seq (WP.mono (ifRest_ok v F K h₃) fun s₄ h₄ =>

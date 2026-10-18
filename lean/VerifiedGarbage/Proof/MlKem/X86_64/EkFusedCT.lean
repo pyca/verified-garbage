@@ -184,12 +184,12 @@ theorem ifRestρ_tr (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) 
     ⟨ek₂, m₂, r₂, e₂, Enc.ER0.start (h₂.flag hy hc.inK hc.aK hc.sbK) o₂⟩⟩
 
 theorem ifRest_tr (v : Sample4Impl) (F : EkHWf L) {wc wd : List Nat} (K : KemCalls L wc wd) :
-    RelCT isa (R L fun σ s => Enc.EB L (Ek.ekC F.toEcWf σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 (L.k * L.k) s)
+    RelCT isa (R L fun σ s => Enc.EB L (Ek.ekC F.toEcWf.toEcWfB σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 (L.k * L.k) s)
       (ifOk (Encrypt.rest L v.callee (.r14, 0))) fun _ _ => True := by
   have W := F.toEcWf
   refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => LRel (ecR L) (ecW L) x y ∧
-      Enc.EBρ L (Ek.ekCA W) (.r14, 0) ρ (L.k * L.k) x ∧ Enc.EBρ L (Ek.ekCA W) (.r14, 0) ρ (L.k * L.k) y)
-    (Q := fun _ _ => True) fun ρ => ifRestρ_tr v K W.toKemWf (C := Ek.ekCA W) (Enc.encChk_spec W.enc)) ?_
+      Enc.EBρ L (Ek.ekCA W.toEcWfB) (.r14, 0) ρ (L.k * L.k) x ∧ Enc.EBρ L (Ek.ekCA W.toEcWfB) (.r14, 0) ρ (L.k * L.k) y)
+    (Q := fun _ _ => True) fun ρ => ifRestρ_tr v K W.toKemWf (C := Ek.ekCA W.toEcWfB) (Enc.encChk_spec W.enc)) ?_
     fun _ _ _ => trivial
   rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
   exact ⟨Enc.rhoE L (ekE L σ₁), ek_lrel W p₁ p₂ pub h₁.i.out.2.ec h₂.i.out.2.ec,
@@ -206,9 +206,9 @@ theorem kemEncapsF_ct (v : Sample4Impl) {L : Kem} (F : EkHWf L) (T : EkTWf L) {w
   refine relStart (Q := fun _ _ => True) ?_
   unfold kemEncaps
   rw [hb]
-  refine RelCT.seq (relInv (I' := ProOut L) (fun σ s hp hs => by subst hs; exact pro_ok W₀ hp) pro_tr) ?_
+  refine RelCT.seq (relInv (I' := ProOut L) (fun σ s hp hs => by subst hs; exact pro_ok W₀.toEcWfB hp) pro_tr) ?_
   refine RelCT.seq (matH_tr v F T hB) ?_
-  refine RelCT.seq (relInv (I' := fun σ s => Enc.EB L (ekC W₀ σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2
+  refine RelCT.seq (relInv (I' := fun σ s => Enc.EB L (ekC W₀.toEcWfB σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2
     (L.k * L.k) s) (fun σ s hp hs => hashesF_ok F hp hs) (hashesF_tr F)) ?_
   refine RelCT.seq (relInv (I' := EncO W₀) (fun σ s _ hs => ifRest_ok v F K hs) (ifRest_tr v F K)) ?_
   refine RelCT.seq (relInv (I' := EKEnd L) (fun σ s _ hs => out_ok W₀ hs) (out_tr W₀)) ?_

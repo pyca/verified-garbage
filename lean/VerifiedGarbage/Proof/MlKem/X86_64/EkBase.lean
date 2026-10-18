@@ -14,7 +14,7 @@ For a parameter set `L`: the contract the proof of `kemEncaps`
 shared contract implies), and what holds throughout (`EK`: `Top`, and `ek`
 and `m` at their pointers). The function keeps its buffers in the registers
 `kemEncapsH` keeps them in, so its layout (`ecR`, `ecW`) and the checks of
-`EcWf L` are those of `EcBase.lean`; only the entry differs (no `h`, and the
+`EcWfB L` are those of `EcBase.lean`; only the entry differs (no `h`, and the
 other pointers one register earlier: `ekM`). Then the prologue (`pro_ok`),
 `H(ek)` with the sponge functions (`hashEk_ok`) and `G(m ‖ H(ek))`
 (`hashes_ok`), and the context `K-PKE.Encrypt` runs in (`ekC`, which also
@@ -59,7 +59,7 @@ def encK (L : Kem) : Contract isa where
 
 namespace Ek
 
-open VG.Proof.MlKem.X86_64.Encaps (ecR ecW ecB ecB_bases ecChk eckChk EcWf hW₃)
+open VG.Proof.MlKem.X86_64.Encaps (ecR ecW ecB ecB_bases ecChk eckChk EcWfB hW₃)
 
 variable (L : Kem)
 
@@ -72,7 +72,7 @@ section
 variable {L : Kem} {σ : State}
 
 /-- The layout of encapsulation. -/
-theorem ekLay (W : EcWf L) (hp : (encK L).pre σ) {s : State} (h : Top ekM σ s) : Lay (ecR L) (ecW L) s := by
+theorem ekLay (W : EcWfB L) (hp : (encK L).pre σ) {s : State} (h : Top ekM σ s) : Lay (ecR L) (ecW L) s := by
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5,
     n1, n2, n3, n4, n5⟩ := hp
   have e1 : s.gpr .rbx = σ.gpr .r8 := h.regs (.rbx, .r8) (by decide)
@@ -115,7 +115,7 @@ structure EK (L : Kem) (σ s : State) : Prop where
   m : bytesAt s.mem (pa s (.rbp, 0)) 32 = ekMs σ
 
 section
-variable {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ)
+variable {L : Kem} (W : EcWfB L) {σ : State} (hp : (encK L).pre σ)
 include W hp
 
 theorem EK.lay {s : State} (h : EK L σ s) : Lay (ecR L) (ecW L) s := ekLay W hp h.top
@@ -134,13 +134,13 @@ structure EKK (L : Kem) (σ s : State) : Prop where
   ec : EK L σ s
   k : bytesAt s.mem (pa s (sc oG)) 32 = (ekG L σ).1
 
-theorem EKK.step {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s s' : State} (h : EKK L σ s)
+theorem EKK.step {L : Kem} (W : EcWfB L) {σ : State} (hp : (encK L).pre σ) {s s' : State} (h : EKK L σ s)
     {ws : List (Ptr × Nat)} (hP : PPostB s s' ws) (hc : eckChk L ws = true) : EKK L σ s' := by
   simp only [Encaps.eckChk, Bool.and_eq_true] at hc
   exact ⟨h.ec.step W hp hP hc.1, by rw [(h.ec.lay W hp).keepBytes hP hc.2]; exact h.k⟩
 
 /-- The context of `K-PKE.Encrypt` in a run from `σ`. -/
-def ekC {L : Kem} (W : EcWf L) (σ : State) : Ctx (ecR L) (ecW L) where
+def ekC {L : Kem} (W : EcWfB L) (σ : State) : Ctx (ecR L) (ecW L) where
   Out s := (encK L).pre σ ∧ EKK L σ s
   chk := eckChk L
   bs := ecB_bases L
@@ -148,7 +148,7 @@ def ekC {L : Kem} (W : EcWf L) (σ : State) : Ctx (ecR L) (ecW L) where
   step h hP hc := ⟨h.1, h.2.step W h.1 hP hc⟩
 
 /-- The context of `K-PKE.Encrypt` in any run. -/
-def ekCA {L : Kem} (W : EcWf L) : Ctx (ecR L) (ecW L) where
+def ekCA {L : Kem} (W : EcWfB L) : Ctx (ecR L) (ecW L) where
   Out s := ∃ σ, (encK L).pre σ ∧ EKK L σ s
   chk := eckChk L
   bs := ecB_bases L
@@ -165,7 +165,7 @@ structure ProOut (L : Kem) (σ s : State) : Prop where
   ec : EK L σ s
   r15 : s.gpr .r15 = 1
 
-theorem pro_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) :
+theorem pro_ok {L : Kem} (W : EcWfB L) {σ : State} (hp : (encK L).pre σ) :
     WP isa (.block Encaps.pro) σ (ProOut L σ) := by
   have hp' := hp
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5,
@@ -206,12 +206,12 @@ theorem pro_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) :
 /-! ## `G(m ‖ H(ek))` -/
 
 /-- The inputs of `K-PKE.Encrypt`, and `r15 = 1`. -/
-abbrev EncI {L : Kem} (W : EcWf L) (σ s : State) : Prop :=
+abbrev EncI {L : Kem} (W : EcWfB L) (σ s : State) : Prop :=
   Enc.EIn L (ekC W σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 s ∧ s.gpr .r15 = 1
 
 /-- `m` to `M`, and `G(m ‖ H(ek))`, with `H(ek)` at `H`: what it writes, `r15`, and the inputs of
 `K-PKE.Encrypt`. -/
-theorem hashes_okP {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s : State}
+theorem hashes_okP {L : Kem} (W : EcWfB L) {σ : State} (hp : (encK L).pre σ) {s : State}
     (h : EK L σ s) (hH : bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ)) :
     WP isa EncapsH.hashes s fun s' => PPostB s s' ([(sc oM, 32)] ++ hW₃) ∧ s'.gpr .r15 = s.gpr .r15 ∧
       Enc.EIn L (ekC W σ) (.r14, 0) (ekE L σ) (ekMs σ) (ekG L σ).2 s' := by
@@ -241,7 +241,7 @@ theorem hashes_okP {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s
   rw [L₁.keepBytes hP₃.b W.h₃M, hb₁]
 
 /-- `m` to `M`, and `G(m ‖ H(ek))`, with `H(ek)` at `H`. -/
-theorem hashes_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encK L).pre σ) {s : State}
+theorem hashes_ok {L : Kem} (W : EcWfB L) {σ : State} (hp : (encK L).pre σ) {s : State}
     (h : EK L σ s) (hH : bytesAt s.mem (pa s (sc oH)) 32 = H (ekE L σ)) (h15 : s.gpr .r15 = 1) :
     WP isa EncapsH.hashes s (EncI W σ) :=
   WP.mono (hashes_okP W hp h hH) fun _ ⟨_, e, hi⟩ => ⟨hi, by rw [e, h15]⟩
