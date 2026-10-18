@@ -19,9 +19,8 @@ public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
 `[a]^2 2^-384 mod p`, with `[a]` in `aRegs` (`P384Mul.bRegs384`):
 
 1. `offDiag`: the products `a_i a_j` of distinct words, `i < j`, into the
-   accumulator (`P384Mul.accRegs`): a `row` for each `i < 5`, adding
-   `a_i [a_(i+1) … a_5]` to words `2i + 1` to `6 + i`, the first setting them
-   (`rowInit`) and the words it leaves cleared first;
+   accumulator (`P384Mul.accRegs`, cleared first): a `row` for each `i < 5`,
+   adding `a_i [a_(i+1) … a_5]` to words `2i + 1` to `6 + i`;
 2. `dbl`: the accumulator doubled;
 3. `diag`: the squares `a_i^2` added at words `2i` and `2i + 1`;
 4. then `P384Mul.reds` and `P384Mul.addHigh`, as for the product.
@@ -42,15 +41,8 @@ def sqRowRegs (i : Nat) : List Reg := (P384Mul.accRegs.drop (2 * i + 1)).take (6
 def sqRow (i : Nat) : List Instr :=
   row .x27 (aRegs.getD i .x4) (sqRowRegs i) ((aRegs.drop (i + 1)).map fun r => .gen (.reg r))
 
-/-- Row `0`, `a_0 [a_1 … a_5]`, straight into words `1` to `6` (`rowInit`). -/
-def sqRow0 : List Instr := rowInit .x27 .x4 (sqRowRegs 0) (aRegs.drop 1)
-
-/-- The words no row sets: word `0` and the high half, which the rows after the
-first add to. -/
-def sqClear : List Reg := .x8 :: P384Mul.highRegs
-
-/-- The products of distinct words: `sqClear` cleared, then the rows. -/
-def offDiag : List Instr := zeros sqClear ++ sqRow0 ++ (List.range 4).flatMap fun i => sqRow (1 + i)
+/-- The products of distinct words, from a cleared accumulator. -/
+def offDiag : List Instr := zeros P384Mul.accRegs ++ (List.range 5).flatMap sqRow
 
 /-- `ts += ts`: `adds` on the first word, `adcs` on the others. -/
 def dblIn (first : Bool) : List Reg → List Instr

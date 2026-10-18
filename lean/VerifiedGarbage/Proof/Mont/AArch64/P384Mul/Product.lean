@@ -4,15 +4,13 @@ public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
 public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 public import VerifiedGarbage.Proof.Mont.AArch64.Chain
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Mont.AArch64.RowInit
 
 /-!
 # P-384's Montgomery product on AArch64: the product
 
-`prod` (`Impl/Mont/AArch64/P384Mul.lean`) sets the low seven words of
-`accRegs` to `a_0 [b]` (`rowInit_ok`), the high half cleared, and adds
-`a_i [b]` to its words `i` to `i + 6` for each other word `a_i` of `[a]`
-(`row_ok`), leaving `[acc] = [a] [b]` (`prod_ok`). `addHigh` adds the high half to the
+`prod` (`Impl/Mont/AArch64/P384Mul.lean`) clears the twelve words of
+`accRegs` and adds `a_i [b]` to its words `i` to `i + 6` for each word `a_i`
+of `[a]` (`row_ok`), leaving `[acc] = [a] [b]` (`prod_ok`). `addHigh` adds the high half to the
 low half (`addHigh_ok`).
 -/
 
@@ -137,56 +135,20 @@ theorem rowsN_ok {pa : Addr} {B : Nat} :
     refine WP.mono this fun t ⟨e, k₃⟩ => ⟨by rw [e, hmem], (k₁.mono (by sub_regs)).trans
       ((k₂.mono fsub).trans k₃)⟩
 
-/-- What the first row needs of its registers. -/
-theorem row0_facts : (∀ t ∈ rowRegs 0, t ≠ ra ∧ t ≠ .x2 ∧ t ≠ .x3 ∧ t ≠ .x7 ∧ t ≠ .x1 ∧ t ∉ bRegs384) ∧
-    (∀ r ∈ bRegs384, r ≠ .x2 ∧ r ≠ .x3) ∧ (rowRegs 0).Nodup ∧
-    (∀ t ∈ (rowRegs 0).drop bRegs384.length, t ≠ .x1 ∧ t ∈ highRegs) ∧
-    (∀ r ∈ accRegs.drop 7, r ∉ Reg.x2 :: .x3 :: rowRegs 0 ∧ r ≠ .x1 ∧ r ∈ highRegs) := by
-  decide
-
-theorem prod_eq : prod = zeros highRegs ++ (([.ldr .x .x1 ra 0] : List Instr) ++
-    (rowInit ra .x1 (rowRegs 0) bRegs384 ++ (List.range 5).flatMap fun i =>
-      .ldr .x .x1 ra (8 * (1 + i)) :: row ra .x1 (rowRegs (1 + i)) bWordsR)) := by
-  simp only [prod, List.append_assoc, List.cons_append, List.nil_append]
-
 /-- The product: `[acc] = [a] [b]`, `x7` being zero. -/
 theorem prod_ok {s : State} {pa : Addr} (hp : Ptr s ra pa 48) (hz : s.gpr .x7 = 0) :
     WP isa (.block prod) s fun t =>
       regsVal t accRegs = wordsVal s.mem pa 0 6 * regsVal s bRegs384 ∧
       Keeps (.x1 :: .x2 :: .x3 :: accRegs) s t := by
-  obtain ⟨f0, fb, fnd, ftop, fhi⟩ := row0_facts
-  obtain ⟨hlen, hrl, fra, f7, -, -, -, fsub⟩ := row_facts 0 (by decide)
-  rw [prod_eq, WP.block_append_iff]
-  refine WP.mono (zeros_ok s highRegs) fun s₁ ⟨z₁, k₁⟩ => ?_
-  have hp₁ := hp.of_keeps k₁ (by decide)
-  have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by decide), hz]
+  rw [prod, WP.block_append_iff]
+  refine WP.mono (zeros_ok s accRegs) fun s₁ ⟨z₁, k₁⟩ => ?_
   have hB : regsVal s₁ bRegs384 = regsVal s bRegs384 :=
     regsVal_congr fun r hr => k₁.gpr r (by revert r; decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (ldR_ok hp₁ (d := 0) (by decide) (by decide) .x1) fun s₂ ⟨l₂, k₂, _⟩ => ?_
-  have hp₂ := hp₁.of_keeps k₂ (by decide)
-  have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (by decide), hz₁]
-  have hB₂ : regsVal s₂ bRegs384 = regsVal s bRegs384 := by
-    rw [← hB]; exact regsVal_congr fun r hr => k₂.gpr r (by revert r; decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (rowInit_ok hp₂ hz₂ (by decide) (by decide) (x := .x1) (ts := rowRegs 0) (bs := bRegs384)
-    (by decide) fnd f0 fb (by decide) (by decide) (by decide) (fun t ht => by
-      rw [k₂.gpr t (by simpa using (ftop t ht).1)]; exact z₁ t (ftop t ht).2)) fun s₃ ⟨e₃, k₃⟩ => ?_
-  have hp₃ : Ptr s₃ ra pa 48 := hp₂.of_keeps k₃ fra
-  have hz₃ : s₃.gpr .x7 = 0 := by rw [k₃.gpr _ f7, hz₂]
-  have hB₃ : regsVal s₃ bRegs384 = regsVal s bRegs384 := by
-    rw [← hB₂]; exact regsVal_congr fun r hr => k₃.gpr r (by revert r; decide)
-  have hmem : s₃.mem = s.mem := by rw [k₃.mem, k₂.mem, k₁.mem]
-  have hhi : regsVal s₃ (accRegs.drop 7) = 0 := regsVal_zero fun r hr => by
-    rw [k₃.gpr r (fhi r hr).1, k₂.gpr r (by simpa using (fhi r hr).2.1)]; exact z₁ r (fhi r hr).2.2
-  have hv₃ : regsVal s₃ accRegs = wordsVal s₃.mem pa 0 1 * regsVal s bRegs384 := by
-    rw [acc_split 0 (by decide), regsVal_append, regsVal_append, hlen, hrl, hhi, e₃, l₂, hmem, hB₂,
-      wordsVal_succ_top, k₁.mem]
-    simp [wordsVal, regsVal]
-  have := rowsN_ok 1 (by decide) s₃ hp₃ hz₃ hB₃ hv₃
-  simp only [show 6 - 1 = 5 from rfl] at this
-  refine WP.mono this fun t ⟨e, k₄⟩ => ⟨by rw [e, hmem], (k₁.mono (by sub_regs)).trans
-    ((k₂.mono (by sub_regs)).trans ((k₃.mono fsub).trans k₄))⟩
+  have h0 : regsVal s₁ accRegs = wordsVal s₁.mem pa 0 0 * regsVal s bRegs384 := by
+    rw [regsVal_zero z₁, wordsVal, Nat.zero_mul]
+  have := rowsN_ok 0 (Nat.zero_le _) s₁ (hp.of_keeps k₁ (by decide)) (by rw [k₁.gpr _ (by decide), hz]) hB h0
+  simp only [Nat.zero_add, Nat.sub_zero] at this
+  refine WP.mono this fun t ⟨e, k₂⟩ => ⟨by rw [e, k₁.mem], (k₁.mono (by sub_regs)).trans k₂⟩
 
 /-- `ts += hs` with the carry flag in, `adcs` throughout, and its carry out. -/
 theorem adcsIn_ok : ∀ (ts hs : List Reg) (s : State), ts.length = hs.length → ts.Nodup →

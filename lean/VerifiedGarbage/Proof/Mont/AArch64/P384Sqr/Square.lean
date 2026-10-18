@@ -3,14 +3,12 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Rows
 import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Mont.AArch64.RowInit
 
 /-!
 # P-384's Montgomery square on AArch64: the square
 
 `sq` (`Impl/Mont/AArch64/P384Sqr.lean`) leaves `[acc] = [a]^2`
-(`sq_ok`): the products of distinct words (`offDiag_ok`, the first row by
-`rowInit_ok`), doubled (`dbl_ok`),
+(`sq_ok`): the products of distinct words (`offDiag_ok`), doubled (`dbl_ok`),
 plus the squares of the words (`diag_ok`), as `[a]^2 = 2 odd + diagSum`
 (`sq_identity`).
 -/
@@ -59,10 +57,9 @@ theorem sqX_mem (i : Nat) : sqX i ∈ aRegs := by
   | none => decide
   | some r => exact List.mem_of_getElem? h
 
-theorem offDiag_eq : offDiag = zeros sqClear ++ (sqRow0 ++ (sqRow 1 ++ (sqRow 2 ++
+theorem offDiag_eq : offDiag = zeros P384Mul.accRegs ++ (sqRow 0 ++ (sqRow 1 ++ (sqRow 2 ++
     (sqRow 3 ++ sqRow 4)))) := by
-  simp only [offDiag, List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil,
-    List.append_assoc, Nat.reduceAdd]
+  simp only [offDiag, List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- `[acc] = odd`, from any accumulator, `x7` being zero. -/
 theorem offDiag_ok {s : State} {base : Addr} (hp : Ptr s .x27 base 48) (hz : s.gpr .x7 = 0) :
@@ -73,55 +70,40 @@ theorem offDiag_ok {s : State} {base : Addr} (hp : Ptr s .x27 base 48) (hz : s.g
     fun k h i => ⟨regsVal_congr fun r hr => k.gpr r (h r (List.mem_of_mem_drop hr)),
       k.gpr _ (h _ (sqX_mem i))⟩
   rw [offDiag_eq, WP.block_append_iff]
-  refine WP.mono (zeros_ok s sqClear) fun s₀ ⟨z₀, k₀⟩ => ?_
+  refine WP.mono (zeros_ok s P384Mul.accRegs) fun s₀ ⟨z₀, k₀⟩ => ?_
+  have hv₀ : regsVal s₀ P384Mul.accRegs = 0 := regsVal_zero z₀
   have hp₀ := hp.of_keeps k₀ (by decide)
   have hz₀ : s₀.gpr .x7 = 0 := by rw [k₀.gpr _ (by decide), hz]
   have a₀ := ka k₀ (by decide)
-  obtain ⟨hlen₀, hrl₀, -, hsplit₀, -, -, -, -, -, f27₀, f7₀, -, fa₀, flo₀, fhi₀, fs₀⟩ := sqRow_facts 0 (by decide)
+  obtain ⟨-, -, -, -, -, -, -, -, -, f27₀, f7₀, -, fa₀, -, -, fs₀⟩ := sqRow_facts 0 (by decide)
   obtain ⟨-, -, -, -, -, -, -, -, -, f27₁, f7₁, -, fa₁, -, -, fs₁⟩ := sqRow_facts 1 (by decide)
   obtain ⟨-, -, -, -, -, -, -, -, -, f27₂, f7₂, -, fa₂, -, -, fs₂⟩ := sqRow_facts 2 (by decide)
   obtain ⟨-, -, -, -, -, -, -, -, -, f27₃, f7₃, -, fa₃, -, -, fs₃⟩ := sqRow_facts 3 (by decide)
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, fa₄, -, -, fs₄⟩ := sqRow_facts 4 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (rowInit_ok hp₀ hz₀ (by decide) (by decide) (x := .x4) (ts := sqRowRegs 0)
-    (bs := aRegs.drop 1) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun t ht => z₀ t (by revert t; decide))) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (sqRow_ok (i := 0) (by decide) hp₀ hz₀ (by rw [hv₀]; exact Nat.two_pow_pos _))
+    fun s₁ ⟨e₁, b₁, k₁⟩ => ?_
   have a₁ := ka k₁ fa₀
-  have hlo₁ : regsVal s₁ (P384Mul.accRegs.take 1) = 0 := regsVal_zero fun r hr => by
-    rw [k₁.gpr r (flo₀ r hr)]; exact z₀ r (by revert r; decide)
-  have hhi₁ : regsVal s₁ (P384Mul.accRegs.drop 7) = 0 := regsVal_zero fun r hr => by
-    rw [k₁.gpr r (fhi₀ r hr)]; exact z₀ r (by revert r; decide)
-  have hv₁ : regsVal s₁ P384Mul.accRegs =
-      2 ^ (64 * 1) * ((s.gpr (sqX 0)).toNat * regsVal s (aRegs.drop 1)) := by
-    rw [hsplit₀, regsVal_append, regsVal_append, hlen₀, hrl₀, hlo₁, hhi₁, e₁, (a₀ 1).1,
-      show s₀.gpr .x4 = s.gpr (sqX 0) from (a₀ 0).2, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.add_zero]
-  have b₁ : regsVal s₁ P384Mul.accRegs < 2 ^ (64 * (6 + 1)) := by
-    have hT := regsVal_lt s₁ (sqRowRegs 0)
-    rw [hrl₀] at hT
-    rw [hsplit₀, regsVal_append, regsVal_append, hlen₀, hrl₀, hlo₁, hhi₁, Nat.mul_zero, Nat.add_zero,
-      Nat.zero_add, show 64 * (6 + 1) = 64 * 1 + 64 * (6 - 0) from rfl, Nat.pow_add]
-    exact Nat.mul_lt_mul_of_pos_left hT (Nat.two_pow_pos _)
-  have hp₁ := hp₀.of_keeps k₁ f27₀
   rw [WP.block_append_iff]
-  refine WP.mono (sqRow_ok (i := 1) (by decide) hp₁ (by rw [k₁.gpr _ f7₀, hz₀]) b₁)
+  refine WP.mono (sqRow_ok (i := 1) (by decide) (hp₀.of_keeps k₁ f27₀) (by rw [k₁.gpr _ f7₀, hz₀]) b₁)
     fun s₂ ⟨e₂, b₂, k₂⟩ => ?_
   have a₂ := ka k₂ fa₁
   rw [WP.block_append_iff]
-  refine WP.mono (sqRow_ok (i := 2) (by decide) (hp₁.of_keeps k₂ f27₁)
+  refine WP.mono (sqRow_ok (i := 2) (by decide) ((hp₀.of_keeps k₁ f27₀).of_keeps k₂ f27₁)
     (by rw [k₂.gpr _ f7₁, k₁.gpr _ f7₀, hz₀]) b₂) fun s₃ ⟨e₃, b₃, k₃⟩ => ?_
   have a₃ := ka k₃ fa₂
   rw [WP.block_append_iff]
-  refine WP.mono (sqRow_ok (i := 3) (by decide) ((hp₁.of_keeps k₂ f27₁).of_keeps k₃ f27₂)
+  refine WP.mono (sqRow_ok (i := 3) (by decide) (((hp₀.of_keeps k₁ f27₀).of_keeps k₂ f27₁).of_keeps k₃ f27₂)
     (by rw [k₃.gpr _ f7₂, k₂.gpr _ f7₁, k₁.gpr _ f7₀, hz₀]) b₃) fun s₄ ⟨e₄, b₄, k₄⟩ => ?_
   have a₄ := ka k₄ fa₃
   refine WP.mono (sqRow_ok (i := 4) (by decide)
-    (((hp₁.of_keeps k₂ f27₁).of_keeps k₃ f27₂).of_keeps k₄ f27₃)
+    ((((hp₀.of_keeps k₁ f27₀).of_keeps k₂ f27₁).of_keeps k₃ f27₂).of_keeps k₄ f27₃)
     (by rw [k₄.gpr _ f7₃, k₃.gpr _ f7₂, k₂.gpr _ f7₁, k₁.gpr _ f7₀, hz₀]) b₄) fun t ⟨e₅, _, k₅⟩ => ?_
-  refine ⟨?_, (k₀.mono fun r hr => by revert r; decide).trans ((k₁.mono fs₀).trans ((k₂.mono fs₁).trans
+  refine ⟨?_, (k₀.mono (by sub_regs)).trans ((k₁.mono fs₀).trans ((k₂.mono fs₁).trans
     ((k₃.mono fs₂).trans ((k₄.mono fs₃).trans (k₅.mono fs₄)))))⟩
-  rw [e₅, e₄, e₃, e₂, hv₁]
+  rw [e₅, e₄, e₃, e₂, e₁, hv₀]
   simp only [odd, (a₄ _).1, (a₄ _).2, (a₃ _).1, (a₃ _).2, (a₂ _).1, (a₂ _).2, (a₁ _).1, (a₁ _).2,
-    (a₀ _).1, (a₀ _).2]
+    (a₀ _).1, (a₀ _).2, Nat.zero_add]
 
 /-! ## Doubling -/
 

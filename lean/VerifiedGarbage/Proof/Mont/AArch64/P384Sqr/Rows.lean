@@ -6,8 +6,8 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 /-!
 # P-384's Montgomery square on AArch64: the products of distinct words
 
-`offDiag` (`Impl/Mont/AArch64/P384Sqr.lean`) runs a row for each word
-`a_i`, `i < 5`, adding `2^(64 (2i + 1)) a_i [a_(i+1) … a_5]`
+`offDiag` (`Impl/Mont/AArch64/P384Sqr.lean`) clears the accumulator and runs
+a `row` for each word `a_i`, `i < 5`, adding `2^(64 (2i + 1)) a_i [a_(i+1) … a_5]`
 (`sqRow_ok`, one symbolic execution for any `i`), so that the accumulator holds
 `odd [a]`, the sum of `2^(64 (i + j)) a_i a_j` over `i < j` (`offDiag_ok`).
 -/
