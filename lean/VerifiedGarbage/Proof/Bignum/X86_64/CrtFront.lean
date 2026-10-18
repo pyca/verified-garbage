@@ -96,13 +96,21 @@ structure NReady (s t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N C : 
   iscr : InScr B Z s.mem t.mem
   keep : Keep mmRegs s t
 
-/-- `n`'s setup, for a valid modulus. -/
-theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
-    {nb xb pb qb dpb dqb qib : List Byte}
+/-- `n`'s setup, for a valid modulus, with `c2` setting `R² mod n` (right
+if `ok`). -/
+theorem nPartWith_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {c2 : Prog isa} {ok : Prop}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
-    WP isa (seqs (nSetup M.mm)) s fun t => ∃ minv,
-      NReady s t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) True := by
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (h2 : ∀ t₁ minv, SetupOut t₁ B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) →
+      Frm B (setupRanges ((k + 7) / 8)) s.mem t₁.mem → Keep mmRegs s t₁ →
+      WP isa c2 t₁ fun t₂ => Good t₂ B Z ((k + 7) / 8) minv ∧
+        wv t₂.mem B (slot ((k + 7) / 8) Public.aR2) ((k + 7) / 8) < Spec.Rsa.os2ip nb ∧
+        (ok → wv t₂.mem B (slot ((k + 7) / 8) Public.aR2) ((k + 7) / 8) % Spec.Rsa.os2ip nb =
+          2 ^ (64 * ((k + 7) / 8)) * 2 ^ (64 * ((k + 7) / 8)) % Spec.Rsa.os2ip nb) ∧
+        Frm B (r2Ranges ((k + 7) / 8)) t₁.mem t₂.mem ∧ Keep mmRegs t₁ t₂) :
+    WP isa (seqs ((loadSteps ++ restSteps) ++ ([c2] ++ [M.mm Public.aXm Public.aX Public.aR2]))) s fun t =>
+      ∃ minv, NReady s t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) ok := by
   obtain ⟨hodd, hN1, hlo⟩ := valid_facts hv h.k1
   have hk1 := h.k1
   have hk2 := h.k2
@@ -112,15 +120,13 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ Z :=
     fun h' r hr => (h' r hr).trans hZ
-  rw [nSetup_eq]
   -- The modulus, the input, `-n⁻¹`, 1 and the mask of `c < n`.
   refine wp_seqs_append (by simp [loadSteps]) (by simp)
     (WP.mono (setup_ok h.scr h.rdi hZ (by omega_arith) (by omega_arith) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
       fun t₁ ⟨minv, so, f₁, k₁⟩ => ?_)
   -- `R² mod n`.
   refine wp_seqs_append (by simp) (by simp)
-    (WP.mono (R2w.choice_ok M so.good hZ (by omega_arith) (by omega_arith) so.n so.inv so.r12 so.r10 hodd hlo)
-      fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
+    (WP.mono (h2 t₁ minv so f₁ (k₁.mono (by decide))) fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have hX₂ : wv t₂.mem B (slot ((k + 7) / 8) Public.aX) ((k + 7) / 8) = Spec.Rsa.os2ip xb := by
     rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.x
   have hN₂ : wv t₂.mem B (slot ((k + 7) / 8) Public.aN) ((k + 7) / 8) = Spec.Rsa.os2ip nb := by
@@ -135,10 +141,10 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hN₂ hI₂ hlt₂)
     fun t₃ ⟨hg₃, hN₃, hI₃, hlt₃, hm₃, ha₃, k₃⟩ => ?_
   have hR : Nat.Coprime (2 ^ (64 * ((k + 7) / 8))) (Spec.Rsa.os2ip nb) := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hxm₃ : wv t₃.mem B (slot ((k + 7) / 8) Public.aXm) ((k + 7) / 8) % Spec.Rsa.os2ip nb =
-      Spec.Rsa.os2ip xb * 2 ^ (64 * ((k + 7) / 8)) % Spec.Rsa.os2ip nb := by
+  have hxm₃ : ok → wv t₃.mem B (slot ((k + 7) / 8) Public.aXm) ((k + 7) / 8) % Spec.Rsa.os2ip nb =
+      Spec.Rsa.os2ip xb * 2 ^ (64 * ((k + 7) / 8)) % Spec.Rsa.os2ip nb := fun hok => by
     apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm₃, hX₂, Nat.mul_mod, hr₂, ← Nat.mul_mod, Nat.mul_assoc]
+    rw [hm₃, hX₂, Nat.mul_mod, hr₂ hok, ← Nat.mul_mod, Nat.mul_assoc]
   have g₃ : Frm B [(slot ((k + 7) / 8) Public.aAcc, 8 * ((k + 7) / 8 + 2)),
       (slot ((k + 7) / 8) Public.aTmp, 8 * ((k + 7) / 8 + 2)),
       (slot ((k + 7) / 8) Public.aXm, 8 * ((k + 7) / 8 + 2))] t₂.mem t₃.mem :=
@@ -159,15 +165,31 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have e2 : word t₂.mem B (8 * Public.sMask) = word t₁.mem B (8 * Public.sMask) :=
     f₂.word_eq (r2Ranges_hdr _ (by decide) (by decide)) (by unfold Public.sMask sFn; omega_arith)
   exact ⟨minv, hg₃,
-    ⟨hN₃, hI₃, fun _ => by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hr₂,
+    ⟨hN₃, hI₃, fun hok => by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hr₂ hok,
       by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hlt₂,
-      by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hO₂⟩, fun _ => hxm₃,
+      by rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact hO₂⟩, hxm₃,
     by rw [ha₃.hslot (by decide), e2]; exact so.mask,
     ((HFix.of_frm f₁ (keepsHdr_setupRanges _)).trans (HFix.of_frm f₂ (keepsHdr_r2Ranges _))).trans
       (HFix.of_frm g₃ fun r hr => (kg₃ r hr).1),
     ((InScr.of_frm f₁ (hZs (setupRanges_le _))).trans (InScr.of_frm f₂ (hZs (r2Ranges_le _)))).trans
       (InScr.of_frm g₃ (hZs fun r hr => (kg₃ r hr).2)),
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+
+/-- `n`'s setup, for a valid modulus. -/
+theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
+    {nb xb pb qb dpb dqb qib : List Byte}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
+    WP isa (seqs (nSetup M.mm)) s fun t => ∃ minv,
+      NReady s t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) True := by
+  obtain ⟨hodd, -, hlo⟩ := valid_facts hv h.k1
+  have hk1 := h.k1
+  have hk2 := h.k2
+  have hZq := h.z
+  have hZ : slot ((k + 7) / 8) 8 ≤ Z := by unfold offQ at hZq; omega_arith
+  rw [nSetup_eq]
+  exact nPartWith_ok M h hv fun _ _ so _ _ => WP.mono (R2w.choice_ok M so.good hZ (by omega_arith) (by omega_arith)
+    so.n so.inv so.r12 so.r10 hodd hlo) fun _ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ⟨hg₂, hlt₂, fun _ => hr₂, f₂, k₂⟩
 
 /-- After the primes' workspaces: `n`'s values as before, the workspaces,
 `p`, `q` and `qInv`. -/
