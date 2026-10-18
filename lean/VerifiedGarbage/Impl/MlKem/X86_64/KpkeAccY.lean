@@ -170,27 +170,58 @@ def rowY (k : Nat) : Prog isa :=
 
 /-! ### A row of products to an accumulator -/
 
-/-- Product `j` of a block: of the 32 coefficients of `f = rsi + o j` and of
+/-- The 32 coefficients of block `b` of the `u32`s at `rsi + o j`, the even
+ones as the words of `ymm0` and the odd ones as those of `ymm4`, in
+`vbase`'s order. -/
+def rowLdY (o j : Nat) : List Instr :=
+  yload4o .rsi (o * j) .xmm0 .xmm1 .xmm2 .xmm3 ++ toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5)
+
+/-- The low words of the doublewords of `ymm0` and `ymm1` packed to `ymm0`,
+and their high words to `ymm4`, lane by lane. -/
+def de16Y : List Instr :=
+  [.vop (.vshift .psrld .l256 .xmm4 .xmm0 16), .vop (.vshift .psrld .l256 .xmm5 .xmm1 16),
+    .vop (.vshift .pslld .l256 .xmm0 .xmm0 16), .vop (.vshift .psrld .l256 .xmm0 .xmm0 16),
+    .vop (.vshift .pslld .l256 .xmm1 .xmm1 16), .vop (.vshift .psrld .l256 .xmm1 .xmm1 16),
+    yb .vpackssdw .xmm0 .xmm0 .xmm1, yb .vpackssdw .xmm4 .xmm4 .xmm5]
+
+/-- `rowLdY` of `u16`s: the 64 bytes at `rsi + o j`, each 128-bit lane
+holding the quadwords `vpermq` with `0xD8` brings it, then `de16Y`. -/
+def rowLdY16 (o j : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm0 (at_ .rsi (o * j)), .vmovdquLoad .l256 .xmm1 (at_ .rsi (o * j + 32)),
+    .vop (.vpermq .xmm0 .xmm0 0xD8), .vop (.vpermq .xmm1 .xmm1 0xD8)] ++ de16Y
+
+/-- Product `j` of a block: of the 32 coefficients `ld j` loads and of
 block of the accumulator `g = rdx + 512 j`, whose words are already in
 `vbase`'s order. -/
-def rowMulEY (o j : Nat) : List Instr :=
-  yload4o .rsi (o * j) .xmm0 .xmm1 .xmm2 .xmm3 ++ toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5) ++
-    [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))] ++
+def rowMulEg (ld : Nat → List Instr) (j : Nat) : List Instr :=
+  ld j ++ [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))] ++
     toY vbaseL
+
+/-- `rowMulEg` of the `u32`s from `f = rsi + o j`. -/
+def rowMulEY (o j : Nat) : List Instr := rowMulEg (rowLdY o) j
 
 /-- A block of row `k` to an accumulator: its `k` products summed in `ymm11`
 and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and stored to
-the accumulator at `rdi`. -/
-def rowBodyEY (o k : Nat) : List Instr :=
-  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0)] ++ rowSums (rowMulEY o) k ++ yconst .xmm13 0x05490549 ++
+the accumulator at `rdi`; `rsi` moves `st` bytes on. -/
+def rowBodyEg (ld : Nat → List Instr) (st : BitVec 32) (k : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0)] ++ rowSums (rowMulEg ld) k ++ yconst .xmm13 0x05490549 ++
     toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++
     [.vmovdquStore .l256 (at_ .rdi 0) .xmm11, .vmovdquStore .l256 (at_ .rdi 32) .xmm12,
-      .alu .add .rsi (.imm 128), .alu .add .rdx (.imm 64), .alu .add .rdi (.imm 64), .alu .add .r8 (.imm 32)]
+      .alu .add .rsi (.imm st), .alu .add .rdx (.imm 64), .alu .add .rdi (.imm 64), .alu .add .r8 (.imm 32)]
 
-/-- The accumulator at `rdi` of the `k` products of the polynomials from
-`f = rsi`, `o` bytes apart, and the accumulators from `g = rdx`, 512 bytes
-apart, with the table of `tabAccY` at `rcx + 3328`. -/
-def rowEY (o k : Nat) : Prog isa :=
-  .seq (.block (yconsts ++ leaR .r8 .rcx oTabY)) (rcxLoop 8 (rowBodyEY o k))
+/-- `rowBodyEg` of the `u32`s. -/
+def rowBodyEY (o k : Nat) : List Instr := rowBodyEg (rowLdY o) 128 k
+
+/-- The accumulator at `rdi` of the `k` products of the polynomials `ld`
+loads from `f = rsi` (`st` bytes a block) and the accumulators from
+`g = rdx`, 512 bytes apart, with the table of `tabAccY` at `rcx + 3328`. -/
+def rowEg (ld : Nat → List Instr) (st : BitVec 32) (k : Nat) : Prog isa :=
+  .seq (.block (yconsts ++ leaR .r8 .rcx oTabY)) (rcxLoop 8 (rowBodyEg ld st k))
+
+/-- `rowEg` of polynomials of `u32`s, `o` bytes apart. -/
+def rowEY (o k : Nat) : Prog isa := rowEg (rowLdY o) 128 k
+
+/-- `rowEg` of polynomials of `u16`s, `o` bytes apart. -/
+def rowEY16 (o k : Nat) : Prog isa := rowEg (rowLdY16 o) 64 k
 
 end VG.Impl.MlKem.X86_64
