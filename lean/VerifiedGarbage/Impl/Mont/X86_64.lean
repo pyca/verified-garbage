@@ -120,6 +120,29 @@ def mulSteps : List Reg → Nat → List Instr
 /-- `ts += rcx · [d]`, its carry word in `rbp`. -/
 def mulRow (ts : List Reg) (d : Nat) : List Instr := .mov32 .rbp (.imm 0) :: mulSteps ts d
 
+/-- `mulStep` with the carry word added last: `t += lo`, then `t += c`, so
+that the carry from one step to the next passes through one addition (`add`,
+`adc`) rather than two. -/
+def mulStepL (t c ai : Reg) (src : Src) : List Instr :=
+  [.mov .rax src, .mul ai, .alu .add t (.reg .rax), .alu .adc .rdx (.imm 0),
+    .alu .add t (.reg c), .alu .adc .rdx (.imm 0), .mov c (.reg .rdx)]
+
+/-- `mulSteps` by `mulStepL`. -/
+def mulStepsL : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, d => mulStepL t .rbp .rcx (.mem (sc d)) ++ mulStepsL ts (d + 8)
+
+/-- `mulRow` by `mulStepL`. -/
+def mulRowL (ts : List Reg) (d : Nat) : List Instr := .mov32 .rbp (.imm 0) :: mulStepsL ts d
+
+/-- `mulRowL` if `late`, else `mulRow`. -/
+def mulRowB (late : Bool) (ts : List Reg) (d : Nat) : List Instr := if late then mulRowL ts d else mulRow ts d
+
+/-- Whether `mul`'s rows add the carry last: for a general modulus. A sparse
+or friendly modulus (`p` of P-384, P-256, P-521, …) keeps `mulRow`, whose
+order measured faster there. -/
+def lateRow (M : Mod) : Bool := decide (M.red = .general) && !M.sparse
+
 /-- The carry word `rbp` added into `t_n` and its carry into `t_{n+1}`. -/
 def carryUp (tn tn1 : Reg) : List Instr := [.alu .add tn (.reg .rbp), .alu .adc tn1 (.imm 0)]
 
@@ -262,14 +285,15 @@ def redRound (M : Mod) (i : Nat) : List Instr :=
   if M.sparse then redSparse (wins M.n i) else
   match M.red with
   | .general => ([.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] : List Instr) ++
-      mulRow ((List.range M.n).map t) M.mo ++ carryUp (t M.n) (t (M.n + 1))
+      mulRowB (lateRow M) ((List.range M.n).map t) M.mo ++ carryUp (t M.n) (t (M.n + 1))
   | .friendly ws => redFriendly false (t 0) ws (wins M.n i).tail ++ ([.mov32 (t 0) (.imm 0)] : List Instr)
 
 /-- Round `i` of `mul o a b` by `mul`: `t += a_i [b]`, then the reduction. -/
 def roundM (M : Mod) (a b i : Nat) : List Instr :=
   let t := win M.n i
   let low := (List.range M.n).map t
-  ([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++ mulRow low b ++ carryUp (t M.n) (t (M.n + 1)) ++ redRound M i
+  ([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++ mulRowB (lateRow M) low b ++ carryUp (t M.n) (t (M.n + 1)) ++
+    redRound M i
 
 /-! ### With BMI2 and ADX -/
 
