@@ -35,8 +35,6 @@ structure FullPostW (w16 : Bool) (B : Nat → Byte) (p out : Addr) (initial s u 
   flag23 : u.gpr .x23=s.gpr .x23
   ptr : u.gpr .x19=p
 
-abbrev FullPost := FullPostW false
-
 theorem fullSampleCode_ok {w16 : Bool} {s initial : State} {p seed out : Addr} {sb ss off a k : Nat}
     (hss : ss<4096) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)
     (hk : 0<k) (hk256 : k≤256)

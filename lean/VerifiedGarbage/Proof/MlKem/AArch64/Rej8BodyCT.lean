@@ -16,8 +16,6 @@ def BodyPairPostW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) 
   PairInvW w16 initial N B bP aP s₀ u₀ (t+4) s u ∨
     (ResultW w16 initial N B aP s₀ s ∧ ResultW w16 initial N B aP u₀ u ∧ s.gpr .x5=0 ∧ u.gpr .x5=0)
 
-abbrev BodyPairPost := BodyPairPostW false
-
 theorem choice_ct : ConstantTime isa (fun _ => True)
     (VG.AArch64.Taint.Agree (Taint.ofRegs [])) (.block choosePrefix) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
@@ -79,7 +77,6 @@ theorem stop_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byt
     obtain ⟨_,rfl⟩ := Exec.det eu eb
     exact ⟨htr,Or.inr ⟨ha,hb,xa,xb⟩⟩
   · exact RelCT.block_nil (fun _ _ h => Or.inl h.1)
-
 
 theorem body_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
     {s₀ u₀ : State} (ps : EnvW w16 N B bP aP s₀) (pu : EnvW w16 N B bP aP u₀)

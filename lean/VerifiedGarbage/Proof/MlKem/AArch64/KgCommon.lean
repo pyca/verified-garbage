@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
+public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.Framework.TacticTemplate

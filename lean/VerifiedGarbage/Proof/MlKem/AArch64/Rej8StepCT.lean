@@ -14,8 +14,6 @@ def PairInvW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (bP a
   Scalar.InvW w16 initial N B bP aP s₀ t s ∧ Scalar.InvW w16 initial N B bP aP u₀ t u ∧
     Constants s ∧ Constants u
 
-abbrev PairInv := PairInvW false
-
 theorem vectorStep_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
     {s₀ u₀ : State} (ps : EnvW w16 N B bP aP s₀) (pu : EnvW w16 N B bP aP u₀)
     (hsp : s₀.sp=u₀.sp) (htab : s₀.gpr .x16=u₀.gpr .x16) (ht : t+4≤N)

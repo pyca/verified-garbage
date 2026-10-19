@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
 
 /-! # The 16-bit key generation is correct

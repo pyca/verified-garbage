@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsVerified
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsPrefix
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks

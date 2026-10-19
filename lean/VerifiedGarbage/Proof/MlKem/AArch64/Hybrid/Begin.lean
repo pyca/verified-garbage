@@ -20,7 +20,7 @@ namespace VG.Proof.MlKem.AArch64.Hybrid
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
-open VG.Proof.MlKem.AArch64.Paired (Context stepWrites Progress ProgressW accepted seedState shakeStream
+open VG.Proof.MlKem.AArch64.Paired (Context stepWrites ProgressW accepted seedState shakeStream
   initialCode initialRegions initial_ok pair_frame)
 open VG.Proof.Sha3 (iterF)
 open VG.Spec.Sha3 (stateAt bytesAt)
@@ -58,8 +58,6 @@ structure Begin3PostW (w16 : Bool) (L : KemLay) (A B : Spec.Sha3.State) (p a b c
   flag : (t.gpr .x6).toNat = if (accepted A 3).length = 256 ∧ (accepted B 3).length = 256 then 1 else 0
   hash : stateAt t.mem st = hstate E (3 * i + 3)
   ek : bytesAt t.mem e L.ekLen = E
-
-abbrev Begin3Post := Begin3PostW false
 
 theorem Context.frame3 {s t : State} {p a b c st sp : Addr} (h : Context p a b c s)
     (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hf : Frame [⟨p, 2048⟩, stR st, frame sp] s.mem t.mem)

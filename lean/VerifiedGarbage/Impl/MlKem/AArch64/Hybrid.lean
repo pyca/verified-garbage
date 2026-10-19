@@ -100,8 +100,4 @@ def tailH (hash : FixedHashCallers.HashFn) : Prog isa :=
   .seq (.block (copy32 .x28 KEM.ST .x28 HB))
     (hash .x28 KEM.ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩] [⟨.x26,0,32⟩,⟨.x28,RB,32⟩])
 
-/-- The encapsulation. -/
-def encaps (hash : FixedHashCallers.HashFn) (prf : Nat→Nat→Prog isa) (L : KemLay) : Prog isa :=
-  .seq (startH L) (.seq (matrixH L) (.seq (tailH hash) (Optimized.enRestUsing prf L)))
-
 end VG.Impl.MlKem.AArch64.Hybrid

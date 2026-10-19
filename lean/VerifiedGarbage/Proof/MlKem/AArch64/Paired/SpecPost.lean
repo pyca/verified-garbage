@@ -17,8 +17,6 @@ structure PairOutcomeW (w16 : Bool) (A B : List Byte) (p a b : Addr) (s t : Stat
   status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64
     (if (sampleNTT 280 A).isSome ∧ (sampleNTT 280 B).isSome then 1 else 0)
 
-abbrev PairOutcome := PairOutcomeW false
-
 theorem PairPostW.outcome {w16 : Bool} {s t : State} {p seed a b : Addr} {i j k : Nat}
     (hk : 0<k) (hk256 : k≤256)
     (h : PairPostW w16 (seedState s.mem seed i k) (seedState s.mem seed j k) p a b s t) :

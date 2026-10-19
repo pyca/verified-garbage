@@ -37,15 +37,4 @@ theorem rejection_envW {w16 : Bool} {s : State} {p out : Addr} {off N : Nat} {B 
     exact Noise.inScratch ho (by cases w16 <;> simp [VG.Proof.MlKem.cs_eq] at hi ⊢ <;> omega :
       VG.Proof.MlKem.cs w16*i+16≤1024) (by decide)
 
-theorem rejection_env {s : State} {p out : Addr} {off N : Nat} {B : Nat → Byte}
-    (hn : N≤280) (hf : off+3*N+4≤2048)
-    (hc : Covers [⟨p,2048⟩] s.wr) (ho : Covers [⟨out,1024⟩] s.wr)
-    (hd : (Region.mk p 2048).Disjoint ⟨out,1024⟩)
-    (bytes : ∀i<3*N,s.mem ((p+BitVec.ofNat 64 off)+BitVec.ofNat 64 i)=B i)
-    (tr : ∀mask<256,InRegions (s.rd++s.wr) (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16)
-    (tv : ∀mask<256,s.mem.read (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16=Rej8.tableVec mask)
-    (td : ∀mask<256,(Region.mk (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16).Disjoint (polyRegion out)) :
-    Rej8.Env N B (p+BitVec.ofNat 64 off) out s :=
-  rejection_envW hn hf hc ho hd bytes tr tv td
-
 end VG.Proof.MlKem.AArch64.Paired

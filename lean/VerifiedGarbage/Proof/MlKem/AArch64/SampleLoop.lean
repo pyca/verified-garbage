@@ -82,12 +82,6 @@ theorem cvW_last {w16 : Bool} (L : List Zq) (x : Zq) :
     cvW w16 (L ++ [x]) L.length = BitVec.ofNat (cw w16) x.val := by
   simp [cvW]
 
-theorem cv_append (L : List Zq) (x : Zq) {i : Nat} (hi : i < L.length) : cv L i = cv (L ++ [x]) i :=
-  cvW_append L x hi
-
-theorem cv_last (L : List Zq) (x : Zq) : cv (L ++ [x]) L.length = BitVec.ofNat 32 x.val :=
-  cvW_last L x
-
 theorem CoeffsW.full {w16 : Bool} {m : Mem} {aP : Addr} {L : List Zq} (h : CoeffsW w16 m aP L)
     (hf : L.length = 256) : CoeffsUpToW w16 m aP L.length (cvW w16 L) fun _ => 0 :=
   fun i hi => h i hi (by omega)

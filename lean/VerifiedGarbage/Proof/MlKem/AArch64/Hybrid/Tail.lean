@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsRestUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem.KPke
 
@@ -9,9 +16,7 @@ import VerifiedGarbage.Proof.MlKem.KPke
 # The hashing encapsulation after the matrix
 
 `tailH_ok`: `H(ek)`, the first 32 bytes of the third state, into `HB`, and
-`G(m ‖ H(ek))` (`Hybrid.tailH`). `restH_ok`: noise, `u`, `v` and the
-epilogue (as `Encaps.fused_c_using_ok`, from the facts at the state they
-start in).
+`G(m ‖ H(ek))` (`Hybrid.tailH`), with `Â` stored with 16 bits (`w16`) or 32.
 -/
 
 @[expose] public section
@@ -45,8 +50,6 @@ structure AfterTW (w16 : Bool) (P : KemLay) (s₀ : State) (ρ : List Byte) (s :
   key : bytesAt s.mem (kA s₀ 2) 32 = (gE P s₀).1
   r : bytesAt s.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2
   m : bytesAt s.mem (sA (enL P) s₀ MB) 32 = mE s₀
-
-abbrev AfterT := AfterTW false
 
 theorem tailH_ok {w16 : Bool} (hash : FixedHash.HashFn)
     (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]

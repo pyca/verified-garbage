@@ -1,6 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURows
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReady
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
 
 /-! # Encryption after the consumed matrix may be reused for decoded keys -/
 

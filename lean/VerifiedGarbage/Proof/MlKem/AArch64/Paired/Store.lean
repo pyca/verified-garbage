@@ -19,8 +19,6 @@ structure SavedPostW (w16 : Bool) (L : List Zq) (aP p : Addr) (flag : Reg) (s u 
   x3 : u.gpr .x3=cAddr w16 aP L.length
   x4 : (u.gpr .x4).toNat=256-L.length
 
-abbrev SavedPost := SavedPostW false
-
 theorem store_ok {w16 : Bool} (s : State) {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
     {flag : Reg} (hf : flag≠.x3 ∧ flag≠.x4 ∧ flag≠.x19)
     {L : List Zq} {aP : Addr} (hl : L.length≤256)

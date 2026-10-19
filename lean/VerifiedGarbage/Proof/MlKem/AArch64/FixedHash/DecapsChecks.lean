@@ -23,12 +23,6 @@ theorem deStart768_taint (c : Impl.Sha3.AArch64.Callee)
     ∃h,((VectorSymbols.analysis restSymbols).check
       (VectorTaint.ofRegs [.x0,.x1,.x2,.x3]) (FixedHashDecaps.deStartUsing (fixedHash c) lay768) h).isSome=true := by
   taint_decide_generic c := hole using hS
-theorem deRest768_taint (c : Impl.Sha3.AArch64.Callee)
-    (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
-    ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (FixedHashDecaps.deRestPrfUsing (fixedHash c) (prf c) lay768) h).isSome=true := by
-  taint_decide_generic c := hole using hS
-
 theorem deStart1024_depth (v : Proof.Sha3.AArch64.Permutation) :
     (FixedHashDecaps.deStartUsing (fixedHash v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth≤1 :=
   Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
@@ -38,10 +32,5 @@ theorem deStart1024_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
       (FixedHashDecaps.deStartUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
-  taint_decide_generic c := hole using hS
-theorem deRest1024_taint (c : Impl.Sha3.AArch64.Callee)
-    (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
-    ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (FixedHashDecaps.deRestPrfUsing (fixedHash c) (prf c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
   taint_decide_generic c := hole using hS
 end VG.Proof.MlKem.AArch64.FixedHash

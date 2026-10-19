@@ -14,8 +14,6 @@ structure OneReadyW (w16 : Bool) (B : Nat→Byte) (buf out slot : Nat) (s : Stat
   out1 : InRegions s.wr (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8
   apart : (polyRegion (s.gpr .x28+BitVec.ofNat 64 out)).Disjoint ⟨s.gpr .x19+BitVec.ofNat 64 slot,16⟩
 
-abbrev OneReady := OneReadyW false
-
 theorem OneReadyW.wp {w16 : Bool} {s : State} {B : Nat→Byte} {buf out slot : Nat} {flag : Reg}
     (hb : buf<4096) (ho : out<65536) (hslot : slot+8<32768) (ha : slot%8=0)
     (hf : flag≠.x3 ∧ flag≠.x4 ∧ flag≠.x19) (h : OneReadyW w16 B buf out slot s) :

@@ -28,15 +28,6 @@ open VG.Proof.MlKem.AArch64.DotW (half_sub)
 
 variable {P : KemLay} {L : Layout}
 
-/-- A frame of the first halves of buffers is one of the buffers. -/
-theorem frame_halves {rs : List Region} {m m' : Mem} (h : Frame (rs.map fun r => ⟨r.base, 512⟩) m m')
-    (hr : ∀ r ∈ rs, r.len = 1024) : Frame rs m m' :=
-  h.sub fun r hh => by
-    obtain ⟨r', hr', rfl⟩ := List.mem_map.mp hh
-    refine ⟨r', hr', fun a ha => ?_⟩
-    have := hr r' hr'
-    simp only [Region.Contains] at ha ⊢; omega
-
 theorem fusedW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
     (hk : KB P L s₀ s) (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Poly}
     (hd : DotW.LoopDataW s .x28 .x28 (s.gpr .x28+BitVec.ofNat 64 off) (s.syms "VG_MLKEM_GAMMA") terms

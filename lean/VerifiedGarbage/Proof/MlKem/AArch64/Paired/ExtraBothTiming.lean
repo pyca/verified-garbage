@@ -15,8 +15,6 @@ structure BothReadyW (w16 : Bool) (L M : List Zq) (A B : Nat→Byte) (p a b : Ad
  right : ExtraReadyW w16 M B 904 1696 b s
  table : ∀mask<256,(Region.mk (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16).Disjoint ⟨p,2048⟩
 
-abbrev BothReady := BothReadyW false
-
 theorem BothReadyW.afterLeft {w16 : Bool} {s t : State} {L M : List Zq} {A B : Nat→Byte} {p a b : Addr}
  (h : BothReadyW w16 L M A B p a b s)
  (ht : ExtraPostW w16 L A a (s.gpr .x19+1680) .x22 s t) (cs : Rej8.Constants t) : ExtraReadyW w16 M B 904 1696 b t := by

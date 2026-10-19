@@ -33,8 +33,6 @@ structure FullPrefixPostW (w16 : Bool) (B : Nat→Byte) (p out : Addr) (s t : St
  pointer : t.gpr .x19=p
  tablePtr : t.gpr .x16=s.syms "VG_MLKEM_REJ_SHUFFLE"
 
-abbrev FullPrefixPost := FullPrefixPostW false
-
 theorem fullPrefix_ok {w16 : Bool} {s initial : State} {p seed out table : Addr} {sb ss off a k : Nat}
     (hss : ss<4096) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)
     (hk : 0<k) (hk256 : k≤256)

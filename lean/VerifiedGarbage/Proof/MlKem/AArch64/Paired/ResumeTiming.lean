@@ -54,8 +54,6 @@ structure CleanupW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s : St
   saveLeft : checkpointW w16 (p+1680) a (accepted A 5) s.mem
   saveRight : checkpointW w16 (p+1696) b (accepted B 5) s.mem
 
-abbrev Cleanup := CleanupW false
-
 theorem BoundedW.cleanup {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
     (h : BoundedW w16 A B p a b c s u) : CleanupW w16 A B p a b c u :=
   ⟨h.context,h.ptr,h.left,h.right,h.saveLeft,h.saveRight⟩

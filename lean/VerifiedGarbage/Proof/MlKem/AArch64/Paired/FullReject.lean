@@ -51,7 +51,6 @@ theorem fullEntry_ok {w16 : Bool} (s : State) {buf out : Nat} (hb : buf<4096) (h
       by simpa only [hv] using hc.zero⟩
   · simpa only [List.length_nil,cAddr,Nat.mul_zero,ptr_zero] using x3
 
-
 def fullFinish (w16 : Bool := false) : Prog isa := seqs [Impl.MlKem.AArch64.Rej8.rejLoop w16,
   .block [.logic .and .x .x24 .x24 .x0],Rej8.zeroSuffix w16,
   .block [.ldr .x .x22 .x19 1848,.ldr .x .x23 .x19 1856]]
@@ -67,8 +66,6 @@ structure FullFinishPostW (w16 : Bool) (B : Nat → Byte) (out : Addr) (flags s 
   status : u.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleAfter [] B 280).length=256 then 1 else 0)
   flag22 : u.gpr .x22=flags.gpr .x22
   flag23 : u.gpr .x23=flags.gpr .x23
-
-abbrev FullFinishPost := FullFinishPostW false
 
 theorem fullFinish_ok {w16 : Bool} {s flags : State} {p out : Addr} {B : Nat → Byte}
     (he : Rej8.EntryW w16 [] 280 B (p+400) out s)

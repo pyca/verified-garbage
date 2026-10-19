@@ -57,8 +57,6 @@ structure RejectPostW (w16 : Bool) (B : Nat → Byte) (aP : Addr) (flag : Reg) (
   x4 : (u.gpr .x4).toNat=256-(sampleAfter [] B 168).length
   flagValue : (u.gpr flag).toNat=if (sampleAfter [] B 168).length=256 then 1 else 0
 
-abbrev RejectPost := RejectPostW false
-
 theorem reject_ok {w16 : Bool} (s : State) {buf out : Nat} (hb : buf<4096) (ho : out<65536)
     {flag : Reg} (hf : flag≠.x3 ∧ flag≠.x4)
     {B : Nat → Byte} (hp : Rej8.EnvW w16 168 B (s.gpr .x19+BitVec.ofNat 64 buf)

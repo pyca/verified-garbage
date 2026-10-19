@@ -10,9 +10,9 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 
 /-! # AArch64 ML-KEM with 16-bit coefficients
 
-The paired whole-KEM functions (`Optimized`, `Hybrid`, `FixedHashCallers`,
-`FixedHashDecaps`) with the matrix, the noise and the products stored with
-16-bit coefficients, in the first half of each 1024-byte slot of `scratch`:
+The paired whole-KEM functions, with the hashing of `FixedHashCallers` and
+`FixedHashDecaps` and the encapsulation's `Hybrid` matrix, with the matrix,
+the noise and the products stored with 16-bit coefficients, in the first half of each 1024-byte slot of `scratch`:
 the sampler and the CBD write halfwords (`w16`), the transforms are
 `Ntt16.Readonly.nttAtWithW` and `nttInvAtWithW`, the dot products `DotW.dotW`
 and the sums `AddSubW.addW`, and keys are encoded and decoded by
@@ -71,7 +71,7 @@ def encryptRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : N
 def enRest (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
   .seq (encryptRest prf L .x25 0 .x28 MB .x27 0) (.block L.kemEpilogue)
 
-/-- The encapsulation, hashing `ek` during the matrix as `Hybrid.encaps` does. -/
+/-- The encapsulation, hashing `ek` during the matrix (`Hybrid.matrixH`). -/
 def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
   .seq (Hybrid.startH L) (.seq (Hybrid.matrixH L true) (.seq (Hybrid.tailH hash) (enRest prf L)))
 

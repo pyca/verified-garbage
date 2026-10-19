@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenRest
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenFinish
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 
 /-! # Readonly artifact tables are separate from every writable operand -/

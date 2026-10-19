@@ -1,5 +1,19 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsCorrect
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsTiming
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized

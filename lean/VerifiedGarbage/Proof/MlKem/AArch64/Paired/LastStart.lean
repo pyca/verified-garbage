@@ -42,8 +42,6 @@ structure LastStartPostW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t
  flag : (t.gpr .x22).toNat=if (sampleAfter [] B 168).length=256 then 1 else 0
  ptr : t.gpr .x19=p
 
-abbrev LastStartPost := LastStartPostW false
-
 theorem lastStart_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)
     (hk : 0<k) (hk256 : k≤256)

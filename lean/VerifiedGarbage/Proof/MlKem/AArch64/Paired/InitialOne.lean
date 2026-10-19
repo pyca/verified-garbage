@@ -21,8 +21,6 @@ structure InitialOnePostW (w16 : Bool) (B : Nat→Byte) (aP p : Addr) (flag : Re
   flagValue : (t.gpr flag).toNat=if (sampleAfter [] B 168).length=256 then 1 else 0
   constants : Rej8.Constants t
 
-abbrev InitialOnePost := InitialOnePostW false
-
 theorem initialOne_ok {w16 : Bool} (s : State) {buf out slot : Nat} (hb : buf<4096) (ho : out<65536)
     (hslot : slot+8<32768) (halign : slot%8=0)
     {flag : Reg} (hf : flag≠.x3 ∧ flag≠.x4 ∧ flag≠.x19)

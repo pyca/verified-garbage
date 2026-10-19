@@ -72,12 +72,6 @@ structure BInvW (w16 : Bool) (P : KemLay) (L : Layout) (s₀ : State) (mA : Mem)
 /-- After `n` entries of `Â`, from memory `mA`. -/
 abbrev BInv := BInvW false
 
-theorem BInv.toW {s₀ s : State} {mA : Mem} {ρ : List Byte} {n : Nat} (h : BInv P L s₀ mA ρ n s) :
-    BInvW false P L s₀ mA ρ n s := h
-
-theorem BInvW.ofW {s₀ s : State} {mA : Mem} {ρ : List Byte} {n : Nat} (h : BInvW false P L s₀ mA ρ n s) :
-    BInv P L s₀ mA ρ n s := h
-
 theorem BInvW.zero {w16 : Bool} {s₀ s : State} {ρ : List Byte} (hk : KB P L s₀ s) (h24 : s.gpr .x24 = 1)
     (hρ : bytesAt s.mem (sA L s₀ SB) 32 = ρ) : BInvW w16 P L s₀ s.mem ρ 0 s :=
   ⟨hk, Frame.refl _ _, hρ, by rw [h24, ite_eq_left (show okR P ρ 0 from fun e he => absurd he (Nat.not_lt_zero e))],

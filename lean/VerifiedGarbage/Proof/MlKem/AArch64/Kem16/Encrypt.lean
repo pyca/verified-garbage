@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemEncryptUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 
 /-! # The 16-bit encryption
 
-`encrypt_restW`: the noise, `u` and `v` of `Kem16.encryptRest`, as
-`encrypt_rest_using` for the 32-bit code. -/
+`encrypt_restW`: the noise, `u` and `v` of `Kem16.encryptRest`. -/
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Kem

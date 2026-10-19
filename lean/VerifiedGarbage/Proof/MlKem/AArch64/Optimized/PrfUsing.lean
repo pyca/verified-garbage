@@ -93,17 +93,6 @@ theorem prfCbd_using_ok {w16 : Bool} (hash : Prog isa) (valid : PrfHashValid has
   rw [k₆.cs _ (by decide) (by decide), h₅.get .x24, h₄.get .x24, k₃.cs _ (by decide) (by decide), h₂.gpr,
     h₁.get .x24]
 
-
-def PrfValid (P : KemLay) (L : Layout) (prf : Nat→Nat→Prog isa) : Prop :=
- ∀{s₀ : State}, Pre P L s₀→∀{N off : Nat}, N<256→PO P off→∀{s : State},
- KB P L s₀ s→∀{rv : List Byte},bytesAt s.mem (sA L s₀ RB) 32=rv→
- WP isa (prf N off) s fun t=>KB P L s₀ t ∧ Frame (pcW L s₀ off) s.mem t.mem ∧
-   PolyIs t.mem (sA L s₀ off) (cbd rv N) ∧ t.gpr .x24=s.gpr .x24
-
-theorem prf_using_valid {hash : Prog isa} (valid : PrfHashValid hash) :
-    PrfValid P L (Impl.MlKem.AArch64.Optimized.prfCbdUsing hash) :=
-  fun {_} hp {_ _} hn ho {_} hk {_} hr=>prfCbd_using_ok (w16 := false) hash valid hp hn ho hk hr
-
 /-- `PrfValid` with the polynomial stored with 16 bits. -/
 def PrfValidW (P : KemLay) (L : Layout) (prf : Nat→Nat→Prog isa) : Prop :=
  ∀{s₀ : State}, Pre P L s₀→∀{N off : Nat}, N<256→PO P off→∀{s : State},

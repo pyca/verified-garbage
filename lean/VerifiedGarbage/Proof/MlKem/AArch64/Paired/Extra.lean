@@ -18,8 +18,6 @@ structure ExtraPostW (w16 : Bool) (L : List Zq) (B : Nat → Byte) (aP p : Addr)
   x4 : (u.gpr .x4).toNat=256-(sampleAfter L B 56).length
   flagValue : (u.gpr flag).toNat=if (sampleAfter L B 56).length=256 then 1 else 0
 
-abbrev ExtraPost := ExtraPostW false
-
 theorem extra_ok {w16 : Bool} (s : State) {buf slot : Nat} (hb : buf<4096)
     (ho : slot+8<32768) (halign : slot%8=0)
     {flag : Reg} (hf : flag≠.x3 ∧ flag≠.x4 ∧ flag≠.x19)

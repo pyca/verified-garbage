@@ -29,8 +29,6 @@ structure BatchPostW (w16 : Bool) (s t : State) : Prop where
   input : t.gpr .x2=s.gpr .x2+12
   chunks : (t.gpr .x5).toNat=(s.gpr .x5).toNat-4
 
-abbrev BatchPost := BatchPostW false
-
 theorem batch_ok (w16 : Bool) (s : State) (hc : Constants s)
     (hr : InRegions (s.rd++s.wr) (s.gpr .x2) 16)
     (h4 : 8≤(s.gpr .x4).toNat) (h5 : 4≤(s.gpr .x5).toNat)

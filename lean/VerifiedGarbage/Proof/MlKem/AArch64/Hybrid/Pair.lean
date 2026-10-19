@@ -9,8 +9,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
 `pair3Code_ok`: `begin3_ok`, then `Paired.finishCode` from
 `Paired.finish_ok`, run from the state `begin3` left with the registers
 of the pair's start (which is all `finish_ok` asks of its `initial` state
-but its memory). `Pair3Post.outcome`: its outcome in terms of the
-specification (as `Paired.PairPost.outcome`).
+but its memory). `Pair3PostW.outcome`: its outcome in terms of the
+specification (as `Paired.PairPostW.outcome`).
 -/
 
 @[expose] public section
@@ -45,8 +45,6 @@ structure Pair3PostW (w16 : Bool) (L : KemLay) (A B : Spec.Sha3.State) (p a b e 
     (if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0)
   hash : stateAt t.mem st = hstate E (3 * i + 3)
   ek : bytesAt t.mem e L.ekLen = E
-
-abbrev Pair3Post := Pair3PostW false
 
 theorem pair3Code_ok {w16 : Bool} (L : KemLay) {s : State} {p seed outA outB table e st : Addr} {E : List Byte}
     {a i : Nat} (hoa : KEM.AH+1024*a < 65536) (hob : KEM.AH+1024*(a+1) < 65536)
@@ -95,8 +93,6 @@ structure Pair3OutcomeW (w16 : Bool) (L : KemLay) (A B : List Byte) (p a b e st 
     (if (sampleNTT 280 A).isSome ∧ (sampleNTT 280 B).isSome then 1 else 0)
   hash : stateAt t.mem st = hstate E (3 * i + 3)
   ek : bytesAt t.mem e L.ekLen = E
-
-abbrev Pair3Outcome := Pair3OutcomeW false
 
 theorem Pair3PostW.outcome {w16 : Bool} {L : KemLay} {s t : State} {p seed a b e st : Addr} {E : List Byte} {i j k n : Nat}
     (hk : 0<k) (hk256 : k≤256)

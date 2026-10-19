@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 
 /-! # The 16-bit hashing encapsulation is constant time
 
-`encapsHW_ct`: as `Hybrid.encapsH_ct`, for `Kem16.encaps`: the first phase
+`encapsHW_ct`: `Kem16.encaps` is constant time: the first phase
 and the rest by the taint analyses, the matrix sampled with 16 bits by
 `matrixH_relCT`. -/
 

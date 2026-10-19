@@ -24,15 +24,11 @@ structure ProgressW (w16 : Bool) (A B : Spec.Sha3.State) (n : Nat) (p a b c : Ad
   saveLeft : checkpointW w16 (p+1680) a (accepted A n) s.mem
   saveRight : checkpointW w16 (p+1696) b (accepted B n) s.mem
 
-abbrev Progress := ProgressW false
-
 structure AdvancedW (w16 : Bool) (A B : Spec.Sha3.State) (n : Nat) (p a b c : Addr) (s u : State) : Prop where
   keep : Keep resumeRegs s u
   frame : Frame (resumeWrites p a b) s.mem u.mem
   progress : ProgressW w16 A B n p a b c u
   flag : (u.gpr .x6).toNat=if (accepted A n).length=256 ∧ (accepted B n).length=256 then 1 else 0
-
-abbrev Advanced := AdvancedW false
 
 structure BoundedW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s u : State) : Prop where
   keep : Keep resumeRegs s u
@@ -91,8 +87,6 @@ structure ResumePostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b : Addr) (s u :
   reducedRight : ReducedW (cw w16) u.mem b
   status : u.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0)
 
-abbrev ResumePost := ResumePostW false
-
 theorem resume_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
       t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
@@ -120,7 +114,6 @@ theorem resume_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : Sta
     apply BitVec.eq_of_toNat_eq
     rw [ht.flag]
     split_ifs <;> rfl
-
 
 theorem ResumePostW.saved {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s₀ s u : State}
     (h : ResumePostW w16 A B p a b s u) (ctx : Context p a b c s)

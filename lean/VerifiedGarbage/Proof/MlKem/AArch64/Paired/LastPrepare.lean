@@ -15,8 +15,6 @@ structure LastPreparedW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t 
  pointer : t.gpr .x19=p
  tablePtr : t.gpr .x16=table
 
-abbrev LastPrepared := LastPreparedW false
-
 theorem lastPrepare_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss off a k : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hk : 0<k) (hk256 : k≤256)
     (h : LastInput sb ss off p seed out table s) :

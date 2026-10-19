@@ -23,7 +23,6 @@ def nttInvAtWithW (off ns : Nat) : Prog isa :=
   .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 ns)) invW
 /-- The transform of a polynomial stored with 16-bit coefficients (`w16`) or 32-bit ones. -/
 def nttAtR (w16 : Bool) : Nat → Nat → Prog isa := if w16 then nttAtWithW else nttAtWith
-def nttInvAtR (w16 : Bool) : Nat → Nat → Prog isa := if w16 then nttInvAtWithW else nttInvAtWith
 def nttAt (off : Nat) : Prog isa := nttAtWith off KEM.NS
 def nttInvAt (off : Nat) : Prog isa := nttInvAtWith off KEM.NS
 

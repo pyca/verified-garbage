@@ -9,17 +9,12 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64.Kem
 def prfHash (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
  Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 31
  [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩]
-def prf (c : Impl.Sha3.AArch64.Callee) : Nat→Nat→Prog isa := Impl.MlKem.AArch64.Optimized.prfCbdUsing (prfHash c)
-
 theorem prfHash_valid (v : Proof.Sha3.AArch64.Permutation) : PrfHashValid (prfHash v.callee) := by
  intro s hs hi ho
  simpa only [prfHash,List.map_cons,List.map_nil,List.flatten_cons,List.flatten_nil,List.append_nil,pbytes]
   using prf768_correct v hs (by decide) (by decide) hi ho (by simp)
 
-theorem prf_valid (v : Proof.Sha3.AArch64.Permutation) {P : KemLay} {L : Layout} : PrfValid P L (prf v.callee) :=
- prf_using_valid (prfHash_valid v)
-
-/-- `prf` with the polynomial stored with 16 bits. -/
+/-- `PRF₂` and `SamplePolyCBD₂`, with the polynomial stored with 16 bits. -/
 def prfW (c : Impl.Sha3.AArch64.Callee) : Nat→Nat→Prog isa :=
  fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing (prfHash c) N off true
 

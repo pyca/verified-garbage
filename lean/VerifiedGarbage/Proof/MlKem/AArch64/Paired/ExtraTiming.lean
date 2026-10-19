@@ -17,8 +17,6 @@ structure ExtraReadyW (w16 : Bool) (L : List Zq) (B : Nat→Byte) (buf slot : Na
   out1 : InRegions s.wr (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8
   apart : (polyRegion aP).Disjoint ⟨s.gpr .x19+BitVec.ofNat 64 slot,16⟩
 
-abbrev ExtraReady := ExtraReadyW false
-
 theorem load_resume {w16 : Bool} {s : State} {L : List Zq} {B : Nat→Byte} {buf slot : Nat} {aP : Addr}
     (ho : slot+8<32768) (ha : slot%8=0) (h : ExtraReadyW w16 L B buf slot aP s) :
     WP isa (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)]) s fun t =>

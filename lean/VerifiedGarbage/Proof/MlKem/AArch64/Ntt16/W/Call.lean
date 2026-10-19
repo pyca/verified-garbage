@@ -46,40 +46,6 @@ theorem invW_correct (s : State) (h : invContractW.pre s) :
   obtain ⟨tr,t,he,_,hf⟩ := invW_ok s h
   exact ⟨tr,t,he,abi_of rfl (by lit_decide) he (by lit_decide),hf⟩
 
-theorem fwdW_ct : ConstantTime isa fwdContractW.pre fwdContractW.pub
-    Impl.MlKem.AArch64.Ntt16.Readonly.fwdW := by
-  have hp : ∀ s t, fwdContractW.pre s → fwdContractW.pre t → fwdContractW.pub s t →
-      VG.AArch64.Taint.AgreeS ["VG_MLKEM_NTT16_ZETAS"] (VG.AArch64.Taint.ofRegs [.x0,.x1]) s t := by
-    intro s t _ _ h
-    refine ⟨agree_of h.1 ?_,?_⟩
-    · intro r hr
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl
-      · exact h.2.1
-      · exact h.2.2.1
-    · intro name hn
-      rw [List.mem_singleton.mp hn]
-      exact h.2.2.2
-  exact VG.Taint.constantTime (A:=taintS ["VG_MLKEM_NTT16_ZETAS"])
-    (VG.AArch64.Taint.ofRegs [.x0,.x1]) hp (by taint_decide)
-
-theorem invW_ct : ConstantTime isa invContractW.pre invContractW.pub
-    Impl.MlKem.AArch64.Ntt16.Readonly.invW := by
-  have hp : ∀ s t, invContractW.pre s → invContractW.pre t → invContractW.pub s t →
-      VG.AArch64.Taint.AgreeS ["VG_MLKEM_INTT16_ZETAS"] (VG.AArch64.Taint.ofRegs [.x0,.x1]) s t := by
-    intro s t _ _ h
-    refine ⟨agree_of h.1 ?_,?_⟩
-    · intro r hr
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl
-      · exact h.2.1
-      · exact h.2.2.1
-    · intro name hn
-      rw [List.mem_singleton.mp hn]
-      exact h.2.2.2
-  exact VG.Taint.constantTime (A:=taintS ["VG_MLKEM_INTT16_ZETAS"])
-    (VG.AArch64.Taint.ofRegs [.x0,.x1]) hp (by taint_decide)
-
 /-- The transform inlined, on the polynomial at `f` with working space at `w`, both of 512
 bytes. -/
 theorem transformW_call {op : Poly → Poly} {symbol : String} {H : List Nat} {c : Prog isa}

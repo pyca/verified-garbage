@@ -28,8 +28,6 @@ structure InitialPostW (w16 : Bool) (A B : Nat→Byte) (p a b : Addr) (s t : Sta
   both : (t.gpr .x6).toNat=if (sampleAfter [] A 168).length=256 ∧ (sampleAfter [] B 168).length=256 then 1 else 0
   constants : Rej8.Constants t
 
-abbrev InitialPost := InitialPostW false
-
 theorem initial_ok {w16 : Bool} {s : State} {a b : Nat} (ha : a<65536) (hb : b<65536)
     {A B : Nat→Byte}
     (pa : Rej8.EnvW w16 168 A (s.gpr .x19+BitVec.ofNat 64 400) (s.gpr .x28+BitVec.ofNat 64 a) s)

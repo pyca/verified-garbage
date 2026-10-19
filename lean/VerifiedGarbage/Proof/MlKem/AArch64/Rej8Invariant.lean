@@ -66,17 +66,4 @@ theorem batch_invW {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byt
     omega
   · rw [hp.keep.get .x10,h.x10]
 
-theorem batch_frame (s : State) {aP : Addr} {L : List Zq}
-    (h3 : s.gpr .x3=coeffAddr aP L.length) (hroom : L.length+8≤256) :
-    Frame [polyRegion aP] s.mem (updatedMem s) :=
-  batch_frameW false s h3 hroom
-
-theorem batch_inv {initial : List Zq} {N t : Nat} {B : Nat → Byte}
-    {bP aP : Addr} {s₀ s u : State} (h : Scalar.Inv initial N B bP aP s₀ t s)
-    (hroom : (Scalar.LA initial B t).length+8≤256)
-    (hz : ∀i<8,vhalf (s.v .v21) i=0)
-    (hb : ∀i<12,s.mem (s.gpr .x2+BitVec.ofNat 64 i)=B (3*t+i))
-    (hp : BatchPost s u) : Scalar.Inv initial N B bP aP s₀ (t+4) u :=
-  batch_invW h hroom hz hb hp
-
 end VG.Proof.MlKem.AArch64.Rej8

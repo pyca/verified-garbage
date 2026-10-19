@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyNoise
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
 
 /-! # The 16-bit encryption noise
 
-`readonly_noise_einv` for the noise of `Kem16.encryptRest`, stored with 16 bits:
+`noiseW_einv`: the noise of `Kem16.encryptRest`, stored with 16 bits:
 `ŷ` into `YH`, and `e₁` and `e₂` past the KEM's buffers (`ErrorsW`). -/
 
 @[expose] public section

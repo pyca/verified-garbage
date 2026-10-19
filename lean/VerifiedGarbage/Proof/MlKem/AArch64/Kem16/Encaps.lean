@@ -6,8 +6,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 
 /-! # The 16-bit hashing encapsulation is correct
 
-`using_correctHW`: `Kem16.encaps`, as `Hybrid.using_correctH`, with the matrix
-sampled with 16 bits and the 16-bit encryption (`encrypt_restW`). -/
+`using_correctHW`: `Kem16.encaps`: the first phase, the matrix sampled with
+16 bits, `H` and `G`, and the 16-bit encryption (`encrypt_restW`). -/
 
 @[expose] public section
 

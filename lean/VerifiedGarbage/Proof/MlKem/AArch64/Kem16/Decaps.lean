@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsPrefix
 /-! # The 16-bit decapsulation is correct
 
 `fused_c_W_ok`: the re-encryption of `Kem16.deRest` (`encrypt_restW`), `J(z ‖ c)`,
-the comparison and the selection, as `fused_c_prf_using_ok`; `using_correctW`:
+the comparison and the selection; `using_correctW`:
 `Kem16.decaps`, with the matrix sampled with 16 bits. -/
 
 @[expose] public section

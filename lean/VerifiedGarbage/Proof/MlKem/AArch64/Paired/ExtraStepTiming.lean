@@ -19,8 +19,6 @@ structure StepReadyW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b
  saveLeft : checkpointW w16 (p+1680) a L s.mem
  saveRight : checkpointW w16 (p+1696) b M s.mem
 
-abbrev StepReady := StepReadyW false
-
 theorem nextBlock_ready {w16 : Bool} {s : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
  (h : StepReadyW w16 A B L M p a b c s) :
  WP isa nextBlock s fun u=> Keep nextRegs s u ∧ u.gpr .x16=c ∧

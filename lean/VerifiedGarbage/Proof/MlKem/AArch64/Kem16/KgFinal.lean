@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgRows
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenFinal
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
@@ -10,8 +12,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 
 /-! # The 16-bit `vg_mlkem768_keygen` and `vg_mlkem1024_keygen`
 
-As `FixedHash/KeyGenTiming.lean`, `KeyGenVerified.lean` and `KeyGenFinal.lean`,
-for `Kem16.keyGen`: constant time (`keyGenW_ct`), with the taint analysis of
+For `Kem16.keyGen`: constant time (`keyGenW_ct`), with the taint analysis of
 the code after the matrix decided on each parameter set, and the contract
 (`keyGenW768_final`, `keyGenW1024_final`). -/
 

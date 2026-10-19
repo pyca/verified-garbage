@@ -31,8 +31,6 @@ structure LastPostW (w16 : Bool) (B : List Byte) (p out : Addr) (s t : State) : 
    ((sampleAfter [] (xofByte B) 280).length≠256 ∧ sampleNTT 280 B=none)
  status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleAfter [] (xofByte B) 280).length=256 then 1 else 0)
 
-abbrev LastPost := LastPostW false
-
 structure LastReadyW (w16 : Bool) (B : List Byte) (p out : Addr) (s t : State) : Prop where
  keep : Keep pairWorkingRegs s t
  frame : Frame (fullWrites p out) s.mem t.mem
@@ -41,8 +39,6 @@ structure LastReadyW (w16 : Bool) (B : List Byte) (p out : Addr) (s t : State) :
  coeffs : CoeffsUpToW w16 t.mem out (sampleAfter [] (xofByte B) 280).length (Sample.cvW w16 (sampleAfter [] (xofByte B) 280)) (fun _=>0)
  reduced : ReducedW (cw w16) t.mem out
  status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleAfter [] (xofByte B) 280).length=256 then 1 else 0)
-
-abbrev LastReady := LastReadyW false
 
 theorem lastCode_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
     (hss : ss<4096) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)

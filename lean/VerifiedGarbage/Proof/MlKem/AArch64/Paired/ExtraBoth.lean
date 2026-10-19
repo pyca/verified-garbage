@@ -27,8 +27,6 @@ structure BothPostW (w16 : Bool) (L M : List Zq) (p a b : Addr) (s u : State) : 
   flagBoth : (u.gpr .x6).toNat=if L.length=256 ∧ M.length=256 then 1 else 0
   constants : Rej8.Constants u
 
-abbrev BothPost := BothPostW false
-
 theorem extraBoth_ok {w16 : Bool} {s : State} {p a b : Addr} {L M : List Zq} {A B : Nat→Byte}
     (hp : s.gpr .x19=p) (hc : Covers [⟨p,2048⟩] s.wr)
     (da : (Region.mk p 2048).Disjoint (polyRegion a))

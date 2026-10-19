@@ -28,9 +28,6 @@ variable {P : KemLay}
 /-- `ρ`. -/
 abbrev rhoK (P : KemLay) (s₀ : State) : List Byte := KPke.kgRho P.params (dB s₀)
 
-/-- Entry `e` of `Â`, at `s`. -/
-abbrev aAt (s₀ : State) (m : Mem) (e : Nat) : Poly := polyAt m (kA s₀ 3 + BitVec.ofNat 64 (AH + 1024 * e))
-
 /-- Whether the first `n` `SampleNTT`s succeed. -/
 def allOk (P : KemLay) (s₀ : State) (n : Nat) : Prop :=
   ∀ e < n, (sampleNTT 280 (matSeed (rhoK P s₀) (e / P.k) (e % P.k))).isSome
@@ -53,10 +50,6 @@ structure BInvW (w16 : Bool) (P : KemLay) (s₀ : State) (n : Nat) (s : State) :
 
 /-- After `n` entries of `Â`. -/
 abbrev BInv := BInvW false
-
-theorem BInv.toW {s₀ s : State} {n : Nat} (h : BInv P s₀ n s) : BInvW false P s₀ n s := h
-
-theorem BInvW.ofW {s₀ s : State} {n : Nat} (h : BInvW false P s₀ n s) : BInv P s₀ n s := h
 
 theorem BInv.zero {s₀ s : State} (h : AfterA P s₀ s) : BInv P s₀ 0 s :=
   ⟨h.kb, h.rho, h.sig, by rw [h.x24, ite_eq_left (show allOk P s₀ 0 from fun e he => absurd he (Nat.not_lt_zero e))],

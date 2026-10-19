@@ -27,8 +27,6 @@ structure BeginPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s t 
  progress : ProgressW w16 A B 3 p a b c t
  flag : (t.gpr .x6).toNat=if (accepted A 3).length=256 ∧ (accepted B 3).length=256 then 1 else 0
 
-abbrev BeginPost := BeginPostW false
-
 theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
     (hoa : oa<65536) (hob : ob<65536)

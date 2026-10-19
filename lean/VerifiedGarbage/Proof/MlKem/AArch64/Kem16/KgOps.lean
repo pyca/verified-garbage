@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgCommon
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenAdd
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenDot
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Core
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 
 /-! # The building blocks of the 16-bit key generation
 

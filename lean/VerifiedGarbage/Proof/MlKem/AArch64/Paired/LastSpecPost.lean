@@ -13,8 +13,6 @@ structure LastOutcomeW (w16 : Bool) (B : List Byte) (p out : Addr) (s t : State)
  result : sampleNTT 280 B=none ∨ sampleNTT 280 B=some (polyAtW (cw w16) t.mem out)
  status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleNTT 280 B).isSome then 1 else 0)
 
-abbrev LastOutcome := LastOutcomeW false
-
 theorem LastPostW.outcome {w16 : Bool} {B : List Byte} {p out : Addr} {s t : State} (h : LastPostW w16 B p out s t) :
     LastOutcomeW w16 B p out s t := by
   refine ⟨h.keep,h.frame,h.reduced,?_,?_⟩
