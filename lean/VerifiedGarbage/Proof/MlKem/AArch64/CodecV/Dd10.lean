@@ -22,7 +22,7 @@ abbrev dig10 (Gv : Nat → Nat) (m : Nat) : Nat := Gv (m / 4) / 2 ^ (10 * (m % 4
 
 theorem dd10Half_ok {s : State} {g : VReg} (hg : g = .v6 ∨ g = .v7) {o : Nat} (ho : o % 16 = 0 ∧ o + 16 < 4096 * 16)
     (hc : DConsts 10 s) (h18 : Lanes (s.v .v18) fun _ => 2 ^ 20 - 1) (h19 : Lanes (s.v .v19) fun _ => 2 ^ 10 - 1)
-    {Gv : Nat → Nat} (hG : DLanes (s.v g) Gv) (hGv : ∀ l < 2, Gv l < 2 ^ 40)
+    {Gv : Nat → Nat} (hG : DLanes (s.v g) Gv)
     {p : Addr} {m₀ : Mem} {t : Nat} {Gf old : Nat → BitVec 32} {is : List Instr} {Q : State → Prop}
     (hw : ∀ i, i + 4 ≤ 256 → InRegions s.wr (coeffAddr p i) 16)
     (h3 : s.gpr .x3 + BitVec.ofNat 64 o = coeffAddr p t) (ht : t + 8 ≤ 256) (hcu : CoeffsUpTo s.mem p t Gf old)
@@ -40,7 +40,7 @@ theorem dd10Half_ok {s : State} {g : VReg} (hg : g = .v6 ∨ g = .v7) {o : Nat} 
   have g19 : g ≠ .v19 := by rcases hg with rfl | rfl <;> decide
   unfold dd10Half
   simp only [List.append_assoc]
-  refine ddSplit_ok (b := 10) (.inl rfl) h18 h19 hG hGv g1 g2 g18 g19 fun a7 c7 L6 L7 => ?_
+  refine ddSplit_ok (b := 10) (.inl rfl) h18 h19 hG g1 g2 g18 g19 fun a7 c7 L6 L7 => ?_
   have cs7 : DConsts 10 a7 := hc.chg c7 (by simp [g16.symm]) (by simp [g17.symm])
   have dig_lt : ∀ m, dig 10 Gv m < 2 ^ 10 := fun m => Nat.mod_lt _ (by decide)
   rw [WP.block_append_iff]

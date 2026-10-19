@@ -39,7 +39,7 @@ abbrev dig (b : Nat) (Gv : Nat → Nat) (m : Nat) : Nat := Gv (m / 4) / 2 ^ (b *
 
 /-- The words of `v` after TRN1: the low word and the high `2 b` bits of each group. -/
 abbrev V2 (b : Nat) (Gv : Nat → Nat) (e : Nat) : Nat :=
-  if e % 2 = 0 then Gv (e / 2) % 2 ^ 32 else Gv (e / 2) / 2 ^ (2 * b)
+  if e % 2 = 0 then Gv (e / 2) % 2 ^ 32 else Gv (e / 2) / 2 ^ (2 * b) % 2 ^ 32
 
 /-- Value `m` of the two groups, as `ddSplit` computes it. -/
 abbrev CS (b : Nat) (Gv : Nat → Nat) (m : Nat) : Nat :=
@@ -47,15 +47,15 @@ abbrev CS (b : Nat) (Gv : Nat → Nat) (m : Nat) : Nat :=
   else (if (m - 4) % 2 = 0 then V2 b Gv (2 + (m - 4) / 2) % 2 ^ (2 * b) % 2 ^ b
     else V2 b Gv (2 + (m - 4) / 2) % 2 ^ (2 * b) / 2 ^ b)
 
-theorem splitCS {b : Nat} (hb : b = 10 ∨ b = 11) {Gv : Nat → Nat} (h0 : Gv 0 < 2 ^ (4 * b))
-    (h1 : Gv 1 < 2 ^ (4 * b)) {m : Nat} (hm : m < 8) : CS b Gv m = dig b Gv m := by
+theorem splitCS {b : Nat} (hb : b = 10 ∨ b = 11) {Gv : Nat → Nat} {m : Nat} (hm : m < 8) :
+    CS b Gv m = dig b Gv m := by
   rcases hb with rfl | rfl <;>
   rcases (show m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 ∨ m = 5 ∨ m = 6 ∨ m = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [CS, V2, dig] at h0 h1 ⊢ <;> omega
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [CS, V2, dig] <;> omega
 
 theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     (h18 : Lanes (s.v .v18) fun _ => 2 ^ (2 * b) - 1) (h19 : Lanes (s.v .v19) fun _ => 2 ^ b - 1)
-    {Gv : Nat → Nat} (hG : DLanes (s.v g) Gv) (hGv : ∀ l < 2, Gv l < 2 ^ (4 * b))
+    {Gv : Nat → Nat} (hG : DLanes (s.v g) Gv)
     {is : List Instr} {Q : State → Prop}
     (g1 : g ≠ .v1 := by decide) (g2 : g ≠ .v2 := by decide)
     (g18 : g ≠ .v18 := by decide) (g19 : g ≠ .v19 := by decide)
@@ -72,25 +72,19 @@ theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
   refine wp_vop (eval_shift hsh1) fun a1 h1 => wp_vop rfl fun a2 h2 => wp_vop rfl fun a3 h3' =>
     wp_vop (eval_shift hsh2) fun a4 h4 => wp_vop rfl fun a5 h5 => wp_vop rfl fun a6 h6 =>
     wp_vop rfl fun a7 h7 => ?_
-  have pw : 2 ^ (2 * b) ≤ 2 ^ 22 := Nat.pow_le_pow_right (by decide) (by omega)
-  have pw4 : 2 ^ (4 * b) = 2 ^ (2 * b) * 2 ^ (2 * b) := by rw [← Nat.pow_add]; congr 1; omega
   -- the low word and the high `2 b` bits of each group
   have A : ∀ l < 2, (vword (s.v g) (2 * l)).toNat = Gv l % 2 ^ 32 := fun l hl => by
     have w := vdword_words' (s.v g) l
     rw [hG l hl] at w
     have := (vword (s.v g) (2 * l + 1)).isLt
     omega
-  have B : ∀ l < 2, (vword (a1.v .v1) (2 * l)).toNat = Gv l / 2 ^ (2 * b) := fun l hl => by
+  have B : ∀ l < 2, (vword (a1.v .v1) (2 * l)).toNat = Gv l / 2 ^ (2 * b) % 2 ^ 32 := fun l hl => by
     have dv : (vdword (a1.v .v1) l).toNat = Gv l / 2 ^ (2 * b) := by
       rw [h1.v, StraightV.vdword_map2 _ _ _ hl]
       simp only [VShiftOp.eval, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       rw [hG l hl]
     have w := vdword_words' (a1.v .v1) l
     rw [dv] at w
-    have lt : Gv l / 2 ^ (2 * b) < 2 ^ 22 := by
-      have := hGv l hl
-      rw [pw4] at this
-      exact Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr this) pw
     have := (vword (a1.v .v1) (2 * l)).isLt
     have := (vword (a1.v .v1) (2 * l + 1)).isLt
     omega
@@ -132,7 +126,7 @@ theorem ddSplit_ok {s : State} {b : Nat} (hb : b = 10 ∨ b = 11) {g : VReg}
     (h6.chg.trans h7.chg)).mono (by
       intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hr ⊢
       rcases hr with h | h | h | h | h | h | h <;> simp [h]))
-    (L6.congr fun e he => splitCS hb (hGv 0 (by decide)) (hGv 1 (by decide)) (by omega))
-    (L7.congr fun e he => splitCS hb (hGv 0 (by decide)) (hGv 1 (by decide)) (by omega))
+    (L6.congr fun e he => splitCS hb (by omega))
+    (L7.congr fun e he => splitCS hb (by omega))
 
 end VG.Proof.MlKem.AArch64.CodecV
