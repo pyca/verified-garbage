@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedLink
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryRestore
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Omega
@@ -24,9 +24,11 @@ structure EntryResult (s t : State) : Prop where
 
 theorem entryInner_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
     {s : State} (h : GenerationABI s) :
-    WP isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 M.mm K.run) (allocState 320 s) fun t =>
-      EntryResult s t ∧ t.gpr .x30 = s.gpr .x30 ∧ t.sp = (allocState 320 s).sp ∧
-      t.rd = s.rd ∧ t.wr = (allocState 320 s).wr := by
+    WP isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 M.mm K.run) (allocState 448 s) fun t =>
+      EntryResult s t ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
+      (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧
+      t.sp = (allocState 448 s).sp ∧
+      t.rd = s.rd ∧ t.wr = (allocState 448 s).wr := by
   unfold Impl.Dsa.AArch64.Generation.entryBody
   refine WP.seq (WP.mono (entrySave_ok s) fun u hu => ?_)
   subst u
@@ -47,30 +49,25 @@ theorem entryInner_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
   have outlen : 2 * (contextOf h).geo.pLen + (contextOf h).geo.qLen = (s.gpr .x1).toNat := h.outLength.symm
   rw [outlen] at bytes ft
   have saved := link_saved h ft
-  have perm : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 296) 8 := by
-    rw [rd, wr, sp]
-    exact ⟨⟨generationBase s, 320⟩, List.mem_append_right _ (List.mem_cons_self ..),
-      Offset.contains_base _ (by decide) (by decide)⟩
-  have load : t.mem.readW (t.sp + BitVec.ofNat 64 296) 64 = s.gpr .x30 := by
-    rw [sp]
-    exact saved
-  refine WP.mono (WP.keep [.x30] (Q := fun v => v.gpr .x30 = s.gpr .x30 ∧ v.mem = t.mem)
-    (by brun [exec_ldrSp (off := 296) (by decide), perm, load]) rfl rfl rfl)
-    fun v ⟨⟨lr, hm⟩, kv⟩ => ?_
-  refine ⟨⟨?_, ?_⟩, lr, kv.sp.trans sp, kv.rd.trans rd, kv.wr.trans wr⟩
-  · exact (kv.gpr .x0 (by decide)).trans status
-  · rw [hm]
-    exact bytes
+  have abis := entryAbi_saved h ft
+  have perm (d : Nat) (hd : d + 8 ≤ 448) :
+      InRegions (t.rd ++ t.wr) (generationBase s + BitVec.ofNat 64 d) 8 := by
+    rw [rd, wr]
+    exact ⟨⟨generationBase s, 448⟩, List.mem_append_right _ (List.mem_cons_self ..),
+      Offset.contains_base _ hd (by omega)⟩
+  refine WP.mono (entryRestore_ok sp perm abis.1 abis.2 saved) fun v hv => ?_
+  exact ⟨⟨hv.result.trans status, hv.memory ▸ bytes⟩, hv.gprs, hv.vectors,
+    hv.stack.trans sp, hv.read.trans rd, hv.write.trans wr⟩
 
 theorem entryRun_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
     {s : State} (h : GenerationABI s) :
     WP isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm K.run) s fun t =>
-      EntryResult s t ∧ t.gpr .x30 = s.gpr .x30 ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+      EntryResult s t ∧ abiPreserved s t ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.AArch64.Generation.code
-  apply alloc_frame_ok (by decide : 0 < 320 ∧ 320 < 4096 ∧ 320 % 16 = 0) (by omega_using [h.stackLower])
-  refine WP.mono (entryInner_ok H M K h) fun t ⟨result, lr, sp, rd, wr⟩ => ?_
-  refine ⟨sp, wr, ⟨result.status, result.bytes⟩, lr, ?_, rd, ?_⟩
-  · change t.sp + BitVec.ofNat 64 320 = s.sp
+  apply alloc_frame_ok (by decide : 0 < 448 ∧ 448 < 4096 ∧ 448 % 16 = 0) (by omega_using [h.stackLower])
+  refine WP.mono (entryInner_ok H M K h) fun t ⟨result, cs, vs, sp, rd, wr⟩ => ?_
+  refine ⟨sp, wr, ⟨result.status, result.bytes⟩, ⟨cs, ?_, vs⟩, rd, ?_⟩
+  · change t.sp + BitVec.ofNat 64 448 = s.sp
     rw [sp]
     exact BitVec.sub_add_cancel ..
   · change t.wr.tail = s.wr

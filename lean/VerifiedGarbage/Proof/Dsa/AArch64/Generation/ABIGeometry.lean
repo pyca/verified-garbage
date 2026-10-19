@@ -10,27 +10,27 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.Dsa.Generation.Layout VG.Impl.RsaOaep.AArch64
 
-def generationBase (s : State) : Addr := s.sp - BitVec.ofNat 64 320
+def generationBase (s : State) : Addr := s.sp - BitVec.ofNat 64 448
 
 theorem generationBase_toNat {s : State} (h : GenerationABI s) :
-    (generationBase s).toNat = (s.sp).toNat - 320 := by
+    (generationBase s).toNat = (s.sp).toNat - 448 := by
   have hl := h.stackLower
   have hb := (s.sp).isLt
   simp only [generationBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
   omega
 
 theorem generation_frame_sub (s : State) :
-    Region.Sub ⟨generationBase s, frameBytes⟩ (below (s.sp) 336) :=
+    Region.Sub ⟨generationBase s, frameBytes⟩ (below (s.sp) 464) :=
   Offset.sub_below _ (by decide) (by decide)
 
 theorem generation_stack_sub (s : State) :
-    Region.Sub (below (generationBase s) 16) (below (s.sp) 336) := by
-  have he : generationBase s - BitVec.ofNat 64 16 = s.sp - BitVec.ofNat 64 336 := by
+    Region.Sub (below (generationBase s) 16) (below (s.sp) 464) := by
+  have he : generationBase s - BitVec.ofNat 64 16 = s.sp - BitVec.ofNat 64 464 := by
     simp only [generationBase, BitVec.sub_sub]
     rfl
-  change Region.Sub ⟨_, 16⟩ ⟨_, 336⟩
+  change Region.Sub ⟨_, 16⟩ ⟨_, 464⟩
   rw [he]
-  simpa using (Offset.sub_base (s.sp - BitVec.ofNat 64 336) (d := 0) (n := 16) (k := 336) (by decide))
+  simpa using (Offset.sub_base (s.sp - BitVec.ofNat 64 464) (d := 0) (n := 16) (k := 464) (by decide))
 
 theorem generation_scratch_size {s : State} (h : GenerationABI s) :
     usedBytes (s.gpr .x2).toNat ≤ (stackArg s 3).toNat * 8 := by
@@ -58,7 +58,7 @@ def geometryOf {s : State} (h : GenerationABI s) : GenerationGeometry where
 def tapeOf {s : State} (h : GenerationABI s) (ptr : Addr) (len : BitVec 64)
     (bound : ptr.toNat + len.toNat ≤ 2 ^ 64)
     (arena : (⟨ptr, len.toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩)
-    (stack : (below (s.sp) 336).Disjoint ⟨ptr, len.toNat⟩) : GenerationTape (geometryOf h) where
+    (stack : (below (s.sp) 464).Disjoint ⟨ptr, len.toNat⟩) : GenerationTape (geometryOf h) where
   ptr := ptr
   bytes := Spec.Rsa.bytesAt s.mem ptr len.toNat
   bound := by rw [bytesAt_length]; exact bound

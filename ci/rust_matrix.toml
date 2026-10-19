@@ -269,7 +269,7 @@ runs = """
 neon | chacha20
 aes | aes_gcm aes_gcm_siv
 sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
-sha2 | rsa_oaep
+sha2 | dsa_parameters rsa_oaep
 sha2,sha3 | rsa_oaep
 none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep
 """

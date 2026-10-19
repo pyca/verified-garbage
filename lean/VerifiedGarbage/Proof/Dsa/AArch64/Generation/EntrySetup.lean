@@ -11,7 +11,7 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
 
 def entryWords (regs : Reg → BitVec 64) (incoming W : Nat → BitVec 64) : Nat → BitVec 64 :=
-  workspaceWords (incoming 336) (copiedWords argumentSlots incoming (registerWords headerSlots regs W))
+  workspaceWords (incoming 464) (copiedWords argumentSlots incoming (registerWords headerSlots regs W))
 
 theorem argumentSlots_bounds {slot : Nat × Nat} (hs : slot ∈ argumentSlots) :
     frameBytes ≤ slot.1 ∧ slot.1 + 8 ≤ 2 ^ 64 := by
@@ -36,7 +36,7 @@ theorem entrySetup_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
     (fun slot hs => frame_input_word fu (argumentSlots_bounds hs).1 (argumentSlots_bounds hs).2)
     (registerWords headerSlots s.gpr W)
   rw [words] at Rv
-  have base : copiedWords argumentSlots (VG.Proof.Bignum.word s.mem F) (registerWords headerSlots s.gpr W) 5 = VG.Proof.Bignum.word s.mem F 336 := by
+  have base : copiedWords argumentSlots (VG.Proof.Bignum.word s.mem F) (registerWords headerSlots s.gpr W) 5 = VG.Proof.Bignum.word s.mem F 464 := by
     rfl
   refine WP.mono (entryDerived_ok G Rv ((kv.sp.trans ku.sp).trans hsp)
     (by rw [kv.wr, ku.wr]; exact hfr) base) fun t ⟨Rt, ft, kt⟩ => ?_

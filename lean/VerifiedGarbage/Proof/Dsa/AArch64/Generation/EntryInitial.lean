@@ -10,14 +10,14 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
 theorem entryInitial {s : State} (h : GenerationABI s) :
-    EntryState (contextOf h) (allocState 320 s) where
+    EntryState (contextOf h) (allocState 448 s) where
   sp := rfl
   frame := by
-    change Covers [⟨generationBase s, frameBytes⟩] (⟨generationBase s, 320⟩ :: s.wr)
+    change Covers [⟨generationBase s, frameBytes⟩] (⟨generationBase s, 448⟩ :: s.wr)
     apply Covers.one
-    exact ⟨⟨generationBase s, 320⟩, List.mem_cons_self ..,
+    exact ⟨⟨generationBase s, 448⟩, List.mem_cons_self ..,
       by simpa [off] using
-        Offset.contains_base (generationBase s) (d := 0) (n := frameBytes) (k := 320) (by decide) (by decide)⟩
+        Offset.contains_base (generationBase s) (d := 0) (n := frameBytes) (k := 448) (by decide) (by decide)⟩
   frameTop := by
     change (generationBase s).toNat + frameBytes ≤ 2 ^ 64
     rw [generationBase_toNat h]

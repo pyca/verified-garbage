@@ -3,7 +3,7 @@
 //! validation all run in verified assembly. Rust supplies the three entropy
 //! tapes, allocates output and scratch, and selects the CPU implementation.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::{vec, vec::Vec};
 
@@ -101,6 +101,7 @@ impl Parameters {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 type Generate = unsafe extern "sysv64" fn(
     *mut u8,
     usize,
@@ -116,6 +117,23 @@ type Generate = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 
+#[cfg(target_arch = "aarch64")]
+type Generate = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    usize,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+) -> u32;
+
+#[cfg(target_arch = "x86_64")]
 fn select(features: Features) -> Generate {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
@@ -125,6 +143,7 @@ fn select(features: Features) -> Generate {
     )
 }
 
+#[cfg(target_arch = "x86_64")]
 fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
@@ -151,3 +170,26 @@ fn select_backends(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(target_arch = "aarch64")]
+fn select(features: Features) -> Generate {
+    use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
+    select_backends(
+        Sha1Backend::select(features),
+        Sha256Backend::select(features),
+    )
+}
+
+#[cfg(target_arch = "aarch64")]
+fn select_backends(
+    sha1: crate::hashes::sha1::Sha1Backend,
+    sha256: crate::hashes::sha256::Sha256Backend,
+) -> Generate {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    match (sha1, sha256) {
+        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
+        (H1::Scalar, H256::Sha2) => vg_dsa_generate_parameters_sha256_sha2,
+        (H1::Sha2, H256::Scalar) => vg_dsa_generate_parameters_sha1_sha2,
+        (H1::Sha2, H256::Sha2) => vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
+    }
+}

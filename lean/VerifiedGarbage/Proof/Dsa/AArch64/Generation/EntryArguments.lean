@@ -14,7 +14,7 @@ open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
 def headerSlots : List (Nat × Reg) :=
   [(6, .x0), (7, .x1), (17, .x2), (18, .x3), (26, .x3), (8, .x4), (9, .x5), (11, .x6), (13, .x7)]
 
-def argumentSlots : List (Nat × Nat) := [(320, 14), (328, 15), (336, 5)]
+def argumentSlots : List (Nat × Nat) := [(448, 14), (456, 15), (464, 5)]
 
 theorem entryHeader_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (G : Geo F S) (R : Rep s.mem F S V W) (hsp : s.sp = F)

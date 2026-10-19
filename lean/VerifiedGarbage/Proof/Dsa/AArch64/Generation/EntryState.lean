@@ -31,27 +31,27 @@ theorem EntryState.geometry {p : GenerationContext} {s : State} (h : EntryState 
 
 theorem EntryState.words {p : GenerationContext} {s : State} (h : EntryState p s) (W : Nat → BitVec 64) :
     ∀ k ∈ generationSlots, entryWords s.gpr (VG.Proof.Bignum.word s.mem p.geo.F) W k = p.saved k := by
-  have base : VG.Proof.Bignum.word s.mem p.geo.F 336 = p.geo.B :=
-    (h.incoming (336, 5) (by simp [argumentSlots])).trans p.baseSlot
+  have base : VG.Proof.Bignum.word s.mem p.geo.F 464 = p.geo.B :=
+    (h.incoming (464, 5) (by simp [argumentSlots])).trans p.baseSlot
   intro k hk
   simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · change VG.Proof.Bignum.off (VG.Proof.Bignum.word s.mem p.geo.F 336) wrappedSeed = p.saved 3
+  · change VG.Proof.Bignum.off (VG.Proof.Bignum.word s.mem p.geo.F 464) wrappedSeed = p.saved 3
     rw [base, p.wrappedSlot]
-  · change VG.Proof.Bignum.off (VG.Proof.Bignum.word s.mem p.geo.F 336) hashes = p.saved 4
+  · change VG.Proof.Bignum.off (VG.Proof.Bignum.word s.mem p.geo.F 464) hashes = p.saved 4
     rw [base, p.hashesSlot]
-  · exact h.incoming (336, 5) (by simp [argumentSlots])
+  · exact h.incoming (464, 5) (by simp [argumentSlots])
   · exact h.registers (6, .x0) (by simp [headerSlots])
   · exact h.registers (7, .x1) (by simp [headerSlots])
   · exact h.registers (8, .x4) (by simp [headerSlots])
   · exact h.registers (9, .x5) (by simp [headerSlots])
   · exact h.registers (11, .x6) (by simp [headerSlots])
-  · change VG.Proof.Bignum.off (VG.Proof.Bignum.word s.mem p.geo.F 336) VG.Impl.Dsa.Generation.Layout.hash = p.saved 12
+  · change VG.Proof.Bignum.off (VG.Proof.Bignum.word s.mem p.geo.F 464) VG.Impl.Dsa.Generation.Layout.hash = p.saved 12
     rw [base, h.hashScratch]
     rfl
   · exact h.registers (13, .x7) (by simp [headerSlots])
-  · exact h.incoming (320, 14) (by simp [argumentSlots])
-  · exact h.incoming (328, 15) (by simp [argumentSlots])
+  · exact h.incoming (448, 14) (by simp [argumentSlots])
+  · exact h.incoming (456, 15) (by simp [argumentSlots])
   · exact h.registers (17, .x2) (by simp [headerSlots])
   · exact h.registers (18, .x3) (by simp [headerSlots])
   · exact h.registers (26, .x3) (by simp [headerSlots])
