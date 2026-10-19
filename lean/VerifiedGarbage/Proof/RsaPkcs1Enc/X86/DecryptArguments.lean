@@ -1,0 +1,54 @@
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecryptStackWord
+
+/-! # Installing successive cdecl arguments preserves every earlier word -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Enc.X86.Dec
+open VG VG.X86 VG.Proof.Bignum.X86 VG.Proof.Mont.X86
+
+theorem outgoing_word_preserved {g : Geometry} {m m' : Mem} {i j : Nat}
+    (hi : i < 20) (hj : j < 20) (hne : i ≠ j)
+    (f : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] m m') :
+    m'.readW (byteAddr g.stack + BitVec.ofNat 64 (4 * i)) 32 =
+      m.readW (byteAddr g.stack + BitVec.ofNat 64 (4 * i)) 32 := by
+  apply f.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 (4 * i), 4⟩) (Region.contains_self _ _) ?_ (by decide)
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+
+def Arguments (g : Geometry) (values : Nat → BitVec 32) (n : Nat) (s : State) : Prop :=
+  ∀ j < n, s.mem.readW (byteAddr g.stack + BitVec.ofNat 64 (4 * j)) 32 = values j
+
+theorem Arguments.append {g : Geometry} {values : Nat → BitVec 32} {n : Nat} {s t : State}
+    (h : Arguments g values n s) (hn : n < 20)
+    (M : t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * n)) (values n))
+    (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * n), 4⟩] s.mem t.mem) :
+    Arguments g values (n + 1) t := by
+  intro j hj
+  by_cases same : j = n
+  · subst j; rw [M, Mem.readW_writeW_self32]
+  · rw [outgoing_word_preserved (by omega) hn same F]
+    exact h j (by omega)
+
+theorem slotFrame_outgoing {g : Geometry} {s t : State} {j : Nat} (hj : j < 20)
+    (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem) :
+    Frame [⟨byteAddr g.stack, 80⟩] s.mem t.mem := F.sub (by
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩)
+
+theorem prepareArgument_ok {g : Geometry} {bs : Fin 9 → List Byte} {s : State}
+    {values : Nat → BitVec 32} {n : Nat} {code : List Instr}
+    (a : Arguments g values n s) (hn : n < 20)
+    (w : WP isa (.block code) s fun t => Context g bs t ∧
+      t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * n)) (values n) ∧
+      Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * n), 4⟩] s.mem t.mem ∧ Keeps [.eax] s t) :
+    WP isa (.block code) s fun t => Context g bs t ∧ Arguments g values (n + 1) t ∧
+      Frame [⟨byteAddr g.stack, 80⟩] s.mem t.mem ∧ Keeps [.eax] s t := by
+  refine WP.mono w ?_
+  rintro t ⟨h, M, F, K⟩
+  exact ⟨h, a.append hn M F, slotFrame_outgoing hn F, K⟩
+
+end VG.Proof.RsaPkcs1Enc.X86.Dec
