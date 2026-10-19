@@ -64,7 +64,7 @@ def vRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : Nat) (m
 /-- The noise, `u` and `v`. -/
 def encryptRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : Nat) (m : Reg)
     (mo : Nat) (ct : Reg) (co : Nat) : Prog isa :=
-  .seq (noiseAllWith nttAtWithW L false true) (seqs (((List.range L.k).map (uRow L ct co)) ++
+  .seq (noiseAllWith nttAtWithW L false) (seqs (((List.range L.k).map (uRow L ct co)) ++
     [vRest prf L ek eo m mo ct co]))
 
 /-- Encapsulation after the matrix. -/
@@ -93,7 +93,7 @@ def kgRow (L : KemLay) (i : Nat) : Prog isa :=
 
 /-- Key generation after the matrix. -/
 def kgRest (hash : FixedHashCallers.HashFn) (L : KemLay) : Prog isa :=
-  .seq (noiseAllWith nttAtWithW L true true) (seqs (
+  .seq (noiseAllWith nttAtWithW L true) (seqs (
     ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
     ((List.range L.k).map (kgRow L)) ++ [FixedHashCallers.kgEndUsing hash L]))
 

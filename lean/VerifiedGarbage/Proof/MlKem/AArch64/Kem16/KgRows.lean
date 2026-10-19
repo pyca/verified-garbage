@@ -243,12 +243,12 @@ theorem noise_cinvW {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P)
 
 theorem readonly_noise_encodeW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (ht : Optimized.TransformTables s)
     {mB : Mem} {v : BitVec 64} (h : CInvW P s₀ mB v s) :
-    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P true true) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P true) s fun t =>
       Kept (Noise.allWrites P true (kA s₀ 3)) s t ∧ EncodeInvW P s₀ mB t.mem v 0 t := by
   have hc : Covers [⟨kA s₀ 3,P.scl⟩] s.wr := by
     have hh := cov_w hp h.kb (b := 3) (o := 0) (l := P.scl) (by decide) (by kl)
     simpa only [R,ptr_zero] using hh
-  refine WP.mono (Noise.readonly_noiseAll_tables (w16 := true) hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
+  refine WP.mono (Noise.readonly_noiseAll_tables hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
   refine ⟨kt,noise_cinvW hp hr h kt,?_,?_,fun _ hj => by omega,Frame.refl _ _⟩
   · intro j hj
     have p : PolyIsW 16 _ _ _ := pt j (by omega)

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-!
-# Sums and differences of polynomials stored with 16 bits, on AArch64
+# Sums of polynomials stored with 16 bits, on AArch64
 
 `accW op(f = x0, g = x1)`: `f[i] ← op(f[i], g[i])`, eight coefficients at a
 time, with `q` in the halfwords of `v16`. In halfwords there is no UMIN, so
@@ -23,9 +23,6 @@ def hcsub : List Instr :=
 /-- `v2 ← (v0 + v1) mod q`. -/
 def haddOp : List Instr := .vop (.add .h8 .v2 .v0 .v1) :: hcsub
 
-/-- `v2 ← (v0 - v1) mod q`: `(v0 + q - v1) mod q`. -/
-def hsubOp : List Instr := [.vop (.sub .h8 .v2 .v0 .v1), .vop (.add .h8 .v2 .v2 .v16)] ++ hcsub
-
 def accBodyW (op : List Instr) : List Instr :=
   [.ldrq .v0 .x0 0, .ldrq .v1 .x1 0] ++ op ++
     [.strq .v2 .x0 0, .addImm .x .x0 .x0 16, .addImm .x .x1 .x1 16, .subImm .x .x11 .x11 1]
@@ -35,6 +32,5 @@ def accW (op : List Instr) : Prog isa :=
     (.loop (.block (accBodyW op)) (.nonzero .x .x11))
 
 def addW : Prog isa := accW haddOp
-def subW : Prog isa := accW hsubOp
 
 end VG.Impl.MlKem.AArch64.AddSubW

@@ -16,7 +16,7 @@ theorem prfHash_valid (v : Proof.Sha3.AArch64.Permutation) : PrfHashValid (prfHa
 
 /-- `PRF₂` and `SamplePolyCBD₂`, with the polynomial stored with 16 bits. -/
 def prfW (c : Impl.Sha3.AArch64.Callee) : Nat→Nat→Prog isa :=
- fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing (prfHash c) N off true
+ fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing (prfHash c) N off
 
 theorem prfW_valid (v : Proof.Sha3.AArch64.Permutation) {P : KemLay} {L : Layout} : PrfValidW P L (prfW v.callee) :=
  prf_using_validW (prfHash_valid v)
