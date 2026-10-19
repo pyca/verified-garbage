@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
