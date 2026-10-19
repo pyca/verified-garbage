@@ -211,10 +211,12 @@ end
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared) (hF : ShortFacts)
+theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) {pre : Prog isa} {qf : Nat → Nat → Nat}
+    (hpre : PreOk CtxMode.prepared pre qf) (hrel : PreRel CtxMode.prepared pre)
+    (hq : ∀ n sl, sl ≤ n → 16 * qf n sl ≤ n) (hF : ShortFacts)
     {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {fin : Prog isa} (hfr : FinRel CtxMode.prepared fin)
     {other : Prog isa} (ho : MidRel CtxMode.prepared other) :
-    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn ks fin other any) := by
+    MidRel CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
   intro s₀ s₀' Ctx W SP Np A D S T' nl al n sl R C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR'
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.Fast.sel
@@ -239,7 +241,7 @@ theorem sel_rel (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.
       (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
       (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
         g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial
-    exact (splitRun_rel_of_midB T (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
+    exact (splitRun_rel_of_pre hpre hrel hq (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
       (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega))
       (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega))).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h

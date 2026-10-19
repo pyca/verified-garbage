@@ -52,6 +52,21 @@ def encTo : Prog isa :=
         (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae))
           (.block (storeCtr ++ lastG ++ storeY)))))
 
+/-- `encTo` in one pass over the blocks at `src` (`r9` of them, a multiple of
+16) and then, in place, over the whole groups after them at `dst`: after the
+loop at `src`, `r8 ← rbx` (`dst`) and `r9 += rbp` (the number of blocks
+after them at `dst`, a multiple of 16), and the in-place loop (`Stitch.body`) goes on from
+the group the out-of-place one encrypted last, with one setup and one last
+reduction for both. -/
+def encN : Prog isa :=
+  .seq (.block setupTo)
+    (.seq StitchTo.firstTo
+      (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae))
+          (.seq (.block [.mov .r8 (.reg .rbx), .alu .add .r9 (.reg .rbp), .alu .cmp .r9 (.imm 32)])
+            (.seq (.ite .b (.block []) (.loop body .ae))
+              (.block (storeCtr ++ lastG ++ storeY)))))))
+
 /-! ## Decryption: the blocks after the last group -/
 
 /-- The keystream of eight blocks, the next counters' in the lanes of

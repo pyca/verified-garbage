@@ -479,6 +479,10 @@ structure GcmImpl where
   (`Impl/AesGcm/X86_64/SealFin.lean`), which needs AES-NI, PCLMULQDQ and
   AVX. -/
   fin : Bool := false
+  /-- Whether `seal_split`'s path for TLS records takes the whole groups at
+  `src` and at `dst` in one pass (`SealSplit.prefixN`), which needs the loop
+  on 256-bit registers inline. -/
+  onePass : Bool := false
 
 namespace GcmImpl
 

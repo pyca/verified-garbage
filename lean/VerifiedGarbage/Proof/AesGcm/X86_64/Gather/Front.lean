@@ -10,7 +10,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the test of a TLS record's text
 
-Untrusted: everything here is checked by Lean. What `frontTest long fill`
+Untrusted: everything here is checked by Lean. What `frontTest long`
 computes from the public arguments of the entry state (`frontGo`), in one
 run (`frontTest_wp`) and in two runs with the same public arguments
 (`frontTest_rel`, which take the same path: `Pub.eFront`), leaving the
@@ -44,29 +44,27 @@ def fA (n al c : BitVec 64) : BitVec 64 :=
   if (!decide ((c - 1#64).toNat < (2#64).toNat)) = true then c - 1#64
   else if (!decide (al.toNat < (17#64).toNat)) = true then al else n - 12#64
 
-/-- `r11` after `frontSlice long fill`, from `r11` before it (`acc`), the
+/-- `r11` after `frontSlice long`, from `r11` before it (`acc`), the
 first slice's length `a` and the text's `len`. -/
-def fB (long fill : Bool) (acc a len : BitVec 64) : BitVec 64 :=
+def fB (long : Bool) (acc a len : BitVec 64) : BitVec 64 :=
   let x := a >>> 4 <<< 4 + 16#64
   let b₁ := acc ||| if (!decide (x.toNat < len.toNat)) = true then acc else x
-  let b₂ := b₁ ||| if (!decide (a.toNat < (256#64).toNat)) = true then b₁
+  b₁ ||| if (!decide (a.toNat < (256#64).toNat)) = true then b₁
     else (if long = true then len ||| BitVec.signExtend 64 (BitVec.ofNat 32 256) else len) >>> 8
-  let m := if fill = true then len &&& BitVec.signExtend 64 (BitVec.ofNat 32 255) else len
-  b₂ ||| if (!((m &&& m) == 0)) = true then b₂ else a &&& 15#64
 
 /-- `r11` after the tests of `frontCore`. -/
-def fR11 (long fill : Bool) (s : State) : BitVec 64 :=
+def fR11 (long : Bool) (s : State) : BitVec 64 :=
   if (stackArg s 1 - 1#64).toNat < (2#64).toNat then
-    fB long fill (fA (s.gpr .rcx) (AL s) (stackArg s 1)) (BitVec.ofNat 64 (fl s)) (stackArg s 3)
+    fB long (fA (s.gpr .rcx) (AL s) (stackArg s 1)) (BitVec.ofNat 64 (fl s)) (stackArg s 3)
   else fA (s.gpr .rcx) (AL s) (stackArg s 1)
 
-/-- Whether `frontTest long fill` takes the path of a TLS record's text. -/
-def frontGo (long fill : Bool) (s : State) : Bool :=
+/-- Whether `frontTest long` takes the path of a TLS record's text. -/
+def frontGo (long : Bool) (s : State) : Bool :=
   if long = true ∧ (stackArg s 3).toNat < (256#64).toNat then false
-  else (fR11 long fill s &&& fR11 long fill s) == 0
+  else (fR11 long s &&& fR11 long s) == 0
 
-theorem Pub.eFront {s₀ s₀' : State} (pb : Pub s₀ s₀') (long fill : Bool) :
-    frontGo long fill s₀' = frontGo long fill s₀ := by
+theorem Pub.eFront {s₀ s₀' : State} (pb : Pub s₀ s₀') (long : Bool) :
+    frontGo long s₀' = frontGo long s₀ := by
   simp only [frontGo, fR11, AL, pb.rcx, pb.r9, pb.a 1 (by decide), pb.a 3 (by decide), pb.eFl]
 
 /-! ## In one run -/
@@ -119,9 +117,9 @@ theorem fArgs_ok {st : State} (hs : Same s st) :
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, ite_true]; rfl
 
 /-- The first slice's length, with one or two slices. -/
-theorem fSlice_ok (long fill : Bool) (hc : Cnt s ≠ 0) {st : State} (hs : Same s st) :
-    WP isa (.block (frontSlice long fill)) st fun st' => Same s st' ∧
-      st'.gpr .r11 = fB long fill (st.gpr .r11) (BitVec.ofNat 64 (fl s)) (stackArg s 3) := by
+theorem fSlice_ok (long : Bool) (hc : Cnt s ≠ 0) {st : State} (hs : Same s st) :
+    WP isa (.block (frontSlice long)) st fun st' => Same s st' ∧
+      st'.gpr .r11 = fB long (st.gpr .r11) (BitVec.ofNat 64 (fl s)) (stackArg s 3) := by
   obtain ⟨a₀, e₀⟩ := same_a hp hs (i := 0) (by decide)
   obtain ⟨a₃, e₃⟩ := same_a hp hs (i := 3) (by decide)
   have d₈ : InRegions (st.rd ++ st.wr) (Src s + BitVec.ofNat 64 8) 8 := by
@@ -131,7 +129,7 @@ theorem fSlice_ok (long fill : Bool) (hc : Cnt s ≠ 0) {st : State} (hs : Same 
     have := sl_eq hp (m := st.mem) (by rw [hs.mem]; exact Frame.refl _ _) (i := 0) (by omega)
     rw [show Src s + BitVec.ofNat 64 (16 * 0) = Src s by simp] at this
     rw [this, fl_eq]; simp [hc]
-  cases long <;> cases fill <;>
+  cases long <;>
   · apply WP.of_runBlock
     refine ⟨_, by
       simp only [frontSlice, Bool.false_eq_true, ↓reduceIte, List.cons_append, List.nil_append]
@@ -161,33 +159,33 @@ theorem cnt_ne_of {s : State} (h : (stackArg s 1 - 1#64).toNat < (2#64).toNat) :
 
 /-- The nonce's and the additional data's lengths and the slices, then the
 first slice if there are one or two: `r11`. -/
-theorem fMid_wp (long fill : Bool) {st : State} (hs : Same s st) (hc : st.cf = some (decide ((stackArg s 1 - 1#64).toNat < (2#64).toNat)))
+theorem fMid_wp (long : Bool) {st : State} (hs : Same s st) (hc : st.cf = some (decide ((stackArg s 1 - 1#64).toNat < (2#64).toNat)))
     (h11 : st.gpr .r11 = fA (s.gpr .rcx) (AL s) (stackArg s 1)) :
-    WP isa (.ite .ae (.block []) (.block (frontSlice long fill))) st fun t => Same s t ∧
-      t.gpr .r11 = fR11 long fill s := by
+    WP isa (.ite .ae (.block []) (.block (frontSlice long))) st fun t => Same s t ∧
+      t.gpr .r11 = fR11 long s := by
   refine WP.ite (!decide ((stackArg s 1 - 1#64).toNat < (2#64).toNat)) (by simp only [eval, hc, Option.map_some])
     (fun e => WP.block_nil ⟨hs, ?_⟩) (fun e => ?_)
   · have hc : ¬(stackArg s 1 - 1#64).toNat < (2#64).toNat := by simpa using e
     rw [h11]; simp only [fR11, hc, ↓reduceIte]
   · have hc : (stackArg s 1 - 1#64).toNat < (2#64).toNat := by simpa using e
-    refine WP.mono (fSlice_ok hp long fill (cnt_ne_of hc) hs) fun t ⟨S, r11⟩ => ⟨S, ?_⟩
+    refine WP.mono (fSlice_ok hp long (cnt_ne_of hc) hs) fun t ⟨S, r11⟩ => ⟨S, ?_⟩
     rw [r11, h11]; simp only [fR11, hc, ↓reduceIte]
 
 /-- The tests of `frontCore`, from a state `Same` as the entry. -/
-theorem frontCore_wp (long fill : Bool) {st : State} (hs : Same s st) :
-    WP isa (frontCore long fill) st fun st' => Same s st' ∧
-      st'.zf = some ((fR11 long fill s &&& fR11 long fill s) == 0) := by
+theorem frontCore_wp (long : Bool) {st : State} (hs : Same s st) :
+    WP isa (frontCore long) st fun st' => Same s st' ∧
+      st'.zf = some ((fR11 long s &&& fR11 long s) == 0) := by
   unfold frontCore
   exact WP.seq (WP.mono (fArgs_ok hp hs) fun s₂ ⟨S₂, cf₂, r11₂⟩ =>
-    WP.seq (WP.mono (fMid_wp hp long fill S₂ cf₂ r11₂)
+    WP.seq (WP.mono (fMid_wp hp long S₂ cf₂ r11₂)
       fun s₃ ⟨S₃, r11₃⟩ => WP.mono (fZero_ok S₃) fun s₄ ⟨S₄, zf₄⟩ => ⟨S₄, by rw [zf₄, r11₃]⟩))
 
 /-- The test of a TLS record's text, from the entry. -/
-theorem frontTest_wp (long fill : Bool) :
-    WP isa (frontTest long fill) s fun st' => Same s st' ∧ st'.zf = some (frontGo long fill s) := by
+theorem frontTest_wp (long : Bool) :
+    WP isa (frontTest long) s fun st' => Same s st' ∧ st'.zf = some (frontGo long s) := by
   cases long
   · simp only [frontTest, Bool.false_eq_true, ↓reduceIte]
-    exact WP.mono (frontCore_wp hp false fill (Same.refl s)) fun st ⟨S, zf⟩ => ⟨S, by simpa [frontGo] using zf⟩
+    exact WP.mono (frontCore_wp hp false (Same.refl s)) fun st ⟨S, zf⟩ => ⟨S, by simpa [frontGo] using zf⟩
   simp only [frontTest, ↓reduceIte]
   refine WP.seq (WP.mono (fLen_ok hp (Same.refl s)) fun s₁ ⟨S₁, cf₁, zf₁⟩ => ?_)
   refine WP.ite (decide ((stackArg s 3).toNat < (256#64).toNat))
@@ -199,11 +197,11 @@ theorem frontTest_wp (long fill : Bool) :
     intro h0
     bv_omega
   have hl : ¬(stackArg s 3).toNat < (256#64).toNat := by simpa using e
-  exact WP.mono (frontCore_wp hp true fill S₁) fun st ⟨S, zf⟩ => ⟨S, by rw [zf]; simp only [frontGo, hl, and_false, ↓reduceIte]⟩
+  exact WP.mono (frontCore_wp hp true S₁) fun st ⟨S, zf⟩ => ⟨S, by rw [zf]; simp only [frontGo, hl, and_false, ↓reduceIte]⟩
 
 /-- What the path of a TLS record's text needs: a 12-byte nonce, one or two
 slices, and at most 16 bytes of text after the first. -/
-theorem front_facts {long fill : Bool} (h : frontGo long fill s = true) :
+theorem front_facts {long : Bool} (h : frontGo long s = true) :
     s.gpr .rcx = 12#64 ∧ (Cnt s = 1 ∨ Cnt s = 2) ∧ L s - fl s ≤ 16 := by
   have hfl := fl_le hp
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
@@ -218,7 +216,7 @@ theorem front_facts {long fill : Bool} (h : frontGo long fill s = true) :
     have hc0 := cnt_ne_of hc
     unfold fB at h0
     simp only [BitVec.or_eq_zero_iff] at h0
-    obtain ⟨⟨⟨hA, hx⟩, -⟩, -⟩ := h0
+    obtain ⟨⟨hA, hx⟩, -⟩ := h0
     unfold fA at hA
     simp only [hc, decide_true, Bool.not_true, Bool.false_eq_true, ↓reduceIte] at hA
     split at hA

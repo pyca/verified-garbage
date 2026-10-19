@@ -132,13 +132,15 @@ theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
   refine ⟨{ hI with a := { hI.a with } }, ?_⟩
   rw [toNat_ofNat_lt (by omega)]; rfl
 
-theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
-    (hI : EInv s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
+/-- The loop, from any group `e₀` on. -/
+theorem loopE_from_ok {s₀ : State} (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hp : SPre s₀)
+    (hf : FinOk ordE (hk s₀) P) {e₀ : Nat} {s : State}
+    (hI : EInv s₀ P e₀ s) (hcf : s.cf = some (decide (nb s₀ - 16 * (e₀ - 1) < 32))) :
     WP isa (.ite .b (.block []) (.loop body .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s' := by
   have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInv s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e t :=
     fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega, hI⟩
-  refine WP.ite (decide (nb s₀ - 16 * (1 - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil (fin 1 (by simpa using h) s hI)
+  refine WP.ite (decide (nb s₀ - 16 * (e₀ - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
+  · exact WP.block_nil (fin e₀ (by simpa using h) s hI)
   · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ EInv s₀ P e s
     have hstep : ∀ m s, I m s → WP isa body s (fun s' =>
         (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s') ∨
@@ -150,7 +152,13 @@ theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Na
           fin (e + 1) (by simpa using hlt) s' hI'⟩
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
           nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI'⟩
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by simp at h; omega, hI⟩
+    have := hI.one; have := hI.a.le
+    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e₀) s ⟨e₀, rfl, by simp at h; omega, hI⟩
+
+theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
+    (hI : EInv s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
+    WP isa (.ite .b (.block []) (.loop body .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s' :=
+  loopE_from_ok hm hp hf hI hcf
 
 /-! ## The last group, and the stores -/
 

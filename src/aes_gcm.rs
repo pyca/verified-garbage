@@ -1182,87 +1182,6 @@ impl AesGcm {
         }
     }
 
-    /// `encrypt` of a TLS record (a 96-bit nonce, at most 16 bytes of
-    /// additional data, and a payload and the content type) of a multiple
-    /// of 16 blocks from 2048 bytes on, whose last block the payload starts
-    /// and the content type fills, on 256-bit registers, with the key
-    /// context with the powers if it is ready: one call of
-    /// `vg_aes_gcm_seal_split_prepared` for the payload up to its last whole
-    /// group of 16 blocks (`cut`), after the rest of it and the content type
-    /// are copied to `out`, where it seals them as one group (2048 bytes:
-    /// 1–4% faster than the gathering; 4096: 6–8%; 16384: 2–5% faster than
-    /// sealing all the payload's whole blocks where they are, which
-    /// `seal_split` does in groups of 16 and then the last block alone).
-    /// The gathering takes every other message.
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    #[inline(always)]
-    fn seal_cut_prepared(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [u8],
-    ) -> Option<Block> {
-        use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul;
-        if nonce.len() != 12 || aad.len() > 16 || out.len() < 2048 || !out.len().is_multiple_of(256)
-        {
-            return None;
-        }
-        let [src, rest] = plaintext else {
-            return None;
-        };
-        if src.len() % 16 == 0 || src.len() % 16 + rest.len() > 16 {
-            return None;
-        }
-        let split = match self.backend {
-            Backend::VaesVpclmul => vg_aes_gcm_seal_split_prepared_vaes_vpclmul,
-            Backend::Scalar
-            | Backend::AesNi
-            | Backend::Pclmul
-            | Backend::AesNiPclmul
-            | Backend::Vaes
-            | Backend::Vpclmul
-            | Backend::VaesPclmul
-            | Backend::AesNiVpclmul
-            | Backend::VaesVpclmulAvx512
-            | Backend::AesNiPclmulAvx => return None,
-        };
-        let ctx = self.powers.ctx.load(Ordering::Acquire);
-        if ctx.is_null() {
-            return None;
-        }
-        let cut = src.len() / 256 * 256;
-        out[cut..src.len()].copy_from_slice(&src[cut..]);
-        out[src.len()..].copy_from_slice(rest);
-        let mut tag: Block = [0; 16];
-        // SAFETY: `ctx` is a published key context (see `Powers::ctx`),
-        // which `vg_aes_gcm_prepare` wrote for this key, valid for
-        // reads of 1024 bytes as long as `self` lives, and the CPU has the
-        // features of `self.backend`, whose `_prepared` instance this is.
-        // `encrypt` checked that `out` is as long as the pieces in all, so
-        // `cut <= src.len() <= out.len()`, and `out` holds the rest of `src`
-        // and the second piece after `cut` bytes. The nonce, the additional
-        // data, `src` (for `cut` bytes), `out` and `tag` are valid for their
-        // lengths, and `out` and `tag`, which the function writes, are
-        // distinct Rust objects from the others.
-        unsafe {
-            split(
-                ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                src.as_ptr(),
-                cut,
-                out.as_mut_ptr(),
-                out.len(),
-                &mut tag,
-            )
-        };
-        Some(tag)
-    }
-
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
     pub const MAX_PIECES: usize = 64;
 
@@ -1292,10 +1211,6 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(tag) = self.seal_cut_prepared(nonce, aad, plaintext, out) {
-            return Ok(tag);
-        }
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
         if out.len() >= POWERS_MIN_LEN
             && let Some(tag) = self.seal_pieces_prepared(nonce, aad, plaintext, out)
@@ -2719,8 +2634,7 @@ mod tests {
                             // One piece (the gathering's path for TLS
                             // records; on 512-bit registers from 256
                             // bytes); a second of 1 byte (the same, a TLS
-                            // 1.3 record's content type, or on 256-bit
-                            // registers `seal_cut_prepared`), none (the
+                            // 1.3 record's content type), none (the
                             // same, a TLS 1.2 record's), 16 bytes (the same
                             // when the first ends on a block), or 17;
                             // three; empty

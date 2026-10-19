@@ -346,31 +346,28 @@ def frontArgs : List Instr :=
 /-- With one or two slices, `r11` made nonzero unless at most 16 bytes of
 text follow the whole blocks of the first slice (of length `a`, in `r10`),
 and the first slice is at least 256 bytes long if the text is (and always,
-if `long`), and, if `fill`, unless the text is a multiple of 256 bytes whose
-last block the first slice starts and the second fills. -/
-def frontSlice (long fill : Bool) : List Instr :=
+if `long`). -/
+def frontSlice (long : Bool) : List Instr :=
   [.mov .r10 (.mem (at_ .rsp 8)), .mov .r10 (.mem (at_ .r10 8)),
     .mov .rax (.reg .r10), .shift .shr .rax 4, .shift .shl .rax 4, .alu .add .rax (imm 16),
     .alu .cmp .rax (.mem (at_ .rsp 32)), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax),
     .mov .rax (.mem (at_ .rsp 32))] ++ (if long then [.alu .or .rax (imm 256)] else []) ++
-  [.shift .shr .rax 8, .alu .cmp .r10 (imm 256), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax),
-    .mov .rax (.mem (at_ .rsp 32))] ++ (if fill then [.alu .and .rax (imm 255)] else []) ++
-  [.alu .and .r10 (imm 15), .alu .test .rax (.reg .rax), .cmov .ne .r10 (.reg .r11), .alu .or .r11 (.reg .r10)]
+  [.shift .shr .rax 8, .alu .cmp .r10 (imm 256), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax)]
 
-/-- The tests of `frontArgs` and `frontSlice long fill`; `ZF` if all pass. -/
-def frontCore (long fill : Bool) : Prog isa :=
+/-- The tests of `frontArgs` and `frontSlice long`; `ZF` if all pass. -/
+def frontCore (long : Bool) : Prog isa :=
   .seq (.block frontArgs)
-    (.seq (.ite .ae (.block []) (.block (frontSlice long fill))) (.block [.alu .test .r11 (.reg .r11)]))
+    (.seq (.ite .ae (.block []) (.block (frontSlice long))) (.block [.alu .test .r11 (.reg .r11)]))
 
 /-- From the entry, with the arguments where the caller put them: `ZF` if the
 text is a TLS record's (a 12-byte nonce, at most 16 bytes of additional
 data, and one or two slices, the second ending at most 16 bytes after the
-first's whole blocks; `frontSlice long fill`), which `vg_aes_gcm_seal_split`
+first's whole blocks; `frontSlice long`), which `vg_aes_gcm_seal_split`
 seals fastest from its first slice. Only `rax`, `r10` and `r11` change; on
 512-bit registers (`long`) a text shorter than 256 bytes leaves after the
 first comparison. -/
-def frontTest (long fill : Bool) : Prog isa :=
-  if long then .seq (.block (frontLen 256)) (.ite .b (.block []) (frontCore long fill)) else frontCore long fill
+def frontTest (long : Bool) : Prog isa :=
+  if long then .seq (.block (frontLen 256)) (.ite .b (.block []) (frontCore long)) else frontCore long
 
 /-- `ctx` and `rounds` kept in `work` (where `splitCtx` reads them), the first
 descriptor in `r10`, and `ZF` if there is one slice. -/
@@ -407,10 +404,10 @@ def frontFast (splitFn : Fn) : Prog isa :=
         (.frame (.push [.rax, .r10, .r11, .rdi, .rsi]) (.seq (.block splitCtx) (.call splitFn.name splitFn.code))
           (.pop .rax 5))))
 
-/-- `frontFast splitFn` if `frontTest long fill` sets `ZF`, and otherwise `rest`
+/-- `frontFast splitFn` if `frontTest long` sets `ZF`, and otherwise `rest`
 (`sealGather`). -/
-def withFront (long fill : Bool) (splitFn : Fn) (rest : Prog isa) : Prog isa :=
-  .seq (frontTest long fill) (.ite .e (frontFast splitFn) rest)
+def withFront (long : Bool) (splitFn : Fn) (rest : Prog isa) : Prog isa :=
+  .seq (frontTest long) (.ite .e (frontFast splitFn) rest)
 
 /-! ## A longer text: the streaming functions -/
 

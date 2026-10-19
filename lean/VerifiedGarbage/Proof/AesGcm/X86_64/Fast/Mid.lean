@@ -113,10 +113,11 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) K.rd K.wr (by rw [K.mem]; exact Frame.refl _ _)
 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
-theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
+theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {pre : Prog isa}
+    {qf : Nat → Nat → Nat} (hpre : PreOk CtxMode.prepared pre qf)
     {ks : Prog isa} (hks : KsOk ks) {fin : Prog isa} (hfin : FinOk CtxMode.prepared fin) {other : Prog isa}
     (ho : MidOk CtxMode.prepared other) :
-    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn ks fin other any) := by
+    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
   intro s₀ s₁ Ctx W SP Np A D S T' nl al n sl C X kM E hNp hnl hal
   unfold Impl.AesGcm.X86_64.Fast.sel
   refine WP.seq (WP.mono (condE_ok C.toOneCtx E.toOneEntry hnl hal) fun s₂ ⟨hz, E₂, K⟩ => ?_)
@@ -124,7 +125,7 @@ theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T :
   refine WP.ite (decide ¬IsFast nl al n any) (eval_e hz) (fun _ => ho C X kM S₂ hNp hnl hal) fun h => ?_
   obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
-  exact splitRun_of_midB T (fbody_ok hF hks B hfin) C X kM S₂ hal
+  exact splitRun_of_pre hpre (fbody_ok hF hks B hfin) C X kM S₂ hal
     (aad_mid hF C.toOneCtx X S₂.toOneEntry hNp hnl hal (by omega))
 
 end VG.Proof.AesGcm.X86_64.Fast

@@ -100,7 +100,7 @@ def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
-    v.stitch.any (·.name.short), v.stitch.any (·.name.fin)⟩
+    v.stitch.any (·.name.short), v.stitch.any (·.name.fin), v.stitch.any (·.name.onePass)⟩
 
 /-- Prepared-context versions of each named interleaved loop (encrypting any
 number of blocks from 16 on if `fullR`). -/
@@ -209,19 +209,6 @@ faster on Zen 3, with AES-NI and AVX). -/
 def tlsLong (v : GcmVariant) : Bool :=
   match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
   | some .vaesAvx512 => true
-  | _ => false
-
-/-- Whether `vg_aes_gcm_seal_gather_prepared` leaves to its other paths a TLS
-record of a multiple of 16 blocks whose last block the first slice starts
-and the second fills (`frontTest`'s `fill`): on 256-bit registers, whose
-`seal_split` seals the first slice's whole blocks in groups of 16 and then
-that block alone. Up to 1024 bytes the gathering, which seals blocks in
-whole groups, is faster (a 1024-byte TLS record, of a 1023-byte payload:
-31–36%); from 2048 bytes on the caller seals the first slice up to its last
-whole group by `seal_split` itself. -/
-def tlsFill (v : GcmVariant) : Bool :=
-  match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
-  | some .vaes => true
   | _ => false
 
 theorem sealCode_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :

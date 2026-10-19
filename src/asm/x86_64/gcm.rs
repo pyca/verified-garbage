@@ -37437,11 +37437,6 @@ shr rax, 8
 cmp r10, 256
 cmovae rax, r11
 or r11, rax
-mov rax, QWORD PTR [rsp+32]
-and r10, 15
-test rax, rax
-cmovne r10, r11
-or r11, r10
 jmp 21f
 20:
 21:
@@ -63287,9 +63282,17 @@ jmp 27f
 26:
 27:
 mov rax, QWORD PTR [r15+192]
+shr rax, 8
+sub rax, 1
+mov rcx, QWORD PTR [r15+208]
+shr rcx, 8
+sub rcx, 1
+cmp rax, rcx
+jb 213f
+mov rax, QWORD PTR [r15+192]
 shr rax, 4
 test rax, rax
-je 213f
+je 215f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -63309,9 +63312,9 @@ call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul}
 pop rax
 pop rax
 pop rax
-jmp 214f
-213:
-214:
+jmp 216f
+215:
+216:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -63321,17 +63324,17 @@ add rsi, rax
 mov rdi, QWORD PTR [r15+200]
 add rdi, rax
 test rcx, rcx
-je 215f
+je 217f
 mov r10d, 0
-217:
+219:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 217b
-jmp 216f
-215:
-216:
+jne 219b
+jmp 218f
+217:
+218:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -63342,15 +63345,1123 @@ sub rcx, rax
 mov QWORD PTR [r15+208], rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
+jmp 214f
+213:
+mov rax, QWORD PTR [r15+192]
+mov rcx, rax
+shr rax, 8
+shl rax, 8
+sub rcx, rax
+mov rsi, QWORD PTR [r15+224]
+add rsi, rax
+mov rdi, QWORD PTR [r15+200]
+add rdi, rax
+mov r10d, 0
+mov r8, rcx
+shr r8, 6
+shl r8, 6
+cmp r8, 0
+je 220f
+222:
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
+movdqu xmm2, XMMWORD PTR [rsi+r10*1+32]
+movdqu xmm3, XMMWORD PTR [rsi+r10*1+48]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
+movdqu XMMWORD PTR [rdi+r10*1+32], xmm2
+movdqu XMMWORD PTR [rdi+r10*1+48], xmm3
+add r10, 64
+cmp r10, r8
+jne 222b
+jmp 221f
+220:
+221:
+mov r8, rcx
+shr r8, 4
+shl r8, 4
+cmp r10, r8
+je 223f
+225:
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+add r10, 16
+cmp r10, r8
+jne 225b
+jmp 224f
+223:
+224:
+cmp r10, rcx
+je 226f
+cmp rcx, 16
+jb 228f
+mov r10, rcx
+sub r10, 16
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+jmp 229f
+228:
+230:
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
+jne 230b
+229:
+jmp 227f
+226:
+227:
+mov rdi, r13
+mov rsi, QWORD PTR [r15+176]
+mov rdx, r14
+add rdx, 48
+mov rcx, r14
+add rcx, 16
+mov r8, QWORD PTR [r15+224]
+mov r9, QWORD PTR [r15+192]
+shr r9, 8
+shl r9, 4
+mov r10, QWORD PTR [r15+200]
+mov rbx, r10
+mov rbp, QWORD PTR [r15+208]
+shr rbp, 8
+shl rbp, 4
+sub rbp, r9
+mov r11, r15
+add r11, 448
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm0, XMMWORD PTR [rax]
+lea rax, [rip + {VG_GCM_CONSTS}]
+movdqu xmm1, XMMWORD PTR [rax+16]
+vinserti128 ymm0, ymm0, xmm0, 1
+vinserti128 ymm1, ymm1, xmm1, 1
+vmovdqu ymm3, YMMWORD PTR [rdi+480]
+vmovdqu ymm4, YMMWORD PTR [rdi+448]
+vmovdqu ymm5, YMMWORD PTR [rdi+416]
+vmovdqu ymm6, YMMWORD PTR [rdi+384]
+vmovdqu ymm15, YMMWORD PTR [rdi+352]
+vmovdqu ymm14, YMMWORD PTR [rdi+320]
+vmovdqu ymm13, YMMWORD PTR [rdi+288]
+vmovdqu ymm12, YMMWORD PTR [rdi+256]
+vmovdqu YMMWORD PTR [r11], ymm3
+vmovdqu YMMWORD PTR [r11+32], ymm4
+vmovdqu YMMWORD PTR [r11+64], ymm5
+vmovdqu YMMWORD PTR [r11+96], ymm6
+vmovdqu YMMWORD PTR [r11+128], ymm15
+vmovdqu YMMWORD PTR [r11+160], ymm14
+vmovdqu YMMWORD PTR [r11+192], ymm13
+vmovdqu YMMWORD PTR [r11+224], ymm12
+vmovdqu xmm2, XMMWORD PTR [rcx]
+vpshufb xmm2, xmm2, xmm0
+movabs rax, 1
+vmovq xmm15, rax
+vmovdqu xmm14, XMMWORD PTR [rdx]
+vpshufb xmm14, xmm14, xmm0
+vpaddd xmm13, xmm14, xmm15
+vinserti128 ymm14, ymm14, xmm13, 1
+movabs rax, 2
+vmovq xmm15, rax
+vinserti128 ymm15, ymm15, xmm15, 1
+sub r8, r10
+mov rax, rdx
+mov rdx, r10
+mov r10, rsi
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, r10
+add r10, rdi
+vpshufb ymm3, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm4, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm5, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm6, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vbroadcasti128 ymm13, XMMWORD PTR [rdi]
+vpxor ymm3, ymm3, ymm13
+vpxor ymm4, ymm4, ymm13
+vpxor ymm5, ymm5, ymm13
+vpxor ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+16]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+32]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+48]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+64]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+80]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+96]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+112]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+128]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+144]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 10
+je 231f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+160]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+176]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 12
+je 233f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+192]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+208]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+jmp 234f
+233:
+234:
+jmp 232f
+231:
+232:
+vbroadcasti128 ymm13, XMMWORD PTR [r10]
+vaesenclast ymm3, ymm3, ymm13
+vaesenclast ymm4, ymm4, ymm13
+vaesenclast ymm5, ymm5, ymm13
+vaesenclast ymm6, ymm6, ymm13
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1]
+vpxor ymm3, ymm3, ymm13
+vmovdqu YMMWORD PTR [rdx], ymm3
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+32]
+vpxor ymm4, ymm4, ymm13
+vmovdqu YMMWORD PTR [rdx+32], ymm4
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+64]
+vpxor ymm5, ymm5, ymm13
+vmovdqu YMMWORD PTR [rdx+64], ymm5
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+96]
+vpxor ymm6, ymm6, ymm13
+vmovdqu YMMWORD PTR [rdx+96], ymm6
+vpshufb ymm3, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm4, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm5, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm6, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vbroadcasti128 ymm13, XMMWORD PTR [rdi]
+vpxor ymm3, ymm3, ymm13
+vpxor ymm4, ymm4, ymm13
+vpxor ymm5, ymm5, ymm13
+vpxor ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+16]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+32]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+48]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+64]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+80]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+96]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+112]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+128]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+144]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 10
+je 235f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+160]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+176]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 12
+je 237f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+192]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+208]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+jmp 238f
+237:
+238:
+jmp 236f
+235:
+236:
+vbroadcasti128 ymm13, XMMWORD PTR [r10]
+vaesenclast ymm3, ymm3, ymm13
+vaesenclast ymm4, ymm4, ymm13
+vaesenclast ymm5, ymm5, ymm13
+vaesenclast ymm6, ymm6, ymm13
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+128]
+vpxor ymm3, ymm3, ymm13
+vmovdqu YMMWORD PTR [rdx+128], ymm3
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+160]
+vpxor ymm4, ymm4, ymm13
+vmovdqu YMMWORD PTR [rdx+160], ymm4
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+192]
+vpxor ymm5, ymm5, ymm13
+vmovdqu YMMWORD PTR [rdx+192], ymm5
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+224]
+vpxor ymm6, ymm6, ymm13
+vmovdqu YMMWORD PTR [rdx+224], ymm6
+cmp r9, 32
+jb 239f
+241:
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpshufb ymm3, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm4, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm5, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm6, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vbroadcasti128 ymm13, XMMWORD PTR [rdi]
+vpxor ymm3, ymm3, ymm13
+vpxor ymm4, ymm4, ymm13
+vpxor ymm5, ymm5, ymm13
+vpxor ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+16]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+32]
+vmovdqu ymm7, YMMWORD PTR [rdx+32]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+32]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+64]
+vmovdqu ymm7, YMMWORD PTR [rdx+64]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+48]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+96]
+vmovdqu ymm7, YMMWORD PTR [rdx+96]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+64]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+128]
+vmovdqu ymm7, YMMWORD PTR [rdx+128]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+80]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+96]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+112]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+128]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+144]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 10
+je 242f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+160]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+176]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 12
+je 244f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+192]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+208]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+jmp 245f
+244:
+245:
+jmp 243f
+242:
+243:
+vbroadcasti128 ymm13, XMMWORD PTR [r10]
+vaesenclast ymm3, ymm3, ymm13
+vaesenclast ymm4, ymm4, ymm13
+vaesenclast ymm5, ymm5, ymm13
+vaesenclast ymm6, ymm6, ymm13
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+256]
+vpxor ymm3, ymm3, ymm13
+vmovdqu YMMWORD PTR [rdx+256], ymm3
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+288]
+vpxor ymm4, ymm4, ymm13
+vmovdqu YMMWORD PTR [rdx+288], ymm4
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+320]
+vpxor ymm5, ymm5, ymm13
+vmovdqu YMMWORD PTR [rdx+320], ymm5
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+352]
+vpxor ymm6, ymm6, ymm13
+vmovdqu YMMWORD PTR [rdx+352], ymm6
+vpshufb ymm3, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm4, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm5, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm6, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vbroadcasti128 ymm13, XMMWORD PTR [rdi]
+vpxor ymm3, ymm3, ymm13
+vpxor ymm4, ymm4, ymm13
+vpxor ymm5, ymm5, ymm13
+vpxor ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+16]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+160]
+vmovdqu ymm7, YMMWORD PTR [rdx+160]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+32]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+192]
+vmovdqu ymm7, YMMWORD PTR [rdx+192]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+48]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+224]
+vmovdqu ymm7, YMMWORD PTR [rdx+224]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+64]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11]
+vmovdqu ymm7, YMMWORD PTR [rdx]
+vpshufb ymm7, ymm7, ymm0
+vpxor ymm7, ymm7, ymm2
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+80]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm7, ymm10, ymm8
+vextracti128 xmm11, ymm7, 1
+vpxor xmm2, xmm7, xmm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+96]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+112]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+128]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+144]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 10
+je 246f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+160]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+176]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 12
+je 248f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+192]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+208]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+jmp 249f
+248:
+249:
+jmp 247f
+246:
+247:
+vbroadcasti128 ymm13, XMMWORD PTR [r10]
+vaesenclast ymm3, ymm3, ymm13
+vaesenclast ymm4, ymm4, ymm13
+vaesenclast ymm5, ymm5, ymm13
+vaesenclast ymm6, ymm6, ymm13
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+384]
+vpxor ymm3, ymm3, ymm13
+vmovdqu YMMWORD PTR [rdx+384], ymm3
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+416]
+vpxor ymm4, ymm4, ymm13
+vmovdqu YMMWORD PTR [rdx+416], ymm4
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+448]
+vpxor ymm5, ymm5, ymm13
+vmovdqu YMMWORD PTR [rdx+448], ymm5
+vmovdqu ymm13, YMMWORD PTR [rdx+r8*1+480]
+vpxor ymm6, ymm6, ymm13
+vmovdqu YMMWORD PTR [rdx+480], ymm6
+add rdx, 256
+sub r9, 16
+cmp r9, 32
+jae 241b
+jmp 240f
+239:
+240:
+mov r8, rbx
+add r9, rbp
+cmp r9, 32
+jb 250f
+252:
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vpshufb ymm3, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm4, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm5, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm6, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vbroadcasti128 ymm13, XMMWORD PTR [rdi]
+vpxor ymm3, ymm3, ymm13
+vpxor ymm4, ymm4, ymm13
+vpxor ymm5, ymm5, ymm13
+vpxor ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+16]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+32]
+vmovdqu ymm7, YMMWORD PTR [rdx+32]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+32]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+64]
+vmovdqu ymm7, YMMWORD PTR [rdx+64]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+48]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+96]
+vmovdqu ymm7, YMMWORD PTR [rdx+96]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+64]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+128]
+vmovdqu ymm7, YMMWORD PTR [rdx+128]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+80]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+96]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+112]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+128]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+144]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 10
+je 253f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+160]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+176]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 12
+je 255f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+192]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+208]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+jmp 256f
+255:
+256:
+jmp 254f
+253:
+254:
+vbroadcasti128 ymm13, XMMWORD PTR [r10]
+vaesenclast ymm3, ymm3, ymm13
+vaesenclast ymm4, ymm4, ymm13
+vaesenclast ymm5, ymm5, ymm13
+vaesenclast ymm6, ymm6, ymm13
+vmovdqu ymm13, YMMWORD PTR [rdx+256]
+vpxor ymm3, ymm3, ymm13
+vmovdqu YMMWORD PTR [rdx+256], ymm3
+vmovdqu ymm13, YMMWORD PTR [rdx+288]
+vpxor ymm4, ymm4, ymm13
+vmovdqu YMMWORD PTR [rdx+288], ymm4
+vmovdqu ymm13, YMMWORD PTR [rdx+320]
+vpxor ymm5, ymm5, ymm13
+vmovdqu YMMWORD PTR [rdx+320], ymm5
+vmovdqu ymm13, YMMWORD PTR [rdx+352]
+vpxor ymm6, ymm6, ymm13
+vmovdqu YMMWORD PTR [rdx+352], ymm6
+vpshufb ymm3, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm4, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm5, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vpshufb ymm6, ymm14, ymm0
+vpaddd ymm14, ymm14, ymm15
+vbroadcasti128 ymm13, XMMWORD PTR [rdi]
+vpxor ymm3, ymm3, ymm13
+vpxor ymm4, ymm4, ymm13
+vpxor ymm5, ymm5, ymm13
+vpxor ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+16]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+160]
+vmovdqu ymm7, YMMWORD PTR [rdx+160]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+32]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+192]
+vmovdqu ymm7, YMMWORD PTR [rdx+192]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+48]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11+224]
+vmovdqu ymm7, YMMWORD PTR [rdx+224]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+64]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vmovdqu ymm12, YMMWORD PTR [r11]
+vmovdqu ymm7, YMMWORD PTR [rdx]
+vpshufb ymm7, ymm7, ymm0
+vpxor ymm7, ymm7, ymm2
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+80]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm7, ymm10, ymm8
+vextracti128 xmm11, ymm7, 1
+vpxor xmm2, xmm7, xmm11
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+96]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+112]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+128]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+144]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 10
+je 257f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+160]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+176]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+cmp rsi, 12
+je 259f
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+192]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+vbroadcasti128 ymm13, XMMWORD PTR [rdi+208]
+vaesenc ymm3, ymm3, ymm13
+vaesenc ymm4, ymm4, ymm13
+vaesenc ymm5, ymm5, ymm13
+vaesenc ymm6, ymm6, ymm13
+jmp 260f
+259:
+260:
+jmp 258f
+257:
+258:
+vbroadcasti128 ymm13, XMMWORD PTR [r10]
+vaesenclast ymm3, ymm3, ymm13
+vaesenclast ymm4, ymm4, ymm13
+vaesenclast ymm5, ymm5, ymm13
+vaesenclast ymm6, ymm6, ymm13
+vmovdqu ymm13, YMMWORD PTR [rdx+384]
+vpxor ymm3, ymm3, ymm13
+vmovdqu YMMWORD PTR [rdx+384], ymm3
+vmovdqu ymm13, YMMWORD PTR [rdx+416]
+vpxor ymm4, ymm4, ymm13
+vmovdqu YMMWORD PTR [rdx+416], ymm4
+vmovdqu ymm13, YMMWORD PTR [rdx+448]
+vpxor ymm5, ymm5, ymm13
+vmovdqu YMMWORD PTR [rdx+448], ymm5
+vmovdqu ymm13, YMMWORD PTR [rdx+480]
+vpxor ymm6, ymm6, ymm13
+vmovdqu YMMWORD PTR [rdx+480], ymm6
+add rdx, 256
+sub r9, 16
+cmp r9, 32
+jae 252b
+jmp 251f
+250:
+251:
+vpshufb xmm13, xmm14, xmm0
+vmovdqu XMMWORD PTR [rax], xmm13
+vpxor ymm8, ymm8, ymm8
+vpxor ymm9, ymm9, ymm9
+vpxor ymm10, ymm10, ymm10
+vmovdqu ymm12, YMMWORD PTR [r11+32]
+vmovdqu ymm7, YMMWORD PTR [rdx+32]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11+64]
+vmovdqu ymm7, YMMWORD PTR [rdx+64]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11+96]
+vmovdqu ymm7, YMMWORD PTR [rdx+96]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11+128]
+vmovdqu ymm7, YMMWORD PTR [rdx+128]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11+160]
+vmovdqu ymm7, YMMWORD PTR [rdx+160]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11+192]
+vmovdqu ymm7, YMMWORD PTR [rdx+192]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11+224]
+vmovdqu ymm7, YMMWORD PTR [rdx+224]
+vpshufb ymm7, ymm7, ymm0
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vmovdqu ymm12, YMMWORD PTR [r11]
+vmovdqu ymm7, YMMWORD PTR [rdx]
+vpshufb ymm7, ymm7, ymm0
+vpxor ymm7, ymm7, ymm2
+vpclmulqdq ymm11, ymm7, ymm12, 0
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 17
+vpxor ymm10, ymm10, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 1
+vpxor ymm9, ymm9, ymm11
+vpclmulqdq ymm11, ymm7, ymm12, 16
+vpxor ymm9, ymm9, ymm11
+vpsrldq ymm11, ymm9, 8
+vpxor ymm10, ymm10, ymm11
+vpslldq ymm9, ymm9, 8
+vpxor ymm8, ymm8, ymm9
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpclmulqdq ymm11, ymm8, ymm1, 16
+vpshufd ymm8, ymm8, 78
+vpxor ymm8, ymm8, ymm11
+vpxor ymm7, ymm10, ymm8
+vextracti128 xmm11, ymm7, 1
+vpxor xmm2, xmm7, xmm11
+vpshufb xmm2, xmm2, xmm0
+vmovdqu XMMWORD PTR [rcx], xmm2
+vzeroupper
+mov rax, QWORD PTR [r15+208]
+mov QWORD PTR [r15+216], rax
+mov rcx, rax
+shr rax, 8
+shl rax, 8
+sub rcx, rax
+mov QWORD PTR [r15+208], rcx
+add rax, QWORD PTR [r15+200]
+mov QWORD PTR [r15+200], rax
+214:
 mov rax, QWORD PTR [r15+208]
 cmp rax, 17
-jb 218f
+jb 261f
 push rax
 mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 220f
+je 263f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -63371,9 +64482,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 221f
-220:
-221:
+jmp 264f
+263:
+264:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
 mov r12, QWORD PTR [r15+200]
@@ -63387,7 +64498,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 222f
+je 265f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -63395,11 +64506,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 223f
-222:
-223:
+jmp 266f
+265:
+266:
 test rbp, rbp
-je 224f
+je 267f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -63418,17 +64529,17 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-226:
+269:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 226b
-jmp 225f
-224:
-225:
+jne 269b
+jmp 268f
+267:
+268:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -63440,7 +64551,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 227f
+je 270f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -63448,12 +64559,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 228f
-227:
-228:
+jmp 271f
+270:
+271:
 mov rcx, rbp
 test rcx, rcx
-je 229f
+je 272f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -63461,12 +64572,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-231:
+274:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 231b
+jne 274b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -63477,9 +64588,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 230f
-229:
-230:
+jmp 273f
+272:
+273:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -63518,8 +64629,8 @@ mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
 pop rax
-jmp 219f
-218:
+jmp 262f
+261:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
 lea rax, [rip + {VG_GCM_CONSTS}]
@@ -63569,7 +64680,7 @@ movdqu xmm8, XMMWORD PTR [rdi+144]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 cmp rsi, 10
-je 232f
+je 275f
 movdqu xmm8, XMMWORD PTR [rdi+160]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
@@ -63577,19 +64688,19 @@ movdqu xmm8, XMMWORD PTR [rdi+176]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 cmp rsi, 12
-je 234f
+je 277f
 movdqu xmm8, XMMWORD PTR [rdi+192]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
 movdqu xmm8, XMMWORD PTR [rdi+208]
 aesenc xmm5, xmm8
 aesenc xmm7, xmm8
-jmp 235f
-234:
-235:
-jmp 233f
-232:
-233:
+jmp 278f
+277:
+278:
+jmp 276f
+275:
+276:
 movdqu xmm8, XMMWORD PTR [r10]
 aesenclast xmm5, xmm8
 aesenclast xmm7, xmm8
@@ -63597,7 +64708,7 @@ movdqu XMMWORD PTR [r15+1024], xmm5
 movdqu XMMWORD PTR [r15+1040], xmm7
 mov rax, QWORD PTR [r15+208]
 test rax, rax
-je 236f
+je 279f
 pxor xmm7, xmm7
 movdqu XMMWORD PTR [r15+512], xmm7
 mov rdi, r15
@@ -63611,45 +64722,45 @@ mov r8, rcx
 shr r8, 4
 shl r8, 4
 cmp r8, 0
-je 238f
-240:
+je 281f
+283:
 vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 add r10, 16
 cmp r10, r8
-jne 240b
-jmp 239f
-238:
-239:
+jne 283b
+jmp 282f
+281:
+282:
 test rcx, 15
-je 241f
+je 284f
 test rcx, 12
-je 243f
+je 286f
 test rcx, 8
-je 245f
+je 288f
 mov rax, QWORD PTR [rsi+r10*1]
 xor rax, QWORD PTR [rdx+r10*1]
 mov QWORD PTR [rsi+r10*1], rax
 mov QWORD PTR [rdi+r10*1], rax
 add r10, 8
-jmp 246f
-245:
-246:
+jmp 289f
+288:
+289:
 test rcx, 4
-je 247f
+je 290f
 mov eax, DWORD PTR [rsi+r10*1]
 xor eax, DWORD PTR [rdx+r10*1]
 mov DWORD PTR [rsi+r10*1], eax
 mov DWORD PTR [rdi+r10*1], eax
 add r10, 4
-jmp 248f
-247:
-248:
+jmp 291f
+290:
+291:
 test rcx, 3
-je 249f
-251:
+je 292f
+294:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
 xor rax, r9
@@ -63657,13 +64768,13 @@ mov BYTE PTR [rsi+r10*1], al
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 251b
-jmp 250f
-249:
-250:
-jmp 244f
-243:
-252:
+jne 294b
+jmp 293f
+292:
+293:
+jmp 287f
+286:
+295:
 movzx eax, BYTE PTR [rsi+r10*1]
 movzx r9d, BYTE PTR [rdx+r10*1]
 xor rax, r9
@@ -63671,11 +64782,11 @@ mov BYTE PTR [rsi+r10*1], al
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 252b
-244:
-jmp 242f
-241:
-242:
+jne 295b
+287:
+jmp 285f
+284:
+285:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -63738,8 +64849,8 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-jmp 237f
-236:
+jmp 280f
+279:
 mov rax, QWORD PTR [r15+184]
 shl rax, 3
 bswap rax
@@ -63788,12 +64899,12 @@ vmovdqu xmm3, XMMWORD PTR [r15+1024]
 vpxor xmm2, xmm2, xmm3
 vmovdqu XMMWORD PTR [r15], xmm2
 vzeroupper
-237:
-219:
+280:
+262:
 jmp 25f
 24:
 cmp rbp, 12
-je 253f
+je 296f
 mov eax, 0
 mov QWORD PTR [r14], rax
 mov QWORD PTR [r14+8], rax
@@ -63807,7 +64918,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 255f
+je 298f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -63815,12 +64926,12 @@ add rsi, 0
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 256f
-255:
-256:
+jmp 299f
+298:
+299:
 mov rcx, rbp
 test rcx, rcx
-je 257f
+je 2100f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -63828,12 +64939,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-259:
+2102:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 259b
+jne 2102b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -63844,9 +64955,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 258f
-257:
-258:
+jmp 2101f
+2100:
+2101:
 mov ebx, 0
 mov rbp, QWORD PTR [r15+216]
 mov rax, rbx
@@ -63871,8 +64982,8 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 254f
-253:
+jmp 297f
+296:
 mov eax, DWORD PTR [r12]
 mov ecx, DWORD PTR [r12+4]
 mov edx, DWORD PTR [r12+8]
@@ -63881,7 +64992,7 @@ mov DWORD PTR [r14], eax
 mov DWORD PTR [r14+4], ecx
 mov DWORD PTR [r14+8], edx
 mov DWORD PTR [r14+12], esi
-254:
+297:
 mov eax, DWORD PTR [r14]
 mov ecx, DWORD PTR [r14+4]
 mov edx, DWORD PTR [r14+8]
@@ -63907,7 +65018,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 260f
+je 2103f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -63915,12 +65026,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 261f
-260:
-261:
+jmp 2104f
+2103:
+2104:
 mov rcx, rbp
 test rcx, rcx
-je 262f
+je 2105f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -63928,12 +65039,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-264:
+2107:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 264b
+jne 2107b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -63944,13 +65055,13 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 263f
-262:
-263:
+jmp 2106f
+2105:
+2106:
 mov rax, QWORD PTR [r15+192]
 shr rax, 4
 test rax, rax
-je 265f
+je 2108f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -63970,9 +65081,9 @@ call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul}
 pop rax
 pop rax
 pop rax
-jmp 266f
-265:
-266:
+jmp 2109f
+2108:
+2109:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -63982,17 +65093,17 @@ add rsi, rax
 mov rdi, QWORD PTR [r15+200]
 add rdi, rax
 test rcx, rcx
-je 267f
+je 2110f
 mov r10d, 0
-269:
+2112:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 269b
-jmp 268f
-267:
-268:
+jne 2112b
+jmp 2111f
+2110:
+2111:
 mov rax, QWORD PTR [r15+192]
 mov rcx, rax
 and rcx, 15
@@ -64008,7 +65119,7 @@ mov rax, QWORD PTR [r15+208]
 mov QWORD PTR [r15+192], rax
 shr rax, 4
 test rax, rax
-je 270f
+je 2113f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -64029,9 +65140,9 @@ mov QWORD PTR [r15+208], rcx
 sub rax, rcx
 add rax, QWORD PTR [r15+200]
 mov QWORD PTR [r15+200], rax
-jmp 271f
-270:
-271:
+jmp 2114f
+2113:
+2114:
 mov rax, QWORD PTR [r15+216]
 mov QWORD PTR [r15+192], rax
 mov r12, QWORD PTR [r15+200]
@@ -64045,7 +65156,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test r8, r8
-je 272f
+je 2115f
 mov rdi, r13
 mov rsi, QWORD PTR [r15+176]
 mov rdx, r14
@@ -64053,11 +65164,11 @@ add rdx, 48
 mov r9, r15
 add r9, 512
 call {vg_aes_ctr32_vaes}
-jmp 273f
-272:
-273:
+jmp 2116f
+2115:
+2116:
 test rbp, rbp
-je 274f
+je 2117f
 mov eax, 0
 mov QWORD PTR [r14+64], rax
 mov QWORD PTR [r14+72], rax
@@ -64076,17 +65187,17 @@ mov rsi, r14
 add rsi, 64
 mov rcx, rbp
 mov r10d, 0
-276:
+2119:
 movzx eax, BYTE PTR [rdi+r10*1]
 movzx r11d, BYTE PTR [rsi+r10*1]
 xor rax, r11
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 276b
-jmp 275f
-274:
-275:
+jne 2119b
+jmp 2118f
+2117:
+2118:
 mov r12, QWORD PTR [r15+200]
 mov rbp, QWORD PTR [r15+208]
 mov ebx, 0
@@ -64098,7 +65209,7 @@ and rbp, 15
 sub rax, rbp
 add r12, rax
 test rcx, rcx
-je 277f
+je 2120f
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -64106,12 +65217,12 @@ add rsi, 16
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 278f
-277:
-278:
+jmp 2121f
+2120:
+2121:
 mov rcx, rbp
 test rcx, rcx
-je 279f
+je 2122f
 mov eax, 0
 mov QWORD PTR [r15+96], rax
 mov QWORD PTR [r15+104], rax
@@ -64119,12 +65230,12 @@ mov rdi, r15
 add rdi, 96
 mov rsi, r12
 mov r10d, 0
-281:
+2124:
 movzx eax, BYTE PTR [rsi+r10*1]
 mov BYTE PTR [rdi+r10*1], al
 add r10, 1
 cmp r10, rcx
-jne 281b
+jne 2124b
 mov rdi, r13
 add rdi, 240
 mov rsi, r14
@@ -64135,9 +65246,9 @@ mov ecx, 1
 mov r8, r15
 add r8, 512
 call {vg_ghash_vpclmul}
-jmp 280f
-279:
-280:
+jmp 2123f
+2122:
+2123:
 mov rbx, QWORD PTR [r15+184]
 mov rbp, QWORD PTR [r15+192]
 mov rax, rbx
@@ -69080,7 +70191,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: crate::c
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
-/// A text of a TLS record (a 12-byte nonce, at most 16 bytes of additional data, and one or two slices, the second ending at most 16 bytes after the first's whole blocks) is sealed first, from the entry: the second slice, if any, is copied to the output after the first, and the text is encrypted with `vg_aes_gcm_seal_split_prepared_vaes_vpclmul` from the first slice where it is, unless the text is at least 256 bytes long and that slice shorter, or the text is a multiple of 256 bytes whose last block the first slice starts and the second fills.
+/// A text of a TLS record (a 12-byte nonce, at most 16 bytes of additional data, and one or two slices, the second ending at most 16 bytes after the first's whole blocks) is sealed first, from the entry: the second slice, if any, is copied to the output after the first, and the text is encrypted with `vg_aes_gcm_seal_split_prepared_vaes_vpclmul` from the first slice where it is, unless the text is at least 256 bytes long and that slice shorter.
 ///
 /// When the text is shorter than 16384 bytes, or its first slice holds all its whole blocks, this implementation takes a short path. If that slice holds all the whole blocks and at least 1024 bytes, it copies the slices after it to the output after its length and encrypts the text with `vg_aes_gcm_seal_split_prepared_vaes_vpclmul`, from the first slice where it is and the rest in the output; otherwise it copies all the slices to the output and encrypts the text there with `vg_aes_gcm_seal_prepared_vaes_vpclmul`. Otherwise, it runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul`.
 ///
@@ -69138,12 +70249,6 @@ shr rax, 8
 cmp r10, 256
 cmovae rax, r11
 or r11, rax
-mov rax, QWORD PTR [rsp+32]
-and rax, 255
-and r10, 15
-test rax, rax
-cmovne r10, r11
-or r11, r10
 jmp 21f
 20:
 21:
@@ -90498,11 +91603,6 @@ shr rax, 8
 cmp r10, 256
 cmovae rax, r11
 or r11, rax
-mov rax, QWORD PTR [rsp+32]
-and r10, 15
-test rax, rax
-cmovne r10, r11
-or r11, r10
 jmp 23f
 22:
 23:

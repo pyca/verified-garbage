@@ -105,16 +105,16 @@ whole blocks or calls, with `H'` and `H'²` from the prepared key context
 def tail (ks : Prog isa) : Prog isa :=
   .seq (.block SealSplit.fixTlen) (Short.finishP ks)
 
-/-- After the entry: `aad`, then `SealSplit.run`'s `prefix` (with `fTo`, the
-whole blocks at `src`), and `tail` if at most 16 bytes are left, `body`
-otherwise. -/
-def run (c : Callees) (fTo : Fn) (ks fin : Prog isa) : Prog isa :=
-  .seq aad (.seq (SealSplit.prefix fTo)
+/-- After the entry: `aad`, then `pre` (`SealSplit.run`'s `prefix`, or
+`SealSplit.prefixN`: the first whole blocks of the text), and `tail` if at
+most 16 bytes are left, `body` otherwise. -/
+def run (c : Callees) (pre ks fin : Prog isa) : Prog isa :=
+  .seq aad (.seq pre
     (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 17)])
       (.ite .b (tail ks) (SealSplit.body c fin))))
 
 /-- `cond any`, then this path, or `other`. -/
-def sel (c : Callees) (fTo : Fn) (ks fin : Prog isa) (other : Prog isa) (any : Bool := false) : Prog isa :=
-  .seq (cond any) (.ite .e other (run c fTo ks fin))
+def sel (c : Callees) (pre ks fin : Prog isa) (other : Prog isa) (any : Bool := false) : Prog isa :=
+  .seq (cond any) (.ite .e other (run c pre ks fin))
 
 end VG.Impl.AesGcm.X86_64.Fast

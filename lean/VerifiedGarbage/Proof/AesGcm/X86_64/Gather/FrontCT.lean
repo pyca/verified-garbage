@@ -37,9 +37,9 @@ theorem frontArgs_check : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block fro
 theorem ldSrc_check : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .r10 (.mem (at_ .rsp 8))]) hc).isSome =
     true := ⟨_, by taint_decide⟩
 
-theorem frontSlice_check (long fill : Bool) : ∃ hc, (taint.check (Taint.ofRegs [.r10, .rsp])
-    (.block (frontSlice long fill).tail) hc).isSome = true := by
-  cases long <;> cases fill <;>
+theorem frontSlice_check (long : Bool) : ∃ hc, (taint.check (Taint.ofRegs [.r10, .rsp])
+    (.block (frontSlice long).tail) hc).isSome = true := by
+  cases long <;>
     exact ⟨_, by
       simp only [frontSlice, List.cons_append, List.nil_append, List.tail, Bool.false_eq_true, ↓reduceIte, imm]
       taint_decide⟩
@@ -95,51 +95,51 @@ variable {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') 
 include hp hp' pb
 
 /-- The tests of `frontCore`, from two states `Same` as the entry states. -/
-theorem frontCore_eq2 (long fill : Bool) {σ₁ σ₂ : State} (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) (frontCore long fill) TT := by
+theorem frontCore_eq2 (long : Bool) {σ₁ σ₂ : State} (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) :
+    RelCT isa (Eq2 σ₁ σ₂) (frontCore long) TT := by
   have sp : ∀ {a b : State}, Same s₀ a → Same s₀' b → a.gpr .rsp = b.gpr .rsp := fun A B => by
     rw [same_rsp A, same_rsp B]; exact pb.rsp.symm
   unfold frontCore
   refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp] (by simp [sp S₁ S₂]) frontArgs_check)
     (fArgs_ok hp S₁) (fArgs_ok hp' S₂) fun υ₁ υ₂ ⟨U₁, cf₁', r11₁⟩ ⟨U₂, cf₂', r11₂⟩ => ?_
-  refine rel_seq ?_ (fMid_wp hp long fill U₁ cf₁' r11₁) (fMid_wp hp' long fill U₂ cf₂' r11₂)
+  refine rel_seq ?_ (fMid_wp hp long U₁ cf₁' r11₁) (fMid_wp hp' long U₂ cf₂' r11₂)
     fun _ _ _ _ => ChaCha20Poly1305.X86_64.Gather.rel_regs [] (by simp) fZero_check
   refine rel_ite (b := !decide ((stackArg s₀ 1 - 1#64).toNat < (2#64).toNat))
     (by simp only [eval, cf₁', Option.map_some]) (by simp only [eval, cf₂', Option.map_some, pb.a 1 (by decide)])
     (fun _ => rel_skip) fun _ => ?_
-  rw [show frontSlice long fill = [.mov .r10 (.mem (at_ .rsp 8))] ++ (frontSlice long fill).tail from rfl]
+  rw [show frontSlice long = [.mov .r10 (.mem (at_ .rsp 8))] ++ (frontSlice long).tail from rfl]
   refine rel_block_split (rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp] (by simp [sp U₁ U₂]) ldSrc_check)
     (ldSrc_ok hp U₁) (ldSrc_ok hp' U₂) fun ω₁ ω₂ ⟨W₁, r10₁⟩ ⟨W₂, r10₂⟩ => ?_)
   exact ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10, .rsp] (by simp [r10₁, r10₂, pb.src, sp W₁ W₂])
-    (frontSlice_check long fill)
+    (frontSlice_check long)
 
 /-- The test, from two states `Same` as the entry states. -/
-theorem frontTest_eq2 (long fill : Bool) {σ₁ σ₂ : State} (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) (frontTest long fill) TT := by
+theorem frontTest_eq2 (long : Bool) {σ₁ σ₂ : State} (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) :
+    RelCT isa (Eq2 σ₁ σ₂) (frontTest long) TT := by
   cases long
-  · simp only [frontTest, Bool.false_eq_true, ↓reduceIte]; exact frontCore_eq2 hp hp' pb false fill S₁ S₂
+  · simp only [frontTest, Bool.false_eq_true, ↓reduceIte]; exact frontCore_eq2 hp hp' pb false S₁ S₂
   simp only [frontTest, ↓reduceIte]
   refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp]
       (by simp [same_rsp S₁, same_rsp S₂, pb.rsp]) frontLen_check) (fLen_ok hp S₁) (fLen_ok hp' S₂)
     fun τ₁ τ₂ ⟨T₁, cf₁, _⟩ ⟨T₂, cf₂, _⟩ => ?_
   exact rel_ite (b := decide ((stackArg s₀ 3).toNat < (256#64).toNat))
     (by simp only [eval, cf₁]) (by simp only [eval, cf₂, pb.a 3 (by decide)]) (fun _ => rel_skip)
-    fun _ => frontCore_eq2 hp hp' pb true fill T₁ T₂
+    fun _ => frontCore_eq2 hp hp' pb true T₁ T₂
 
 /-- The test, in two runs from the entry states. -/
-theorem frontTest_rel (long fill : Bool) :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (frontTest long fill) fun s₁ s₂ =>
-      (Same s₀ s₁ ∧ s₁.zf = some (frontGo long fill s₀)) ∧ (Same s₀' s₂ ∧ s₂.zf = some (frontGo long fill s₀')) :=
+theorem frontTest_rel (long : Bool) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (frontTest long) fun s₁ s₂ =>
+      (Same s₀ s₁ ∧ s₁.zf = some (frontGo long s₀)) ∧ (Same s₀' s₂ ∧ s₂.zf = some (frontGo long s₀')) :=
   pstep (F₁ := (· = s₀)) (F₂ := (· = s₀'))
     (rel_of_eq2 fun _ _ h => by
-      obtain ⟨rfl, rfl⟩ := h; exact frontTest_eq2 hp hp' pb long fill (Same.refl _) (Same.refl _))
-    (fun _ h => by rw [h]; exact frontTest_wp hp long fill) (fun _ h => by rw [h]; exact frontTest_wp hp' long fill)
+      obtain ⟨rfl, rfl⟩ := h; exact frontTest_eq2 hp hp' pb long (Same.refl _) (Same.refl _))
+    (fun _ h => by rw [h]; exact frontTest_wp hp long) (fun _ h => by rw [h]; exact frontTest_wp hp' long)
 
 
 /-- The path of a TLS record's text, from two states `Same` as the entry states. -/
-theorem frontFast_eq2 (S : SplitFn M) {long fill : Bool} (hg : frontGo long fill s₀ = true) {σ₁ σ₂ : State}
+theorem frontFast_eq2 (S : SplitFn M) {long : Bool} (hg : frontGo long s₀ = true) {σ₁ σ₂ : State}
     (S₁ : Same s₀ σ₁) (S₂ : Same s₀' σ₂) : RelCT isa (Eq2 σ₁ σ₂) (frontFast S.fn) TT := by
-  have hg' : frontGo long fill s₀' = true := by rw [pb.eFront]; exact hg
+  have hg' : frontGo long s₀' = true := by rw [pb.eFront]; exact hg
   obtain ⟨hn, hcnt, hsub⟩ := front_facts hp hg
   obtain ⟨hn', hcnt', hsub'⟩ := front_facts hp' hg'
   have ec := pb.cnt
