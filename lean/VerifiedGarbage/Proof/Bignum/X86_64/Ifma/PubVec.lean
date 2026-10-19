@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -173,13 +174,13 @@ theorem OutN.one (hl : PubOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l 
   obtain rfl : p = 0 := by omega
   simpa only [Nat.mul_zero, Nat.zero_add] using hx
 
-/-- `ammCore` with `r8`, `r9` at offsets `a`, `b` of `B = rbx`, into `A`. -/
+/-- `ammMul` with `r8`, `r9` at offsets `a`, `b` of `B = rbx`, into `A`. -/
 theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gpr .rbx = B)
     (r8 : s.gpr .r8 = off B a) (r9 : s.gpr .r9 = off B b) (r11 : s.gpr .r11 = off B (oA l))
     (hs : Scr s B (48 * (l.W + 2))) (hm : Mod l s.mem B M k)
     (ha : a + l.NB ≤ 48 * (l.W + 2)) (hb : b + l.NB ≤ 48 * (l.W + 2))
     (hla : ∀ j < l.L, limb l s.mem B a j < 2 ^ 52) (hlb : ∀ j < l.L, limb l s.mem B b j < 2 ^ 52) :
-    WP isa (ammCore l) s fun s' =>
+    WP isa (ammMul l) s fun s' =>
       (∀ j < l.L, limb l s'.mem B (oA l) j < 2 ^ 52) ∧
       (val52 l s.mem B a < 2 * M → val52 l s.mem B b < 2 * M →
         val52 l s'.mem B (oA l) < 2 * M ∧
@@ -192,7 +193,7 @@ theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gp
   have hp : ∀ p < l.nl, p = 0 := fun p hp => by omega
   have h0 : ∀ c, l.D * 0 + c = c := fun c => by rw [Nat.mul_zero, Nat.zero_add]
   have hM : val52 l s.mem B oM = M := hm.val
-  refine WP.mono (ammCoreSpecN_ok hl.amm (ammCore_core hl.amm) (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
+  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl.amm) (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega) (by omega)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega)
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega)
@@ -205,7 +206,7 @@ theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gp
   simp only [h0, hM] at v
   exact ⟨v.1, fun hA hB' => v.2 hA hB' hm.big, OutN.one hl hf, hg, h12, hrd, hwr, hx⟩
 
-/-- `ammCore`'s operands. -/
+/-- `ammMul`'s operands. -/
 theorem setOps_ok {s : State} {B : Addr} {o a b : Nat} (hB : s.gpr .rbx = B) (ho : o < 2 ^ 31) (ha : a < 2 ^ 31)
     (hb : b < 2 ^ 31) :
     WP isa (.block (setOps o a b)) s fun s' =>
@@ -471,7 +472,7 @@ theorem limbN_lt64 (v j : Nat) : (BitVec.ofNat 64 (limbN v j)).toNat < 2 ^ 52 :=
 /-- One multiplication of the loop. -/
 theorem iter_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} (e : Env l t₀ B H X M k)
     (h : Inv l t₀ B H X M R0 c t) (hc : c < 20) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs [sel l, ammCore l,
+    WP isa (VG.Impl.Bignum.X86_64.seqs [sel l, ammMul l,
         .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) t fun t' =>
       Inv l t₀ B H X M R0 (c + 1) t' ∧ t'.zf = some (decide (c + 1 = 20)) := by
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := hl.area
@@ -552,7 +553,7 @@ theorem iter_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} 
 /-- The loop, from multiplication `c`. -/
 theorem loop_ok (hl : PubOk l) {t₀ : State} {B H X : Addr} {M k R0 : Nat} (e : Env l t₀ B H X M k) :
     ∀ c t, c < 20 → Inv l t₀ B H X M R0 c t →
-      WP isa (.loop (VG.Impl.Bignum.X86_64.seqs [sel l, ammCore l,
+      WP isa (.loop (VG.Impl.Bignum.X86_64.seqs [sel l, ammMul l,
         .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) .ne) t (Inv l t₀ B H X M R0 20) := by
   intro c t hc hI
   refine WP.loop (M := isa) (c := .ne) (Q := Inv l t₀ B H X M R0 20)
