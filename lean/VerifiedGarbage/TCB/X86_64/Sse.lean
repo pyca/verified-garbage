@@ -21,7 +21,7 @@ inductive XBinOp
   | pshufb | sha256msg1 | sha256msg2 | sha1msg1 | sha1msg2 | sha1nexte
   | pand | pandn | paddq | psubq | pmuludq
   | paddw | psubw | psubd | pmullw | pmulhw | packssdw | punpcklwd | punpckhwd
-  | pmaddwd | pmulhrsw | pcmpgtw
+  | pmaddwd | pmulhrsw | pcmpgtw | packsswb
   | aesenc | aesenclast | aesdec | aesdeclast | aesimc
   | pcmpeqd
   deriving DecidableEq, Repr
@@ -87,6 +87,12 @@ doubleword as a signed word, `7FFFH` if it is greater than 32767 and `8000H`
 if it is less than -32768. -/
 def satSignedWord (x : BitVec 32) : BitVec 16 :=
   if 32767 < x.toInt then 0x7fff else if x.toInt < -32768 then 0x8000 else x.setWidth 16
+
+/-- SDM Vol. 2, "PACKSSWB", `SaturateSignedWordToSignedByte`: the word as a
+signed byte, `7FH` if it is greater than 127 and `80H` if it is less than
+-128. -/
+def satSignedByte (x : BitVec 16) : BitVec 8 :=
+  if 127 < x.toInt then 0x7f else if x.toInt < -128 then 0x80 else x.setWidth 8
 
 /-- Byte `i` of `x`: bits `8i+7:8i`. -/
 def byte (x : BitVec 128) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
@@ -328,6 +334,11 @@ bits above 127 unmodified; no flags are affected):
   `DEST[79:64] := SaturateSignedDwordToSignedWord (SRC[31:0])`, …
   `DEST[127:112] := SaturateSignedDwordToSignedWord (SRC[127:96])` (see
   `satSignedWord`).
+* PACKSSWB: `DEST[7:0] := SaturateSignedWordToSignedByte (DEST[15:0])`, …
+  `DEST[63:56] := SaturateSignedWordToSignedByte (DEST[127:112])`;
+  `DEST[71:64] := SaturateSignedWordToSignedByte (SRC[15:0])`, …
+  `DEST[127:120] := SaturateSignedWordToSignedByte (SRC[127:112])` (see
+  `satSignedByte`).
 * PUNPCKLWD (`INTERLEAVE_WORDS`): `DEST[15:0] := SRC1[15:0]; DEST[31:16] :=
   SRC2[15:0]; DEST[47:32] := SRC1[31:16]; DEST[63:48] := SRC2[31:16];
   DEST[79:64] := SRC1[47:32]; DEST[95:80] := SRC2[47:32]; DEST[111:96] :=
@@ -395,6 +406,8 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .pcmpgtw, a, b => ofWords fun i => if (word b i).slt (word a i) then 0xFFFF else 0
   | .packssdw, a, b =>
     ofWords fun i => if i < 4 then satSignedWord (dword a i) else satSignedWord (dword b (i - 4))
+  | .packsswb, a, b =>
+    ofBytes fun i => if i < 8 then satSignedByte (word a i) else satSignedByte (word b (i - 8))
   | .punpcklwd, a, b => ofWords fun i => if i % 2 = 0 then word a (i / 2) else word b (i / 2)
   | .punpckhwd, a, b =>
     ofWords fun i => if i % 2 = 0 then word a (4 + i / 2) else word b (4 + i / 2)

@@ -23,7 +23,7 @@ inductive VBinOp
   | vpaddd | vpaddq | vpxor | vpor | vpand | vpandn | vpshufb | vpmuludq
   | vpunpckldq | vpunpckhdq | vpunpcklqdq | vpunpckhqdq
   | vpaddw | vpsubw | vpsubd | vpmullw | vpmulhw | vpackssdw | vpunpcklwd | vpunpckhwd
-  | vpmaddwd | vpmulhrsw | vpcmpgtw
+  | vpmaddwd | vpmulhrsw | vpcmpgtw | vpacksswb
   | vpsubq
   | vaesenc | vaesenclast | vaesdec | vaesdeclast
   | vpcmpeqd
@@ -124,12 +124,13 @@ into `DEST[127:0]`, then of `SRC1[255:128]` and `SRC2[255:128]` into
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 VPADDD, VPADDQ, VPXOR, VPOR, VPAND, VPANDN, VPSHUFB, VPMULUDQ,
 VPUNPCK{L,H}{DQ,QDQ}, VPADDW, VPSUBW, VPSUBD, VPMULLW, VPMULHW, VPACKSSDW,
-VPUNPCK{L,H}WD, VPSUBQ, VPCMPEQD, VPMADDWD, VPMULHRSW and VPCMPGTW are, lane by lane, PADDD, PADDQ, PXOR,
+VPUNPCK{L,H}WD, VPSUBQ, VPCMPEQD, VPMADDWD, VPMULHRSW, VPCMPGTW and VPACKSSWB are, lane by lane, PADDD, PADDQ, PXOR,
 POR, PAND, PANDN, PSHUFB, PMULUDQ, PUNPCK{L,H}{DQ,QDQ}, PADDW, PSUBW, PSUBD,
-PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ, PCMPEQD, PMADDWD, PMULHRSW and PCMPGTW
+PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ, PCMPEQD, PMADDWD, PMULHRSW, PCMPGTW and
+PACKSSWB
 (SDM Vol. 2, each
 instruction's "VEX.256 encoded version" pseudocode, with `SRC1` in place of
-the destination; VPACKSSDW and VPUNPCK{L,H}WD pack and interleave within
+the destination; VPACKSSDW, VPACKSSWB and VPUNPCK{L,H}WD pack and interleave within
 each 128-bit lane). -/
 def VBinOp.sse : VBinOp → XBinOp
   | .vpaddd => .paddd | .vpaddq => .paddq | .vpxor => .pxor | .vpor => .por
@@ -141,7 +142,7 @@ def VBinOp.sse : VBinOp → XBinOp
   | .vpunpckhwd => .punpckhwd | .vpsubq => .psubq
   | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vaesdec => .aesdec
   | .vaesdeclast => .aesdeclast | .vpcmpeqd => .pcmpeqd | .vpmaddwd => .pmaddwd
-  | .vpmulhrsw => .pmulhrsw | .vpcmpgtw => .pcmpgtw
+  | .vpmulhrsw => .pmulhrsw | .vpcmpgtw => .pcmpgtw | .vpacksswb => .packsswb
 
 /-! ### Vector AES and carry-less multiplication
 

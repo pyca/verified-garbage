@@ -99,6 +99,7 @@ def XBinOp.name : XBinOp → String
   | .aesenc => "aesenc" | .aesenclast => "aesenclast" | .aesdec => "aesdec"
   | .aesdeclast => "aesdeclast" | .aesimc => "aesimc" | .pcmpeqd => "pcmpeqd"
   | .pmaddwd => "pmaddwd" | .pmulhrsw => "pmulhrsw" | .pcmpgtw => "pcmpgtw"
+  | .packsswb => "packsswb"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
@@ -127,7 +128,7 @@ def VBinOp.name : VBinOp → String
   | .vpunpckhwd => "vpunpckhwd" | .vpsubq => "vpsubq"
   | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vaesdec => "vaesdec"
   | .vaesdeclast => "vaesdeclast" | .vpcmpeqd => "vpcmpeqd" | .vpmaddwd => "vpmaddwd"
-  | .vpmulhrsw => "vpmulhrsw" | .vpcmpgtw => "vpcmpgtw"
+  | .vpmulhrsw => "vpmulhrsw" | .vpcmpgtw => "vpcmpgtw" | .vpacksswb => "vpacksswb"
 
 def VVarOp.name : VVarOp → String
   | .vpsllvd => "vpsllvd" | .vpsrlvd => "vpsrlvd" | .vpsllvq => "vpsllvq" | .vpsrlvq => "vpsrlvq"
