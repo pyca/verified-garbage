@@ -9,6 +9,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # Translate native-array byte frames to the shared RSA workspace -/
 

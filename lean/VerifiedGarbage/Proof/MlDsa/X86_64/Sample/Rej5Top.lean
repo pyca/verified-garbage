@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
 
 @[expose] public section
 

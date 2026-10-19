@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
 
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedByte
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedByte
 import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega

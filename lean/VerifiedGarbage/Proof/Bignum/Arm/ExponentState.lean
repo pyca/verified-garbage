@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExponentByte
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Impl.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckMath
 
 /-! # The public buffer and prefix invariants of exponent validation -/
 

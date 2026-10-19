@@ -198,6 +198,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.WideMath
 import VerifiedGarbage.Proof.Bignum.Arm.WideValue
 import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
 import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.Math

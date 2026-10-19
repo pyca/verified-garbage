@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.AesXts.Alpha
 import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
 import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Common
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith

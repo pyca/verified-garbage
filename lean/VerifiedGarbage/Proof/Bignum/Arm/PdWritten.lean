@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdChecked
 import VerifiedGarbage.Proof.Bignum.PublicWritten
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.Arm.PublicWritten
 
 /-! # The packed-key result implies the shared, modulus-quantified RSA postcondition -/
 

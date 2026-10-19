@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P192.X86
-import VerifiedGarbage.Proof.Ecdh.X86.P192.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86.P192.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Data.Int.ModEq
@@ -58,6 +58,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDH over P-192 (SP 800-56A) on x86 (32-bit)

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
-import VerifiedGarbage.Proof.Dsa.Digest
+public import VerifiedGarbage.Proof.Dsa.Digest
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -56,6 +56,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Encoding a DSA arithmetic result into its separate output buffer -/
 

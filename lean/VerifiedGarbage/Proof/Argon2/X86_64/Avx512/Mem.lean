@@ -7,8 +7,8 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
 import VerifiedGarbage.Proof.Argon2.Permutation
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
 import VerifiedGarbage.Proof.Argon2.X86_64.Mix
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegSetOrder

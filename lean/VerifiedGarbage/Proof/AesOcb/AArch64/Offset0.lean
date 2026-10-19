@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
 import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
-import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
+public import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Dbl32
 import VerifiedGarbage.Proof.Cmac.Spec

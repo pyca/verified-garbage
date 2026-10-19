@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands

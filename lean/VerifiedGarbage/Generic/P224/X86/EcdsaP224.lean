@@ -57,6 +57,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Impl.Ecdsa.P224.X86
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDSA over P-224 (FIPS 186-5) on x86 (32-bit)

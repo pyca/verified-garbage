@@ -1,11 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Hmac.Common
+public import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Spec.Pbkdf2
 public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -19,6 +19,12 @@ import no target's ISA or proofs.
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Spec.Sha1
+import VerifiedGarbage.Spec.Md5
+import VerifiedGarbage.Spec.Sha512
 -/
 
 @[expose] public section

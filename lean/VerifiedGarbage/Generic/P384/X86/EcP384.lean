@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P384.X86
-import VerifiedGarbage.Proof.EcKey.X86.P384.Verified
+public import VerifiedGarbage.Proof.EcKey.X86.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.P384.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Data.Int.ModEq
@@ -58,6 +58,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # P-384 public keys (FIPS 186-5 §A.2) on x86 (32-bit)

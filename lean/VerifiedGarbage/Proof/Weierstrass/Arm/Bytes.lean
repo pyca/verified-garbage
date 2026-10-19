@@ -15,10 +15,10 @@ import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Mont.Arm.Row
 import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
 

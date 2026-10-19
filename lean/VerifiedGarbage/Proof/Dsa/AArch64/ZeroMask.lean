@@ -63,7 +63,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.Arithmetic
 import VerifiedGarbage.Proof.Dsa.AArch64.Load
-import VerifiedGarbage.Proof.Dsa.AArch64.Masks
+public import VerifiedGarbage.Proof.Dsa.AArch64.Masks
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.Setup
@@ -79,6 +79,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Branch-free zero and equality masks -/
 @[expose] public section

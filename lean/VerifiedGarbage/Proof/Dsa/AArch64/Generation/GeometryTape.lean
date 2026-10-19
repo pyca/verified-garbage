@@ -66,7 +66,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceSlice
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceSlice
 import VerifiedGarbage.Proof.Dsa.AArch64.Load
 import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.Setup

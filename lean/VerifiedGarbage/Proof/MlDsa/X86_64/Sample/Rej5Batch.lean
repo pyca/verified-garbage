@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Parse
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
 
 @[expose] public section
 

@@ -63,7 +63,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Arithmetic
 import VerifiedGarbage.Proof.Dsa.AArch64.Load
 import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
-import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoop
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoop
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceRead
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
 import VerifiedGarbage.Proof.Dsa.AArch64.Setup
@@ -76,6 +76,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Initial source and count for DSA modular reduction -/
 

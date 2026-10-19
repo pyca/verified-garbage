@@ -1,9 +1,9 @@
 module
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
 
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
 import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub

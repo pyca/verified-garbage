@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # Export a modulus into a zero-padded full-product buffer -/
 

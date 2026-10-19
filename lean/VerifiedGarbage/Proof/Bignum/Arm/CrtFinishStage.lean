@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
-import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace

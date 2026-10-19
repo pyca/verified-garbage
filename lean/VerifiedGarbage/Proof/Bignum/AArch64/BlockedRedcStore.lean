@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Impl.Bignum.AArch64
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
 import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.Reduce
@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section
 

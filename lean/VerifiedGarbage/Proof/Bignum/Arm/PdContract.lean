@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PdFnCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdFn
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
 
 /-! # ARMv7 precomputed public RSA satisfies the shared API contract -/
 

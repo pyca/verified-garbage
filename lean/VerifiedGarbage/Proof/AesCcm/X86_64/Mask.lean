@@ -9,8 +9,8 @@ public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

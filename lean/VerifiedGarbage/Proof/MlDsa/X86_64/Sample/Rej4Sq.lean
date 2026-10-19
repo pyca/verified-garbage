@@ -2,7 +2,7 @@ module
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha3.X86_64.Round
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Offset

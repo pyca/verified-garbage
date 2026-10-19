@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Copy
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Copy
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout

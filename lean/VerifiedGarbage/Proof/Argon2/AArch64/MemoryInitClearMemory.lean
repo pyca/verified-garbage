@@ -7,9 +7,9 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
 import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

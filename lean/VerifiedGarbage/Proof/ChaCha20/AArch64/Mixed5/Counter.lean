@@ -9,7 +9,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop

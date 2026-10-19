@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.X86
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP256r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Framework.TaintSum
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -60,6 +60,10 @@ import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over brainpoolP256r1 (FIPS 186-5) on x86 (32-bit)

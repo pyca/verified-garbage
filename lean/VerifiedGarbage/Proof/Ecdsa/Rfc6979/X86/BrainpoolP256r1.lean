@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Contract
@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Mont.X86.Csub
@@ -95,6 +95,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 meta import VerifiedGarbage.Proof.X25519.Field
 meta import VerifiedGarbage.Proof.X25519.X86.Arith
 meta import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): brainpoolP256r1

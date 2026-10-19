@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.X86
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Data.Int.ModEq
@@ -64,6 +64,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over brainpoolP512r1 (FIPS 186-5) on x86 (32-bit)

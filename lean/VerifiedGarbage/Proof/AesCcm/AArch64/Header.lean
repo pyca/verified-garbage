@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
 import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
 import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
 import VerifiedGarbage.Proof.AesCcm.BytesAt

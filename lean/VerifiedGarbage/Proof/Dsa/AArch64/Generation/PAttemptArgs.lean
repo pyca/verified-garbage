@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
@@ -54,7 +54,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashFrame
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Digest

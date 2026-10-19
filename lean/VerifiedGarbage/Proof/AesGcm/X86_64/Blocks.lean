@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 public import VerifiedGarbage.Impl.AesGcm.X86_64
 public import VerifiedGarbage.Proof.Framework.Block
 public import Mathlib.Data.List.Induction
@@ -34,6 +34,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-!
 # AES-GCM on x86-64: small blocks shared by the pieces

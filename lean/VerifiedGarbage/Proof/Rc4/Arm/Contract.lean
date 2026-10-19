@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc4.Scratch
+public import VerifiedGarbage.Proof.Rc4.Scratch
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.Arm.Isa
 

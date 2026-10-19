@@ -7,7 +7,7 @@ public import Mathlib.Tactic.SplitIfs
 public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

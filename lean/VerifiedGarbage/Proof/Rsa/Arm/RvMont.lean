@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # `vg_rsa_recover_primes` on ARMv7: Montgomery multiplication's working space
 

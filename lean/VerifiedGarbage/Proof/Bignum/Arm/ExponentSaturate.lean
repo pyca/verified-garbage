@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
 import VerifiedGarbage.Proof.Bignum.ExponentWords
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentWords
 
 /-! # Saturate only the public exponent's upper word -/
 

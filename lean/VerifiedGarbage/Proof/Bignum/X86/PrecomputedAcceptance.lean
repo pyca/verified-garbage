@@ -3,7 +3,7 @@ public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
-import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

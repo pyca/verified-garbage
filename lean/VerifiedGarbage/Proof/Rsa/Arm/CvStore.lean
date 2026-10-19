@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
 import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # `vg_rsa_crt_values` on ARMv7: an array written out under the mask (`store_ok`) -/
 

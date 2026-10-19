@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Aes.Circuit
 public import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+public import VerifiedGarbage.Impl.Aes.Arm.Alloc
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 public meta import VerifiedGarbage.TCB.Arm.Isa
 
