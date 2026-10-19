@@ -192,6 +192,15 @@ class Plan(Project):
         (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("module\n-- changed\n")
         self.assertEqual(self.stale(), 2)
 
+    def test_the_edited_modules(self):
+        # Listed whatever the inputs: a toolchain change rebuilds everything,
+        # but only Spec.A's source changed.
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
+        (self.lean / "lean-toolchain").write_text("leanprover/lean4:v4.35.0\n")
+        p = shards.plan(self.manifest)
+        self.assertEqual(p["edited"], ["VerifiedGarbage.Spec.A"])
+        self.assertNotIn("edited", shards.plan({}))
+
     def test_needed_takes_whole_precompiled_libraries(self):
         self.edit('globs = ["VerifiedGarbage.Spec.A"]', 'globs = ["VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
         (self.lean / "VerifiedGarbage/UsesA.lean").write_text("import VerifiedGarbage.Spec.A\n")
