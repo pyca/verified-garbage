@@ -129,6 +129,69 @@ class Plan(Project):
         (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
         self.assertEqual(self.stale(), 3)
 
+    def change_spec_a(self, files):
+        """The modules to rebuild when Spec.A changes, with `files` written
+        over the project and the manifest taken after them."""
+        for name, text in files.items():
+            (self.lean / name).write_text(text)
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("module\n-- changed\n")
+        mods = shards.modules()
+        imps = shards.imports(mods)
+        read = shards.reads(imps, shards.closures(imps), shards.visibilities(mods))
+        return sorted(shards.stale_of({"VerifiedGarbage.Spec.A"}, read))
+
+    def test_a_private_import_stops_the_rebuild(self):
+        # Proof imports Spec.A privately: Proof rebuilds, but Other, which
+        # imports Proof, reads nothing of Spec.A.
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\npublic import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_a_public_import_passes_it_on(self):
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\npublic import VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\nimport VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Other", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_meta_imports_are_imports(self):
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\npublic meta import VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\nmeta import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Other", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_import_all_reads_private_imports(self):
+        # `import all Proof` reads what Proof imports, privately or not.
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\nimport all VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Other", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_a_file_that_is_not_a_module_reads_everything(self):
+        # The root, not a module, reads the whole closure; Other, a module
+        # importing Proof (which imports Spec.A privately), reads nothing of it.
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\npublic import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "import VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_the_plan_counts_only_what_reads_the_change(self):
+        for name, text in {
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\npublic import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }.items():
+            (self.lean / name).write_text(text)
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("module\n-- changed\n")
+        self.assertEqual(self.stale(), 2)
+
     def test_needed_takes_whole_precompiled_libraries(self):
         self.edit('globs = ["VerifiedGarbage.Spec.A"]', 'globs = ["VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
         (self.lean / "VerifiedGarbage/UsesA.lean").write_text("import VerifiedGarbage.Spec.A\n")
