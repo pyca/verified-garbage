@@ -69,7 +69,7 @@ theorem dd10Half_ok {s : State} {g : VReg} (hg : g = .v6 ∨ g = .v7) {o : Nat} 
   have g17 : g ≠ .v17 := by rcases hg with rfl | rfl <;> decide
   have g18 : g ≠ .v18 := by rcases hg with rfl | rfl <;> decide
   have g19 : g ≠ .v19 := by rcases hg with rfl | rfl <;> decide
-  unfold dd10Half
+  unfold dd10Half ddSplit
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine wp_vop (eval_shift (by decide)) fun a1 h1 => wp_vop rfl fun a2 h2 => wp_vop rfl fun a3 h3' =>

@@ -19,14 +19,14 @@ abbrev byte8 (Y : Nat → Nat) (j : Nat) : Nat :=
   Y (8 * j) + Y (8 * j + 1) * 2 + Y (8 * j + 2) * 4 + Y (8 * j + 3) * 8 + Y (8 * j + 4) * 16 +
     Y (8 * j + 5) * 32 + Y (8 * j + 6) * 64 + Y (8 * j + 7) * 128
 
-theorem ce1Math_ok {s : State} (hc : CConsts 1 s) {X : Nat → Nat} (hX : ∀ i < 32, X i < 3329)
+theorem ce1Math_ok {s : State} (hc : CConsts width1 s) {X : Nat → Nat} (hX : ∀ i < 32, X i < 3329)
     (l0 : Lanes (s.v .v0) fun i => X i) (l1 : Lanes (s.v .v1) fun i => X (4 + i))
     (l2 : Lanes (s.v .v2) fun i => X (8 + i)) (l3 : Lanes (s.v .v3) fun i => X (12 + i))
     (l4 : Lanes (s.v .v4) fun i => X (16 + i)) (l5 : Lanes (s.v .v5) fun i => X (20 + i))
     (l6 : Lanes (s.v .v6) fun i => X (24 + i)) (l7 : Lanes (s.v .v7) fun i => X (28 + i)) :
     WP isa (.block ce1Math) s fun t => VChg [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v19] s t ∧
-      ∀ j < 4, (vbyte (t.v .v0) j).toNat = byte8 (fun i => cf 1 (X i)) j := by
-  have hd : (1 : Nat) ∈ compressWidths := by decide
+      ∀ j < 4, (vbyte (t.v .v0) j).toNat = byte8 (fun i => cf width1 (X i)) j := by
+  have hd : WOk width1 := width1_ok
   unfold ce1Math cmp8
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -37,8 +37,8 @@ theorem ce1Math_ok {s : State} (hc : CConsts 1 s) {X : Nat → Nat} (hX : ∀ i 
     ((Lanes.chg c1 (by decide) l6).congr fun i _ => by congr 1; omega)
     ((Lanes.chg c1 (by decide) l7).congr fun i _ => by congr 1; omega))
     fun s2 ⟨c2, m4, m5, m6, m7⟩ => ?_
-  let Y : Nat → Nat := fun i => cf 1 (X i)
-  have hY : ∀ i, Y i < 2 ^ 1 := fun i => cf_lt 1 _
+  let Y : Nat → Nat := fun i => cf width1 (X i)
+  have hY : ∀ i, Y i < 2 ^ 1 := fun i => cf_lt width1 _
   -- level 1: pairs of bits
   let Z : Nat → Nat := fun i => Y (2 * i) + Y (2 * i + 1) * 2 ^ 1
   have hZ : ∀ i, Z i < 2 ^ 2 := fun i => by have := hY (2 * i); have := hY (2 * i + 1); simp only [Z]; omega

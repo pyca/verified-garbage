@@ -52,10 +52,12 @@ structure Width where
   nb : Nat
   /-- The multiplier of `Compress_d`. -/
   mul : Nat
+  /-- The addend of `Compress_d`. -/
+  add : Nat
 
-def width1 : Width := ⟨1, 8, 1, 315⟩
-def width4 : Width := ⟨4, 2, 1, 2520⟩
-def width10 : Width := ⟨10, 4, 5, 161271⟩
+def width1 : Width := ⟨1, 8, 1, 315, 262080⟩
+def width4 : Width := ⟨4, 2, 1, 2520, 262080⟩
+def width10 : Width := ⟨10, 4, 5, 161271, 262080⟩
 
 /-- `c` in every word of `v`, through `x9`. -/
 def dupW (v : VReg) (c : Nat) : List Instr := movImm .x9 (BitVec.ofNat 64 c) ++ [.vop (.dup .s4 v .x9)]
@@ -129,18 +131,19 @@ def ce10Body : List Instr :=
     [.strq .v6 .x2 0, .umov .w .x9 .v7 0, .str .w .x9 .x2 16, .addImm .x .x0 .x0 64, .addImm .x .x2 .x2 20,
      .subImm .x .x11 .x11 1]
 
-/-- The constants of `cmpV`, the count `n` in `x11`, and `body` until it is zero. -/
-def ceLoop (d mul n : Nat) (setup body : List Instr) : Prog isa :=
-  .seq (.block (dupW .v16 mul ++ dupW .v17 262080 ++ dupW .v18 (2 ^ d - 1) ++ setup ++
+/-- The constants of `cmpV` for the width `w`, the count `n` in `x11`, and `body` until it is
+zero. -/
+def ceLoop (w : Width) (n : Nat) (setup body : List Instr) : Prog isa :=
+  .seq (.block (dupW .v16 w.mul ++ dupW .v17 w.add ++ dupW .v18 (2 ^ w.d - 1) ++ setup ++
       movImm .x11 (BitVec.ofNat 64 n)))
     (.loop (.block body) (.nonzero .x .x11))
 
 def compressEncode : Prog isa :=
   .seq (.block [.subImm .x .x9 .x3 32]) <|
-  .ite (.zero .x .x9) (ceLoop 1 315 8 [] ce1Body) <|
+  .ite (.zero .x .x9) (ceLoop width1 8 [] ce1Body) <|
   .seq (.block [.subImm .x .x9 .x3 128]) <|
-  .ite (.zero .x .x9) (ceLoop 4 2520 8 [] ce4Body)
-    (ceLoop 10 161271 16 (bytesVec .v20 ce10Idx ++ bytesVec .v21 ce10IdxHi) ce10Body)
+  .ite (.zero .x .x9) (ceLoop width4 8 [] ce4Body)
+    (ceLoop width10 16 (bytesVec .v20 ce10Idx ++ bytesVec .v21 ce10IdxHi) ce10Body)
 
 /-! ## `decodeDecompress` -/
 
@@ -183,13 +186,17 @@ def dd1Body : List Instr :=
 def dd10Idx : List Nat := [0, 1, 2, 3, 4, 255, 255, 255, 5, 6, 7, 8, 9, 255, 255, 255]
 def dd10IdxHi : List Nat := [10, 11, 12, 13, 14, 255, 255, 255, 15, 16, 17, 18, 19, 255, 255, 255]
 
+/-- The two groups of `2 b` bits in the doublewords of `g` (`b ≤ 11`) split into eight values of
+`b` bits, in `v2` and `v3`, through `v1`: `v18` holds `2^(2 b) - 1` in every word, `v19` `2ᵇ - 1`. -/
+def ddSplit (b : Nat) (g : VReg) : List Instr :=
+  [.vop (.shift .ushr .d2 .v1 g (2 * b)), .vop (.perm .trn1 .s4 g g .v1), .vop (.logic .and g g .v18),
+   .vop (.shift .ushr .s4 .v1 g b), .vop (.logic .and g g .v19),
+   .vop (.perm .zip1 .s4 .v2 g .v1), .vop (.perm .zip2 .s4 .v3 g .v1)]
+
 /-- The two groups of 40 bits in the doublewords of `g` to 8 coefficients at
 `x3 + o`. `v18` holds `2²⁰ - 1` in every word, `v19` `2¹⁰ - 1`. -/
 def dd10Half (g : VReg) (o : Nat) : List Instr :=
-  [.vop (.shift .ushr .d2 .v1 g 20), .vop (.perm .trn1 .s4 g g .v1), .vop (.logic .and g g .v18),
-   .vop (.shift .ushr .s4 .v1 g 10), .vop (.logic .and g g .v19),
-   .vop (.perm .zip1 .s4 .v2 g .v1), .vop (.perm .zip2 .s4 .v3 g .v1)] ++
-  decV 10 .v2 ++ decV 10 .v3 ++ [.strq .v2 .x3 o, .strq .v3 .x3 (o + 16)]
+  ddSplit 10 g ++ decV 10 .v2 ++ decV 10 .v3 ++ [.strq .v2 .x3 o, .strq .v3 .x3 (o + 16)]
 
 /-- `d = 10`: 20 bytes to 16 coefficients. -/
 def dd10Body : List Instr :=
