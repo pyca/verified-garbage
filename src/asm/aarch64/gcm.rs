@@ -5495,7 +5495,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aes`.
+/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal_aes`.
 ///
 /// # Safety
 ///
@@ -5540,13 +5540,40 @@ b 24f
 movz x15, #15, lsl #0
 and x13, x13, x15
 cbz x13, 26f
+lsr x14, x13, #3
+cbz x14, 28f
+210:
+ldr x14, [x12, #0]
+str x14, [x11, #0]
+add x12, x12, #8
+add x11, x11, #8
+sub x13, x13, #8
+lsr x14, x13, #3
+cbnz x14, 210b
+b 29f
 28:
+29:
+lsr x14, x13, #2
+cbz x14, 211f
+ldr w14, [x12, #0]
+str w14, [x11, #0]
+add x12, x12, #4
+add x11, x11, #4
+sub x13, x13, #4
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
 ldrb w14, [x12, #0]
 strb w14, [x11, #0]
 add x12, x12, #1
 add x11, x11, #1
 sub x13, x13, #1
-cbnz x13, 28b
+cbnz x13, 215b
+b 214f
+213:
+214:
 b 27f
 26:
 27:
@@ -14328,7 +14355,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aes_sha3`.
+/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal_aes_sha3`.
 ///
 /// # Safety
 ///
@@ -14373,13 +14400,40 @@ b 24f
 movz x15, #15, lsl #0
 and x13, x13, x15
 cbz x13, 26f
+lsr x14, x13, #3
+cbz x14, 28f
+210:
+ldr x14, [x12, #0]
+str x14, [x11, #0]
+add x12, x12, #8
+add x11, x11, #8
+sub x13, x13, #8
+lsr x14, x13, #3
+cbnz x14, 210b
+b 29f
 28:
+29:
+lsr x14, x13, #2
+cbz x14, 211f
+ldr w14, [x12, #0]
+str w14, [x11, #0]
+add x12, x12, #4
+add x11, x11, #4
+sub x13, x13, #4
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
 ldrb w14, [x12, #0]
 strb w14, [x11, #0]
 add x12, x12, #1
 add x11, x11, #1
 sub x13, x13, #1
-cbnz x13, 28b
+cbnz x13, 215b
+b 214f
+213:
+214:
 b 27f
 26:
 27:
@@ -30922,7 +30976,7 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal`.
+/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal`.
 ///
 /// # Safety
 ///
@@ -30965,13 +31019,40 @@ b 24f
 movz x15, #15, lsl #0
 and x13, x13, x15
 cbz x13, 26f
+lsr x14, x13, #3
+cbz x14, 28f
+210:
+ldr x14, [x12, #0]
+str x14, [x11, #0]
+add x12, x12, #8
+add x11, x11, #8
+sub x13, x13, #8
+lsr x14, x13, #3
+cbnz x14, 210b
+b 29f
 28:
+29:
+lsr x14, x13, #2
+cbz x14, 211f
+ldr w14, [x12, #0]
+str w14, [x11, #0]
+add x12, x12, #4
+add x11, x11, #4
+sub x13, x13, #4
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
 ldrb w14, [x12, #0]
 strb w14, [x11, #0]
 add x12, x12, #1
 add x11, x11, #1
 sub x13, x13, #1
-cbnz x13, 28b
+cbnz x13, 215b
+b 214f
+213:
+214:
 b 27f
 26:
 27:

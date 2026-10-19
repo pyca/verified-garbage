@@ -36,8 +36,9 @@ def notes (v : Proof.ChaCha20.AArch64.XorImpl) : List String :=
 
 /-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
 def gatherNote (fn : String) : String :=
-  "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
-    encrypts them there in place with `" ++ fn ++ "`."
+  "This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then \
+    the last bytes of each eight, four and one at a time, and encrypts them there in place with `" ++
+    fn ++ "`."
 
 def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact AArch64.target {

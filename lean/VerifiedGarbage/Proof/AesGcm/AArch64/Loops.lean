@@ -510,21 +510,24 @@ theorem lsr14_ok {s : State} {P Q D : Addr} {n i sh : Nat} {out : List Byte} {t 
 theorem word_tail {s : State} {S D : Addr} {n i : Nat} (h : LoopPre s S D n) {t : State}
     (C : WordAt s S D n i D (bytesAt s.mem S i) t) (hi : i < n) :
     WP isa copyLoop t fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
-      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.gpr .x11 = D + BitVec.ofNat 64 n := by
   have hlt := h.lt
   have hp : LoopPre t (S + BitVec.ofNat 64 i) (D + BitVec.ofNat 64 i) (n - i) :=
     ⟨by omega, by rw [C.rd, C.wr]; exact covers_off h.rd (by omega) (by omega),
       by rw [C.wr]; exact covers_off h.wr (by omega) (by omega),
       (h.disj.sub_left (Offset.sub_base S (by omega))).sub_right (Offset.sub_base D (by omega))⟩
-  refine WP.mono (copyLoop_ok t C.x12 C.x11 C.x13 (by omega) hp) fun s' ⟨m, _, _, g, sp, rd, wr⟩ =>
-    ⟨?_, fun r hr => by rw [g r hr, C.gpr r hr], by rw [sp, C.sp], by rw [rd, C.rd], by rw [wr, C.wr]⟩
-  rw [m, C.mem, copy_more h (show i + (n - i) ≤ n by omega), Nat.add_sub_cancel' (Nat.le_of_lt hi)]
+  refine WP.mono (copyLoop_ok t C.x12 C.x11 C.x13 (by omega) hp) fun s' ⟨m, _, x11, g, sp, rd, wr⟩ =>
+    ⟨?_, fun r hr => by rw [g r hr, C.gpr r hr], by rw [sp, C.sp], by rw [rd, C.rd], by rw [wr, C.wr], ?_⟩
+  · rw [m, C.mem, copy_more h (show i + (n - i) ≤ n by omega), Nat.add_sub_cancel' (Nat.le_of_lt hi)]
+  · rw [x11, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (Nat.le_of_lt hi)]
 
 /-- `copyW`: the `n` bytes at `S` to `D`, a word at a time. -/
 theorem copyW_ok {s t : State} {S D : Addr} {n : Nat} (h : LoopPre s S D n)
     (W₀ : WordAt s S D n 0 D (bytesAt s.mem S 0) t) :
     WP isa copyW t fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
-      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.gpr .x11 = D + BitVec.ofNat 64 n := by
   have hlt := h.lt
   unfold copyW
   -- Eight at a time.
@@ -558,7 +561,7 @@ theorem copyW_ok {s t : State} {S D : Addr} {n : Nat} (h : LoopPre s S D n)
   refine WP.ite (decide (n - j = 0)) (eval_zero V.x13 (by omega)) (fun hz => ?_) (fun hz => ?_)
   · have e : j = n := by have := of_decide_eq_true hz; have := V.le; omega
     subst e
-    exact WP.block_nil ⟨V.mem, V.gpr, V.sp, V.rd, V.wr⟩
+    exact WP.block_nil ⟨V.mem, V.gpr, V.sp, V.rd, V.wr, V.x11⟩
   · exact word_tail h V (by have := of_decide_eq_false hz; omega)
 
 /-- `copy`: none, fewer than four one at a time, or `copyW`. -/
@@ -578,8 +581,9 @@ theorem copy_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD : s
   · obtain ⟨s₁, run₁, W₁, x14₁⟩ := lsr14_ok (sh := 2) W₀ (by omega) (by decide)
     refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
     refine WP.ite (decide ((n - 0) / 2 ^ 2 = 0)) (eval_zero x14₁ (by omega)) (fun _ => ?_) (fun _ => ?_)
-    · exact word_tail h W₁ (by have := of_decide_eq_false hz; omega)
-    · exact copyW_ok h W₁
+    · exact WP.mono (word_tail h W₁ (by have := of_decide_eq_false hz; omega))
+        fun _ ⟨m, g, sp, rd, wr, _⟩ => ⟨m, g, sp, rd, wr⟩
+    · exact WP.mono (copyW_ok h W₁) fun _ ⟨m, g, sp, rd, wr, _⟩ => ⟨m, g, sp, rd, wr⟩
 
 /-- `copyB`: none, or one at a time. -/
 theorem copyB_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD : s.gpr .x11 = D)
