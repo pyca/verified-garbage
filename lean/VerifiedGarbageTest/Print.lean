@@ -611,10 +611,25 @@ def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 #guard Rust.featureDoc safeDoc ["sha", "ssse3", "sse4.1"] ==
   safeDoc ++ "\n* The CPU must support the `sha`, `ssse3` and `sse4.1` target features."
 
-#guard Rust.featuresConst "vg_f" [] == ""
-#guard Rust.featuresConst "vg_sha256_compress_shani" ["sha", "ssse3"] ==
+#guard Rust.featuresConst "vg_f" "" [] == ""
+#guard Rust.featuresConst "vg_sha256_compress_shani" "" ["sha", "ssse3"] ==
   "/// The CPU features `vg_sha256_compress_shani` requires (`Artifact.features`).\n\
   pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = \
   crate::cpu::Features::of(&[\"sha\", \"ssse3\"]);\n\n"
+
+-- A feature some of the target's configurations cannot assemble or must
+-- never run compiles its functions and constants only under its `cfg`.
+#guard Rust.cfgGate [] == ""
+#guard Rust.cfgGate ["target_os = \"linux\""] == "#[cfg(target_os = \"linux\")]\n"
+#guard Rust.cfgGate ["a", "b"] == "#[cfg(all(a, b))]\n"
+#guard Arm.Instr.asm (.umaal .r3 .r11 .r2 .r9) == ["umaal r3, r11, r2, r9"]
+#guard Arm.Instr.requires (.umaal .r3 .r11 .r2 .r9) == ["umaal"]
+#guard Arm.Instr.requires (.mla .r3 .r11 .r2 .r9) == []
+#guard (Arm.printer.featureCfg "umaal").isSome
+#guard (Arm.printer.featureCfg "neon").isNone
+#guard Rust.featuresConst "vg_f_umaal" "#[cfg(c)]\n" ["umaal"] ==
+  "/// The CPU features `vg_f_umaal` requires (`Artifact.features`).\n#[cfg(c)]\n\
+  pub(crate) const VG_F_UMAAL_FEATURES: crate::cpu::Features = \
+  crate::cpu::Features::of(&[\"umaal\"]);\n\n"
 
 end VG.Test

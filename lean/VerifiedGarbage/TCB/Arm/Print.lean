@@ -46,6 +46,7 @@ def Instr.asm : Instr → List String
   | .rev d m => [s!"rev {d.name}, {m.name}"]
   | .mul d n m => [s!"mul {d.name}, {n.name}, {m.name}"]
   | .mla d n m a => [s!"mla {d.name}, {n.name}, {m.name}, {a.name}"]
+  | .umaal lo hi n m => [s!"umaal {lo.name}, {hi.name}, {n.name}, {m.name}"]
   | .ldr t n off => [s!"ldr {t.name}, [{n.name}, #{off}]"]
   | .str t n off => [s!"str {t.name}, [{n.name}, #{off}]"]
   | .ldrb t n off => [s!"ldrb {t.name}, [{n.name}, #{off}]"]
@@ -66,6 +67,15 @@ def printer : Printer isa where
   jump l := s!"b {l}"
   ret := ["bx lr"]
   call := "bl"
+  -- `umaal` assembles only for ARMv7-A, -R and ARMv7E-M (not for
+  -- `thumbv7m-none-eabi`, the Cortex-M3), and its timing is known not to
+  -- depend on its operands only on A-profile cores (`TCB/Arm/Isa.lean`): code
+  -- needing it is compiled only for the operating systems that run on them
+  -- alone, where `src/cpu.rs` reports it.
+  featureCfg
+    | "umaal" => some "any(target_os = \"linux\", target_os = \"android\", \
+        target_os = \"freebsd\", target_os = \"netbsd\", target_os = \"openbsd\")"
+    | _ => none
   -- Labels 2 and 3 are private to `adrSym`, around its `add`: structured
   -- control flow uses 20, 21, ...; repeated sequences use the nearest 2f/3f.
   -- `2f + 2 * (3f - 2f)` is the `pc` the `add` reads: its address plus 8 in
