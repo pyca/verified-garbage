@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # Save and reload rejection continuation cursors -/
 

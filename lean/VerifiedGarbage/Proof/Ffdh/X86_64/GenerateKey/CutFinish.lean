@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # FFDH on x86-64: retain the scalar's significant slice -/
 

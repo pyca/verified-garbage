@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `ResponseZLoop.lean` -/
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on AArch64: `0x80` at a public offset, and the length field

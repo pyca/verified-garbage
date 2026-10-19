@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Subtract
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Increment
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Native remainder subtraction and increment implement p reduction -/
 

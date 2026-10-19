@@ -35,6 +35,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejState
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls

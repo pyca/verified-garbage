@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Spec.Ecdh
 public import VerifiedGarbage.Spec.P521
+import VerifiedGarbage.Spec.Ecdh.Generic
 
 /-!
 # ECDH over P-521 on x86 (32-bit): the contract the proof is written against

@@ -7,6 +7,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `KeygenPackTailMemory.lean` -/
 

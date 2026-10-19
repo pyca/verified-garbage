@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PdApply
 import VerifiedGarbage.Proof.Bignum.Arm.PdFail
 import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
 
 /-! # Public packed-key validation guards the precomputed arithmetic path -/
 

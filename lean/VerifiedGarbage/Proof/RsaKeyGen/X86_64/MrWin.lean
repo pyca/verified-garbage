@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.CrtExp
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # A candidate on x86-64: one window of Miller–Rabin's exponentiation

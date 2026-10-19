@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+import VerifiedGarbage.Proof.Siv.Spec
 
 /-!
 # AES-GCM-SIV on ARMv7: counter mode (`crypt`)

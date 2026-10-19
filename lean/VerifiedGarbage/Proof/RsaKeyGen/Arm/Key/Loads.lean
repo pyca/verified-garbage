@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # An RSA key on ARMv7: the working space set up, and `p`, `q` and `e` read
 

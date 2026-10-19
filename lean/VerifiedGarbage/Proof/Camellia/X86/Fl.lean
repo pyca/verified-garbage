@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86.Round
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # FL and FLINV on x86 (32-bit)

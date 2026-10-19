@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-! # Construct the parser constants with the measured emitted instructions -/
 

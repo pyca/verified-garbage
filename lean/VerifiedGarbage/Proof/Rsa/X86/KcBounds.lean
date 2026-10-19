@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
 import VerifiedGarbage.Proof.Rsa.X86.KcResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # The signature's byte-length bounds imply the arithmetic factor bounds -/
 

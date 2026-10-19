@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the call of `vg_rsa_private_checked`

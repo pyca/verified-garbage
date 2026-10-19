@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcBase
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: building `EM`

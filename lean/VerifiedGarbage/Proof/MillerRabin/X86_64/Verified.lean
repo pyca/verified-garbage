@@ -11,6 +11,7 @@ public import VerifiedGarbage.Spec.MillerRabin
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Correct
 import VerifiedGarbage.Proof.MillerRabin.X86_64.RoundCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Verified shared round with a generic inlined Montgomery backend -/
 

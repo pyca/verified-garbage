@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 
 /-! # Compositional instruction-safety checks for generation code -/

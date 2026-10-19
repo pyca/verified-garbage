@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Spec.X25519
 
 /-! # The x86 P-256 variable-base product -/
 

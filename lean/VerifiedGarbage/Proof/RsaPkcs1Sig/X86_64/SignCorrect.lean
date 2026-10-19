@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: correctness

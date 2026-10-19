@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-! Direct table selection for public verification scalars. -/
 

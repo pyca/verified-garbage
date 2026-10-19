@@ -6,6 +6,7 @@ public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin, its header

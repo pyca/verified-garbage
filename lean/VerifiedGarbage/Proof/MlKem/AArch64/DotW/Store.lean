@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: the store

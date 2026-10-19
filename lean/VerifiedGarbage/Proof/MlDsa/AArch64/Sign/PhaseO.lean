@@ -5,6 +5,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA signing on AArch64: the signature

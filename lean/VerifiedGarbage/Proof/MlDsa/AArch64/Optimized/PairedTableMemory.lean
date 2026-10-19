@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedTableConstants.lean` -/
 

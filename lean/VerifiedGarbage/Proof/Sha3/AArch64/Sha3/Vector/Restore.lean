@@ -8,6 +8,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 @[expose] public section
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on x86-64: `n` and the final mask

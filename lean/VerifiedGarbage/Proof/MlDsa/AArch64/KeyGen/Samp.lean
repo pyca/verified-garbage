@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA key generation on AArch64: the samplers

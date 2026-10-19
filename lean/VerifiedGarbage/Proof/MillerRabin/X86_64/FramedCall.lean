@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
 import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Actual Montgomery calls within the saved round frames -/
 

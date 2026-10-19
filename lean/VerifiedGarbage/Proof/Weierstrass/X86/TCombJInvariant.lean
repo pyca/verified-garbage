@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Spec.X25519
 
 
 @[expose] public section

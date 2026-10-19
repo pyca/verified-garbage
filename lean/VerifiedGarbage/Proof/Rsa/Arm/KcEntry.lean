@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Bignum.Arm.Zero
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # The checks of an RSA key on ARMv7: the entry's first block, and every array zeroed
 

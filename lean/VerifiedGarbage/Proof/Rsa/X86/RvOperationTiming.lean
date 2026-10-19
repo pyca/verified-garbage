@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
 import VerifiedGarbage.Proof.Rsa.X86.RvResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # The complete recovery operation leaks only the contract's declared public inputs -/
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
 import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.ZeroTest32
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery with a precomputed public key on ARMv7: the encoding and the comparison

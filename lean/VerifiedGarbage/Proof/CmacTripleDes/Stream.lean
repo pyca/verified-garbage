@@ -5,6 +5,7 @@ public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming TDEA-CMAC: lemmas about the state

@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
+import VerifiedGarbage.Proof.MlKem.Arith
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

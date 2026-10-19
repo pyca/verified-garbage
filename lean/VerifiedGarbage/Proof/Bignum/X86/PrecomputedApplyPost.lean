@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Bignum.PublicWritten
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # A well-formed stored key yields the shared checked-public RSA result -/
 

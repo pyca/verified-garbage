@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Sbox
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The machine state of the bitsliced ECB code

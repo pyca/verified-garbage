@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
 # AES-CCM (NIST SP 800-38C) on AArch64

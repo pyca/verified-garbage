@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInput
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Argument capture and public-domain validation for a complete verifying attempt -/
 

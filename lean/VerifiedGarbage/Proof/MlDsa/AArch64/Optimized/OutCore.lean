@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `OuterOutLoop.lean` -/
 

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 public import VerifiedGarbage.Proof.Weierstrass.Window
 public import VerifiedGarbage.Proof.Weierstrass.X86.Window
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 @[expose] public section
 

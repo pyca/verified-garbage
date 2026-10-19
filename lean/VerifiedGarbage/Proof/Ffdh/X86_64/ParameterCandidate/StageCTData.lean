@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.OuterCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCTData
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: public candidate phase boundaries -/
 

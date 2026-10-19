@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Preserve System V callee-saved registers outside the search frame -/
 

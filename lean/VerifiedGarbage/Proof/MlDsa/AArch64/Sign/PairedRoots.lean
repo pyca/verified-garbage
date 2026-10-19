@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 
 @[expose] public section
 

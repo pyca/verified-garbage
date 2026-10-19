@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_check_key` on x86-64: verified against the shared contract

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
 
 /-! # A candidate on ARMv7: Montgomery multiplication's working space
 

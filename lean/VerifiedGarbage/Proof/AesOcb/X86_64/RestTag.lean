@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on x86-64: the rest of the data and the tag (`rest`, `tag`)

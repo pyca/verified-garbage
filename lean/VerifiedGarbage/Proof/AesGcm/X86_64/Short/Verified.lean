@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 
 /-!
 # AES-GCM's short path on x86-64: the functions verified

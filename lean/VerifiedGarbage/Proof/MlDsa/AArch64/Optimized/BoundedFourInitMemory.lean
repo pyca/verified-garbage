@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `BoundedFourInitStore.lean` -/
 

@@ -7,6 +7,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA key generation on AArch64: `s₁ ‖ s₂` to `sk`, and `ŝ₁`

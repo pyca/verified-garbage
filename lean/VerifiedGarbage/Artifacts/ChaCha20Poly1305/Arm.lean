@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on ARMv7

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlDsa.Round.Mem
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `ResponseHintOnes.lean` -/
 

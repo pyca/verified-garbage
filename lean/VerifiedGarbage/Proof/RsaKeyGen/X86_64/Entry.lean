@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # A candidate on x86-64: the entry

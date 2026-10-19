@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.AesCtr.Inc
 
 /-!
 # CFB8 on AArch64, for any core: the byte and the shift

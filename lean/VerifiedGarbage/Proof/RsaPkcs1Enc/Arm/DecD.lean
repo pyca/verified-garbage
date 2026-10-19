@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `D = I2OSP(d, k)`

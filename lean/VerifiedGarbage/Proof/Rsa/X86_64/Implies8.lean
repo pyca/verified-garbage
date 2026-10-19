@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # The x86-64 RSA functions' contracts, with 8 bytes of stack

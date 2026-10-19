@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_private_checked`

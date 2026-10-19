@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSAES-OAEP on x86-64: `rsp` written only by the frames

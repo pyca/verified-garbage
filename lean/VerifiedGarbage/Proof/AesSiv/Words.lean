@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Spec.Siv
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Siv.Spec
 
 /-!
 # AES-SIV: words and bits

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Store
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # A candidate on x86-64: zeros to `out`, and the ends

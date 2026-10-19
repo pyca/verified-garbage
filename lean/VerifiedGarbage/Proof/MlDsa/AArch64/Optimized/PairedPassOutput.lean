@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedPassRead.lean` -/
 

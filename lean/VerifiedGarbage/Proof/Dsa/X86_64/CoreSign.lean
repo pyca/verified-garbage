@@ -8,6 +8,7 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Correctness of the complete seven-operation DSA signing core -/
 

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on x86-64: the primes

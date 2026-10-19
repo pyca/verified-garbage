@@ -6,6 +6,7 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 /-!
 # ML-DSA signing on x86-64: the signature

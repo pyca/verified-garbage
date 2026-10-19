@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
 
 /-! # The key-generation controller's tests of its budgets and tape -/
 

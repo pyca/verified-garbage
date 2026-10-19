@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Implies
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Correct
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 /-! # The verified key search, for every arithmetic backend -/
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

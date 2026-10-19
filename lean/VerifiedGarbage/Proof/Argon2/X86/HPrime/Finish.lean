@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 public import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MdStream.X86.Common
 
 @[expose] public section
 

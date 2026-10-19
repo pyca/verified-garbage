@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

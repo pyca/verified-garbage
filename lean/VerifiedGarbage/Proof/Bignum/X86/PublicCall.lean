@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 
 /-! # Stable cdecl arguments while RSA uses its disjoint scratch buffer -/
 

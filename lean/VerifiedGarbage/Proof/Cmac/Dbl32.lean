@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CMAC: doubling a block in four 32-bit words

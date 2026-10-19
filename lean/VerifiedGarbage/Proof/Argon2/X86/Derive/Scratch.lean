@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.X86.Compress
+import VerifiedGarbage.Proof.MdStream.X86.Common
 
 @[expose] public section
 

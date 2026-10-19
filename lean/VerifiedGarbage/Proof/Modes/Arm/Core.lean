@@ -8,6 +8,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesCtr.Inc
 
 /-!
 # What the modes need of a block cipher's ECB function, on ARMv7

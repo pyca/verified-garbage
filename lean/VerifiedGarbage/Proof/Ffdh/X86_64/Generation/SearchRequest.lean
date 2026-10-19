@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 
 /-! # The verified controller selects the exact next entropy request -/
 

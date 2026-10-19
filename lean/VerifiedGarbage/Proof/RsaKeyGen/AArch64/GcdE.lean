@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # A candidate on AArch64: `gcd(c − 1, e)`

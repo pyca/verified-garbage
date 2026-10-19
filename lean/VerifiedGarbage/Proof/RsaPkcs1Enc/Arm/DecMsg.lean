@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the message of an IRPRF block

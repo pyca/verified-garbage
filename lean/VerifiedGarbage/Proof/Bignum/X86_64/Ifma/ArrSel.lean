@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with AVX512_IFMA on x86-64: choosing an array of the region's loop

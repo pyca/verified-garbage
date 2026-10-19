@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafPoints
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! The verifier with `[v]Q` by the public NAF satisfies the complete verification postcondition. -/
 

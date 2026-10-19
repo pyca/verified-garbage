@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+import VerifiedGarbage.Spec.X25519
 
 
 /-!

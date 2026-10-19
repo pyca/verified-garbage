@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvStore
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.RvStage
 
 /-! # A candidate on ARMv7: the results, as pieces
 

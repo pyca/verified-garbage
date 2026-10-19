@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Release both signature scalars, or zero the complete output -/
 

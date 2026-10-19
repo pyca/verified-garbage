@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedFirstSource.lean` -/
 

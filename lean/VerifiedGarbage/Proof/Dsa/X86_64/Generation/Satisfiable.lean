@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 
 /-! # The native parameter-generation contract admits concrete inputs -/

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
 import VerifiedGarbage.Proof.Rsa.X86.CvResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # The complete CRT operation leaks only the contract's declared public inputs -/
 

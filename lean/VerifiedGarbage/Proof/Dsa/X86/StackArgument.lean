@@ -11,6 +11,7 @@ public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 
 /-! # Caller stack arguments remain readable while the header is installed -/
 

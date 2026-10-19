@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StageFrame
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The whole inlined callable has only its declared public inputs -/
 

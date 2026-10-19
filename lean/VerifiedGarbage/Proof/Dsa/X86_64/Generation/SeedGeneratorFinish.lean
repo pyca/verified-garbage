@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import VerifiedGarbage.Spec.Ffdh
 
 /-! # Generator selection and final validation produce one complete seed result -/
 

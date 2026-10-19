@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Rsa.ZeroTest32
 
 /-!
 # RSASSA-PKCS1-v1_5 verification with a precomputed public key on ARMv7: after the call

@@ -11,6 +11,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCT
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # `vg_rsa_public_precomputed_checked_ifma`: `Verified` -/
 

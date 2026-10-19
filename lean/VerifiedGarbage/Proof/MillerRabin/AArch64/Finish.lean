@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Release the round's Boolean result without a secret branch -/
 

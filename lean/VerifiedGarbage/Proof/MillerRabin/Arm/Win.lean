@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Tab
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Words
 import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The Miller–Rabin round on ARMv7: the windows
 

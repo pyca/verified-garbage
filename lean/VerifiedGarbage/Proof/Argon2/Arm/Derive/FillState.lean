@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Argon2.FillStep
 
 /-!
 # Argon2 on ARMv7: the state of the filling loops

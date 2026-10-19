@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # A shared call's return address preserves the prepared workspace -/
 

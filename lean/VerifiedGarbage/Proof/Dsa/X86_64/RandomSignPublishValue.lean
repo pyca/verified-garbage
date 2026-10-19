@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! Published consumption, preserved signature bytes, and erased nonce bytes. -/
 @[expose] public section

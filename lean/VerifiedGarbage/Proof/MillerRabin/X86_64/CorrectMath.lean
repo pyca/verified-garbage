@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Mathematical correctness and register restoration of the prepared round -/
 

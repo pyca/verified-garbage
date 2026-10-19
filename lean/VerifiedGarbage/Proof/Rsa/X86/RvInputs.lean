@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
+import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-! # Input and output geometry of the prime-recovery call -/
 

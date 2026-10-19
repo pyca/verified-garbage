@@ -10,6 +10,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
+import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
 
 /-! ## From `InverseBankFieldPacked.lean` -/
 

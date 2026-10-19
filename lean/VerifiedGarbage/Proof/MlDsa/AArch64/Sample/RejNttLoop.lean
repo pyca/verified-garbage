@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_rej_ntt_poly`

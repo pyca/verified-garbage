@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Cmac
 
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming AES-CMAC: lemmas about the state

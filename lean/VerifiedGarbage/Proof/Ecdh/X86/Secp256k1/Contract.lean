@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Spec.Ecdh
 public import VerifiedGarbage.Spec.Secp256k1
+import VerifiedGarbage.Spec.Ecdh.Generic
 
 /-!
 # ECDH over secp256k1 on x86 (32-bit): the contract the proof is written against

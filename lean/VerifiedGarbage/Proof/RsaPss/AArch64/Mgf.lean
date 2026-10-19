@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on AArch64: MGF1

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-! # Importing one CRT input into its fixed workspace array -/
 

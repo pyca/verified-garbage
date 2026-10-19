@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTraversal
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `BoundedFourLoopState.lean` -/
 

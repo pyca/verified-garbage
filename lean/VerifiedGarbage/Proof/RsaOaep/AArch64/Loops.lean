@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-OAEP on AArch64: counted loops over bytes

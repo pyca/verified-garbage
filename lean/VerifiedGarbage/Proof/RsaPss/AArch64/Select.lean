@@ -8,6 +8,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on AArch64: selecting the hash value of the last block

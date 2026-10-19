@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on AArch64: the outputs

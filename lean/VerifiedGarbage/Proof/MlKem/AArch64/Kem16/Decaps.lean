@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 
 /-! # The 16-bit decapsulation is correct
 

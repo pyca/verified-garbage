@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KcPublic
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Public exponent rejection and width dispatch have matching traces -/
 

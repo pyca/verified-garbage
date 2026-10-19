@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! Copy a complete draw's significant suffix, preserving the advanced cursor frame. -/
 @[expose] public section

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreJoint
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Joint exponentiation preserving the DSA execution context -/
 

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA -/
 

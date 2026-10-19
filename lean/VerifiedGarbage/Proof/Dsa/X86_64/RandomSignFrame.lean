@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! Allocate the wrapper frame and locate the incoming stack arguments. -/
 @[expose] public section

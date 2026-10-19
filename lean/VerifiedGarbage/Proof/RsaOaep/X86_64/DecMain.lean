@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 
 /-!
 # RSAES-OAEP decryption on x86-64: the decoding

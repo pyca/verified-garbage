@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSAES-OAEP decryption on x86-64: the frame and the prologue

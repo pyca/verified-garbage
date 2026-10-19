@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Rej8

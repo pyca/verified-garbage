@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM

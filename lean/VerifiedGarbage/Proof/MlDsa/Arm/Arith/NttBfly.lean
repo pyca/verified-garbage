@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Ntt
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on 32-bit ARM: the butterflies of `NTT` and `NTT⁻¹`

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Inv
 import VerifiedGarbage.Proof.X448.AArch64.Iter
+import VerifiedGarbage.Spec.X25519
 
 @[expose] public section
 

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The AVX-512 machine state of a batch

@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with the CRT on x86-64: up to the checks

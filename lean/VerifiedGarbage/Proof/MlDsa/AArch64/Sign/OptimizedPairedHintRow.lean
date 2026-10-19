@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `OptimizedPairedHintLayout.lean` -/
 

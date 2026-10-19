@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Rc2.CbcMemory
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
 # Streaming RC2-CBC: the contracts from memory facts

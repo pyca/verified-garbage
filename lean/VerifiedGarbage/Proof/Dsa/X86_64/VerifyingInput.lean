@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSpec
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerify
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # External input layout for the complete DSA verification program -/
 

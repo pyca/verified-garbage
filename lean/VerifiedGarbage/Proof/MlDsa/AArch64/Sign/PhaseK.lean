@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA signing on AArch64: the checks of an iteration

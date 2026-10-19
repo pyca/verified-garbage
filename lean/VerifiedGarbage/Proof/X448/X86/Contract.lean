@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 import Mathlib.Tactic.SplitIfs
 import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86 (32-bit): the contract the proof is written against

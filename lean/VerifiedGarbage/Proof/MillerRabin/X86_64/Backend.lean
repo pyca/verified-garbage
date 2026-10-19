@@ -13,6 +13,8 @@ public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCorrect
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCT
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 
 /-! # Shared round implementations for generic RSA and FFDH callers -/
 

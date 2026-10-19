@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # Clear the suffix of a failed continued matrix sample -/
 

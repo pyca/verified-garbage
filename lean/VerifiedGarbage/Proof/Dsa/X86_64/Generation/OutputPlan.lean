@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The caller's output is disjoint from every parameter-search workspace -/
 

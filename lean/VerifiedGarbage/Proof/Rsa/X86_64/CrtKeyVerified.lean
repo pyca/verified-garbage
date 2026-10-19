@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTCode
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: verified against the shared contract

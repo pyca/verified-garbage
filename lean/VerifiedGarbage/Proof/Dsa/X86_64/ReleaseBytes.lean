@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import Mathlib.Tactic.Set
 import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # Byte-string postconditions for masked DSA signature release -/
 

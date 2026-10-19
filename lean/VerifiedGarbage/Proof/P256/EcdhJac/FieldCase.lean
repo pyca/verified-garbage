@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
+import VerifiedGarbage.Impl.P256.VerifyRegisters
 
 @[expose] public section
 

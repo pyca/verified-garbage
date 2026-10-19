@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdImport
 import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
 
 /-! # Intermediate public states used to compose the packed-key leakage proof -/
 

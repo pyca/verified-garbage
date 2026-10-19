@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 public import VerifiedGarbage.Spec.Mgf1
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Hash implementations shared by the complete parameter-generation phases -/
 

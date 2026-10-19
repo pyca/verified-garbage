@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Reduce the shaped candidate from an uninitialized arithmetic workspace -/
 

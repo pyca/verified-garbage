@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # RSAES-PKCS1-v1_5 on x86-64: bytes at offsets of a base

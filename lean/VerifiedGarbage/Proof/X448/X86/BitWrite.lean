@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86 (32-bit): expanding a scalar byte

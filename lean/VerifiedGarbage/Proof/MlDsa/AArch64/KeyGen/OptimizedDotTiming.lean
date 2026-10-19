@@ -7,6 +7,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

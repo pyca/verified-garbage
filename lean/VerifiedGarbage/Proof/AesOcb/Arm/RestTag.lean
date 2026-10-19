@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on ARMv7: the rest of the data and the tag (`rest`, `tag`)

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA signing on AArch64: the private key and `ρ″`

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Lcm
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on AArch64: from the primes to `smallMask`

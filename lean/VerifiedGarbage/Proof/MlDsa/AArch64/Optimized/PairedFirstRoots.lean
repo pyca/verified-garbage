@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

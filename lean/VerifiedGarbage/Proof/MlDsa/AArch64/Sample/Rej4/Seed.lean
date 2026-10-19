@@ -7,6 +7,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.Spec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 
