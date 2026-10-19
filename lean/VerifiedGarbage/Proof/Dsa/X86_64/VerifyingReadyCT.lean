@@ -1,94 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingShapeCT
-import VerifiedGarbage.Proof.Dsa.SizeBounds
 public import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
-public import VerifiedGarbage.Proof.Dsa.DomainWidths
-public import VerifiedGarbage.Proof.Dsa.Layout
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
-public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-public import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
-public import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-public import VerifiedGarbage.Proof.Dsa.X86_64.Parity
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
-public import VerifiedGarbage.Proof.Dsa.X86_64.Save
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
-public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
-public import VerifiedGarbage.Proof.Dsa.X86_64.TopMask
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingMain
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingOperands
-public import VerifiedGarbage.Proof.Dsa.X86_64.WidthMask
-public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
-public import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Dsa.DomainWidths
-import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Dsa.PackedBytes
-import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
-import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
-import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
-import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
-import VerifiedGarbage.Proof.Dsa.X86_64.JointByteCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
-import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
-import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
-import VerifiedGarbage.Proof.Dsa.X86_64.JointInit
-import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
-import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepareCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointRun
-import VerifiedGarbage.Proof.Dsa.X86_64.JointStore
-import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
-import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
-import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-import VerifiedGarbage.Proof.Dsa.X86_64.Minus
-import VerifiedGarbage.Proof.Dsa.X86_64.MinusStep
-import VerifiedGarbage.Proof.Dsa.X86_64.OneScanCT
-import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
-import VerifiedGarbage.Proof.Dsa.X86_64.Parity
-import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
-import VerifiedGarbage.Proof.Dsa.X86_64.Save
-import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
-import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.TopMask
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingMain
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.WidthMask
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroHead
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
-import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # The public schedule after independent verifying-workspace initialization -/
 

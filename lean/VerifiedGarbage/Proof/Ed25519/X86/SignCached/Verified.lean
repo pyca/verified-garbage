@@ -1,92 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
-meta import VerifiedGarbage.Impl.Ed25519.X86.SignCached
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
 public import VerifiedGarbage.Spec.Ed25519.CachedSign
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.NormNum.Prime
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-meta import VerifiedGarbage.Spec.Ed25519.CachedSign
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
-import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86.Power
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Freeze
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Impl.Sha256.X86.Stream
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-meta import VerifiedGarbage.Proof.Ed25519.X86.Power
-meta import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ed25519.X86.SignCached
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
+meta import VerifiedGarbage.Spec.Ed25519.CachedSign
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.Spec
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-meta import VerifiedGarbage.Proof.X25519.X86.Fold
-meta import VerifiedGarbage.Proof.X25519.X86.Freeze
-meta import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.Contract`. -/
 

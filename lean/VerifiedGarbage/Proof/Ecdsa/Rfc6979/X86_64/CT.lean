@@ -1,73 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Mont.X86_64.Adx
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Round
-import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Hmac.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
-meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.Mont.X86_64.Adx
-meta import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-meta import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-meta import VerifiedGarbage.Proof.Mont.X86_64.Round
-meta import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-meta import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-meta import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-meta import VerifiedGarbage.Proof.Sha256.StateMem
-meta import VerifiedGarbage.Proof.Weierstrass.Words
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-meta import VerifiedGarbage.Proof.X25519.Field
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Deterministic ECDSA on x86-64: constant time, up to the number of candidates

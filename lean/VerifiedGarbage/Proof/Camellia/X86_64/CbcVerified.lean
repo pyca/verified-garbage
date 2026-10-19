@@ -1,109 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
-meta import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
-meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
-meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+meta import VerifiedGarbage.Proof.Camellia.CbcScratch
+meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.AesSiv.Words
-import VerifiedGarbage.Proof.Camellia.CtrCipher
-import VerifiedGarbage.Proof.Camellia.Scratch
-import VerifiedGarbage.Proof.Camellia.X86_64.Copy
-import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.CbcNext
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-import VerifiedGarbage.Proof.Modes.X86_64.Copy
-import VerifiedGarbage.Proof.Modes.X86_64.Counter
-import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import VerifiedGarbage.Proof.Modes.X86_64.Fb
-import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Modes.X86_64.Xor
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCcm.Mac
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Camellia.CtrCipher
-meta import VerifiedGarbage.Proof.Camellia.Scratch
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Copy
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-meta import VerifiedGarbage.Proof.Cmac.Dbl32
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Modes.Addr
-meta import VerifiedGarbage.Proof.Modes.CbcNext
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-meta import VerifiedGarbage.Proof.Modes.X86_64.Copy
-meta import VerifiedGarbage.Proof.Modes.X86_64.Counter
-meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Steps
-meta import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-meta import VerifiedGarbage.Proof.Modes.X86_64.Words
-meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
-meta import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Camellia-CBC on x86-64 meets its contracts

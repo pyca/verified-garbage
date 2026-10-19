@@ -3,120 +3,13 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
-import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Cold
-import VerifiedGarbage.Proof.Framework.EntryBranch
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import VerifiedGarbage.Proof.Hmac.AnyKey
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-import VerifiedGarbage.Proof.Pbkdf2.Scratch
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-meta import VerifiedGarbage.Proof.Bignum.LazyMath
-meta import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Store
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Cold
-meta import VerifiedGarbage.Proof.Framework.EntryBranch
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Registration
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Hmac.AnyKey
-meta import VerifiedGarbage.Proof.Hmac.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-meta import VerifiedGarbage.Proof.Pbkdf2.Scratch
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
-meta import VerifiedGarbage.Proof.Sha256.StateMem
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, from `KDK` on

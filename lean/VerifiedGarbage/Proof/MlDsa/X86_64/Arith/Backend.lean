@@ -2,24 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
@@ -31,52 +16,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
 public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-public import VerifiedGarbage.Proof.MlKem.PolyW
-public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 
 /-!
 # ML-DSA on x86-64: what the callers of the polynomial arithmetic need of it

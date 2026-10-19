@@ -1,81 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
 import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
 import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.Group.Extended
+meta import VerifiedGarbage.Proof.Ed25519.Recover
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
-import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
-import VerifiedGarbage.Proof.Ed25519.AArch64.Points
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Decode
-import VerifiedGarbage.Proof.Ed25519.Field64
-import VerifiedGarbage.Proof.Ed25519.Scalar
-import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-import VerifiedGarbage.Proof.Ed25519.Window
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-meta import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
-meta import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
-meta import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Points
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.Decode
-meta import VerifiedGarbage.Proof.Ed25519.Field64
-meta import VerifiedGarbage.Proof.Ed25519.Scalar
-meta import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-meta import VerifiedGarbage.Proof.Ed25519.Window
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.Csub
-meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyCTPublic`. -/
 

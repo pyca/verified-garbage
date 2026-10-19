@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.P256.X86_64.JointFrame
 import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 
 /-! Baseline and ADX joint verification satisfy the existing functional specification. -/
 

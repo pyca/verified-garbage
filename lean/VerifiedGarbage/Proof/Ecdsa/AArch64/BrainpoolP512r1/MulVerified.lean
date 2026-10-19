@@ -1,137 +1,43 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
-meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-meta import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Proof.Weierstrass.Pow
-meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
+meta import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-meta import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-meta import VerifiedGarbage.Proof.Weierstrass.Pow
+meta import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-!
 # `vg_brainpoolp512r1_mul` on AArch64: `Verified`

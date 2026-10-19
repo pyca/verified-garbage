@@ -2,76 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
 import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
-meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.Permutation
-import VerifiedGarbage.Proof.Argon2.Reference
-import VerifiedGarbage.Proof.Argon2.Serialization
-import VerifiedGarbage.Proof.Argon2.Slices
-import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
-import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
-import VerifiedGarbage.Proof.Blake2.Scratch
-import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha256.X86.Compress
-import VerifiedGarbage.Proof.Sha512.Spec
-meta import VerifiedGarbage.Proof.Argon2.Dimensions
-meta import VerifiedGarbage.Proof.Argon2.Permutation
-meta import VerifiedGarbage.Proof.Argon2.Reference
-meta import VerifiedGarbage.Proof.Argon2.Serialization
-meta import VerifiedGarbage.Proof.Argon2.Slices
-meta import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
-meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
-meta import VerifiedGarbage.Proof.Blake2.Scratch
-meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
-meta import VerifiedGarbage.Proof.MdStream.X86.Common
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha256.X86.Compress
-meta import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Argon2 on x86 (32-bit): H₀, in two runs

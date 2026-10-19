@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFinalCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 
 @[expose] public section
 

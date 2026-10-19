@@ -6,75 +6,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
 import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.Mmx
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86.Sse
-public import VerifiedGarbage.Proof.Mont.Words128
-public import VerifiedGarbage.Proof.Mont.X86.Chain
-public import VerifiedGarbage.Proof.Mont.X86.Csub
-public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.P256Red
-public import VerifiedGarbage.Proof.Mont.X86.RedRow
-public import VerifiedGarbage.Proof.Mont.X86.Row
-public import VerifiedGarbage.Proof.Mont.X86.SparseShift
-public import VerifiedGarbage.Proof.Mont.X86.SparseStep
-public import VerifiedGarbage.Proof.Mont.X86.Step
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Weierstrass.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-public import VerifiedGarbage.Proof.Weierstrass.Window5
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
-public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-public import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.X25519.X86.Arith
-public import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.P256Red
-import VerifiedGarbage.Proof.Mont.X86.RedRow
-import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
-import VerifiedGarbage.Proof.Mont.X86.Step
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.Window5
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-! ## `NafInvariant` -/
 

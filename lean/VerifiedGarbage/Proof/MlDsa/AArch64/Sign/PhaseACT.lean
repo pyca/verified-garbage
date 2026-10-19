@@ -1,75 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.KPke
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 
 /-!
 # ML-DSA signing on AArch64: `ExpandA` leaks only `ρ`

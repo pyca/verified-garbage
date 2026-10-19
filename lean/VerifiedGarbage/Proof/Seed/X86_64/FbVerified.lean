@@ -1,87 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
 import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 public import VerifiedGarbage.Proof.Seed.FbScratch
-meta import VerifiedGarbage.Proof.Seed.FbScratch
 import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
-meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Modes.Fb
 public import VerifiedGarbage.Spec.Seed.Cfb
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-import VerifiedGarbage.Proof.Modes.X86_64.Copy
-import VerifiedGarbage.Proof.Modes.X86_64.Counter
-import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Seed.X86_64.Setup
-import VerifiedGarbage.Proof.Seed.X86_64.Swap
-import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.Spec.Seed.Contract
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+meta import VerifiedGarbage.Proof.Seed.FbScratch
+meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Modes.Fb
+meta import VerifiedGarbage.Spec.Seed.Cfb
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Seed.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Modes.Addr
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-meta import VerifiedGarbage.Proof.Modes.X86_64.Copy
-meta import VerifiedGarbage.Proof.Modes.X86_64.Counter
-meta import VerifiedGarbage.Proof.Modes.X86_64.Steps
-meta import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-meta import VerifiedGarbage.Proof.Modes.X86_64.Words
-meta import VerifiedGarbage.Proof.Seed.X86_64.Setup
-meta import VerifiedGarbage.Proof.Seed.X86_64.Swap
-meta import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Spec.Seed.Cfb
-meta import VerifiedGarbage.Spec.Seed.Contract
 
 /-!
 # SEED-OFB and -CFB128 on x86-64 meet their contracts

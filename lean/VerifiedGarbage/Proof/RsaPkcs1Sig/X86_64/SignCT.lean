@@ -3,128 +3,29 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-meta import Mathlib.Data.Int.ModEq
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
-meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
-meta import VerifiedGarbage.Proof.Bignum.CrtMath
-meta import VerifiedGarbage.Proof.Bignum.LazyMath
-meta import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Store
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Poly1305.Limbs64
-meta import VerifiedGarbage.Proof.Rsa.Octets
-meta import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
-meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
-meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: constant time

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
 import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 
 @[expose] public section
 

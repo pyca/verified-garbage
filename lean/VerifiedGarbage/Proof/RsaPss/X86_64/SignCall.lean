@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Order.Defs.PartialOrder
+import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 
 /-!
 # RSASSA-PSS signing on x86-64: the call of `vg_rsa_private_checked`

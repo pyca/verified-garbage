@@ -1,82 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
 public import VerifiedGarbage.Proof.Sm4.FbScratch
-meta import VerifiedGarbage.Proof.Sm4.FbScratch
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.Sm4.Arm.Fb
 public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 public import VerifiedGarbage.Spec.Sm4.Cfb
-meta import VerifiedGarbage.Impl.Sm4.Arm.Fb
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.Arm.Counter
-import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sm4.Arm.Copy
-import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
-import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
-import VerifiedGarbage.Proof.Sm4.CbcScratch
-import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.CmacAes.Arm.Words
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.Arm.Syms
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Modes.Addr
-meta import VerifiedGarbage.Proof.Modes.Arm.Counter
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sm4.Arm.Copy
-meta import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-meta import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
-meta import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
-meta import VerifiedGarbage.Proof.Sm4.CbcScratch
-meta import VerifiedGarbage.Proof.Sm4.CtrCipher
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.FbScratch
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Impl.Sm4.Arm.Fb
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SM4-OFB and SM4-CFB128 on ARMv7 meet their contracts

@@ -1,109 +1,41 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
-meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
 import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecode
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyScalar
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyFinish
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTEquation
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
+meta import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+meta import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-import VerifiedGarbage.Proof.Ed25519.Window
-import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86.Power
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
-import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Freeze
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-meta import VerifiedGarbage.Proof.Ed25519.Window
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-meta import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-meta import VerifiedGarbage.Proof.Ed25519.X86.Power
-meta import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
-meta import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-meta import VerifiedGarbage.Proof.X25519.X86.Fold
-meta import VerifiedGarbage.Proof.X25519.X86.Freeze
-meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMain`. -/
 

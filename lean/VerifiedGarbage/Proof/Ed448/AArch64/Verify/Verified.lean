@@ -1,64 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.ScalarWords
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-meta import VerifiedGarbage.Impl.Ed448.Formulas
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
-meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
-meta import VerifiedGarbage.Proof.Ed448.ScalarWords
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Call
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 
 /-!
 # Ed448 verification on AArch64: `Verified`

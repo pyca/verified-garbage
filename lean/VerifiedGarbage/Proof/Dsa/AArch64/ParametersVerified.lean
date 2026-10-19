@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The AArch64 DSA domain check verified against the shared contract -/
 

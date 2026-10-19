@@ -1,92 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.AesCcm.X86.Aad
-meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
 public import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
 public import VerifiedGarbage.Proof.AesCcm.Mac
-meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
 import VerifiedGarbage.Proof.AesCcm.BytesAt
-meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
-meta import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.X86.Run
-meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
+meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
+meta import VerifiedGarbage.Proof.AesCcm.Mac
+meta import VerifiedGarbage.Proof.AesCcm.BytesAt
+meta import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.AesCcm.X86.Callee
-import VerifiedGarbage.Proof.AesCcm.X86.Contract
-import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.CmacAes.X86.Verified
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Spec.Ccm.Contract
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-meta import VerifiedGarbage.Proof.Aes.X86.Keys
-meta import VerifiedGarbage.Proof.AesCcm.Ctr
-meta import VerifiedGarbage.Proof.AesCcm.X86.Callee
-meta import VerifiedGarbage.Proof.AesCcm.X86.Contract
-meta import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-meta import VerifiedGarbage.Proof.CmacAes.X86.Verified
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Gcm.Compose
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Spec.Ccm.Contract
 
 /-!
 # AES-CCM on x86: the associated data is chained in constant time

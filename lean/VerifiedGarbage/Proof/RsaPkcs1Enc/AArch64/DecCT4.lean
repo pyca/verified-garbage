@@ -3,79 +3,23 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Cold
-import VerifiedGarbage.Proof.Framework.EntryBranch
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Hmac.AnyKey
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMsg
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
-import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
-import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Cold
-meta import VerifiedGarbage.Proof.Framework.EntryBranch
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Hmac.AnyKey
-meta import VerifiedGarbage.Proof.Hmac.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMsg
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
-meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
-meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, the selection

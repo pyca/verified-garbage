@@ -3,93 +3,27 @@ public import VerifiedGarbage.Proof.AesCcm.X86_64.Chunk
 public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 
 import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
 import VerifiedGarbage.Proof.AesCcm.X86_64.Args
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
-import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-import VerifiedGarbage.Proof.AesCcm.X86_64.Ctrs
-import VerifiedGarbage.Proof.AesCcm.X86_64.Header
-import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
-import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
-import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
-import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
-import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-import VerifiedGarbage.Spec.Ccm.Contract
-meta import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
-meta import VerifiedGarbage.Impl.Gcm.X86_64
-meta import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Ctrs
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Header
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Chunk
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Impl.AesCcm.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.Impl.AesCcm.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-meta import VerifiedGarbage.Spec.Ccm.Contract
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-CCM on x86-64: counter mode is constant time

@@ -1,95 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
-meta import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.Aes.X86.Decrypt
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-import VerifiedGarbage.Proof.AesGcm.X86.Flush
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-import VerifiedGarbage.Proof.AesOcb.X86.Entry
-import VerifiedGarbage.Proof.AesOcb.X86.Run
-import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.X86.CT
-import VerifiedGarbage.Proof.AesXts.X86.Verified
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.X86.Save
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Spec.Ocb.Contract
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-meta import VerifiedGarbage.Proof.Aes.X86.Decrypt
-meta import VerifiedGarbage.Proof.Aes.X86.Keys
-meta import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-meta import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-meta import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
-meta import VerifiedGarbage.Proof.AesGcm.X86.Top
-meta import VerifiedGarbage.Proof.AesOcb.X86.Entry
-meta import VerifiedGarbage.Proof.AesOcb.X86.Run
-meta import VerifiedGarbage.Proof.AesXts.Alpha
-meta import VerifiedGarbage.Proof.AesXts.X86.CT
-meta import VerifiedGarbage.Proof.AesXts.X86.Verified
-meta import VerifiedGarbage.Proof.Cmac.Block
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.CmacAes.X86.Save
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Gcm.Be64
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Spec.Ocb.Contract
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES of data units on x86: constant time

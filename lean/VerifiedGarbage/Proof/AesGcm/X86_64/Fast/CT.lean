@@ -1,114 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
-import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
-import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-meta import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
-meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
-meta import VerifiedGarbage.Impl.Gcm.X86_64
-meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-meta import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Gcm.Be64
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
-meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records, in two runs

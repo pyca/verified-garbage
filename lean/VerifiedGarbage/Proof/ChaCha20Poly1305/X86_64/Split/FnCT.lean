@@ -1,120 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Fn
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Fn
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Fn
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Loop
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.ContractPost
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Poly1305.Stream
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
-import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Init
-meta import VerifiedGarbage.Impl.Gcm.X86_64
-meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Loop
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.ContractPost
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-meta import VerifiedGarbage.Proof.Gcm.Ctr
-meta import VerifiedGarbage.Proof.Gcm.SealGather
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Poly1305.Stream
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 
 
 /-!

@@ -1,68 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.RsaOaep.Scan
-import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-meta import VerifiedGarbage.Proof.Bignum.LazyMath
-meta import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Mgf1.Bytes
-meta import VerifiedGarbage.Proof.RsaOaep.Scan
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
-meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # RSAES-OAEP on x86-64: the label's hash in constant time

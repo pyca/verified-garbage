@@ -1,63 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Impl.Bignum.AArch64
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcEnd
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcExtend
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoop
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
-import VerifiedGarbage.Proof.Bignum.AArch64.Csub
-import VerifiedGarbage.Proof.Bignum.AArch64.Reduce
-import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-meta import VerifiedGarbage.Impl.Bignum.AArch64
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcEnd
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcExtend
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoop
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
-meta import VerifiedGarbage.Proof.Bignum.AArch64.Csub
-meta import VerifiedGarbage.Proof.Bignum.AArch64.Reduce
-meta import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
-meta import VerifiedGarbage.Proof.Bignum.AArch64.Row
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-meta import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 @[expose] public section
 

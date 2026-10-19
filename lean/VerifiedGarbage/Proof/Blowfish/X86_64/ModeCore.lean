@@ -1,81 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 public import VerifiedGarbage.Proof.Modes.X86_64.KeepGpr
 public import VerifiedGarbage.Impl.Blowfish.X86_64.Modes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import VerifiedGarbage.Proof.Blowfish.X86_64.Block
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Modes.X86_64.Core
-public import VerifiedGarbage.Proof.Modes.X86_64.Words
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
-public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCtr.Spec
-public import VerifiedGarbage.Proof.Blowfish.Schedule
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-public import VerifiedGarbage.Proof.Modes.X86_64.Copy
-public import VerifiedGarbage.Proof.Modes.X86_64.Counter
-public import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-public import VerifiedGarbage.Proof.Modes.X86_64.Steps
-public import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-public import VerifiedGarbage.Spec.Blowfish.Contract
-public import VerifiedGarbage.Spec.Ctr.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-import VerifiedGarbage.Proof.Modes.X86_64.Copy
-import VerifiedGarbage.Proof.Modes.X86_64.Counter
-import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Spec.Blowfish.Contract
-import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Blowfish's core for the modes on x86-64

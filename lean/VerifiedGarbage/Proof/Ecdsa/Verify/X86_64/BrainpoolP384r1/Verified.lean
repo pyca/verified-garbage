@@ -1,133 +1,39 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-meta import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.X86_64
+import VerifiedGarbage.Proof.Framework.LitShare
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Weierstrass.WinLay
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.X86_64
-import VerifiedGarbage.Proof.BrainpoolP384r1.Point
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.X86_64.Check
-import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
-import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.X86_64
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.WinLay
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Mont.X86_64.Round
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
-meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.X86_64
-meta import VerifiedGarbage.Proof.BrainpoolP384r1.Point
-meta import VerifiedGarbage.Proof.EcKey.PublicKey
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.Check
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-meta import VerifiedGarbage.Proof.Ecdsa.Sign
-meta import VerifiedGarbage.Proof.Ecdsa.Verify
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.BitByte
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Mont.Words128
-meta import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-meta import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-meta import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-meta import VerifiedGarbage.Proof.Mont.X86_64.Ops
-meta import VerifiedGarbage.Proof.Mont.X86_64.Round
-meta import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-meta import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-meta import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
 
 /-!
 # ECDSA verification over brainpoolP384r1 on x86-64: `Verified`

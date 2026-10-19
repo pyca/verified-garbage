@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Set
+import Mathlib.Order.Defs.PartialOrder
+import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the frame

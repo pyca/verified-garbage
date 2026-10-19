@@ -5,66 +5,19 @@ public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Spec.Xts.Contract
 
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-import VerifiedGarbage.Proof.AesCbc.X86_64.Block
-import VerifiedGarbage.Proof.AesCbc.X86_64.Body
-import VerifiedGarbage.Proof.AesCbc.X86_64.CT
-import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-meta import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
-meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-meta import VerifiedGarbage.Proof.AesCbc.X86_64.Block
-meta import VerifiedGarbage.Proof.AesCbc.X86_64.Body
-meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
-meta import VerifiedGarbage.Proof.AesXts.Alpha
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Impl.AesXts.X86_64Vaes
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+meta import VerifiedGarbage.Proof.AesXts.Spec
 meta import VerifiedGarbage.Spec.Xts.Contract
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # One-pass XTS-AES on x86-64: `Verified`

@@ -1,73 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Correct
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Correct
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Arm.TaintErase
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Mont.Arm.Csub
-import VerifiedGarbage.Proof.Mont.Arm.Row
-import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.X25519.Arm.Limbs
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Spec.Ecdsa.P256
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Correct
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Hmac.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Mont.Arm.Csub
-meta import VerifiedGarbage.Proof.Mont.Arm.Row
-meta import VerifiedGarbage.Proof.Mont.Arm.Step
-meta import VerifiedGarbage.Proof.Sha256.StateMem
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 meta import VerifiedGarbage.Proof.Weierstrass.Layout
-meta import VerifiedGarbage.Proof.Weierstrass.Words
-meta import VerifiedGarbage.Proof.Weierstrass.Words32
-meta import VerifiedGarbage.Proof.X25519.Arm.Limbs
-meta import VerifiedGarbage.Proof.X25519.Field
-meta import VerifiedGarbage.Spec.Ecdsa.P256
-meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: constant time, up to the number of candidates

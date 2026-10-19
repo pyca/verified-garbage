@@ -1,62 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
-meta import VerifiedGarbage.Proof.AesGcm.X86.Common
-public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
-meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Gcm.Compose
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-meta import VerifiedGarbage.Proof.Aes.X86.Keys
+meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 meta import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Gcm.Compose
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-GCM on x86: GHASH absorbing a piece (`absorb`)

@@ -1,98 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Mem16Bytes
-import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbWord
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.Mem16Bytes
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Call
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
 
 /-! ## From `BallChecks.lean` -/

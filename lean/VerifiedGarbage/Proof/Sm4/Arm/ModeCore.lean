@@ -1,69 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
-public import VerifiedGarbage.Proof.Sm4.Arm.Lit
 public import VerifiedGarbage.Spec.Sm4.Cbc
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
-public import VerifiedGarbage.Proof.Sm4.CbcScratch
-import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCtr.Spec
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacAes.Arm.Words
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.Arm.Syms
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Modes.Arm.Counter
-public import VerifiedGarbage.Proof.Modes.Arm.Ops
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sm4.Arm.Copy
-public import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-public import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
-public import VerifiedGarbage.Proof.Sm4.Layout
-public import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.Arm.Counter
-import VerifiedGarbage.Proof.Modes.Arm.Ops
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sm4.Arm.Copy
-import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
-import VerifiedGarbage.Proof.Sm4.CbcScratch
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
 
 /-!
 # SM4's ECB functions on ARMv7 as the modes' core

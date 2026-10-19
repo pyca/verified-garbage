@@ -4,81 +4,22 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.PolyW
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4`

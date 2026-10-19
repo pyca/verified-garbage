@@ -1,98 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryHash
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructPlan
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.BufferSeparate
-import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryPrime
+import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateFromFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateReduction
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Double
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyArgs
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawPrepared
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequence
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashValue
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Increment
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopExhausted
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopInit
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopRound
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopStep
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusHeader
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeLoop
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeReject
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeEnds
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Reduce
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReduceFromFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReductionExponent
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundHeader
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Subtract
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceWords
-public import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
-public import VerifiedGarbage.Proof.Dsa.Generation.Trial
-import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateFromFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateReduction
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Double
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopy
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyArgs
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawPrepared
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequence
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashValue
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Increment
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopExhausted
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopInit
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopRound
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopStep
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusHeader
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShape
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeLoop
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeReject
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShape
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeEnds
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Reduce
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReduceFromFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReductionExponent
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundHeader
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Subtract
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceWords
-import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
-import VerifiedGarbage.Proof.Dsa.Generation.Trial
 
 /-! # Concrete p-candidate construction plan for each accepted subgroup candidate -/
 

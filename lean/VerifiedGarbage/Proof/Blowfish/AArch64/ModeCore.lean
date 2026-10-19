@@ -1,65 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeepV
-public import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Impl.Blowfish.AArch64.Modes
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
-import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-import VerifiedGarbage.Proof.Modes.AArch64.Copy
-import VerifiedGarbage.Proof.Modes.AArch64.Counter
-import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Spec.Blowfish.Contract
-import VerifiedGarbage.Spec.Ctr.Contract
-public import VerifiedGarbage.Proof.Modes.AArch64.Core
-public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCtr.Spec
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-public import VerifiedGarbage.Proof.Modes.AArch64.Copy
-public import VerifiedGarbage.Proof.Modes.AArch64.Counter
-public import VerifiedGarbage.Proof.Modes.AArch64.Steps
-public import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-public import VerifiedGarbage.Proof.Modes.AArch64.Words
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Spec.Blowfish.Contract
-public import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 
 /-!
 # Blowfish's core for the modes on AArch64

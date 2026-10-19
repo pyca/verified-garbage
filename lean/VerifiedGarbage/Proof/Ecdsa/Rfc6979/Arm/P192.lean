@@ -1,94 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
+import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.Arm.Csub
-import VerifiedGarbage.Proof.Mont.Arm.Row
-import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.P192.Point
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Rc2.PairMem
-import VerifiedGarbage.Proof.Rc2.Select
-import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Weierstrass.Pow
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.X25519.Arm.Limbs
-import VerifiedGarbage.Proof.X25519.Field
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-meta import VerifiedGarbage.Proof.Ecdsa.Sign
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Mont.Arm.Csub
-meta import VerifiedGarbage.Proof.Mont.Arm.Row
-meta import VerifiedGarbage.Proof.Mont.Arm.Step
-meta import VerifiedGarbage.Proof.P192.Point
-meta import VerifiedGarbage.Proof.Rc2.Memory32
-meta import VerifiedGarbage.Proof.Rc2.PairMem
-meta import VerifiedGarbage.Proof.Rc2.Select
-meta import VerifiedGarbage.Proof.Rc2.Word
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-meta import VerifiedGarbage.Proof.Weierstrass.Pow
-meta import VerifiedGarbage.Proof.Weierstrass.Words
-meta import VerifiedGarbage.Proof.Weierstrass.Words32
-meta import VerifiedGarbage.Proof.X25519.Arm.Limbs
-meta import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.P192.Point
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
-public import VerifiedGarbage.Proof.X25519.Field
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: P-192

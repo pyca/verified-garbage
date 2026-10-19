@@ -2,59 +2,22 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Impl.MlKem.AArch64.Encode
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
-import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
-import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Decode
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Loop
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Memory
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Steps
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
-import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
-meta import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
-meta import VerifiedGarbage.Proof.MlKem.Mem16Bytes
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Vector rejection leaks only its public matrix candidates and cursors -/
 

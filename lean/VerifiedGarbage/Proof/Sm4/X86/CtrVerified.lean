@@ -1,64 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-public import VerifiedGarbage.Proof.Sm4.X86.CtrLit
-meta import VerifiedGarbage.Proof.Sm4.X86.CtrLit
 import VerifiedGarbage.Proof.Modes.X86.Ctr
-meta import VerifiedGarbage.Proof.Modes.X86.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
-public import Mathlib.Data.List.Induction
-meta import VerifiedGarbage.Proof.Sm4.Scratch
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Sm4.X86.CtrLit
+public import VerifiedGarbage.Impl.Sm4.X86.Ctr
+meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.Ctr
+meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Inc
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Modes.CtrStep
-import VerifiedGarbage.Proof.Modes.X86.Counter
-import VerifiedGarbage.Proof.Modes.X86.Ops
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.X86.Copy
-import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCtr.Inc
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Modes.CtrStep
-meta import VerifiedGarbage.Proof.Modes.X86.Counter
-meta import VerifiedGarbage.Proof.Modes.X86.Ops
-meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-meta import VerifiedGarbage.Proof.Sm4.CtrCipher
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Proof.Sm4.Planes
-meta import VerifiedGarbage.Proof.Sm4.X86.Copy
-meta import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Sm4.X86.CtrLit
+meta import VerifiedGarbage.Impl.Sm4.X86.Ctr
 
 /-! # SM4-CTR on x86 meets its correctness and constant-time contracts -/
 
