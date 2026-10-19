@@ -114,6 +114,12 @@ def short : StitchName → Bool
   | .vaesAvx512 => true
   | _ => false
 
+/-- Whether `seal_split` takes a TLS record's whole groups at `src` and at
+`dst` in one pass of the loop on 256-bit registers (`SealSplit.prefixN`). -/
+def onePass : StitchName → Bool
+  | .vaes => true
+  | _ => false
+
 end StitchName
 
 /-- The facts `Piece` states of the loops named `n` for a key context of

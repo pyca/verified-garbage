@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 
 /-!
 # AES-GCM on x86-64: `seal` of a plaintext whose prefix is elsewhere
@@ -92,6 +93,54 @@ def «prefix» (fTo : Fn) : Prog isa :=
   (.seq (.block copyArgs)
   (.seq (.ite .e (.block []) copyLoop)
     (.block rest))))
+
+/-! ## In one pass
+
+On 256-bit registers, `prefixN` takes the texts whose first slice holds a
+whole group of 16 blocks and that hold more of them than it: the bytes of
+`src` after its last whole group copied to `dst`, its groups and then those
+at `dst` after them are encrypted and absorbed by one interleaved loop
+(`StitchR.encN`, inline), and the data from the last whole group of the
+text on is kept for `body`. -/
+
+/-- `CF` if `⌊src_len / 256⌋` is not 0 and less than `⌊len / 256⌋`: their
+values less one compared unsigned (`len` is at least `src_len`). -/
+def nTest : List Instr :=
+  [.mov .rax (.mem (at_ .r15 tlenO)), .shift .shr .rax 8, .alu .sub .rax (imm 1), .mov .rcx (.mem (at_ .r15 lenO)),
+    .shift .shr .rcx 8, .alu .sub .rcx (imm 1), .alu .cmp .rax (.reg .rcx)]
+
+/-- The bytes of `src` after its last whole group, their number into `rcx`
+and their address and that of their copy into `rsi` and `rdi`, for the
+gathering's `copy`. -/
+def nCopyArgs : List Instr :=
+  [.mov .rax (.mem (at_ .r15 tlenO)), .mov .rcx (.reg .rax), .shift .shr .rax 8, .shift .shl .rax 8,
+    .alu .sub .rcx (.reg .rax), .mov .rsi (.mem (at_ .r15 tlO)), .alu .add .rsi (.reg .rax),
+    .mov .rdi (.mem (at_ .r15 dataO)), .alu .add .rdi (.reg .rax)]
+
+/-- The arguments of `StitchR.encN`: those of `vg_aes_gcm_encrypt_blocks_to`
+for the whole groups at `src` (`r9` blocks), and `dst` and the number of
+blocks of the whole groups at `dst` after them in `rbx` and `rbp`. -/
+def nArgs : List Instr :=
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+    ptr .rcx .r14 16 ++ ([.mov .r8 (.mem (at_ .r15 tlO)), .mov .r9 (.mem (at_ .r15 tlenO)), .shift .shr .r9 8,
+      .shift .shl .r9 4, .mov .r10 (.mem (at_ .r15 dataO)), .mov .rbx (.reg .r10),
+      .mov .rbp (.mem (at_ .r15 lenO)), .shift .shr .rbp 8, .shift .shl .rbp 4, .alu .sub .rbp (.reg .r9)] :
+      List Instr) ++ ptr .r11 .r15 bScrO
+
+/-- `len` kept at `auxO`, and the data from its last whole group on as the
+data and its length. -/
+def nRest : List Instr :=
+  [.mov .rax (.mem (at_ .r15 lenO)), .store (at_ .r15 auxO) .rax, .mov .rcx (.reg .rax), .shift .shr .rax 8,
+    .shift .shl .rax 8, .alu .sub .rcx (.reg .rax), .store (at_ .r15 lenO) .rcx, .alu .add .rax (.mem (at_ .r15 dataO)),
+    .store (at_ .r15 dataO) .rax]
+
+/-- `prefix fTo`, but in one pass (`StitchR.encN`) for the texts `nTest`
+takes. -/
+def prefixN (fTo : Fn) : Prog isa :=
+  .seq (.block nTest)
+    (.ite .b
+      (.seq (.block nCopyArgs) (.seq SealGather.copy (.seq (.block nArgs) (.seq Gcm.X86_64.StitchR.encN (.block nRest)))))
+      («prefix» fTo))
 
 /-- The total length put back where `oneBlocks` kept the length of what it
 encrypted. -/

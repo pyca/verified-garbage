@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.Split
 public import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field
@@ -85,6 +86,7 @@ theorem gacc_ghash {m : Mem} {G T : Addr} {H : Block} {g : Nat} (hT : TabOk m T 
 theorem shortFacts : ShortFacts :=
   ⟨powers_ok, powHead_ok, gacc_ghash, finPow_facts,
     fun H _ _ => step1' _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]),
-    fun H _ _ _ => step2 _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2)⟩
+    fun H _ _ _ => step2 _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2),
+    VG.Proof.Gcm.X86_64.StitchR.setupFin⟩
 
 end VG.Proof.AesGcm.X86_64.Short

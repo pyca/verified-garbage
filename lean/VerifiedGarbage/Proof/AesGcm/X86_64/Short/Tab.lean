@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 public import VerifiedGarbage.Spec.Gcm.Precomputed
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 
 /-!
 # AES-GCM's short path on x86-64: the table of powers, without the field
@@ -109,5 +110,8 @@ structure ShortFacts : Prop where
   /-- The prepared powers `H'` and `H'²` (`Spec.Gcm.preparedPower`) multiply as `H` and `H²`. -/
   pp1 : ∀ H : Block, IsH1 H (hInvF (hpow H 1))
   pp2 : ∀ H : Block, IsH2 H (hInvF (hpow H 1)) (hInvF (hpow H 2))
+  /-- The powers the 256-bit loop's out-of-place setup stores give the
+  products of an encryption body (for `seal_split`'s one pass). -/
+  setupFin : VG.Proof.Gcm.X86_64.StitchR.SetupFin
 
 end VG.Proof.AesGcm.X86_64.Short

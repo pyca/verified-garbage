@@ -322,7 +322,7 @@ theorem fastArgs_ok (hn : s.gpr .rcx = 12#64) (hc : Cnt s ≠ 0) {st : State} (h
     all_goals simp [gpr_setReg]
 
 /-- The path of a TLS record's text, from a state `Same` as the entry. -/
-theorem frontFast_wp (S : SplitFn M) {long fill : Bool} (hg : frontGo long fill s = true) {st : State}
+theorem frontFast_wp (S : SplitFn M) {long : Bool} (hg : frontGo long s = true) {st : State}
     (hs : Same s st) : WP isa (frontFast S.fn) st (Done s) := by
   obtain ⟨hn, hcnt, hsub⟩ := front_facts hp hg
   have hc0 : Cnt s ≠ 0 := by omega

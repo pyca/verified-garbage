@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 
 /-!
 # The 256-bit interleaved loops with prepared powers meet their contracts
@@ -112,5 +113,9 @@ theorem setupTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
 /-- The out-of-place loop, for a prepared key context. -/
 theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encTo := fun _ hp hm =>
   WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailTo_ok hp hm (finE hpw) hR)
+
+/-- The setup's powers give the products of an encryption body. -/
+theorem setupFin : SetupFin := fun hp =>
+  WP.mono (setupTo_ok hp) fun _ ⟨P, hR, hpw⟩ => ⟨P, hR, finE hpw⟩
 
 end VG.Proof.Gcm.X86_64.StitchR
