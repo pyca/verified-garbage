@@ -9,11 +9,12 @@ public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Layers
 import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # SM4 on AArch64: the layers every function shares, as literals

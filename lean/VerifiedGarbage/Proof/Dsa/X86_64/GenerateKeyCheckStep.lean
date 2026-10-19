@@ -6,6 +6,91 @@ import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.Random
+public import VerifiedGarbage.Proof.Dsa.RandomEncoding
+public import VerifiedGarbage.Proof.Dsa.RandomSign
+public import VerifiedGarbage.Proof.Dsa.RandomSignResult
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveMainCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyDerive
+public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopy
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCandidate
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyWhole
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDraw
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawRange
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomFunctional
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomInRange
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomNonceEncoding
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepare
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareFinish
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareState
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomRange
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgs
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallPre
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInit
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPost
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedStep
+import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+import VerifiedGarbage.Proof.Dsa.Random
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Dsa.RandomSign
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveMainCT
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyDerive
+import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCandidate
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyWhole
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDraw
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawRange
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFunctional
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomInRange
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomNonceEncoding
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareFinish
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareState
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomRange
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallPre
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInit
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPost
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-! # Key generation's domain check, on its frame state -/
 

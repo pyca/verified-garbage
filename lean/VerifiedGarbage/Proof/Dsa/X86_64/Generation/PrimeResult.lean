@@ -4,10 +4,66 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import VerifiedGarbage.Proof.Bignum.LazyMath
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
+public import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+public import VerifiedGarbage.Proof.Bignum.X86_64.Row
+public import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+public import VerifiedGarbage.Proof.RsaOaep.Scan
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Bignum.LazyMath
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.RsaOaep.Scan
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-! # Return the primality result to the persistent generation frame -/
 

@@ -4,6 +4,24 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 public import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.Bytes
+public import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Permutation
 
 @[expose] public section
 

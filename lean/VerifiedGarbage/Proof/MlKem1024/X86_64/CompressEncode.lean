@@ -24,7 +24,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Proof.MlKem.Encode1024
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
@@ -64,6 +64,22 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.MlKem.PolyW
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_compress_encode`

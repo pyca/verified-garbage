@@ -43,7 +43,7 @@ import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -85,6 +85,31 @@ meta import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Proof.X25519.X86.Fold
 meta import VerifiedGarbage.Proof.X25519.X86.Freeze
 meta import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
+meta import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
+public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
+meta import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
+public import VerifiedGarbage.Impl.Sha256.X86.Stream
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+public import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86.Power
+public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.CT`. -/
 

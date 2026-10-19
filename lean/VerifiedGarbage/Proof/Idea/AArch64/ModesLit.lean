@@ -12,6 +12,9 @@ meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Spec.TripleDes
 
 /-! # IDEA-CBC, -OFB and -CFB64's AArch64 code as literals, for kernel-evaluated checks -/
 

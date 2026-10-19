@@ -42,6 +42,8 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Memory
 meta import VerifiedGarbage.Proof.Sha1.Arm.Shared
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha512.Arm.Shared
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the instances

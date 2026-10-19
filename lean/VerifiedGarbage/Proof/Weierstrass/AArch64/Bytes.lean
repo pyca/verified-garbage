@@ -13,6 +13,17 @@ import VerifiedGarbage.Impl.Mont.AArch64
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # Short Weierstrass curves on AArch64: words to and from big-endian bytes

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.X86.Top
@@ -11,6 +11,83 @@ public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
 import VerifiedGarbage.Proof.MlKem.X86.Pack
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86.Mul
+public import VerifiedGarbage.Proof.MlKem.X86.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+public import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.Proof.MlKem.X86.TopCall
+public import VerifiedGarbage.Proof.MlKem.X86.TopHash
+public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
+public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import VerifiedGarbage.Proof.MlKem.X86.Cbd
+import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86.Decode12
+import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86.Encode12
+import VerifiedGarbage.Proof.MlKem.X86.Mul
+import VerifiedGarbage.Proof.MlKem.X86.NttInv
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Sample
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-DSA key generation on x86 (32-bit): parameters and layout

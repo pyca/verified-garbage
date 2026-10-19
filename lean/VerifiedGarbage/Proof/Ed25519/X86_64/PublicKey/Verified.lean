@@ -1,13 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Spec.Weierstrass
@@ -198,6 +198,69 @@ meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Bits
 meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Group.Decode
+public import VerifiedGarbage.Proof.Ed25519.Scalar
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
+public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTBatch
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.X25519.X86_64.Bits
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+public import VerifiedGarbage.Proof.X25519.X86_64.Finish
+public import VerifiedGarbage.Proof.X25519.X86_64.Freeze
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Proof.X25519.X86_64.Inv
+public import VerifiedGarbage.Proof.X25519.X86_64.Invert
+public import VerifiedGarbage.Proof.X25519.X86_64.Iter
+public import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
 meta import VerifiedGarbage.Proof.X25519.X86_64.Finish

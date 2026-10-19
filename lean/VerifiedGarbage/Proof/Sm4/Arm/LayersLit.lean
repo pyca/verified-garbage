@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Impl.Sm4.Arm.Layers
 import VerifiedGarbage.Impl.Aes.Arm.Alloc
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # SM4 on Arm: the layers every function shares, as literals

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Modes.X86_64.Fb
+public import VerifiedGarbage.Proof.Modes.X86_64.Words
+public import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Seed.X86_64.Lit
 public import VerifiedGarbage.Impl.Seed.X86_64.Modes
 public import VerifiedGarbage.Proof.Seed.ModeBytes
@@ -36,6 +36,34 @@ import VerifiedGarbage.Proof.Modes.X86_64.Unchain
 import VerifiedGarbage.Proof.Seed.X86_64.Swap
 import VerifiedGarbage.Spec.Ctr.Contract
 import VerifiedGarbage.Spec.Seed.Contract
+public import VerifiedGarbage.Spec.Seed.Cbc
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+public import VerifiedGarbage.Proof.Modes.X86_64.Copy
+public import VerifiedGarbage.Proof.Modes.X86_64.Counter
+public import VerifiedGarbage.Proof.Modes.X86_64.Steps
+public import VerifiedGarbage.Proof.Modes.X86_64.Unchain
+public import VerifiedGarbage.Proof.Seed.X86_64.Setup
+public import VerifiedGarbage.Proof.Seed.X86_64.Swap
+public import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Spec.Seed.Contract
 
 /-!
 # SEED's core for the modes on x86-64

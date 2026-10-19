@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: the encodings -/
 

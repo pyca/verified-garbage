@@ -11,11 +11,12 @@ public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Block
 import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

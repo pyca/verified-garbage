@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Code
 public import VerifiedGarbage.Proof.Hmac.Generic.Common

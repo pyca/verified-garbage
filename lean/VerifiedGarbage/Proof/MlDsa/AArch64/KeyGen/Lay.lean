@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
@@ -12,6 +12,85 @@ public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+public import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+public import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers

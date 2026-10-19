@@ -5,6 +5,14 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackLoop
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackMain
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackLoop
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackMain
 
 /-!
 # ML-DSA (FIPS 204) on x86: the encodings

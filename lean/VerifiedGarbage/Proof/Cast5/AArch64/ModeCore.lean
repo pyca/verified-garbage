@@ -12,7 +12,7 @@ import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
+public import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -29,6 +29,24 @@ import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Spec.Cast5.Contract
 import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+public import VerifiedGarbage.Proof.Modes.AArch64.Copy
+public import VerifiedGarbage.Proof.Modes.AArch64.Counter
+public import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Modes.AArch64.Unchain
+public import VerifiedGarbage.Proof.Modes.AArch64.Words
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Spec.Cast5.Contract
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # CAST5's core for the modes on AArch64

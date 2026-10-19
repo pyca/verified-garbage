@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Offset
@@ -70,6 +70,25 @@ meta import VerifiedGarbage.Proof.Weierstrass.Words
 meta import VerifiedGarbage.Proof.Weierstrass.Words32
 meta import VerifiedGarbage.Proof.X25519.Arm.Limbs
 meta import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.BrainpoolP256r1.Point
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: brainpoolP256r1

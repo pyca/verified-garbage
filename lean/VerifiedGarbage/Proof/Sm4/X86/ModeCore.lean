@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.PreparedVerified
 public import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
 public import VerifiedGarbage.Impl.Sm4.X86.Modes
-import VerifiedGarbage.Proof.Sm4.CtrCipher
+public import VerifiedGarbage.Proof.Sm4.CtrCipher
 public import VerifiedGarbage.Spec.Sm4.Cbc
 public import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
 public import VerifiedGarbage.Proof.Framework.X86.Call
@@ -25,6 +25,21 @@ import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Sm4.X86.Copy
 import VerifiedGarbage.Proof.Sm4.X86.Crypt8
 import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Modes.Steps
+public import VerifiedGarbage.Proof.Modes.X86.Counter
+public import VerifiedGarbage.Proof.Modes.X86.Ops
+public import VerifiedGarbage.Proof.Sm4.Layout
+public import VerifiedGarbage.Proof.Sm4.Planes
+public import VerifiedGarbage.Proof.Sm4.X86.Copy
+public import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SM4's core for the modes on x86 (32-bit)

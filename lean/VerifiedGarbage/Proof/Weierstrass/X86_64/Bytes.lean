@@ -9,6 +9,37 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Mont.X86_64.Adx
+public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+public import VerifiedGarbage.Proof.Mont.X86_64.Round
+public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Mont.X86_64.Adx
+import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Mont.X86_64.Round
+import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+import VerifiedGarbage.Proof.Mont.X86_64.SparseX
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 
 /-!
 # Short Weierstrass curves on x86-64: numbers to and from big-endian bytes

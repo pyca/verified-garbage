@@ -1,12 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.X86_64.DeriveMainCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveMainCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABI
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # x86-64 DSA key derivation verified against the shared contract -/
 
