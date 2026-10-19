@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
 import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Dsa.X86_64.Parent
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 import VerifiedGarbage.Proof.Dsa.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

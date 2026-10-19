@@ -21,6 +21,64 @@ import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAdd
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+public import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+public import VerifiedGarbage.Proof.X448.X86_64.Bits
+public import VerifiedGarbage.Proof.X448.X86_64.Freeze
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAdd
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import VerifiedGarbage.Proof.X448.X86_64.Pow223
+import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
 /-!
 # Ed448 verification on x86-64: correctness

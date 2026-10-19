@@ -246,7 +246,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Setup
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
 import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningCT
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningMain
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningReadyCT
