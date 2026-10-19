@@ -87,6 +87,34 @@ import VerifiedGarbage.Proof.X448.Wide.TailSquare
 import VerifiedGarbage.Proof.X448.Wide.TailStep
 import VerifiedGarbage.Proof.X448.Wide.Term
 import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
+public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
+public import VerifiedGarbage.Proof.Ed448.DecodeBytes
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.X448.AArch64.BitStep
+public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+public import VerifiedGarbage.Proof.X448.AArch64.Bits
+public import VerifiedGarbage.Proof.X448.AArch64.Decode
+public import VerifiedGarbage.Proof.X448.AArch64.DecodeAll
+public import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
+public import VerifiedGarbage.Proof.X448.AArch64.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Initial
+public import VerifiedGarbage.Proof.X448.AArch64.Inv
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.BitStep
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+public import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # Ed448 verification on AArch64: the entry and the decodings

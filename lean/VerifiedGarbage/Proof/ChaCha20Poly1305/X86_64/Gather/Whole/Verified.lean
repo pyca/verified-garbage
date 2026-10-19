@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
@@ -9,6 +9,61 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Loop
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+public import VerifiedGarbage.Proof.Framework.ContractPost
+public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+public import VerifiedGarbage.Proof.Gcm.SealGather
+public import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Loop
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.Framework.ContractPost
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`

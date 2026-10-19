@@ -54,6 +54,15 @@ meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 meta import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 
 /-!
 # SHA-256 on x86 with the SHA extensions: the variant's code and proofs

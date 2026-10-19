@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -150,6 +150,34 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.EcKey.AArch64.Verified
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # Deterministic ECDSA on AArch64: P-256

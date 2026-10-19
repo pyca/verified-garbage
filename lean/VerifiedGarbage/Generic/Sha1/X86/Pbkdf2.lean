@@ -5,6 +5,21 @@ import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
+import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+public import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 
 /-!
 # PBKDF2-HMAC-SHA-1 (RFC 8018) on x86, for every x86 SHA-1 backend: the iteration and the whole derivation

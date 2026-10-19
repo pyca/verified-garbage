@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
-import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
-import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
@@ -198,6 +198,33 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
+public import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+public import VerifiedGarbage.Proof.Dsa.AArch64.Child
+public import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
+public import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
+public import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.LowerScan
+public import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
+public import VerifiedGarbage.Proof.Dsa.AArch64.Parity
+public import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScanFieldCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizesCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
+public import VerifiedGarbage.Proof.Dsa.AArch64.TopMask
+public import VerifiedGarbage.Proof.Dsa.AArch64.WidthMask
+public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
+public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
+public import VerifiedGarbage.Proof.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.DomainWidths
+public import VerifiedGarbage.Proof.Dsa.Layout
+public import VerifiedGarbage.Proof.RsaPss.Params
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCorrect
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtRows
@@ -298,6 +325,7 @@ meta import VerifiedGarbage.Proof.Dsa.DomainWidths
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.PackedBytes
 meta import VerifiedGarbage.Proof.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.Zero
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
