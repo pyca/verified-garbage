@@ -24,11 +24,14 @@ def redDigit (acc inv mult : Nat) : List Instr :=
    .mul .edx, .store (sc mult) .eax]
 
 /-- `[ebp + acc + 4j] += [mult] · [ecx + b]` for the word `j` that `ecx`
-points to, its carry word in `ebx`, then both pointers move up a word. -/
+points to, its carry word in `ebx`, then both pointers move up a word. The
+accumulator's word is added before the carry, so that the carry from one
+step to the next passes through one addition (`add`, `adc`) rather than
+two. -/
 def mulStepW (N acc b mult : Nat) : List Instr :=
   [.mov .eax (.mem (sc mult)), .mov .edx (.mem (at_ .ecx b)), .mul .edx,
-    .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
     .alu .add .eax (.mem (at_ .ebp acc)), .alu .adc .edx (.imm 0),
+    .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
     .store (at_ .ebp acc) .eax, .mov .ebx (.reg .edx),
     .alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4),
     .mov .eax (.reg .edi), .alu .add .eax (.imm (BitVec.ofNat 32 (4 * N))), .alu .cmp .ecx (.reg .eax)]

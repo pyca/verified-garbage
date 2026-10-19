@@ -60,15 +60,15 @@ theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size
     rw [u₀.other _ (by decide), u₀.other _ (by decide)]; exact hecx
   refine wp_movS (readSrc_regAt hs₀ hecx₀ (d := b) (by omega)) fun s₁ u₁ _ => ?_
   refine wp_mul fun s₂ m₂ => ?_
-  refine wp_addS rfl fun s₃ u₃ c₃ => ?_
+  have K₂ : Keeps [.eax, .edx] t s₂ := ((u₀.keeps.mono (by decide)).widen u₁.keeps).widen m₂.keeps
+  have hs₂ := hs.of_keeps K₂ (by decide)
+  have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
+    rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact hp
+  refine wp_addS (readSrc_regAt hs₂ hp₂ (d := acc) (by omega)) fun s₃ u₃ c₃ => ?_
   refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
-  have K₄ : Keeps [.eax, .edx] t s₄ :=
-    ((((u₀.keeps.mono (by decide)).widen u₁.keeps).widen m₂.keeps).widen u₃.keeps).widen u₄.keeps
-  have hs₄ := hs.of_keeps K₄ (by decide)
-  have hp₄ : s₄.gpr .ebp = s₄.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
-    rw [K₄.1 _ (by decide), K₄.1 _ (by decide)]; exact hp
-  refine wp_addS (readSrc_regAt hs₄ hp₄ (d := acc) (by omega)) fun s₅ u₅ c₅ => ?_
+  refine wp_addS rfl fun s₅ u₅ c₅ => ?_
   refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
+  have K₄ : Keeps [.eax, .edx] t s₄ := (K₂.widen u₃.keeps).widen u₄.keeps
   have K₆ : Keeps [.eax, .edx] t s₆ := (K₄.widen u₅.keeps).widen u₆.keeps
   have hs₆ := hs.of_keeps K₆ (by decide)
   have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
@@ -82,7 +82,8 @@ theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size
   refine wp_addS rfl fun s₁₂ u₁₂ _ => ?_
   refine wp_cmpS rfl fun s₁₃ f₁₃ z₁₃ => WP.block_nil ?_
   -- The registers and memory along the way.
-  have m₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂.mem, u₁.mem, u₀.mem]
+  have m₂' : s₂.mem = t.mem := by rw [m₂.mem, u₁.mem, u₀.mem]
+  have m₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂']
   have m₆ : s₆.mem = t.mem := by rw [u₆.mem, u₅.mem, m₄]
   have eax₁ : s₁.gpr .eax = t.mem.readW (off base mult) 32 := by rw [u₁.other _ (by decide), u₀.gpr]
   have eax₂ := m₂.eax
@@ -90,27 +91,28 @@ theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size
   rw [eax₁, u₁.gpr, u₀.mem, eb] at eax₂ edx₂
   have ebx₂ : s₂.gpr .ebx = t.gpr .ebx := by
     rw [m₂.other _ (by decide) (by decide), u₁.other _ (by decide), u₀.other _ (by decide)]
-  have eax₃ : s₃.gpr .eax = s₂.gpr .eax + s₂.gpr .ebx := u₃.gpr
+  have eax₃ : s₃.gpr .eax = s₂.gpr .eax + t.mem.readW (off base (w + 4 * j)) 32 := by
+    rw [u₃.gpr, m₂', ew]
   have edx₄ : s₄.gpr .edx = s₃.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₄.gpr
   have eax₄ : s₄.gpr .eax = s₃.gpr .eax := u₄.other _ (by decide)
   have edx₃ : s₃.gpr .edx = s₂.gpr .edx := u₃.other _ (by decide)
-  have eax₅ : s₅.gpr .eax = s₄.gpr .eax + t.mem.readW (off base (w + 4 * j)) 32 := by
-    rw [u₅.gpr, m₄, ew]
+  have ebx₄ : s₄.gpr .ebx = t.gpr .ebx := by rw [u₄.other _ (by decide), u₃.other _ (by decide), ebx₂]
+  have eax₅ : s₅.gpr .eax = s₄.gpr .eax + s₄.gpr .ebx := u₅.gpr
   have edx₆ : s₆.gpr .edx = s₅.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₆.gpr
   have eax₆ : s₆.gpr .eax = s₅.gpr .eax := u₆.other _ (by decide)
   have edx₅ : s₅.gpr .edx = s₄.gpr .edx := u₅.other _ (by decide)
-  have hpost := step_regs (t.mem.readW (off base (b + 4 * j)) 32) (t.mem.readW (off base mult) 32) (t.gpr .ebx)
-    (t.mem.readW (off base (w + 4 * j)) 32) _ _ rfl rfl
+  have hpost := step_regs (t.mem.readW (off base (b + 4 * j)) 32) (t.mem.readW (off base mult) 32)
+    (t.mem.readW (off base (w + 4 * j)) 32) (t.gpr .ebx) _ _ rfl rfl
   rw [Nat.mul_comm (t.mem.readW (off base (b + 4 * j)) 32).toNat] at hpost
   have ex₆ : s₆.gpr .eax = BitVec.ofNat 32 ((t.mem.readW (off base mult) 32).toNat *
-      (t.mem.readW (off base (b + 4 * j)) 32).toNat) + t.gpr .ebx + t.mem.readW (off base (w + 4 * j)) 32 := by
-    rw [eax₆, eax₅, eax₄, eax₃, eax₂, ebx₂]
+      (t.mem.readW (off base (b + 4 * j)) 32).toNat) + t.mem.readW (off base (w + 4 * j)) 32 + t.gpr .ebx := by
+    rw [eax₆, eax₅, ebx₄, eax₄, eax₃, eax₂]
   have dx₆ := edx₆
-  rw [edx₅, edx₄, edx₃, edx₂, eax₄, eax₃, eax₂, ebx₂, m₄, ew] at dx₆
+  rw [edx₅, edx₄, edx₃, edx₂, ebx₄, eax₄, eax₃, eax₂, m₂', ew] at dx₆
   have hx : s₆.gpr .eax = BitVec.ofNat 32 (w32 t.mem base mult * w32 t.mem base (b + 4 * j) +
       (t.gpr .ebx).toNat + w32 t.mem base (w + 4 * j)) := by
     apply BitVec.eq_of_toNat_eq
-    rw [ex₆, hpost.1, BitVec.toNat_ofNat]
+    rw [ex₆, hpost.1, BitVec.toNat_ofNat, Nat.add_right_comm]
   have K₇ : Keeps [.eax, .ebx, .edx] t s₇ := (K₆.mono (by decide)).widen (m₇.keeps [])
   have K₁₃ : Keeps [.eax, .ebx, .ecx, .edx, .ebp] t s₁₃ :=
     (((((K₇.mono (by decide)).widen u₈.keeps).widen u₉.keeps).widen u₁₀.keeps).widen u₁₁.keeps |>.widen
@@ -129,7 +131,7 @@ theorem mulStepW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size
     ?_, by rw [edi₁₃, f₁₃.gpr, ecx₁₂, row_ebp], by rw [edi₁₃, f₁₃.gpr, ebp₁₂, row_ebp, Nat.add_assoc],
     by rw [z₁₃, ecx₁₂, eax₁₂, row_zf _ hj hN32], K₁₃⟩
   rw [f₁₃.gpr, u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
-    u₈.gpr, m₇.gpr, dx₆, hpost.2]
+    u₈.gpr, m₇.gpr, dx₆, hpost.2, Nat.add_right_comm]
 
 /-- The window `+= [mult] · [b]` (`N` words), when the sum fits its `N + 2`
 words; `ecx` is used and `ebp` restored. -/
