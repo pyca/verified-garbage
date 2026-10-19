@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.WindowTable
-public import VerifiedGarbage.Proof.Mont.X86.WindowWords
+public import VerifiedGarbage.Proof.Mont.X86.WindowShift
 public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
 
 /-! # One window: four squares and a multiplication by the window's entry -/
@@ -53,7 +53,7 @@ theorem squares_ok {n size m tab y k : Nat} {base : Addr} {s : State}
 /-- The window word from the exponent's top four bits, and the exponent shifted up. -/
 theorem nextWindow_ok {n size m tab k : Nat} {base : Addr} {s : State}
     (h : Context n m base size s) (W : WinLay n tab size) (hk0 : 0 < k) (hk : k ≤ 2 * n) :
-    WP isa (.block (topWindow (slot n 8) k ++ shiftUp k (slot n 8))) s fun t =>
+    WP isa (nextWindow n k) s fun t =>
       Context n m base size t ∧
       w32 t.mem base 4 = val32 s.mem base (slot n 8) k * 16 / 2 ^ (32 * k) ∧
       val32 t.mem base (slot n 8) k = val32 s.mem base (slot n 8) k * 16 % 2 ^ (32 * k) ∧
@@ -73,12 +73,13 @@ theorem nextWindow_ok {n size m tab k : Nat} {base : Addr} {s : State}
   have fit := W.fit
   unfold stride at b8 h08 h68
   have expBound : slot n 8 + 4 * k ≤ size := by omega
-  refine WP.block_append (WP.mono (topWindow_ok h.scr hk0 expBound (by omega)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+  unfold nextWindow
+  refine WP.seq (WP.mono (topWindow_ok h.scr hk0 expBound (by omega)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
   have c₁ := h.outside_keep K₁ (by decide) (by decide) O₁ (.inr (by omega)) (by omega)
-  refine WP.mono (shiftUp_ok c₁.scr k (slot n 8) expBound) fun t ⟨O₂, V₂, K₂⟩ => ?_
+  refine WP.mono (shiftUp_ok c₁.scr hk0 expBound) fun t ⟨O₂, V₂, K₂⟩ => ?_
   have E₁ : val32 s₁.mem base (slot n 8) k = val32 s.mem base (slot n 8) k := O₁.val32 (by omega) (by omega)
   refine ⟨c₁.outside_keep K₂ (by decide) (by decide) O₂ (.inl (by omega)) (by omega), ?_, ?_, ?_, ?_, ?_,
-    ((K₁.mono (by decide) : Keeps [.eax, .edx] s s₁).trans K₂).mono (by decide)⟩
+    ((K₁.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s s₁).trans K₂).mono (by decide)⟩
   · rw [O₂.w32 (by omega) (by omega), V₁]
   · rw [V₂, E₁]
   · rw [O₂.wordsVal (.inl (by omega)) (by omega), O₁.wordsVal (.inr (by omega)) (by omega)]

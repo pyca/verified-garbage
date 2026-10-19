@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 public import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
 public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
+public import VerifiedGarbage.Proof.Mont.X86.WindowTiming
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 
 /-! # Secret-independent workspace operations in prime recovery -/
@@ -186,40 +187,14 @@ theorem halfBody_workspace (n : Nat) : WorkspacePublic (halfBody n) := by
   all_goals first | exact copy_workspace .. | exact zeroCarry_workspace | exact half_workspace .. |
     exact halfBit_workspace .. | exact sel_workspace .. | exact cntNext_workspace
 
-theorem shiftUpWord_private_taint (out : Nat) (lowest : Bool) :
-    taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftUpWord out lowest) =
-      some (workspaceTaint false) := by
-  cases lowest <;>
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl)]
-  · change taint.checkBlock (workspaceTaint false)
-      [.mov .edx (.mem (sc 0)), .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx),
-       .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx), .mov .eax (.mem (sc 0)),
-       .shift .shr .eax 28, .alu .add .edx (.reg .eax), .store (sc 0) .edx] = _
-    rfl
-  · change taint.checkBlock (workspaceTaint false)
-      [.mov .edx (.mem (sc 0)), .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx),
-       .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx), .store (sc 0) .edx] = _
-    rfl
-
-theorem shiftUp_private_taint (k exp : Nat) :
-    taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftUp k exp) =
-      some (workspaceTaint false) := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [VG.Impl.Mont.X86.Dynamic.shiftUp, exponent_check_append taint (workspaceTaint false),
-      shiftUpWord_private_taint]
-    exact ih
-
 theorem cntNext_taint : taint.checkBlock (workspaceTaint false) cntNext = some (workspaceTaint false) := rfl
 
-theorem alignBody_workspace (n : Nat) : WorkspacePublic (alignBody n) := by
-  refine ⟨.block [], workspaceTaint false, ?_, by rfl⟩
-  unfold alignBody
-  simp only [VG.Taint.check, VG.Taint.checkChunks]
-  rw [exponent_check_append taint (workspaceTaint false), shiftUp_private_taint]
-  change taint.checkBlock (workspaceTaint false) cntNext = _
-  exact cntNext_taint
+theorem shiftUp_workspace (k exp : Nat) :
+    WorkspacePublic (VG.Impl.Mont.X86.Dynamic.shiftUp k exp) :=
+  ⟨shiftHint false, rowTaint false, shiftUp_check false k exp, by rfl⟩
+
+theorem alignBody_workspace (n : Nat) : WorkspacePublic (alignBody n) :=
+  (shiftUp_workspace ..).seq cntNext_workspace
 
 theorem windowTop_taint (n : Nat) :
     taint.checkBlock (workspaceTaint false) (windowTop n) = some (workspaceTaint false) := by
@@ -230,10 +205,6 @@ theorem windowTop_taint (n : Nat) :
 
 theorem windowTop_workspace (n : Nat) : WorkspacePublic (.block (windowTop n)) :=
   ⟨.block [], workspaceTaint false, windowTop_taint n, by rfl⟩
-
-theorem shiftUp_workspace (k exp : Nat) :
-    WorkspacePublic (.block (VG.Impl.Mont.X86.Dynamic.shiftUp k exp)) :=
-  ⟨.block [], workspaceTaint false, shiftUp_private_taint k exp, by rfl⟩
 
 theorem windowIs_workspace (j : Nat) : WorkspacePublic (.block (windowIs j)) := by
   refine ⟨.block [], workspaceTaint false, ?_, by rfl⟩
@@ -246,15 +217,45 @@ theorem scan_workspace (n : Nat) : ∀ k, WorkspacePublic (scan n k)
     rw [scan]
     exact (scan_workspace n k).seq ((windowIs_workspace _).seq (sel_workspace ..))
 
-theorem powers_workspace (n : Nat) : ∀ k, WorkspacePublic (powers n k)
-  | 0 => ⟨.block [], workspaceTaint false, rfl, rfl⟩
-  | k + 1 => by
-    rw [powers]
-    exact (powers_workspace n k).seq (mmul_public ..)
+def tableStepHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) (.seq (workspaceTaint true) (mulHint true) (zerosHint true))
+    (.seq (rowTaint true) copyOutHint (.block []))
+
+theorem tableStep_check (n : Nat) :
+    VG.Taint.check taint (workspaceTaint true) (tableStep n) tableStepHint = some (rowTaint true) := by
+  unfold tableStep tableStepHint mmul clrTop
+  simp only [seqs]
+  refine exponent_check_seq taint
+    (exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl) (zeros_check true _ _)) (by rfl)
+    (exponent_check_seq taint (copyOut_check _ _) (by rfl) ?_)
+  exact (check_of_erase_eq (.block [.alu .add .esi (.imm 8), .mov .edx (.reg .edi),
+    .alu .add .edx (.imm (BitVec.ofNat 32 (slot (width n) 16))), .alu .cmp .esi (.reg .edx)])
+    (.block [.alu .add .esi (.imm 0), .mov .edx (.reg .edi),
+    .alu .add .edx (.imm 0), .alu .cmp .esi (.reg .edx)]) (rowTaint true) (.block []) rfl rfl rfl).trans
+    (by rfl)
+
+theorem tableLoop_workspace (n : Nat) : WorkspacePublic (.seq
+    (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm (BitVec.ofNat 32 (slot (width n) 2)))])
+    (.loop (tableStep n) .ne)) := by
+  have loop : VG.Taint.check taint (workspaceTaint true) (.loop (tableStep n) .ne)
+      (.loop (workspaceTaint true) tableStepHint) = some (rowTaint true) := by
+    change (if taint.le (workspaceTaint true) (workspaceTaint true) then
+      (VG.Taint.check taint (workspaceTaint true) (tableStep n) tableStepHint).bind
+        (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
+      else none) = _
+    rw [tableStep_check n]
+    rfl
+  refine ⟨.seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) tableStepHint),
+    rowTaint true, ?_, by rfl⟩
+  refine exponent_check_seq taint (u := { regs := .ofList [.edi, .esi], flags := true }) ?_ (by rfl) loop
+  exact (check_of_erase_eq (.block [.mov .esi (.reg .edi),
+    .alu .add .esi (.imm (BitVec.ofNat 32 (slot (width n) 2)))])
+    (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm 0)])
+    (workspaceTaint false) (.block []) rfl rfl rfl).trans (by rfl)
 
 theorem table_workspace (n : Nat) : WorkspacePublic (table n) := by
   unfold table
-  exact (copy_workspace ..).seq ((copy_workspace ..).seq (powers_workspace n 14))
+  exact (copy_workspace ..).seq ((copy_workspace ..).seq ((copy_workspace ..).seq (tableLoop_workspace n)))
 
 theorem windowBody_workspace (n : Nat) : WorkspacePublic (windowBody n) := by
   unfold windowBody square

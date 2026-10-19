@@ -158,7 +158,7 @@ def alignCount (n : Nat) : List Instr := [.mov .eax (.mem (PublicFn.argument 7))
   .mov .edx (.imm (BitVec.ofNat 32 (8 * wide n))), .alu .sub .edx (.reg .eax), .store (sc sCnt) .edx]
 
 def alignBody (n : Nat) : Prog isa :=
-  .block (Dynamic.shiftUp (wide n) (slot (wide n) wRc) ++ cntNext)
+  .seq (Dynamic.shiftUp (wide n) (slot (wide n) wRc)) (.block cntNext)
 
 /-- The candidate, and the alignment's count. -/
 def alignStart (n : Nat) : Prog isa := .seq (candSet n) (.block (alignCount n))
@@ -167,12 +167,17 @@ def alignStart (n : Nat) : Prog isa := .seq (candSet n) (.block (alignCount n))
 def windowCount : List Instr := [.mov .eax (.mem (PublicFn.argument 7)),
   .alu .add .eax (.mem (PublicFn.argument 9)), .alu .add .eax (.reg .eax), .store (sc sCnt) .eax]
 
-/-- Entries `2` to `k + 1` of the table, each the one below times the candidate. -/
-def powers (n : Nat) : Nat → Prog isa
-  | 0 => .block []
-  | k + 1 => .seq (powers n k) (mmul n (k + 2) (k + 1) mG)
+/-- The next entry: the one below (`mXm`) times the candidate, into `mXm` and
+the array at `esi`; until `esi` reaches array 16. -/
+def tableStep (n : Nat) : Prog isa := seqs [mmul n mXm mXm mG,
+  Dynamic.copyOut (width n) (slot (width n) mXm),
+  .block [.alu .add .esi (.imm 8), .mov .edx (.reg .edi),
+    .alu .add .edx (.imm (BitVec.ofNat 32 (slot (width n) 16))), .alu .cmp .esi (.reg .edx)]]
 
-def table (n : Nat) : Prog isa := seqs [copy (width n) 0 aO, copy (width n) 1 mG, powers n 14]
+def table (n : Nat) : Prog isa := seqs [copy (width n) 0 aO, copy (width n) 1 mG,
+  copy (width n) mXm mG,
+  .block [.mov .esi (.reg .edi), .alu .add .esi (.imm (BitVec.ofNat 32 (slot (width n) 2)))],
+  .loop (tableStep n) .ne]
 
 /-- The exponent's top four bits, into `sWin`. -/
 def windowTop (n : Nat) : List Instr :=
@@ -192,7 +197,7 @@ def scan (n : Nat) : Nat → Prog isa
 def square (n : Nat) : Prog isa := mmul n mY mY mY
 
 def windowBody (n : Nat) : Prog isa := seqs [square n, square n, square n, square n,
-  .block (windowTop n), .block (Dynamic.shiftUp (wide n) (slot (wide n) wRc)), scan n 15,
+  .block (windowTop n), Dynamic.shiftUp (wide n) (slot (wide n) wRc), scan n 15,
   mmul n mY mY mXm, .block cntNext]
 
 def eqAt (n d a b : Nat) : Prog isa := eqS (width n) d a b aW

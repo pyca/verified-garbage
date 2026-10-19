@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvOps
 public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-public import VerifiedGarbage.Proof.Mont.X86.WindowWords
+public import VerifiedGarbage.Proof.Mont.X86.WindowShift
 
 /-! # The window operations on the recovery workspace
 
@@ -26,13 +26,14 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 
 theorem KS.shiftUp_W {j : Nat} (h : KS g s0 A live AW liveW V ls s)
     (hj : j ∈ liveW) (hl : ∀ i ∈ live, i / 2 ≠ j) :
-    WP isa (.block (VG.Impl.Mont.X86.Dynamic.shiftUp g.W (arr g.W j))) s fun t =>
+    WP isa (VG.Impl.Mont.X86.Dynamic.shiftUp g.W (arr g.W j)) s fun t =>
       KS g s0 A live (upd AW j (AW j * 16 % 2 ^ (32 * g.W))) (j :: liveW) V ls t ∧
       Keeps opRegs s t := by
   have hjN := h.liveW_lt j hj
   have fit := h.wsW.arr_fit hjN
   simp only [S] at fit
-  refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftUp_ok h.wsW.workspace g.W (arr g.W j) (by omega))
+  have pos : 0 < g.W := by simp only [Geo.W, wide]; omega
+  refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftUp_ok h.wsW.workspace pos (by omega))
     fun t ⟨frame, value, rest⟩ => ?_
   have k : Keep g.B g.W [j] [] s.mem t.mem :=
     Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega) (by simp)

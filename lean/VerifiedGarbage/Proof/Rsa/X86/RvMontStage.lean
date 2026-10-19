@@ -52,13 +52,14 @@ theorem KS.mmul {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (hl : ∀ j ∈ live, j = o ∨ (j ≠ mTmp ∧ j ≠ mAcc ∧ j ≠ mAcc + 1))
     (hlW : ∀ j ∈ liveW, ∀ i ∈ montWrites o, i / 2 ≠ j) :
     WP isa (mmul g.n o a b) s fun t => ∃ X,
-      KS g s0 (upd A o X) (o :: live) AW liveW V ls t ∧ MR g m t ∧ Keeps opRegs s t ∧
+      KS g s0 (upd A o X) (o :: live) AW liveW V ls t ∧ MR g m t ∧
+      (Keeps opRegs s t ∧ t.gpr .esi = s.gpr .esi) ∧
       X < m ∧ X * 2 ^ (64 * g.n) % m = A a * A b % m := by
   refine WP.mono (mmul_ok mr ho ha hb ho0
     (by rw [h.arrs a hal]; exact Nat.lt_trans hA mr.bound)
     (by rw [h.arrs b hbl]; exact hB)) fun t ⟨mt, k, r, lt, value⟩ => ?_
   refine ⟨num t.mem g.B g.w o, ?_, mt, r, lt, ?_⟩
-  · exact h.montResult ho.2.1 k r hl hlW
+  · exact h.montResult ho.2.1 k r.1 hl hlW
   · rw [h.arrs a hal, h.arrs b hbl] at value
     exact value
 

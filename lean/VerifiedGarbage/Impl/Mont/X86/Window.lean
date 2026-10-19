@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Impl.Mont.X86.Words
 
 /-! # Exponentiation by fixed 4-bit windows on 32-bit x86
 
@@ -26,19 +27,13 @@ def entry (n tab j : Nat) : Nat := tab + 8 * n * j
 def copyWords (n src dst : Nat) : Prog isa :=
   .seq (.block [.mov .ecx (.imm 0)]) (selectsW (2 * n) src src dst)
 
-/-- Shift the word at `out` up by four bits (four doublings), bringing in
-the top four bits of the word below it, or zeros for the lowest word. -/
-def shiftUpWord (out : Nat) (lowest : Bool) : List Instr :=
-  [.mov .edx (.mem (sc out)), .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx),
-   .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx)] ++
-  (if lowest then [] else
-    [.mov .eax (.mem (sc (out - 4))), .shift .shr .eax 28, .alu .add .edx (.reg .eax)]) ++
-  [.store (sc out) .edx]
-
-/-- Shift the `k` words at `exp` up by four bits, from the top word down. -/
-def shiftUp : Nat → Nat → List Instr
-  | 0, _ => []
-  | k + 1, exp => shiftUpWord (exp + 4 * k) (k == 0) ++ shiftUp k exp
+/-- The `k` words at `o` shifted up by four bits, from the lowest word up:
+each word's top four bits are carried in `ecx` into the word above. -/
+def shiftUp (k o : Nat) : Prog isa :=
+  .seq (.block [.mov .ecx (.imm 0)]) (wordLoop k [.mov .eax (.mem (at_ .ebp o)),
+    .mov .ebx (.reg .eax), .shift .shr .ebx 28, .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .ecx),
+    .store (at_ .ebp o) .eax, .mov .ecx (.reg .ebx)])
 
 /-- The top four bits of the `k`-word exponent at `exp`, into the window word. -/
 def topWindow (exp k : Nat) : List Instr :=
@@ -62,28 +57,40 @@ def selectEntries (n tab dst : Nat) : Nat → Prog isa
 def selectWindow (n tab dst : Nat) : Prog isa :=
   .seq (copyWords n (entry n tab 0) dst) (selectEntries n tab dst 15)
 
-/-- Entries `2` to `k + 1`: each the previous one times the base (slot 5),
-in slot 7. -/
-def tablePowers (n tab : Nat) : Nat → Prog isa
-  | 0 => .block []
-  | k + 1 => .seq (tablePowers n tab k)
-      (.seq (mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 7) (slot n 5))
-        (copyWords n (slot n 7) (entry n tab (k + 2))))
+/-- The `k` words at `src` into the words from `esi` up, `esi` past them. -/
+def copyOut (k src : Nat) : Prog isa :=
+  wordLoop k [.mov .eax (.mem (at_ .ebp src)), .store { base := .esi } .eax, .alu .add .esi (.imm 4)]
+
+/-- The next entry: the one below (slot 7) times the base (slot 5), into slot 7
+and the entry at `esi`; until `esi` reaches the table's end. -/
+def tableStep (n tab : Nat) : Prog isa :=
+  .seq (mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 7) (slot n 5)) <|
+  .seq (copyOut (2 * n) (slot n 7))
+    (.block [.mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 (entry n tab 16))),
+      .alu .cmp .esi (.reg .edx)])
+
+/-- Entries `2` to `15`. -/
+def tablePowers (n tab : Nat) : Prog isa :=
+  .seq (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm (BitVec.ofNat 32 (entry n tab 2)))])
+    (.loop (tableStep n tab) .ne)
 
 /-- The table: one (slot 6) and the base (slot 5), in Montgomery form, and
 their products. -/
 def buildTable (n tab : Nat) : Prog isa :=
   .seq (copyWords n (slot n 6) (entry n tab 0)) <|
   .seq (copyWords n (slot n 5) (entry n tab 1)) <|
-  .seq (copyWords n (slot n 5) (slot n 7)) (tablePowers n tab 14)
+  .seq (copyWords n (slot n 5) (slot n 7)) (tablePowers n tab)
 
 def square (n : Nat) : Prog isa := mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 6)
 
 def squares (n : Nat) : Prog isa := .seq (square n) <| .seq (square n) <| .seq (square n) (square n)
 
+/-- The window, and the exponent shifted past it. -/
+def nextWindow (n expWords : Nat) : Prog isa :=
+  .seq (.block (topWindow (slot n 8) expWords)) (shiftUp expWords (slot n 8))
+
 def windowBody (n expWords tab : Nat) : Prog isa :=
-  .seq (squares n) <|
-  .seq (.block (topWindow (slot n 8) expWords ++ shiftUp expWords (slot n 8))) <|
+  .seq (squares n) <| .seq (nextWindow n expWords) <|
   .seq (selectWindow n tab (slot n 7))
     (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 7))
 

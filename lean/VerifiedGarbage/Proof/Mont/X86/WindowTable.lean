@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.WindowSelect
+public import VerifiedGarbage.Proof.Mont.X86.WindowCopy
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Proof.Mont.X86.ContextMul
 public import VerifiedGarbage.Proof.Mont.X86.ContextMath
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -141,41 +143,143 @@ theorem tableRanges_op {n tab o : Nat} {base : Addr} {s t : State}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> simp [tableRanges, contextMod, accLen, words] <;> omega
 
-/-- The entries `2` to `k + 1`, each the one below times the base. -/
+/-- One entry more: slot 7 times the base, into slot 7 and the entry at `esi`. -/
+theorem tableStep_ok {n m size tab b i : Nat} {base : Addr} {s : State}
+    (h : Context n m base size s) (W : WinLay n tab size) (hi : i < 14)
+    (he : ∀ j < i + 2, wordsVal s.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m)
+    (h7 : wordsVal s.mem base (slot n 7) n = b ^ (i + 1) * 2 ^ (64 * n) % m)
+    (hb : wordsVal s.mem base (slot n 5) n = b * 2 ^ (64 * n) % m)
+    (hesi : s.gpr .esi = s.gpr .edi + BitVec.ofNat 32 (entry n tab (i + 2))) :
+    WP isa (tableStep n tab) s fun t =>
+      Context n m base size t ∧
+      (∀ j < i + 3, wordsVal t.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m) ∧
+      wordsVal t.mem base (slot n 7) n = b ^ (i + 2) * 2 ^ (64 * n) % m ∧
+      wordsVal t.mem base (slot n 5) n = b * 2 ^ (64 * n) % m ∧
+      Outs base (tableRanges n tab) s.mem t.mem ∧ Keeps powerClob s t ∧
+      t.gpr .esi = t.gpr .edi + BitVec.ofNat 32 (entry n tab (i + 3)) ∧
+      t.zf = some (decide (i + 3 = 16)) := by
+  have hm0 : 0 < m := by have := h.gt_one; omega
+  have cn : contextBytes n ≤ 2 ^ 64 := by have := h.size_le; have := h.scr.nowrap; omega
+  have n0 := h.modulus.n0
+  change 0 < n at n0
+  have fit := W.fit
+  have ctx := W.ctx
+  have nw := h.scr.nowrap
+  have sz := h.scr.size_lt
+  have b7 := slot_bound (n := n) (i := 7) (by decide)
+  have h07 := slot_le (n := n) (i := 0) (j := 7) (by decide)
+  have h7h := slot_header n 7
+  unfold stride at b7 h07
+  have L := W.tableLay h (i := 7) (by decide)
+  obtain ⟨eb, esep, etab, etop⟩ := L.entry (j := i + 2) (by omega)
+  unfold tableStep
+  refine WP.seq (WP.mono (context_mul_ok h (o := 7) (a := 7) (b := 5)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by rw [hb]; exact Nat.mod_lt _ hm0)) fun s₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
+  have S₁ : wordsVal s₁.mem base (slot n 7) n = b ^ (i + 2) * 2 ^ (64 * n) % m := by
+    have v := VG.Proof.Dsa.mont_product h.coprime (a := b ^ (i + 1)) (b := b)
+      (by rw [h7, Nat.mod_mod]) (by rw [hb, Nat.mod_mod]) V₁
+    rwa [Nat.mod_eq_of_lt lt₁, ← Nat.pow_succ] at v
+  have esi₁ : s₁.gpr .esi = s₁.gpr .edi + BitVec.ofNat 32 (entry n tab (i + 2)) := by
+    rw [K₁.gpr _ (by decide), K₁.gpr _ (by decide), hesi]
+  have B₁ : wordsVal s₁.mem base (slot n 5) n = b * 2 ^ (64 * n) % m := by
+    rw [context_slot_val h (by decide) (by decide) (by decide) (by decide) K₁, hb]
+  refine WP.seq (WP.mono (copyOut_ok c₁.scr (k := 2 * n) (src := slot n 7) (dst := entry n tab (i + 2))
+    (by omega) (by omega) (by omega) (.inr (by omega)) esi₁) fun s₂ ⟨V₂, O₂, E₂, K₂⟩ => ?_)
+  rw [show 4 * (2 * n) = 8 * n by omega] at O₂ E₂
+  have c₂ := c₁.outside_keep K₂ (by decide) (by decide) O₂ (.inl (by omega)) (by omega)
+  have next : entry n tab (i + 2) + 8 * n = entry n tab (i + 3) := by
+    have e : 8 * n * (i + 3) = 8 * n * (i + 2) + 8 * n := by
+      rw [show i + 3 = (i + 2) + 1 by omega, Nat.mul_add, Nat.mul_one]
+    unfold entry; omega
+  refine wp_movS rfl fun s₃ u₃ _ => ?_
+  refine wp_addS rfl fun s₄ u₄ _ => ?_
+  refine wp_cmpS rfl fun t ft zt => WP.block_nil ?_
+  have mt : t.mem = s₂.mem := by rw [ft.mem, u₄.mem, u₃.mem]
+  have kt : Keeps [.edx] s₂ t := (u₃.keeps.widen u₄.keeps).trans (ft.keeps _)
+  have ct : Context n m base size t := ⟨c₂.scr.of_keeps kt (by decide), c₂.size_le,
+    mt ▸ c₂.modulus, c₂.gt_one, mt ▸ c₂.inverse⟩
+  have slot_keep (j : Nat) (hj : j < 9) :
+      wordsVal s₂.mem base (slot n j) n = wordsVal s₁.mem base (slot n j) n := by
+    have bj := slot_bound (n := n) hj
+    unfold stride at bj
+    exact O₂.wordsVal (.inl (by omega)) (by omega)
+  refine ⟨ct, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro j hj
+    rw [mt]
+    by_cases e : j = i + 2
+    · subst e
+      rw [wordsVal_eq_val32, V₂, ← wordsVal_eq_val32, S₁]
+    · obtain ⟨eb', esep', etab', etop'⟩ := L.entry (j := j) (by omega)
+      have sep : entry n tab j + 8 * n ≤ entry n tab (i + 2) ∨ entry n tab (i + 2) + 8 * n ≤ entry n tab j := by
+        unfold entry
+        rcases Nat.lt_or_gt_of_ne e with lt | lt
+        · have := Nat.mul_le_mul_left (8 * n) (show j + 1 ≤ i + 2 by omega)
+          rw [Nat.mul_add, Nat.mul_one] at this; omega
+        · have := Nat.mul_le_mul_left (8 * n) (show i + 2 + 1 ≤ j by omega)
+          rw [Nat.mul_add, Nat.mul_one] at this; omega
+      rw [O₂.wordsVal sep (by omega), op_table_keep h W K₁ (by decide) (by omega), he j (by omega)]
+  · rw [mt, slot_keep 7 (by decide), S₁]
+  · rw [mt, slot_keep 5 (by decide), B₁]
+  · exact ((tableRanges_op K₁ rfl).trans (Outs.of_outside (O₂.mono (o' := tab) (n' := 128 * n) etab etop)
+      (by simp [tableRanges]))).trans (mt ▸ Outs.refl _ _ _)
+  · exact ((OpKeep.keeps K₁).mono (by decide)).trans ((K₂.mono (by decide)).trans (kt.mono (by decide)))
+  · have esi₄ : s₄.gpr .esi = s₂.gpr .edi + BitVec.ofNat 32 (entry n tab (i + 3)) := by
+      rw [u₄.other _ (by decide), u₃.other _ (by decide), E₂, next]
+    rw [ft.gpr, esi₄, u₄.other _ (by decide), u₃.other _ (by decide)]
+  · have esi₄ : s₄.gpr .esi = s₂.gpr .edi + BitVec.ofNat 32 (entry n tab (i + 3)) := by
+      rw [u₄.other _ (by decide), u₃.other _ (by decide), E₂, next]
+    have edx₄ : s₄.gpr .edx = s₂.gpr .edi + BitVec.ofNat 32 (entry n tab 16) := by
+      rw [u₄.gpr, u₃.gpr]
+    rw [zt, esi₄, edx₄, ptr_cmp _ (by unfold entry at *; omega) (by unfold entry at *; omega)]
+    congr 2
+    apply propext
+    unfold entry
+    constructor
+    · intro e
+      have := Nat.eq_of_mul_eq_mul_left (show 0 < 8 * n by omega) (show 8 * n * (i + 3) = 8 * n * 16 by omega)
+      omega
+    · intro e; rw [e]
+
+/-- Entries `2` to `15`. -/
 theorem tablePowers_ok {n m size tab b : Nat} {base : Addr} {s : State}
     (h : Context n m base size s) (W : WinLay n tab size)
     (hb : wordsVal s.mem base (slot n 5) n = b * 2 ^ (64 * n) % m)
     (he : ∀ j < 2, wordsVal s.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m)
     (h7 : wordsVal s.mem base (slot n 7) n = b ^ 1 * 2 ^ (64 * n) % m) :
-    ∀ k, k ≤ 14 → WP isa (tablePowers n tab k) s fun t =>
+    WP isa (tablePowers n tab) s fun t =>
       Context n m base size t ∧
-      (∀ j < k + 2, wordsVal t.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m) ∧
-      wordsVal t.mem base (slot n 7) n = b ^ (k + 1) * 2 ^ (64 * n) % m ∧
-      Outs base (tableRanges n tab) s.mem t.mem ∧ Keeps clob s t
-  | 0, _ => WP.block_nil ⟨h, he, h7, Outs.refl _ _ _, Keeps.refl _ _⟩
-  | k + 1, hk => by
-    have hm0 : 0 < m := by have := h.gt_one; omega
-    have cn : contextBytes n ≤ 2 ^ 64 := by have := h.size_le; have := h.scr.nowrap; omega
-    rw [tablePowers]
-    refine WP.seq (WP.mono (tablePowers_ok h W hb he h7 k (by omega)) fun s₁ ⟨c₁, E₁, S₁, O₁, K₁⟩ => ?_)
-    have B₁ : wordsVal s₁.mem base (slot n 5) n = b * 2 ^ (64 * n) % m := by
-      rw [tableRanges_val O₁ (by decide) (by decide) (by decide) (by decide) W.ctx cn, hb]
-    refine WP.seq (WP.mono (context_mul_ok c₁ (o := 7) (a := 7) (b := 5)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by rw [B₁]; exact Nat.mod_lt _ hm0)) fun s₂ ⟨c₂, K₂, lt₂, V₂⟩ => ?_)
-    have S₂ : wordsVal s₂.mem base (slot n 7) n = b ^ (k + 2) * 2 ^ (64 * n) % m := by
-      have v := VG.Proof.Dsa.mont_product c₁.coprime (a := b ^ (k + 1)) (b := b)
-        (by rw [S₁, Nat.mod_mod]) (by rw [B₁, Nat.mod_mod]) V₂
-      rwa [Nat.mod_eq_of_lt lt₂, ← Nat.pow_succ] at v
-    refine WP.mono (copy_entry_ok c₂ W (src := 7) (j := k + 2) (by decide) (by omega))
-      fun t ⟨c₃, V₃, O₃, E₃, S₃, K₃⟩ => ?_
-    refine ⟨c₃, ?_, by rw [S₃ 7 (by decide), S₂], ?_, ?_⟩
-    · intro j hj
-      by_cases e : j = k + 2
-      · subst e; rw [V₃, S₂]
-      · rw [E₃ j (by omega) e, op_table_keep c₁ W K₂ (by decide) (by omega), E₁ j (by omega)]
-    · exact (O₁.trans (tableRanges_op K₂ rfl)).trans O₃
-    · exact (K₁.trans (OpKeep.keeps K₂)).trans (K₃.mono (by decide))
+      (∀ j < 16, wordsVal t.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m) ∧
+      Outs base (tableRanges n tab) s.mem t.mem ∧ Keeps powerClob s t := by
+  have fit := W.fit
+  have nw := h.scr.nowrap
+  have sz := h.scr.size_lt
+  unfold tablePowers
+  refine WP.seq (wp_movS rfl fun s₁ u₁ _ => wp_addS rfl fun s₂ u₂ _ => WP.block_nil ?_)
+  have k₂ : Keeps [.esi] s s₂ := u₁.keeps.widen u₂.keeps
+  have mem₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  have c₂ : Context n m base size s₂ := ⟨h.scr.of_keeps k₂ (by decide), h.size_le,
+    mem₂ ▸ h.modulus, h.gt_one, mem₂ ▸ h.inverse⟩
+  have esi₂ : s₂.gpr .esi = s₂.gpr .edi + BitVec.ofNat 32 (entry n tab 2) := by
+    rw [u₂.gpr, u₂.other _ (by decide), u₁.gpr, u₁.other _ (by decide)]
+  let Inv (i : Nat) (t : State) : Prop :=
+    Context n m base size t ∧
+    (∀ j < i + 2, wordsVal t.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m) ∧
+    wordsVal t.mem base (slot n 7) n = b ^ (i + 1) * 2 ^ (64 * n) % m ∧
+    wordsVal t.mem base (slot n 5) n = b * 2 ^ (64 * n) % m ∧
+    Outs base (tableRanges n tab) s.mem t.mem ∧ Keeps powerClob s t ∧
+    t.gpr .esi = t.gpr .edi + BitVec.ofNat 32 (entry n tab (i + 2))
+  have init : Inv 0 s₂ := ⟨c₂, by simpa only [mem₂] using he, by rw [mem₂]; exact h7,
+    by rw [mem₂]; exact hb, mem₂ ▸ Outs.refl _ _ _, k₂.mono (by decide), esi₂⟩
+  refine WP.loop (M := isa) (fun c t => ∃ i, c = 14 - i ∧ i < 14 ∧ Inv i t) ?_ 14 s₂ ⟨0, rfl, by decide, init⟩
+  rintro c t ⟨i, rfl, hi, ct, E, S7, S5, O, K, P⟩
+  refine WP.mono (tableStep_ok ct W hi E S7 S5 P) fun u ⟨cu, Eu, S7u, S5u, Ou, Ku, Pu, zu⟩ => ?_
+  by_cases last : i + 1 = 14
+  · refine .inl ⟨?_, cu, fun j hj => Eu j (by omega), O.trans Ou, K.trans Ku⟩
+    simp only [eval, zu, show i + 3 = 16 by omega, decide_true, Option.map_some, Bool.not_true]
+  · refine .inr ⟨?_, 14 - (i + 1), by omega, i + 1, rfl, by omega, cu, Eu, S7u, S5u, O.trans Ou,
+      K.trans Ku, Pu⟩
+    simp only [eval, zu, show i + 3 ≠ 16 by omega, decide_false, Option.map_some, Bool.not_false]
 
 /-- The table of the base's powers `0` to `15`, from one (slot 6) and the base
 (slot 5) in Montgomery form. -/
@@ -186,7 +290,7 @@ theorem buildTable_ok {n m size tab b : Nat} {base : Addr} {s : State}
     WP isa (buildTable n tab) s fun t =>
       Context n m base size t ∧
       (∀ j < 16, wordsVal t.mem base (entry n tab j) n = b ^ j * 2 ^ (64 * n) % m) ∧
-      Outs base (tableRanges n tab) s.mem t.mem ∧ Keeps clob s t := by
+      Outs base (tableRanges n tab) s.mem t.mem ∧ Keeps powerClob s t := by
   have cn : contextBytes n ≤ 2 ^ 64 := by have := h.size_le; have := h.scr.nowrap; omega
   unfold buildTable
   refine WP.seq (WP.mono (copy_entry_ok h W (src := 6) (j := 0) (by decide) (by decide))
@@ -214,8 +318,8 @@ theorem buildTable_ok {n m size tab b : Nat} {base : Addr} {s : State}
   have one : (2 : Nat) ^ (64 * n) % m = b ^ 0 * 2 ^ (64 * n) % m := by rw [Nat.pow_zero, Nat.one_mul]
   have B₃ : wordsVal s₃.mem base (slot n 5) n = b * 2 ^ (64 * n) % m := by
     rw [O₃.wordsVal (.inl (by omega)) (by omega), S₂ 5 (by decide), S₁ 5 (by decide), hb]
-  refine WP.mono (tablePowers_ok c₃ W B₃ ?_ (by rw [V₃, S₂ 5 (by decide), S₁ 5 (by decide), hb, Nat.pow_one])
-    14 (by decide)) fun t ⟨ct, Et, _, Ot, Kt⟩ => ?_
+  refine WP.mono (tablePowers_ok c₃ W B₃ ?_ (by rw [V₃, S₂ 5 (by decide), S₁ 5 (by decide), hb, Nat.pow_one]))
+    fun t ⟨ct, Et, Ot, Kt⟩ => ?_
   · intro j hj
     rw [keep₃ j (by omega)]
     rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl

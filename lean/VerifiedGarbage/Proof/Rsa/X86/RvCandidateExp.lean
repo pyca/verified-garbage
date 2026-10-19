@@ -12,7 +12,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 
-theorem liveExp_table : TableLive liveExp := ⟨by decide, by decide⟩
+theorem liveExp_table : TableLive liveExp := ⟨by decide, by decide, by decide⟩
 
 /-- The arrays after the candidate's initialization. -/
 abbrev candA (A V : Nat → Nat) : Nat → Nat := upd (upd A mG (V sCand + 2)) mY (A aO)

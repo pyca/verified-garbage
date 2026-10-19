@@ -13,27 +13,14 @@ whose every entry is read whatever the window.
 namespace VG.Proof.Mont.X86.Dynamic
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic
 
-theorem shiftUpWord_taint (out : Nat) (lowest : Bool) :
-    taint.checkBlock (workspaceTaint true) (shiftUpWord out lowest) = some (workspaceTaint true) := by
-  cases lowest <;>
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint true) = true from rfl)]
-  · change taint.checkBlock (workspaceTaint true)
-      [.mov .edx (.mem (sc 0)), .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx),
-       .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx), .mov .eax (.mem (sc 0)),
-       .shift .shr .eax 28, .alu .add .edx (.reg .eax), .store (sc 0) .edx] = _
-    rfl
-  · change taint.checkBlock (workspaceTaint true)
-      [.mov .edx (.mem (sc 0)), .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx),
-       .alu .add .edx (.reg .edx), .alu .add .edx (.reg .edx), .store (sc 0) .edx] = _
-    rfl
+def shiftHint (counter : Bool) : VG.Taint.Hint VG.X86.Taint.T :=
+  VG.Taint.hintOf taint (workspaceTaint counter) (Code.erase (shiftUp 1 0))
 
-theorem shiftUp_taint (k exp : Nat) :
-    taint.checkBlock (workspaceTaint true) (shiftUp k exp) = some (workspaceTaint true) := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [shiftUp, exponent_check_append taint (workspaceTaint true), shiftUpWord_taint]
-    exact ih
+theorem shiftUp_check (counter : Bool) (k o : Nat) :
+    VG.Taint.check taint (workspaceTaint counter) (shiftUp k o) (shiftHint counter) =
+      some (rowTaint counter) :=
+  (check_of_erase_eq (shiftUp k o) (shiftUp 1 0) (workspaceTaint counter) (shiftHint counter)
+    rfl (by cases counter <;> rfl) (by cases counter <;> rfl)).trans (by cases counter <;> rfl)
 
 theorem topWindow_taint (exp k : Nat) :
     taint.checkBlock (workspaceTaint true) (topWindow exp k) = some (workspaceTaint true) := by
@@ -100,19 +87,18 @@ theorem squares_check (n : Nat) :
 
 def windowBodyHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint true) squaresHint
-    (.seq (workspaceTaint true) (.block [])
+    (.seq (workspaceTaint true) (.seq (workspaceTaint true) (.block []) (shiftHint true))
       (.seq (workspaceTaint true) selectWindowHint (mulHint true)))
 
 theorem windowBody_check (n expWords tab : Nat) :
     VG.Taint.check taint (workspaceTaint true) (windowBody n expWords tab) windowBodyHint =
       some (rowTaint true) := by
-  unfold windowBody windowBodyHint
+  unfold windowBody windowBodyHint nextWindow
   refine exponent_check_seq taint (squares_check n) (by rfl) ?_
-  refine exponent_check_seq taint (u := workspaceTaint true) ?_ (by rfl)
+  refine exponent_check_seq taint
+    (exponent_check_seq taint (u := workspaceTaint true) (topWindow_taint _ _) (by rfl)
+      (shiftUp_check true _ _)) (by rfl)
     (exponent_check_seq taint (selectWindow_check n tab _) (by rfl) (mul_check true _ _ _ _ _ _))
-  change taint.checkBlock (workspaceTaint true) (topWindow (slot n 8) expWords ++ shiftUp expWords (slot n 8)) = _
-  rw [exponent_check_append taint (workspaceTaint true), topWindow_taint]
-  exact shiftUp_taint _ _
 
 def windowStepHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint true) windowBodyHint (.block [])
@@ -123,35 +109,60 @@ theorem windowStep_check (n expWords tab : Nat) :
   unfold windowStep windowStepHint
   exact exponent_check_seq taint (windowBody_check n expWords tab) (by rfl) (by rfl)
 
-def tablePowersHint : Nat → VG.Taint.Hint VG.X86.Taint.T
-  | 0 => .block []
-  | k + 1 => .seq (workspaceTaint false) (tablePowersHint k)
-      (.seq (workspaceTaint false) (mulHint false) (copyHint false))
+def copyOutHint : VG.Taint.Hint VG.X86.Taint.T :=
+  VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (copyOut 1 0))
 
-theorem tablePowers_check (n tab : Nat) : ∀ k,
-    VG.Taint.check taint (workspaceTaint false) (tablePowers n tab k) (tablePowersHint k) =
-      some (if k = 0 then workspaceTaint false else copyTaint false)
-  | 0 => rfl
-  | k + 1 => by
-    rw [tablePowers, tablePowersHint]
-    refine exponent_check_seq taint (tablePowers_check n tab k) ?_
-      (exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) (copyWords_check false _ _ _))
-    cases k with
-    | zero => rfl
-    | succ k => simp only [Nat.add_one_ne_zero, ↓reduceIte]; rfl
+theorem copyOut_check (k src : Nat) :
+    VG.Taint.check taint (workspaceTaint true) (copyOut k src) copyOutHint = some (rowTaint true) :=
+  (check_of_erase_eq (copyOut k src) (copyOut 1 0) (workspaceTaint true) copyOutHint
+    rfl rfl rfl).trans rfl
+
+def tableStepHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) (mulHint true) (.seq (rowTaint true) copyOutHint (.block []))
+
+theorem tableStep_check (n tab : Nat) :
+    VG.Taint.check taint (workspaceTaint true) (tableStep n tab) tableStepHint = some (rowTaint true) := by
+  unfold tableStep tableStepHint
+  refine exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl)
+    (exponent_check_seq taint (copyOut_check _ _) (by rfl) ?_)
+  rw [← VG.X86.Taint.check_erase _ _ _ (show VG.X86.Taint.noBases (rowTaint true) = true from rfl) rfl]
+  change taint.check (rowTaint true) (.block [.mov .edx (.reg .edi), .alu .add .edx (.imm 0),
+    .alu .cmp .esi (.reg .edx)]) (.block []) = _
+  rfl
+
+def tablePowersHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) tableStepHint)
+
+theorem tablePowers_check (n tab : Nat) :
+    VG.Taint.check taint (workspaceTaint false) (tablePowers n tab) tablePowersHint =
+      some (rowTaint true) := by
+  have loop : VG.Taint.check taint (workspaceTaint true) (.loop (tableStep n tab) .ne)
+      (.loop (workspaceTaint true) tableStepHint) = some (rowTaint true) := by
+    change (if taint.le (workspaceTaint true) (workspaceTaint true) then
+      (VG.Taint.check taint (workspaceTaint true) (tableStep n tab) tableStepHint).bind
+        (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
+      else none) = _
+    rw [tableStep_check n tab]
+    rfl
+  unfold tablePowers tablePowersHint
+  refine exponent_check_seq taint (u := { regs := .ofList [.edi, .esi], flags := true }) ?_ (by rfl) loop
+  rw [← VG.X86.Taint.check_erase _ _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl) rfl]
+  change taint.check (workspaceTaint false) (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm 0)])
+    (.block []) = _
+  rfl
 
 def buildTableHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint false) (copyHint false) <|
   .seq (workspaceTaint false) (copyHint false) <|
-  .seq (workspaceTaint false) (copyHint false) (tablePowersHint 14)
+  .seq (workspaceTaint false) (copyHint false) tablePowersHint
 
 theorem buildTable_check (n tab : Nat) :
     VG.Taint.check taint (workspaceTaint false) (buildTable n tab) buildTableHint =
-      some (copyTaint false) := by
+      some (rowTaint true) := by
   unfold buildTable buildTableHint
   exact exponent_check_seq taint (copyWords_check false _ _ _) (by rfl)
     (exponent_check_seq taint (copyWords_check false _ _ _) (by rfl)
-      (exponent_check_seq taint (copyWords_check false _ _ _) (by rfl) (tablePowers_check n tab 14)))
+      (exponent_check_seq taint (copyWords_check false _ _ _) (by rfl) (tablePowers_check n tab)))
 
 def windowExponentiateHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint false) (mulHint false)

@@ -38,12 +38,6 @@ theorem shiftExponent_sp (n out : Nat) : (Dynamic.shiftExponent n out).all stack
     rw [Dynamic.shiftExponent, List.all_append, ih]
     rfl
 
-theorem shiftUp_sp : ∀ k exp, (Dynamic.shiftUp k exp).all stackSafe = true
-  | 0, _ => rfl
-  | k + 1, exp => by
-    rw [Dynamic.shiftUp, List.all_append, shiftUp_sp k exp, Bool.and_true]
-    cases k == 0 <;> rfl
-
 theorem sized_sp (n : Nat) : (VG.Impl.Bignum.X86.Crt.sized n).all stackSafe = true := by
   simp only [VG.Impl.Bignum.X86.Crt.sized, VG.Impl.Bignum.X86.Crt.importComponents,
     VG.Impl.Bignum.X86.Crt.importComponent, VG.Impl.Bignum.X86.Crt.validate,
@@ -59,7 +53,7 @@ theorem sized_sp (n : Nat) : (VG.Impl.Bignum.X86.Crt.sized n).all stackSafe = tr
     copyArray, copyPadded, checkedPrimePower, checkedPreparePrime, primePower, preparePrime,
     VG.Impl.Bignum.X86.Crt.checkedWindowPower, Dynamic.windowExponentiate, Dynamic.windowStep,
     Dynamic.windowBody, Dynamic.squares, Dynamic.square, Dynamic.buildTable, Dynamic.copyWords,
-    Dynamic.selectWindow, Dynamic.topWindow, shiftUp_sp,
+    Dynamic.selectWindow, Dynamic.topWindow, Dynamic.nextWindow, Dynamic.shiftUp,
     sanitizeModulus, smallConstant, primeMask, crtCoefficient, reduceOperand, crtRecombine,
     Dynamic.contextSetup, Dynamic.exponentiate, Dynamic.exponentStep, Dynamic.exponentBody,
     Dynamic.exponentProduct, Dynamic.selectProduct, Dynamic.powerTwo, Dynamic.doubleLoop,

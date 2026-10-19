@@ -161,7 +161,8 @@ theorem windowExponentiate_ok {n size m expWords tab : Nat} {base : Addr} {s : S
     have o₅ := sub _ (fun r hr => List.mem_append_left _ hr) I.mem
     have o₆ := sub _ (fun r hr => List.mem_append_left _ hr) (exponentRanges_op (expWords := expWords) Kt (.inr rfl))
     exact ((((o₁.trans o₂).trans o₃).trans o₄).trans o₅).trans o₆
-  · exact ((((((OpKeep.keeps K₁).trans (OpKeep.keeps K₂)).trans K₃).mono (by decide)).widen u₄.keeps).trans
-      I.keeps).trans ((OpKeep.keeps Kt).mono (by decide))
+  · have k₂ : Keeps powerClob s s₂ := ((OpKeep.keeps K₁).trans (OpKeep.keeps K₂)).mono (by decide)
+    have k₄ : Keeps powerClob s s₄ := ((k₂.trans K₃).widen u₄.keeps).mono (by decide)
+    exact (k₄.trans I.keeps).trans ((OpKeep.keeps Kt).mono (by decide))
 
 end VG.Proof.Mont.X86.Dynamic

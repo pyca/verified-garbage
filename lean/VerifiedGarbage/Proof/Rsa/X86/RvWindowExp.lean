@@ -51,7 +51,7 @@ theorem alignBody_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {r C j : Na
     WP isa (alignBody g.n) s fun t => AI g s0 A AW V r C (j + 1) t ∧
       t.zf = some (decide (C - (j + 1) = 0)) := by
   unfold alignBody AI at *
-  refine WP.block_append (WP.mono (h.shiftUp_W (j := wRc) (by simp) (by decide)) fun u ⟨hu, _⟩ => ?_)
+  refine WP.seq (WP.mono (h.shiftUp_W (j := wRc) (by simp) (by decide)) fun u ⟨hu, _⟩ => ?_)
   rw [upd_self, upd_twice] at hu
   have hu' := hu.mono (liveW' := [wRc, wR]) (fun j hj => ⟨hj, rfl⟩)
     (fun j hj => ⟨by simp [hj], rfl⟩) (fun d hd => ⟨hd, rfl⟩)
