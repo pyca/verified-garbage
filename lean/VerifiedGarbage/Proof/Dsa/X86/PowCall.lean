@@ -12,28 +12,16 @@ namespace VG.Proof.Dsa.X86.Pow
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.X86.Pow
 
-theorem shift_noSp (e d : Nat) :
-    (shiftExponent e d).all (fun i => !Taint.clobbers i .esp) = true := by
-  induction e generalizing d with
-  | zero => rfl
-  | succ e ih => simp only [shiftExponent, List.all_append, ih, Bool.and_true]; rfl
-
 theorem body_noSp (n e : Nat) : NoSp (body n e) := NoSp.of_all (by
   rw [Code.allInstrs_eq]
   simp only [body, core, contextSetup, exponentiate, exponentStep, exponentBody,
-    exponentProduct, instrs, List.all_append, shift_noSp, Bool.and_true]
+    exponentProduct, instrs, List.all_append]
   rfl)
-
-theorem shift_spSafe (e d : Nat) :
-    (shiftExponent e d).all (fun i => !isa.writesSp i) = true := by
-  induction e generalizing d with
-  | zero => rfl
-  | succ e ih => simp only [shiftExponent, List.all_append, ih, Bool.and_true]; rfl
 
 theorem body_spSafe (n e : Nat) : (body n e).allInstrs (fun i => !isa.writesSp i) = true := by
   rw [Code.allInstrs_eq]
   simp only [body, core, contextSetup, exponentiate, exponentStep, exponentBody,
-    exponentProduct, instrs, List.all_append, shift_spSafe, Bool.and_true]
+    exponentProduct, instrs, List.all_append]
   rfl
 
 theorem body_stackUse (n e : Nat) : stackUse (body n e) = 0 := by rfl
@@ -64,7 +52,7 @@ theorem frame_val32 {sp : BitVec 32} {base : Addr} {size : Nat}
 theorem call_ok {s : State} {base : Addr} {size n e m : Nat}
     (hs : Scr s base size) (room : Room (s.gpr .esp) base size)
     (hz : contextBytes n ≤ size) (hused : VG.Impl.Dsa.Layout.usedBytes ≤ size)
-    (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
+    (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
     (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
     WP isa (Impl.Dsa.X86.Pow.call n e) s fun t =>
       wordsVal t.mem base (slot n 6) n =

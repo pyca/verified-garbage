@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.ExponentProduct
-public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 
 /-! # The arithmetic and exponent update of one iteration -/
 
@@ -14,7 +14,7 @@ def exponentRanges (n expWords : Nat) : List (Nat × Nat) :=
   productRanges n ++ [(slot n 5, 8 * n), (slot n 8, 4 * expWords)]
 
 theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State}
-    (h : Context n m base size s) (he : 0 < expWords) (hen : expWords ≤ 2 * n)
+    (h : Context n m base size s) (he : 1 < expWords) (hen : expWords ≤ 2 * n)
     (hy : wordsVal s.mem base (slot n 6) n = y * 2 ^ (64 * n) % m)
     (hb : wordsVal s.mem base (slot n 5) n = b * 2 ^ (64 * n) % m) :
     WP isa (exponentBody n expWords) s fun t =>
@@ -54,7 +54,7 @@ theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State}
       rcases hr with rfl | rfl | rfl <;> simp only [contextMod, accLen, words] <;>
         unfold stride at h58 h18 h28 <;> omega
     · omega
-  refine WP.mono (shiftExponent_ok c₂.scr expWords (slot n 8) expBound) fun t ⟨O₃, E₃, K₃⟩ => ?_
+  refine WP.mono (shiftDown_ok c₂.scr he expBound) fun t ⟨O₃, E₃, K₃⟩ => ?_
   have h08 := slot_le (n := n) (i := 0) (j := 8) (by decide)
   have h8 := slot_header n 8
   refine ⟨c₂.outside_keep K₃ (by decide) (by decide) O₃

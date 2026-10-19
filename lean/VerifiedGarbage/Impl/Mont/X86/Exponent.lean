@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Power
+public import VerifiedGarbage.Impl.Mont.X86.Words
 
 /-! # Secret-exponent operations on 32-bit x86 -/
 
@@ -20,6 +21,15 @@ def shiftWord (out : Nat) (last : Bool) : List Instr :=
 def shiftExponent : Nat → Nat → List Instr
   | 0, _ => []
   | n + 1, out => shiftWord out (n == 0) ++ shiftExponent n (out + 4)
+
+/-- The `k` words at `out` (`2 ≤ k`) shifted down by a bit, as
+`shiftExponent`: words `0` to `k - 2` in a loop, each bringing in the next
+word's low bit, then the top word, bringing in zero. -/
+def shiftDown (k out : Nat) : Prog isa :=
+  .seq (wordLoop (k - 1) [.mov .eax (.mem (at_ .ebp (out + 4))), .alu .and .eax (.imm 1),
+    .shift .ror .eax 1, .mov .edx (.mem (at_ .ebp out)), .shift .shr .edx 1,
+    .alu .add .edx (.reg .eax), .store (at_ .ebp out) .edx])
+    (.block (shiftWord (out + 4 * (k - 1)) true))
 
 /-- The low exponent bit as an all-zero or all-one mask in the workspace. -/
 def exponentMask (exp mask : Nat) : List Instr :=

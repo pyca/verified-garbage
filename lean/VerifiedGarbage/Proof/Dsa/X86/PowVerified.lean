@@ -47,8 +47,8 @@ theorem satisfiable {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
   · exact Nat.lt_trans (by decide) (read_ones _ k).2
 
 theorem verified (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide)
-    (he : 0 < e := by decide) (hen : e ≤ 2 * n := by decide) :
+    (he : 1 < e := by decide) (hen : e ≤ 2 * n := by decide) :
     Verified target (body n e) (Spec.Dsa.ModPow.powContract (layout n e) abi 20) :=
-  ⟨correct hn hn48 he hen, constantTime n e he, satisfiable hn hn48⟩
+  ⟨correct hn hn48 he hen, constantTime n e, satisfiable hn hn48⟩
 
 end VG.Proof.Dsa.X86.Pow

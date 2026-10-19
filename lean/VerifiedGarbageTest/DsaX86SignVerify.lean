@@ -41,34 +41,34 @@ def check (x nonce digest : Nat) : Except String Unit := do
   let input := 0x20000
   let output := 0x30000
   let y := Spec.Dsa.powMod 4 x 563
-  let ws := putBE (putBE ({} : Words) input 8 563) (input + 8) 4 281
-  let ws := putBE (putBE ws (input + 12) 8 4) (input + 20) 8 y
-  let ws := putBE (putBE ws (input + 28) 4 x) (input + 32) 4 nonce
-  let ws := putBE ws (input + 36) 1 digest
-  let ws := putBE ws output 8 (2 ^ 64 - 1)
-  let ws := [(Field.p, input), (.q, input + 8), (.g, input + 12), (.y, input + 20),
-    (.x, input + 28), (.nonce, input + 32), (.digest, input + 36), (.signature, output),
-    (.out, output), (.qLen, 4), (.digestPrefixLen, 1), (.mask, 2 ^ 32 - 1)].foldl
+  let ws := putBE (putBE ({} : Words) input 8 563) (input + 8) 8 281
+  let ws := putBE (putBE ws (input + 16) 8 4) (input + 24) 8 y
+  let ws := putBE (putBE ws (input + 32) 8 x) (input + 40) 8 nonce
+  let ws := putBE ws (input + 48) 1 digest
+  let ws := putBE ws output 16 (2 ^ 128 - 1)
+  let ws := [(Field.p, input), (.q, input + 8), (.g, input + 16), (.y, input + 24),
+    (.x, input + 32), (.nonce, input + 40), (.digest, input + 48), (.signature, output),
+    (.out, output), (.qLen, 8), (.digestPrefixLen, 1), (.mask, 2 ^ 32 - 1)].foldl
       (fun w (f, value) => put w (base + Layout.field f) 1 value) ws
   let state : State := {
     gpr := fun reg => if reg == .edi then BitVec.ofNat 32 base else if reg == .esp then 0x40000 else 0
     unknowns := fun i => BitVec.ofNat 32 (0x60000 + 4 * i)
     cf := none, zf := none, sf := none, of := none
-    mem := memory ws, rd := [⟨BitVec.ofNat 64 input, 37⟩],
-    wr := [⟨BitVec.ofNat 64 base, 16384⟩, ⟨BitVec.ofNat 64 output, 8⟩] }
-  let signed ← evaluate fuel (SignVerify.signBody 8 4) ⟨state, ws⟩
+    mem := memory ws, rd := [⟨BitVec.ofNat 64 input, 49⟩],
+    wr := [⟨BitVec.ofNat 64 base, 16384⟩, ⟨BitVec.ofNat 64 output, 16⟩] }
+  let signed ← evaluate fuel (SignVerify.signBody 8 8) ⟨state, ws⟩
   let key : Spec.Dsa.Key := ⟨⟨563, 281, 4⟩, y, some x⟩
   let dg := [BitVec.ofNat 8 digest]
   let expected := Spec.Dsa.signWithNonce key dg nonce
   let expectedR := expected.map (·.r) |>.getD 0
   let expectedS := expected.map (·.s) |>.getD 0
   unless signed.state.gpr .eax == (if expected.isSome then 1 else 0) &&
-      getBE signed.words output 4 == expectedR && getBE signed.words (output + 4) 4 == expectedS do
+      getBE signed.words output 8 == expectedR && getBE signed.words (output + 8) 8 == expectedS do
     throw s!"sign body mismatch: x={x}, nonce={nonce}, digest={digest}"
   for rValue in [expectedR, (expectedR + 1) % 281] do
-    let vw := put (putBE signed.words output 4 rValue) (base + Layout.field .mask) 1 (2 ^ 32 - 1)
+    let vw := put (putBE signed.words output 8 rValue) (base + Layout.field .mask) 1 (2 ^ 32 - 1)
     let vs : State := { signed.state with mem := memory vw }
-    let verified ← evaluate fuel (SignVerify.verifyBody 8 4) ⟨vs, vw⟩
+    let verified ← evaluate fuel (SignVerify.verifyBody 8 8) ⟨vs, vw⟩
     let valid := Spec.Dsa.verify { key with x := none } ⟨rValue, expectedS⟩ dg
     unless verified.state.gpr .eax == (if valid then 1 else 0) do
       throw "verify body mismatch"

@@ -31,9 +31,22 @@ theorem exponentProduct_check (n : Nat) :
     (exponent_check_seq taint (mul_check true _ _ _ _ _ _)
       (by rfl) (selectProduct_check (modulus n) (slot n 7) (slot n 5) maskOffset))
 
+def publicBodyHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) productHint
+    (.seq (workspaceTaint true) (mulHint true) (.block []))
+
+def publicStepHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) publicBodyHint (.block [])
+
+def publicExponentiateHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint false) (mulHint false)
+    (.seq (workspaceTaint false) (mulHint false)
+      (.seq (workspaceTaint true) (.block [])
+        (.seq (workspaceTaint false) (.loop (workspaceTaint true) publicStepHint) (mulHint false))))
+
 theorem exponentBody_check (n : Nat) :
-    VG.Taint.check taint (workspaceTaint true) (exponentBody n) bodyHint = some (zeroTaint true) := by
-  unfold exponentBody multiply bodyHint
+    VG.Taint.check taint (workspaceTaint true) (exponentBody n) publicBodyHint = some (zeroTaint true) := by
+  unfold exponentBody multiply publicBodyHint
   refine exponent_check_seq taint (exponentProduct_check n) (by rfl)
     (exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl) ?_)
   change taint.checkBlock (workspaceTaint true) (VG.Impl.Mont.X86.Dynamic.shiftExponent 2 exponentOffset) = _
@@ -41,21 +54,21 @@ theorem exponentBody_check (n : Nat) :
   rfl
 
 theorem exponentStep_check (n : Nat) :
-    VG.Taint.check taint (workspaceTaint true) (exponentStep n) stepHint = some counterEndTaint := by
-  unfold exponentStep stepHint
+    VG.Taint.check taint (workspaceTaint true) (exponentStep n) publicStepHint = some counterEndTaint := by
+  unfold exponentStep publicStepHint
   exact exponent_check_seq taint (exponentBody_check n) (by rfl) (by rfl)
 
 theorem exponentiate_check (n : Nat) :
-    VG.Taint.check taint (workspaceTaint false) (exponentiate n) exponentiateHint = some (rowTaint false) := by
+    VG.Taint.check taint (workspaceTaint false) (exponentiate n) publicExponentiateHint = some (rowTaint false) := by
   have loop : VG.Taint.check taint (workspaceTaint true) (.loop (exponentStep n) .ne)
-      (.loop (workspaceTaint true) stepHint) = some counterEndTaint := by
+      (.loop (workspaceTaint true) publicStepHint) = some counterEndTaint := by
     change (if taint.le (workspaceTaint true) (workspaceTaint true) then
-      (VG.Taint.check taint (workspaceTaint true) (exponentStep n) stepHint).bind
+      (VG.Taint.check taint (workspaceTaint true) (exponentStep n) publicStepHint).bind
         (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
       else none) = _
     rw [exponentStep_check n]
     rfl
-  unfold exponentiate multiply exponentiateHint
+  unfold exponentiate multiply publicExponentiateHint
   refine exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) ?_
   refine exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) ?_
   refine exponent_check_seq taint (u := workspaceTaint true) (by rfl) (by rfl) ?_
@@ -66,12 +79,12 @@ public. Only the common workspace pointer is public on entry. -/
 theorem exponentiate_constantTime (n : Nat) :
     ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint false)) (exponentiate n) := by
   refine VG.Taint.constantTime (A := taint) (workspaceTaint false) (fun _ _ _ _ h => h)
-    (hc := exponentiateHint) ?_
+    (hc := publicExponentiateHint) ?_
   rw [exponentiate_check n]
   rfl
 
 def publicPowerHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint false) contextSetupHint exponentiateHint
+  .seq (workspaceTaint false) contextSetupHint publicExponentiateHint
 
 theorem publicPower_check (n : Nat) :
     VG.Taint.check taint (workspaceTaint false) (publicPower n) publicPowerHint = some (rowTaint false) :=

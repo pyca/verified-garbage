@@ -22,11 +22,11 @@ theorem loadPower_relCT (n prime exponent : Nat) :
       (VG.X86.Taint.Agree (workspaceTaint false)) :=
   VG.RelCT.seq (copyArray_relCT _ _ _) (VG.RelCT.seq (copyArray_relCT _ _ _) (copyArray_relCT _ _ _))
 
-theorem factorPower_relCT (n prime exponent output : Nat) (hn : 0 < n) :
+theorem factorPower_relCT (n prime exponent output : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (factorPower n prime exponent output)
       (VG.X86.Taint.Agree (workspaceTaint false)) :=
   VG.RelCT.seq (loadPower_relCT _ _ _)
-    (VG.RelCT.seq (checkedPrimePower_relCT n hn) (copyPadded_relCT _ _ _))
+    (VG.RelCT.seq (checkedPrimePower_relCT n) (copyPadded_relCT _ _ _))
 
 theorem loadCoefficient_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (loadCoefficient n)

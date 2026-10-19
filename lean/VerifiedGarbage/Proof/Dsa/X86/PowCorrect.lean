@@ -16,7 +16,7 @@ theorem scratch_fits {n size : Nat} (h : contextBytes n ≤ size) :
   simp only [scratch, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> simp only [contextBytes, slot, stride] at * <;> omega
 
-theorem correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
+theorem correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
     (s : State) (h : (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pre s) :
     ∃ tr t, Exec isa (body n e) s tr t ∧ abiPreserved s t ∧
       (Spec.Dsa.ModPow.powContract (layout n e) abi 20).post s t := by
@@ -61,12 +61,12 @@ theorem ABI.readArg {n e : Nat} {s : State} (A : ABI n e s) :
   rw [State.load32, ite_eq_left_iff.mpr fun h => absurd A.entry.arg h]
   rfl
 
-theorem constantTime (n e : Nat) (he : 0 < e) :
+theorem constantTime (n e : Nat) :
     ConstantTime isa (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pre
       (Spec.Dsa.ModPow.powContract (layout n e) abi 20).pub (body n e) := by
   intro s t tr ur sf tf hs ht hp E F
   have A := publicArgs hp
-  exact ((body_relCT n e he) s t tr ur sf tf
+  exact ((body_relCT n e) s t tr ur sf tf
     ⟨A.1, A.2, (abi_of hs).readArg, (abi_of ht).readArg⟩ E F).1
 
 end VG.Proof.Dsa.X86.Pow

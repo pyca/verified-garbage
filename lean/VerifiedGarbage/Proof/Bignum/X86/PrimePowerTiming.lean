@@ -24,10 +24,10 @@ theorem preparePrime_relCT (n : Nat) :
   refine VG.RelCT.seq (sanitizeModulus_relCT n _ _) ?_
   exact checkedProgramChange (contextSetup_check n) (by rfl)
 
-theorem primePower_relCT (n : Nat) (hn : 0 < n) :
+theorem primePower_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (primePower n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   refine VG.RelCT.seq (preparePrime_relCT n) ?_
-  exact checkedProgramChange (exponentiate_check n (2 * n) (by omega)) (by rfl)
+  exact checkedProgramChange (exponentiate_check n (2 * n)) (by rfl)
 
 end VG.Proof.Bignum.X86

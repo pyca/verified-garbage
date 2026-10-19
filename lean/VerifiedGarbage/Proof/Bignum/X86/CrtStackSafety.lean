@@ -31,13 +31,6 @@ theorem sub_sp (M : Mod) (acc out a b : Nat) : (sub M acc out a b).all stackSafe
   simp only [sub, List.all_append, chain_sp, masked_sp]
   rfl
 
-theorem shiftExponent_sp (n out : Nat) : (Dynamic.shiftExponent n out).all stackSafe = true := by
-  induction n generalizing out with
-  | zero => rfl
-  | succ n ih =>
-    rw [Dynamic.shiftExponent, List.all_append, ih]
-    rfl
-
 theorem sized_sp (n : Nat) : (VG.Impl.Bignum.X86.Crt.sized n).all stackSafe = true := by
   simp only [VG.Impl.Bignum.X86.Crt.sized, VG.Impl.Bignum.X86.Crt.importComponents,
     VG.Impl.Bignum.X86.Crt.importComponent, VG.Impl.Bignum.X86.Crt.validate,
@@ -59,7 +52,7 @@ theorem sized_sp (n : Nat) : (VG.Impl.Bignum.X86.Crt.sized n).all stackSafe = tr
     Dynamic.exponentProduct, Dynamic.selectProduct, Dynamic.powerTwo, Dynamic.doubleLoop,
     Dynamic.doubleStep, Dynamic.one, Dynamic.mul, Dynamic.row, Dynamic.mulRowW,
     Dynamic.zerosW, Dynamic.selectsW, Dynamic.chainW, Dynamic.csubW, Dynamic.addW, Dynamic.wordLoop,
-    VG.Impl.Dsa.X86.lessThan, VG.Impl.Dsa.X86.equal, Code.all, sub_sp, shiftExponent_sp,
+    VG.Impl.Dsa.X86.lessThan, VG.Impl.Dsa.X86.equal, Code.all, sub_sp, Dynamic.shiftDown,
     List.all_append]
   rfl
 

@@ -1,7 +1,7 @@
 import VerifiedGarbageTest.DsaX86Mont
 import VerifiedGarbage.Impl.Mont.X86.Context
 import VerifiedGarbage.Proof.Mont.X86.PowerTwo
-import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 import VerifiedGarbage.Proof.Mont.X86.ContextInit
 import VerifiedGarbage.Proof.Mont.X86.Exponentiate
@@ -13,7 +13,7 @@ import VerifiedGarbage.TCB.Axioms
 exercise the ISA model; they are separate from the full correctness proof. -/
 
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.powerTwo_ok
-#assert_standard_axioms VG.Proof.Mont.X86.Dynamic.shiftExponent_ok
+#assert_standard_axioms VG.Proof.Mont.X86.Dynamic.shiftDown_ok
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.exponentMask_ok
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.selectProduct_ok
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.Context.keep
@@ -31,7 +31,7 @@ def check (n modulus a exponent : Nat) : Except String Unit := do
   let ws := (List.range (size / 4)).foldl (fun w i =>
     w.insert (base / 4 + i) (0xa5a5a5a5 : BitVec 32)) ({} : Words)
   let ws := put (put (put ws (base + slot n 0) (2 * n) modulus)
-    (base + slot n 5) (2 * n) a) (base + slot n 8) 1 exponent
+    (base + slot n 5) (2 * n) a) (base + slot n 8) 2 exponent
   let state : State := {
     gpr := fun r => if r == .edi then BitVec.ofNat 32 base else BitVec.ofNat 32 (0xdead00 + r.ctorIdx)
     cf := none, zf := none, sf := none, of := none
@@ -39,10 +39,10 @@ def check (n modulus a exponent : Nat) : Except String Unit := do
   let initialized ← evaluate fuel (contextSetup n) ⟨state, ws⟩
   unless get initialized.words (base + slot n 4) (2 * n) == 2 ^ (128 * n) % modulus do
     throw "R squared setup mismatch"
-  let result ← evaluate fuel (exponentiate n 1) initialized
+  let result ← evaluate fuel (exponentiate n 2) initialized
   unless get result.words (base + slot n 6) (2 * n) == Spec.Rsa.powMod a exponent modulus do
     throw s!"exponentiation mismatch: n={n}, m={modulus}, a={a}, e={exponent}"
-  unless get result.words (base + slot n 8) 1 == 0 do throw "exponent not consumed"
+  unless get result.words (base + slot n 8) 2 == 0 do throw "exponent not consumed"
   unless get result.words (base + slot n 0) (2 * n) == modulus do throw "modulus changed"
   for r in [.edi, .esp] do
     unless result.state.gpr r == state.gpr r do throw "preserved register changed"

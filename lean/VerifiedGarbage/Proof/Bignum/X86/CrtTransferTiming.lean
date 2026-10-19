@@ -19,10 +19,10 @@ theorem copyArray_relCT (n src dst : Nat) :
     (VG.Taint.hintOf taint (workspaceTaint false) (copyArray 1 0 0)) rfl rfl rfl
   rfl
 
-theorem checkedPrimePower_relCT (n : Nat) (hn : 0 < n) :
+theorem checkedPrimePower_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (checkedPrimePower n)
       (VG.X86.Taint.Agree (workspaceTaint false)) :=
-  VG.RelCT.seq (primeMask_relCT n) (primePower_relCT n hn)
+  VG.RelCT.seq (primeMask_relCT n) (primePower_relCT n)
 
 theorem crtRecombine_relCT (n product q h residue out mult : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (crtRecombine n product q h residue out mult)

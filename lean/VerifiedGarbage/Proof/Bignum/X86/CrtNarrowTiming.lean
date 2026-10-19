@@ -45,7 +45,7 @@ theorem narrowPower_relCT (n prime exponent output : Nat) :
   · exact VG.RelCT.seq (copyArray_relCT _ _ _) (VG.RelCT.seq (copyArray_relCT _ _ _) (copyArray_relCT _ _ _))
 
 theorem factorPowerFit_relCT {base : Addr} {bytes : Nat} (n prime exponent output lenArg : Nat)
-    (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) :
+    (hn32 : 128 * n < 2 ^ 32) :
     RelCT isa (fun s t => Public s t ∧ s.gpr .esp = t.gpr .esp ∧
         ∃ v, CallArgument s base bytes lenArg v ∧ CallArgument t base bytes lenArg v)
       (factorPowerFit n prime exponent output lenArg) Public := by
@@ -74,7 +74,7 @@ theorem factorPowerFit_relCT {base : Addr} {bytes : Nat} (n prime exponent outpu
       (.ite .b (narrowPower n prime exponent output) (factorPower n prime exponent output)) Public :=
     RelCT.ite (fun _ _ H => H.2)
       ((narrowPower_relCT n prime exponent output).mono (fun _ _ H => H.1.1) (fun _ _ h => h))
-      ((factorPower_relCT n prime exponent output hn).mono (fun _ _ H => H.1.1) (fun _ _ h => h))
+      ((factorPower_relCT n prime exponent output).mono (fun _ _ H => H.1.1) (fun _ _ h => h))
   have T₂ := Branch _ _ _ _ _ _ ⟨A', Cs.trans Ct.symm⟩ E₂ F₂
   rw [T₁.1, T₂.1]
   exact ⟨rfl, T₂.2⟩
@@ -87,7 +87,7 @@ theorem compute_relCT (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
   unfold compute powers at E F
   cases E with | seq Ep Er => cases F with | seq Fp Fr =>
   cases Ep with | seq E₁ E₂ => cases Fp with | seq F₁ F₂ =>
-  have T₁ := factorPowerFit_relCT (base := base) (bytes := bytes) _ _ _ _ _ dims.1 dims.2.1 _ _ _ _ _ _
+  have T₁ := factorPowerFit_relCT (base := base) (bytes := bytes) _ _ _ _ _ dims.2.1 _ _ _ _ _ _
     ⟨A, H.sp, args 7, H.left.stack 7 (by decide), H.right.stack 7 (by decide)⟩ E₁ F₁
   have power (σ : State) {τ : State} {tr : List Leak} (I : Inputs base bytes len args σ)
       (X : Exec isa (factorPowerFit (Spec.Rsa.modulusWords len) pSlot dpSlot mpSlot 7) σ tr τ) :=
@@ -97,7 +97,7 @@ theorem compute_relCT (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
   obtain ⟨_, Ot, Kt⟩ := power t H.right F₁
   have H' := H.keep Ks Kt (by decide) (by decide) (factor_outside Os (by decide) H.left.space)
     (factor_outside Ot (by decide) H.left.space)
-  have T₂ := factorPowerFit_relCT (base := base) (bytes := bytes) _ _ _ _ _ dims.1 dims.2.1 _ _ _ _ _ _
+  have T₂ := factorPowerFit_relCT (base := base) (bytes := bytes) _ _ _ _ _ dims.2.1 _ _ _ _ _ _
     ⟨T₁.2, H'.sp, args 9, H'.left.stack 9 (by decide), H'.right.stack 9 (by decide)⟩ E₂ F₂
   have T₃ := VG.RelCT.seq (coefficient_relCT _) (crtRecombine_relCT _ _ _ _ _ _ _) _ _ _ _ _ _ T₂.2 Er Fr
   rw [T₁.1, T₂.1, T₃.1]

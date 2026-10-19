@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeySelect
-public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 
 /-! # Halving an RSA workspace array with an incoming carry -/
 
@@ -14,15 +14,17 @@ theorem half_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N)
     (hj : j < N) (bit : (s.gpr .ebx).toNat ≤ 1) :
     WP isa (half w j) s fun t => Ws t B Z w N ∧ Keep B w [j] [] s.mem t.mem ∧
       num t.mem B w j = (num s.mem B w j + 2 ^ (32 * w) * (s.gpr .ebx).toNat) / 2 ∧
-      Keeps [.eax, .edx] s t := by
+      Keeps [.eax, .edx, .ebp] s t := by
   have fit := h.arr_fit hj
   simp only [S] at fit
   have nw := h.workspace.nowrap
   unfold half
-  change WP isa (.block (.store (VG.Impl.Mont.X86.sc (arr w j + 4 * w)) .ebx :: _)) s _
-  refine wp_storeS (h.workspace.ea (by omega)) (h.workspace.write (by omega)) fun u U => ?_
+  have wpos := h.wpos
+  change WP isa (.seq (.block [.store (VG.Impl.Mont.X86.sc (arr w j + 4 * w)) .ebx])
+    (VG.Impl.Mont.X86.Dynamic.shiftDown (w + 1) (arr w j))) s _
+  refine WP.seq (wp_storeS (h.workspace.ea (by omega)) (h.workspace.write (by omega)) fun u U => WP.block_nil ?_)
   have hu := h.workspace.of_keeps (U.keeps []) (by decide)
-  refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftExponent_ok hu (w + 1) (arr w j) (by omega)) ?_
+  refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftDown_ok hu (k := w + 1) (out := arr w j) (by omega) (by omega)) ?_
   rintro t ⟨frame, value, rest⟩
   have stored := writeW32_outside s.mem B (d := arr w j + 4 * w) (s.gpr .ebx) (by omega)
   have keepU : Keep B w [j] [] s.mem u.mem := by

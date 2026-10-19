@@ -16,7 +16,7 @@ open VG.Impl.Dsa.X86.Pow
 
 theorem core_ok {s : State} {base : Addr} {size n e m : Nat}
     (hs : Scr s base size) (hz : contextBytes n ≤ size)
-    (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
+    (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n)
     (hv : wordsVal s.mem base (slot n 0) n = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
     WP isa (core n e) s fun t =>
       wordsVal t.mem base (slot n 6) n =

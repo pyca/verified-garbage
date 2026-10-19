@@ -20,9 +20,20 @@ def productHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint true) (.block [])
     (.seq (workspaceTaint true) (mulHint true) selectHint)
 
+def shiftDownHint : VG.Taint.Hint VG.X86.Taint.T :=
+  VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (shiftDown 2 0))
+
+/-- After the shift: the loop's pointer, and the zero shifted into the top word. -/
+def shiftDownTaint : VG.X86.Taint.T := { regs := .ofList [.edi, .ebp, .eax, .esi], flags := false }
+
+theorem shiftDown_check (k out : Nat) :
+    VG.Taint.check taint (workspaceTaint true) (shiftDown k out) shiftDownHint = some shiftDownTaint :=
+  (check_of_erase_eq (shiftDown k out) (shiftDown 2 0) (workspaceTaint true) shiftDownHint
+    rfl rfl rfl).trans rfl
+
 def bodyHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint true) productHint
-    (.seq (workspaceTaint true) (mulHint true) (.block []))
+    (.seq (workspaceTaint true) (mulHint true) shiftDownHint)
 
 def stepHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint true) bodyHint (.block [])
@@ -36,19 +47,16 @@ theorem exponentProduct_check (n : Nat) :
     (exponent_check_seq taint (mul_check true _ _ _ _ _ _)
       (by rfl) (selectProduct_check (contextMod n) (slot n 6) (slot n 7) 4))
 
-theorem exponentBody_check (n expWords : Nat) (he : 0 < expWords) :
-    VG.Taint.check taint (workspaceTaint true) (exponentBody n expWords) bodyHint = some (zeroTaint true) := by
+theorem exponentBody_check (n expWords : Nat) :
+    VG.Taint.check taint (workspaceTaint true) (exponentBody n expWords) bodyHint = some shiftDownTaint := by
   unfold exponentBody bodyHint
-  refine exponent_check_seq taint (exponentProduct_check n) (by rfl)
-    (exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl) ?_)
-  change taint.checkBlock (workspaceTaint true) (shiftExponent expWords (slot n 8)) = _
-  rw [shiftExponent_taint, ite_eq_right (by omega)]
-  rfl
+  exact exponent_check_seq taint (exponentProduct_check n) (by rfl)
+    (exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl) (shiftDown_check _ _))
 
-theorem exponentStep_check (n expWords : Nat) (he : 0 < expWords) :
+theorem exponentStep_check (n expWords : Nat) :
     VG.Taint.check taint (workspaceTaint true) (exponentStep n expWords) stepHint = some counterEndTaint := by
   unfold exponentStep stepHint
-  exact exponent_check_seq taint (exponentBody_check n expWords he) (by rfl) (by rfl)
+  exact exponent_check_seq taint (exponentBody_check n expWords) (by rfl) (by rfl)
 
 def exponentiateHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint false) (mulHint false)
@@ -56,7 +64,7 @@ def exponentiateHint : VG.Taint.Hint VG.X86.Taint.T :=
       (.seq (workspaceTaint true) (.block [])
         (.seq (workspaceTaint false) (.loop (workspaceTaint true) stepHint) (mulHint false))))
 
-theorem exponentiate_check (n expWords : Nat) (he : 0 < expWords) :
+theorem exponentiate_check (n expWords : Nat) :
     VG.Taint.check taint (workspaceTaint false) (exponentiate n expWords) exponentiateHint = some (rowTaint false) := by
   have loop : VG.Taint.check taint (workspaceTaint true) (.loop (exponentStep n expWords) .ne)
       (.loop (workspaceTaint true) stepHint) = some counterEndTaint := by
@@ -64,7 +72,7 @@ theorem exponentiate_check (n expWords : Nat) (he : 0 < expWords) :
       (VG.Taint.check taint (workspaceTaint true) (exponentStep n expWords) stepHint).bind
         (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
       else none) = _
-    rw [exponentStep_check n expWords he]
+    rw [exponentStep_check n expWords]
     rfl
   unfold exponentiate exponentiateHint
   refine exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) ?_
@@ -74,11 +82,11 @@ theorem exponentiate_check (n expWords : Nat) (he : 0 < expWords) :
 
 /-- Neither the modulus, base, exponent nor intermediate values need to be
 public. Only the common workspace pointer is public on entry. -/
-theorem exponentiate_constantTime (n expWords : Nat) (he : 0 < expWords) :
+theorem exponentiate_constantTime (n expWords : Nat) :
     ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint false)) (exponentiate n expWords) := by
   refine VG.Taint.constantTime (A := taint) (workspaceTaint false) (fun _ _ _ _ h => h)
     (hc := exponentiateHint) ?_
-  rw [exponentiate_check n expWords he]
+  rw [exponentiate_check n expWords]
   rfl
 
 end VG.Proof.Mont.X86.Dynamic

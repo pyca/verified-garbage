@@ -105,48 +105,10 @@ theorem clrLow_workspace (n j : Nat) : WorkspacePublic (.block (clrLow n j)) := 
   · exact (check_of_erase_eq (.block (clrLow n j)) reference (workspaceTaint false) hint rfl rfl rfl).trans (by rfl)
   · decide +kernel
 
-theorem shiftWord_private_taint (out : Nat) (last : Bool) :
-    taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftWord out last) = some (if last then zeroTaint false else workspaceTaint false) := by
-  cases last <;>
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl)]
-  · change taint.checkBlock (workspaceTaint false)
-      [.mov .eax (.mem (sc 0)), .alu .and .eax (.imm 0), .shift .ror .eax 0,
-       .mov .edx (.mem (sc 0)), .shift .shr .edx 0, .alu .add .edx (.reg .eax), .store (sc 0) .edx] = _
-    rfl
-  · change taint.checkBlock (workspaceTaint false)
-      [.mov .eax (.imm 0), .alu .and .eax (.imm 0), .shift .ror .eax 0,
-       .mov .edx (.mem (sc 0)), .shift .shr .edx 0, .alu .add .edx (.reg .eax), .store (sc 0) .edx] = _
-    rfl
-
-theorem shiftExponent_private_taint (n out : Nat) :
-    taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftExponent n out) =
-      some (if n = 0 then workspaceTaint false else zeroTaint false) := by
-  induction n generalizing out with
-  | zero => rfl
-  | succ n ih =>
-    rw [VG.Impl.Mont.X86.Dynamic.shiftExponent, exponent_check_append taint (workspaceTaint false), shiftWord_private_taint]
-    cases n with
-    | zero => rfl
-    | succ n =>
-      change taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftExponent (n + 1) (out + 4)) = _
-      exact ih (out + 4)
-
 theorem half_workspace (n j : Nat) : WorkspacePublic (half n j) := by
-  refine ⟨.block [], zeroTaint false, ?_, by rfl⟩
-  unfold half
-  simp only [VG.Taint.check, VG.Taint.checkChunks]
-  rw [exponent_check_append taint (workspaceTaint false)]
-  have store : taint.checkBlock (workspaceTaint false)
-      [.store (VG.Impl.Mont.X86.sc (slot n j + 4 * n)) .ebx] = some (workspaceTaint false) := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl)]
-    change taint.checkBlock (workspaceTaint false) [.store (VG.Impl.Mont.X86.sc 0) .ebx] = _
-    rfl
-  rw [store]
-  change taint.checkBlock (workspaceTaint false)
-    (VG.Impl.Mont.X86.Dynamic.shiftExponent (n + 1) (slot n j)) = _
-  rw [shiftExponent_private_taint, ite_eq_right (by omega)]
-  rfl
-
+  let hint := VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (half 1 0))
+  refine ⟨hint, { regs := .ofList [.edi, .ebp, .eax], flags := false }, ?_, by rfl⟩
+  exact (check_of_erase_eq (half n j) (half 1 0) (workspaceTaint false) hint rfl rfl rfl).trans (by rfl)
 
 theorem fixedBlock_workspace (code : List Instr)
     (checked : (taint.checkBlock (workspaceTaint false) code).isSome = true)

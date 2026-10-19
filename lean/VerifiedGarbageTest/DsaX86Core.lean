@@ -39,30 +39,30 @@ def check (x nonce digest : Nat) : Except String Unit := do
   let q := 281
   let g := 4
   let y := Spec.Dsa.powMod g x p
-  let ws := putBE (putBE ({} : Words) input 8 p) (input + 8) 4 q
-  let ws := putBE (putBE ws (input + 12) 8 g) (input + 20) 8 y
-  let ws := putBE (putBE ws (input + 28) 4 x) (input + 32) 4 nonce
-  let ws := putBE (putBE ws (input + 36) 4 digest) (base + qMinusTwo) 4 (q - 2)
-  let ws := [(Field.p, input), (.q, input + 8), (.g, input + 12), (.y, input + 20),
-    (.x, input + 28), (.nonce, input + 32), (.digest, input + 36), (.signature, input + 40),
-    (.qLen, 4), (.digestPrefixLen, 4)].foldl (fun w (f, value) => put w (base + Layout.field f) 1 value) ws
+  let ws := putBE (putBE ({} : Words) input 8 p) (input + 8) 8 q
+  let ws := putBE (putBE ws (input + 16) 8 g) (input + 24) 8 y
+  let ws := putBE (putBE ws (input + 32) 8 x) (input + 40) 8 nonce
+  let ws := putBE (putBE ws (input + 48) 8 digest) (base + qMinusTwo) 8 (q - 2)
+  let ws := [(Field.p, input), (.q, input + 8), (.g, input + 16), (.y, input + 24),
+    (.x, input + 32), (.nonce, input + 40), (.digest, input + 48), (.signature, input + 56),
+    (.qLen, 8), (.digestPrefixLen, 8)].foldl (fun w (f, value) => put w (base + Layout.field f) 1 value) ws
   let state : State := {
     gpr := fun reg => if reg == .edi then BitVec.ofNat 32 base else if reg == .esp then 0x40000 else 0
     unknowns := fun i => BitVec.ofNat 32 (0x60000 + 4 * i)
     cf := none, zf := none, sf := none, of := none
-    mem := memory ws, rd := [⟨BitVec.ofNat 64 input, 48⟩], wr := [⟨BitVec.ofNat 64 base, 16384⟩] }
-  let signed ← evaluate fuel (Core.sign 8 4) ⟨state, ws⟩
+    mem := memory ws, rd := [⟨BitVec.ofNat 64 input, 72⟩], wr := [⟨BitVec.ofNat 64 base, 16384⟩] }
+  let signed ← evaluate fuel (Core.sign 8 8) ⟨state, ws⟩
   let expectedR := Spec.Dsa.powMod g nonce p % q
   let expectedS := Spec.Dsa.powMod nonce (q - 2) q * (digest + x * expectedR) % q
-  unless getBE signed.words (base + r) 4 == expectedR && getBE signed.words (base + s) 4 == expectedS do
+  unless getBE signed.words (base + r) 8 == expectedR && getBE signed.words (base + s) 8 == expectedS do
     throw s!"composed signing mismatch: x={x}, nonce={nonce}, digest={digest}"
-  let vw := putBE (putBE signed.words (input + 40) 4 expectedR) (input + 44) 4 expectedS
+  let vw := putBE (putBE signed.words (input + 56) 8 expectedR) (input + 64) 8 expectedS
   let vs : State := { signed.state with mem := memory vw }
-  let verified ← evaluate fuel (Core.verify 8 4) ⟨vs, vw⟩
+  let verified ← evaluate fuel (Core.verify 8 8) ⟨vs, vw⟩
   let inverse := Spec.Dsa.powMod expectedS (q - 2) q
   let expected := (Spec.Dsa.powMod g (digest * inverse % q) p *
     Spec.Dsa.powMod y (expectedR * inverse % q) p) % p % q
-  unless getBE verified.words (base + u) 4 == expected do
+  unless getBE verified.words (base + u) 8 == expected do
     throw "composed verification mismatch"
 
 def checks : Except String Unit := do
