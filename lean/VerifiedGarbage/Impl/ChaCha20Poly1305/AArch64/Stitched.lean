@@ -23,9 +23,12 @@ and only the rest with those calls:
   restored, and `x22`, `x23` set to the data not yet absorbed: everything
   after the chunks when decrypting, and also the last chunk when encrypting
   (`polyOut`); the chunks use SVE2 as the stream does (`XorCallee.sve`);
+* with SVE2 when encrypting, if data follows the chunks, the last chunk is
+  absorbed while the keystream of the next four blocks is computed, and up to
+  256 bytes of the rest encrypted with it (`Tail.rest`, below);
 * the rest of the data is encrypted (`vg_chacha20_xor`, from where the
-  chunks stopped) and absorbed (from `x22`), in the order the direction
-  needs.
+  chunks, or `Tail.rest`, stopped) and absorbed (from `x22`), in the order the
+  direction needs.
 
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
 prologue saved them, and `restore` restores them.

@@ -83,7 +83,7 @@ theorem zeroStores_ok {c : Addr} {j : Nat} (hj : j ≤ 16) {s : State} (hx3 : s.
 /-- The buffer zeroed. -/
 theorem zero_ok {c : Addr} {s : State} (hx3 : s.gpr .x3 = c)
     (hw : ∀ a, a + 16 ≤ 256 → InRegions s.wr (c + BitVec.ofNat 64 a) 16) :
-    WP isa (.block ([.vop (.logic .eor .v28 .v28 .v28)] ++
+    WP isa (.block (([.vop (.logic .eor .v28 .v28 .v28)] : List Instr) ++
         (List.range 16).map (fun i => .strq .v28 .x3 (16 * i)))) s fun s' =>
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ≠ .v28 → s'.v r = s.v r) ∧ Zeroed c 16 s.mem s'.mem := by

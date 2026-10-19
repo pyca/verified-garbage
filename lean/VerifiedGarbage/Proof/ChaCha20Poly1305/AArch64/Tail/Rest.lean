@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Lit
 
 /-!
 # ChaCha20-Poly1305 on AArch64, the rest when encrypting
@@ -232,7 +233,7 @@ theorem rest_ok {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {
   have oo : ∀ a b, off (cx s₀) a + BitVec.ofNat 64 b = off (cx s₀) (a + b) := fun a b => off_off _ a b
   refine (WP.withSp (WP.preservedV (c := Tail.rest) (Q := fun w => ∃ P,
       (∀ r ∈ preservedV, (w.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) → w.sp = u.sp →
-        Sealed s₀ s key msg P (512 * T) w) ?_ (by decide +kernel))).mono
+        Sealed s₀ s key msg P (512 * T) w) ?_ (by lit_decide))).mono
     fun w ⟨⟨⟨P, hw⟩, vw⟩, spw⟩ => ⟨P, hw vw spw⟩
   unfold Tail.rest
   refine WP.seq ((load_ok hp hc hc.inv.x21).mono

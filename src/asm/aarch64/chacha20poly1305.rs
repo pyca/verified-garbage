@@ -15724,6 +15724,8 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: crate::cpu::Features =
 ///
 /// Absorbs each 512 bytes into Poly1305 with integer instructions while computing the keystream of the next with the eight-block ChaCha20 kernel.
 ///
+/// Computes the keystream of the four blocks after the chunks while absorbing the last chunk, and encrypts up to 256 bytes of the rest with it.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
