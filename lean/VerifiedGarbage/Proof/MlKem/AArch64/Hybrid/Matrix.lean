@@ -42,10 +42,12 @@ abbrev bW3 (P : KemLay) (s₀ : State) : List Region :=
   bW P (enL P) s₀ ++ [R (kA s₀) (enL P).sc 0 200, frame s₀.sp]
 
 /-- After `n` entries of `Â` and `j` hashing pairs, from memory `mA`. -/
-structure HInv (P : KemLay) (s₀ : State) (mA : Mem) (ρ E : List Byte) (n j : Nat) (s : State) : Prop where
-  b : BInv P (enL P) s₀ s.mem ρ n s
+structure HInvW (w16 : Bool) (P : KemLay) (s₀ : State) (mA : Mem) (ρ E : List Byte) (n j : Nat) (s : State) : Prop where
+  b : BInvW w16 P (enL P) s₀ s.mem ρ n s
   fr : Frame (bW3 P s₀) mA s.mem
   hash : stateAt s.mem (kA s₀ (enL P).sc) = hstate E (3 * j)
+
+abbrev HInv := HInvW false
 
 /-- The rejection table, apart from the frame too. -/
 structure MT3 (P : KemLay) (s₀ s : State) : Prop where
@@ -55,8 +57,8 @@ structure MT3 (P : KemLay) (s₀ s : State) : Prop where
 theorem stR_sc (s₀ : State) : stR (kA s₀ (enL P).sc) = R (kA s₀) (enL P).sc 0 200 := by
   simp only [stR, R, ptr_zero]
 
-theorem binv_rebase {s₀ s : State} {mA : Mem} {ρ : List Byte} {n : Nat} (h : BInv P (enL P) s₀ mA ρ n s) :
-    BInv P (enL P) s₀ s.mem ρ n s :=
+theorem binv_rebase {w16 : Bool} {s₀ s : State} {mA : Mem} {ρ : List Byte} {n : Nat} (h : BInvW w16 P (enL P) s₀ mA ρ n s) :
+    BInvW w16 P (enL P) s₀ s.mem ρ n s :=
   ⟨h.kb, Frame.refl _ _, h.rho, h.acc, h.red, h.res⟩
 
 theorem far3 {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) {e : Nat} (he : e+1<P.k*P.k)
@@ -77,12 +79,12 @@ theorem safe_frame {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀)
   ⟨(hk.R (b := (enL P).sc) hp.scb hp.sv).symm, fun c hc => (hk.args c (by
     have : c < 2 := hc; omega)).symm⟩
 
-theorem BInv.paired3 {s₀ s t : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) {mA : Mem}
+theorem BInvW.paired3 {w16 : Bool} {s₀ s t : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) {mA : Mem}
     {ρ E : List Byte} {e i : Nat}
-    (he : e+1<P.k*P.k) (h : BInv P (enL P) s₀ mA ρ e s)
-    (ht : Pair3Outcome P (matSeed ρ (e/P.k) (e%P.k)) (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))
+    (he : e+1<P.k*P.k) (h : BInvW w16 P (enL P) s₀ mA ρ e s)
+    (ht : Pair3OutcomeW w16 P (matSeed ρ (e/P.k) (e%P.k)) (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))
       (sA (enL P) s₀ SS) (aP (enL P) s₀ e) (aP (enL P) s₀ (e+1)) (kA s₀ 0) (kA s₀ (enL P).sc) E i s t) :
-    BInv P (enL P) s₀ t.mem ρ (e+2) t := by
+    BInvW w16 P (enL P) s₀ t.mem ρ (e+2) t := by
   have hw := hp.wf
   have fr : Frame (pairWrites3 (sA (enL P) s₀ SS) (aP (enL P) s₀ e) (aP (enL P) s₀ (e+1))
       (kA s₀ (enL P).sc) s₀.sp) s.mem t.mem := by
@@ -111,12 +113,12 @@ theorem BInv.paired3 {s₀ s t : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P
       simp [hall,ha,hb,hc]
   · intro j hj
     rcases (by omega : j<e ∨ j=e ∨ j=e+1) with hj|rfl|rfl
-    · exact reduced_frame fr (old hj) (h.red j hj)
+    · exact reducedW_frame fr (old hj) (h.red j hj)
     · exact ht.reducedLeft
     · exact ht.reducedRight
   · intro j hj
     rcases (by omega : j<e ∨ j=e ∨ j=e+1) with hj|rfl|rfl
-    · rw [polyAt_frame fr (old hj)]; exact h.res j hj
+    · rw [polyAtW_frame fr (old hj)]; exact h.res j hj
     · exact ht.left
     · exact ht.right
 
@@ -166,19 +168,19 @@ theorem MT3.frame {s₀ s t : State} (h : MT3 P s₀ s) {rs : List Region}
 theorem ek_kb {s₀ s : State} (h : KB P (enL P) s₀ s) :
     bytesAt s.mem (kA s₀ 0) P.ekLen = Encaps.ekE P s₀ := h.ro 0 (show 0 < 2 by decide)
 
-theorem x24_bit {s₀ s : State} {mA : Mem} {ρ : List Byte} {n : Nat} (h : BInv P (enL P) s₀ mA ρ n s) :
+theorem x24_bit {w16 : Bool} {s₀ s : State} {mA : Mem} {ρ : List Byte} {n : Nat} (h : BInvW w16 P (enL P) s₀ mA ρ n s) :
     s.gpr .x24 = 0 ∨ s.gpr .x24 = 1 := by
   rw [h.acc]; split
   · exact Or.inr rfl
   · exact Or.inl rfl
 
 /-- **A hashing pair** of the matrix. -/
-theorem paired_step3 {s₀ s : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) {mA : Mem} {ρ : List Byte}
+theorem paired_step3 {w16 : Bool} {s₀ s : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) {mA : Mem} {ρ : List Byte}
     {i : Nat} (he : 2*i+1<P.k*P.k) (hb : 136 * (3 * i + 2) < P.ekLen) (h8 : P.ekLen % 8 = 0)
     (hlim : P.ekLen ≤ 4096)
-    (h : HInv P s₀ mA ρ (Encaps.ekE P s₀) (2*i) i s) (tb : MT3 P s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.pair3 P (2*i) i) s fun t =>
-      HInv P s₀ mA ρ (Encaps.ekE P s₀) (2*i+2) (i+1) t ∧ MT3 P s₀ t := by
+    (h : HInvW w16 P s₀ mA ρ (Encaps.ekE P s₀) (2*i) i s) (tb : MT3 P s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Hybrid.pair3 P (2*i) i w16) s fun t =>
+      HInvW w16 P s₀ mA ρ (Encaps.ekE P s₀) (2*i+2) (i+1) t ∧ MT3 P s₀ t := by
   have hw := hp.wf
   rw [pair3_iff]
   have hf := hw.facts
@@ -207,7 +209,7 @@ theorem paired_step3 {s₀ s : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s
       rcases hr with rfl | rfl
       · exact ⟨R (kA s₀) (enL P).sc 0 200, by simp, by rw [stR_sc]; exact fun _ h => h⟩
       · exact ⟨frame s₀.sp, by simp, fun _ h => h⟩
-  refine ⟨⟨BInv.paired3 hp hk he h.b post, h.fr.trans (fr.sub sub3), ?_⟩, ?_⟩
+  refine ⟨⟨BInvW.paired3 hp hk he h.b post, h.fr.trans (fr.sub sub3), ?_⟩, ?_⟩
   · rw [ht.hash, show 3 * (i + 1) = 3 * i + 3 by omega]
   · refine tb.frame post.keep.rd post.keep.wr sy fr fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -232,19 +234,19 @@ theorem bW_sub {s₀ : State} : ∀ r ∈ bW P (enL P) s₀, r ∈ bW3 P s₀ :=
   fun _ hr => List.mem_append_left _ hr
 
 /-- **A pair that does not hash.** -/
-theorem paired_stepH {s₀ s : State} (hp : Pre P (enL P) s₀) {mA : Mem} {ρ E : List Byte} {e j : Nat}
-    (he : e+1<P.k*P.k) (h : HInv P s₀ mA ρ E e j s) (tb : MT3 P s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair P false e) s fun t =>
-      HInv P s₀ mA ρ E (e+2) j t ∧ MT3 P s₀ t := by
+theorem paired_stepH {w16 : Bool} {s₀ s : State} (hp : Pre P (enL P) s₀) {mA : Mem} {ρ E : List Byte} {e j : Nat}
+    (he : e+1<P.k*P.k) (h : HInvW w16 P s₀ mA ρ E e j s) (tb : MT3 P s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Paired.pair P false e w16) s fun t =>
+      HInvW w16 P s₀ mA ρ E (e+2) j t ∧ MT3 P s₀ t := by
   refine WP.mono_syms (paired_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
   refine ⟨⟨binv_rebase hb, h.fr.trans (hb.fr.mono bW_sub), ?_⟩, mt, by rw [sy]; exact tb.stk⟩
   rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame hb.fr (bW_st hp), h.hash]
 
 /-- **The singleton.** -/
-theorem singleton_stepH {s₀ s : State} (hp : Pre P (enL P) s₀) {mA : Mem} {ρ E : List Byte} {e j : Nat}
-    (he : e<P.k*P.k) (h : HInv P s₀ mA ρ E e j s) (tb : MT3 P s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e)) s fun t =>
-      HInv P s₀ mA ρ E (e+1) j t ∧ MT3 P s₀ t := by
+theorem singleton_stepH {w16 : Bool} {s₀ s : State} (hp : Pre P (enL P) s₀) {mA : Mem} {ρ E : List Byte} {e j : Nat}
+    (he : e<P.k*P.k) (h : HInvW w16 P s₀ mA ρ E e j s) (tb : MT3 P s₀ s) :
+    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) w16) s fun t =>
+      HInvW w16 P s₀ mA ρ E (e+1) j t ∧ MT3 P s₀ t := by
   refine WP.mono_syms (singleton_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
   refine ⟨⟨binv_rebase hb, h.fr.trans (hb.fr.mono bW_sub), ?_⟩, mt, by rw [sy]; exact tb.stk⟩
   rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame hb.fr (bW_st hp), h.hash]
@@ -261,11 +263,11 @@ theorem hashOk768 : HashOk lay768 := ⟨by decide, by decide, by decide, by deci
 theorem hashOk1024 : HashOk Impl.MlKem1024.AArch64.lay1024 := ⟨by decide, by decide, by decide, by decide, by decide⟩
 
 /-- **The matrix.** -/
-theorem matrixH_ok {s₀ s : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) (ho : HashOk P)
+theorem matrixH_ok {w16 : Bool} {s₀ s : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) (ho : HashOk P)
     {mA : Mem} {ρ : List Byte}
-    (h : HInv P s₀ mA ρ (Encaps.ekE P s₀) 0 0 s) (tb : MT3 P s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.matrixH P) s fun t =>
-      HInv P s₀ mA ρ (Encaps.ekE P s₀) (P.k*P.k) (Impl.MlKem.AArch64.Hybrid.hashPairs P) t ∧ MT3 P s₀ t := by
+    (h : HInvW w16 P s₀ mA ρ (Encaps.ekE P s₀) 0 0 s) (tb : MT3 P s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Hybrid.matrixH P w16) s fun t =>
+      HInvW w16 P s₀ mA ρ (Encaps.ekE P s₀) (P.k*P.k) (Impl.MlKem.AArch64.Hybrid.hashPairs P) t ∧ MT3 P s₀ t := by
   have hk' : 0<P.k := hp.wf.facts.1
   have hn : 0<P.k*P.k := Nat.mul_pos hk' hk'
   have hP := ho.pairs
@@ -277,7 +279,7 @@ theorem matrixH_ok {s₀ s : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s�
     · have np : 0<P.k*P.k/2 := by omega
       exact map_range_ne_nil np _ parts.1
   · apply WPs.append
-    refine WPs.mono (WPs.range (I := fun i t => HInv P s₀ mA ρ (Encaps.ekE P s₀) (2*i)
+    refine WPs.mono (WPs.range (I := fun i t => HInvW w16 P s₀ mA ρ (Encaps.ekE P s₀) (2*i)
       (min i (Impl.MlKem.AArch64.Hybrid.hashPairs P)) t ∧ MT3 P s₀ t)
       (fun i hi t ht => ?_) ⟨by simpa using h, tb⟩) fun t ht => ?_
     · by_cases hh : i < Impl.MlKem.AArch64.Hybrid.hashPairs P

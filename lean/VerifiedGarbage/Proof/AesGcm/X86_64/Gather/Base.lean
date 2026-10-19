@@ -231,9 +231,21 @@ theorem keep_w {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) :
     m.readW (SP s + BitVec.ofNat 64 48) 64 = W s :=
   keep_a hp hf (i := 5) (by decide)
 
+omit hp in
+/-- A state the entry block runs from: the entry state `s` but for `rax`,
+`r10`, `r11` and the flags (which a test before it may have changed). -/
+structure Same (s st : State) : Prop where
+  gpr : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → st.gpr r = s.gpr r
+  mem : st.mem = s.mem
+  rd : st.rd = s.rd
+  wr : st.wr = s.wr
+
+omit hp in
+theorem Same.refl (s : State) : Same s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl⟩
+
 /-- The first entry block: `work` into `r11`, and the arguments in registers
 kept, with `src` and `src_count`. -/
-theorem entry1_ok : WP isa (.block entry1) s fun s₁ => s₁.gpr .r11 = W s ∧
+theorem entry1_ok {st : State} (hs : Same s st) : WP isa (.block entry1) st fun s₁ => s₁.gpr .r11 = W s ∧
     (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 0) 64 = K s ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi ∧
@@ -243,13 +255,23 @@ theorem entry1_ok : WP isa (.block entry1) s fun s₁ => s₁.gpr .r11 = W s ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 64) 64 = stackArg s 1 ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 80) 64 = AL s ∧
     Frame [kpR s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have w : ∀ d, d + 8 ≤ 104 → InRegions s.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => w_in hp (by omega)
-  have a₀ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 := a_in hp (i := 0) (by decide)
-  have a₁ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 16) 8 := a_in hp (i := 1) (by decide)
-  have a₅ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 48) 8 := a_in hp (i := 5) (by decide)
-  have e₀ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 8) 64 = stackArg s 0 := rfl
-  have e₁ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 16) 64 = stackArg s 1 := rfl
-  have e₅ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 48) 64 = W s := rfl
+  have sp : st.gpr .rsp = s.gpr .rsp := hs.gpr _ (by decide) (by decide) (by decide)
+  have w : ∀ d, d + 8 ≤ 104 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => by
+    rw [hs.wr]; exact w_in hp (by omega)
+  have a₀ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 8) 8 := by
+    rw [hs.rd, hs.wr, sp]; exact a_in hp (i := 0) (by decide)
+  have a₁ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 16) 8 := by
+    rw [hs.rd, hs.wr, sp]; exact a_in hp (i := 1) (by decide)
+  have a₅ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 48) 8 := by
+    rw [hs.rd, hs.wr, sp]; exact a_in hp (i := 5) (by decide)
+  have e₀ : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 8) 64 = stackArg s 0 := by rw [hs.mem, sp]; rfl
+  have e₁ : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 16) 64 = stackArg s 1 := by rw [hs.mem, sp]; rfl
+  have e₅ : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 48) 64 = W s := by rw [hs.mem, sp]; rfl
+  have gdi : st.gpr .rdi = s.gpr .rdi := hs.gpr _ (by decide) (by decide) (by decide)
+  have gsi : st.gpr .rsi = s.gpr .rsi := hs.gpr _ (by decide) (by decide) (by decide)
+  have g8 : st.gpr .r8 = s.gpr .r8 := hs.gpr _ (by decide) (by decide) (by decide)
+  have g9 : st.gpr .r9 = s.gpr .r9 := hs.gpr _ (by decide) (by decide) (by decide)
+  rw [← hs.mem, ← hs.rd, ← hs.wr]
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [entry1, gCtx, gRounds, gAad, gAlen, gAlenP, gDesc, gLeft]
@@ -257,7 +279,8 @@ theorem entry1_ok : WP isa (.block entry1) s fun s₁ => s₁.gpr .r11 = W s ∧
       w 80 (by decide), w 56 (by decide), w 64 (by decide)],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg]
-  · intro r hr hr' hr''; simp [gpr_setReg, hr, hr', hr'']
+  · intro r hr hr' hr''; simp [gpr_setReg, hr, hr', hr'']; exact hs.gpr r hr' hr'' hr
+  all_goals try simp only [gdi, gsi, g8, g9]
   all_goals try simp (disch := decide) only [gpr_setReg, ite_true, reduceCtorEq, ↓reduceIte,
     Mem.readW_writeW_self64, readW_writeW_off]
   · have c : ∀ d, d + 8 ≤ 104 → (kpR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=

@@ -18,7 +18,7 @@ namespace VG.Proof.MlKem.AArch64.Hybrid
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Optimized
-open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prf prf_valid enG768_correct enG1024_correct symSums)
+open VG.Proof.MlKem.AArch64.FixedHash (fixedHash)
 open VG.Proof.MlKem
 
 /-! ## ML-KEM-768 -/
@@ -80,24 +80,6 @@ theorem encapsH768_sat : ∃s,encapsH768Contract.pre s := by
             change q∈[below (0x100000:Addr) 128] at hq
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
-
-theorem encapsH768_ct (v : Proof.Sha3.AArch64.Permutation) :
-    ConstantTime isa (entryContractS (encapsAArch64S lay768)).pre (entryContractS (encapsAArch64S lay768)).pub
-      (Impl.MlKem.AArch64.Hybrid.encaps (fixedHash v.callee) (prf v.callee) lay768) :=
-  encapsH_ct (fixedHash v.callee) (prf v.callee) VG.Proof.MlKem.AArch64.KeyGen.wf768 hashOk768 habs768 startH768_taint
-    (restH768_taint v.callee (symSums v))
-
-theorem encapsH768_verified (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Impl.MlKem.AArch64.Hybrid.encaps (fixedHash v.callee) (prf v.callee) lay768) encapsH768Contract := by
-  refine Verified.of_correct (T:=AArch64.target) (k:=entryContractS (encapsAArch64S lay768)) ?_ (encapsH768_ct v) ?_
-  · intro s h
-    have ss := preS h.1
-    have ts := entryS_tables h
-    exact using_correctH (fixedHash v.callee) (prf_valid v) (enG768_correct v)
-      (kem_unstrip (Encaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩ hashOk768
-      Noise.room768 VG.Proof.MlKem.AArch64.Encaps.calls768 ts.1 ts.2 matrixH768_depth (tailH_depth v)
-  · exact ⟨fun _ h=>encapsH768_entry h,fun _ _ h hp=>encapsH768_post h hp,
-      fun _ _ hs ht hp=>encapsH768_pub hs ht hp,encapsH768_sat⟩
 
 /-! ## ML-KEM-1024 -/
 
@@ -162,27 +144,5 @@ theorem encapsH1024_sat : ∃s,encapsH1024Contract.pre s := by
             change q∈[below (0x100000:Addr) 128] at hq
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
-
-theorem encapsH1024_ct (v : Proof.Sha3.AArch64.Permutation) :
-    ConstantTime isa (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre
-      (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub
-      (Impl.MlKem.AArch64.Hybrid.encaps (fixedHash v.callee) (prf v.callee) Impl.MlKem1024.AArch64.lay1024) :=
-  encapsH_ct (fixedHash v.callee) (prf v.callee) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 hashOk1024 habs1024 startH1024_taint
-    (restH1024_taint v.callee (symSums v))
-
-theorem encapsH1024_verified (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Impl.MlKem.AArch64.Hybrid.encaps (fixedHash v.callee) (prf v.callee) Impl.MlKem1024.AArch64.lay1024)
-      encapsH1024Contract := by
-  refine Verified.of_correct (T:=AArch64.target)
-    (k:=entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_ (encapsH1024_ct v) ?_
-  · intro s h
-    have ss := preS h.1
-    have ts := entryS_tables h
-    exact using_correctH (fixedHash v.callee) (prf_valid v) (enG1024_correct v)
-      (kem_unstrip (Encaps.pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1)) ⟨ss.2.sp, ss.2.args⟩
-      hashOk1024 Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2 matrixH1024_depth
-      (tailH_depth v)
-  · exact ⟨fun _ h=>encapsH1024_entry h,fun _ _ h hp=>encapsH1024_post h hp,
-      fun _ _ hs ht hp=>encapsH1024_pub hs ht hp,encapsH1024_sat⟩
 
 end VG.Proof.MlKem.AArch64.Hybrid

@@ -3,13 +3,29 @@
 //! `(n, e, d, p, q)` or from `(n, e, d)`, and the check of a key: see the
 //! parent module.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa::vg_rsa_private_checked_umaal;
 use crate::arch::rsa::{
     vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
     vg_rsa_recover_primes,
@@ -259,6 +275,17 @@ impl PrivateKey {
             // `select` chose it because the CPU has the features it needs.
             #[cfg(target_arch = "x86_64")]
             Backend::Adx | Backend::Ifma => vg_rsa_recover_primes_adx,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_recover_primes,
         };
         // SAFETY: each pointer is valid for its length (`p`, `q` and
         // `scratch` for writes), and none overlaps another or wraps around,
@@ -382,6 +409,17 @@ impl PrivateKey {
             Backend::Adx => vg_rsa_private_checked_adx,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_rsa_private_checked_ifma,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_private_checked_umaal,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they

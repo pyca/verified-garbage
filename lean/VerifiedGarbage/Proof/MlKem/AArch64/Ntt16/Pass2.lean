@@ -171,6 +171,54 @@ theorem ld_step {s w : State} {rs : List VReg} (cw : VChg rs s w) {t : VReg} {n 
   rw [← cw.rd, ← cw.wr] at hin
   refine wp_ldrq ho ha hin fun w' h' => k w' (cw.trans h'.chg) (by rw [h'.v, cw.mem]) h'.other
 
+/-- The four vectors of block `b` and its table, from where they are in memory. -/
+theorem p2_loadsOf {P : Poly} {b : Nat} {sP t : Addr} {s : State}
+    (a2 : ∀ i < 4, s.gpr .x2 + BitVec.ofNat 64 (16 * i) = sP + BitVec.ofNat 64 (64 * b + 16 * i))
+    (a6 : ∀ i < 4, s.gpr .x6 + BitVec.ofNat 64 (16 * i) = t + BitVec.ofNat 64 (64 * b + 16 * i))
+    (i2 : ∀ i < 4, InRegions (s.rd ++ s.wr) (sP + BitVec.ofNat 64 (64 * b + 16 * i)) 16)
+    (i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16)
+    (hld : ∀ i < 4, IRep P 3 (32 * b) (seg (8 * i)) (s.mem.read (sP + BitVec.ofNat 64 (64 * b + 16 * i)) 16))
+    (htl : ∀ i < 4, ∀ e < 8, vhalf (s.mem.read (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16) e =
+      BitVec.ofNat 16 ((blockHalves b).getD (8 * i + e) 0))
+    (k : ∀ s', VChg ld2Regs s s' →
+      IRep P 3 (32 * b) (seg 0) (s'.v .v0) → IRep P 3 (32 * b) (seg 8) (s'.v .v1) →
+      IRep P 3 (32 * b) (seg 16) (s'.v .v2) → IRep P 3 (32 * b) (seg 24) (s'.v .v3) →
+      (∀ e < 8, vhalf (s'.v .v20) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 0 + e) 0)) →
+      (∀ e < 8, vhalf (s'.v .v21) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 1 + e) 0)) →
+      (∀ e < 8, vhalf (s'.v .v22) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 2 + e) 0)) →
+      (∀ e < 8, vhalf (s'.v .v23) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 3 + e) 0)) →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (.ldrq .v0 .x2 0 :: .ldrq .v1 .x2 16 :: .ldrq .v2 .x2 32 :: .ldrq .v3 .x2 48 ::
+      .ldrq .v20 .x6 0 :: .ldrq .v21 .x6 16 :: .ldrq .v22 .x6 32 :: .ldrq .v23 .x6 48 :: rest)) s Q := by
+  refine ld_step (VChg.refl [] s) (by decide) (a2 0 (by decide)) (i2 0 (by decide)) fun s₁ c₁ v₁ o₁ => ?_
+  refine ld_step c₁ (by decide) (a2 1 (by decide)) (i2 1 (by decide)) fun s₂ c₂ v₂ o₂ => ?_
+  refine ld_step c₂ (by decide) (a2 2 (by decide)) (i2 2 (by decide)) fun s₃ c₃ v₃ o₃ => ?_
+  refine ld_step c₃ (by decide) (a2 3 (by decide)) (i2 3 (by decide)) fun s₄ c₄ v₄ o₄ => ?_
+  refine ld_step c₄ (by decide) (a6 0 (by decide)) (i6 0 (by decide)) fun s₅ c₅ v₅ o₅ => ?_
+  refine ld_step c₅ (by decide) (a6 1 (by decide)) (i6 1 (by decide)) fun s₆ c₆ v₆ o₆ => ?_
+  refine ld_step c₆ (by decide) (a6 2 (by decide)) (i6 2 (by decide)) fun s₇ c₇ v₇ o₇ => ?_
+  refine ld_step c₇ (by decide) (a6 3 (by decide)) (i6 3 (by decide)) fun s₈ c₈ v₈ o₈ => ?_
+  refine k s₈ (c₈.mono (by decide)) ?_ ?_ ?_ ?_ (fun e he => ?_) (fun e he => ?_) (fun e he => ?_)
+    (fun e he => ?_)
+  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide),
+      o₃ _ (by decide), o₂ _ (by decide), v₁]
+    exact hld 0 (by decide)
+  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide),
+      o₃ _ (by decide), v₂]
+    exact hld 1 (by decide)
+  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide), v₃]
+    exact hld 2 (by decide)
+  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), v₄]
+    exact hld 3 (by decide)
+  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), v₅]
+    exact htl 0 (by decide) e he
+  · rw [o₈ _ (by decide), o₇ _ (by decide), v₆]
+    exact htl 1 (by decide) e he
+  · rw [o₈ _ (by decide), v₇]
+    exact htl 2 (by decide) e he
+  · rw [v₈]
+    exact htl 3 (by decide) e he
+
 /-- The four vectors of block `b` and its table. -/
 theorem p2_loads {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {s : State}
     {t : Addr} (h : L2 s₀ mB b s t)
@@ -194,34 +242,7 @@ theorem p2_loads {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8
     fun i hi => by
       rw [h.st.rd,h.st.wr]
       exact h.tableRead _ (by omega)
-  refine ld_step (VChg.refl [] s) (by decide) (a2 0 (by decide)) (i2 0 (by decide)) fun s₁ c₁ v₁ o₁ => ?_
-  refine ld_step c₁ (by decide) (a2 1 (by decide)) (i2 1 (by decide)) fun s₂ c₂ v₂ o₂ => ?_
-  refine ld_step c₂ (by decide) (a2 2 (by decide)) (i2 2 (by decide)) fun s₃ c₃ v₃ o₃ => ?_
-  refine ld_step c₃ (by decide) (a2 3 (by decide)) (i2 3 (by decide)) fun s₄ c₄ v₄ o₄ => ?_
-  refine ld_step c₄ (by decide) (a6 0 (by decide)) (i6 0 (by decide)) fun s₅ c₅ v₅ o₅ => ?_
-  refine ld_step c₅ (by decide) (a6 1 (by decide)) (i6 1 (by decide)) fun s₆ c₆ v₆ o₆ => ?_
-  refine ld_step c₆ (by decide) (a6 2 (by decide)) (i6 2 (by decide)) fun s₇ c₇ v₇ o₇ => ?_
-  refine ld_step c₇ (by decide) (a6 3 (by decide)) (i6 3 (by decide)) fun s₈ c₈ v₈ o₈ => ?_
-  refine k s₈ (c₈.mono (by decide)) ?_ ?_ ?_ ?_ (fun e he => ?_) (fun e he => ?_) (fun e he => ?_)
-    (fun e he => ?_)
-  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide),
-      o₃ _ (by decide), o₂ _ (by decide), v₁]
-    exact h.ld hp hb (i := 0) (by decide)
-  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide),
-      o₃ _ (by decide), v₂]
-    exact h.ld hp hb (i := 1) (by decide)
-  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide), v₃]
-    exact h.ld hp hb (i := 2) (by decide)
-  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), v₄]
-    exact h.ld hp hb (i := 3) (by decide)
-  · rw [o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), v₅]
-    exact h.tl hp hb (i := 0) (by decide) he
-  · rw [o₈ _ (by decide), o₇ _ (by decide), v₆]
-    exact h.tl hp hb (i := 1) (by decide) he
-  · rw [o₈ _ (by decide), v₇]
-    exact h.tl hp hb (i := 2) (by decide) he
-  · rw [v₈]
-    exact h.tl hp hb (i := 3) (by decide) he
+  exact p2_loadsOf a2 a6 i2 i6 (fun i hi => h.ld hp hb hi) (fun i hi e he => h.tl hp hb hi he) k
 
 /-! ## Zetas -/
 
@@ -285,14 +306,22 @@ theorem lane_zt {s : State} {b k K : Nat} {x y : VReg}
   rw [hx k hk, hy k hk, show 8 * 0 + k = k by omega, (blockHalves_get b hk).1, (blockHalves_get b hk).2.1, hK]
   exact ⟨rfl, rfl⟩
 
-theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {sb : State}
-    {t : Addr} (h : L2 s₀ mB b sb t) :
-    WP isa (.block pass2Body) sb fun s' => L2 s₀ mB (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
-  simp only [pass2Body, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
+/-- The four layers of block `b` and the reduction of each lane (`pass2Arith`), from its four
+vectors after pass 1 and its table. -/
+theorem p2_arith {rest : List Instr} {Q : State → Prop} {P : Poly} {b : Nat} (hb : b < 8) {s : State}
+    (a0 : IRep P 3 (32 * b) (seg 0) (s.v .v0)) (a1 : IRep P 3 (32 * b) (seg 8) (s.v .v1))
+    (a2 : IRep P 3 (32 * b) (seg 16) (s.v .v2)) (a3 : IRep P 3 (32 * b) (seg 24) (s.v .v3))
+    (t20 : ∀ e < 8, vhalf (s.v .v20) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 0 + e) 0))
+    (t21 : ∀ e < 8, vhalf (s.v .v21) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 1 + e) 0))
+    (t22 : ∀ e < 8, vhalf (s.v .v22) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 2 + e) 0))
+    (t23 : ∀ e < 8, vhalf (s.v .v23) e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 3 + e) 0))
+    (hq : Cst (s.v .v31) fun _ => 3329) (h10 : Cst (s.v .v30) fun _ => 10)
+    (kk : ∀ s₂₆, VChg arRegs s s₂₆ →
+      (∀ i < 4, ∀ e < 8, (vhalf (s₂₆.v (row i)) e).toNat = ((nttL 7 P)[32 * b + 8 * i + e]!).val) →
+      WP isa (.block rest) s₂₆ Q) :
+    WP isa (.block (pass2Arith ++ rest)) s Q := by
+  simp only [pass2Arith, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
     List.flatMap_nil, List.append_nil]
-  refine p2_loads hp hb h fun s c₀ a0 a1 a2 a3 t20 t21 t22 t23 => ?_
-  have hq : Cst (s.v .v31) fun _ => 3329 := by rw [c₀.get .v31]; exact h.q
-  have h10 : Cst (s.v .v30) fun _ => 10 := by rw [c₀.get .v30]; exact h.c10
   have hb0 : 32 * b % 32 = 0 := by omega
   have hb1 : 32 * b + 32 ≤ 256 := by omega
   have Z0 := lane_zt (k := 0) (K := 8 + b) t20 t21 (by decide) rfl
@@ -421,17 +450,26 @@ theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8)
     (h10 := by rw [c₂₅.get .v30, c₂₄.get .v30, c₂₃.get .v30]; exact k₂₂)
     (hq := by rw [c₂₅.get .v31, c₂₄.get .v31, c₂₃.get .v31]; exact q₂₂) (k := fun s₂₆ c₂₆ n3 => ?_)
   have out : ∀ i < 4, ∀ e < 8,
-      (vhalf (s₂₆.v (row i)) e).toNat = ((nttL 7 (P₀ s₀))[32 * b + 8 * i + e]!).val := by
+      (vhalf (s₂₆.v (row i)) e).toNat = ((nttL 7 P)[32 * b + 8 * i + e]!).val := by
     intro i hi e he
-    have fix : ∀ a, (nttL 7 (P₀ s₀))[32 * b + (seg a).getD e 0]! = (nttL 7 (P₀ s₀))[32 * b + a + e]! :=
+    have fix : ∀ a, (nttL 7 P)[32 * b + (seg a).getD e 0]! = (nttL 7 P)[32 * b + a + e]! :=
       fun a => by rw [seg_getD _ he, Nat.add_assoc]
     match i, hi with
     | 0, _ => rw [show row 0 = .v0 from rfl, c₂₆.get .v0, c₂₅.get .v0, c₂₄.get .v0, n0 e he, fix]
     | 1, _ => rw [show row 1 = .v1 from rfl, c₂₆.get .v1, c₂₅.get .v1, n1 e he, fix]
     | 2, _ => rw [show row 2 = .v2 from rfl, c₂₆.get .v2, n2 e he, fix]
     | 3, _ => rw [show row 3 = .v3 from rfl, n3 e he, fix]
-  have CC := (((((((((((c₀.trans C₄).trans C₇).trans C₁₀).trans cz).trans c₁₇).trans cw).trans c₂₂).trans
-    c₂₃).trans c₂₄).trans c₂₅).trans c₂₆)
+  exact kk s₂₆ ((((((((((C₄.trans C₇).trans C₁₀).trans cz).trans c₁₇).trans cw).trans c₂₂).trans
+    c₂₃).trans c₂₄).trans c₂₅).trans c₂₆).mono out
+
+theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {sb : State}
+    {t : Addr} (h : L2 s₀ mB b sb t) :
+    WP isa (.block pass2Body) sb fun s' => L2 s₀ mB (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
+  simp only [pass2Body, pass2Loads, List.cons_append, List.nil_append, List.append_assoc]
+  refine p2_loads hp hb h fun s c₀ a0 a1 a2 a3 t20 t21 t22 t23 => ?_
+  refine p2_arith hb a0 a1 a2 a3 t20 t21 t22 t23 (by rw [c₀.get .v31]; exact h.q)
+    (by rw [c₀.get .v30]; exact h.c10) fun s₂₆ C' out => ?_
+  have CC := c₀.trans C'
   have st₂₆ : St s₀ s₂₆ := h.st.vchg CC
   have z29 : ∀ e < 8, vhalf (s₂₆.v .v29) e = 0 := fun e he => by
     rw [CC.get .v29 (by simp)]; exact h.c0 e he

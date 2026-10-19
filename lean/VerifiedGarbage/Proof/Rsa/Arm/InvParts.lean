@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
-public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # `inverse` on ARMv7: the differences and halvings modulo `m`
@@ -40,21 +40,8 @@ theorem wp_seqs_append {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ 
 macro "idx" : tactic => `(tactic| ((try simp only [aM, aNM, aZero, aT1, aT2, aT3, aT4, sOdd, sB, sC, sT,
   List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true, true_and, hdr, ne_eq]) <;> omega_arith))
 
-theorem subMod_impl {P M a b t1 β t4 e β' : Nat} (hM : M ≤ P) (hb : b < M)
-    (h1 : t1 + b = a + P * β) (ht1 : t1 < P) (hβ : β ≤ 1) (h4 : t4 = if β = 0 then 0 else P - M)
-    (h2 : e + t4 = t1 + P * β') (he : e < P) (hβ' : β' ≤ 1) : e = subMod M a b := by
-  unfold subMod
-  rcases (by omega : β = 0 ∨ β = 1) with rfl | rfl <;>
-  rcases (by omega : β' = 0 ∨ β' = 1) with rfl | rfl <;>
-  split at h4 <;> split <;> omega
-
-theorem halfMod_impl {P M X t4 y β c : Nat} (hM : M ≤ P) (hX : X < P)
-    (h4 : t4 = if X % 2 = 0 then 0 else P - M) (h3 : y + t4 = X + P * β) (hy : y < P) (hβ : β ≤ 1)
-    (hc : c = (β + X % 2) % 2) : (y + P * c) / 2 = halfMod M X := by
-  unfold halfMod
-  rcases (by omega : β = 0 ∨ β = 1) with rfl | rfl <;>
-  rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;>
-  split at h4 <;> split <;> omega
+alias subMod_impl := VG.Proof.Rsa.subMod_impl
+alias halfMod_impl := VG.Proof.Rsa.halfMod_impl
 
 /-- `subModP o a b`: `[o] = [a] - [b] mod m`. -/
 theorem subModP_ok {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z w N)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.Arm.ContextCall
 public import VerifiedGarbage.Impl.Dsa.Arm.Core
 public import VerifiedGarbage.Proof.Dsa.Arm.Bytes
 public import VerifiedGarbage.Proof.Dsa.Arm.Stream
@@ -68,10 +69,10 @@ theorem Outs.of_slot {base : Addr} {n i : Nat} {m m' : Mem} (O : Outside base (s
     omega
 
 theorem setupRanges_arith {n : Nat} (hn : n ≤ 48) :
-    ∀ r ∈ setupRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
-  simp only [setupRanges, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
-  rintro r (rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
+  simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
+  rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
 
 theorem exponentRanges_arith {n k : Nat} (hn : n ≤ 48) (hk : k ≤ 2 * n) :
     ∀ r ∈ exponentRanges n k, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by

@@ -60,6 +60,17 @@ use core::fmt;
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_adx;
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_umaal;
 use crate::arch::rsa_keygen::{vg_rsa_keygen_candidate, vg_rsa_keygen_key};
 use crate::cpu::detected;
 use crate::rsa::PublicKey;
@@ -217,6 +228,17 @@ fn prime_from(
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
         Backend::Adx | Backend::Ifma => vg_rsa_keygen_candidate_adx,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_keygen_candidate_umaal,
     };
     let mut read = 0;
     let mut rejected = 0;

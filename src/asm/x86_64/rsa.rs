@@ -2016,7 +2016,7 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
 ///
-/// The exponentiation of the baseline, with the last multiplication by the input itself. Montgomery multiplication for a number of words that is a multiple of 4 (from 4 to 2^30) adds `a_i b + u m` to the accumulator in one pass per word of `a`, four words at a time, with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise.
+/// The exponentiation of the baseline, with the last multiplication by the input itself, by Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once) for a number of words that is a multiple of 4 (from 4 to 2^30), and the baseline's otherwise. A product is tiled; a square (all sixteen for `e = 65537`, the operands' indices telling it publicly) computes each product of two different words once, in triangular tiles when the number of words is a multiple of 8, and doubles their sum before adding the words' squares, then reduces.
 ///
 /// # Safety
 ///

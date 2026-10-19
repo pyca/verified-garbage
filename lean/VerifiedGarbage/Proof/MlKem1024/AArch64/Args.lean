@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
+public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
 import Mathlib.Tactic.Conv

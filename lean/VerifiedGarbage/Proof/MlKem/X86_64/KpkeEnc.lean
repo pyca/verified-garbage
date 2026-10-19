@@ -431,7 +431,7 @@ theorem ER.keep {nt : Nat} {s s' : State} (h : ER L σ nt s) {i : Nat} (hi : i <
 omit E in
 theorem na_rbx (o : Nat) : NA ((.rbx, o) : Ptr) := by simp [NA, argRegs]
 
-theorem t_ok {A : Arith} (hA : ArithOk A) (W : KeWf L) (hn : A.dec12.noCalls = true) {i : Nat} (hi : i < L.k)
+theorem t_ok {A : Prims} (hA : PrimsOk A) (W : KeWf L) (hn : A.dec12.noCalls = true) {i : Nat} (hi : i < L.k)
     {s : State} (h : ER L σ i s) : WP isa (tHatE L A i) s (ER L σ (i + 1)) := by
   have hkt := h.kt
   have hk4 : L.k ≤ 4 := by rcases W.k34 with e | e <;> omega
@@ -596,7 +596,7 @@ omit E in
 theorem pa_r15 {s : State} (h : KT L σ s) (o : Nat) : pa s (.r15, o) = σ.gpr .rdi + BitVec.ofNat 64 o := by
   simp only [pa, h.r15]
 
-theorem u_ok {A : Arith} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
+theorem u_ok {A : Prims} {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
     (hnC : (L.ce A.codecs).noCalls = true) {i : Nat} (hi : i < L.k) {s : State}
     (h : EU L σ i s) : WP isa (uE L A i) s (EU L σ (i + 1)) := by
   have hkt := h.kt
@@ -720,7 +720,7 @@ theorem ct_eq {m : Mem}
   · rw [hP i (List.mem_range.mp hi), rW, off_add, show 512 * L.k + 32 * 16 * i = 512 * (L.k + i) by omega]
   · rw [rW, show 512 * (2 * L.k) = 1024 * L.k by omega]
 
-theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
+theorem v_ok {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd) (W : KeWf L)
     (hnA : A.add.noCalls = true) (hnC : (L.ce A.codecs).noCalls = true) (hnD : A.codecs.dd.noCalls = true)
     {s : State} (h : EU L σ L.k s) :
     WP isa (vE L A) s fun s' => KT L σ s' ∧
@@ -843,7 +843,7 @@ end
 /-! ## The function -/
 
 /-- The prologue, `t̂`, `y` and the products. -/
-theorem pre_wp {L : Kem} {A : Arith} (hA : ArithOk A) (W : KeWf L) {mul : Nat → Prog isa}
+theorem pre_wp {L : Kem} {A : Prims} (hA : PrimsOk A) (W : KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (encMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) {σ : State} (hp : (kpkeEncK L).pre σ) :
@@ -857,7 +857,7 @@ theorem pre_wp {L : Kem} {A : Arith} (hA : ArithOk A) (W : KeWf L) {mul : Nat �
   exact mul_ok E W hv hn h₂
 
 /-- `u`, `v` and the epilogue. -/
-theorem post_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem post_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KeWf L) (hnA : A.add.noCalls = true) (hnC : (L.ce A.codecs).noCalls = true)
     (hnD : A.codecs.dd.noCalls = true) {σ : State} (hp : (kpkeEncK L).pre σ) {s : State} (h : EU L σ 0 s) :
     WP isa (kpkeEncPost L A) s fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
@@ -868,7 +868,7 @@ theorem post_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : K
   exact WP.seq (WP.mono (v_ok E hA K W hnA hnC hnD h₅) fun s₆ ⟨kt₆, hm₆⟩ =>
     WP.mono (epi_ok E kt₆) fun s₇ ⟨hg, hm⟩ => ⟨hg, by show bytesAt _ _ _ = _; rw [hm]; exact hm₆⟩)
 
-theorem kpkeEnc_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem kpkeEnc_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (encMulK16 L.k).post s s')
@@ -878,7 +878,7 @@ theorem kpkeEnc_wp {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K 
     WP isa (kpkeEnc L A mul) σ fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' :=
   WP.seq (WP.mono (pre_wp hA W hv hn hn12 hp) fun _ h => post_wp hA K W hnA hnC hnD hp h)
 
-theorem kpkeEnc_correct {L : Kem} {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
+theorem kpkeEnc_correct {L : Kem} {A : Prims} (hA : PrimsOk A) {wc wd : List Nat} (K : KemCalls L wc wd)
     (W : KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (encMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (encMulK16 L.k).post s s')

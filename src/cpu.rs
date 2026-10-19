@@ -7,7 +7,9 @@
 //! called on a CPU that has all of them. They are detected once: with `cpuid` on x86 and x86-64; on AArch64,
 //! by asking the operating system with the `std` feature (which links
 //! `std`, and which `cpu-features-env` enables), and otherwise from the
-//! target features the code was compiled for. Each object that can use such a function chooses its
+//! target features the code was compiled for; on ARMv7, from the operating
+//! system the code was compiled for (`umaal`, on those that run on A-profile
+//! cores alone). Each object that can use such a function chooses its
 //! implementation when it is created, from the features detected. A feature
 //! detection does not know ([`NAMES`]) cannot be checked for:
 //! [`Features::of`] panics on it, so a generated constant naming one fails
@@ -29,7 +31,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 
 /// The features detection knows, by their Rust `target_feature` names: bit
 /// `i` of a [`Features`] is `NAMES[i]`.
-pub(crate) const NAMES: [&str; 20] = [
+pub(crate) const NAMES: [&str; 21] = [
     "ssse3",
     "sha",
     "aes",
@@ -50,6 +52,7 @@ pub(crate) const NAMES: [&str; 20] = [
     "vaes",
     "vpclmulqdq",
     "avx512bw",
+    "umaal",
 ];
 
 /// The bit of the feature `name` in a [`Features`]: its index in [`NAMES`],
@@ -58,7 +61,21 @@ pub(crate) const NAMES: [&str; 20] = [
 /// `_FEATURES` constants by searching took a second of every build of the
 /// crate.
 #[cfg_attr(
-    not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+    not(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        )
+    )),
     allow(dead_code)
 )]
 const fn bit(name: &str) -> usize {
@@ -83,13 +100,28 @@ const fn bit(name: &str) -> usize {
         b"vaes" => 17,
         b"vpclmulqdq" => 18,
         b"avx512bw" => 19,
+        b"umaal" => 20,
         _ => panic!("a CPU feature this library does not know"),
     }
 }
 
 /// Whether two names are equal (`==` on strings, which is not `const`).
 #[cfg_attr(
-    not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+    not(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        )
+    )),
     allow(dead_code)
 )]
 const fn eq(a: &str, b: &str) -> bool {
@@ -118,7 +150,21 @@ impl Features {
     /// know. In a constant (`const { Features::of(…) }`), that fails to
     /// compile, rather than quietly never choosing the code that needs it.
     #[cfg_attr(
-        not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+        not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            )
+        )),
         allow(dead_code)
     )]
     pub(crate) const fn of(names: &[&str]) -> Features {
@@ -135,7 +181,21 @@ impl Features {
 
     /// The features in any of `sets`.
     #[cfg_attr(
-        not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+        not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            )
+        )),
         allow(dead_code)
     )]
     pub(crate) const fn all(sets: &[Features]) -> Features {
@@ -150,7 +210,21 @@ impl Features {
 
     /// Whether every feature of `other` is in `self`.
     #[cfg_attr(
-        not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+        not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            )
+        )),
         allow(dead_code)
     )]
     pub(crate) fn contains(self, other: Features) -> bool {
@@ -394,8 +468,44 @@ fn aarch64_sve2() -> bool {
     cfg!(target_feature = "sve2")
 }
 
-/// No features are detected on the other targets yet.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+/// ARMv7's `umaal`: every ARMv7-A (and ARMv8-A AArch32) core has it, and
+/// the operating systems the emitter compiles code needing it for
+/// (`TCB/Arm/Print.lean`'s `featureCfg`) run on those alone; the Cortex-M3,
+/// which `target_arch = "arm"` also covers, lacks it (ARMv7-M has it only
+/// with the DSP extension) and its long multiplies take a time that depends
+/// on their operands.
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+fn runtime() -> u32 {
+    Features::of(&["umaal"]).0
+}
+
+/// No features are detected on the other targets: on ARMv7 without an
+/// operating system that runs on A-profile cores alone, `umaal` is not
+/// assumed.
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    )
+)))]
 fn runtime() -> u32 {
     0
 }
@@ -428,6 +538,7 @@ mod tests {
         assert_eq!(Features::of(&["sha3"]), Features(1 << 11));
         assert_eq!(Features::of(&["neon"]), Features(1 << 15));
         assert_eq!(Features::of(&["sve2"]), Features(1 << 16));
+        assert_eq!(Features::of(&["umaal"]), Features(1 << 20));
         assert_eq!(
             Features::of(&["vpclmulqdq", "vaes"]),
             Features((1 << 18) | (1 << 17))
@@ -550,6 +661,7 @@ mod tests {
         assert_eq!(parse("sha2,sha3"), Some((1 << 10) | (1 << 11)));
         assert_eq!(parse("adx"), Some(1 << 12));
         assert_eq!(parse("avx512bw"), Some(1 << 19));
+        assert_eq!(parse("umaal"), Some(1 << 20));
         for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }

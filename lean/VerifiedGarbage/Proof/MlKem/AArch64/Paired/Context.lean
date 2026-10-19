@@ -35,11 +35,11 @@ theorem Context.frame {s t : State} {p a b c : Addr} (h : Context p a b c s)
     · exact h.tableA
     · exact h.tableB)
 
-theorem Context.env {s : State} {p a b c out : Addr} {N off : Nat} {B : Nat→Byte}
+theorem Context.envW {w16 : Bool} {s : State} {p a b c out : Addr} {N off : Nat} {B : Nat→Byte}
     (h : Context p a b c s) (hx : s.gpr .x16=c) (hn : N≤280) (ho : off+3*N+4≤2048)
     (hout : out=a ∨ out=b)
     (bytes : ∀i<3*N,s.mem ((p+BitVec.ofNat 64 off)+BitVec.ofNat 64 i)=B i) :
-    Rej8.Env N B (p+BitVec.ofNat 64 off) out s := by
+    Rej8.EnvW w16 N B (p+BitVec.ofNat 64 off) out s := by
   have hc : Covers [polyRegion out] s.wr := by rcases hout with rfl|rfl; exact h.outA; exact h.outB
   have hd : (Region.mk p 2048).Disjoint (polyRegion out) := by rcases hout with rfl|rfl; exact h.farA; exact h.farB
   have ht : Rej8.TableReady s out := by
@@ -48,7 +48,14 @@ theorem Context.env {s : State} {p a b c out : Addr} {N off : Nat} {B : Nat→By
     rcases hout with rfl|rfl
     · exact h.tableA
     · exact h.tableB
-  exact rejection_env hn ho h.scratch hc hd bytes (fun _ hm=>ht.read hm)
+  exact rejection_envW hn ho h.scratch hc hd bytes (fun _ hm=>ht.read hm)
     (fun _ hm=>ht.artifact.vector hm) (fun _ hm=>ht.disjoint hm)
+
+theorem Context.env {s : State} {p a b c out : Addr} {N off : Nat} {B : Nat→Byte}
+    (h : Context p a b c s) (hx : s.gpr .x16=c) (hn : N≤280) (ho : off+3*N+4≤2048)
+    (hout : out=a ∨ out=b)
+    (bytes : ∀i<3*N,s.mem ((p+BitVec.ofNat 64 off)+BitVec.ofNat 64 i)=B i) :
+    Rej8.Env N B (p+BitVec.ofNat 64 off) out s :=
+  h.envW hx hn ho hout bytes
 
 end VG.Proof.MlKem.AArch64.Paired

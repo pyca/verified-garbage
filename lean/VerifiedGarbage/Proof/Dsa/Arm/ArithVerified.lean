@@ -48,8 +48,8 @@ theorem mulArm_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h :
   obtain ⟨tr, t, ex, abi, V, O⟩ := mulK_correct hn hn48 s (powArm_pre (e := 1) h)
   exact ⟨tr, t, ex, abi, by simp only [numAt_eq8]; exact V, keeps_of_outs h.2.2.1 O⟩
 
-theorem mulArm_ct (n : Nat) : ConstantTime isa (mulArm n).pre (mulArm n).pub (mulBody n) :=
-  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => mulK_ct n _ _ _ _ _ _ (powArm_pre (e := 1) h₁) (powArm_pre (e := 1) h₂) hp.2.1 e₁ e₂
+theorem mulArm_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) : ConstantTime isa (mulArm n).pre (mulArm n).pub (mulBody n) :=
+  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => mulK_ct n hn hn48 _ _ _ _ _ _ (powArm_pre (e := 1) h₁) (powArm_pre (e := 1) h₂) hp.2.1 e₁ e₂
 
 theorem mulArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
     (mulArm n).Implies (Spec.Dsa.ModArith.mulContract (mulLayout n) Arm.abi) where
@@ -81,7 +81,7 @@ theorem mulArm_implies {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
 
 theorem mulVerified (n : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) :
     Verified Arm.target (mulBody n) (Spec.Dsa.ModArith.mulContract (mulLayout n) Arm.abi) :=
-  Verified.of_correct (mulArm_correct hn hn48) (mulArm_ct n) (mulArm_implies hn hn48)
+  Verified.of_correct (mulArm_correct hn hn48) (mulArm_ct n hn hn48) (mulArm_implies hn hn48)
 
 /-! ## Reductions -/
 

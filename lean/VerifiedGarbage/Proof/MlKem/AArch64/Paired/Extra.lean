@@ -9,36 +9,36 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Store
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-structure ExtraPost (L : List Zq) (B : Nat → Byte) (aP p : Addr) (flag : Reg) (s u : State) : Prop where
+structure ExtraPostW (w16 : Bool) (L : List Zq) (B : Nat → Byte) (aP p : Addr) (flag : Reg) (s u : State) : Prop where
   keep : Keep (flag::[.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15]) s u
   frame : Frame [polyRegion aP,⟨p,16⟩] s.mem u.mem
-  coeffs : Rej8.Scalar.Coeffs u.mem aP (sampleAfter L B 56)
-  checkpoint : checkpoint p aP (sampleAfter L B 56) u.mem
-  x3 : u.gpr .x3=coeffAddr aP (sampleAfter L B 56).length
+  coeffs : Rej8.Scalar.CoeffsW w16 u.mem aP (sampleAfter L B 56)
+  checkpoint : checkpointW w16 p aP (sampleAfter L B 56) u.mem
+  x3 : u.gpr .x3=cAddr w16 aP (sampleAfter L B 56).length
   x4 : (u.gpr .x4).toNat=256-(sampleAfter L B 56).length
   flagValue : (u.gpr flag).toNat=if (sampleAfter L B 56).length=256 then 1 else 0
 
-theorem extra_ok (s : State) {buf slot : Nat} (hb : buf<4096)
+theorem extra_ok {w16 : Bool} (s : State) {buf slot : Nat} (hb : buf<4096)
     (ho : slot+8<32768) (halign : slot%8=0)
     {flag : Reg} (hf : flag≠.x3 ∧ flag≠.x4 ∧ flag≠.x19)
     {B : Nat → Byte} {L : List Zq} {aP : Addr}
-    (hp : Rej8.Env 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s) (hc : Rej8.Constants s)
-    (hl : L.length≤256) (hcoeff : Rej8.Scalar.Coeffs s.mem aP L)
-    (hcp : checkpoint (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem)
+    (hp : Rej8.EnvW w16 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s) (hc : Rej8.Constants s)
+    (hl : L.length≤256) (hcoeff : Rej8.Scalar.CoeffsW w16 s.mem aP L)
+    (hcp : checkpointW w16 (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem)
     (h0 : InRegions s.wr (s.gpr .x19+BitVec.ofNat 64 slot) 8)
     (h1 : InRegions s.wr (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8)
     (hd : (polyRegion aP).Disjoint ⟨s.gpr .x19+BitVec.ofNat 64 slot,16⟩) :
-    WP isa (Impl.MlKem.AArch64.Paired.extraReject buf slot flag) s
-      (ExtraPost L B aP (s.gpr .x19+BitVec.ofNat 64 slot) flag s) := by
+    WP isa (Impl.MlKem.AArch64.Paired.extraReject buf slot flag w16) s
+      (ExtraPostW w16 L B aP (s.gpr .x19+BitVec.ofNat 64 slot) flag s) := by
   refine WP.seq (WP.mono (load_checkpoint s ho halign (in_rd_wr h0) (in_rd_wr h1)) fun a ⟨ha,hv,h3,h4⟩ => ?_)
-  have a3 : a.gpr .x3=coeffAddr aP L.length := h3.trans hcp.1
+  have a3 : a.gpr .x3=cAddr w16 aP L.length := h3.trans hcp.1
   have a4 : (a.gpr .x4).toNat=256-L.length := by
     rw [h4,show s.gpr .x19+BitVec.ofNat 64 (slot+8)=s.gpr .x19+BitVec.ofNat 64 slot+8 by
       rw [BitVec.ofNat_add,BitVec.add_assoc]; rfl]
     exact hcp.2
   have ac : Rej8.Constants a := ⟨by rw [hv]; exact hc.index,by rw [hv]; exact hc.mask,
     by simpa only [hv] using hc.q,by simpa only [hv] using hc.weights,by simpa only [hv] using hc.zero⟩
-  have ap : Rej8.Env 56 B (a.gpr .x19+BitVec.ofNat 64 buf) aP a := by
+  have ap : Rej8.EnvW w16 56 B (a.gpr .x19+BitVec.ofNat 64 buf) aP a := by
     rw [ha.get .x19]
     exact hp.transfer ha.mem ha.rd ha.wr (ha.get .x16)
   refine WP.ite (a.gpr .x4 == 0) (eval_zero _ _) (fun hz => ?_) (fun _ => ?_)
@@ -55,7 +55,7 @@ theorem extra_ok (s : State) {buf slot : Nat} (hb : buf<4096)
     · rw [eqL,eu,ite_eq_left full]; rfl
   · have hrun := continue_ok a hb ap ac hl (by rw [ha.mem]; exact hcoeff) a3 a4
     change WP isa (.seq (.block (continueEntry buf))
-      (.seq Impl.MlKem.AArch64.Rej8.rejLoop (.block _))) a _
+      (.seq (Impl.MlKem.AArch64.Rej8.rejLoop w16) (.block _))) a _
     apply WP.assoc
     refine WP.seq (WP.mono hrun fun b ⟨kb,fb,cb,b3,b4,b0⟩ => ?_)
     have b19 : b.gpr .x19=s.gpr .x19 := (kb.get .x19).trans (ha.get .x19)

@@ -42,6 +42,17 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
         Backend::Adx | Backend::Ifma => vg_rsa_public_precompute_adx,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_public_precompute,
     };
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are

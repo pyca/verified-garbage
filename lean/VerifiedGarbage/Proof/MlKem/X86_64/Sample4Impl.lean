@@ -15,7 +15,9 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
@@ -37,16 +39,17 @@ and each caller (the top-level functions of ML-KEM-768 and ML-KEM-1024, in
 address: the baseline's calls of `vg_mlkem_sample_ntt`, three deep (the
 others call nothing).
 
-Those with AVX2 come with the same code with 16-bit coefficients
-(`Callee4.s16`, `vg_mlkem16_sample_ntt4_avx2` and `_avx512`), proven against
-`sample4KW true` by the same proofs (`S16Ok`).
+Those with AVX2 are code with 16-bit coefficients (`Callee4.s16`,
+`vg_mlkem16_sample_ntt4_avx2` and `_avx512`), proven against `sample4KW true`
+(`S16Ok`), and their callers run with 16-bit polynomials; their functions of
+`u32`s, which the callers never run, are the baseline's.
 
 Each also comes with the computation of several outputs of `PRF₂` that its
 callers inline (`Callee4.prfs`): one at a time for the baseline, and four
-at a time with AVX2 for `vg_mlkem_sample_ntt4_avx2` (`Prfs.lean`); and, for
+at a time with AVX2 (`Prfs.lean`); and, for
 those with AVX2, the fragment encapsulation inlines to sample three entries
-of the matrix while absorbing blocks of `ek` (`Callee4.batchH`,
-`Sample4.sampleH`), with its proofs (`BatchHOk`).
+of the matrix with 16-bit coefficients while absorbing blocks of `ek`
+(`Callee4.batchH16`, `Sample4.sampleH`), with its proofs (`BatchHOk16`).
 -/
 
 @[expose] public section
@@ -55,33 +58,9 @@ namespace VG.Proof.MlKem.X86_64
 
 open VG VG.X86_64
 
-/-- What encapsulation needs of a fragment it inlines (`Callee4.batchH`):
-it meets `sampleHK`, in constant time, calls nothing, keeps MXCSR's control
-bits and never writes the stack pointer. -/
-structure BatchHOk (b : Prog isa) : Prop where
-  ok : ∀ s, sampleHK.pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ sampleHK.post s s'
-  ct : ConstantTime isa sampleHK.pre sampleHK.pub b
-  noCalls : b.noCalls = true
-  ctl : ctlOk b = true
-  sp : b.all (fun i => !isa.writesSp i) = true
-
-/-- The checks of every instruction of a fragment, at once. -/
-def BatchHOk.checks (b : Prog isa) : Bool :=
-  b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i)
-
-theorem BatchHOk.of_checks {b : Prog isa} (hv : ∀ s, sampleHK.pre s → ∃ t s', Exec isa b s t s' ∧
-    abiPreserved s s' ∧ sampleHK.post s s') (hct : ConstantTime isa sampleHK.pre sampleHK.pub b)
-    (h : BatchHOk.checks b = true) : BatchHOk b := by
-  simp only [BatchHOk.checks, Bool.and_eq_true] at h
-  exact ⟨hv, hct, h.1.1, h.1.2, Code.all_of_allInstrs h.2⟩
-
-theorem sampleH_checks (fast : Bool) : BatchHOk.checks (Impl.MlKem.X86_64.Sample4.sampleH fast) = true := by
-  cases fast <;> decide +kernel
-
-theorem sampleH_ok (fast : Bool) : BatchHOk (Impl.MlKem.X86_64.Sample4.sampleH fast) :=
-  .of_checks (SH.correct (fast := fast)) (SH.ct (fast := fast)) (sampleH_checks fast)
-
-/-- `BatchHOk` with 16-bit coefficients: the fragment meets `sampleHKW true`. -/
+/-- What encapsulation needs of a fragment it inlines (`Callee4.batchH16`):
+it meets `sampleHKW true`, in constant time, calls nothing, keeps MXCSR's
+control bits and never writes the stack pointer. -/
 structure BatchHOk16 (b : Prog isa) : Prop where
   ok : ∀ s, (sampleHKW true).pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ (sampleHKW true).post s s'
   ct : ConstantTime isa (sampleHKW true).pre (sampleHKW true).pub b
@@ -89,12 +68,16 @@ structure BatchHOk16 (b : Prog isa) : Prop where
   ctl : ctlOk b = true
   sp : b.all (fun i => !isa.writesSp i) = true
 
-theorem sampleH16_checks (fast : Bool) : BatchHOk.checks (Impl.MlKem.X86_64.Sample4.sampleH fast true) = true := by
+/-- The checks of every instruction of a fragment, at once. -/
+def BatchHOk16.checks (b : Prog isa) : Bool :=
+  b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i)
+
+theorem sampleH16_checks (fast : Bool) : BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleH fast true) = true := by
   cases fast <;> decide +kernel
 
 theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampleH fast true) := by
   have h := sampleH16_checks fast
-  simp only [BatchHOk.checks, Bool.and_eq_true] at h
+  simp only [BatchHOk16.checks, Bool.and_eq_true] at h
   exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1, h.1.2,
     Code.all_of_allInstrs h.2⟩
 
@@ -141,8 +124,6 @@ structure Sample4Impl where
   time, and safe to call. -/
   arith : ArithOk callee.arith
   /-- Its fragment for encapsulation, if any, is verified. -/
-  batchH : ∀ b, callee.batchH = some b → BatchHOk b
-  /-- So is the fragment with 16-bit coefficients. -/
   batchH16 : ∀ b, callee.batchH16 = some b → BatchHOk16 b
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
   nothing for the baseline implementation). -/
@@ -182,13 +163,10 @@ def scalar : Sample4Impl where
   prfs_ctl := prfsScalar_ctl
   prfs_sp := prfsScalar_sp
   arith := ArithOk.sse
-  batchH := fun _ h => nomatch h
   batchH16 := fun _ h => nomatch h
   suffix := ""
   prfsDoc := "one at a time"
   features := []
-
-theorem avx2_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx2).code = true := by decide +kernel
 
 theorem avx2_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) = true := by decide +kernel
 
@@ -196,28 +174,26 @@ theorem avx2_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) :
   ⟨S4.correct (w16 := true) (fast := false), S4.ct (w16 := true) (fast := false), (codeChecks_spec avx2_checks16).1,
     (codeChecks_spec avx2_checks16).2.1, (codeChecks_spec avx2_checks16).2.2.1, (codeChecks_spec avx2_checks16).2.2.2⟩
 
-/-- The AVX2 implementation, `vg_mlkem_sample_ntt4_avx2`. -/
+/-- The AVX2 implementation, `vg_mlkem16_sample_ntt4_avx2`: its callers run with 16-bit
+polynomials, and its functions of `u32`s, which they never run, are the baseline's. -/
 def avx2 : Sample4Impl where
   callee := .avx2
-  ok := sample4_correct (fast := false)
-  ct := sample4_ct (fast := false)
-  nosp := (codeChecks_spec avx2_checks).1
-  depth_le := (codeChecks_spec avx2_checks).2.1
-  mxcsr := (codeChecks_spec avx2_checks).2.2.1
-  spSafe := (codeChecks_spec avx2_checks).2.2.2
+  ok := sample4_scalar_correct
+  ct := sample4_scalar_ct
+  nosp := (codeChecks_spec scalar_checks).1
+  depth_le := (codeChecks_spec scalar_checks).2.1
+  mxcsr := (codeChecks_spec scalar_checks).2.2.1
+  spSafe := (codeChecks_spec scalar_checks).2.2.2
   s16 := fun _ _ h => by injection h with h; cases h; exact avx2_s16
   prfs_ok := fun L hcs => prfsAvx2_ok L hcs
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
   prfs_sp := prfsAvx2_sp
-  arith := ArithOk.avx2
-  batchH := fun _ h => Option.some.inj h ▸ sampleH_ok false
+  arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok false
   suffix := "_avx2"
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
-
-theorem avx512_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx512).code = true := by decide +kernel
 
 theorem avx512_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) = true := by decide +kernel
 
@@ -225,22 +201,22 @@ theorem avx512_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) 
   ⟨S4.correct (w16 := true) (fast := true), S4.ct (w16 := true) (fast := true), (codeChecks_spec avx512_checks16).1,
     (codeChecks_spec avx512_checks16).2.1, (codeChecks_spec avx512_checks16).2.2.1, (codeChecks_spec avx512_checks16).2.2.2⟩
 
-/-- The AVX-512VL implementation, `vg_mlkem_sample_ntt4_avx512`. -/
+/-- The AVX-512VL implementation, `vg_mlkem16_sample_ntt4_avx512`: as `avx2`, with
+AVX-512VL quadword rotates. -/
 def avx512 : Sample4Impl where
   callee := .avx512
-  ok := sample4_correct (fast := true)
-  ct := sample4_ct (fast := true)
-  nosp := (codeChecks_spec avx512_checks).1
-  depth_le := (codeChecks_spec avx512_checks).2.1
-  mxcsr := (codeChecks_spec avx512_checks).2.2.1
-  spSafe := (codeChecks_spec avx512_checks).2.2.2
+  ok := sample4_scalar_correct
+  ct := sample4_scalar_ct
+  nosp := (codeChecks_spec scalar_checks).1
+  depth_le := (codeChecks_spec scalar_checks).2.1
+  mxcsr := (codeChecks_spec scalar_checks).2.2.1
+  spSafe := (codeChecks_spec scalar_checks).2.2.2
   s16 := fun _ _ h => by injection h with h; cases h; exact avx512_s16
   prfs_ok := fun L hcs => prfsAvx2_ok L hcs
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
   prfs_sp := prfsAvx2_sp
-  arith := ArithOk.avx2
-  batchH := fun _ h => Option.some.inj h ▸ sampleH_ok true
+  arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok true
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"

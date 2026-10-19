@@ -128,6 +128,10 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dsa_parameters": {
+        "lib": ["dsa::parameters"],
+        "tests": [],
+    },
     "dsa": {
         "lib": ["dsa"],
         "tests": ["cavp::dsa", "wycheproof::dsa"],

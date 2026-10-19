@@ -26,10 +26,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : Lis
     notes := ["The function is `vg_ecdsa_p521_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       the callee-saved registers `x19`–`x25` in `scratch`; field elements are nine \
-      64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
-      with `mul` and `umulh`, four of the multiplicand's words in registers and the other five \
-      loaded for each word of the multiplier; each reduction step multiplies the accumulator's low \
-      word by `-p⁻¹ mod 2⁶⁴` and adds that multiple of `p`) with a final conditional subtraction; \
+      64-bit words in Montgomery form, multiplied by calls of `vg_p521_mul_mod_p` (word-by-word \
+      Montgomery multiplication with all of `[b]` in registers, whose reductions are shifts, \
+      P-521's `p` being friendly, and a final conditional subtraction); \
       `[d]G` is `vg_ecdsa_p521_sign`'s fixed-base comb of 7-bit signed digits from the 83 tables \
       of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P521_COMB`, each entry selected in \
       constant time by loading the whole table, with no doublings; and \

@@ -23,16 +23,7 @@ theorem invStep_eq (A D : Nat) : VG.Impl.Rsa.Arm.Keys.invStep A D =
     seqs (invU A D ++ (subModP aT3 (A + 2) (A + 3) ++ (subModP aT2 (A + 3) (A + 2) ++
       (invX A D ++ halfModP (D + 2))))) := rfl
 
-theorem invStep_arith {u v x₁ x₂ M : Nat} :
-    (if u % 2 = 1 then (if u < v then (v - u) / 2 else (u - v) / 2) else u / 2,
-     (if u % 2 = 1 ∧ u < v then u else v),
-     halfMod M (if (u % 2) = 0 then x₁ else
-       if (if u % 2 = 1 ∧ u < v then 1 else 0) = 0 then subMod M x₁ x₂ else subMod M x₂ x₁),
-     (if (if u % 2 = 1 ∧ u < v then 1 else 0) = 0 then x₂ else x₁)) =
-    VG.Proof.Rsa.invStep M (u, v, x₁, x₂) := by
-  unfold VG.Proof.Rsa.invStep
-  by_cases e : u % 2 = 1 <;> by_cases f : u < v <;>
-  simp [e, f, show u % 2 = 0 ↔ ¬ u % 2 = 1 by omega]
+alias invStep_arith := VG.Proof.Rsa.invStep_arith
 
 theorem invStep_ok {s : State} {B : BitVec 32} {Z w N A D : Nat} (h : Ws s B Z w N)
     (hN15 : 15 ≤ N) (hN : N ≤ 256) (hb : (A = 0 ∧ D = 4) ∨ (A = 4 ∧ D = 0)) :

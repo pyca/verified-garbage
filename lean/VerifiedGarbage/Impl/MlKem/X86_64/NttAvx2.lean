@@ -5,14 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_ntt_avx2` and `vg_mlkem_inv_ntt_avx2`
-
-`nttAvx2(f = rdi, scratch = rsi)` is `NTT` in two passes on registers
-(`NttRegs.lean`), with MXCSR's words at 768 (`withMxcsr`).
-
-`nttInvAvx2(f = rdi, scratch = rsi)` is `NTT⁻¹` in two passes on registers
-(`NttRegs.lean`), in place, with the same working space: the polynomial as
-256 words at 256 (`S`), and MXCSR's words at 768.
+# ML-KEM on x86-64: NTT layers with AVX2
 
 The definitions below are the layers on sixteen coefficients at a time,
 eight in each 128-bit lane of AVX2 registers (`Avx.lean`), that ML-DSA's
@@ -149,11 +142,5 @@ def ypro (tab : Nat → Nat) : Prog isa :=
 /-- `S` unpacked into `f`, and the upper halves of the vector registers cleared. -/
 def yepi : Prog isa :=
   .seq (.block ([.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) (.seq yunpack (.block [.vop .vzeroupper]))
-
-/-- `NTT` in two passes on registers (`NttRegs.lean`), in place. -/
-def nttAvx2 : Prog isa := withMxcsr .rsi oMx (nttR NttR.passBsRdi)
-
-/-- `NTT⁻¹` in two passes on registers (`NttRegs.lean`), in place. -/
-def nttInvAvx2 : Prog isa := withMxcsr .rsi oMx (nttIR NttR.passIBsU32)
 
 end VG.Impl.MlKem.X86_64

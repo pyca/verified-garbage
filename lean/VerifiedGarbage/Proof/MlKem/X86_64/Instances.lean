@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 
 /-!
 # ML-KEM on x86-64: the stack pointer, for each implementation of `Sample4`
@@ -26,13 +27,8 @@ theorem encapsH_spSafe (v : Sample4Impl) :
   encapsHSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v)
 
 theorem encaps_spSafe (v : Sample4Impl) :
-    (Impl.MlKem.X86_64.encaps v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold Impl.MlKem.X86_64.encaps Impl.MlKem.X86_64.kemEncaps
-  split
-  · s4_sp v
-  · rename_i b hb
-    have hB := v.batchH b hb
-    ek_sp v b hB
+    (Impl.MlKem.X86_64.encaps v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
+  encapsSel_sp v (fun _ c b S B => by ek16_sp v c b S B kpke768) (by s4_sp v)
 
 theorem decaps_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.decaps v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
@@ -51,15 +47,10 @@ theorem encapsH1024_spSafe (v : Sample4Impl) :
     all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 
 theorem encaps1024_spSafe (v : Sample4Impl) :
-    (Impl.MlKem1024.X86_64.encaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold Impl.MlKem1024.X86_64.encaps1024 Impl.MlKem.X86_64.kemEncaps
-  split
-  · s4_sp v
-    all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
-  · rename_i b hb
-    have hB := v.batchH b hb
-    ek_sp v b hB
-    all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _
+    (Impl.MlKem1024.X86_64.encaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
+  encapsSel_sp v (fun _ c b S B => by ek16_sp v c b S B MlKem1024.X86_64.kpke1024) (by
+    s4_sp v
+    all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 
 theorem decaps1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.decaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=

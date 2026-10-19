@@ -11,10 +11,9 @@ import VerifiedGarbage.Proof.MlKem.Bits
 
 `encapsAArch64S`: `encapsAArch64` with the 128 bytes below the stack pointer
 the x3 calls use (rather than 16) apart from the buffers, and
-`entryContractS`: with the constant tables apart from them too. `encapsH_ct`:
-the first phase and the rest by the taint analyses, the matrix by
-`matrixH_relCT`; `encapsH_correct`: from
-`using_correctH`.
+`entryContractS`: with the constant tables apart from them too. `kemH_relCT`:
+two runs of the first phase, the matrix (by `matrixH_relCT`) and the rest
+(by its taint analysis) leak the same, for `Kem16/EncapsTop.lean`.
 -/
 
 @[expose] public section
@@ -82,27 +81,27 @@ theorem entryS_tables {base : Contract isa} {s : State} (h : (entryContractS bas
   ⟨tables_of_consts c.1, c.2⟩
 
 /-- The first phase, with what the matrix needs. -/
-theorem prefixH {s₀ : State} (hp : Pre P (enL P) s₀) (tables : Tables s₀) (ts : TStk s₀) :
+theorem prefixH {w16 : Bool} {s₀ : State} (hp : Pre P (enL P) s₀) (tables : Tables s₀) (ts : TStk s₀) :
     WP isa (Impl.MlKem.AArch64.Hybrid.startH P) s₀ fun t =>
-      HInv P s₀ t.mem (rhoE P s₀) (ekE P s₀) 0 0 t ∧ MT3 P s₀ t := by
+      HInvW w16 P s₀ t.mem (rhoE P s₀) (ekE P s₀) 0 0 t ∧ MT3 P s₀ t := by
   refine WP.mono_syms (WP.tablesDepth (startH_ok hp) tables
     (by unfold Impl.MlKem.AArch64.Hybrid.startH; exact Nat.zero_le _)) fun t ⟨hA, ta⟩ sy => ?_
   have tsA : TStk t := ts.of sy (by rw [hA.kb.sp])
-  exact ⟨⟨BInv.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero⟩,
+  exact ⟨⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero⟩,
     matrix_table_of_kb hp hA.kb ta, by rw [← hA.kb.sp]; exact tsA.shuffle⟩
 
-theorem kemH_relCT {σ τ : State} {ρ : List Byte} {start rest : Prog isa}
+theorem kemH_relCT {w16 : Bool} {σ τ : State} {ρ : List Byte} {start rest : Prog isa}
     (hp : Pre P (enL P) σ) (hq : Pre P (enL P) τ) (hk : Stk128 P σ) (hk' : Stk128 P τ)
     (sm : Same P σ τ) (ptr : ∀i<4,kA σ ((enL P).slot i)=kA τ ((enL P).slot i)) (ho : HashOk P)
     (habs : ∀ blk, 136 * blk < P.ekLen → ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock P blk)) h).isSome = true)
     (shuffle : σ.syms "VG_MLKEM_REJ_SHUFFLE"=τ.syms "VG_MLKEM_REJ_SHUFFLE")
     (symbols : ∀name∈restSymbols,σ.syms name=τ.syms name)
-    (as : WP isa start σ (fun s=>HInv P σ s.mem ρ (ekE P σ) 0 0 s ∧ MT3 P σ s))
-    (au : WP isa start τ (fun s=>HInv P τ s.mem ρ (ekE P τ) 0 0 s ∧ MT3 P τ s))
+    (as : WP isa start σ (fun s=>HInvW w16 P σ s.mem ρ (ekE P σ) 0 0 s ∧ MT3 P σ s))
+    (au : WP isa start τ (fun s=>HInvW w16 P τ s.mem ρ (ekE P τ) 0 0 s ∧ MT3 P τ s))
     (ac : RelCT isa (fun s u=>s=σ ∧ u=τ) start (fun _ _=>True))
     (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) rest h).isSome=true) :
-    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Hybrid.matrixH P) rest))
+    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Hybrid.matrixH P w16) rest))
       (fun _ _=>True) := by
   intro s u tr ur t v h et eu
   rcases h with ⟨hs,hu⟩; subst s; subst u
@@ -132,46 +131,5 @@ theorem entryS_symbols {base : Contract isa} {s u : State} (h : (entryContractS 
     (s.syms "VG_MLKEM_REJ_SHUFFLE"=u.syms "VG_MLKEM_REJ_SHUFFLE") ∧
     ∀name∈restSymbols,s.syms name=u.syms name :=
   entry_symbols (base := base) h
-
-/-- **The hashing encapsulation is constant time.** -/
-theorem encapsH_ct (hash : FixedHash.HashFn) (prf : Nat→Nat→Prog isa) (hw : P.Wf) (ho : HashOk P)
-    (habs : ∀ blk, 136 * blk < P.ekLen → ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock P blk)) h).isSome = true)
-    (ha : ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3,.x4])
-      (Impl.MlKem.AArch64.Hybrid.startH P) h).isSome=true)
-    (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (.seq (Impl.MlKem.AArch64.Hybrid.tailH hash) (Impl.MlKem.AArch64.Optimized.enRestUsing prf P)) h).isSome=true) :
-    ConstantTime isa (entryContractS (encapsAArch64S P)).pre (entryContractS (encapsAArch64S P)).pub
-      (Impl.MlKem.AArch64.Hybrid.encaps hash prf P) := by
-  intro s u tr ur t v hs hu hpub et eu
-  have ss := preS hs.1
-  have su := preS hu.1
-  have ps := kem_unstrip (Encaps.pre_of hw ss.1)
-  have pu := kem_unstrip (Encaps.pre_of hw su.1)
-  have rs : ∀r∈[Reg.x0,.x1,.x2,.x3,.x4],s.gpr r=u.gpr r := by
-    intro r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl|rfl
-    · exact hpub.1.1
-    · exact hpub.1.2.1
-    · exact hpub.1.2.2.1
-    · exact hpub.1.2.2.2.1
-    · exact hpub.1.2.2.2.2.1
-  have ptr : ∀i<4,kA s ((enL P).slot i)=kA u ((enL P).slot i) := by
-    intro i hi
-    rcases (by omega : i=0 ∨ i=1 ∨ i=2 ∨ i=3) with rfl|rfl|rfl|rfl <;> exact rs _ (by simp [enL,argReg])
-  have sp : s.sp=u.sp := hpub.1.2.2.2.2.2.1
-  have rho : rhoE P s=rhoE P u := map_toNat_inj hpub.1.2.2.2.2.2.2
-  have sym := entryS_symbols hpub
-  have sm : Same P s u := ⟨ptr 3 (by decide), ptr 0 (by decide), sp⟩
-  have ts := entryS_tables hs
-  have tu := entryS_tables hu
-  have wa := prefixH ps ts.1 ts.2
-  have wb := prefixH pu tu.1 tu.2
-  rw [←rho] at wb
-  have ac := VectorTaint.relRegs [.x0,.x1,.x2,.x3,.x4]
-    (P:=fun a b=>a=s ∧ b=u) (fun a b ⟨ha,hb⟩=>by subst a; subst b; exact ⟨sp,rs⟩) ha.choose_spec
-  exact (kemH_relCT ps pu ⟨ss.2.sp, ss.2.args⟩ ⟨su.2.sp, su.2.args⟩ sm ptr ho habs
-    sym.1 sym.2 wa wb ac hc _ _ _ _ _ _ ⟨rfl,rfl⟩ et eu).1
 
 end VG.Proof.MlKem.AArch64.Hybrid

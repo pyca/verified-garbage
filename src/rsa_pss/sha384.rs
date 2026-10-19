@@ -51,6 +51,19 @@ use crate::arch::rsa_pss_sha384_mgf1_sha384::{
     vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_sha3,
     vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed_sha384_sha3,
 };
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_pss_sha384_mgf1_sha384::{
+    VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_UMAAL_FEATURES, vg_rsa_pss_sha384_mgf1_sha384_sign_umaal,
+};
 use crate::arch::rsa_pss_sha384_mgf1_sha384::{
     vg_rsa_pss_sha384_mgf1_sha384_sign, vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed,
 };
@@ -64,6 +77,7 @@ super::pss_hash!(48, Sha384Backend {
         verify_ifma: vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed_rsa_ifma [VG_RSA_PSS_SHA384_MGF1_SHA384_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES],
         adx: vg_rsa_pss_sha384_mgf1_sha384_sign_crt_adx [VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_ADX_FEATURES],
         ifma: vg_rsa_pss_sha384_mgf1_sha384_sign_crt_ifma [VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_CRT_IFMA_FEATURES],
+        umaal: vg_rsa_pss_sha384_mgf1_sha384_sign_umaal [VG_RSA_PSS_SHA384_MGF1_SHA384_SIGN_UMAAL_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     ShaNi => {

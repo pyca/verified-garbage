@@ -96,7 +96,7 @@ theorem done_ok {s₀ : State} (hp : Pre s₀) {u : State} (h : FastPost s₀ u)
   have hc := h.coeffs.full hf
   rw [hf] at hc
   refine ⟨⟨hfin.cs, hfin.sp, hfin.vcs⟩, ?_, .inl ⟨h0, ?_⟩⟩
-  · rw [hm]; exact reduced_of_coeffs (L := LA (Bs s₀) 168) (by rw [hf]; exact hc)
+  · rw [hm]; exact reduced_of_coeffs (w16 := false) (L := LA (Bs s₀) 168) (by rw [hf]; exact hc)
   · rw [sampleNTT_of_full (by decide : 168 ≤ 280) hf]
     refine congrArg some ?_
     exact ((CoeffsUpTo.polyIs (by rw [hm]; exact hc) fun i hi => cv_toPoly hi).2).symm

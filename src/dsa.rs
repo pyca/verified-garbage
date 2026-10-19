@@ -1,10 +1,11 @@
-//! DSA key generation, and signing and verification of prehashed messages,
+//! DSA parameter and key generation, and signing and verification of prehashed messages,
 //! with fixed-width big-endian `r || s` signatures (FIPS 186-4).
 //!
 //! The verified operations check domain and key algebraic consistency and
 //! scalar ranges. As with this crate's RSA operations, they do not prove
 //! primality: callers must obtain domain parameters from a trusted source
-//! or validate them separately. FIPS 186-5 retains DSA for legacy verification.
+//! or validate them separately. On x86-64 and AArch64, `Parameters::generate` runs
+//! probable-prime parameter generation entirely in verified assembly. FIPS 186-5 retains DSA for legacy verification.
 //!
 //! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
 //! `(256, 32)` and `(384, 32)` bytes. The 2048/160 pair is a legacy
@@ -317,6 +318,10 @@ impl PrivateKey {
 }
 
 mod keygen;
+mod parameters;
+
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+pub use parameters::Parameters;
 
 #[cfg(test)]
 #[path = "dsa/tests.rs"]

@@ -26,10 +26,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
     notes := ["The function is `vg_ecdsa_p384_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       the callee-saved registers `x19`–`x25` in `scratch`; field elements are six \
-      64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
-      with `mul` and `umulh`, four of the multiplicand's words in registers and the other two \
-      loaded for each word of the multiplier; each reduction step multiplies the accumulator's low \
-      word by `-p⁻¹ mod 2⁶⁴` and adds that multiple of `p`) with a final conditional subtraction; \
+      64-bit words in Montgomery form, multiplied by calls of `vg_p384_mul_mod_p` (the schedule of \
+      s2n-bignum's `bignum_montmul_p384_alt`: the full twelve-word product, six short Montgomery \
+      reductions by the three nonzero words of `2^384 - p`, and a final conditional subtraction); \
       `[d]G` is `vg_ecdsa_p384_sign`'s fixed-base comb of 7-bit signed digits from the 55 tables \
       of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P384_COMB`, each entry selected in \
       constant time by loading the whole table, with no doublings; and \

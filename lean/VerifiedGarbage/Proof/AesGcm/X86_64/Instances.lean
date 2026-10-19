@@ -197,6 +197,33 @@ theorem splitFrom_pos (v : GcmVariant) : 1 ≤ splitFrom v := by
 theorem splitFrom_le (v : GcmVariant) : splitFrom v + 16 ≤ copyBelow v := by
   unfold splitFrom copyBelow; split <;> simp_all <;> decide
 
+/-- Whether `vg_aes_gcm_seal_gather_prepared` seals a TLS record's text from
+its first slice by `vg_aes_gcm_seal_split_prepared` only when that slice
+holds 256 bytes or more (`frontTest`'s `long`): on 512-bit registers, whose
+short path of the gathering is faster for less. Elsewhere it does from a
+first slice of any length (the path for TLS records is faster than the
+others' at every length), but for a text of 256 bytes or more whose first
+slice is shorter: the gathering's path for TLS records, which takes it
+whole, seals it faster (a 256-byte TLS record, of a 255-byte payload: 22%
+faster on Zen 3, with AES-NI and AVX). -/
+def tlsLong (v : GcmVariant) : Bool :=
+  match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
+  | some .vaesAvx512 => true
+  | _ => false
+
+/-- Whether `vg_aes_gcm_seal_gather_prepared` leaves to its other paths a TLS
+record of a multiple of 16 blocks whose last block the first slice starts
+and the second fills (`frontTest`'s `fill`): on 256-bit registers, whose
+`seal_split` seals the first slice's whole blocks in groups of 16 and then
+that block alone. Up to 1024 bytes the gathering, which seals blocks in
+whole groups, is faster (a 1024-byte TLS record, of a 1023-byte payload:
+31–36%); from 2048 bytes on the caller seals the first slice up to its last
+whole group by `seal_split` itself. -/
+def tlsFill (v : GcmVariant) : Bool :=
+  match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
+  | some .vaes => true
+  | _ => false
+
 theorem sealCode_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.sealCode (v.withBlk B)).x86_64Depth ≤ 24 := by
   unfold GcmImpl.sealCode; split

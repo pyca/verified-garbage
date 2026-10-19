@@ -31,7 +31,9 @@ CPU-second for each module.
 alone holds the build: CI's Actions cache keeps it, and each job that
 restores it runs `restore`, which extracts `files.tar` and unpacks every
 archive, keeping them, so that the build's next `store` packs only what
-changed.
+changed. A shard needs only the modules its targets import: `restore
+--modules` unpacks only theirs, and `--except` the others, before the
+shard assembles the build.
 
 `store` and `restore` accept `--archive-dir` to keep Mathlib's Actions cache
 in `.lake/mathlib-ltar`, independently of the project's `.lake/ltar` (each
@@ -196,13 +198,26 @@ def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
                     "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
 
 
-def restore(lean, jobs, tool, archive_dir=LTAR):
+def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
+    """Extracts `files.tar` and unpacks the archives; with `modules` (a
+    file of module names, one per line), only the archives of those of the
+    project's build, and with `others` (such a file), only the archives
+    `modules` left out, and not `files.tar` again: a build in between may
+    have changed its `.hash` files."""
     ltars = lean / archive_dir
-    files = extract(lean, ltars / FILES) if (ltars / FILES).is_file() else None
+    chosen = set((modules or others).read_text().split()) if modules or others else set()
+    files = extract(lean, ltars / FILES) if (ltars / FILES).is_file() and not others else None
     try:
         records = []
         for ltar in sorted(ltars.rglob("*.ltar")):
-            build = build_of(ltar.relative_to(ltars))
+            rel = ltar.relative_to(ltars)
+            m = module_of(rel)
+            # A package's archive goes with `modules`, as `files.tar` does.
+            if modules and m is not None and m not in chosen:
+                continue
+            if others and (m is None or m in chosen):
+                continue
+            build = build_of(rel)
             records.append({"file": str(ltar.relative_to(lean)),
                             "base": [str(build / "lib/lean"), str(build / "ir")]})
         if records:
@@ -229,6 +244,13 @@ def finish(files):
     """Waits for `extract`'s `tar`, if there is one, and fails if it did."""
     if files is not None and files.wait():
         raise SystemExit(f"tar failed ({files.returncode})")
+
+
+def module_of(rel):
+    """The module of the project's build whose archive is at
+    `.lake/ltar/<rel>`, or None for a package's."""
+    parts = Path(rel).with_suffix("").parts
+    return ".".join(parts[1:]) if parts[0] == "build" else None
 
 
 def build_of(rel):
@@ -332,6 +354,11 @@ def main(argv=None):
     r = sub.add_parser("restore", help="restore what `store` stored, keeping `.lake/ltar`")
     r.add_argument("lean", type=Path, help="the Lean project (lean/)")
     r.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
+    only = r.add_mutually_exclusive_group()
+    only.add_argument("--modules", type=Path,
+                      help="a file of modules: unpack only their archives (and every package's)")
+    only.add_argument("--except", dest="others", type=Path,
+                      help="a file of modules: unpack only the other archives, without files.tar")
     u = sub.add_parser("unpack", help="extract a tar of `pack` from stdin")
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
@@ -354,7 +381,7 @@ def main(argv=None):
     elif args.command == "store":
         store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, args.archive_dir)
     elif args.command == "restore":
-        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir)
+        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others)
     else:
         unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer)
 

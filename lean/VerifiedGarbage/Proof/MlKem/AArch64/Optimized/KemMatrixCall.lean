@@ -56,10 +56,10 @@ theorem singleton_context {s₀ s : State} (hp : Pre P L s₀) {e : Nat} (he : e
   refine ⟨cov_s hp h (by lom),cov_s hp h (by lom),sdisj hp (by lom) (by lom) (by lom),
     tb.artifact,tb.readable,?_,?_⟩ <;> exact tb.apart.sub_right (scratch_sub hp (by lom))
 
-theorem paired_step {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e : Nat}
-    (he : e+1<P.k*P.k) (h : BInv P L s₀ mA ρ e s) (tb : MatrixTable P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair P false e) s fun t =>
-      BInv P L s₀ mA ρ (e+2) t ∧ MatrixTable P L s₀ t := by
+theorem paired_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e : Nat}
+    (he : e+1<P.k*P.k) (h : BInvW w16 P L s₀ mA ρ e s) (tb : MatrixTable P L s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Paired.pair P false e w16) s fun t =>
+      BInvW w16 P L s₀ mA ρ (e+2) t ∧ MatrixTable P L s₀ t := by
   have hw := hp.wf
   rw [Paired.pair_iff]
   refine WP.mono_syms (Paired.pairCode_ok (by decide) (by decide) (by decide)
@@ -78,10 +78,10 @@ theorem paired_step {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List B
     rw [seed,seed] at post
     exact ⟨h.paired hp he post,tb.frame post.keep.rd post.keep.wr sy post.frame (pair_scratch hp he)⟩
 
-theorem singleton_step {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e : Nat}
-    (he : e<P.k*P.k) (h : BInv P L s₀ mA ρ e s) (tb : MatrixTable P L s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e)) s fun t =>
-      BInv P L s₀ mA ρ (e+1) t ∧ MatrixTable P L s₀ t := by
+theorem singleton_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e : Nat}
+    (he : e<P.k*P.k) (h : BInvW w16 P L s₀ mA ρ e s) (tb : MatrixTable P L s₀ s) :
+    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) w16) s fun t =>
+      BInvW w16 P L s₀ mA ρ (e+1) t ∧ MatrixTable P L s₀ t := by
   have hw := hp.wf
   refine WP.mono_syms (Paired.lastCode_ok (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     (e28 h.kb SS) (e28 h.kb SB) (e28 h.kb (AH+1024*e)) (fun j hj => ?_)

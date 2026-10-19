@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 
 The pieces of `Bodies.avx2` (`KpkeMul.lean`) that keep a sum of products
 `ŝ[j] ×_T ŷ[j]` as 256 words (an *accumulator*) rather than as 256 `u32`s:
-the products of `vg_mlkem_multiply_ntts_avx2` (`MulAvx2.lean`) are added to
+the products of `MulAvx2.lean`'s loads and `vbase` are added to
 it where `vbase` leaves them, and `NTT⁻¹` starts from it rather than from
 the `u32`s it would pack.
 
@@ -21,10 +21,10 @@ that order: `ymm1` at byte `64 i` and `ymm2` at `64 i + 32`
 (`accIdx`).
 
 * `zeroAccY(acc = rdi)`: the accumulator of the zero polynomial.
-* `tabAccY(scratch = rcx)`: the `γ`s of `vg_mlkem_multiply_ntts_avx2`
+* `tabAccY(scratch = rcx)`: the `γ`s in `vbase`'s order
   (`gTabY`) at `scratch + 3328`, once for all the products.
 * `mulAccY(acc = rdi, f = rsi, g = rdx, scratch = rcx)`: `acc += f ×_T g`,
-  8 times on 32 coefficients: `vg_mlkem_multiply_ntts_avx2`'s loads and
+  8 times on 32 coefficients: the loads of `MulAvx2.lean` and
   `vbase`, with the table at `scratch + 3328`, then each of `ymm1` and
   `ymm2` added to its 32 bytes of the accumulator, reduced (`vcsub`).
 * `mulSetY(acc = rdi, f = rsi, g = rdx, scratch = rcx)`: `acc = f ×_T g`:
@@ -204,9 +204,6 @@ def rowMulEg (ld : Nat → List Instr) (j : Nat) : List Instr :=
   ld j ++ [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))] ++
     toY vbaseL
 
-/-- `rowMulEg` of the `u32`s from `f = rsi + o j`. -/
-def rowMulEY (o j : Nat) : List Instr := rowMulEg (rowLdY o) j
-
 /-- A block of row `k` to an accumulator: its `k` products summed in `ymm11`
 and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and stored to
 the accumulator at `rdi`; `rsi` moves `st` bytes on. -/
@@ -215,9 +212,6 @@ def rowBodyEg (ld : Nat → List Instr) (st : BitVec 32) (k : Nat) : List Instr 
     toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++
     [.vmovdquStore .l256 (at_ .rdi 0) .xmm11, .vmovdquStore .l256 (at_ .rdi 32) .xmm12,
       .alu .add .rsi (.imm st), .alu .add .rdx (.imm 64), .alu .add .rdi (.imm 64), .alu .add .r8 (.imm 32)]
-
-/-- `rowBodyEg` of the `u32`s. -/
-def rowBodyEY (o k : Nat) : List Instr := rowBodyEg (rowLdY o) 128 k
 
 /-- The accumulator at `rdi` of the `k` products of the polynomials `ld`
 loads from `f = rsi` (`st` bytes a block) and the accumulators from

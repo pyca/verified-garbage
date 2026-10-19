@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+public import VerifiedGarbage.Proof.Rsa.ZeroTest32
 
 /-!
 # AES-GCM on ARMv7: checking a received tag
@@ -24,26 +25,12 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (zeros)
 open VG.Proof.Cmac (le4 store4)
 
-theorem shr31 (y : BitVec 32) : (y >>> 31).toNat = if y.msb then 1 else 0 := by
-  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_decide]
-  have := y.isLt
-  by_cases h : 2 ^ (32 - 1) ≤ y.toNat
-  · rw [decide_eq_true h]; simp only [ite_true]; simp only [Nat.reduceSub] at h; omega
-  · rw [decide_eq_false h]; simp only [Bool.false_eq_true, ite_false]; simp only [Nat.reduceSub] at h; omega
+theorem shr31 (y : BitVec 32) : (y >>> 31).toNat = if y.msb then 1 else 0 :=
+  VG.Proof.Rsa.shr31 y
 
-theorem msb_or_neg (x : BitVec 32) : (x ||| (0 - x)) >>> 31 = if x = 0 then 0 else 1 := by
-  apply BitVec.eq_of_toNat_eq
-  have z0 : (0 : BitVec 32).toNat = 0 := rfl
-  rw [shr31, BitVec.msb_or, BitVec.msb_eq_decide, BitVec.msb_eq_decide (x := 0 - x), BitVec.toNat_sub, z0,
-    Nat.add_zero]
-  have := x.isLt
-  by_cases h : x = 0
-  · subst h; decide
-  · have hx : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
-    have : 2 ^ (32 - 1) ≤ x.toNat ∨ 2 ^ (32 - 1) ≤ (2 ^ 32 - x.toNat) % 2 ^ 32 := by
-      rw [Nat.mod_eq_of_lt (by omega)]; omega
-    simp only [h, ite_false, Bool.or_eq_true, decide_eq_true_eq]
-    simp only [this, ite_true]; rfl
+theorem msb_or_neg (x : BitVec 32) : (x ||| (0 - x)) >>> 31 = if x = 0 then 0 else 1 :=
+  VG.Proof.Rsa.msb_or_neg x
+
 theorem le4_inj {x y : BitVec 32} (h : le4 x = le4 y) : x = y := by
   have e : ∀ k < 4, x.extractLsb' (8 * k) 8 = y.extractLsb' (8 * k) 8 := fun k hk => by
     have := congrArg (fun l => l.getD k 0) h

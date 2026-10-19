@@ -380,10 +380,4 @@ def cbd2_16Sat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 512⟩]
 
-theorem cbd2_16_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.cbd2_16 (Spec.MlKem.cbd2_16Contract X86_64.abi) :=
-  Verified.of_correct cbd2_16_correct cbd2_16_ct (by
-    mlkem_implies [Spec.MlKem.cbd2_16Contract, Spec.MlKem.cbd2_16Sig, Cbd16.cbd2_16K, X86_64.abi,
-      X86_64.argRegs] [cbd2_16Sat] using cbd2_16Sat)
-
 end VG.Proof.MlKem.X86_64

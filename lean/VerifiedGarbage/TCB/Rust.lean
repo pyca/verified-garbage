@@ -100,7 +100,10 @@ pub(crate) const <NAME>_FEATURES: crate::cpu::Features = crate::cpu::Features::o
 (The functions get no `#[target_feature]` attribute: Rust does not allow one
 on naked functions. The x86 assemblers accept every instruction without it;
 on AArch64 the printer's `enableFeature`/`disableFeature` directives enable
-each feature for the function's body only.)
+each feature for the function's body only.) A feature that some of the
+target's configurations cannot assemble or must never run has a `cfg`
+(`Printer.featureCfg`, ARMv7's `umaal`): the function and its constants are
+compiled only under it, `#[cfg(<predicate>)]`.
 -/
 
 @[expose] public section
@@ -211,10 +214,10 @@ def featureDoc (doc : String) : List String → String
 
 /-- The constant of the CPU features `fs` that the function `name`
 requires; nothing if there are none. -/
-def featuresConst (name : String) : List String → String
+def featuresConst (name gate : String) : List String → String
   | [] => ""
   | fs =>
-    s!"/// The CPU features `{name}` requires (`Artifact.features`).\n" ++
+    s!"/// The CPU features `{name}` requires (`Artifact.features`).\n" ++ gate ++
     s!"pub(crate) const {name.toUpper}_FEATURES: crate::cpu::Features = \
       crate::cpu::Features::of(&[" ++
     ", ".intercalate (fs.map fun f => s!"\"{escape f}\"") ++ "]);\n\n"
@@ -225,10 +228,10 @@ def writtenName (name param : String) : String := s!"{name.toUpper}_{param.toUpp
 
 /-- The constants of how much of its parameters the function `name` writes
 (`Artifact.written`), one per parameter; nothing if there are none. -/
-def writtenConsts (name : String) (written : List (String × Nat)) : String :=
+def writtenConsts (name gate : String) (written : List (String × Nat)) : String :=
   String.join (written.map fun (p, n) =>
     s!"/// The bytes of `{p}` that `{name}` may write: it changes no byte of `{p}` at this \
-      offset or beyond (`Artifact.written`).\n" ++
+      offset or beyond (`Artifact.written`).\n" ++ gate ++
     s!"pub(crate) const {writtenName name p}: usize = {n};\n\n")
 
 /-- The paragraphs documenting how much of its parameters the function `name`
@@ -378,6 +381,14 @@ def checkLayout (a : Artifact) : Except String Unit := do
     throw s!"{a.target.name}: {a.name} has buffers but its doc does not end with its \
       `# Safety` section"
 
+/-- The attribute compiling an item only under every predicate of `cs`
+(`Printer.featureCfg` of the features a function needs); nothing if there
+are none. -/
+def cfgGate : List String → String
+  | [] => ""
+  | [c] => s!"#[cfg({c})]\n"
+  | cs => s!"#[cfg(all({", ".intercalate cs}))]\n"
+
 /-- One artifact as a Rust naked function; `moduleOf` gives the module of
 each function it calls. The printer's `funcAlign` comes last, after the
 return (`Printer.function`) and any directives that follow it. -/
@@ -392,9 +403,11 @@ where
     (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
-  featuresConst a.name a.features ++
-  writtenConsts a.name a.written ++
+  let gate := cfgGate (a.features.filterMap P.featureCfg)
+  featuresConst a.name gate a.features ++
+  writtenConsts a.name gate a.written ++
   docComment "" (fullDoc a) ++
+  gate ++
   "#[unsafe(naked)]\n" ++
   s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}{a.sig.rust} " ++ "{\n" ++
   "    core::arch::naked_asm!(\n" ++

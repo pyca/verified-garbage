@@ -23,21 +23,6 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm.Pow
 open VG.Spec.Dsa.ModPow (numAt Keeps)
 
-/-- The `4k` bytes at `base + d` are its `k` 32-bit words. -/
-theorem read_eq_val32 (m : Mem) (base : Addr) : ∀ (k d : Nat),
-    (m.read (off base d) (4 * k)).toNat = val32 m base d k
-  | 0, d => by simp [Mem.read, val32]
-  | k + 1, d => by
-    rw [show 4 * (k + 1) = 4 * k + 4 from rfl, read_toNat_add, val32, ← read_eq_val32 m base k (d + 4),
-      Offset.add_add]
-    congr 1
-
-theorem numAt_eq8 (m : Mem) (base : Addr) (d n : Nat) : numAt m base d (8 * n) = val32 m base d (2 * n) := by
-  rw [← wordsVal_eq_val32, ← read_eq_wordsVal]; rfl
-
-theorem numAt_eq4 (m : Mem) (base : Addr) (d e : Nat) : numAt m base d (4 * e) = val32 m base d e := by
-  rw [← read_eq_val32]; rfl
-
 /-- The contract on ARM, as `Spec.Dsa.ModPow.powContract` states it. -/
 def powArm (n e : Nat) : Contract isa where
   pre s :=
@@ -68,8 +53,8 @@ theorem powArm_correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (
       simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]]
     exact hj r hr
 
-theorem powArm_ct (n e : Nat) : ConstantTime isa (powArm n e).pre (powArm n e).pub (body n e) :=
-  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => powK_ct n e _ _ _ _ _ _ (powArm_pre h₁) (powArm_pre h₂) hp.2.1 e₁ e₂
+theorem powArm_ct (n e : Nat) (hn : 0 < n) (hn48 : n ≤ 48) : ConstantTime isa (powArm n e).pre (powArm n e).pub (body n e) :=
+  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => powK_ct n e hn hn48 _ _ _ _ _ _ (powArm_pre h₁) (powArm_pre h₂) hp.2.1 e₁ e₂
 
 /-- A state satisfying the contract: the working space at `0x1000`, of 620
 words, every byte 1. -/
@@ -83,14 +68,6 @@ def satState : State where
   mem _ := 1
   rd := []
   wr := [⟨0x1000, 4960⟩]
-
-/-- Bytes of 1: an odd number, above 255 when there are at least two. -/
-theorem read_ones (a : Addr) : ∀ k, (Mem.read (fun _ => 1) a (k + 2)).toNat % 2 = 1 ∧
-    255 < (Mem.read (fun _ => 1) a (k + 2)).toNat := by
-  intro k
-  rw [VG.Proof.Mont.read_toNat_succ, VG.Proof.Mont.read_toNat_succ]
-  rw [show (1 : BitVec 8).toNat = 1 from rfl]
-  omega
 
 theorem powArm_implies {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
     (powArm n e).Implies (Spec.Dsa.ModPow.powContract (layout n e) Arm.abi) where
@@ -123,6 +100,6 @@ theorem powArm_implies {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
 theorem verified (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
     (hen : e ≤ 2 * n := by decide) :
     Verified Arm.target (body n e) (Spec.Dsa.ModPow.powContract (layout n e) Arm.abi) :=
-  Verified.of_correct (powArm_correct hn hn48 he hen) (powArm_ct n e) (powArm_implies hn hn48)
+  Verified.of_correct (powArm_correct hn hn48 he hen) (powArm_ct n e hn hn48) (powArm_implies hn hn48)
 
 end VG.Proof.Dsa.Arm.Pow

@@ -63,7 +63,12 @@
 //! scheme.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -89,6 +94,20 @@ use crate::arch::rsa::{
 use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::{
+    rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES,
+    rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
+};
 use crate::cpu::{Features, detected};
 
 /// The implementations of `vg_rsa_public_precompute`,
@@ -109,6 +128,21 @@ pub(crate) enum Backend {
     /// operation with `e = 65537`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
+    /// ARMv7's `umaal` for each word of a Montgomery row, in the
+    /// private-key operation and the Miller–Rabin rounds of key generation
+    /// (the public-key operation and the other functions run the
+    /// baseline's).
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    Umaal,
 }
 
 impl Backend {
@@ -135,10 +169,47 @@ impl Backend {
     }
 
     /// The best implementation a CPU with the features `f` can run: on
-    /// AArch64 and ARMv7, the baseline is the only one.
-    #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+    /// i686, AArch64, and ARMv7 where `umaal` is not detected, the baseline
+    /// is the only one.
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "aarch64",
+        all(
+            target_arch = "arm",
+            not(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            ))
+        )
+    ))]
     pub(crate) fn select(_f: Features) -> Backend {
         Backend::Baseline
+    }
+
+    /// The best implementation a CPU with the features `f` can run, on
+    /// ARMv7.
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    pub(crate) fn select(f: Features) -> Backend {
+        if f.contains(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES)
+            && f.contains(VG_RSA_PKCS1_SIGN_UMAAL_FEATURES)
+            && f.contains(VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES)
+        {
+            Backend::Umaal
+        } else {
+            Backend::Baseline
+        }
     }
 }
 
@@ -284,6 +355,17 @@ impl PublicKey {
             Backend::Adx => vg_rsa_public_precomputed_checked_adx,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_rsa_public_precomputed_checked_ifma,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_public_precomputed_checked,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
@@ -419,6 +501,24 @@ pub(crate) mod tests {
     #[test]
     fn backends() {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
+    }
+
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    #[test]
+    fn backends_arm() {
+        assert_eq!(
+            Backend::select(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES),
+            Backend::Umaal
+        );
     }
 
     #[cfg(target_arch = "x86_64")]

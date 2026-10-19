@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 
 /-!
-# ML-KEM-1024 on x86-64: `vg_mlkem1024_compress_encode_avx2`
+# ML-KEM-1024 on x86-64: `ByteEncode_d ∘ Compress_d` with AVX2, which the K-PKE functions inline
 
 As ML-KEM-768's (`Proof/MlKem/X86_64/CompressEncodeAvx2.lean`): the
 doublewords of a group are compressed by sums of shifts (`dword_mul11`,
@@ -924,12 +924,6 @@ theorem compressEncode1024Y_ct :
       exacts [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1])
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
-
-theorem compressEncode1024Y_verified :
-    Verified X86_64.target compressEncode1024Avx2 (Spec.MlKem1024.compressEncodeContract X86_64.abi) :=
-  Verified.of_correct CEW.correct compressEncode1024Y_ct (by
-    mlkem_implies [Spec.MlKem1024.compressEncodeContract, Spec.MlKem1024.compressEncodeSig, compressEncode1024K,
-      X86_64.abi, X86_64.argRegs] [compressEncode1024Sat] using compressEncode1024Sat)
 
 /-- `vg_mlkem1024_compress_encode_avx2`, for the calls of the top-level functions. -/
 theorem ceImpl1024Y : CEImpl "vg_mlkem1024_compress_encode_avx2" compressEncode1024Avx2

@@ -38,22 +38,31 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
     stackArgAddr (s.withRegions rd wr) i = stackArgAddr s i := rfl
 
 /-- The register an instruction writes, if any (a frame's pop writes its
-register). -/
+register); for `umaal`, which writes two (`dsts`), the low one. -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
-  | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
+  | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _
+  | .umaal d _ _ _ => some d
   | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none
 
 /-- The registers instruction `i` writes. -/
-def dsts (i : Instr) : List Reg := (dstOf i).toList
+def dsts (i : Instr) : List Reg :=
+  match i with
+  | .umaal lo hi _ _ => [lo, hi]
+  | _ => (dstOf i).toList
 
 /-- Whether instruction `i` writes the register `r`, one of `dsts i`. The
 lemmas about the registers code keeps are stated with it, not with `dstOf`,
 which names only an instruction's single destination. -/
-def clobbers (i : Instr) (r : Reg) : Bool := dstOf i == some r
+def clobbers (i : Instr) (r : Reg) : Bool :=
+  match i with
+  | .umaal lo hi _ _ => r == lo || r == hi
+  | _ => dstOf i == some r
 
 theorem clobbers_iff {i : Instr} {r : Reg} : clobbers i r = true ↔ r ∈ dsts i := by
   unfold clobbers dsts
+  split
+  · simp
   cases dstOf i with
   | none => simp
   | some d =>
@@ -75,7 +84,11 @@ theorem clobbers_eq_false_of_contains {i : Instr} {r : Reg} {rs : List Reg}
   clobbers_eq_false_of_all h (by simpa using hr)
 
 theorem clobbers_of_dstOf {i : Instr} {r : Reg} (h : dstOf i = some r) : clobbers i r = true :=
-  clobbers_iff.mpr (by simp [dsts, h])
+  clobbers_iff.mpr (by
+    unfold dsts
+    split
+    · simp [dstOf] at h; simp [h]
+    · simp [h])
 
 theorem dstOf_ne_of_clobbers {i : Instr} {r : Reg} (h : clobbers i r = false) : dstOf i ≠ some r :=
   fun e => by simp [clobbers_of_dstOf e] at h
@@ -129,6 +142,11 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [hi, ite_true, Option.some.injEq] at h ⊢
     subst h; rfl
   | push _ | pop _ _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | umaal lo hi n m =>
+    simp only [exec] at h ⊢
+    split at h <;> [cases h; rename_i hne]
+    simp only [hne, ite_false, Option.some.injEq] at h ⊢
+    subst h; rfl
   | _ =>
     simp only [exec, op2_withRegions, Option.map_eq_some_iff] at h ⊢
     first
@@ -150,6 +168,11 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
+  | umaal lo hi n m =>
+    simp only [exec] at h
+    split at h <;> [cases h; skip]
+    simp only [Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | _ =>
     simp only [exec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>
@@ -161,20 +184,27 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s = some s') :
     s'.gpr r = s.gpr r := by
-  replace hi := dstOf_ne_of_clobbers hi
   have hs : ∀ (t : State) (d : Reg) (v : BitVec 32), d ≠ r → (t.setReg d v).gpr r = t.gpr r :=
     fun t d v hd => by simp [State.setReg, Ne.symm hd]
-  cases i <;>
-  simp only [exec, State.load32, State.load8, State.store32, State.store8, Option.map_eq_some_iff] at h <;>
-  (repeat' split at h) <;>
-  (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
-  first
-  | (subst h; first | rfl | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
-  | (obtain ⟨_, _, rfl⟩ := h
-     first
-     | rfl
-     | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
-  | (cases h)
+  cases i
+  case umaal lo hi' n m =>
+    simp only [clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne] at hi
+    simp only [exec] at h
+    split at h <;> [cases h; skip]
+    simp only [Option.some.injEq] at h; subst h
+    rw [hs _ _ _ (Ne.symm hi.2), hs _ _ _ (Ne.symm hi.1)]
+  all_goals
+    replace hi := dstOf_ne_of_clobbers hi
+    simp only [exec, State.load32, State.load8, State.store32, State.store8, Option.map_eq_some_iff] at h <;>
+    (repeat' split at h) <;>
+    (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
+    first
+    | (subst h; first | rfl | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
+    | (obtain ⟨_, _, rfl⟩ := h
+       first
+       | rfl
+       | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
+    | (cases h)
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
     eval c (s.withRegions rd wr) = eval c s := by

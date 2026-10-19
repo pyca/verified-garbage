@@ -109,6 +109,12 @@ structure Printer (M : ISA) where
   enable it for that function only. -/
   enableFeature : String → List String := fun _ => []
   disableFeature : String → List String := fun _ => []
+  /-- The Rust `cfg` predicate under which code needing the CPU feature `f`
+  may be compiled, for a feature that some of the target's configurations
+  cannot assemble or must never run (e.g. ARMv7's `umaal`, which the
+  Cortex-M3 lacks); `none` for a feature every configuration may compile.
+  The emitter compiles a function needing `f` only under it. -/
+  featureCfg : String → Option String := fun _ => none
   /-- Why the assembler cannot encode an instruction as the model describes
   it (e.g. an x86-64 displacement too wide for its field, which some
   assemblers silently truncate), or `none` if it can. The emitter refuses

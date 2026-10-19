@@ -26,11 +26,11 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : Lis
     notes := ["The function is `vg_ecdsa_p521_sign`'s \
       setup, field arithmetic and inversion, with the peer's point in place of `G`: it \
       saves the callee-saved registers `x19`–`x25` in `scratch`; field elements are \
-      nine 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication \
-      (CIOS, with `mul` and `umulh`, four of the multiplicand's words in registers and the other \
-      five loaded for each word of the multiplier; each reduction step multiplies the \
-      accumulator's low word by `-p⁻¹ mod 2⁶⁴` and adds that multiple of `p`) \
-      with a final conditional subtraction. The peer's key is checked without branches (its first \
+      nine 64-bit words in Montgomery form, multiplied and squared by calls of `vg_p521_mul_mod_p` \
+      and `vg_p521_sqr_mod_p` (word-by-word Montgomery multiplication with all of `[b]` in \
+      registers, whose reductions are shifts, P-521's `p` being friendly, and for squares the \
+      symmetric square folded at bit 521; then a final conditional subtraction). The peer's key is \
+      checked without branches (its first \
       byte, both coordinates below `p`, and the curve's equation), and the scalar multiplication \
       runs on the peer's point if it is valid, else `G`, so always on a point of the curve. `[d]P` \
       is by signed 4-bit windows: `d + 8 Σ_{j<145} 16^j` gives 145 digits in `[-8, 7]`, a table of \

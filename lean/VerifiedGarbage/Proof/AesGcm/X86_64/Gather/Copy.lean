@@ -222,9 +222,10 @@ theorem copy16Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr 
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, ht.r10, hb]
     rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
 
-/-- The byte loop's body. -/
-theorem copy1Step_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤ n) :
-    ∃ t', runBlock isa copy1Body t = some t' ∧ CInv s S D (j + 1) t' ∧ t'.zf = some (decide (j + 1 = n)) := by
+/-- The byte loop's body, which keeps `r8`. -/
+theorem copy1Step_ok8 {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤ n) :
+    ∃ t', runBlock isa copy1Body t = some t' ∧ CInv s S D (j + 1) t' ∧ t'.zf = some (decide (j + 1 = n)) ∧
+      t'.gpr .r8 = t.gpr .r8 := by
   have hn := h.lt
   have hs : t.gpr .rsi = S := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rsi]
   have hd : t.gpr .rdi = D := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rdi]
@@ -238,7 +239,7 @@ theorem copy1Step_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤
   refine ⟨_, by
     simp only [copy1Body, srcD, dstD]
     mrun [es, ed, r₀, w₀, i1], ?_⟩
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, by simp [gpr_setReg, gpr_arithFlags]⟩
   · simp [gpr_setReg, gpr_arithFlags, ht.r10, ofNat_add_ofNat]
   · have hlen : (bytesAt s.mem S j).length = j := length_bytesAt _ _ _
     simp only [mem_setReg, mem_arithFlags, BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 64 by decide),
@@ -250,6 +251,12 @@ theorem copy1Step_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤
   · simp [wr_setReg, wr_arithFlags, ht.wr]
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, reduceCtorEq, ht.r10, hc]
     rw [show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
+
+/-- The byte loop's body. -/
+theorem copy1Step_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤ n) :
+    ∃ t', runBlock isa copy1Body t = some t' ∧ CInv s S D (j + 1) t' ∧ t'.zf = some (decide (j + 1 = n)) :=
+  let ⟨t', e, c, z, _⟩ := copy1Step_ok8 h ht hj
+  ⟨t', e, c, z⟩
 
 /-- The last 16 bytes, after `j ≥ n - 16` of them: all `n` copied. -/
 theorem copyLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : n - 16 ≤ j) (hjn : j ≤ n) (h16 : 16 ≤ n) :

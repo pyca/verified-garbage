@@ -30,7 +30,7 @@ def load (n len dst : Nat) (p : Pointer) : Prog isa :=
 
 /-- Every operation restores its modulus and Montgomery constants. -/
 def setup (len : Nat) (modulus : Field) : Prog isa :=
-  .seq (load ((len + 7) / 8) len (modS ((len + 7) / 8)) (.input modulus)) (contextSetup ((len + 7) / 8))
+  .seq (load ((len + 7) / 8) len (modS ((len + 7) / 8)) (.input modulus)) (Context.call ((len + 7) / 8))
 
 /-- Internal results are not masked until the final signature output. -/
 def store (len output : Nat) : Prog isa :=

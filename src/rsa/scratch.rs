@@ -9,8 +9,10 @@ use core::{
     fmt,
     ops::{Deref, DerefMut},
     ptr, slice,
-    sync::atomic::{AtomicPtr, Ordering},
+    sync::atomic::AtomicPtr,
 };
+
+use core::sync::atomic::Ordering;
 
 /// A cache line of a [`Scratch`].
 #[derive(Clone, Copy)]

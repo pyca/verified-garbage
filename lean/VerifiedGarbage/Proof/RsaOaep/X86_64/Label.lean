@@ -80,12 +80,26 @@ theorem labF_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
 /-- The ranges the label's hashing writes, with its digest at `o`. -/
 def labR (o : Nat) : List (Nat × Nat) := [(oSt, 256), (o, 64), (oW, 2048)]
 
+/-- A hash call only changes its scratch allocation and call stack. -/
+theorem hash_frame_large {F S : Addr} {rgs : List (Nat × Nat)} {m m' : Mem}
+    (hr : ∀ r ∈ rgs, r.1 + r.2 ≤ oRsa)
+    (hf : Frame (regs S rgs ++ [retR F]) m m') :
+    Frame [⟨S, oRsa⟩, retR F] m m' := by
+  apply hf.sub
+  intro r h
+  rcases List.mem_append.mp h with h | h
+  · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp h
+    exact ⟨⟨S, oRsa⟩, by simp, Offset.sub_base S (hr p hp)⟩
+  · obtain rfl := List.mem_singleton.mp h
+    exact ⟨retR F, by simp, fun _ h => h⟩
+
 include hG in
-theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
+theorem hashLabel_frame_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
     (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lab : Addr} {labLen : Nat}
     (A : LabAt u F S W lab labLen) {o : Nat} (ho : o = oDig ∨ o = oLh) :
     WP isa (hashLabel G o) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       (∀ r ∈ calleeSaved, u'.gpr r = u.gpr r) ∧
+      Frame [⟨S, oRsa⟩, retR F] u.mem u'.mem ∧
       ∃ V', Rep u'.mem F S V' W ∧ (∀ x, ¬ inR (labR o) x → V' x = V x) ∧
         ∀ i < G.D, V' (o + i) = (Hs.hash (Spec.Rsa.bytesAt u.mem lab labLen)).getD i 0 := by
   obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hG
@@ -103,7 +117,7 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
   have R3 : Rep u3.mem F S V2 W := hm3 ▸ R2
   have A3 : LabAt u3 F S W lab labLen := A2.congr k3.2.1 k3.2.2 rfl rfl
   refine WP.seq (WP.mono (updExt_ok hG L3 R3 A3.len A3.cov A3.dS A3.dK hdi3 hdx3 hcx3 h83)
-    fun u4 ⟨L4, rd4, wr4, cs4, R4, _, hr4⟩ => ?_)
+    fun u4 ⟨L4, rd4, wr4, cs4, R4, hF4, hr4⟩ => ?_)
   have hR4 := hr4 [] (hm3 ▸ hr2) (by rw [hsi3]; rfl)
   rw [List.nil_append, hm3] at hR4
   obtain ⟨V4, R4, hV4, -⟩ := Rep.ex R4
@@ -111,7 +125,7 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
     fun u5 ⟨hdi5, hsi5, hdx5, hcx5, hm5, k5⟩ => ?_)
   have L5 : Lay u5 F S := L4.congr (k5.gpr (by decide)) k5.2.2 (by rw [hm5])
   have R5 : Rep u5.mem F S V4 W := hm5 ▸ R4
-  refine WP.mono (fin_ok hG L5 R5 (o := o) (Or.inr hoo) hdi5 hdx5 hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hr6⟩ => ?_
+  refine WP.mono (fin_frame_ok hG L5 R5 (o := o) (Or.inr hoo) hdi5 hdx5 hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hF6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
   have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [hsi5, hlb])
@@ -127,8 +141,25 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
       exact A.dS.sub_right hs
     · rw [List.mem_singleton.mp hr]; exact A.dK.symm
   obtain ⟨V6, R6, hV6, hV6'⟩ := Rep.ex R6
+  have frame2 := hash_frame_large (by
+    simp only [List.mem_singleton]
+    rintro r rfl
+    unfold oSt oRsa
+    omega) hF2
+  have frame4 := hash_frame_large (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> dsimp only [oSt, oW, oRsa] <;> omega) hF4
+  have frame6 := hash_frame_large (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · unfold oSt oRsa; omega
+    · rcases ho with rfl | rfl <;> dsimp only [oDig, oLh, oRsa] <;> omega
+    · unfold oW oRsa; omega) hF6
+  rw [hm1] at frame2
+  rw [hm3] at frame4
+  rw [hm5] at frame6
   refine ⟨L6, rd6.trans (k5.2.1.trans (rd4.trans (k3.2.1.trans (rd2.trans k1.2.1)))),
-    wr6.trans (k5.2.2.trans (wr4.trans (k3.2.2.trans (wr2.trans k1.2.2)))), fun r hr => ?_, V6, R6,
+    wr6.trans (k5.2.2.trans (wr4.trans (k3.2.2.trans (wr2.trans k1.2.2)))), fun r hr => ?_, (frame2.trans frame4).trans frame6, V6, R6,
     fun x hx => ?_, fun i hi => ?_⟩
   · rw [cs6 r hr, keep_cs' k5 (cs_disj _ (by decide)) r hr, cs4 r hr, keep_cs' k3 (cs_disj _ (by decide)) r hr,
       cs2 r hr, keep_cs' k1 (cs_disj _ (by decide)) r hr]
@@ -137,5 +168,16 @@ theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.has
       hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
       hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
   · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig i hi, hHh, hlab]
+
+include hG in
+theorem hashLabel_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.hash x) {u : State} {F S : Addr}
+    (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lab : Addr} {labLen : Nat}
+    (A : LabAt u F S W lab labLen) {o : Nat} (ho : o = oDig ∨ o = oLh) :
+    WP isa (hashLabel G o) u fun u' => Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+      (∀ r ∈ calleeSaved, u'.gpr r = u.gpr r) ∧
+      ∃ V', Rep u'.mem F S V' W ∧ (∀ x, ¬ inR (labR o) x → V' x = V x) ∧
+        ∀ i < G.D, V' (o + i) = (Hs.hash (Spec.Rsa.bytesAt u.mem lab labLen)).getD i 0 := by
+  exact WP.mono (hashLabel_frame_ok hG hHh L R A ho)
+    fun _ ⟨Lt, rd, wr, cs, _, rest⟩ => ⟨Lt, rd, wr, cs, rest⟩
 
 end VG.Proof.RsaOaep.X86_64

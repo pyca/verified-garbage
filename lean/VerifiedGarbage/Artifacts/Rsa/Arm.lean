@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PcVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
@@ -57,6 +58,17 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.Arm.CrtFn.code
     stack := 56
     verified := Proof.Bignum.Arm.crt_verified },
+  Spec.Rsa.privateCrtApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_rsa_private_crt`'s code, with each word of a Montgomery row by one `umaal` \
+        (`hi:lo := n * m + hi + lo`) of the scalar, the input word, the carry and the accumulator word, \
+        in place of four 16 × 16-bit `mul`s and their additions; after a row's loop, the registers its \
+        16-bit steps would leave are set from the last word, so that each row ends as the baseline's \
+        does and the baseline's proofs carry over."]
+    code := Impl.Bignum.Arm.umaalRows Impl.Bignum.Arm.CrtFn.code
+    stack := 56
+    verified := Proof.Bignum.Arm.crtUmaal_verified
+    features := ["umaal"] },
   Spec.Rsa.crtValuesApi.artifact Arm.target {
     notes := ["Baseline ARMv7, frameless (the callee-saved registers are kept in the working \
         space): `n` is checked first, the only branch on data. `n`, `p`, `q` and `d` are read into \

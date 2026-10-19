@@ -365,6 +365,12 @@ pub(crate) mod rc2;
 pub(crate) mod rc4;
 
 #[rustfmt::skip]
+pub(crate) mod rsa;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pkcs1_sig;
+
+#[rustfmt::skip]
 pub(crate) mod scrypt;
 
 #[rustfmt::skip]

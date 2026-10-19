@@ -59,6 +59,21 @@ Modelling choices:
   depending on the operands (the same table: 3 to 5 and 4 to 7 cycles, its
   note a: "UMULL, SMULL, UMLAL, and SMLAL instructions use early termination
   depending on the size of the source values").
+  The long multiply-accumulate `umaal` is modelled outside the baseline: it
+  needs the CPU feature `umaal` (`Instr.requires`), which stands for an
+  A-profile core (ARMv7-A, or ARMv8-A in AArch32). The Cortex-M3 does not
+  have `UMAAL` (ARMv7-M has it only with the DSP extension, ARMv7E-M: DDI
+  0403E, A7.7 "UMAAL"). On the A-profile cores the long multiplies take a
+  time independent of their operands: Pornin's survey lists the 32×32→64
+  multiply `umull` as constant time on the Cortex-A cores (in A32), and the
+  Cortex-A72 Software Optimization Guide (ARM UAN 0016A, §3.5, "Divide and
+  Multiply Instructions") gives `UMAAL` a fixed latency of 4 cycles (2 for
+  the accumulate) and a throughput of one every two cycles, noting
+  operand-dependent early termination for `SDIV` and `UDIV` alone. The
+  emitter compiles code that needs it only where the printer's `featureCfg`
+  allows (operating systems that run on A-profile cores alone), and
+  `src/cpu.rs` may report it only there, so no code with `umaal` reaches a
+  Cortex-M core.
 * Calls are `bl` and returns `bx lr` (DDI 0406C, A8.8.25 "BL, BLX
   (immediate)", A8.8.27 "BX"). The return addresses are the next of the
   state's `unknowns`, which nothing constrains (see `TCB/Code.lean`); a
@@ -146,6 +161,9 @@ inductive Instr
   | mul (d n m : Reg)
   /-- `mla d, n, m, a`: the low 32 bits of `n * m + a` (no flags set) -/
   | mla (d n m a : Reg)
+  /-- `umaal lo, hi, n, m`: `hi:lo := n * m + hi + lo`, unsigned and 64 bits
+  wide (no flags set; `lo` and `hi` distinct) -/
+  | umaal (lo hi n m : Reg)
   /-- `ldr t, [n, #off]` (`0 ≤ off < 4096`) -/
   | ldr (t n : Reg) (off : Nat)
   /-- `str t, [n, #off]` (`0 ≤ off < 4096`) -/
@@ -289,6 +307,16 @@ and so in the ARMv7 baseline: `requires` stays empty. `pc` (and, in Thumb,
 express (T1 with `Ra` = `pc` is MUL's encoding); the ARM encoding's
 `ArchVersion() < 6 && d == n` restriction does not apply to ARMv7.
 
+"UMAAL" (DDI 0406C A8.8, "UMAAL"): `result =
+UInt(R[n]) * UInt(R[m]) + UInt(R[dHi]) + UInt(R[dLo]); R[dHi] =
+result<63:32>; R[dLo] = result<31:0>`, flags unchanged. The sum is below
+`2^64` (`(2^32 - 1)^2 + 2 (2^32 - 1) = 2^64 - 1`). It exists in the ARM
+(encoding A1, ARMv6 and later) and Thumb (encoding T1, ARMv6T2 and later,
+and ARMv7E-M) instruction sets; `dHi = dLo` is UNPREDICTABLE, which the
+model makes a fault, and `pc` (and, in Thumb, `sp`) as any of the registers
+is UNPREDICTABLE, which the model cannot express. It requires the feature
+`umaal` (see "Instructions whose timing depends on their operands" above).
+
 `adrSym d name` is three instructions, which the linker completes with the
 static's address `S` (`State.syms name`): "MOVW" (A8.8.102, "MOV
 (immediate)" encoding A2 or T3: `R[d] = ZeroExtend(imm16, 32)`), then "MOVT"
@@ -334,6 +362,10 @@ def exec : Instr → State → Option State
   | .rev d m, s => some (s.setReg d (rev (s.gpr m)))
   | .mul d n m, s => some (s.setReg d (s.gpr n * s.gpr m))
   | .mla d n m a, s => some (s.setReg d (s.gpr n * s.gpr m + s.gpr a))
+  | .umaal lo hi n m, s =>
+    if lo = hi then none else
+      let r := (s.gpr n).toNat * (s.gpr m).toNat + (s.gpr hi).toNat + (s.gpr lo).toNat
+      some ((s.setReg lo (BitVec.ofNat 32 r)).setReg hi (BitVec.ofNat 32 (r / 2 ^ 32)))
   | .ldr t n off, s =>
     if off < 4096 then
       (s.load32 (State.addr (s.gpr n + BitVec.ofNat 32 off))).map fun x => s.setReg t x
@@ -467,6 +499,14 @@ def pop : Instr → State → State → Option State
     else none
   | _, _, _ => none
 
+/-- The CPU features an instruction needs beyond the ARMv7 baseline: `umaal`
+for UMAAL, which the Cortex-M3 lacks (see "Instructions whose timing depends
+on their operands" above); every other modelled instruction is in the
+baseline. -/
+def Instr.requires : Instr → List String
+  | .umaal .. => ["umaal"]
+  | _ => []
+
 abbrev isa : ISA where
   State := State
   Instr := Instr
@@ -483,7 +523,6 @@ abbrev isa : ISA where
   writesSp _ := false
   push := push
   pop := pop
-  -- Every modelled instruction is in the ARMv7-A baseline.
-  requires _ := []
+  requires := Instr.requires
 
 end VG.Arm

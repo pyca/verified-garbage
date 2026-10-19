@@ -64,7 +64,7 @@ theorem kpkeKg768Y_ct :
 
 theorem kpkeKg768Y_correct : ∀ s, (kpkeKgK kem768).pre s →
     ∃ t s', Exec isa (kpkeKg kem768 .avx2 keygenMul16Y) s t s' ∧ abiPreserved s s' ∧ (kpkeKgK kem768).post s s' :=
-  KpkeKg.kpkeKg_correct ArithOk.avx2 keWf768 kgMul16Y3_correct (by lit_decide) (by lit_decide) (by lit_decide)
+  KpkeKg.kpkeKg_correct PrimsOk.avx2 keWf768 kgMul16Y3_correct (by lit_decide) (by lit_decide) (by lit_decide)
 
 /-- A state the contract permits. -/
 def kpkeKgSat (L : Kem) : State where

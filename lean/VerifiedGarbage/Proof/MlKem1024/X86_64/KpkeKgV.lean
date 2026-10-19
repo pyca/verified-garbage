@@ -44,7 +44,7 @@ theorem kpkeKg1024Y_ct :
 theorem kpkeKg1024Y_correct : ∀ s, (kpkeKgK kem1024).pre s →
     ∃ t s', Exec isa (kpkeKg kem1024 .avx2 keygenMul16Y) s t s' ∧ abiPreserved s s' ∧
       (kpkeKgK kem1024).post s s' :=
-  KpkeKg.kpkeKg_correct ArithOk.avx2 keWf1024 kgMul16Y4_correct (by lit_decide) (by lit_decide) (by lit_decide)
+  KpkeKg.kpkeKg_correct PrimsOk.avx2 keWf1024 kgMul16Y4_correct (by lit_decide) (by lit_decide) (by lit_decide)
 
 theorem kpkeKg1024_of {c : Prog isa}
     (hc : ∀ s, (kpkeKgK kem1024).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧

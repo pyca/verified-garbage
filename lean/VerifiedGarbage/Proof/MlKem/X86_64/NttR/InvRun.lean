@@ -10,8 +10,8 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 Pass B reads the input at `rdi` and writes `S`, in the regions `rsA` of
 `NTT`; pass A reads `S` and writes the output to `rdi`, in the regions
 `rsB .rdi`. Pass B starts from the terms of the input (`initIB`): the
-accumulator's words, coefficient `accIdx w` in word `w` (`accTerms`), or
-`u32`s as `NTT`'s input (`inTerms`); `checkI` says the output's terms are
+accumulator's words, coefficient `accIdx w` in word `w` (`accTerms`);
+`checkI` says the output's terms are
 `out p`, in the low words of their `u32`s.
 
 The kernel checks the run in two parts, each in a module of its own
@@ -32,7 +32,6 @@ def accTerms : List Y :=
 
 def srcTerms : InvIn → List Y
   | .acc => accTerms
-  | .u32 => inTerms
 
 def initIB (src : InvIn) : St :=
   ⟨(List.range 16).map (fun r => if r = 15 then List.replicate 16 (.c qN) else List.replicate 16 .junk),
@@ -61,9 +60,6 @@ def stIA (σ₁ : Option St) : Option St := σ₁.bind fun σ => (toB σ).run in
 def stIAcc0 : Option St := stI0 .acc passIBAcc0
 def stIAcc1 : Option St := stI1 stIAcc0 passIBAcc1
 def stIAccA : Option St := stIA stIAcc1
-def stIU320 : Option St := stI0 .u32 passIBU320
-def stIU321 : Option St := stI1 stIU320 passIBU321
-def stIU32A : Option St := stIA stIU321
 
 /-- `checkI` from the state after both parts. -/
 theorem checkI_of {src : InvIn} {p₀ p₁ : List Instr}

@@ -92,8 +92,9 @@ class Output(unittest.TestCase):
         self.assertIs(out["all"], False)
         self.assertEqual([e["name"] for e in out["rust"]], ["Linux, ARMv7"])
         self.assertEqual(len(out["thumb"]), 1)
-        self.assertEqual(out["cpu"], [])
-        self.assertTrue(all(e["tests"] for job in ("rust", "thumb") for e in out[job]))
+        # ARMv7's one CPU entry, the baseline with VG_CPU_FEATURES=none.
+        self.assertEqual([e["arch"] for e in out["cpu"]], ["arm"])
+        self.assertTrue(all(e["tests"] for job in ("rust", "thumb", "cpu") for e in out[job]))
 
     def test_x86_64_takes_the_sde_chips(self):
         out = run("pull_request", "src/asm/x86_64/md5.rs\n")
@@ -134,8 +135,9 @@ class Output(unittest.TestCase):
                                               for d in cpu[:i])])
         self.assertEqual({rust_arches.cache_of(e) for e in push["cpu"]},
                          {rust_arches.cache_of(e) for e in full["cpu"]})
-        self.assertEqual({e.get("arch", "x86_64") for e in push["cpu"]}, {"x86_64", "x86", "aarch64"})
-        self.assertEqual(len(push["cpu"]), 3)
+        self.assertEqual({e.get("arch", "x86_64") for e in push["cpu"]},
+                         {"x86_64", "x86", "aarch64", "arm"})
+        self.assertEqual(len(push["cpu"]), 4)
 
 
 class Workflow(unittest.TestCase):

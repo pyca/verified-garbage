@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_decode_decompress_avx2`
+# ML-KEM on x86-64: `Decompress_d ∘ ByteDecode_d` with AVX2, which the K-PKE functions inline
 
 The values of a group are extracted from its bytes in the doublewords of
 each lane (`dword_vals`), decompressed by sums of shifts (`dword_ddMul`),
@@ -666,11 +666,5 @@ theorem decodeDecompressY_ct :
       exacts [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1])
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
-
-theorem decodeDecompressY_verified :
-    Verified X86_64.target decodeDecompressAvx2 (Spec.MlKem.decodeDecompressContract X86_64.abi) :=
-  Verified.of_correct DDY.correct decodeDecompressY_ct (by
-    mlkem_implies [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, decodeDecompressK,
-      X86_64.abi, X86_64.argRegs] [decodeDecompressSat] using decodeDecompressSat)
 
 end VG.Proof.MlKem.X86_64

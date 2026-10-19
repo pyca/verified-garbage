@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 
 /-!
-# ML-KEM-1024 on x86-64: `vg_mlkem1024_decode_decompress_avx2`
+# ML-KEM-1024 on x86-64: `Decompress_d ∘ ByteDecode_d` with AVX2, which the K-PKE functions inline
 
 As ML-KEM-768's (`Proof/MlKem/X86_64/DecodeDecompressAvx2.lean`): value `e`
 of a group of width `d` is extracted from the bytes that hold it, from byte

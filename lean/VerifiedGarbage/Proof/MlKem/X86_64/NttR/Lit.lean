@@ -22,24 +22,17 @@ namespace Impl.MlKem.X86_64.NttR
 
 /-- The halves of pass B, each with a literal of its own, for the runs of
 the machine on them (`Run.lean`). -/
-def passBRdi0 : List VG.X86_64.Instr := passB .rdi 0
-def passBRdi1 : List VG.X86_64.Instr := passB .rdi 1
 def passBR100 : List VG.X86_64.Instr := passB .r10 0
 def passBR101 : List VG.X86_64.Instr := passB .r10 1
 def passBAccR100 : List VG.X86_64.Instr := passBAcc .r10 0
 def passBAccR101 : List VG.X86_64.Instr := passBAcc .r10 1
 def passIBAcc0 : List VG.X86_64.Instr := passIB .acc 0
 def passIBAcc1 : List VG.X86_64.Instr := passIB .acc 1
-def passIBU320 : List VG.X86_64.Instr := passIB .u32 0
-def passIBU321 : List VG.X86_64.Instr := passIB .u32 1
 
 end Impl.MlKem.X86_64.NttR
 
 materialize_value Impl.MlKem.X86_64.NttR.passA
-materialize_value Impl.MlKem.X86_64.NttR.passBsRdi
 materialize_value Impl.MlKem.X86_64.NttR.passBsR10
-materialize_value Impl.MlKem.X86_64.NttR.passBRdi0
-materialize_value Impl.MlKem.X86_64.NttR.passBRdi1
 materialize_value Impl.MlKem.X86_64.NttR.passBR100
 materialize_value Impl.MlKem.X86_64.NttR.passBR101
 materialize_value Impl.MlKem.X86_64.NttR.passBsAccR10
@@ -47,8 +40,5 @@ materialize_value Impl.MlKem.X86_64.NttR.passBAccR100
 materialize_value Impl.MlKem.X86_64.NttR.passBAccR101
 materialize_value Impl.MlKem.X86_64.NttR.passIA
 materialize_value Impl.MlKem.X86_64.NttR.passIBsAcc
-materialize_value Impl.MlKem.X86_64.NttR.passIBsU32
 materialize_value Impl.MlKem.X86_64.NttR.passIBAcc0
 materialize_value Impl.MlKem.X86_64.NttR.passIBAcc1
-materialize_value Impl.MlKem.X86_64.NttR.passIBU320
-materialize_value Impl.MlKem.X86_64.NttR.passIBU321

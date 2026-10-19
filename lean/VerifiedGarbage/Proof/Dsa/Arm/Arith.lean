@@ -58,8 +58,8 @@ theorem saved_keep {s t u : State} {base : Addr} {rs : List (Nat × Nat)}
   simp only at hw
   rw [outs_readW O (fun r h => by have := hr r h; omega) (by omega), hv x hx]
 
-theorem setup_apart (n : Nat) : ∀ r ∈ setupRanges n, r.1 + r.2 ≤ 8 ∨ 48 ≤ r.1 := by
-  simp only [setupRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
+theorem setup_apart (n : Nat) : ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ 8 ∨ 48 ≤ r.1 := by
+  simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
     slot, stride]
   omega
 
@@ -106,21 +106,21 @@ theorem mulBody_ok {s : State} {base : Addr} {size n m : Nat} (E : Entry s base 
     fun hd hd' => O₂.val32 (fun r hr => .inr (by have := slots_words r hr; omega)) hd'
   have hv₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
     rw [away (by omega) (by omega)]; exact hv
-  refine WP.seq (WP.mono (contextSetup_ok w₂ hn (by omega) (by omega) (by omega) hv₂ hm1 hodd)
+  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega) hn hn48 hv₂ hm1 hodd)
     fun s₃ ⟨c₃, _, rr₃, O₃, R₃⟩ => ?_)
   refine WP.seq (WP.mono (ordinaryMul_ok c₃ rr₃) fun s₄ ⟨c₄, V₄, O₄, R₄⟩ => ?_)
   refine WP.mono (restore_ok c₄.ws (by omega) (saved_keep (saved_keep S₂ O₃ (setup_apart n)) O₄ (stream_apart n)))
     fun t ⟨P, R₅, M₅⟩ => ⟨?_, ?_, P, ?_, ?_, ?_⟩
-  · have k₃ : ∀ {d k : Nat}, (∀ r ∈ setupRanges n, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) → d + 4 * k ≤ 2 ^ 64 →
+  · have k₃ : ∀ {d k : Nat}, (∀ r ∈ Context.callRanges n, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) → d + 4 * k ≤ 2 ^ 64 →
         val32 s₃.mem base d k = val32 s₂.mem base d k := fun h h' => O₃.val32 h h'
     rw [M₅, V₄,
-      k₃ (by simp only [setupRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+      k₃ (by simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
         implies_true, and_true, slot, stride]; omega) (by omega),
-      k₃ (by simp only [setupRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+      k₃ (by simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
         implies_true, and_true, slot, stride]; omega) (by omega),
       away (by omega) (by omega), away (by omega) (by omega), Nat.mul_comm]
   · rw [M₅]
-    exact ((outs_within O₂ (words_scratch n)).trans (outs_within O₃ (setup_scratch n))).trans
+    exact ((outs_within O₂ (words_scratch n)).trans (outs_within O₃ (setup_scratch hn))).trans
       (outs_within O₄ stream_scratch)
   · rw [R₅.sp, R₄.sp, R₃.sp, R₂.sp]
   · rw [R₅.rd, R₄.rd, R₃.rd, R₂.rd]
@@ -137,8 +137,8 @@ theorem bytes_apart {m m' : Mem} {base p : Addr} {len n : Nat} {rs : List (Nat �
   VG.Proof.Dsa.outs_bytes O hl (fun r h => by have := hr r h; have := contextBytes_bounds hn48; omega)
     fun r h => hd.sub_right (Offset.sub_base base (hr r h))
 
-theorem setup_inside {n : Nat} : ∀ r ∈ setupRanges n, r.1 + r.2 ≤ contextBytes n := by
-  simp only [setupRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
+theorem setup_inside {n : Nat} (hn : 0 < n) : ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ contextBytes n := by
+  simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
     contextBytes, slot, stride]
   omega
 
@@ -211,7 +211,7 @@ theorem reduceBody_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec
   refine WP.seq (WP.mono (reduceHead_ok E (by omega)) fun s₂ ⟨w₂, S₂, O₂, R₂, P₂, L₂⟩ => ?_)
   have hv₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
     rw [O₂.val32 (fun r hr => .inr (by have := len_apart r hr; omega)) (by omega)]; exact hv
-  refine WP.seq (WP.mono (contextSetup_ok w₂ hn (by omega) (by omega) (by omega) hv₂ (by omega) hodd)
+  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega) hn hn48 hv₂ (by omega) hodd)
     fun s₃ ⟨c₃, _, _, O₃, R₃⟩ => ?_)
   refine WP.seq (WP.mono (reduceEnd_ok c₃.ws (by omega)) fun s₄ ⟨L₄, R₄, M₄⟩ => ?_)
   have c₄ := ctx_of_rest c₃ R₄ (by decide) M₄
@@ -227,11 +227,11 @@ theorem reduceBody_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec
   refine WP.mono (restore_ok c₅.ws (by omega)
     (saved_keep (saved_keep (saved_keep S₂ O₃ (setup_apart n)) K₄ (by simp)) O₅ (stream_apart n)))
     fun t ⟨P, R₆, M₆⟩ => ⟨?_, ?_, P, ?_, ?_, ?_⟩
-  · rw [M₆, V₅, M₄, bytes_apart O₃ hd (by omega) setup_inside hn48,
+  · rw [M₆, V₅, M₄, bytes_apart O₃ hd (by omega) (setup_inside hn) hn48,
       bytes_apart O₂ hd (by omega) (fun r h => by have := len_apart r h; omega) hn48]
   · rw [M₆]
     refine ((outs_within O₂ (within_scratch fun r h => .inl (len_apart r h))).trans
-      (outs_within O₃ (setup_scratch n))).trans ?_
+      (outs_within O₃ (setup_scratch hn))).trans ?_
     rw [← M₄]
     exact outs_within O₅ stream_scratch
   · rw [R₆.sp, R₅.sp, R₄.sp, R₃.sp, R₂.sp]
@@ -260,17 +260,22 @@ theorem mulK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (
   obtain ⟨tr, t, ex, V, O, P, hsp, -, -⟩ := mulBody_ok E hz hn hn48 rfl hm1 hodd
   exact ⟨tr, t, ex, ⟨P, hsp⟩, V, O⟩
 
-theorem mulBody_relCT (n : Nat) :
-    RelCT isa (VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs [.r0])) (mulBody n) fun _ _ => True := by
+theorem mulK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
+    ConstantTime isa (mulK n).pre (mulK n).pub (mulBody n) := by
+  refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
+  have E : ∀ {s : State}, (mulK n).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
+    intro s H
+    exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega, by rw [H.2.1]; simp⟩,
+      by simpa only [VG.Proof.X25519.Arm.addr_toNat] using H.2.2.1⟩
+  have E₂ : Entry s₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [Eq]; exact E h₂
   unfold mulBody
-  refine RelCT.seq (relCT_of_check (σ := wsT false false) (h := .block []) (by decide)) ?_
-  refine RelCT.seq (contextSetup_relCT false false n) (RelCT.seq (ordinaryMul_relCT n) ?_)
-  exact (relCT_of_check (σ := VG.Arm.Taint.ofRegs []) (h := .block []) (by decide)).mono (fun _ _ h => h)
-    fun _ _ _ => trivial
-
-theorem mulK_ct (n : Nat) : ConstantTime isa (mulK n).pre (mulK n).pub (mulBody n) :=
-  RelCT.constantTime ((mulBody_relCT n).mono (fun _ _ h => VG.Arm.Taint.agree_ofRegs fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact h.2.2) fun _ _ h => h)
+  refine savedSetup_trace (E h₁) E₂ h₁.2.2.2.1 h₂.2.2.2.1 hn hn48
+    h₁.2.2.2.2.1 h₁.2.2.2.2.2 ?_ ?_ ?_
+  · rw [Eq]; exact h₂.2.2.2.2.1
+  · rw [Eq]; exact h₂.2.2.2.2.2
+  · refine RelCT.seq (ordinaryMul_relCT n) ?_
+    exact (relCT_of_check (σ := VG.Arm.Taint.ofRegs []) (h := .block []) (by decide)).mono (fun _ _ h => h)
+      fun _ _ _ => trivial
 
 /-- `vg_dsa_reduce_{n}`'s contract in this file's terms: the working space at
 `r0`, of `r1` words, and the `r3` bytes at `r2`, apart from it. -/
@@ -337,18 +342,17 @@ theorem reduceK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   have mod : ∀ {s u : State} {base : Addr}, Outs base ((lenAt, 4) :: words slots) s.mem u.mem →
       val32 u.mem base (slot n 0) (2 * n) = val32 s.mem base (slot n 0) (2 * n) := fun O =>
     O.val32 (fun r hr => .inr (by have := len_apart r hr; omega)) (by omega)
-  refine SameTrace.seq (SameTrace.of_relCT (contextSetup_relCT true false n)
-      (VG.Arm.Taint.agree_ofRegs fun r hr => ?_))
-    (contextSetup_ok w₁ hn (by omega) (by omega) (by omega) (mod O₁) (by have := h₁.2.2.2.2.2.2.2; omega)
+  have W₂ : Ws u₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [pb]; exact w₂
+  refine SameTrace.seq (Context.call_trace w₁ W₂ (by omega) (by omega) hn hn48
+    (by rw [modS, mod O₁]; exact h₁.2.2.2.2.2.2.1)
+    (by rw [modS, mod O₁]; have := h₁.2.2.2.2.2.2.2; omega)
+    (by rw [pb, modS, mod O₂]; exact h₂.2.2.2.2.2.2.1)
+    (by rw [pb, modS, mod O₂]; have := h₂.2.2.2.2.2.2.2; omega))
+    (Context.call_ok w₁ (by omega) hn hn48 (mod O₁) (by have := h₁.2.2.2.2.2.2.2; omega)
       h₁.2.2.2.2.2.2.1)
-    (contextSetup_ok w₂ hn (by omega) (by omega) (by omega) (mod O₂) (by have := h₂.2.2.2.2.2.2.2; omega)
+    (Context.call_ok w₂ (by omega) hn hn48 (mod O₂) (by have := h₂.2.2.2.2.2.2.2; omega)
       h₂.2.2.2.2.2.2.1)
     fun v₁ v₂ ⟨c₁, _, _, Q₁, R₁⟩ ⟨c₂, _, _, Q₂, R₂⟩ => ?_
-  · simp only [wsRegs, Bool.false_eq_true, ↓reduceIte, List.append_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact addr_inj (w₁.wb.trans (pb.trans w₂.wb.symm))
-    · rw [P₁, P₂, p2]
   refine SameTrace.seq (SameTrace.of_relCT (relCT_of_check (τ := wsT true false) (σ := wsT true false)
       (h := .block []) (by decide)) (VG.Arm.Taint.agree_ofRegs fun r hr => ?_))
     (reduceEnd_ok c₁.ws (by omega)) (reduceEnd_ok c₂.ws (by omega)) fun x₁ x₂ ⟨L₃, K₁, _⟩ ⟨L₄, K₂, _⟩ => ?_
@@ -360,7 +364,7 @@ theorem reduceK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   refine SameTrace.of_relCT (RelCT.seq (reduceStream_relCT n)
     ((relCT_of_check (σ := VG.Arm.Taint.ofRegs []) (h := .block []) (by decide)).mono (fun _ _ h => h)
       fun _ _ _ => trivial)) (VG.Arm.Taint.agree_ofRegs fun r hr => ?_)
-  have k : ∀ {s u : State} {base : Addr}, Outs base (setupRanges n) s.mem u.mem →
+  have k : ∀ {s u : State} {base : Addr}, Outs base (Context.callRanges n) s.mem u.mem →
       u.mem.readW (off base lenAt) 32 = s.mem.readW (off base lenAt) 32 := fun O =>
     outs_readW O (fun r h => by have := setup_apart n r h; simp only [lenAt]; omega) (by simp only [lenAt]; omega)
   simp only [wsRegs, ↓reduceIte, List.cons_append, List.nil_append, List.mem_cons,

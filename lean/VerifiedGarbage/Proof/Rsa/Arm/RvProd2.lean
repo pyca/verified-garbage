@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvProd
+public import VerifiedGarbage.Proof.Rsa.RecoverProduct
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `M = d e` as a piece (`prod_vp`), and the test of `M` (`skip_vp`) -/
 
@@ -28,11 +29,8 @@ theorem prod_val {P : RP} {σ : State} (h : In P σ) :
   have hd : dv P σ < 2 ^ (8 * P.dl) := bytes_lt σ.mem (State.addr P.dP) P.dl
   have sz := h.sizes
   have := h.el2; have := h.dl2
-  rw [Nat.zero_add, Nat.mod_eq_of_lt he, Nat.mul_comm]
-  apply Nat.mod_eq_of_lt
-  calc dv P σ * P.e < 2 ^ (8 * P.dl) * 2 ^ (8 * P.el) := Nat.mul_lt_mul'' hd he
-    _ = 2 ^ (8 * P.dl + 8 * P.el) := (Nat.pow_add _ _ _).symm
-    _ ≤ mTop P := Nat.pow_le_pow_right (by decide) (by simp only [RP.W, RP.w, RP.w6]; omega)
+  exact VG.Proof.Rsa.recover_product_exact hd he
+    (by simp only [RP.W, RP.w, RP.w6]; omega)
 
 theorem prod_vp {E : State → Prop} :
     VP (fun σ s => E σ ∧ KS P σ (Aload P σ) [aN] (AW1 P σ) [wZ, wE, wD, wM, wMod] (fun _ => 0) [] s) prod

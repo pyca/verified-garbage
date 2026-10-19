@@ -115,8 +115,8 @@ aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
 aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
 aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 aes,avx,avx2,ssse3,vaes | aes_xts cpu
-sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
-avx,avx2,bmi2,adx,sha,ssse3 | rsa_oaep cpu
+sha,ssse3 | dsa_parameters rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
+avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep cpu
 avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
 adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
 """
@@ -269,8 +269,20 @@ runs = """
 neon | chacha20
 aes | aes_gcm aes_gcm_siv
 sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
-sha2 | rsa_oaep
+sha2 | dsa_parameters rsa_oaep
 sha2,sha3 | rsa_oaep
 none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep
+"""
+
+# ARMv7, in the `rust` job's container (cross-compiled, run as that job
+# runs them): `none` takes RSA's baseline code, which a CPU with `umaal`
+# (every runner's) never chooses.
+[[cpu]]
+chip = "native"
+arch = "arm"
+os = "ubuntu-26.04-arm"
+container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
+runs = """
+none | rsa cpu
 """
 

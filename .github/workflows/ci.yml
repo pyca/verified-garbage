@@ -179,6 +179,17 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/runner-info
+      - uses: ./.github/actions/download-artifact
+        with:
+          name: lean-plan
+          path: ${{ runner.temp }}
+      # What the shard's sinks import: all it unpacks of the last build.
+      - name: List the modules the shard needs
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 ../ci/lean_shards.py closure "$RUNNER_TEMP/lean-plan.json" "$SHARD" > "$RUNNER_TEMP/lean-modules"
+          echo "The shard needs $(wc -l < "$RUNNER_TEMP/lean-modules") of the project's modules."
       # The build the plan is for (or, if it has none, the last build main
       # saved).
       - uses: ./.github/actions/lean-prepare
@@ -188,10 +199,7 @@ jobs:
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
-      - uses: ./.github/actions/download-artifact
-        with:
-          name: lean-plan
-          path: ${{ runner.temp }}
+          modules: ${{ runner.temp }}/lean-modules
       - name: Check the shard's proofs (and the axiom audit)
         env:
           SHARD: ${{ matrix.shard }}
@@ -261,6 +269,11 @@ jobs:
           pattern: lean-build-*
           merge-multiple: true
           path: ${{ runner.temp }}/lean-build
+      # The rest of the last build, which the assembly checks too, without
+      # what this shard built over it.
+      - name: Unpack the rest of the build
+        if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
+        run: python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules"
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:
