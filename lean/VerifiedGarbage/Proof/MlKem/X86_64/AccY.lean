@@ -14,8 +14,8 @@ The accumulator of `Bodies.avx2` (`Impl/MlKem/X86_64/KpkeAccY.lean`): word
 and the table of the products is `gTabY` at `scratch + 3328` (`tabY`).
 `zeroAccY` stores zeros (`zeroAccY_correct`), `tabAccY` stores the table
 (`tabAccY_wp`), and `mulAccY` adds a product (`MulAccY.correct`): each
-iteration does what one of `vg_mlkem_multiply_ntts_avx2` does up to
-`vbase` (`MulAvx2.lean`), whose lanes hold the products of the pairs
+iteration loads and deinterleaves its factors (`yload4_ok`, `deintS`) and
+runs `vbase` (`MulAvx2.lean`), whose lanes hold the products of the pairs
 `pairY i l e`, which are the coefficients of words `32i + 8l + e` and
 `32i + 16 + 8l + e` of the accumulator; each is added to its word, in each
 lane (`vacc_ok`, `accStore_ok`).

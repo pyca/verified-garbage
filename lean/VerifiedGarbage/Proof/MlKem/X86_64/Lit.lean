@@ -40,8 +40,6 @@ materialize_code Impl.MlKem.X86_64.nttInv
 materialize_code Impl.MlKem.X86_64.sub
 materialize_code Impl.MlKem.X86_64.cbd2
 materialize_code Impl.MlKem.X86_64.decode12
-materialize_code Impl.MlKem.X86_64.multiplyNTTsAvx2
-materialize_code Impl.MlKem.X86_64.nttAvx2
 materialize_code Impl.MlKem.X86_64.subAvx2
 materialize_code Impl.MlKem.X86_64.decode12Avx2
 materialize_code Impl.MlKem.X86_64.encode12

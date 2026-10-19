@@ -15,10 +15,10 @@ B are the reduced words of `NTT` (`outOk`).
 
 The kernel checks the run in parts, each the state after it as a literal
 (`materialize_value`) in a module of its own: pass A (`stA`, `RunA.lean`),
-and for each output register the halves of pass B (`stRdi0`, `stRdi1`, …,
-`RunRdi0.lean`, …), each starting from the literal of the part before. Each
+and for each form of pass B its halves (`stR100`, `stR101`, …,
+`RunR100.lean`, …), each starting from the literal of the part before. Each
 part costs the kernel a fraction of the whole run's memory, and the parts of
-the two registers build in parallel.
+the two forms build in parallel.
 -/
 
 @[expose] public section
@@ -105,8 +105,6 @@ def stA : Option St := initA.run fwdRules rsA passA
 /-- The state after half 0 of pass B, from that after pass A. -/
 def stB0 (d : Reg) (p₀ : List Instr) : Option St := stA.bind fun σ => (toB σ).run fwdRules (rsB d) p₀
 
-def stRdi0 : Option St := stB0 .rdi passBRdi0
-def stRdi1 : Option St := stRdi0.bind fun σ => σ.run fwdRules (rsB .rdi) passBRdi1
 def stR100 : Option St := stB0 .r10 passBR100
 def stR101 : Option St := stR100.bind fun σ => σ.run fwdRules (rsB .r10) passBR101
 

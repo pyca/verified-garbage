@@ -311,9 +311,7 @@ def pro : List Instr := yconst .xmm15 0x0D010D01 ++ [.leaSym .r8 tblName]
 /-- Pass B on both halves, the `u32`s to `d`. -/
 def passBs (d : Reg) : List Instr := passB d 0 ++ passB d 1
 
-/-- Pass B storing to `rdi`, for `vg_mlkem_ntt_avx2`, and to `r10`, for the
-functions that inline the NTT. -/
-def passBsRdi : List Instr := passBs .rdi
+/-- Pass B storing to `r10`, for the functions that inline the NTT. -/
 def passBsR10 : List Instr := passBs .r10
 
 /-- Pass B on both halves, the words to the accumulator at `r10`. -/
