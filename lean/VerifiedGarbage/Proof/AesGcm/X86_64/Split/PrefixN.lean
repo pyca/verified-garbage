@@ -12,10 +12,11 @@ Untrusted: everything here is checked by Lean. For the texts `nTest` takes
 (`1 ≤ ⌊sl / 256⌋ < ⌊n / 256⌋`), `prefixN` copies the bytes of `src` after its
 last whole group to `dst` (the gathering's `copy`), and encrypts and absorbs
 the `16 ⌊sl / 256⌋` blocks at `src` and then the `16 ⌊n / 256⌋` of the data
-after them at `dst` by one loop (`StitchR.encN`, proven from the
-permissions it needs, `regionModel.wp_narrow`): the first `256 ⌊n / 256⌋`
-bytes of the plaintext, and the data from them on kept (`PPostG`). Other
-texts take `prefix` (`prefixNOk`).
+after them at `dst` by one loop `encN` (`StitchR.encN` or
+`StitchZHTo.encN`, any meeting `EncNOk`, proven from the permissions it
+needs, `regionModel.wp_narrow`): the first `256 ⌊n / 256⌋` bytes of the
+plaintext, and the data from them on kept (`PPostG`). Other texts take
+`prefix` (`prefixNOk`).
 -/
 
 @[expose] public section
@@ -28,6 +29,14 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm.X86_64.StreamTo (BlkToFn)
 open VG.Spec.Aes (bytesAt)
+
+/-- A loop that encrypts and absorbs the `nb` blocks at `src` and then the
+blocks at `dst` after them, `N` in all (`StitchR.NPost`), from a state that
+the out-of-place loops could start from (`SPreTo`) with what `StitchR.NPre`
+adds. -/
+def EncNOk (c : Prog isa) : Prop :=
+  ∀ {s₀ : State} {N : Nat}, Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀ → Gcm.X86_64.Stitch.nb s₀ % 16 = 0 →
+    Gcm.X86_64.StitchR.NPre CtxMode.prepared s₀ N → WP isa c s₀ (Gcm.X86_64.StitchR.NPost s₀ N)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 open VG.Proof.Gcm (Ctr xorKs)
 
@@ -101,7 +110,7 @@ theorem nCopyArgs_ok {D S : Addr} {sl : Nat} (hsl : sl < 2 ^ 64) {s : State}
   all_goals simp [mem_arithFlags, mem_setReg, mem_setFlags, rd_arithFlags, rd_setReg, rd_setFlags, wr_arithFlags,
     wr_setReg, wr_setFlags]
 
-/-- The arguments of `StitchR.encN`. -/
+/-- The arguments of `encN`. -/
 theorem nArgs_ok {R : Nat} {D S : Addr} {n sl : Nat} (hn : n < 2 ^ 64) (hsl : sl ≤ n) {s : State}
     (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hR : RoundsAt s.mem W R)
     (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D) (hsrc : s.mem.readW (W + BitVec.ofNat 64 224) 64 = S)
@@ -386,10 +395,10 @@ theorem nLoop (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC 
       (h.data.ok.w.sub_left dG).sub_right yW, (h.data.ok.w.sub_left dG).sub_right pW, by omega]
 
 /-- The loop. -/
-theorem nD_ok (hS : Gcm.X86_64.StitchR.SetupFin) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC Ctx W D S R n sl s t) :
-    WP isa Impl.Gcm.X86_64.StitchR.encN t (Gcm.X86_64.StitchR.NPost t (16 * (n / 256))) :=
+theorem nD_ok {c : Prog isa} (hE : EncNOk c) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State} (hN : NC Ctx W D S R n sl s t) :
+    WP isa c t (Gcm.X86_64.StitchR.NPost t (16 * (n / 256))) :=
   have L := nLoop h hC hN
-  Gcm.X86_64.StitchR.encN_ok hS L.1 L.2.2 L.2.1
+  hE L.1 L.2.2 L.2.1
 
 /-- `nRest` after the loop: what `prefixN` leaves. -/
 theorem nE_ok (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t₃ s₄ : State} (hN : NC Ctx W D S R n sl s t₃)
@@ -555,14 +564,14 @@ theorem nE_ok (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t₃ s₄ : State} (
 for `rax`, `rcx` and the flags: the bytes of `src` after its last whole group
 copied, and the first `256 ⌊n / 256⌋` bytes of the plaintext encrypted in one
 pass. -/
-theorem nPath_ok (hS : Gcm.X86_64.StitchR.SetupFin) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State}
+theorem nPath_ok {c : Prog isa} (hE : EncNOk c) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {t : State}
     (g : ∀ r, r ≠ .rax → r ≠ .rcx → t.gpr r = s.gpr r) (tm : t.mem = s.mem) (trd : t.rd = s.rd)
     (twr : t.wr = s.wr) :
     WP isa (.seq (.block SealSplit.nCopyArgs) (.seq SealGather.copy (.seq (.block SealSplit.nArgs)
-      (.seq Impl.Gcm.X86_64.StitchR.encN (.block SealSplit.nRest))))) t
+      (.seq c (.block SealSplit.nRest))))) t
       (fun s' => PPostG Ctx W SP D S R n sl (16 * (n / 256)) s s') :=
   WP.seq (WP.mono (nA_ok h g tm trd twr) fun _ hA => WP.seq (WP.mono (nB_ok h hA) fun _ hB =>
-    WP.seq (WP.mono (nC_ok h hB) fun _ hN => WP.seq (WP.mono (nD_ok h hS hC hN) fun _ hP => nE_ok h hC hN hP))))
+    WP.seq (WP.mono (nC_ok h hB) fun _ hN => WP.seq (WP.mono (nD_ok h hE hC hN) fun _ hP => nE_ok h hC hN hP))))
 
 end
 
@@ -586,7 +595,8 @@ theorem PPostG.of_eq {Ctx W SP D S : Addr} {R n sl q : Nat} {s t s' : State}
 
 /-- `prefixN` meets `PreOk`: in one pass for the texts `nTest` takes, by
 `prefix` for the others. -/
-theorem prefixNOk (hS : Gcm.X86_64.StitchR.SetupFin) (T : BlkToFn CtxMode.prepared) : PreOk CtxMode.prepared (SealSplit.prefixN T.fn)
+theorem prefixNOk {c : Prog isa} (hE : EncNOk c) (T : BlkToFn CtxMode.prepared) :
+    PreOk CtxMode.prepared (SealSplit.prefixN T.fn c)
     fun n sl => if 1 ≤ sl / 256 ∧ sl / 256 < n / 256 then 16 * (n / 256) else sl / 16 := by
   intro Ctx W SP D S R n sl s h
   unfold SealSplit.prefixN
@@ -595,7 +605,7 @@ theorem prefixNOk (hS : Gcm.X86_64.StitchR.SetupFin) (T : BlkToFn CtxMode.prepar
   refine WP.ite (decide (1 ≤ sl / 256 ∧ sl / 256 < n / 256)) (by simp only [eval, cf]) (fun hc => ?_) (fun hc => ?_)
   · have hc' := of_decide_eq_true hc
     simp only [hc', and_self, ↓reduceIte]
-    exact nPath_ok h hS hc' g tm trd twr
+    exact nPath_ok h hE hc' g tm trd twr
   · have he : Env Ctx (W + BitVec.ofNat 64 16) W SP t := h.env.keep (fun r hr => g r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide) (by

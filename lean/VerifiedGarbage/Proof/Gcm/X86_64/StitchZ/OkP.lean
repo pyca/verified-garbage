@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
@@ -388,6 +389,14 @@ theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.pr
 blocks from 16 on. -/
 theorem stitchToR_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encR 1 :=
   fun _ hp _ => encRTo_ok hp
+
+/-- What `encN`'s loops over `src` leave (`PhaseOne`), from the powers the
+setup stores. -/
+theorem phase1_ok : PhaseOne := fun {s₀} hp hm =>
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨P, hR, hpw, hK⟩ =>
+    WP.mono (phase1G_ok hp hm (finZ (finP hpw)) 144 (by decide) (by decide)
+      (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
+      fun _ ⟨e, he, hI, hK'⟩ => ⟨P, e, he, hI, hK', finZ (finP hpw)⟩)
 
 end VG.Proof.Gcm.X86_64.StitchZHTo
 

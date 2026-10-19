@@ -100,7 +100,7 @@ def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
-    v.stitch.any (·.name.short), v.stitch.any (·.name.fin), v.stitch.any (·.name.onePass)⟩
+    v.stitch.any (·.name.short), v.stitch.any (·.name.fin), v.stitch.bind (·.name.onePass)⟩
 
 /-- Prepared-context versions of each named interleaved loop (encrypting any
 number of blocks from 16 on if `fullR`). -/

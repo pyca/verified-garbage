@@ -25,5 +25,6 @@ materialize_code Impl.Gcm.X86_64.StitchZH.decR
 materialize_code Impl.Gcm.X86_64.StitchZTo.enc
 materialize_code Impl.Gcm.X86_64.StitchZTo.encP
 materialize_code Impl.Gcm.X86_64.StitchZHTo.encR
+materialize_code Impl.Gcm.X86_64.StitchZHTo.encN
 
 end VG

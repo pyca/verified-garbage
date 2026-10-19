@@ -460,6 +460,14 @@ theorem blocks_cases {α : Type} (st : Option α) (f : α → Prog isa) (g : α 
 
 end StitchImpl
 
+/-- A loop that takes `seal_split`'s whole groups at `src` and at `dst` in one
+pass (`SealSplit.prefixN`), inline: on 256-bit registers (`StitchR.encN`) or
+512-bit ones (`StitchZHTo.encN`). -/
+inductive OnePassName where
+  | r
+  | z
+  deriving DecidableEq
+
 /-- What an AES-GCM function calls: an implementation of `vg_aes_ctr32`, the
 `vg_aes_expand_key_scratch` for the same CPUs, and one of `vg_ghash`. -/
 structure GcmImpl where
@@ -479,10 +487,9 @@ structure GcmImpl where
   (`Impl/AesGcm/X86_64/SealFin.lean`), which needs AES-NI, PCLMULQDQ and
   AVX. -/
   fin : Bool := false
-  /-- Whether `seal_split`'s path for TLS records takes the whole groups at
-  `src` and at `dst` in one pass (`SealSplit.prefixN`), which needs the loop
-  on 256-bit registers inline. -/
-  onePass : Bool := false
+  /-- The loop with which `seal_split`'s path for TLS records takes the whole
+  groups at `src` and at `dst` in one pass (`SealSplit.prefixN`), if any. -/
+  onePass : Option OnePassName := none
 
 namespace GcmImpl
 
