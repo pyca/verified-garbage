@@ -69,8 +69,12 @@ def hybridNote : String :=
   "Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main \
   squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states."
 
+def hybridJNote : String :=
+  "Computes `J(z ‖ c)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of a copy of `z ‖ c` \
+  per main squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states."
+
 /-- Paired sampling and fused arithmetic, calling `vg_keccak_f1600_x2_sha3`
-(and, in `encaps`, `vg_keccak_f1600_x3_sha3`) and the single-state
+(and, in `encaps` and `decaps`, `vg_keccak_f1600_x3_sha3`) and the single-state
 permutation of `v` rather than the sponge functions. -/
 def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
     List Artifact := [
@@ -92,10 +96,11 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    notes := [hybridJNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
-    stack := 16
-    verified := Proof.MlKem.AArch64.FixedHash.decapsW768_verified v },
+    stack := 128
+    verified := Proof.MlKem.AArch64.Hybrid.decapsHW768_verified v },
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
@@ -114,10 +119,11 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
+    notes := [hybridJNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
-    stack := 16
-    verified := Proof.MlKem.AArch64.FixedHash.decapsW1024_verified v }]
+    stack := 128
+    verified := Proof.MlKem.AArch64.Hybrid.decapsHW1024_verified v }]
 
 def artifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
   if paired x2 then pairedArtifacts x2 v else if sponge x2 v then spongeArtifacts v else []

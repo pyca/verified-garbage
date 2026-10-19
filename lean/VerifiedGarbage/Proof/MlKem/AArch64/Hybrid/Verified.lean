@@ -37,38 +37,45 @@ open VG.Proof.MlKem
 
 /-! ## The blocks of `ek` -/
 
-theorem absorbWords_erase (eo n : Nat) :
-    Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.absorbWords eo n)) =
-      Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.absorbWords 0 n)) := by
+theorem absorbWords_erase (r : Reg) (eo n : Nat) :
+    Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.absorbWords r eo n)) =
+      Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.absorbWords r 0 n)) := by
   simp only [Code.eraseOff, Impl.MlKem.AArch64.Hybrid.absorbWords, List.map_flatMap, List.map_cons,
     List.map_nil, Instr.eraseOff]
 
-theorem absorbFull_taint : ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-    (Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.absorbWords 0 17))) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-theorem habs_of (L : KemLay)
-    (hlast : ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock L (L.ekLen / 136))) h).isSome = true) :
-    ∀ blk, 136 * blk < L.ekLen → ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock L blk)) h).isSome = true := by
+theorem habs_of (S : Impl.MlKem.AArch64.Hybrid.HSrc)
+    (hfull : ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
+      (Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.absorbWords S.r 0 17))) h).isSome = true)
+    (hlast : ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
+      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S (S.len / 136))) h).isSome = true) :
+    ∀ blk, 136 * blk < S.len → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
+      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true := by
   intro blk hb
-  by_cases hf : 136 * blk + 136 ≤ L.ekLen
-  · have e : Impl.MlKem.AArch64.Hybrid.absorbBlock L blk = Impl.MlKem.AArch64.Hybrid.absorbWords (136 * blk) 17 := by
+  by_cases hf : 136 * blk + 136 ≤ S.len
+  · have e : Impl.MlKem.AArch64.Hybrid.absorbBlock S blk =
+        Impl.MlKem.AArch64.Hybrid.absorbWords S.r (S.base + 136 * blk) 17 := by
       simp only [Impl.MlKem.AArch64.Hybrid.absorbBlock, ite_eq_left hf]
-    obtain ⟨h, hc⟩ := absorbFull_taint
-    exact ⟨h, by rw [e]; exact Taint.isSome_check_of_eraseOff (absorbWords_erase _ _) hc⟩
-  · rw [show blk = L.ekLen / 136 by omega]
+    obtain ⟨h, hc⟩ := hfull
+    exact ⟨h, by rw [e]; exact Taint.isSome_check_of_eraseOff (absorbWords_erase _ _ _) hc⟩
+  · rw [show blk = S.len / 136 by omega]
     exact hlast
 
-theorem habs768 : ∀ blk, 136 * blk < lay768.ekLen → ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-    (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock lay768 blk)) h).isSome = true :=
-  habs_of lay768 ⟨_, by taint_decide⟩
+theorem habs768 : ∀ blk, 136 * blk < (Impl.MlKem.AArch64.Hybrid.ekSrc lay768).len → ∃ h,
+    (taint.check (Taint.ofRegs [(Impl.MlKem.AArch64.Hybrid.ekSrc lay768).r, .x28])
+      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock (Impl.MlKem.AArch64.Hybrid.ekSrc lay768) blk)) h).isSome = true :=
+  habs_of _ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
 
-theorem habs1024 : ∀ blk, 136 * blk < Impl.MlKem1024.AArch64.lay1024.ekLen → ∃ h,
-    (taint.check (Taint.ofRegs [.x25, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock Impl.MlKem1024.AArch64.lay1024 blk)) h).isSome = true :=
-  habs_of Impl.MlKem1024.AArch64.lay1024 ⟨_, by taint_decide⟩
+theorem habs1024 : ∀ blk, 136 * blk < (Impl.MlKem.AArch64.Hybrid.ekSrc Impl.MlKem1024.AArch64.lay1024).len → ∃ h,
+    (taint.check (Taint.ofRegs [(Impl.MlKem.AArch64.Hybrid.ekSrc Impl.MlKem1024.AArch64.lay1024).r, .x28])
+      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock (Impl.MlKem.AArch64.Hybrid.ekSrc Impl.MlKem1024.AArch64.lay1024)
+        blk)) h).isSome = true :=
+  habs_of _ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
+
+theorem srcOk768 : SrcOk (Impl.MlKem.AArch64.Hybrid.ekSrc lay768) :=
+  ⟨.inl rfl, by decide, by decide, by decide⟩
+
+theorem srcOk1024 : SrcOk (Impl.MlKem.AArch64.Hybrid.ekSrc Impl.MlKem1024.AArch64.lay1024) :=
+  ⟨.inl rfl, by decide, by decide, by decide⟩
 
 /-! ## The rest of the code -/
 

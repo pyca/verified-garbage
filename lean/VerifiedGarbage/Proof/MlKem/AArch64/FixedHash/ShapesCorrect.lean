@@ -69,16 +69,6 @@ theorem deG768_correct (v : Proof.Sha3.AArch64.Permutation) :
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (by decide) (deG768_compiled v.callee)
 
-theorem deJ768_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x25,2368,32⟩,⟨.x26,0,lay768.ctLen⟩] [⟨.x28,KEM.JB,32⟩] := by
- intro s hs _ _ hi ho hp
- apply code_ok v hs (by decide) (by decide) (by decide) hi
-   (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (certified_sound deJ768_schedule) ho hp
-   (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (deJ768_compiled v.callee)
-
 theorem kgG1024_correct (v : Proof.Sha3.AArch64.Permutation) :
  HashCorrect (fixedHash v.callee) .x28 KG.ST KG.WK 72 6
         [⟨.x25,0,32⟩,⟨.x28,KG.BK,1⟩] [⟨.x28,KG.SB,32⟩,⟨.x28,KG.SG,32⟩] := by
@@ -138,15 +128,5 @@ theorem deG1024_correct (v : Proof.Sha3.AArch64.Permutation) :
    (certified_sound deG1024_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (by decide) (deG1024_compiled v.callee)
-
-theorem deJ1024_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x25,3136,32⟩,⟨.x26,0,Impl.MlKem1024.AArch64.lay1024.ctLen⟩] [⟨.x28,KEM.JB,32⟩] := by
- intro s hs _ _ hi ho hp
- apply code_ok v hs (by decide) (by decide) (by decide) hi
-   (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (certified_sound deJ1024_schedule) ho hp
-   (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (deJ1024_compiled v.callee)
 
 end VG.Proof.MlKem.AArch64.FixedHash

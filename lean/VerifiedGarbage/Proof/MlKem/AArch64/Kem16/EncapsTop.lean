@@ -23,9 +23,11 @@ open VG.Spec.Sha3 (bytesAt)
 variable {P : KemLay}
 
 /-- **The 16-bit hashing encapsulation is constant time.** -/
-theorem encapsHW_ct (hash : FixedHash.HashFn) (prf : Nat→Nat→Prog isa) (hw : P.Wf) (ho : HashOk P)
-    (habs : ∀ blk, 136 * blk < P.ekLen → ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock P blk)) h).isSome = true)
+theorem encapsHW_ct (hash : FixedHash.HashFn) (prf : Nat→Nat→Prog isa) (hw : P.Wf)
+    (hsrc : SrcOk (Impl.MlKem.AArch64.Hybrid.ekSrc P)) (ho : HashOk P (Impl.MlKem.AArch64.Hybrid.ekSrc P))
+    (habs : ∀ blk, 136 * blk < (Impl.MlKem.AArch64.Hybrid.ekSrc P).len → ∃ h,
+      (taint.check (Taint.ofRegs [(Impl.MlKem.AArch64.Hybrid.ekSrc P).r, .x28])
+        (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock (Impl.MlKem.AArch64.Hybrid.ekSrc P) blk)) h).isSome = true)
     (ha : ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3,.x4])
       (Impl.MlKem.AArch64.Hybrid.startH P) h).isSome=true)
     (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
@@ -52,7 +54,7 @@ theorem encapsHW_ct (hash : FixedHash.HashFn) (prf : Nat→Nat→Prog isa) (hw :
   have sp : s.sp=u.sp := hpub.1.2.2.2.2.2.1
   have rho : rhoE P s=rhoE P u := map_toNat_inj hpub.1.2.2.2.2.2.2
   have sym := entryS_symbols hpub
-  have sm : Same P s u := ⟨ptr 3 (by decide), ptr 0 (by decide), sp⟩
+  have sm : Same (enL P) (ekM P) s u := ⟨ptr 3 (by decide), by rw [ekM_base, ekM_base]; exact ptr 0 (by decide), sp⟩
   have ts := entryS_tables hs
   have tu := entryS_tables hu
   have wa := prefixH (w16 := true) ps ts.1 ts.2
@@ -60,7 +62,9 @@ theorem encapsHW_ct (hash : FixedHash.HashFn) (prf : Nat→Nat→Prog isa) (hw :
   rw [←rho] at wb
   have ac := VectorTaint.relRegs [.x0,.x1,.x2,.x3,.x4]
     (P:=fun a b=>a=s ∧ b=u) (fun a b ⟨ha,hb⟩=>by subst a; subst b; exact ⟨sp,rs⟩) ha.choose_spec
-  exact (kemH_relCT ps pu ⟨ss.2.sp, ss.2.args⟩ ⟨su.2.sp, su.2.args⟩ sm ptr ho habs
+  have ks : Stk128 P (enL P) s := ⟨ss.2.sp, ss.2.args⟩
+  have ku : Stk128 P (enL P) u := ⟨su.2.sp, su.2.args⟩
+  exact (kemH_relCT ps pu ks ku (ekM_ok ps ks hsrc) (ekM_ok pu ku hsrc) sm ptr ho habs
     sym.1 sym.2 wa wb ac hc _ _ _ _ _ _ ⟨rfl,rfl⟩ et eu).1
 
 end VG.Proof.MlKem.AArch64.Hybrid

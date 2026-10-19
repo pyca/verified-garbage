@@ -91,9 +91,11 @@ theorem restHW_ok (valid : PrfValidW P (enL P) prf) {s₀ : State} (hp : Pre P (
 /-- **The 16-bit hashing encapsulation is correct.** -/
 theorem using_correctHW (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) prf)
     (hG : FixedHash.HashCorrect hash .x28 KEM.ST KEM.WK 72 6 [⟨.x28,KEM.MB,32⟩,⟨.x28,KEM.HB,32⟩]
-      [⟨.x26,0,32⟩,⟨.x28,KEM.RB,32⟩]) {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀)
-    (ho : HashOk P) (hr : Noise.Room P) (hc : Calls P) (tables : Tables s₀) (ts : TStk s₀)
-    (depthM : (Impl.MlKem.AArch64.Hybrid.matrixH P true).aarch64Depth≤8)
+      [⟨.x26,0,32⟩,⟨.x28,KEM.RB,32⟩]) {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P (enL P) s₀)
+    (hs : SrcOk (Impl.MlKem.AArch64.Hybrid.ekSrc P))
+    (ho : HashOk P (Impl.MlKem.AArch64.Hybrid.ekSrc P)) (hr : Noise.Room P) (hc : Calls P) (tables : Tables s₀)
+    (ts : TStk s₀)
+    (depthM : (Impl.MlKem.AArch64.Hybrid.matrixH P (Impl.MlKem.AArch64.Hybrid.ekSrc P) true).aarch64Depth≤8)
     (depthT : (Impl.MlKem.AArch64.Hybrid.tailH hash).aarch64Depth≤1) :
     WP isa (Impl.MlKem.AArch64.Kem16.encaps hash prf P) s₀ fun t =>
       abiPreserved s₀ t ∧ (encapsAArch64 P).post s₀ t := by
@@ -101,18 +103,20 @@ theorem using_correctHW (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) p
   refine WP.seq (WP.mono_syms (WP.tablesDepth (startH_ok hp) tables
     (by unfold Impl.MlKem.AArch64.Hybrid.startH; exact Nat.zero_le _)) fun uA ⟨hA, ta⟩ syA => ?_)
   have tsA : TStk uA := ts.of syA (by rw [hA.kb.sp])
-  have mt : MT3 P s₀ uA := ⟨matrix_table_of_kb hp hA.kb ta, by rw [← hA.kb.sp]; exact tsA.shuffle⟩
-  have h0 : HInvW true P s₀ uA.mem (rhoE P s₀) (ekE P s₀) 0 0 uA :=
-    ⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero⟩
-  refine WP.seq (WP.mono_syms (WP.tables128 (matrixH_ok hp hk ho h0 mt) ta tsA depthM)
+  have mt : MT3 P (enL P) s₀ uA := ⟨matrix_table_of_kb hp hA.kb ta, by rw [← hA.kb.sp]; exact tsA.shuffle⟩
+  have h0 : HInvW true P (enL P) (ekM P) s₀ uA.mem (rhoE P s₀) (ekE P s₀) 0 0 uA :=
+    ⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero,
+      by rw [ekM_base]; exact hA.kb.ro 0 (show 0 < 2 by decide)⟩
+  refine WP.seq (WP.mono_syms (WP.tables128 (matrixH_ok hp hk (ekM_ok hp hk hs) ho h0 mt) ta tsA depthM)
     fun uB ⟨⟨hB, _⟩, tb⟩ _ => ?_)
   have hm : bytesAt uB.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
     rw [bytesAt_frame hB.fr (mb_bW3 hp hk) (by decide)]; exact hA.m
   have hst := hB.hash
   rw [hstate_done (by
-    have := ho.three
+    have h3 : (P.ekLen / 136 + 1) % 3 = 0 := ho.three
     have : (ekE P s₀).length = P.ekLen := bytesAt_length _ _ _
-    simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks]
+    simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks, ekM,
+      Impl.MlKem.AArch64.Hybrid.ekSrc]
     omega)] at hst
   refine WP.seq (WP.mono (WP.tablesDepth (tailH_ok hash hG hp hB.b hm hst) tb depthT) fun uC ⟨hC, tc⟩ => ?_)
   refine WP.mono (restHW_ok valid hp hr hc tc.transforms hC tc.gamma tc.gammaRead
