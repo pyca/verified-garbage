@@ -35,12 +35,6 @@ time.
 `w` words, congruent to the same value, which saves a pass over the result in
 every multiplication of an exponentiation. Its callers reduce once, where they
 need a value below `m`.
-
-`vg_rsa_mont_mul_gather` (`mulGatherContract`) is `vg_rsa_mont_mul` with its
-second operand an entry of a table of 32 numbers after the 8 arrays, chosen by
-a secret index: an exponentiation by windows multiplies by the entry of each
-window's digit without a separate pass that selects it, and its timing does
-not depend on the index.
 -/
 
 @[expose] public section
@@ -191,70 +185,6 @@ def mulLazyApi : Api where
       word `32 + j * (w + 2)` of `ws`.",
     "Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.",
     "`o`, `a` and `b` must be below 8, and not 2 or 3.",
-    "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
-      caller must destroy if they are secret."]
-
-/-- The table of `vg_rsa_mont_mul_gather`: its 32 entries are the arrays 8 to
-39, each `w + 2` words, after the 8 arrays of the layout. -/
-def tabFirst : Nat := 8
-def tabLen : Nat := 32
-
-/-- `ws: *mut u64, ws_len: usize, o: u32, a: u32, idx: u32`, the indices of
-the arrays public and the table's index `idx` secret. -/
-def sigGather : Sig where
-  params := [("ws", .slice true .u64 "ws_len"), ("o", .int .u32 true), ("a", .int .u32 true),
-    ("idx", .int .u32 false)]
-
-/-- `mulContract` with `b` the table's entry `idx`, array `8 + idx`: for
-`-m⁻¹ mod 2⁶⁴` in the header (so `m` is odd), the 32 entries in the working
-space (`arrAt w 40 ≤ 8 ws_len`), `idx < 32` and that entry below `m`: the
-number at `o` is below `m` and congruent to `a T_idx R⁻¹` modulo `m`,
-`R = 2^(64 w)`. `idx` is secret: timing does not depend on it, nor on which
-entry is read. -/
-def mulGatherContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sigGather.contract A
-    (pre := fun ws wsLen o a idx m =>
-      let w := wOf m ws
-      Layout m ws wsLen.toNat ∧ arrAt w (tabFirst + tabLen) ≤ 8 * wsLen.toNat ∧
-        Operand o.toNat ∧ Operand a.toNat ∧
-        ((m.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat * (wordAt m ws minvWord).toNat + 1) %
-          2 ^ 64 = 0 ∧
-        idx.toNat < tabLen ∧ numAt m ws w (tabFirst + idx.toNat) < numAt m ws w aM)
-    (post := fun ws wsLen o a idx m m' _ =>
-      let w := wOf m ws
-      let M := numAt m ws w aM
-      numAt m' ws w o.toNat < M ∧
-        numAt m' ws w o.toNat * 2 ^ (64 * w) % M =
-          numAt m ws w a.toNat * numAt m ws w (tabFirst + idx.toNat) % M ∧
-        Keeps ws wsLen.toNat w o.toNat m m')
-    (stack := stack)
-    (leak := some fun ws _ _ _ _ m => [wOf m ws])
-
-/-- `vg_rsa_mont_mul_gather` on every target. -/
-def mulGatherApi : Api where
-  module := "rsa_mont"
-  name := "vg_rsa_mont_mul_gather"
-  sig := sigGather
-  contracts := some fun A stack => mulGatherContract A stack
-  summary := "Montgomery multiplication by a table entry in the working space of the RSA \
-    functions: writes to array `o` the number below the modulus `m` (array 0) congruent to \
-    `a T 2^(-64 w)` modulo `m`, for the number in array `a` and the entry `T` of index `idx` \
-    of a table of 32 numbers, the arrays 8 to 39 after the working space's 8 arrays. The \
-    working space is laid out as for `vg_rsa_mont_mul`: a header of 32 words, then arrays of \
-    `w + 2` words each; header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the \
-    addresses of the first 8 arrays. The numbers are `w` 64-bit words, little-endian, at the \
-    start of their arrays; `o` may be `a`. Every byte of `ws` but those of arrays 2 and 3 (the \
-    function's own) and of array `o` keeps its value.\n\n\
-    Contract: `VG.Spec.Rsa.Mont.mulGatherContract`. Constant time but for `w`: timing may \
-    depend on the pointer, `ws_len`, the arrays' indices and `w`, not on the numbers or on \
-    `idx`."
-  safety := ["Header word 6 of `ws`, `w`, must be in 2..2^31, and `ws_len` at least \
-      `32 + 40 * (w + 2)`.",
-    "Header words 8 to 15 must hold the addresses of the arrays: word `8 + j` the address of \
-      word `32 + j * (w + 2)` of `ws`.",
-    "Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.",
-    "`o` and `a` must be below 8, and not 2 or 3.",
-    "`idx` must be below 32, and the number in array `8 + idx` below `m`.",
     "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
       caller must destroy if they are secret."]
 
