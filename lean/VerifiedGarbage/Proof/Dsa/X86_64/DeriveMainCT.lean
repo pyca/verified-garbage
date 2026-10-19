@@ -198,6 +198,23 @@ meta import VerifiedGarbage.Proof.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Add
 meta import VerifiedGarbage.Proof.Dsa.X86_64.AddCallCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+public import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveFailure
+public import VerifiedGarbage.Proof.Dsa.X86_64.Minus
+public import VerifiedGarbage.Proof.Dsa.X86_64.MinusStep
+public import VerifiedGarbage.Proof.Dsa.X86_64.OneScanCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
+public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Arithmetic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
@@ -286,6 +303,7 @@ meta import VerifiedGarbage.Proof.MdStream.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Limbs64
 meta import VerifiedGarbage.Proof.RsaPss.Params
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
 
 /-! # Constant time of the complete x86-64 key derivation -/
 
