@@ -135,4 +135,8 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     rw [hm, ku.gpr (by decide), hcx] at hv
     simpa using hv
   · have ho := hi.out; rw [hm] at ho; exact ho
+
+theorem generalRow_rowOk : AdxSquare.RowOk AdxSquareWide.generalRow :=
+  ⟨fun hs h8 h9 hbp _ hw hZ hZb sb => generalRow_ok hs h8 h9 hbp hw hZ hZb sb⟩
+
 end VG.Proof.Bignum.X86_64.AdxSquareWide

@@ -35,7 +35,7 @@ theorem fnLazy_implies : fnLazyContract.Implies (Spec.Rsa.Mont.mulLazyContract a
 theorem mulBaseLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp) (ha1 : a ≠ aAcc)
-    (hb1 : b ≠ aAcc) (hdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 o)
+    (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 o)
     (hcx : (s.gpr .rcx).setWidth 32 = BitVec.ofNat 32 a) (h8 : (s.gpr .r8).setWidth 32 = BitVec.ofNat 32 b)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) :
     WP isa mulBase s fun t =>
@@ -49,10 +49,9 @@ theorem mulBaseLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs
     fun s₁ ⟨hbx, h11, h9, h10, h8₁, h12, h15, hsi₁, hm₁, k₁, sv⟩ => ?_)
   rw [← hm₁] at hinv
   have hs₁ := hs.congr k₁.2.2
-  refine WP.seq (WP.mono (WP.keep [.rax, .rcx, .rdx, .rbp, .r13, .r14] (WP.vecKeep (by decide) (mmTailLazy_ok hs₁ hZ hw hw' (by decide) (by decide) (by decide) ho ha hb
-    (by decide) (by decide) (Ne.symm ho1) (Ne.symm ha1) (Ne.symm hb1) (by decide) (Ne.symm ho2) hbx h11 h9 h10
-    h8₁ h12 h15 hsi₁ hinv)) (by decide)) fun s₂ ⟨⟨⟨_, _, heq, har, k₂⟩, hx₂, _⟩, _⟩ => ?_)
-  refine WP.mono (unsaves_ok (sv.of_xmm hx₂)) fun t ⟨rs, mt, _, k₃⟩ => ?_
+  refine WP.seq (WP.mono (BaseSquare.tail_ok hs₁ hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hbx h11 h9 h10 h8₁ h12
+    h15 hsi₁ hinv) fun s₂ ⟨_, _, heq, har, k₂, hx₂⟩ => ?_)
+  refine WP.mono (unsaves_ok (sv.of_stashed hx₂)) fun t ⟨rs, mt, _, k₃⟩ => ?_
   rw [hm₁] at heq har
   rw [← mt] at heq har
   exact ⟨heq, har, ((k₁.trans k₂).trans k₃).mono (by decide), rs⟩
@@ -64,7 +63,7 @@ theorem fnLazy_correct (s : State) (h : fnLazyContract.pre s) :
   suffices hwp : WP isa mulBase s fun s' => gprPreserved s s' ∧ fnLazyContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hg, hp⟩
-  refine WP.mono (mulBaseLazy_ok hs rfl hH hZ hw hw' ho ha hb ho2 ho3 ha2 hb2 (idx_eq s .rdx) (idx_eq s .rcx)
+  refine WP.mono (mulBaseLazy_ok hs rfl hH hZ hw hw' ho ha hb ho2 ho3 ha2 ha3 hb2 hb3 (idx_eq s .rdx) (idx_eq s .rcx)
     (idx_eq s .r8) hinv) fun t ⟨heq, har, k, hcs⟩ => ?_
   have hn := hs.nowrap
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩

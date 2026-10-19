@@ -18,11 +18,12 @@ about it need not state.
 
 namespace VG.X86_64
 
-/-- The instructions that read and write only general-purpose registers, flags and memory. -/
+/-- The instructions that write only general-purpose registers, flags and memory, and
+read nothing else but, for `movq r64, xmm`, an SSE register. -/
 def scalarI : Instr → Bool
   | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movzx16 .. | .movImm64 .. | .leaSym .. | .mul ..
   | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. | .bswap ..
-  | .store32 .. | .store16 .. | .bswap32 .. => true
+  | .store32 .. | .store16 .. | .bswap32 .. | .movqR .. => true
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :

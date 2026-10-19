@@ -16,17 +16,23 @@ def crossTail : List Instr :=
   [.store (ix .r8 .r14) .rcx, .alu .add .r8 (.imm 8), .alu .add .rbp (.imm 1),
     .alu .cmp .rbp (.reg .r10)]
 
-/-- Row `i` adds `a_i` times `a_0, …, a_{i-1}` at word `i` of the product.
-Only products strictly below the diagonal are accumulated. -/
-def crossRow : Prog isa :=
+/-- Row `i` adds `a_i` times `a_0, …, a_{i-1}` at word `i` of the product,
+by the multiply-add `row` (`r8 += rdx · [r9]` over `rbp` words, its carry
+word in `rcx`). Only products strictly below the diagonal are accumulated. -/
+def crossRowWith (row : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (ix .r9 .rbp))])
-    (.seq AdxSquareWide.generalRow (.block crossTail))
+    (.seq row (.block crossTail))
 
-/-- Clear the product buffer, then accumulate its off-diagonal products.
-`r8` addresses `2 w + 2` words; `r9` addresses the input; `rbx = w ≥ 2`. -/
-def cross : Prog isa :=
+def crossRow : Prog isa := crossRowWith AdxSquareWide.generalRow
+
+/-- Clear the product buffer, then accumulate its off-diagonal products, by
+the rows `crossRowWith row`. `r8` addresses `2 w + 2` words; `r9` addresses
+the input; `rbx = w ≥ 2`. -/
+def crossWith (row : Prog isa) : Prog isa :=
   .seq Adx.zeroWin (.seq (.block [.mov .r10 (.reg .rbx), .mov32 .rbp (.imm 1), .alu .add .r8 (.imm 8)])
-    (.loop crossRow .ne))
+    (.loop (crossRowWith row) .ne))
+
+def cross : Prog isa := crossWith AdxSquareWide.generalRow
 
 /-- Double two cross-product words, add the square of `rdx`, and the carry
 in `r15`. The result is `rbx:r12:r11`; the two ADX chains add the diagonal
@@ -46,15 +52,21 @@ def diagonalTail : List Instr :=
   [.store (ix .r8 .r14) .r11, .store (ix .r8 .r14 8) .r12, .mov .r15 (.reg .rbx),
     .alu .add .rbp (.imm 1), .alu .add .r14 (.imm 2), .alu .cmp .rbp (.reg .r10)]
 
-/-- Process one pair of cross-product words and one diagonal product. -/
-def diagonalStep : Prog isa :=
-  .seq (.block diagonalHead) (.seq (.block diagonalCore) (.block diagonalTail))
+/-- Process one pair of cross-product words and one diagonal product, by
+`core` (`diagonalCore`'s result from its registers). -/
+def diagonalStepWith (core : List Instr) : Prog isa :=
+  .seq (.block diagonalHead) (.seq (.block core) (.block diagonalTail))
 
-/-- Double the cross products and add every diagonal square. `r10 = w > 0`,
-`r8` is the product buffer and `r9` the input. -/
-def diagonal : Prog isa :=
+def diagonalStep : Prog isa := diagonalStepWith diagonalCore
+
+/-- Double the cross products and add every diagonal square, by the steps
+`diagonalStepWith core`. `r10 = w > 0`, `r8` is the product buffer and `r9`
+the input. -/
+def diagonalWith (core : List Instr) : Prog isa :=
   .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])
-    (.loop diagonalStep .ne)
+    (.loop (diagonalStepWith core) .ne)
+
+def diagonal : Prog isa := diagonalWith diagonalCore
 
 /-- Groups of eight, or of four, keep both carries live; all other sizes
 retain the general loop. -/
@@ -86,10 +98,13 @@ def redcTail : List Instr :=
     .alu .add .rax (.reg .r10), .alu .adc .rsi (.imm 0),
     .store (ix .r8 .r14) .rax, .mov .r10 (.reg .rsi), .alu .add .r8 (.imm 8)]
 
-/-- One Montgomery cancellation row. `r9` is the modulus, `rbp` its length,
-`r8` the moving window and `r10` the pending high carry. -/
-def redcRow : Prog isa :=
-  .seq (.block redcHead) (.seq AdxSquareWide.row (.seq (.block redcTail) (.block Adx.rowEnd)))
+/-- One Montgomery cancellation row, by `head` (the multiplier into `rdx`, as
+`redcHead`) and the multiply-add `row`. `r9` is the modulus, `rbp` its
+length, `r8` the moving window and `r10` the pending high carry. -/
+def redcRowWith (head : List Instr) (row : Prog isa) : Prog isa :=
+  .seq (.block head) (.seq row (.seq (.block redcTail) (.block Adx.rowEnd)))
+
+def redcRow : Prog isa := redcRowWith redcHead AdxSquareWide.row
 
 def redcSetup : List Instr :=
   [.mov .r8 (.mem (hdr (sArr Public.aAcc))), .alu .add .r8 (.imm 16),
@@ -99,9 +114,12 @@ def redcSetup : List Instr :=
 def redcFinish : List Instr :=
   [.store (ix .r8 .rbp) .r10, .mov32 .rax (.imm 0), .store (ix .r8 .rbp 8) .rax]
 
-/-- Montgomery reduction of the `2 w` words at `aAcc + 16`. -/
-def redc : Prog isa :=
-  .seq (.block redcSetup) (.seq (.loop redcRow .ne) (.block redcFinish))
+/-- Montgomery reduction of the `2 w` words at `aAcc + 16`, by the rows
+`redcRowWith head row`. -/
+def redcWith (head : List Instr) (row : Prog isa) : Prog isa :=
+  .seq (.block redcSetup) (.seq (.loop (redcRowWith head row) .ne) (.block redcFinish))
+
+def redc : Prog isa := redcWith redcHead AdxSquareWide.row
 
 def redcTest : List Instr :=
   [.mov .rax (.mem (hdr sW)), .alu .and .rax (.imm 7), .alu .cmp .rax (.imm 0)]

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! A complete row of Montgomery reduction, retaining its pending carry. -/
 
@@ -112,5 +114,31 @@ theorem redcRow_ok {s : State} {B : Addr} {Z e w n : Nat} {minv : BitVec 64}
     grind
   · rw [kt.gpr (by decide)]; exact hc
   · rw [hm]; exact allout
+
+/-- A new radix digit extends the accumulated cancellation multiplier. -/
+theorem digit_bound {q P u : Nat} (hq : q < P) (hu : u < 2 ^ 64) : q + P * u < P * 2 ^ 64 := by
+  have h := Nat.mul_le_mul_left P (show u ≤ 2 ^ 64 - 1 by omega_using [hu])
+  rw [Nat.mul_sub, Nat.mul_one] at h
+  omega_using [hq, h]
+
+/-- The pending carry stored above the reduced words, and a zero word above it. -/
+theorem redcFinish_ok {s : State} {B : Addr} {Z e w : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B e) (hbp : s.gpr .rbp = BitVec.ofNat 64 w) (hZ : e + 8 * (w + 2) ≤ Z) :
+    WP isa (.block AdxSquare.redcFinish) s fun t =>
+      wv t.mem B e (w + 2) = wv s.mem B e w + 2 ^ (64 * w) * (s.gpr .r10).toNat ∧
+      Outside B (e + 8 * w) 16 s.mem t.mem ∧ Keep [.rax] s t := by
+  have hn := hs.nowrap
+  refine WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.mem = (s.mem.writeW (off B (e + 8 * w)) (s.gpr .r10)).writeW (off B (e + 8 * w + 8)) (0 : BitVec 64)) ?_ rfl)
+    fun t ⟨hm, kt⟩ => ?_
+  · unfold AdxSquare.redcFinish
+    xrun [State.ea, ix, addr0 h8 hbp, addr8 h8 hbp,
+      hs.st (show e + 8 * w + 8 ≤ Z by omega_using [hZ]), hs.st (show e + 8 * w + 8 + 8 ≤ Z by omega_using [hZ])]
+    rfl
+  · obtain ⟨hv, ho⟩ := write2 s.mem B (e + 8 * w) (s.gpr .r10) 0 (by omega_using [hZ, hn])
+    rw [← hm] at hv ho
+    refine ⟨?_, ho, kt⟩
+    rw [wv_add, hv, ho.wv (by omega_using []) (by omega_using [hZ, hn])]
+    simp
 
 end VG.Proof.Bignum.X86_64.AdxSquare

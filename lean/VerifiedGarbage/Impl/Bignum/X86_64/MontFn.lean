@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 
 /-!
 # Montgomery multiplication as a function (x86-64)
@@ -12,7 +13,9 @@ calls of it run as their code inlined would (`Proof/Framework/X86_64/CallInline.
 it keeps `rbx`, `rbp` and `r12`–`r15` in the low quadwords of `xmm8`–`xmm13`
 (caller-saved) while it runs, and moves them back from there, without
 writing them to memory and loading them back, which costs a stalled
-store-to-load forwarding on some cores. It never writes `rdi`.
+store-to-load forwarding on some cores. It never writes `rdi`. For `a = b`
+it squares (`BaseSquare.square`), which keeps what it needs in `xmm0`–`xmm3`,
+`xmm14` and `xmm15`.
 
 `call o a b` is the call, with the indices in the argument registers.
 -/
@@ -58,9 +61,9 @@ def basesR : List Instr :=
 def leave : List Instr := unsaves
 
 /-- `vg_rsa_mont_mul`: `montMul` (`aN`, `aAcc`, `aTmp`) for the arrays in
-`edx`, `ecx` and `r8d`. -/
+`edx`, `ecx` and `r8d`, or `BaseSquare.square` if `a = b`. -/
 def mulBase : Prog isa :=
-  .seq (.block (enter ++ basesR)) (.seq (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc))) (.block leave))
+  .seq (.block (enter ++ basesR)) (.seq BaseSquare.mulTail (.block leave))
 
 /-- The indices `o`, `a`, `b` into the argument registers. -/
 def args (o a b : Nat) : List Instr :=
