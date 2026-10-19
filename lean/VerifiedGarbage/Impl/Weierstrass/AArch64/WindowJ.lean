@@ -122,19 +122,26 @@ def quadJ (dd : Option (Prog isa × Prog isa) := none) : Prog isa :=
 def selSum : List Instr :=
   nzMask K.M.n K.E.z ++ selPt K.M.n K.D K.R K.D ++ nzMask K.M.n K.R.z ++ selPt K.M.n K.R K.E K.D
 
-/-- `R = R + E` for an affine `E`, by the mixed addition, unless `R` and `E`
-are equal but not `O`. -/
-def sumJ : Prog isa :=
-  .seq (fprogB K.M (maddJ K.S K.R K.E K.D)) (.block (selSum K))
+/-- `D = R + E` by the mixed addition: its field program by `fprogB`, or the
+block `ma` gives. -/
+def maddRD (ma : Option (Prog isa)) : Prog isa :=
+  match ma with
+  | some m => m
+  | none => fprogB K.M (maddJ K.S K.R K.E K.D)
+
+/-- `R = R + E` for an affine `E`, by the mixed addition (`maddRD`), unless
+`R` and `E` are equal but not `O`. -/
+def sumJ (ma : Option (Prog isa) := none) : Prog isa :=
+  .seq (maddRD K ma) (.block (selSum K))
 
 /-- The entry of digit `x19` into `E`, its `y` negated for a negative digit. -/
 def entry : List Instr := digit K.bits ++ select K ++ negY K.M K.neg K.zero K.E.y K.bits
 
 /-- Iteration `j = x19 - 1 ≥ 1`: `R = 16 R + [d_j]P` in Jacobian coordinates;
 then `x4 = x19 - 1`, zero after the iteration of digit 1. -/
-def stepJ (dd : Option (Prog isa × Prog isa) := none) : Prog isa :=
+def stepJ (dd : Option (Prog isa × Prog isa) := none) (ma : Option (Prog isa) := none) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (quadJ K dd) <| .seq (.block (entry K)) <|
-  .seq (sumJ K) (.block [.subImm .x .x4 .x19 1])
+  .seq (sumJ K ma) (.block [.subImm .x .x4 .x19 1])
 
 /-- `R` from Jacobian into projective coordinates `(XZ : Y : Z³)` (through
 `D`), with `Y` Montgomery's one where `Z` (so `Z³`) is zero. -/
@@ -152,11 +159,11 @@ def stepLast (pa : Option (String × Nat) := none) (dd : Option (Prog isa × Pro
 
 /-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
 `k + offset J` at `K.bits` (`J ≥ 2`), with `inv` leaving `R.z^(p-2)` in
-`E.x`. The doublings are `dd`'s blocks if given. -/
-def windowJ (inv : Prog isa) (pa : Option (String × Nat) := none) (dd : Option (Prog isa × Prog isa) := none) :
-    Prog isa :=
+`E.x`. The doublings are `dd`'s blocks if given, the mixed additions `ma`'s. -/
+def windowJ (inv : Prog isa) (pa : Option (String × Nat) := none) (dd : Option (Prog isa × Prog isa) := none)
+    (ma : Option (Prog isa) := none) : Prog isa :=
   .seq (build K pa) <| .seq (normTbl K inv) <| .seq (.block (init K)) <|
-  .seq (.loop (stepJ K dd) (.nonzero .x .x4)) (stepLast K pa dd)
+  .seq (.loop (stepJ K dd ma) (.nonzero .x .x4)) (stepLast K pa dd)
 
 end WinCfg
 
