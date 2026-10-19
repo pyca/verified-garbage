@@ -34,17 +34,17 @@ theorem last_input {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
   rw [ptr_add]
   exact in_R (cov_r hp h (b:=3) (o:=SB) (l:=32) (by decide) (by kl)) (k:=8*j) (by omega) (by omega)
 
-def MatrixRel (P : KemLay) (σ τ : State) (e : Nat)
+def MatrixRel (w16 : Bool) (P : KemLay) (σ τ : State) (e : Nat)
     (s u : State) : Prop :=
-  BInv P σ e s ∧ BInv P τ e u ∧
+  BInvW w16 P σ e s ∧ BInvW w16 P τ e u ∧
   MatrixTable P σ s ∧ MatrixTable P τ u ∧
   s.syms "VG_MLKEM_REJ_SHUFFLE"=u.syms "VG_MLKEM_REJ_SHUFFLE"
 
-theorem pair_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
+theorem pair_matrix_relCT {w16 : Bool} {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     (base : kA σ 3=kA τ 3) (sp : σ.sp=τ.sp) (rho : rhoK P σ=rhoK P τ) {e : Nat}
     (he : e+1<P.k*P.k) :
-    RelCT isa (MatrixRel P σ τ e) (Impl.MlKem.AArch64.Paired.pair P true e)
-      (MatrixRel P σ τ (e+2)) := by
+    RelCT isa (MatrixRel w16 P σ τ e) (Impl.MlKem.AArch64.Paired.pair P true e w16)
+      (MatrixRel w16 P σ τ (e+2)) := by
   intro s u tr ur t v h et eu
   have hw := hp.wf
   have ps := pair_input hp he h.1.kb h.2.2.1
@@ -57,7 +57,7 @@ theorem pair_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     rw [Paired.seedState_eq _ _ (by lom) (by lom),Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h.1.rho,ba SB,h.2.1.rho,rho]
-  have ct := Paired.pair_relCT (w16:=false) (L:=P) (kg:=true) (a:=e) (by decide) (by decide) (by decide)
+  have ct := Paired.pair_relCT (w16:=w16) (L:=P) (kg:=true) (a:=e) (by decide) (by decide) (by decide)
     (by change AH+1024*e<65536; lom) (by change AH+1024*(e+1)<65536; lom) ps pu
     (by rw [h.1.kb.sp,h.2.1.kb.sp,sp]) (by rw [h.1.kb.x28,h.2.1.kb.x28,base]) (seeds e) (seeds (e+1))
   have ht := Paired.exec_post (matrix_pair hp he h.1 h.2.2.1) et
@@ -66,11 +66,11 @@ theorem pair_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     by rw [Exec.syms et,Exec.syms eu]; exact h.2.2.2.2⟩
 
 
-theorem last_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
+theorem last_matrix_relCT {w16 : Bool} {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     (base : kA σ 3=kA τ 3) (sp : σ.sp=τ.sp) (rho : rhoK P σ=rhoK P τ) {e : Nat}
     (he : e<P.k*P.k) :
-    RelCT isa (MatrixRel P σ τ e) (Paired.lastCode SB SS e P.k (AH+1024*e))
-      (MatrixRel P σ τ (e+1)) := by
+    RelCT isa (MatrixRel w16 P σ τ e) (Paired.lastCode SB SS e P.k (AH+1024*e) w16)
+      (MatrixRel w16 P σ τ (e+1)) := by
   intro s u tr ur t v h et eu
   have hw := hp.wf
   have ps := last_input hp he h.1.kb h.2.2.1
@@ -81,7 +81,7 @@ theorem last_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
   have seed : Paired.seedBytes s.mem ((kA σ 3+BitVec.ofNat 64 SB)) e P.k=Paired.seedBytes u.mem ((kA σ 3+BitVec.ofNat 64 SB)) e P.k := by
     unfold Paired.seedBytes
     rw [h.1.rho,ba SB,h.2.1.rho,rho]
-  have ct := Paired.lastCode_relCT (w16 := false) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  have ct := Paired.lastCode_relCT (w16 := w16) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     ps pu (hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=AH+1024*e) (l₂:=1024) (by decide) (by decide) (by kl) (matrixEntry_fit hw he) (by lom))
     (by rw [h.1.kb.sp,h.2.1.kb.sp,sp]) (by rw [h.1.kb.x28,h.2.1.kb.x28,base]) seed
   have ht := Paired.exec_post (matrix_singleton hp he h.1 h.2.2.1) et
@@ -90,10 +90,10 @@ theorem last_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     by rw [Exec.syms et,Exec.syms eu]; exact h.2.2.2.2⟩
 
 
-theorem paired_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
+theorem paired_matrix_relCT {w16 : Bool} {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     (base : kA σ 3=kA τ 3) (sp : σ.sp=τ.sp) (rho : rhoK P σ=rhoK P τ) :
-    RelCT isa (MatrixRel P σ τ 0) (Impl.MlKem.AArch64.Paired.matrix P true)
-      (MatrixRel P σ τ (P.k*P.k)) := by
+    RelCT isa (MatrixRel w16 P σ τ 0) (Impl.MlKem.AArch64.Paired.matrix P true w16)
+      (MatrixRel w16 P σ τ (P.k*P.k)) := by
   have hk : 0<P.k := hp.wf.facts.1
   have hn : 0<P.k*P.k := Nat.mul_pos hk hk
   apply RelCTs.seqs
@@ -103,7 +103,7 @@ theorem paired_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
     · simpa only [ite_eq_left ho,List.cons_ne_nil] using parts.2
     · have np : 0<P.k*P.k/2 := by omega
       exact map_range_ne_nil np _ parts.1
-  · refine RelCTs.append (RelCTs.range (I:=fun i=>MatrixRel P σ τ (2*i))
+  · refine RelCTs.append (RelCTs.range (I:=fun i=>MatrixRel w16 P σ τ (2*i))
       (fun i hi=>?_)) ?_
     · simpa only [Nat.mul_add,Nat.mul_one] using
         pair_matrix_relCT hp hq base sp rho (by omega : 2*i+1<P.k*P.k)
@@ -111,7 +111,7 @@ theorem paired_matrix_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ)
       · rw [ite_eq_left ho]
         have idx : 2*(P.k*P.k/2)=P.k*P.k-1 := by omega
         rw [idx]
-        refine ⟨MatrixRel P σ τ (P.k*P.k-1+1),?_,?_⟩
+        refine ⟨MatrixRel w16 P σ τ (P.k*P.k-1+1),?_,?_⟩
         · rw [Paired.lastSample_eq]
           exact last_matrix_relCT hp hq base sp rho (by omega : P.k*P.k-1<P.k*P.k)
         · intro s u h
