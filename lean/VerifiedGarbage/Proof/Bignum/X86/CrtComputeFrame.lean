@@ -17,8 +17,8 @@ theorem compute_header {n d : Nat} {base : Addr} {m m' : Mem}
     · intro r hr
       simp only [computeRanges, powersRanges, arithmeticRanges, tableRange, recombineRanges,
         List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [slot, stride, multiplierOffset] <;> omega
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [slot, stride, multiplierOffset, counterOffset] <;> omega
     · omega
   apply BitVec.eq_of_toNat_eq
   simpa only [val32, w32, Nat.mul_zero, Nat.add_zero] using V

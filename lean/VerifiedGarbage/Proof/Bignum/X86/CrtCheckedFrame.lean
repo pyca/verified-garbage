@@ -21,8 +21,9 @@ theorem checked_frame {n bytes : Nat} {base : Addr} {m m' : Mem}
   intro r hr
   simp only [checkedRanges, validationRanges, computeRanges, powersRanges, arithmeticRanges, tableRange,
     recombineRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [slot, stride, contextBytes, productSlot, resultSlot, mpSlot, mqSlot, multiplierOffset, acceptanceOffset] at * <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [slot, stride, contextBytes, productSlot, resultSlot, pSlot, mpSlot, multiplierOffset,
+      acceptanceOffset, counterOffset] at * <;> omega
 
 theorem body_scratch {bytes : Nat} {base : Addr} {m m' : Mem}
     (O : Outs base (bodyRanges bytes) m m') (space : 48 ≤ bytes) : Outside base 0 bytes m m' := by

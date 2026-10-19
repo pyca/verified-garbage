@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtPowersFrame
+public import VerifiedGarbage.Proof.Bignum.X86.CrtBothPowers
 public import VerifiedGarbage.Proof.Bignum.X86.CrtCoefficientStage
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRecombineStage
 public import VerifiedGarbage.Proof.Bignum.X86.SafePrime
@@ -33,10 +33,8 @@ theorem compute_ok {s : State} {base : Addr} {bytes n : Nat}
       Outs base (computeRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have fit : size n ≤ 2 ^ 64 := by have := hs.nowrap; omega
   unfold compute
-  refine WP.seq (WP.mono (powers_ok hs hn hn32 hz args) fun u ⟨P, _, Q, Qw, O, K⟩ => ?_)
-  have Pu := powers_value O (i := pSlot) (k := n) (by decide) (by decide) (by omega) fit
-  have Qu := powers_value O (i := qSlot) (k := n) (by decide) (by decide) (by omega) fit
-  have QIu := powers_value O (i := inverseSlot) (k := n) (by decide) (by decide) (by omega) fit
+  refine WP.seq (WP.mono (powers_ok hs hn hn32 hz args) fun u ⟨P, _, Q, Qw, Pu, Qu, O, K⟩ => ?_)
+  have QIu := powers_value O (i := inverseSlot) (k := n) (by decide) (by omega) fit
   have reduced : wordsVal u.mem base (slot n mpSlot) n < safePrime (wordsVal u.mem base (slot n pSlot) n) := by
     rw [P, Pu]
     exact Nat.mod_lt _ (by have := safePrime_gt_one (wordsVal s.mem base (slot n pSlot) n); omega)

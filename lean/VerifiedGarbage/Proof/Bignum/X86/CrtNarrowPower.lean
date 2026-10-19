@@ -278,29 +278,27 @@ theorem lengthFits_ok {s : State} {base : Addr} {bytes n lenArg : Nat} {v : BitV
   refine ⟨F.mem.trans U.mem, U.keeps.trans (F.keeps _), ?_⟩
   rw [C, U.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt bound]
 
-theorem factorPowerFit_ok {s : State} {base : Addr} {bytes n prime exponent output lenArg : Nat}
+/-- The factor's exponentiation at `half n` words or at the modulus's width,
+by CF, from the comparison of its length `v` with `8 half n` (`lengthFits_ok`). -/
+theorem fitPower_ok {s : State} {base : Addr} {bytes n prime exponent output : Nat}
     {v : BitVec 32} (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
     (hp : 9 ≤ prime) (hp' : prime < 15) (he : 9 ≤ exponent) (he' : exponent < 16)
-    (ho : 16 ≤ output) (ho' : output < 20) (A : CallArgument s base bytes lenArg v) :
-    WP isa (factorPowerFit n prime exponent output lenArg) s fun t =>
+    (ho : 16 ≤ output) (ho' : output < 20) (cf : s.cf = some (decide (v.toNat < 8 * half n + 1))) :
+    WP isa (fitPower n prime exponent output) s fun t =>
       ((v.toNat ≤ 8 * half n → wordsVal s.mem base (slot n prime) n < 2 ^ (64 * half n) ∧
           wordsVal s.mem base (slot n exponent) n < 2 ^ (64 * half n)) →
         let result := wordsVal s.mem base (slot n inputSlot) n ^ wordsVal s.mem base (slot n exponent) n %
           safePrime (wordsVal s.mem base (slot n prime) n)
         wordsVal t.mem base (slot n output) n = result ∧ wordsVal t.mem base (slot n output) (2 * n) = result) ∧
       Outs base (factorRanges n output) s.mem t.mem ∧ Keeps powerClob s t := by
-  unfold factorPowerFit
-  refine WP.seq (WP.mono (lengthFits_ok hn32 A) fun w ⟨M, Kw, cf⟩ => ?_)
-  have hw := hs.of_keeps Kw (by decide)
+  unfold fitPower
   refine WP.ite _ cf (fun fits => ?_) (fun long => ?_)
-  · refine WP.mono (narrowPower_ok hw hn hn32 hz hp hp' he he' ho ho') fun t ⟨V, O, K⟩ => ?_
-    rw [M] at V O
-    refine ⟨fun B => ?_, O, (Kw.mono (by decide)).trans K⟩
+  · refine WP.mono (narrowPower_ok hs hn hn32 hz hp hp' he he' ho ho') fun t ⟨V, O, K⟩ => ?_
+    refine ⟨fun B => ?_, O, K⟩
     have B' := B (by have := of_decide_eq_true fits; omega)
     exact V B'.1 B'.2
-  · refine WP.mono (factorPower_ok hw hn hn32 hz hp (by omega) he he' ho ho') fun t ⟨V, W, O, K⟩ => ?_
-    rw [M] at V W O
-    exact ⟨fun _ => ⟨V, W⟩, O, (Kw.mono (by decide)).trans K⟩
+  · refine WP.mono (factorPower_ok hs hn hn32 hz hp (by omega) he he' ho ho') fun t ⟨V, W, O, K⟩ => ?_
+    exact ⟨fun _ => ⟨V, W⟩, O, K⟩
 
 /-- Changes within ranges of the working space leave the rest of memory. -/
 theorem Outs.outside {base : Addr} {rs : List (Nat × Nat)} {bytes : Nat} {m m' : Mem}
