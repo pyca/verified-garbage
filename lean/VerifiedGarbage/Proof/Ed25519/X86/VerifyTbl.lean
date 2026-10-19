@@ -14,6 +14,11 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.X25519.X86.Freeze
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Ed25519 verification on x86 (32-bit): `-[1]B … -[15]B` in a static

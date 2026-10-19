@@ -21,6 +21,18 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Mont.Arm.Csub
+public import VerifiedGarbage.Proof.Mont.Arm.Row
+public import VerifiedGarbage.Proof.Mont.Arm.Step
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: big-endian words

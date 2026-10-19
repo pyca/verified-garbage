@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Rc4.Scratch
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # RC4 on ARMv7: the contracts the proofs use

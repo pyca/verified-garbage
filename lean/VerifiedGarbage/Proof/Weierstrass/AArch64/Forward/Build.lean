@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 import VerifiedGarbage.Spec.Weierstrass.Mont
 import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

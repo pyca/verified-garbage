@@ -19,6 +19,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Argon2.HPrime
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Zeroing the Argon2 matrix, independently of its initial contents -/
 

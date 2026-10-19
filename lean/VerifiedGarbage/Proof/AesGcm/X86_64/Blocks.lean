@@ -37,6 +37,28 @@ import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Impl.Gcm.X86_64
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM on x86-64: small blocks shared by the pieces

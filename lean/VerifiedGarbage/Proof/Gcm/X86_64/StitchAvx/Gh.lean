@@ -26,6 +26,22 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 
 /-!
 # Interleaved counter mode and GHASH in AVX: the GHASH work

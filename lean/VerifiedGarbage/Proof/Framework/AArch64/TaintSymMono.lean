@@ -6,6 +6,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # The AArch64 taint analyses with statics are monotone

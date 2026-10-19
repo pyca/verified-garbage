@@ -59,6 +59,50 @@ import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Proof.Ecdh.X86.Peer
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.P256Red
+public import VerifiedGarbage.Proof.Mont.X86.RedRow
+public import VerifiedGarbage.Proof.Mont.X86.Row
+public import VerifiedGarbage.Proof.Mont.X86.SparseShift
+public import VerifiedGarbage.Proof.Mont.X86.SparseStep
+public import VerifiedGarbage.Proof.Mont.X86.Step
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.X25519.X86.Arith
+public import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # ECDH over P-192 (SP 800-56A) on x86 (32-bit)

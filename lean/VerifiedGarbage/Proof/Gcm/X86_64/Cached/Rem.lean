@@ -36,6 +36,33 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.MaskedPrefix
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 
 /-!
 # The blocks after the last group

@@ -41,6 +41,30 @@ import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.X25519.Arm.Cswap
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+public import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+public import VerifiedGarbage.Proof.Ed25519.Arm.Points
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
+public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+public import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.Correct`. -/
 

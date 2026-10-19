@@ -14,6 +14,12 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.X25519.Arm.Pass
 import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.X25519.Arm.Pass
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! The compact point-table representation. -/
 

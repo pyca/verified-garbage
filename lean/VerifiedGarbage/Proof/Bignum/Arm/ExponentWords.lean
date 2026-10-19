@@ -9,6 +9,11 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 
 @[expose] public section

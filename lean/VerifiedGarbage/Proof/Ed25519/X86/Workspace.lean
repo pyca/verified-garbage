@@ -13,6 +13,11 @@ public import VerifiedGarbage.Proof.X25519.X86.Freeze
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.X25519.X86.Ops
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Ed25519 on x86 (32-bit): the field arithmetic

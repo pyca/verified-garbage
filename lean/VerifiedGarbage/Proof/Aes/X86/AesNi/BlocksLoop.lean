@@ -16,6 +16,14 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-NI on x86 (32-bit): the loops over whole blocks

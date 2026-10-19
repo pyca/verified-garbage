@@ -21,6 +21,24 @@ import VerifiedGarbage.Proof.Mont.X86.RowW
 import VerifiedGarbage.Proof.Mont.X86.SparseShift
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
+public import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.Inverse
+public import VerifiedGarbage.Proof.Mont.X86.P256Red
+public import VerifiedGarbage.Proof.Mont.X86.PowerInit
+public import VerifiedGarbage.Proof.Mont.X86.PowerLoop
+public import VerifiedGarbage.Proof.Mont.X86.PowerTwo
+public import VerifiedGarbage.Proof.Mont.X86.RedRow
+public import VerifiedGarbage.Proof.Mont.X86.Row
+public import VerifiedGarbage.Proof.Mont.X86.RowW
+public import VerifiedGarbage.Proof.Mont.X86.SparseShift
+public import VerifiedGarbage.Proof.Mont.X86.Step
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 
 /-! # Boolean meaning of the packed-key acceptance mask -/

@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! Literal code keeps unrolled table scans cheap for kernel-evaluated audits. -/
 

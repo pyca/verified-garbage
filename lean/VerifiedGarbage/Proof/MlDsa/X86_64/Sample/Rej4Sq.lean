@@ -19,6 +19,21 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 
 
 /-!

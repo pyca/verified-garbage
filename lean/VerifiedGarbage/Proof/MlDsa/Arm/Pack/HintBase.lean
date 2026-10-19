@@ -18,6 +18,12 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on 32-bit ARM: what the proofs of `HintBitPack` and `HintBitUnpack` share

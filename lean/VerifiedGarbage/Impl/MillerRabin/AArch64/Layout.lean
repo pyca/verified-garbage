@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.Layout
 import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Impl.Rsa.AArch64
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 
 
 /-! # Workspace representation shared by RSA and FFDH Miller–Rabin -/

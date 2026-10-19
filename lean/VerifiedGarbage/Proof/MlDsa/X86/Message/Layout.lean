@@ -20,6 +20,12 @@ public import VerifiedGarbage.Proof.MlKem.X86.Keccak
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Impl.Sha256.X86.Stream
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: where everything is

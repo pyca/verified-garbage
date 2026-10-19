@@ -16,6 +16,15 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 
 
 @[expose] public section

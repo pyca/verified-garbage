@@ -34,6 +34,32 @@ import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
+public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
+public import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.Proof.Ocb.State
+public import VerifiedGarbage.Spec.Ocb.Contract
 
 /-!
 # AES-OCB on AArch64: `Offset_0` (`offset0`)

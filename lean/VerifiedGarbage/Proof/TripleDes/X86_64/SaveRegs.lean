@@ -7,6 +7,8 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Storing and reloading registers, one instruction at a time

@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
 import VerifiedGarbage.Impl.Mont.AArch64
 import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 
