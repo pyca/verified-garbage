@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourState
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! ## From `BoundedFourInitMiddle.lean` -/
 

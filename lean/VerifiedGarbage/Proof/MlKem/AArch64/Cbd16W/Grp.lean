@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # `vg_mlkem16_cbd2` on AArch64: sixteen coefficients from their nibbles

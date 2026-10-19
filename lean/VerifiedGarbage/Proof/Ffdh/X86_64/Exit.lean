@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # FFDH on x86-64: restore System V's saved registers -/
 

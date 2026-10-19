@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 import VerifiedGarbage.Proof.Dsa.X86.HeaderFrame
 import VerifiedGarbage.Proof.Dsa.X86.SaveArgument
 import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 
 /-! # Installing a list of stack arguments into distinct persistent fields -/
 

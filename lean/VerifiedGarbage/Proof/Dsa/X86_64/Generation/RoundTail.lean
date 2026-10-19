@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # Reuse RSA's verified completion rule with DSA's uniform-round count -/
 

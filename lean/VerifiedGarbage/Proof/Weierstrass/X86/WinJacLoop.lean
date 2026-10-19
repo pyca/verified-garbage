@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.WinJacRead
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.X86.Window
+import VerifiedGarbage.Proof.Weierstrass.Window
 
 /-! ## `WinJacFirst` -/
 

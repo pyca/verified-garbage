@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86.CoreReduceTiming
 import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
 import VerifiedGarbage.Proof.Dsa.X86.StageValues
 import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-! # Streaming reduction stages retain the public call layout -/
 

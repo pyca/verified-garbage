@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: `Verified`

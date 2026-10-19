@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.PackedFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Validate packed arithmetic inputs and choose a safe public-operation path -/
 

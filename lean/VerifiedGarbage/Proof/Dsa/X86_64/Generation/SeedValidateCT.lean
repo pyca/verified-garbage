@@ -6,6 +6,30 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackMemoryCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Pack
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackInto
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateArgs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Pack
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackInto
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 
 /-! # Final domain validation uses the generation arena and exact packed bytes -/
 

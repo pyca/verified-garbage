@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
 
 /-!
 # ML-DSA verification on x86 (32-bit): the hint and `z`

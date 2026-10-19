@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # A candidate on x86-64: Miller–Rabin's witness

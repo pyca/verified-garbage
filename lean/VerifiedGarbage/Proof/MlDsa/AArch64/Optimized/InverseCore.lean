@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

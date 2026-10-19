@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.PackedFrame
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Complete fixed-width public RSA from a stored precomputation -/
 

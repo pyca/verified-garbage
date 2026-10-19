@@ -7,6 +7,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the contract

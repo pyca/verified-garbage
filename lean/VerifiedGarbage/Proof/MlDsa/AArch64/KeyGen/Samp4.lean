@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

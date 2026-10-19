@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! The measured Jacobian denominator square and projective check satisfy verification. -/
 

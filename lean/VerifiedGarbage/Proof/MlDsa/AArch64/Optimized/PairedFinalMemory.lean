@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

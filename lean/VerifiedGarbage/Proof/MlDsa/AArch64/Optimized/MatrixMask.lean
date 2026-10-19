@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `MatrixMaskGroup.lean` -/
 

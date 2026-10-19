@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CTR from `vg_aes_ctr32`

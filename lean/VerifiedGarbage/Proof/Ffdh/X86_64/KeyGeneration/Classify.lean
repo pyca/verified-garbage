@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
 
 /-! # After an attempt: the key, or one fewer scalar or key -/
 

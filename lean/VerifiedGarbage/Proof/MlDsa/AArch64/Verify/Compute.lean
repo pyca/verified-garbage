@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA verification on AArch64: `w′₁`, row by row

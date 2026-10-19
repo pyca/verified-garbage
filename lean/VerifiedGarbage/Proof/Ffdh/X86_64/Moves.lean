@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # FFDH on x86-64: workspace switches and Boolean branches -/
 

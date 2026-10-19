@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.X86.KcBody
 public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.RsaKeyGen
 
 
 /-! # Key-check arithmetic agrees with the shared RSA validity predicates -/

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Spec.MlKem.Poly
 
 @[expose] public section
 

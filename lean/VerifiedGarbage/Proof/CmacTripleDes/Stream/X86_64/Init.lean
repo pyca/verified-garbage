@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Init
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
+import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!
 # Streaming TDEA-CMAC on x86-64: `vg_cmac_triple_des_stream_init`

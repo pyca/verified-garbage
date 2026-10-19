@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on AArch64: the output polynomial set to zeros

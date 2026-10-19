@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Spec.Ffdh
 
 /-! # Packing and final validation implement the last seed-acceptance decision -/
 

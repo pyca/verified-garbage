@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPss.CtPad
 
 /-!
 # RSASSA-PSS on AArch64: the pieces of the encoding

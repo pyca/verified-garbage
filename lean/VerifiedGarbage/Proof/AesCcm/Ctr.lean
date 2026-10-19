@@ -7,6 +7,8 @@ public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-CCM: counter mode in pieces

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `ResponseLowFlags.lean` -/
 

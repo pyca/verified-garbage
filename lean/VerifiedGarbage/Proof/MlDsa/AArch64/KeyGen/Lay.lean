@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers

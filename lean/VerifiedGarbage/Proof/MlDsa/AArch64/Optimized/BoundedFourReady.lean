@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `BoundedFourCounts.lean` -/
 

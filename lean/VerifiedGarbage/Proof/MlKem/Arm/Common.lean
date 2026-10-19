@@ -12,6 +12,7 @@ import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on 32-bit ARM: common lemmas

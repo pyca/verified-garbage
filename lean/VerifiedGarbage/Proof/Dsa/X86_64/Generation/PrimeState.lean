@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # State of DSA's shared Miller–Rabin witness loop -/
 

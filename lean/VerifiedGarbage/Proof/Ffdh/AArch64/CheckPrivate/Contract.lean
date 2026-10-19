@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # `vg_ffdh_check_private` on AArch64: the contract the proofs use

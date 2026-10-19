@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # DSA witness selection branches only on the public sampled candidate -/
 

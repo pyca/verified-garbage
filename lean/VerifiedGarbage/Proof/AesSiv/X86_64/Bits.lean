@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-SIV on x86-64: words and bits

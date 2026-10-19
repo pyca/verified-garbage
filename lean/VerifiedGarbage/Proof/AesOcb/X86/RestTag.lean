@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on x86: the rest of the data and the tag (`rest`, `tag`)

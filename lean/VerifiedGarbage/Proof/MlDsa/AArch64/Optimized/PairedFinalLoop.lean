@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedFinalRoots.lean` -/
 

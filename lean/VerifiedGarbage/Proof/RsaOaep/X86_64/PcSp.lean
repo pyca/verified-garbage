@@ -8,6 +8,7 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # RSAES-OAEP encryption with a precomputed public key on x86-64: the stack pointer -/
 

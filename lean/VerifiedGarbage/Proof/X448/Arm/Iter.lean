@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.X448.Ladder
 public import VerifiedGarbage.Proof.X448.Arm.Ops
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on ARMv7: the Montgomery ladder

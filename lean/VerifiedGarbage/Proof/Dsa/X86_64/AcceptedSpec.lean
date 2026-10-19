@@ -8,6 +8,7 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Connecting implementation acceptance masks with DSA's operational checks -/
 

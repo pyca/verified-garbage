@@ -5,6 +5,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `BoundedFourSqueezeState.lean` -/
 

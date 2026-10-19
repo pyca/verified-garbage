@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! # ECDH correctness with the x86 P-256 signed-window multiplier -/
 

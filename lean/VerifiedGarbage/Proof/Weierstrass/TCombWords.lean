@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Comb
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The comb's tables as words: their length and their entries

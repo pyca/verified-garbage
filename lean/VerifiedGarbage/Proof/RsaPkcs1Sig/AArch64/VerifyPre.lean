@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the precondition

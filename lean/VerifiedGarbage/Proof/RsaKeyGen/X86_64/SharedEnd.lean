@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # Candidate finalization with the shared callee's private stack -/
 

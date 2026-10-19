@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafPoints
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! The Jacobian verifier satisfies the existing complete verification postcondition. -/
 

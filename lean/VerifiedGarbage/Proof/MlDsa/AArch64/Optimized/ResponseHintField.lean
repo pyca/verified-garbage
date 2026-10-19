@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

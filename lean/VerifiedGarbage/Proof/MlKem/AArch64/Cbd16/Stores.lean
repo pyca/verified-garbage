@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Out
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # CBD2's sequential polynomial stores -/
 

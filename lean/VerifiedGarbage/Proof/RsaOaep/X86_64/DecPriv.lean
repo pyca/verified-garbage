@@ -6,6 +6,7 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSAES-OAEP decryption on x86-64: the private-key operation

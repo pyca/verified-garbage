@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 
 /-! # The 16-bit hashing encapsulation is correct
 

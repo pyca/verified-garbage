@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.BrainpoolP512r1
 public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Spec.Ecdh
+import VerifiedGarbage.Spec.Ecdh.Generic
 
 /-!
 # ECDH over brainpoolP512r1 on x86 (32-bit): the contract the proof is written against

@@ -9,6 +9,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on AArch64: the whole function

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 
 /-! # Uniform frames for calls in the DSA signing and verification schedules -/
 

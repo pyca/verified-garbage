@@ -15,6 +15,7 @@ public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: copying words

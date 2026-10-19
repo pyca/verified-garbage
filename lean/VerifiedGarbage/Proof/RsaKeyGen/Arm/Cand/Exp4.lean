@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Spec.RsaKeyGen
 
 
 /-! # A candidate on ARMv7: the masks of the shift and the word `2^(t mod 64)`

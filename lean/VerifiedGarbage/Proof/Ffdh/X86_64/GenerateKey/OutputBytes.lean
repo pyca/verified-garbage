@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # FFDH key generation on x86-64: byte outputs after masking -/
 

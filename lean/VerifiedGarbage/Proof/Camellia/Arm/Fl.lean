@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.Arm.Round
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # FL and FLINV on ARMv7

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

@@ -7,6 +7,7 @@ public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Arithmetic variants for the complete DSA entry points
 

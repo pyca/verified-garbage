@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Layout for native p construction and its saved generator exponent -/
 

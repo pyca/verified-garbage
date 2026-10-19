@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetup
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # Preserved arguments around modulus preparation -/
 

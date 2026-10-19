@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

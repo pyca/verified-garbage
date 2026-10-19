@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Spec.Ffdh
 
 /-! # Packing and final validation implement the last seed-acceptance decision -/
 

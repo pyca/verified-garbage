@@ -8,6 +8,7 @@ public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Lit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # The checked RSA private-key operation on AArch64: its callees' contracts

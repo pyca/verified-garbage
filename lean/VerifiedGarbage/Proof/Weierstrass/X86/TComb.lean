@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Spec.X25519
 
 /-! ## `TCombEntry` -/
 

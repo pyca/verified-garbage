@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Copy
 import VerifiedGarbage.Proof.X448.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # Ed448 verification on AArch64: comparing slots of the register-resident arithmetic

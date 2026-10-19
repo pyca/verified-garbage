@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Keeps
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The saved round body preserves the reusable caller's workspace -/
 

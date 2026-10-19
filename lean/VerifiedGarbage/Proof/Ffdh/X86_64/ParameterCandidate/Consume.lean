@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: consume the candidate's initial prefix -/
 

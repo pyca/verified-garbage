@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## `PairedLowStep` -/
 

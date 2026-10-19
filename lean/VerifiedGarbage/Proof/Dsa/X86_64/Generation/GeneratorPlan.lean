@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Shared memory plan for native generator filtering and exponentiation -/
 

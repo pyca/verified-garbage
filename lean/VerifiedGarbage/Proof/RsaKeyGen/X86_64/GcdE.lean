@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # A candidate on x86-64: `gcd(c − 1, e)` for an odd `e > 1`

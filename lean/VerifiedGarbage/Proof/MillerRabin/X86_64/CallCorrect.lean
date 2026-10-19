@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
 import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # Correctness of the round with Montgomery calls

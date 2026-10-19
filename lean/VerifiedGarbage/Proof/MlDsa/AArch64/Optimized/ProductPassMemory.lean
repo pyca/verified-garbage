@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `ProductFive.lean` -/
 

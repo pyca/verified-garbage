@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!
 # Streaming TDEA-CMAC on AArch64: `vg_cmac_triple_des_stream_init`

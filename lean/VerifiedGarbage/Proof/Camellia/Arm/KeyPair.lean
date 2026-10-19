@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # Camellia's key schedule on ARMv7: a pair of rounds on one value

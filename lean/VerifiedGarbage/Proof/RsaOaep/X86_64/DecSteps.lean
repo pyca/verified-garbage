@@ -9,6 +9,7 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSAES-OAEP decryption on x86-64: the points between the pieces

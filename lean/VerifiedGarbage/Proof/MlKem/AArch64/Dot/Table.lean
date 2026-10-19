@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
 import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

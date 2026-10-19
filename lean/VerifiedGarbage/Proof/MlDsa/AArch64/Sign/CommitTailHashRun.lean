@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
 import VerifiedGarbage.Proof.MlKem.Mem
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `CommitTailHashPadding.lean` -/
 

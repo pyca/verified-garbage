@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
 import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import VerifiedGarbage.Proof.AesGcm.Arm.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM-SIV on ARMv7: POLYVAL and the tag input (`absorb`, `polyval`)

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Spec.Gcm.Precomputed
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # The setup of the blocks after the last group

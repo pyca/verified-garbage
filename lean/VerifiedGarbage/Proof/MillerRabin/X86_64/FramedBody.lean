@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
 import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The framed body restores the caller's saved registers -/
 

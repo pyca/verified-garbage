@@ -5,6 +5,7 @@ public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Rsa.KeyBits32
 
 /-! # A candidate on ARMv7: the bits the code sets and clears
 

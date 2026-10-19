@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # TDEA: the passes, and the key schedule in memory

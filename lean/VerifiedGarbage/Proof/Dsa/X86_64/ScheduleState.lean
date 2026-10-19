@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # State and operand preservation between complete DSA schedules -/
 

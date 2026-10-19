@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Impl.X448.AArch64
 import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on AArch64: clamping the scalar bits

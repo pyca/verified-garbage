@@ -5,6 +5,7 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # FFDH key generation on x86-64: reuse the exchange output workspace -/
 

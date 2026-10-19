@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a prime's region

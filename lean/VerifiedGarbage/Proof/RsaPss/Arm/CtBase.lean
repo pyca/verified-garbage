@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.Hash
 public import VerifiedGarbage.Proof.RsaPss.CtPad
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
 # RSASSA-PSS on ARMv7: hashing a message of secret length, the setting

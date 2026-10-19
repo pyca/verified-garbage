@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the check and the release

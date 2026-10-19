@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-! # Public call layout and caller buffers retained across arithmetic stages -/
 

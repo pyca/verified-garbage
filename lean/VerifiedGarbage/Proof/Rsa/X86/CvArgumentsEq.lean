@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Rsa.X86.CvABI
+import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
 
 
 /-! # Only the sixteen cdecl arguments matter to CRT caller geometry -/

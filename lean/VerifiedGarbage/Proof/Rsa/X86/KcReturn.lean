@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-! # Key validation preserves saved registers and the return address -/
 

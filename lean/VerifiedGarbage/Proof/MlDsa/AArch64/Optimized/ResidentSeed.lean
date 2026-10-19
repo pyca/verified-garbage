@@ -10,6 +10,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.Spec
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `ResidentLast.lean` -/
 

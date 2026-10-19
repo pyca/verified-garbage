@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Siv.Spec
 
 /-!
 # AES-GCM-SIV on AArch64: counter mode (`crypt`)

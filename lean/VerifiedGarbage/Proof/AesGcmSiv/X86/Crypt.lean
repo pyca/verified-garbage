@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Siv.Spec
 
 /-!
 # AES-GCM-SIV on x86: counter mode (`crypt`)

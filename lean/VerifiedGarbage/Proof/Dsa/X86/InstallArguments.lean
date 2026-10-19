@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Dsa.X86.OpenScratch
 import VerifiedGarbage.Proof.Dsa.X86.SaveArguments
 import VerifiedGarbage.Proof.Dsa.X86.EntryFrame
 import VerifiedGarbage.Proof.Dsa.X86.KeyPointers
+import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 
 /-! # Complete cdecl argument installation and packed-key pointer expansion -/
 

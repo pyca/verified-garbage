@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the contract on the registers

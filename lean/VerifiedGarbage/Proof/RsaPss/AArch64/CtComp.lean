@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on AArch64: compressing every block

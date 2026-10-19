@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.PublicWritten
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Match the checked-RSA contract on both acceptance and failure paths -/
 

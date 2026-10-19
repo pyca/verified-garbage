@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 /-!
 # RSAES-OAEP on ARMv7: `dst ⊕= MGF1(src, dstLen)`

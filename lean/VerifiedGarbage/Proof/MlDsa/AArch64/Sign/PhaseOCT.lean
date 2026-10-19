@@ -7,6 +7,7 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA signing on AArch64: the signature leaks only the hint

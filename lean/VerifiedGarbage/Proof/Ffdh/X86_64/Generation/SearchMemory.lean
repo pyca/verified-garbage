@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 
 /-! # Output permissions relative to the persistent generation controller -/
 

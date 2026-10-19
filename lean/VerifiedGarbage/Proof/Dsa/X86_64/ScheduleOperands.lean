@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Buffer separation in the complete DSA arithmetic schedules -/
 

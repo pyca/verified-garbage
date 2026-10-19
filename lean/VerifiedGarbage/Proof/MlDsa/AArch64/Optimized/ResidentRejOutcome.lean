@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.MlKem.Poly
 
 @[expose] public section
 

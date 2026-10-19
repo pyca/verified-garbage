@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # Constant-time derivation of the prepared Montgomery constants -/
 

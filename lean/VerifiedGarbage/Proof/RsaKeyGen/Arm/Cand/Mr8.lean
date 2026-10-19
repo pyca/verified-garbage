@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 
 /-! # A candidate on ARMv7: the pieces of an iteration of Miller–Rabin
 

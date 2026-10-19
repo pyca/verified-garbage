@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Store
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # One continued rejection stream and its checkpoint -/
 

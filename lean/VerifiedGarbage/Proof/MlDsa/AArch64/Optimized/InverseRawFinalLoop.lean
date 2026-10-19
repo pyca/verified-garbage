@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function

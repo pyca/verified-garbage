@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.Ntt
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on AArch64: polynomials in vectors

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Dsa.Random
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! Apply sampler leakage to contexts with independent secret tapes and memories. -/
 @[expose] public section

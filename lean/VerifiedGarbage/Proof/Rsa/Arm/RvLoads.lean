@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the working space set up, and the numbers read
 

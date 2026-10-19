@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.CrtExp
 
 /-! # Equality masks for supported DSA modulus widths -/
 

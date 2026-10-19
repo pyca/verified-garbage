@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # A valid public exponent reaches the selected packed-key width -/
 

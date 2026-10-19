@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Slots
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Native terminal policy transitions -/
 

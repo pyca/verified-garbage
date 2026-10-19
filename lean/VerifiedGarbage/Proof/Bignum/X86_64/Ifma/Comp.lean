@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `ifma`

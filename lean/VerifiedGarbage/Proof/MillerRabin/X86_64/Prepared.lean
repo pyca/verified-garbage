@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Existing Montgomery contexts satisfy the callable's prepared contract -/
 

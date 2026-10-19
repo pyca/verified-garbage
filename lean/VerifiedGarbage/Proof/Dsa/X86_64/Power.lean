@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # DSA exponentiation, including conversion out of Montgomery form -/
 

@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.X448.Arm.Env
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on ARMv7: the whole function

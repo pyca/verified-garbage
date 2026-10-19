@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Rc2
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # RC2's little-endian block representation -/
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcResult
 import VerifiedGarbage.Proof.Rsa.X86.KcPublic
 import VerifiedGarbage.Proof.Rsa.X86.KcValid
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Public rejection branches and full key validation have the same result contract -/
 

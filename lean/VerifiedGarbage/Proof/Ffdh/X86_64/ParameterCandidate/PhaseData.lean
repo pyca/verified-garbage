@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: p and q phase widths and values -/
 

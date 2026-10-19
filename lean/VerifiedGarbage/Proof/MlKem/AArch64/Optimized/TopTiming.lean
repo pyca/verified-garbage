@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
 
 /-! # Compositional timing endpoints for optimized public operations -/
 @[expose] public section

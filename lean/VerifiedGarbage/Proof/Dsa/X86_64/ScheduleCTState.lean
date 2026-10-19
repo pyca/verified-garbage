@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Public state and secret operand availability for complete schedules -/
 

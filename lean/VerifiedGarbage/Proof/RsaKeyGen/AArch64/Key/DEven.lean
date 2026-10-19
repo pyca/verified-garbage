@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on AArch64: `d` for an even `e`

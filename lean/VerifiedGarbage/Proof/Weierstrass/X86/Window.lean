@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.WinLay
 public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # The window method on x86 (32-bit): the table and the additions

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The Montgomery and exponent contexts survive the saved frame -/
 

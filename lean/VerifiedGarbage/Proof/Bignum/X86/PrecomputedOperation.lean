@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedValid
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Complete packed-key public RSA body including exponent rejection -/
 

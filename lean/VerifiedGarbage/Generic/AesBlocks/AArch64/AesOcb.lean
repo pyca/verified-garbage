@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
 # AES-OCB (RFC 7253) on AArch64

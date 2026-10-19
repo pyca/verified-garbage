@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Common
 import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Impl.MlKem.X86.Compress
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86 (32-bit): unpacking and decompressing coefficients

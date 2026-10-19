@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with the CRT on x86-64: the checks

@@ -10,6 +10,7 @@ public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Lift the saved arithmetic body to actual Montgomery calls -/
 

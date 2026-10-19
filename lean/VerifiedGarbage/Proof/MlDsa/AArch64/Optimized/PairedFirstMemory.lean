@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedStoreMemory.lean` -/
 

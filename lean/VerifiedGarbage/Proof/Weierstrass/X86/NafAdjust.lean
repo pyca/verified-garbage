@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.X25519
 
 /-! ## `NafChoose` -/
 

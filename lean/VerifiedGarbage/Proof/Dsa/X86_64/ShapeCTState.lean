@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Public state carried through DSA domain-shape validation -/
 

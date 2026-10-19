@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Sbox
 import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

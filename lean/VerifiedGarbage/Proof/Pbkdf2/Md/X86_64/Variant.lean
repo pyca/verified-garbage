@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Hmac.Scratch
+import VerifiedGarbage.Proof.Framework.Cold
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants

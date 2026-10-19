@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 
 /-! # Instantiate private operand imports from immutable call arguments -/
 

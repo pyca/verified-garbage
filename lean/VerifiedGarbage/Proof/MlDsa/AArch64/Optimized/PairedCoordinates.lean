@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

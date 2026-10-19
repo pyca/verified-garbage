@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCandidate
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
+import VerifiedGarbage.Proof.Dsa.X86.RandomCallPre
 
 
 /-!

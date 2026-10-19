@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.P384.X86_64.PointOpsVerified
 import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # P-384's point functions on x86-64: the shared contracts

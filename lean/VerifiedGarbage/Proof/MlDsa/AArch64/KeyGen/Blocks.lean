@@ -7,6 +7,7 @@ public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on AArch64: the blocks between calls

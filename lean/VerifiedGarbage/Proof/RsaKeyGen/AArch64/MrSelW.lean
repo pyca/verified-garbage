@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # A candidate on AArch64: reading Miller–Rabin's table

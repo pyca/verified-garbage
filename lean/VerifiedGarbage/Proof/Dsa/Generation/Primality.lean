@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+import VerifiedGarbage.Spec.Ffdh
 
 /-! # DSA's policy around the shared RSA Miller–Rabin loop -/
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.LaneU
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the multiplication with the look-ahead

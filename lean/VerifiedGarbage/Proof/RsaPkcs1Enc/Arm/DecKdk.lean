@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Pbkdf2.Hmac
+import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `KDK = HMAC(DH, C)`

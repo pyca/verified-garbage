@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 
 import VerifiedGarbage.Proof.Weierstrass.X86.Window
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 @[expose] public section
 

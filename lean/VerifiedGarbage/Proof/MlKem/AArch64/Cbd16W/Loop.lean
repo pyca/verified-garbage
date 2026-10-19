@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
 import VerifiedGarbage.Proof.Rc4.AArch64.Regs
+import VerifiedGarbage.Proof.Rc4.AArch64.WriteJ
 
 /-! # `vg_mlkem16_cbd2` on AArch64: eight iterations of 32 coefficients -/
 

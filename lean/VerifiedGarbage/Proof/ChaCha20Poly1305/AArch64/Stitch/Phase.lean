@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): a counted phase

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CorrectMath
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The inlined prepared round preserves its full calling convention -/
 

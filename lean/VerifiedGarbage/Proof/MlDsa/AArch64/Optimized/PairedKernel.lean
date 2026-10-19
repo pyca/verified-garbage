@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernelReady
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 
 @[expose] public section
 

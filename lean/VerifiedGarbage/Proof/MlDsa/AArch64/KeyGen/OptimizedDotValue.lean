@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

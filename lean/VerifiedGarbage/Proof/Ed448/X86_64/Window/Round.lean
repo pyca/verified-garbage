@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! One joint window: five doublings followed by two selected additions. -/
 
