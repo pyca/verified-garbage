@@ -1649,30 +1649,30 @@ mov rcx, QWORD PTR [rdi+512]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+704]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+712]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+720]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+728]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -1684,30 +1684,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -1716,30 +1716,30 @@ mov rcx, QWORD PTR [rdi+520]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+704]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+712]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+720]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+728]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -1751,30 +1751,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -1783,30 +1783,30 @@ mov rcx, QWORD PTR [rdi+528]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+704]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+712]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+720]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+728]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -1818,30 +1818,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -1850,30 +1850,30 @@ mov rcx, QWORD PTR [rdi+536]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+704]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+712]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+720]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+728]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -1885,30 +1885,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -1940,30 +1940,30 @@ mov rcx, QWORD PTR [rdi+544]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+736]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+744]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+752]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+760]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -1975,30 +1975,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -2007,30 +2007,30 @@ mov rcx, QWORD PTR [rdi+552]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+736]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+744]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+752]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+760]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -2042,30 +2042,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -2074,30 +2074,30 @@ mov rcx, QWORD PTR [rdi+560]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+736]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+744]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+752]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+760]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -2109,30 +2109,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -2141,30 +2141,30 @@ mov rcx, QWORD PTR [rdi+568]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+736]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+744]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+752]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+760]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -2176,30 +2176,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -2285,30 +2285,30 @@ mov rcx, QWORD PTR [rdi+896]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+928]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+936]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+944]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+952]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -2320,30 +2320,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -2352,30 +2352,30 @@ mov rcx, QWORD PTR [rdi+904]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+928]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+936]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+944]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+952]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -2387,30 +2387,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -2419,30 +2419,30 @@ mov rcx, QWORD PTR [rdi+912]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+928]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+936]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+944]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+952]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -2454,30 +2454,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -2486,30 +2486,30 @@ mov rcx, QWORD PTR [rdi+920]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+928]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+936]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+944]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+952]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -2521,30 +2521,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -2632,30 +2632,30 @@ mov rcx, QWORD PTR [rdi+736]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -2667,30 +2667,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -2699,30 +2699,30 @@ mov rcx, QWORD PTR [rdi+744]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -2734,30 +2734,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -2766,30 +2766,30 @@ mov rcx, QWORD PTR [rdi+752]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -2801,30 +2801,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -2833,30 +2833,30 @@ mov rcx, QWORD PTR [rdi+760]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -2868,30 +2868,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -2950,30 +2950,30 @@ mov rcx, QWORD PTR [rdi+704]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -2985,30 +2985,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -3017,30 +3017,30 @@ mov rcx, QWORD PTR [rdi+712]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -3052,30 +3052,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -3084,30 +3084,30 @@ mov rcx, QWORD PTR [rdi+720]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -3119,30 +3119,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -3151,30 +3151,30 @@ mov rcx, QWORD PTR [rdi+728]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -3186,30 +3186,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -3268,30 +3268,30 @@ mov rcx, QWORD PTR [rdi+1344]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -3303,30 +3303,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -3335,30 +3335,30 @@ mov rcx, QWORD PTR [rdi+1352]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -3370,30 +3370,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -3402,30 +3402,30 @@ mov rcx, QWORD PTR [rdi+1360]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -3437,30 +3437,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -3469,30 +3469,30 @@ mov rcx, QWORD PTR [rdi+1368]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+576]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+584]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+592]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+600]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -3504,30 +3504,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -3698,30 +3698,30 @@ mov rcx, QWORD PTR [rdi+1344]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -3733,30 +3733,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -3765,30 +3765,30 @@ mov rcx, QWORD PTR [rdi+1352]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -3800,30 +3800,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -3832,30 +3832,30 @@ mov rcx, QWORD PTR [rdi+1360]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -3867,30 +3867,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -3899,30 +3899,30 @@ mov rcx, QWORD PTR [rdi+1368]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -3934,30 +3934,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -4238,30 +4238,30 @@ mov rcx, QWORD PTR [rdi+928]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -4273,30 +4273,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -4305,30 +4305,30 @@ mov rcx, QWORD PTR [rdi+936]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -4340,30 +4340,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -4372,30 +4372,30 @@ mov rcx, QWORD PTR [rdi+944]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -4407,30 +4407,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -4439,30 +4439,30 @@ mov rcx, QWORD PTR [rdi+952]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -4474,30 +4474,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -4529,30 +4529,30 @@ mov rcx, QWORD PTR [rdi+800]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -4564,30 +4564,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -4596,30 +4596,30 @@ mov rcx, QWORD PTR [rdi+808]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -4631,30 +4631,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -4663,30 +4663,30 @@ mov rcx, QWORD PTR [rdi+816]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -4698,30 +4698,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -4730,30 +4730,30 @@ mov rcx, QWORD PTR [rdi+824]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+640]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+648]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+656]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+664]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -4765,30 +4765,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -4820,30 +4820,30 @@ mov rcx, QWORD PTR [rdi+608]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -4855,30 +4855,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -4887,30 +4887,30 @@ mov rcx, QWORD PTR [rdi+616]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -4922,30 +4922,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -4954,30 +4954,30 @@ mov rcx, QWORD PTR [rdi+624]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -4989,30 +4989,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5021,30 +5021,30 @@ mov rcx, QWORD PTR [rdi+632]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5056,30 +5056,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5138,30 +5138,30 @@ mov rcx, QWORD PTR [rdi+896]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+608]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+616]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+624]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+632]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -5173,30 +5173,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -5205,30 +5205,30 @@ mov rcx, QWORD PTR [rdi+904]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+608]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+616]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+624]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+632]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -5240,30 +5240,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -5272,30 +5272,30 @@ mov rcx, QWORD PTR [rdi+912]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+608]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+616]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+624]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+632]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5307,30 +5307,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5339,30 +5339,30 @@ mov rcx, QWORD PTR [rdi+920]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+608]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+616]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+624]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+632]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5374,30 +5374,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5458,30 +5458,30 @@ mov rcx, QWORD PTR [rdi+928]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -5493,30 +5493,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -5525,30 +5525,30 @@ mov rcx, QWORD PTR [rdi+936]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -5560,30 +5560,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -5592,30 +5592,30 @@ mov rcx, QWORD PTR [rdi+944]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5627,30 +5627,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5659,30 +5659,30 @@ mov rcx, QWORD PTR [rdi+952]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+672]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+680]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+688]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+696]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5694,30 +5694,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5749,30 +5749,30 @@ mov rcx, QWORD PTR [rdi+896]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+800]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+808]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+816]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+824]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -5784,30 +5784,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -5816,30 +5816,30 @@ mov rcx, QWORD PTR [rdi+904]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+800]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+808]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+816]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+824]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -5851,30 +5851,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -5883,30 +5883,30 @@ mov rcx, QWORD PTR [rdi+912]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+800]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+808]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+816]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+824]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5918,30 +5918,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -5950,30 +5950,30 @@ mov rcx, QWORD PTR [rdi+920]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+800]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+808]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+816]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+824]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -5985,30 +5985,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -6180,30 +6180,30 @@ mov rcx, QWORD PTR [rdi+512]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -6215,30 +6215,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -6247,30 +6247,30 @@ mov rcx, QWORD PTR [rdi+520]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -6282,30 +6282,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -6314,30 +6314,30 @@ mov rcx, QWORD PTR [rdi+528]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -6349,30 +6349,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -6381,30 +6381,30 @@ mov rcx, QWORD PTR [rdi+536]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -6416,30 +6416,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -6471,30 +6471,30 @@ mov rcx, QWORD PTR [rdi+1152]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -6506,30 +6506,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -6538,30 +6538,30 @@ mov rcx, QWORD PTR [rdi+1160]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -6573,30 +6573,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -6605,30 +6605,30 @@ mov rcx, QWORD PTR [rdi+1168]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -6640,30 +6640,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -6672,30 +6672,30 @@ mov rcx, QWORD PTR [rdi+1176]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -6707,30 +6707,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -6762,30 +6762,30 @@ mov rcx, QWORD PTR [rdi+544]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -6797,30 +6797,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -6829,30 +6829,30 @@ mov rcx, QWORD PTR [rdi+552]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -6864,30 +6864,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -6896,30 +6896,30 @@ mov rcx, QWORD PTR [rdi+560]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -6931,30 +6931,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -6963,30 +6963,30 @@ mov rcx, QWORD PTR [rdi+568]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+992]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1000]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1008]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+1016]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -6998,30 +6998,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -7053,30 +7053,30 @@ mov rcx, QWORD PTR [rdi+1280]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -7088,30 +7088,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 add r12, rbp
@@ -7120,30 +7120,30 @@ mov rcx, QWORD PTR [rdi+1288]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -7155,30 +7155,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r9, rax
+adc rdx, 0
+add r9, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 add r13, rbp
@@ -7187,30 +7187,30 @@ mov rcx, QWORD PTR [rdi+1296]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -7222,30 +7222,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r10, rax
+adc rdx, 0
+add r10, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 add r8, rbp
@@ -7254,30 +7254,30 @@ mov rcx, QWORD PTR [rdi+1304]
 mov ebp, 0
 mov rax, QWORD PTR [rdi+192]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+200]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+208]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+216]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp
@@ -7289,30 +7289,30 @@ mov rcx, rax
 mov ebp, 0
 mov rax, QWORD PTR [rdi+64]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r11, rax
+adc rdx, 0
+add r11, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+72]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r12, rax
+adc rdx, 0
+add r12, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+80]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r13, rax
+adc rdx, 0
+add r13, rbp
 adc rdx, 0
 mov rbp, rdx
 mov rax, QWORD PTR [rdi+88]
 mul rcx
-add rax, rbp
-adc rdx, 0
 add r8, rax
+adc rdx, 0
+add r8, rbp
 adc rdx, 0
 mov rbp, rdx
 add r9, rbp

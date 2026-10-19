@@ -52,6 +52,39 @@ theorem mulRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   rw [b₁, hR, k₁.2.1, k₁.1 .rcx (by decide)] at e₂
   refine ⟨by simpa using e₂, (k₁.mono (by sub_regs)).trans k₂⟩
 
+/-- `mulRow_ok` for `mulRowL`. -/
+theorem mulRowL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {ts : List Reg}
+    {d : Nat} (hd : d + 8 * ts.length ≤ size) (hf : Fresh ts) :
+    WP isa (.block (mulRowL ts d)) s fun s' =>
+      regsVal s' ts + 2 ^ (64 * ts.length) * (s'.gpr .rbp).toNat =
+        regsVal s ts + (s.gpr .rcx).toNat * wordsVal s.mem base d ts.length ∧
+      Keeps (.rbp :: .rax :: .rdx :: ts) s s' := by
+  rw [mulRowL, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (show WP isa (.block [.mov32 .rbp (.imm 0)]) s
+      (fun s₁ => s₁.gpr .rbp = 0 ∧ Keeps [.rbp] s s₁) by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
+      State.setReg32, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left']
+    refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨b₁, k₁⟩ => ?_
+  refine WP.mono (mulStepsL_ok ts (hs.of_keeps k₁ (by decide)) hd hf) fun s₂ ⟨e₂, k₂⟩ => ?_
+  have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]; exact (hf.2 q hq).2.2.2.1)
+  rw [b₁, hR, k₁.2.1, k₁.1 .rcx (by decide)] at e₂
+  refine ⟨by simpa using e₂, (k₁.mono (by sub_regs)).trans k₂⟩
+
+/-- A row, by `mulRowL` or `mulRow`. -/
+theorem mulRowB_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {ts : List Reg}
+    {d : Nat} (late : Bool) (hd : d + 8 * ts.length ≤ size) (hf : Fresh ts) :
+    WP isa (.block (mulRowB late ts d)) s fun s' =>
+      regsVal s' ts + 2 ^ (64 * ts.length) * (s'.gpr .rbp).toNat =
+        regsVal s ts + (s.gpr .rcx).toNat * wordsVal s.mem base d ts.length ∧
+      Keeps (.rbp :: .rax :: .rdx :: ts) s s' := by
+  cases late
+  · exact mulRow_ok hs hd hf
+  · exact mulRowL_ok hs hd hf
+
 /-- The carry word `rbp` into `tn` and its carry into `tn1`, if that does not
 overflow. -/
 theorem carryUp_ok (s : State) {tn tn1 : Reg} (h1 : tn ≠ tn1)
