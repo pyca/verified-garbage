@@ -1,0 +1,39 @@
+module
+
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryReady
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Dispatch
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Generate
+
+/-! # The initialized and size-dispatched ABI body implements parameter generation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Proof.MillerRabin.AArch64
+
+theorem entryBody_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
+    {p : GenerationContext} {s : State} (h : EntryState p s) (o : OutputPlan p)
+    (hw : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ s.wr)
+    (seedLength : p.seeds.bytes.length % p.geo.qLen = 0)
+    (hLength : p.hs.bytes.length % p.geo.pLen = 0) :
+    WP isa (.seq (.block (Impl.Dsa.AArch64.Generation.entryHeader ++
+      Impl.Dsa.AArch64.Generation.entryIncoming ++ Impl.Dsa.AArch64.Generation.entryDerived))
+      (Impl.Dsa.AArch64.Generation.dispatch H.sha1 H.sha256 M.mm K.run)) s fun t =>
+      let result := Spec.Dsa.generateParametersBytes p.geo.pLen p.geo.qLen p.seeds.bytes p.hs.bytes p.rand.bytes
+      t.gpr .x0 = BitVec.ofNat 64 (Spec.Dsa.signStatus result) ∧
+      Spec.Rsa.bytesAt t.mem (p.saved 6) (2 * p.geo.pLen + p.geo.qLen) =
+        result.getD (List.replicate (2 * p.geo.pLen + p.geo.qLen) 0) ∧
+      Frame (p.changed ++ [⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩]) s.mem t.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  refine WP.seq (WP.mono (entryReady_ok h) fun u ⟨W, mu, h16, fu, ku⟩ => ?_)
+  apply dispatch_ok H.sha1 H.sha256 M.mm K.run mu
+  intro v mv hm kv
+  refine WP.mono (generate_ok H M K mv h16 o (by rw [kv.wr, ku.wr]; exact hw) seedLength hLength)
+    fun t ⟨status, bytes, ft, rsp, rd, wr⟩ => ?_
+  refine ⟨status, bytes, ?_, ?_, rd.trans (kv.rd.trans ku.rd), wr.trans (kv.wr.trans ku.wr)⟩
+  · have fv : Frame p.changed s.mem v.mem := by rw [hm]; exact fu
+    exact (fv.mono (by intro r hr; exact List.mem_append_left _ hr)).trans ft
+  · exact rsp.trans (kv.sp.trans ku.sp)
+
+end VG.Proof.Dsa.AArch64.Generation
