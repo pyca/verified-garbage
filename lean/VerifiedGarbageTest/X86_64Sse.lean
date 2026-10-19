@@ -89,6 +89,7 @@ def pcmpeqd (x : BitVec 128) : BitVec 128 :=
 #guard bin .pmaddwd == 0x0000a866ff6e8000ff6e468c1952c890#128
 #guard bin .pmulhrsw == 0x00010000fedd0000fedc000110d421d2#128
 #guard bin .pcmpgtw == 0x00000000ffffffff00000000ffff0000#128
+#guard bin .packsswb == 0xffff80007fff7f7f80807f7f80807f7f#128
 #guard bin .packssdw == 0xffff80007fff7fff80007fff80007fff#128
 #guard bin .punpcklwd == 0x7ffffedcffffba981234765456783210#128
 #guard bin .punpckhwd == 0xffff89abffffcdef8000012300004567#128
@@ -114,6 +115,10 @@ def binOf (op : XBinOp) (dst src : XReg) : BitVec 128 := ((XOp.bin op dst src).e
 -- Signed: `0x7fff > -1 > -0x8000`, and no word is greater than itself.
 #guard binOf .pcmpgtw .xmm3 .xmm1 == 0xffffffffffff00000000ffff00000000#128
 #guard binOf .pcmpgtw .xmm1 .xmm1 == 0#128
+-- `packsswb d, e`: the words of `d` saturate (`0x7fff`, `-0x8000`, `0x1234`, `-0x124`) or
+-- not (`0`, `-1`); those of `e` (`0x7f`, `-0x80`, `0x12`, `-0x10`, `1`, `0`, `-1`, `0x42`) fit.
+#guard XBinOp.eval .packsswb d 0x007fff800012fff000000001ffff0042#128 ==
+    0x7f8012f00001ff42007fff80007fff80#128
 -- `pblendw xmm0, xmm1, 0xa5` takes words 0, 2, 5 and 7 of `xmm1`.
 #guard ((XOp.pblendw .xmm0 .xmm1 0xa5).exec s).xmm .xmm0 == 0xffffcdef80004567fedcffff76545678#128
 
