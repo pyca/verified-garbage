@@ -39,22 +39,24 @@ theorem bytesAt_squeeze (m : Mem) (p : Addr) : bytesAt m p 32 = squeezeFrom 136 
     rw [Proof.Sha3.byteOf_stateAt _ _ (by omega)]
     simp only [bytesAt, List.getElem_map, List.getElem_range]
 
-/-- The facts the tail needs and leaves. -/
-structure AfterT (P : KemLay) (s₀ : State) (ρ : List Byte) (s : State) : Prop where
-  b : BInv P (enL P) s₀ s.mem ρ (P.k*P.k) s
+/-- The facts the tail needs and leaves, with `Â` stored with 16 bits (`w16`) or 32. -/
+structure AfterTW (w16 : Bool) (P : KemLay) (s₀ : State) (ρ : List Byte) (s : State) : Prop where
+  b : BInvW w16 P (enL P) s₀ s.mem ρ (P.k*P.k) s
   key : bytesAt s.mem (kA s₀ 2) 32 = (gE P s₀).1
   r : bytesAt s.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2
   m : bytesAt s.mem (sA (enL P) s₀ MB) 32 = mE s₀
 
-theorem tailH_ok (hash : FixedHash.HashFn)
+abbrev AfterT := AfterTW false
+
+theorem tailH_ok {w16 : Bool} (hash : FixedHash.HashFn)
     (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]
       [⟨.x26,0,32⟩,⟨.x28,RB,32⟩])
     {s₀ sB : State} (hp : Pre P (enL P) s₀) {ρ : List Byte}
-    (hB : BInv P (enL P) s₀ sB.mem ρ (P.k*P.k) sB)
+    (hB : BInvW w16 P (enL P) s₀ sB.mem ρ (P.k*P.k) sB)
     (hm : bytesAt sB.mem (sA (enL P) s₀ MB) 32 = mE s₀)
     (hst : stateAt sB.mem (kA s₀ (enL P).sc) =
       Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 6) (ekE P s₀))) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB (AfterT P s₀ ρ) := by
+    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB (AfterTW w16 P s₀ ρ) := by
   have hw := hp.wf
   -- `H(ek)`
   refine WP.seq (WP.mono (KeyGen.copy_ok (S := kA s₀ 4) (D := kA s₀ 4) (so := KEM.ST) (dO := HB)
