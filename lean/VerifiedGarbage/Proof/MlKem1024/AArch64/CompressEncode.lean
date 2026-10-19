@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -36,6 +36,15 @@ meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+public import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_compress_encode`

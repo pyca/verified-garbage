@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.AesCcm.X86.Aad
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.X86.Entry
 import VerifiedGarbage.Proof.AesCcm.X86.Mac
-import VerifiedGarbage.Proof.AesCcm.X86.Top
+public import VerifiedGarbage.Proof.AesCcm.X86.Top
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
 import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
@@ -94,6 +94,32 @@ meta import VerifiedGarbage.Proof.Framework.X86.Mmx
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+public import VerifiedGarbage.Proof.AesCcm.X86.Aad
+public import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+public import VerifiedGarbage.Proof.AesCcm.X86.Entry
+public import VerifiedGarbage.Proof.AesCcm.X86.Mac
+public import VerifiedGarbage.Proof.AesCcm.X86.Run
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+public import VerifiedGarbage.Proof.CmacAes.X86.Verified
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Spec.Ccm.Contract
 
 /-!
 # AES-CCM on x86: masking the data, and the tag copied out

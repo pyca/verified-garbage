@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 
 /-!
 # SHA-224's streaming functions on x86 (32-bit), for every backend

@@ -1,14 +1,41 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Ecb
-import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-import VerifiedGarbage.Proof.Camellia.CtrCipher
+public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+public import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Camellia.X86.Modes
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.Camellia.X86.Copy
+public import VerifiedGarbage.Proof.Camellia.X86.Fl
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Modes.Steps
+public import VerifiedGarbage.Proof.Modes.X86.Counter
+public import VerifiedGarbage.Proof.Modes.X86.Ops
+public import VerifiedGarbage.Spec.Camellia.Contract
+public import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.Camellia.X86.Copy
+import VerifiedGarbage.Proof.Camellia.X86.Fl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Modes.Steps
+import VerifiedGarbage.Proof.Modes.X86.Counter
+import VerifiedGarbage.Proof.Modes.X86.Ops
+import VerifiedGarbage.Spec.Camellia.Contract
+import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Camellia's core for the modes on x86 (32-bit)

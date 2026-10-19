@@ -2,6 +2,46 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Open
+public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Key
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
+import VerifiedGarbage.Proof.AesSiv.AArch64.Open
+import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.Key
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-SIV (RFC 5297) key setup on AArch64

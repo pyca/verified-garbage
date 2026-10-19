@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Encode1024
+public import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
@@ -25,6 +25,14 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_compress_encode`

@@ -7,6 +7,30 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+public import VerifiedGarbage.Proof.TripleDes.Permutation
+public import VerifiedGarbage.Proof.TripleDes.Round
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
+import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
 
 /-!
 # The function

@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
-import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Sse
@@ -125,6 +125,45 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 meta import VerifiedGarbage.Proof.X25519.Field
 meta import VerifiedGarbage.Proof.X25519.X86.Arith
 meta import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Mont.Words128
+public import VerifiedGarbage.Proof.P256.Order
+public import VerifiedGarbage.Proof.P256.Prime
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.X25519.X86.Arith
+public import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-256

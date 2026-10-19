@@ -120,6 +120,55 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 meta import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+public import VerifiedGarbage.Proof.BrainpoolP384r1.Point
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Mont.Words128
+public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
+public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Mont.X86_64.Round
+public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+public import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # Deterministic ECDSA on x86-64: brainpoolP384r1

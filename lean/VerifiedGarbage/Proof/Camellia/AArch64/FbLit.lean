@@ -10,6 +10,11 @@ meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Spec.Camellia.Contract
 meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
+meta import VerifiedGarbage.Impl.Camellia.AArch64.Fb
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Spec.Camellia.Contract
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on AArch64: the code as literals

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.ModeCipher
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Seed.X86.Modes
@@ -9,6 +9,34 @@ public import VerifiedGarbage.Proof.Seed.X86.Prologue
 import VerifiedGarbage.Proof.Seed.X86.Crypt8
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Modes.Steps
+public import VerifiedGarbage.Proof.Modes.X86.Counter
+public import VerifiedGarbage.Proof.Modes.X86.Ops
+public import VerifiedGarbage.Proof.Seed.G16
+public import VerifiedGarbage.Proof.Seed.Memory
+public import VerifiedGarbage.Proof.Seed.X86.Crypt8
+public import VerifiedGarbage.Spec.Seed.Contract
+import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Linear
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Modes.Steps
+import VerifiedGarbage.Proof.Modes.X86.Counter
+import VerifiedGarbage.Proof.Modes.X86.Ops
+import VerifiedGarbage.Proof.Seed.G16
+import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Spec.Seed.Contract
 
 /-!
 # SEED's core for the modes on x86 (32-bit)

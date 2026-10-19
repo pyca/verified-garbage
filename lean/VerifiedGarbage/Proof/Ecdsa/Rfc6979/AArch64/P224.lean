@@ -116,6 +116,19 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # Deterministic ECDSA on AArch64: P-224

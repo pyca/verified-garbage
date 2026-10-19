@@ -3,13 +3,34 @@ module
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Pad
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Select
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.Select
 
 /-!
 # RSASSA-PSS on AArch64: hashing a message of secret length

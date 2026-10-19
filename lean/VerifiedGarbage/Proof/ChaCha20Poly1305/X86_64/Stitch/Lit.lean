@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -17,6 +17,11 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the code as literals

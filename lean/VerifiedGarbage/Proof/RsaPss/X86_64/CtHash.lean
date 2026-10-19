@@ -7,6 +7,38 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 
 /-!
 # RSASSA-PSS on x86-64: hashing a message of secret length

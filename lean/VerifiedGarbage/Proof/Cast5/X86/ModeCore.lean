@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Cast5.X86.Ecb
+public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Cast5.X86.Modes
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
@@ -8,6 +8,14 @@ public import VerifiedGarbage.Proof.Cast5.X86.Block
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.Modes.X86.Counter
+public import VerifiedGarbage.Proof.Modes.X86.Ops
+public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.Modes.X86.Counter
+import VerifiedGarbage.Proof.Modes.X86.Ops
+import VerifiedGarbage.Spec.Cast5.Contract
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)

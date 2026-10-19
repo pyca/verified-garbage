@@ -4,6 +4,16 @@ public import VerifiedGarbage.Proof.Blowfish.Arm.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
 public import VerifiedGarbage.Proof.Blowfish.F
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Blowfish on ARMv7: an S-box lookup

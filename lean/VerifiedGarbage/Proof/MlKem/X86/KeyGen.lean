@@ -2,10 +2,47 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.Common
 import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.Proof.MlKem.X86.TopCall
+public import VerifiedGarbage.Proof.MlKem.X86.TopHash
+public import VerifiedGarbage.Proof.MlKem.X86.TopKem
+public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+public import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_keygen`

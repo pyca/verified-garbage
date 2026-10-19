@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Seed.AArch64.Lit
 public import VerifiedGarbage.Proof.Seed.ModeBytes
-import VerifiedGarbage.Proof.Modes.AArch64.Words
+public import VerifiedGarbage.Proof.Modes.AArch64.Words
 public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 public import VerifiedGarbage.Impl.Seed.AArch64.Modes
 import Mathlib.Tactic.SplitIfs
@@ -33,6 +33,32 @@ import VerifiedGarbage.Proof.Seed.AArch64.Setup
 import VerifiedGarbage.Proof.Seed.AArch64.Swap
 import VerifiedGarbage.Proof.Seed.Scratch
 import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Proof.Seed.AArch64.Batch
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+public import VerifiedGarbage.Proof.Modes.AArch64.Copy
+public import VerifiedGarbage.Proof.Modes.AArch64.Counter
+public import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Modes.AArch64.Unchain
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Proof.Seed.AArch64.Setup
+public import VerifiedGarbage.Proof.Seed.AArch64.Swap
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SEED's core for the modes on AArch64
