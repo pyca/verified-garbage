@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
 public import VerifiedGarbage.Spec.Sha1.Contract
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Variant
-import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
@@ -61,6 +61,31 @@ meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
+import VerifiedGarbage.Proof.Sha1.Md
+meta import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.Cold
+public import VerifiedGarbage.Proof.Framework.EntryBranch
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Hmac.AnyKey
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
+public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-!
 # SHA-1 on AArch64, as a Merkle–Damgård hash function

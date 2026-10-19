@@ -5,6 +5,14 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcVerified
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 
 /-! # PKCS #1 v1.5 encryption over precomputed RSA public variants on AArch64 -/
 

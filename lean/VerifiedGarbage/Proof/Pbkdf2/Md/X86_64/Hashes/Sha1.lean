@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Sha1.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Variant
 import VerifiedGarbage.Proof.Sha1.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Shared
-import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 public import VerifiedGarbage.Spec.Sha1.Contract
@@ -75,6 +75,35 @@ meta import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Cold
+public import VerifiedGarbage.Proof.Framework.EntryBranch
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Hmac.AnyKey
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
 /-!
 # SHA-1 on x86-64, as a Merkle–Damgård hash function
