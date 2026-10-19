@@ -86,4 +86,27 @@ theorem merge88_ok {s : State} {v : VReg} (h19 : v ≠ .v19) (h23 : v ≠ .v23) 
     rw [show 8 * 1 + (j - 8) = j by omega] at e
     rw [ite_eq_right h8, e, dt1]
 
+/-- TBL of `len` registers from `n`, at an index in the table. -/
+theorem vbyte_tblN {s : State} {n m d : VReg} {len i k : Nat} (hi : i < 16)
+    (hk : (vbyte (s.v m) i).toNat = k) (hk' : k < 16 * len) :
+    vbyte (ofVBytes fun i => if (vbyte (s.v m) i).toNat < 16 * len then tableByte s.v n (vbyte (s.v m) i).toNat
+      else if false then vbyte (s.v d) i else 0) i = tableByte s.v n k := by
+  rw [vbyte_ofVBytes _ hi, hk, ite_eq_left hk']
+
+/-- TBL of `len` registers from `n`, at an index past the table. -/
+theorem vbyte_tblN_out {s : State} {n m d : VReg} {len i k : Nat} (hi : i < 16)
+    (hk : (vbyte (s.v m) i).toNat = k) (hk' : 16 * len ≤ k) :
+    vbyte (ofVBytes fun i => if (vbyte (s.v m) i).toNat < 16 * len then tableByte s.v n (vbyte (s.v m) i).toNat
+      else if false then vbyte (s.v d) i else 0) i = 0 := by
+  rw [vbyte_ofVBytes _ hi, hk, ite_eq_right (by omega)]; rfl
+
+/-- ZIP1 of doublewords: the low doublewords of `x` and `y`. -/
+theorem eval_zip1_d2 (x y : BitVec 128) : VPermOp.eval .zip1 .d2 x y = ofVDwords (vdword x 0) (vdword y 0) := by
+  have sw : ∀ w : BitVec 64, (w.setWidth 128).setWidth 64 = w := fun w => by
+    rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd,
+    Nat.reduceDiv]
+  simp only [List.range_succ, List.range_zero, List.nil_append, List.flatMap_cons, List.flatMap_nil,
+    List.nil_append, List.append_nil, List.getD_cons_zero, List.getD_cons_succ, sw]
+
 end VG.Proof.MlKem1024.AArch64.CodecV

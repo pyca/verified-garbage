@@ -25,13 +25,6 @@ abbrev w11 (Y : Nat → Nat) (i : Nat) : Nat := z11 Y (2 * i) + z11 Y (2 * i + 1
 /-- A group of 88 bits: eight values `Y (8 r) …` of 11 bits. -/
 abbrev grp11 (Y : Nat → Nat) (r : Nat) : Nat := w11 Y (2 * r) + w11 Y (2 * r + 1) * 2 ^ 44
 
-/-- TBL of `len` registers from `n`, at an index in the table. -/
-theorem vbyte_tblN {s : State} {n m d : VReg} {len i k : Nat} (hi : i < 16)
-    (hk : (vbyte (s.v m) i).toNat = k) (hk' : k < 16 * len) :
-    vbyte (ofVBytes fun i => if (vbyte (s.v m) i).toNat < 16 * len then tableByte s.v n (vbyte (s.v m) i).toNat
-      else if false then vbyte (s.v d) i else 0) i = tableByte s.v n k := by
-  rw [vbyte_ofVBytes _ hi, hk, ite_eq_left hk']
-
 /-- The index of byte `m` of the output: byte `m mod 11` of register `m / 11`. -/
 abbrev idx11 (m : Nat) : Nat := 16 * (m / 11) + m % 11
 
