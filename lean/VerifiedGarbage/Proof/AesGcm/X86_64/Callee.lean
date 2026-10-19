@@ -28,6 +28,20 @@ import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+public import VerifiedGarbage.Impl.Gcm.X86_64
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-GCM on x86-64: the functions called

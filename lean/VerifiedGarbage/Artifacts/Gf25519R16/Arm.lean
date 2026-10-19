@@ -17,6 +17,19 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.X25519.Arm.Cswap
 import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+public import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+public import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 /-! # Products and powers in curve25519's field, in radix `2^16`, on ARMv7 -/
 

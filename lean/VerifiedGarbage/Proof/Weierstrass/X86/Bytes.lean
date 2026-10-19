@@ -34,6 +34,24 @@ import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.P256Red
+public import VerifiedGarbage.Proof.Mont.X86.RedRow
+public import VerifiedGarbage.Proof.Mont.X86.Row
+public import VerifiedGarbage.Proof.Mont.X86.SparseShift
+public import VerifiedGarbage.Proof.Mont.X86.SparseStep
+public import VerifiedGarbage.Proof.Mont.X86.Step
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): big-endian words

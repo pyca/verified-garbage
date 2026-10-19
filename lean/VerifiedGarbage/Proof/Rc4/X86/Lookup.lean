@@ -12,6 +12,14 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Rc4.Dword
 import VerifiedGarbage.Proof.Rc4.Table
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.Rc4.Dword
+public import VerifiedGarbage.Proof.Rc4.Table
 
 /-! # RC4 on x86 (32-bit): the table lookup, a doubleword at a time -/
 

@@ -25,6 +25,9 @@ import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.Spec.Md5
 import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 -/
 
 @[expose] public section

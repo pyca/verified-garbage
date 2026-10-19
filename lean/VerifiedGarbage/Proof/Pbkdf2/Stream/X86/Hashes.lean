@@ -53,6 +53,24 @@ meta import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+public import VerifiedGarbage.Impl.Sha256.X86.Stream
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions

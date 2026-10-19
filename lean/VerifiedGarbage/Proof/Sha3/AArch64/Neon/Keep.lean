@@ -26,6 +26,26 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 
 @[expose] public section
 

@@ -17,6 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Impl.TripleDes.X86.Sbox
 meta import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! ## `SboxTable` -/
 

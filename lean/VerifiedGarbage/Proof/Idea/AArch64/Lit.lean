@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Literal IDEA programs for kernel-evaluated checks (AArch64) -/
 

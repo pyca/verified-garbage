@@ -21,6 +21,11 @@ import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # ChaCha20 on X86_64: the code as literals

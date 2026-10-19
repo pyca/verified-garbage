@@ -25,6 +25,23 @@ import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Proof.TripleDes.Round
+public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+public import VerifiedGarbage.Proof.TripleDes.Bytes
+public import VerifiedGarbage.Proof.TripleDes.Permutation
+public import VerifiedGarbage.Proof.TripleDes.Round
 
 /-!
 # The function's environment

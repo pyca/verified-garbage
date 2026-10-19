@@ -33,6 +33,28 @@ import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashFrame
+public import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Proof.Dsa.Digest
+public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Dsa.Generation.Memory
+public import VerifiedGarbage.Proof.Dsa.Generation.WordFrame
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.RsaOaep
 
 /-! # Bind each complete seed to q hashing without resetting witness consumption -/
 

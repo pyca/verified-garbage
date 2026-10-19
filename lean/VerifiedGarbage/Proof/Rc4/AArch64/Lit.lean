@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! Literal code keeps the unrolled groups cheap for kernel-evaluated audits. -/
 

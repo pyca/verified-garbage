@@ -28,6 +28,22 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

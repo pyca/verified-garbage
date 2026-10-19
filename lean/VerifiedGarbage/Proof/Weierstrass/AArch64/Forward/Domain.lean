@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

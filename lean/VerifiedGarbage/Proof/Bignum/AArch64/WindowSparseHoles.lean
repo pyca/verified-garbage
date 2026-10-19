@@ -18,6 +18,18 @@ import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Impl.Bignum.AArch64
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSparse

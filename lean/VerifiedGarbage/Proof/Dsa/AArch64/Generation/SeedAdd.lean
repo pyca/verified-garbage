@@ -26,6 +26,20 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Impl.Bignum.AArch64
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Proof.Dsa.Digest
+public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-! # Wrapped addition across an entire seed -/
 
