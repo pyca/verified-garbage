@@ -2343,36 +2343,39 @@ theorem tailLoop_ok {s : State} {B : Addr} {n : Nat} (hn0 : 0 < n) (hn : n < 8) 
 theorem wW64_apply (m : Mem) (a x : Addr) (v : BitVec 64) :
     m.writeW a v x = if (x - a).toNat < 8 then v.extractLsb' (8 * (x - a).toNat) 8 else m x := rfl
 
-/-- The two quadwords stored at `ctx + 576`: the padded block's bytes. -/
-theorem stored_bytes {f : Nat → Nat} (hf : ∀ j, f j < 256) {t : Nat} (m : Mem) (c : Addr)
+/-- The two quadwords stored at `ctx + o`: the padded block's bytes. -/
+theorem stored_bytes {f : Nat → Nat} (hf : ∀ j, f j < 256) {t : Nat} (m : Mem) (c : Addr) (o o8 : Nat)
+    (h8 : o8 = o + 8) (ho : o + 16 < 2 ^ 64)
     {lo hi : BitVec 64} (hlo : lo.toNat = tv f 0 t % 2 ^ 64) (hhi : hi.toNat = tv f 0 t / 2 ^ 64)
     {j : Nat} (hj : j < 16) :
-    ((m.writeW (off c 576) lo).writeW (off c 584) hi (off c (576 + j))).toNat =
+    ((m.writeW (off c o) lo).writeW (off c o8) hi (off c (o + j))).toNat =
       if j < t then f j else 0 := by
+  subst h8
   rw [show (if j < t then f j else 0) = tv f 0 t / 256 ^ j % 256 by rw [tv_byte hf 0 t j, Nat.zero_add],
     wW64_apply, wW64_apply, off_eq, off_eq, off_eq,
-    Offset.sub_toNat' c (by lit_omega) (by lit_omega), Offset.sub_toNat c (by omega_using []) (by lit_omega)]
+    Offset.sub_toNat' c (by omega_using [ho]) (by omega_using [ho, hj]),
+    Offset.sub_toNat c (by omega_using []) (by omega_using [ho, hj])]
   by_cases h8 : 8 ≤ j
-  · rw [ite_eq_left (show 584 ≤ 576 + j by omega_using [h8]), ite_eq_left (by omega_using [hj]),
+  · rw [ite_eq_left (show o + 8 ≤ o + j by omega_using [h8]), ite_eq_left (by omega_using [hj]),
       BitVec.extractLsb'_toNat, hhi, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul, ← Nat.pow_add,
-      show 64 + 8 * (576 + j - 584) = 8 * j by omega_using [h8], Nat.pow_mul]
-  · rw [ite_eq_right (show ¬ 584 ≤ 576 + j by omega_using [h8]), ite_eq_right (by omega_using [h8]),
-      ite_eq_left (show 576 + j - 576 < 8 by omega_using [h8]), show 576 + j - 576 = j by omega_using [],
+      show 64 + 8 * (o + j - (o + 8)) = 8 * j by omega_using [h8], Nat.pow_mul]
+  · rw [ite_eq_right (show ¬ o + 8 ≤ o + j by omega_using [h8]), ite_eq_right (by omega_using [h8]),
+      ite_eq_left (show o + j - o < 8 by omega_using [h8]), show o + j - o = j by omega_using [],
       BitVec.extractLsb'_toNat, hlo, Nat.shiftRight_eq_div_pow,
       show (2 : Nat) ^ 64 = 2 ^ (8 * j) * 2 ^ (64 - 8 * j) by rw [← Nat.pow_add]; congr 1; omega_using [h8],
       Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (show 8 ≤ 64 - 8 * j by omega_using [h8])),
       Nat.pow_mul]
 
 /-- The padded block's bytes. -/
-theorem padded_bytes {s₀ : State} {m mz : Mem} {Q : Addr} {t : Nat} (ht : t < 16)
-    (h : ∀ j < 16, m (off (cx s₀) (576 + j)) = if j < t then mz (Q + BitVec.ofNat 64 j) else 0) :
-    bytesAt m (off (cx s₀) 576) 16 = bytesAt mz Q t ++ List.replicate (16 - t) 0 := by
+theorem padded_bytes {s₀ : State} {m mz : Mem} {Q : Addr} {t o : Nat} (ht : t < 16)
+    (h : ∀ j < 16, m (off (cx s₀) (o + j)) = if j < t then mz (Q + BitVec.ofNat 64 j) else 0) :
+    bytesAt m (off (cx s₀) o) 16 = bytesAt mz Q t ++ List.replicate (16 - t) 0 := by
   apply List.ext_getElem
   · simp [bytesAt]; omega_using [ht]
   · intro k h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
     simp only [bytesAt, List.getElem_map, List.getElem_range]
-    rw [show off (cx s₀) 576 + BitVec.ofNat 64 k = off (cx s₀) (576 + k) by
+    rw [show off (cx s₀) o + BitVec.ofNat 64 k = off (cx s₀) (o + k) by
       rw [off_eq, off_eq, BitVec.ofNat_add, BitVec.add_assoc], h k h₁]
     by_cases hk : k < t
     · rw [List.getElem_append_left (by simp [hk])]
@@ -2656,16 +2659,17 @@ theorem padIte_ok {s₁ : State} {Q : Addr} {t : Nat} (ht0 : 0 < t) (ht : t < 16
           (fun j => tb_add s₁.mem Q 8 j) 0 (t - 8), Nat.add_zero]
 
 set_option simprocs false in
-theorem padStore_ok {s₀ : State} (hp : APre e s₀) {s : State} (hrsi : s.gpr .rsi = off (cx s₀) 576)
-    (hwr : s.wr = s₀.wr) :
+theorem padStore_ok {s₀ : State} (hp : APre e s₀) (o o8 : Nat) (h8 : o8 = o + 8) (ho : o + 16 ≤ 1696) {s : State}
+    (hrsi : s.gpr .rsi = off (cx s₀) o) (hwr : s.wr = s₀.wr) :
     WP isa (.block [.store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .r9]) s fun s' =>
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.mem = (s.mem.writeW (off (cx s₀) 576) (s.gpr .rax)).writeW (off (cx s₀) 584) (s.gpr .r9) := by
-  have o0 := hp.in_ctx (a := 576) (w := 8) (by lit_omega)
-  have o1 := hp.in_ctx (a := 584) (w := 8) (by lit_omega)
+      s'.mem = (s.mem.writeW (off (cx s₀) o) (s.gpr .rax)).writeW (off (cx s₀) o8) (s.gpr .r9) := by
+  subst h8
+  have o0 := hp.in_ctx (a := o) (w := 8) (by omega_using [ho])
+  have o1 := hp.in_ctx (a := o + 8) (w := 8) (by omega_using [ho])
   rw [← hwr] at o0 o1
-  have e0 : off (s.gpr .rsi) 0 = off (cx s₀) 576 := by rw [hrsi, off_off]
-  have e8 : off (s.gpr .rsi) 8 = off (cx s₀) 584 := by rw [hrsi, off_off]
+  have e0 : off (s.gpr .rsi) 0 = off (cx s₀) o := by rw [hrsi, off_off, Nat.add_zero]
+  have e8 : off (s.gpr .rsi) 8 = off (cx s₀) (o + 8) := by rw [hrsi, off_off]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, e0, e8,
     State.store64, o0, o1, ite_true, Option.some.injEq, exists_eq_left']
@@ -2725,7 +2729,7 @@ theorem padTail_ok (b : Impl.Poly1305.X86_64.Blocks) {k : Nat} (hk : k = 1 ∨ k
     fun s₅ ⟨e5, g₅, rd₅, wr₅, m₅⟩ mx₅ => ?_)
   have r15₄ : s₄.gpr .r15 = cx s₀ := by rw [g₄ _ (by decide), r15₃]
   refine WP.block_append (WP.mono_mx (by decide +kernel)
-    (padStore_ok hp (by rw [e5, r15₄]) (by rw [wr₅, wr₄, h₃.wr, wr₁, hwr])) fun s₅' ⟨g₅', rd₅', wr₅', m₅'⟩ mx₅' => ?_)
+    (padStore_ok hp 576 584 rfl (by decide) (by rw [e5, r15₄]) (by rw [wr₅, wr₄, h₃.wr, wr₁, hwr])) fun s₅' ⟨g₅', rd₅', wr₅', m₅'⟩ mx₅' => ?_)
   refine WP.mono_mx (by rcases hk with rfl | rfl <;> decide +kernel) (mov32_rdx_ok (BitVec.ofNat 32 k) s₅')
     fun s₆ ⟨e6, g₆, rd₆, wr₆, m₆⟩ mx₆ => ?_
   have rdi₆ : s₆.gpr .rdi = off (cx s₀) 448 := by rw [g₆ _ (by decide), g₅', g₅ _ (by decide), e4, r15₃]
@@ -2750,7 +2754,7 @@ theorem padTail_ok (b : Impl.Poly1305.X86_64.Blocks) {k : Nat} (hk : k = 1 ∨ k
     apply BitVec.eq_of_toNat_eq
     have hlo : (s₃.gpr .rax).toNat = tv (tb s.mem Q) 0 t % 2 ^ 64 := by rw [h₃.lo, m₁]
     have hhi : (s₃.gpr .r9).toNat = tv (tb s.mem Q) 0 t / 2 ^ 64 := by rw [h₃.hi, m₁]
-    rw [mm₆, stored_bytes (tb_lt s.mem Q) s.mem (cx s₀) hlo hhi hj]
+    rw [mm₆, stored_bytes (tb_lt s.mem Q) s.mem (cx s₀) 576 584 rfl (by decide) hlo hhi hj]
     split <;> rfl
   have hk2 : k ≤ 2 := by omega_using [hk]
   refine WP.seq (WP.mono (blocks_call (n := k) rdi₆ rsi₆ rdx₆ (by lit_omega)
