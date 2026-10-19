@@ -75,8 +75,8 @@ def cntFlags3 : List Instr := .mov32 .r14 (.imm 1) :: (List.range 3).flatMap fun
 
 /-- Two more blocks of each state, and 112 more iterations on each of the first three seeds. -/
 def more3 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
-  .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast)
-    (.seq (run2 0 w16) (.seq (run2 1 w16) (.seq (run2 2 w16) (.block cntFlags3)))))
+  .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast) (.seq (.block tabAddr)
+    (.seq (run2 0 w16) (.seq (run2 1 w16) (.seq (run2 2 w16) (.block cntFlags3))))))
 
 /-- If one of the first three seeds has fewer than 256 coefficients, `more3`; then the return value. -/
 def tail3 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
@@ -87,6 +87,6 @@ def tail3 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
 32-bit coefficients or, if `w16`, 16-bit ones. -/
 def sampleH (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4)) (.seq (.block hload) (.seq (squeezesH fast)
-    (.seq (.block hsave) (.seq (.block tabBuild) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))))))
+    (.seq (.block hsave) (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))))))
 
 end VG.Impl.MlKem.X86_64.Sample4
