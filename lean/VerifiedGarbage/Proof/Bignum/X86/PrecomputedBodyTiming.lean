@@ -16,10 +16,11 @@ theorem precomputedBody_trace {base : Addr} {bytes len : Nat} {args : Nat → Bi
       Spec.Rsa.bytesAt t.mem (byteAddr (args 4)) (args 5).toNat)
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa PrecomputedFn.body s tr sf) (F : Exec isa PrecomputedFn.body t ur tf) : tr = ur := by
-  have Branch : RelCT isa (fun s t => PrecomputedValidPair base bytes len args s t ∧ s.zf = t.zf)
+  have Branch : RelCT isa (fun s t => (PrecomputedValidPair base bytes len args s t ∧
+        s.gpr .ebx = t.gpr .ebx ∧ s.gpr .edx = t.gpr .edx) ∧ s.zf = t.zf)
       (.ite .e PublicFn.failure PrecomputedFn.valid) (fun _ _ => True) := by
     apply VG.RelCT.ite (M := isa) (c := .e) (fun _ _ h => h.2)
-    · exact (precomputedFailure_relCT base bytes len args).mono (fun _ _ h => h.1.1.1) (fun _ _ h => h)
+    · exact (precomputedFailure_relCT base bytes len args).mono (fun _ _ h => h.1.1.1.1) (fun _ _ h => h)
     · exact (precomputedValid_relCT base bytes len args).mono (fun _ _ h => h.1.1) (fun _ _ h => h)
   have Compare : RelCT isa (fun _ _ => True) (.block [.alu .cmp .eax (.imm 0)]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs (by simp)) (hc := .block [])
@@ -29,9 +30,9 @@ theorem precomputedBody_trace {base : Addr} {bytes len : Nat} {args : Nat → Bi
     cases F with
     | seq F1 Frest =>
       have T1 := precomputedExponent_trace H.1 same E1 F1
-      obtain ⟨Vs, _, _, Ms, Ks⟩ := wp_result (precomputedExponentScan_ok H.1.left) E1
-      obtain ⟨Vt, _, _, Mt, Kt⟩ := wp_result (precomputedExponentScan_ok H.1.right) F1
-      rw [same] at Vs
+      obtain ⟨Vs, Bs, Ds, Ms, Ks⟩ := wp_result (precomputedExponentScan_ok H.1.left) E1
+      obtain ⟨Vt, Bt, Dt, Mt, Kt⟩ := wp_result (precomputedExponentScan_ok H.1.right) F1
+      rw [same] at Vs Bs Ds
       have Next := H.keepMem Ks Kt (by decide) (by decide) Ms Mt
       cases Erest with
       | seq E2 E3 =>
@@ -41,7 +42,11 @@ theorem precomputedBody_trace {base : Addr} {bytes len : Nat} {args : Nat → Bi
           obtain ⟨Zs, Mvs, Kvs⟩ := wp_result (exponentFlag_ok _ Vs) E2
           obtain ⟨Zt, Mvt, Kvt⟩ := wp_result (exponentFlag_ok _ Vt) F2
           have Last := Next.keepMem Kvs Kvt (by simp) (by simp) Mvs Mvt
-          have T3 := (Branch _ _ _ _ _ _ ⟨Last, Zs.trans Zt.symm⟩ E3 F3).1
+          have Rb : _ = _ := ((Kvs.1 .ebx (by simp)).trans (Bs.trans
+            (Bt.symm.trans (Kvt.1 .ebx (by simp)).symm)))
+          have Rd : _ = _ := ((Kvs.1 .edx (by simp)).trans (Ds.trans
+            (Dt.symm.trans (Kvt.1 .edx (by simp)).symm)))
+          have T3 := (Branch _ _ _ _ _ _ ⟨⟨Last, Rb, Rd⟩, Zs.trans Zt.symm⟩ E3 F3).1
           rw [T1, T2, T3]
 
 end VG.Proof.Bignum.X86

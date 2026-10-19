@@ -45,6 +45,10 @@ def artifacts : List Artifact := [
     spSafe := Proof.Bignum.X86.Crt.code_sp
     stack := 20 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
+    notes := ["The exponent (at most 33 bits) is scanned from its low bit, branching on each \
+      bit: a multiplication by the base for a set bit, a square of the base for every bit, and \
+      the loop ends once no set bit is left (for `e = 65537`, 17 squares and 2 \
+      multiplications)."]
     code := Impl.Bignum.X86.PrecomputedFn.code
     verified := Proof.Bignum.X86.precomputed_verified
     stack := 20 },

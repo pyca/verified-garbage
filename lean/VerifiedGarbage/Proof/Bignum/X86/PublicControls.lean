@@ -48,6 +48,28 @@ theorem saveExponent_ok {s : State} {base : Addr} {bytes e : Nat}
   rw [low, high]
   omega
 
+/-- The saved exponent is the two registers' value, whatever they hold. -/
+theorem saveExponent_value {s : State} {base : Addr} {bytes : Nat}
+    (hs : Scr s base bytes) (hb : 136 ≤ bytes) :
+    WP isa (.block PublicFn.saveExponent) s fun t =>
+      val32 t.mem base 128 2 = (s.gpr .ebx).toNat + 2 ^ 32 * (s.gpr .edx).toNat ∧
+      Outside base 128 8 s.mem t.mem ∧ Keeps [] s t := by
+  unfold PublicFn.saveExponent
+  refine wp_storeS (hs.ea (by omega)) (hs.write (by omega)) fun u A => ?_
+  have hu := hs.of_keeps (A.keeps []) (by decide)
+  refine wp_storeS (hu.ea (by omega)) (hu.write (by omega)) fun t B => WP.block_nil ?_
+  have Oa : Outside base 128 4 s.mem u.mem := by rw [A.mem]; exact writeW32_outside _ _ _ (by decide)
+  have Ob : Outside base 132 4 u.mem t.mem := by rw [B.mem]; exact writeW32_outside _ _ _ (by decide)
+  refine ⟨?_, (Oa.mono (by omega) (by omega)).trans (Ob.mono (by omega) (by omega)),
+    (A.keeps []).trans (B.keeps [])⟩
+  have low : w32 t.mem base 128 = (s.gpr .ebx).toNat := by
+    rw [Outside.w32 Ob (.inl (by decide)) (by decide), A.mem, w32_write_self]
+  have high : w32 t.mem base 132 = (s.gpr .edx).toNat := by
+    rw [B.mem, w32_write_self, A.gpr]
+  simp only [val32, Nat.mul_zero, Nat.add_zero]
+  change w32 t.mem base 128 + 2 ^ 32 * w32 t.mem base 132 = _
+  rw [low, high]
+
 theorem widthArgs_ok {s : State} {len : Nat} (bound : len ≤ 1024)
     (count : readSrc s (.mem (PublicFn.argument 3)) = some (BitVec.ofNat 32 len)) :
     WP isa (.block PublicFn.widthArgs) s fun t =>
