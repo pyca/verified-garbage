@@ -27,10 +27,9 @@ open VG.Spec.MlKem
 open VG.Proof.MlKem.X86_64 (WPoly PolyRep wordAt wAddr pR Keep)
 
 /-- The input `F` at `p`, as `src` says: an accumulator (coefficient
-`accIdx w` in word `w`) or reduced `u32`s. -/
+`accIdx w` in word `w`). -/
 def InOk : InvIn → Mem → Addr → Poly → Prop
   | .acc, m, p, F => ∀ w < 256, (wordAt m p w).toNat = (F[accIdx w]!).val
-  | .u32, m, p, F => Reduced m p ∧ polyAt m p = F
 
 /-- The canonical words of the coefficients. -/
 def canW (F : Poly) : WPoly := F.map fun x => BitVec.ofNat 16 x.val
@@ -68,18 +67,6 @@ theorem src_hd {src : InvIn} {m : Mem} {p : Addr} {F : Poly} (h : InOk src m p F
       have ha : accIdx j < 256 := accIdx_lt j hj'
       rw [canW_get _ ha, h j hj']
     · exact Hd.junk _
-  | u32 =>
-    obtain ⟨hr, rfl⟩ := h
-    rw [srcTerms, inTerms_get hj]
-    split
-    · rename_i h2
-      refine Hd.of_eq (BitVec.eq_of_toNat_eq ?_)
-      simp only [E.eval, LfI, LIW, List.take_zero, List.foldl_nil]
-      obtain ⟨i, rfl⟩ : ∃ i, j = 2 * i := ⟨j / 2, by omega⟩
-      rw [show 2 * i / 2 = i by omega, canW_get _ (by omega), (reduced_words hr (by omega)).2,
-        VG.Proof.MlKem.polyAt_val hr (by rw [n_eq]; omega)]
-    · refine Hd.of_eq ?_
-      rw [show j = 2 * (j / 2) + 1 by omega, (reduced_words hr (by omega)).1]; rfl
 
 theorem initIB_reg (src : InvIn) (r : XReg) :
     (initIB src).reg r = if r = .xmm15 then List.replicate 16 (.c qN) else List.replicate 16 .junk := by

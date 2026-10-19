@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunRdi1
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvTop
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunU32A
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
@@ -77,55 +76,6 @@ theorem nttY_ct : ConstantTime isa (inPlaceK ntt).pre (inPlaceK ntt).pub nttAvx2
 theorem nttY_verified : Verified X86_64.target nttAvx2 (Spec.MlKem.nttContract X86_64.abi) :=
   Verified.of_correct nttY_correct nttY_ct (by
     mlkem_implies [Spec.MlKem.nttContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, inPlaceK,
-      X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
-
-/-! ## `vg_mlkem_inv_ntt_avx2` -/
-
-theorem nttInvY_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
-    ∃ t s', Exec isa nttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK nttInv).post s s' := by
-  have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
-  have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
-  have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
-  have hW : WP isa nttInvAvx2 s fun s' => ∃ s2,
-      (PolyIs s2.mem (s.gpr .rdi) (nttInv (polyAt s.mem (s.gpr .rdi))) ∧
-        Frame [pR (s.gpr .rdi), pR (s.gpr .rsi)] s.mem s2.mem) ∧ Frame [mxR (s.gpr .rsi)] s2.mem s'.mem ∧
-      Keep [] s2 s' := by
-    unfold nttInvAvx2
-    refine withMxcsr_ok (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw ?_ fun s1 k1 f1 => ?_
-    · decide +kernel
-    have hdi1 : s1.gpr .rdi = s.gpr .rdi := k1.gpr (by decide)
-    have hsi1 : s1.gpr .rsi = s.gpr .rsi := k1.gpr (by decide)
-    have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
-      polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub _))
-        ⟨hs.2.2.2.2.2, rfl⟩
-    refine WP.mono (NttR.nttIR_ok NttR.checkI_u32 (by rw [hsi1, k1.2.2]; exact hw) (by rw [hdi1, k1.2.2]; exact hwf)
-      (by rw [hdi1, hsi1]; exact hd) (F := polyAt s.mem (s.gpr .rdi)) (by rw [hdi1]; exact ⟨hF1.1, hF1.2⟩))
-      fun s2 ⟨hP, hf2, _⟩ => ⟨?_, ?_⟩
-    · rw [hdi1] at hP; exact hP
-    · rw [hdi1, hsi1] at hf2
-      refine (frame_fs f1 ?_).trans hf2
-      intro r hr; simp only [List.mem_singleton] at hr; subst hr
-      exact .inr (mx_sub _)
-  obtain ⟨t, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ :=
-    WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW (by decide +kernel)
-  refine ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide)
-    (hf.trans (hf'.sub fun r hr => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩))
-    (by simpa using ⟨hs.2.2.2.1, hs.2.2.2.2.1⟩)), ?_⟩
-  · rw [List.mem_singleton.mp hr]; exact mx_sub _
-  · exact polyIs_frame hf' (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub _)) hP
-
-theorem nttInvY_ct : ConstantTime isa (inPlaceK nttInv).pre (inPlaceK nttInv).pub nttInvAvx2 :=
-  VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp])
-    (fun _ _ _ _ hp => X86_64.Taint.agree_ofRegs fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      exacts [hp.1, hp.2.1, hp.2.2])
-    (by taint_decide)
-
-theorem nttInvY_verified : Verified X86_64.target nttInvAvx2 (Spec.MlKem.nttInvContract X86_64.abi) :=
-  Verified.of_correct nttInvY_correct nttInvY_ct (by
-    mlkem_implies [Spec.MlKem.nttInvContract, Spec.MlKem.inPlaceContract, Spec.MlKem.inPlaceSig, inPlaceK,
       X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
 
 end VG.Proof.MlKem.X86_64

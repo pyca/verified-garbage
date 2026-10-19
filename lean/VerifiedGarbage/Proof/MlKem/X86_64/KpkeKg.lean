@@ -492,7 +492,7 @@ omit E in
 theorem pa_rbp {s : State} (h : KT L σ s) (o : Nat) : pa s (.rbp, o) = σ.gpr .rsi + BitVec.ofNat 64 o := by
   simp only [pa, h.rbp]
 
-theorem ek_ok {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.noCalls = true) {i : Nat}
+theorem ek_ok {A : Prims} (hA : PrimsOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.noCalls = true) {i : Nat}
     (hi : i < L.k) {s : State} (h : EO L σ i 0 s) : WP isa (ekOut L A i) s (EO L σ (i + 1) 0) := by
   have hkt := h.kt
   have hk4 : L.k ≤ 4 := by rcases W.k34 with e | e <;> omega
@@ -527,7 +527,7 @@ theorem ek_ok {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.no
       exact h.ek i' hi''
     · exact hq
 
-theorem dk_ok {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.noCalls = true) {j : Nat}
+theorem dk_ok {A : Prims} (hA : PrimsOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.noCalls = true) {j : Nat}
     (hj : j < L.k) {s : State} (h : EO L σ L.k j s) : WP isa (dkOut A j) s (EO L σ L.k (j + 1)) := by
   have hkt := h.kt
   have hk4 : L.k ≤ 4 := by rcases W.k34 with e | e <;> omega
@@ -593,7 +593,7 @@ theorem pre_wp {L : Kem} (W : KpkeEnc.KeWf L) {mul : Nat → Prog isa}
   exact mul_ok E W hv hn h₂
 
 /-- `ek`, `dk` and the epilogue. -/
-theorem post_wp {L : Kem} {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.noCalls = true)
+theorem post_wp {L : Kem} {A : Prims} (hA : PrimsOk A) (W : KpkeEnc.KeWf L) (hn : A.enc12.noCalls = true)
     {σ : State} (hp : (kpkeKgK L).pre σ) {s : State} (h : EO L σ 0 0 s) :
     WP isa (kpkeKgPost L A) s fun s' => gprPreserved σ s' ∧ (kpkeKgK L).post σ s' := by
   have E := ep hp
@@ -612,14 +612,14 @@ theorem post_wp {L : Kem} {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) (hn 
     rw [hm]
     exact enc_eq (by simp [vecAtW]) h₂.dk
 
-theorem kpkeKg_wp {L : Kem} {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) {mul : Nat → Prog isa}
+theorem kpkeKg_wp {L : Kem} {A : Prims} (hA : PrimsOk A) (W : KpkeEnc.KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (kgMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (kgMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hnE : A.enc12.noCalls = true) {σ : State} (hp : (kpkeKgK L).pre σ) :
     WP isa (kpkeKg L A mul) σ fun s' => gprPreserved σ s' ∧ (kpkeKgK L).post σ s' :=
   WP.seq (WP.mono (pre_wp W hv hn hp) fun _ h => post_wp hA W hnE hp h)
 
-theorem kpkeKg_correct {L : Kem} {A : Arith} (hA : ArithOk A) (W : KpkeEnc.KeWf L) {mul : Nat → Prog isa}
+theorem kpkeKg_correct {L : Kem} {A : Prims} (hA : PrimsOk A) (W : KpkeEnc.KeWf L) {mul : Nat → Prog isa}
     (hv : ∀ s, (kgMulK16 L.k).pre s → ∃ t s', Exec isa (mul L.k) s t s' ∧ abiPreserved s s' ∧
       (kgMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hnE : A.enc12.noCalls = true) (hctl : ctlOk (kpkeKg L A mul) = true)

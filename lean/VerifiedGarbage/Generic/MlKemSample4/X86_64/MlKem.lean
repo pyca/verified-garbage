@@ -41,13 +41,18 @@ def notes16 (v : Sample4Impl) (kpke : List String) : List String :=
       `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with " ++
       ", ".intercalate (kpke.map (s!"`{·}`")) ++ "."]
 
-/-- What an instance of encapsulation (hashing the key) calls, and how it computes `H(ek)`. -/
-def encapsNotes (v : Sample4Impl) : List String :=
-  notes v ++ [match v.callee.batchH with
-    | none => "It computes `H(ek)` with the sponge functions of SHA3-256 first."
-    | some _ => "It computes `H(ek)` while it samples the matrix: it samples its first entries three at a \
-        time with the code of `" ++ v.callee.name ++ "` inlined, whose fourth Keccak state absorbs the \
-        padded key, three blocks of 136 bytes at a time."]
+/-- How an instance of encapsulation (hashing the key) computes `H(ek)`, sampling the matrix with `sampler`. -/
+def hashNote (sampler : String) : String :=
+  "It computes `H(ek)` while it samples the matrix: it samples its first entries three at a time with the \
+    code of `" ++ sampler ++ "` inlined, whose fourth Keccak state absorbs the padded key, three blocks of \
+    136 bytes at a time."
+
+/-- What an instance of encapsulation (hashing the key) calls, calling the
+K-PKE function `kpke` with 16-bit polynomials, and how it computes `H(ek)`. -/
+def encapsNotes (v : Sample4Impl) (kpke : String) : List String :=
+  match v.callee.s16, v.callee.batchH16 with
+  | some (n, _), some _ => notes16 v [kpke] ++ [hashNote n]
+  | _, _ => notes v ++ ["It computes `H(ek)` with the sponge functions of SHA3-256 first."]
 
 def artifacts (v : Sample4Impl) : List Artifact := [
   Spec.MlKem.keyGenApi.artifact X86_64.target {
@@ -68,7 +73,7 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem.encapsApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := encapsNotes v
+    notes := encapsNotes v "vg_mlkem768_kpke_encrypt"
     code := Impl.MlKem.X86_64.encaps v.callee
     stack := 32
     verified := Proof.MlKem.X86_64.encaps_verified v
@@ -100,7 +105,7 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem1024.encapsApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := encapsNotes v
+    notes := encapsNotes v "vg_mlkem1024_kpke_encrypt"
     code := Impl.MlKem1024.X86_64.encaps1024 v.callee
     stack := 32
     verified := Proof.MlKem1024.X86_64.encaps1024_verified v

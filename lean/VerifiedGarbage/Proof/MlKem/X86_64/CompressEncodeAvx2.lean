@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompressAvx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompressAvx2
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_compress_encode_avx2`
+# ML-KEM on x86-64: `ByteEncode_d ∘ Compress_d` with AVX2, which the K-PKE functions inline
 
 The doublewords of a group are compressed by sums of shifts (`dword_ceV`),
 and a lane of four values is packed into the number whose base-`2ᵈ` digits
@@ -990,11 +990,5 @@ theorem compressEncodeY_ct :
       exacts [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1])
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
-
-theorem compressEncodeY_verified :
-    Verified X86_64.target compressEncodeAvx2 (Spec.MlKem.compressEncodeContract X86_64.abi) :=
-  Verified.of_correct CEY.correct compressEncodeY_ct (by
-    mlkem_implies [Spec.MlKem.compressEncodeContract, Spec.MlKem.compressEncodeSig, compressEncodeK,
-      X86_64.abi, X86_64.argRegs] [compressEncodeSat] using compressEncodeSat)
 
 end VG.Proof.MlKem.X86_64

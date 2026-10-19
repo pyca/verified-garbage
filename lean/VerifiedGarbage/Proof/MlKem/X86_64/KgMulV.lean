@@ -131,18 +131,6 @@ theorem kgMulSse4_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10,
 
 theorem kgMulSse4_ctl : ctlOk (keygenMul .sse 4) = true := by lit_decide
 
-theorem kgMulAvx3_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-    (KgMul.inner .avx2 3) = true :=
-  writesOnly_of (by lit_decide)
-
-theorem kgMulAvx3_ctl : ctlOk (keygenMul .avx2 3) = true := by lit_decide
-
-theorem kgMulAvx4_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-    (KgMul.inner .avx2 4) = true :=
-  writesOnly_of (by lit_decide)
-
-theorem kgMulAvx4_ctl : ctlOk (keygenMul .avx2 4) = true := by lit_decide
-
 theorem kgMulSse3_ct : ConstantTime isa (kgMulK 3).pre (kgMulK 3).pub (keygenMul .sse 3) :=
   VG.Taint.constantTime (A := taint) _ kgMul_agree (by taint_decide)
 
@@ -164,19 +152,5 @@ theorem kgMulSse4_correct : ∀ s, (kgMulK 4).pre s →
 theorem kgMulSse4_verified :
     Verified X86_64.target (keygenMul .sse 4) (Spec.MlKem.keygenMulContract 4 X86_64.abi) :=
   kgMul4_verified _ BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) kgMulSse4_wo kgMulSse4_ctl kgMulSse4_ct
-
-theorem kgMulAvx3_ct : ConstantTime isa (kgMulK 3).pre (kgMulK 3).pub (keygenMul .avx2 3) :=
-  VG.Taint.constantTime (A := taint) _ kgMul_agree (by taint_decide)
-
-theorem kgMulAvx3_correct : ∀ s, (kgMulK 3).pre s →
-    ∃ t s', Exec isa (keygenMul .avx2 3) s t s' ∧ abiPreserved s s' ∧ (kgMulK 3).post s s' :=
-  kgMul_correct BodiesOk.avx2 KgMul.rowOk_avx2 (by decide) (by decide) kgMulAvx3_wo kgMulAvx3_ctl
-
-theorem kgMulAvx4_ct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul .avx2 4) :=
-  VG.Taint.constantTime (A := taint) _ kgMul_agree (by taint_decide)
-
-theorem kgMulAvx4_correct : ∀ s, (kgMulK 4).pre s →
-    ∃ t s', Exec isa (keygenMul .avx2 4) s t s' ∧ abiPreserved s s' ∧ (kgMulK 4).post s s' :=
-  kgMul_correct BodiesOk.avx2 KgMul.rowOk_avx2 (by decide) (by decide) kgMulAvx4_wo kgMulAvx4_ctl
 
 end VG.Proof.MlKem.X86_64

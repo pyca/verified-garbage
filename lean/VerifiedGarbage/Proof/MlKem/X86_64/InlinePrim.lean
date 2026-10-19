@@ -190,41 +190,4 @@ theorem ddIn_ok {n : String} {c : Prog isa} {ws : List Nat} (I : DDImpl n c ws) 
     hV.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega), hm] at hq
   exact hq
 
-/-! ## `vg_mlkem*_decrypt_mul` -/
-
-/-- What inline code of `vg_mlkem*_decrypt_mul` of rank `k` needs. -/
-structure DecMulHi (k : Nat) (w s u z : Ptr) (st : State) : Prop where
-  off : w.2 < 2 ^ 31 ∧ s.2 < 2 ^ 31 ∧ u.2 < 2 ^ 31 ∧ z.2 < 2 ^ 31
-  redS : VecReduced st.mem (pa st s) k
-  redU : VecReduced st.mem (pa st u) k
-  ws : (pR (pa st w)).Disjoint (vR (pa st s) k)
-  wu : (pR (pa st w)).Disjoint (vR (pa st u) k)
-  wz : (pR (pa st w)).Disjoint (cR (pa st z))
-  sz : (vR (pa st s) k).Disjoint (cR (pa st z))
-  uz : (vR (pa st u) k).Disjoint (cR (pa st z))
-  rW : (retR st).Disjoint (pR (pa st w))
-  rS : (retR st).Disjoint (vR (pa st s) k)
-  rU : (retR st).Disjoint (vR (pa st u) k)
-  rZ : (retR st).Disjoint (cR (pa st z))
-  c : Covers ([vR (pa st s) k, vR (pa st u) k] ++ [pR (pa st w), cR (pa st z)]) (st.rd ++ st.wr)
-  wc : Covers [pR (pa st w), cR (pa st z)] st.wr
-
-theorem decMulIn_ok {k : Nat} {c : Prog isa}
-    (hv : ∀ s, (decMulK k).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (decMulK k).post s s')
-    (hn : c.noCalls = true) {w s u z : Ptr} (hs : NA s) (hu : NA u) (hz : NA z) {st : State}
-    (H : DecMulHi k w s u z st) :
-    WP isa (.seq (.block (lea .rdi w ++ lea .rsi s ++ lea .rdx u ++ lea .rcx z)) c) st fun s' =>
-      IPost st s' [pR (pa st w), cR (pa st z)] ∧
-      PolyIs s'.mem (pa st w) (nttInv (dot (vecAt st.mem (pa st s) k) ((vecAt st.mem (pa st u) k).map ntt))) := by
-  refine WP.mono (glueIn_ok hv hn (dmGlue_ok w s u z H.off hs hu hz st) (rd := [vR (pa st s) k, vR (pa st u) k])
-    (wr := [pR (pa st w), cR (pa st z)])
-    (fun s1 hv hm k1 => by
-      simp only [decMulK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
-        hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, hm]
-      exact ⟨trivial, trivial, H.ws, H.wu, H.wz, H.sz, H.uz, retR_keep k1 H.rW _ _, retR_keep k1 H.rS _ _,
-        retR_keep k1 H.rU _ _, retR_keep k1 H.rZ _ _, H.redS, H.redU⟩) H.c H.wc)
-    fun s' ⟨hpost, s1, hV, hm, _, hq⟩ => ⟨hpost, ?_⟩
-  simp only [decMulK, State.withRegions_gpr, State.withRegions_mem, hV.1, hV.2.1, hV.2.2.1, hm] at hq
-  exact hq
-
 end VG.Proof.MlKem.X86_64

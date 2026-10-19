@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
 meta import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
@@ -27,7 +29,13 @@ namespace VG.Proof.MlKem.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Kpke16
 open VG.Spec.MlKem
 
-/-- The products of `decryptMulY`, inline. -/
+theorem decMulY3_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14]
+    (DecMulY.innerY 3) = true := writesOnly_of (by lit_decide)
+
+theorem decMulY4_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14]
+    (DecMulY.innerY 4) = true := writesOnly_of (by lit_decide)
+
+/-- The products of `ŝᵀ ∘ NTT(u)` with AVX2, inline. -/
 theorem dmOkY : KpkeDec.DmOk dmInnerY where
   ok k hk s₀ hs := by
     rcases hk with rfl | rfl
@@ -54,7 +62,7 @@ theorem kpkeDec768Y_ct :
 
 theorem kpkeDec768Y_correct : ∀ s, (kpkeDecK kem768).pre s →
     ∃ t s', Exec isa (kpkeDec kem768 .avx2 dmInnerY) s t s' ∧ abiPreserved s s' ∧ (kpkeDecK kem768).post s s' :=
-  KpkeDec.kpkeDec_correct ArithOk.avx2 kdCalls768 kdWf768 dmOkY (by lit_decide) (by lit_decide) (by lit_decide)
+  KpkeDec.kpkeDec_correct PrimsOk.avx2 kdCalls768 kdWf768 dmOkY (by lit_decide) (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide)
 
 /-- A state the contract permits. -/

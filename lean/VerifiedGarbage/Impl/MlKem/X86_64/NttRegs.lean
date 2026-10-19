@@ -338,16 +338,14 @@ def Alloc.redAll (A : Alloc) : Alloc :=
   (A.give c).give c'
 
 /-- How pass B of `NTT⁻¹` reads its input: the 256 words of an accumulator
-(`KpkeAccY.lean`'s order), or 256 `u32`s. -/
+(`KpkeAccY.lean`'s order). -/
 inductive InvIn
   | acc
-  | u32
   deriving DecidableEq
 
 /-- The 32 coefficients `32 (4 H + p)` to `32 (4 H + p) + 31` of the input at
 `rdi` into blocks `2 p` and `2 p + 1`, as `vpunpck{l,h}wd` of the two
-registers of an accumulator's iteration, or `vpackssdw` of two pairs of
-`u32` registers, leave them: in each lane `l`, coefficients `4 l + {0, …, 3}`
+registers of an accumulator's iteration, leave them: in each lane `l`, coefficients `4 l + {0, …, 3}`
 and `8 + 4 l + {0, …, 3}` of the first sixteen, and the same of the next
 sixteen. -/
 def Alloc.loadI (A : Alloc) (src : InvIn) (H p : Nat) : Alloc :=
@@ -360,13 +358,6 @@ def Alloc.loadI (A : Alloc) (src : InvIn) (H p : Nat) : Alloc :=
     let A := A.emit [.vmovdquLoad .l256 a (at_ .rdi o), .vmovdquLoad .l256 b (at_ .rdi (o + 32)),
       yb .vpunpcklwd t a b, yb .vpunpckhwd b a b]
     { A.give a with regs := A.regs.set (2 * p) t }
-  | .u32 =>
-    let o := 512 * H + 128 * p
-    let (t, A) := A.take
-    let A := A.emit [.vmovdquLoad .l256 a (at_ .rdi o), .vmovdquLoad .l256 t (at_ .rdi (o + 32)),
-      yb .vpackssdw a a t, .vmovdquLoad .l256 b (at_ .rdi (o + 64)), .vmovdquLoad .l256 t (at_ .rdi (o + 96)),
-      yb .vpackssdw b b t]
-    A.give t
 
 /-- Pass B of `NTT⁻¹` on half `H`: its 128 coefficients from `rdi`
 (`loadI`), in the order of `NTT`'s layer `len = 2` after one exchange of
@@ -416,10 +407,8 @@ def passIA : List Instr :=
 /-- Pass B of `NTT⁻¹` on both halves. -/
 def passIBs (src : InvIn) : List Instr := passIB src 0 ++ passIB src 1
 
-/-- Pass B reading an accumulator, for the functions that inline `NTT⁻¹`,
-and `u32`s, for `vg_mlkem_inv_ntt_avx2`. -/
+/-- Pass B reading an accumulator, for the functions that inline `NTT⁻¹`. -/
 def passIBsAcc : List Instr := passIBs .acc
-def passIBsU32 : List Instr := passIBs .u32
 
 end NttR
 
@@ -432,7 +421,7 @@ open NttR in
 def nttR16 (pb : List Instr) : Prog isa := .block (pro ++ passA16 ++ pb ++ [.vop .vzeroupper])
 
 open NttR in
-/-- `NTT⁻¹` of the input at `rdi` (`pb`: an accumulator or `u32`s) to the
+/-- `NTT⁻¹` of the input at `rdi` (`pb`: pass B reading an accumulator) to the
 `u32`s at `rdi`, with `S` at `rsi + oS`. -/
 def nttIR (pb : List Instr) : Prog isa := .block (pro ++ pb ++ passIA ++ [.vop .vzeroupper])
 

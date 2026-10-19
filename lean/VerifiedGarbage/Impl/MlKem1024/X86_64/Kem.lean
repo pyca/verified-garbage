@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
@@ -80,7 +80,7 @@ def kem1024w : Kem16 where
 
 abbrev keyGen1024 (c : Callee4) : Prog isa := kemKeyGenSel kem1024w c
 abbrev encapsH1024 (c : Callee4) : Prog isa := kemEncapsHSel kem1024w c
-abbrev encaps1024 (c : Callee4) : Prog isa := kemEncaps kem1024 c
+abbrev encaps1024 (c : Callee4) : Prog isa := kemEncapsSel kem1024w c
 abbrev decaps1024 (c : Callee4) : Prog isa := kemDecapsSel kem1024w c
 abbrev checkEk1024 : Prog isa := checkEkK 4
 
