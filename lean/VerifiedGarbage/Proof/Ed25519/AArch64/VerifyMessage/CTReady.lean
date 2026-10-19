@@ -4,6 +4,64 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Decode
+public import VerifiedGarbage.Proof.Ed25519.Field64
+public import VerifiedGarbage.Proof.Ed25519.Scalar
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+public import VerifiedGarbage.Proof.Mont.AArch64.Chain
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Decode
+import VerifiedGarbage.Proof.Ed25519.Field64
+import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTCommon`. -/
 

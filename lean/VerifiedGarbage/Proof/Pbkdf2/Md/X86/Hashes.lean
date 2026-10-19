@@ -25,6 +25,12 @@ import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Md5.X86.Compress
+public import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
 
 /-!
 # HMAC and PBKDF2-HMAC on x86 (32-bit): the Merkle–Damgård hash functions
