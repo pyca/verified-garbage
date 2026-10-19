@@ -8,9 +8,9 @@ namespace VG.Impl.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM
 open VG.Impl.MlKem.AArch64.Dot VG.Impl.MlKem.AArch64.Noise
 
-def prfCbdUsing (hash : Prog isa) (N off : Nat) : Prog isa :=
+def prfCbdUsing (hash : Prog isa) (N off : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block [.movz .x .x9 (BitVec.ofNat 16 N) 0,.strb .x9 .x28 (RB+32)])
-  (.seq hash (.seq (.block (ptrTo .x0 .x28 PB ++ ptrTo .x1 .x28 off)) (.call "vg_mlkem_cbd2" cbd2)))
+  (.seq hash (.seq (.block (ptrTo .x0 .x28 PB ++ ptrTo .x1 .x28 off)) (cbdCall w16)))
 
 def vRestUsing (prf : Nat→Nat→Prog isa) (L : KemLay) (ek : Reg) (eo : Nat) (m : Reg) (mo : Nat) (ct : Reg) (co : Nat) : Prog isa :=
  seqs (((List.range L.k).map fun j=>dec12At ek (eo+384*j) (aOff L 0 j)) ++
