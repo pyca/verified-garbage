@@ -282,10 +282,31 @@ namespace VG.Proof.Md5.X86_64
 …
 ```
 
-* `public import` what the file's statements and definitions mention
+* `public import` only what the file's statements and definitions mention
   (importers see it too); a plain `import` gives the file something for its
   proofs only, and importers do not see it. `@[expose] public section`
   keeps every definition unfoldable by importers, as the proofs need.
+  Import privately whatever only proofs use: it is what keeps builds short.
+  Lake rebuilds a module when a module it reads changes its `.olean`, and a
+  module reads its imports and what they `public import`, transitively
+  (`ci/lean_shards.py`'s `reads`). A change to a lemma's statement rebuilds
+  the modules importing it, but those that import it privately produce the
+  `.olean` they did, and nothing beyond them rebuilds; through a
+  `public import` it rebuilds everything above it. (A change to a proof
+  alone changes no `.olean` but its own module's private part, and rebuilds
+  nothing else.) So import what a file uses directly, not through another
+  module that happens to pass it on. `ci/check_lean_public_imports.py`
+  runs `lake shake` on the modules a change edits, after CI's build, and
+  fails on a `public import` the change added of a module of the project
+  that the file uses only privately. It never asks to make private a module whose effect no
+  declaration records (an `attribute [...]`, a `macro_rules`, a `seal`, an
+  instance priority, a `materialize_*` literal: its `SIDE_EFFECTS`), nor a
+  dependency's, and when making an import private would stop passing such
+  a module on, it names the `public import`s that keep doing so. Mark an
+  import that must stay public for another reason `-- shake: keep`, saying
+  why. Shake does not see uses that leave nothing in the `.olean` (an
+  `open` of a namespace, what `#guard`, `materialize_*` or `taint_decide`
+  evaluate): import what those need directly.
 * A file that only defines tactics, elaborators or commands is a
   `public meta section`, and imports each module both ways
   (`public import X` and `public meta import X`; `Lean` only as
@@ -777,6 +798,8 @@ proofs that leave `src/asm/` as it was, tests, docs, CI).
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_modules.py
+git diff --name-only origin/main -- lean/VerifiedGarbage | sed -n 's#^lean/\(.*\)\.lean$#\1#p' | tr / . \
+  | xargs -r python3 ci/check_lean_public_imports.py --base origin/main -m   # after building them
 python3 ci/check_registrations.py
 python3 ci/check_lean_speed.py
 python3 ci/check_vectors.py
