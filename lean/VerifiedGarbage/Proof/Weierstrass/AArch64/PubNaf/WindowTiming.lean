@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepDTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
@@ -19,7 +20,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 Two runs multiplying the same point by the same scalar leak the same trace
 (`window_relCT`): the table's construction (`table_relCT`), the top digit and
-every iteration (`digit_relCT`, `stepRaw_relCT`) branch and address only by
+every iteration (`digit_relCT`, `stepOfRaw_relCT`) branch and address only by
 the values of the point and the digits, which both runs share, and the
 conversion to projective coordinates is constant time.
 -/
@@ -131,12 +132,13 @@ theorem head_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Naf
 /-- The iterations, from the top digit's result to `[k]P`. -/
 theorem loop_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : NafLay K size)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) (hone : K.one < C.p)
-    (hc : StepChecks K) {P : Point C} (hP : onCurve C P = true) {s₀ t₀ : State}
+    (hc : StepChecks K) {dd : Option (Prog isa)} (hD : NafDblOk K C base size dd) (hT : NafDblCT dd)
+    {P : Point C} (hP : onCurve C P = true) {s₀ t₀ : State}
     (hF₁ : NafFixed K C base s₀ P k) (hF₂ : NafFixed K C base t₀ P k) :
     RelCT isa (fun s t => (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (loopLive K) E s t) ∧
         NInv K C base size P s₀ s (64 * K.M.n) (Naf5.residual k (64 * K.M.n)) ∧
         NInv K C base size P t₀ t (64 * K.M.n) (Naf5.residual k (64 * K.M.n)))
-      (.loop (PubNaf.step K) (.nonzero .x .x19))
+      (.loop (PubNaf.stepOf K dd) (.nonzero .x .x19))
       (fun s t => (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (loopLive K) E s t) ∧
         NInv K C base size P s₀ s 0 (Naf5.residual k 0) ∧
         NInv K C base size P t₀ t 0 (Naf5.residual k 0)) := by
@@ -145,7 +147,7 @@ theorem loop_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
   let I := fun j s t => 1 ≤ j ∧ j ≤ 64 * K.M.n ∧
     ((∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (loopLive K) E s t) ∧
       NInv K C base size P s₀ s j (Naf5.residual k j) ∧ NInv K C base size P t₀ t j (Naf5.residual k j))
-  have step : ∀ j, RelCT isa (I j) (PubNaf.step K) (fun s t =>
+  have step : ∀ j, RelCT isa (I j) (PubNaf.stepOf K dd) (fun s t =>
       eval (.nonzero .x .x19) s = eval (.nonzero .x .x19) t ∧
       (eval (.nonzero .x .x19) s = some false →
         (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (loopLive K) E s t) ∧
@@ -156,14 +158,14 @@ theorem loop_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
     by_cases hj : 1 ≤ j
     · by_cases hjn : j ≤ 64 * K.M.n
       · have e : j - 1 + 1 = j := by omega
-        have raw := (stepRaw_relCT (base := base) (size := size) hL hp hone hc hF₁ hF₂
+        have raw := (stepOfRaw_relCT (base := base) (size := size) hL hp hone hc hD hT hF₁ hF₂
           (j := j - 1) (by omega)).mono (P' := I j)
           (fun _ _ h => ⟨h.2.2.1, h.2.2.2.1.st, h.2.2.2.2.st, h.2.2.2.1.cache, h.2.2.2.2.cache,
             by rw [e]; exact h.2.2.2.1.x19, by rw [e]; exact h.2.2.2.2.x19⟩) (fun _ _ h => h)
         have hw := raw.wp (F₁ := fun s => NInv K C base size P s₀ s (j - 1) (Naf5.residual k (j - 1)))
           (F₂ := fun s => NInv K C base size P t₀ s (j - 1) (Naf5.residual k (j - 1)))
-          (fun s t h => ⟨step_ok hL hp hC hM3 hone hP hF₁ (j := j - 1) (by omega) (by rw [e]; exact h.2.2.2.1),
-            step_ok hL hp hC hM3 hone hP hF₂ (j := j - 1) (by omega) (by rw [e]; exact h.2.2.2.2)⟩)
+          (fun s t h => ⟨stepOf_ok hL hp hC hM3 hone hP hF₁ hD (j := j - 1) (by omega) (by rw [e]; exact h.2.2.2.1),
+            stepOf_ok hL hp hC hM3 hone hP hF₂ hD (j := j - 1) (by omega) (by rw [e]; exact h.2.2.2.2)⟩)
         refine hw.mono (fun _ _ h => h) ?_
         intro s t ⟨pair, Is, It⟩
         have s19 := Is.x19
@@ -198,11 +200,11 @@ theorem window_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) (hc : WindowChecks K)
     (hO : PrimeOrder C) (hn17 : 17 ≤ C.n)
     {P : Point C} (hP : onCurve C P = true) (hk : k < 2 ^ (64 * K.M.n)) {E : Nat → Fe C}
-    (hz1 : E K.P.z = 1) :
+    (hz1 : E K.P.z = 1) {dd : Option (Prog isa)} (hD : NafDblOk K C base size dd) (hT : NafDblCT dd) :
     RelCT isa (fun s t => FieldPair K.M base size C.p (· ∈ winSlots K) (winRo K) E s t ∧
         (Scr s base size ∧ ModOkA K.M size C.p s.mem base ∧ NafFixed K C base s P k) ∧
         (Scr t base size ∧ ModOkA K.M size C.p t.mem base ∧ NafFixed K C base t P k))
-      (PubNaf.window K) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
+      (PubNaf.window K dd) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   have hn0 := hL.win.n0
   intro s t ts tt s' t' ⟨pair, ⟨hs₁, hM₁, hF₁⟩, ⟨hs₂, hM₂, hF₂⟩⟩ es et
   rw [PubNaf.window] at es et
@@ -261,7 +263,7 @@ theorem window_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     b19 Dl2' DJ2'
   obtain ⟨_, rfl⟩ := Exec.det f3 y3
   -- The iterations.
-  obtain ⟨tr4, ⟨E4, p4⟩, I4, J4⟩ := loop_relCT hL hp hC hM3 hone_lt hc.step hP G₁ G₂
+  obtain ⟨tr4, ⟨E4, p4⟩, I4, J4⟩ := loop_relCT hL hp hC hM3 hone_lt hc.step hD hT hP G₁ G₂
     _ _ _ _ _ _ ⟨⟨E3, p3.sub (loopLive_sub K)⟩, I3, J3⟩ e4 f4
   -- Projective coordinates.
   have tr5 := hc.finish _ _ _ _ _ _ trivial trivial

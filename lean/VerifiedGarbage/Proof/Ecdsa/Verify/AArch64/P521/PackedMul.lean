@@ -114,7 +114,7 @@ theorem packedNafMul_ok (hc : CfgOk c) (hn9 : c.n = 9) (hC : Law c.C)
   refine WP.seq (WP.mono (PubNaf.window_ok (packedNafLay hc hn9) (unitMod_pow_two hc.p_odd (64 * c.n))
     hC hc.am3 hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hO hn17 hP hs₂ hM₂ hF₂
-    z₂ hk)
+    z₂ hk PubNaf.NafDblOk.none)
     fun s₃ ⟨sc₃, k₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [packedW_eq] at U₃
   exact ⟨sc₃, k₃.rd.trans rd₂, k₃.wr.trans wr₂, by rw [List.append_assoc]; exact U₂.trans U₃, M₃, L₃, R₃⟩
