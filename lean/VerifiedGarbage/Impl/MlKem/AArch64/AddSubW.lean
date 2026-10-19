@@ -32,4 +32,5 @@ def accW (op : List Instr) : Prog isa :=
     (.loop (.block (accBodyW op)) (.nonzero .x .x11))
 
 def addW : Prog isa := accW haddOp
+
 end VG.Impl.MlKem.AArch64.AddSubW

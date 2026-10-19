@@ -84,6 +84,8 @@ theorem haddOp_spec : HOpSpec haddOp fun a b => (a + b) % 3329 := by
   refine hcsub_ok (by rw [h₁.get .v16]; exact hq) l₁ (fun e he => by have := hA e he; have := hB e he; omega)
     fun s₂ h₂ l₂ => k s₂ ((h₁.chg.trans h₂).mono) l₂
 
+end
+
 /-! ## The loop -/
 
 /-- What `accW` needs of the state `s₀` it starts in: the reduced polynomials at `x0`, which
