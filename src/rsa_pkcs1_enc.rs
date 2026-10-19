@@ -49,6 +49,17 @@ use core::fmt;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_umaal;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
@@ -153,6 +164,17 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
         Backend::Adx => vg_rsa_pkcs1_encrypt_precomputed_adx,
         #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_encrypt_precomputed,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
@@ -265,6 +287,17 @@ fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
         (Sha256Backend::Avx2, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
         #[cfg(target_arch = "aarch64")]
         (Sha256Backend::Sha2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_sha2,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        (Sha256Backend::Scalar, Backend::Umaal) => vg_rsa_pkcs1_decrypt_umaal,
     }
 }
 
@@ -421,10 +454,19 @@ mod tests {
             [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
             [Backend::Baseline].as_slice(),
         );
-        #[cfg(target_arch = "arm")]
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
         let (shas, crts) = (
             [Sha256Backend::Scalar].as_slice(),
-            [Backend::Baseline].as_slice(),
+            [Backend::Baseline, Backend::Umaal].as_slice(),
         );
         let mut fns = Vec::new();
         for &sha in shas {

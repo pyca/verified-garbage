@@ -445,7 +445,10 @@ fn call_verify<const N: usize>(
 /// and `sign` calling the selected public- and private-key operations
 /// (`crate::rsa::Backend`), with the CPU features each needs. The functions
 /// calling the x86-64 RSA backends (`verify_adx`, `verify_ifma`, `adx`, `ifma`) are given for
-/// the variants that have them, and used on x86-64 only.
+/// the variants that have them, and used on x86-64 only; the signature
+/// calling the private-key operation with ARMv7's `umaal` (`umaal`), on
+/// ARMv7 only (verification calls the baseline's public-key operation
+/// there).
 macro_rules! pss_hash {
     (
         $n:literal, $backend:ident {
@@ -458,6 +461,9 @@ macro_rules! pss_hash {
                         verify_ifma: $verify_ifma:path [$($vireq:path),*],
                         adx: $adx:path [$($areq:path),*],
                         ifma: $ifma:path [$($ireq:path),*]
+                    )?
+                    $(,
+                        umaal: $umaal:path [$($ureq:path),*]
                     )? $(,)?
                 }
             ),* $(,)?
@@ -473,6 +479,19 @@ macro_rules! pss_hash {
             $(
                 #[cfg(target_arch = "x86_64")]
                 const _: &[$crate::cpu::Features] = &[$($vareq,)* $($vireq,)* $($areq,)* $($ireq,)*];
+            )?
+            $(
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                const _: &[$crate::cpu::Features] = &[$($ureq,)*];
             )?
         )*
 
@@ -492,6 +511,19 @@ macro_rules! pss_hash {
                                 #[cfg(target_arch = "x86_64")]
                                 $crate::rsa::Backend::Ifma => $ifma,
                             )?
+                            $(
+                                #[cfg(all(
+                                    target_arch = "arm",
+                                    any(
+                                        target_os = "linux",
+                                        target_os = "android",
+                                        target_os = "freebsd",
+                                        target_os = "netbsd",
+                                        target_os = "openbsd"
+                                    )
+                                ))]
+                                $crate::rsa::Backend::Umaal => $umaal,
+                            )?
                         },
                         match crt {
                             $crate::rsa::Backend::Baseline => $verify,
@@ -501,6 +533,17 @@ macro_rules! pss_hash {
                                 #[cfg(target_arch = "x86_64")]
                                 $crate::rsa::Backend::Ifma => $verify_ifma,
                             )?
+                            #[cfg(all(
+                                target_arch = "arm",
+                                any(
+                                    target_os = "linux",
+                                    target_os = "android",
+                                    target_os = "freebsd",
+                                    target_os = "netbsd",
+                                    target_os = "openbsd"
+                                )
+                            ))]
+                            $crate::rsa::Backend::Umaal => $verify,
                         },
                     ),
                 )*
@@ -532,6 +575,17 @@ macro_rules! pss_hash {
                                     #[cfg(target_arch = "x86_64")]
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($vireq),*]),
                                 )?
+                                #[cfg(all(
+                                    target_arch = "arm",
+                                    any(
+                                        target_os = "linux",
+                                        target_os = "android",
+                                        target_os = "freebsd",
+                                        target_os = "netbsd",
+                                        target_os = "openbsd"
+                                    )
+                                ))]
+                                $crate::rsa::Backend::Umaal => Features::all(&[$($vreq),*]),
                             };
                             let s: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),
@@ -540,6 +594,19 @@ macro_rules! pss_hash {
                                     $crate::rsa::Backend::Adx => Features::all(&[$($areq),*]),
                                     #[cfg(target_arch = "x86_64")]
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
+                                )?
+                                $(
+                                    #[cfg(all(
+                                        target_arch = "arm",
+                                        any(
+                                            target_os = "linux",
+                                            target_os = "android",
+                                            target_os = "freebsd",
+                                            target_os = "netbsd",
+                                            target_os = "openbsd"
+                                        )
+                                    ))]
+                                    $crate::rsa::Backend::Umaal => Features::all(&[$($ureq),*]),
                                 )?
                             };
                             // An assertion, not an `if`: on ARMv7 every hash has

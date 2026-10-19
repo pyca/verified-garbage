@@ -41,6 +41,17 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_pkcs1_sig::vg_rsa_pkcs1_sign_umaal;
 use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
 };
@@ -144,6 +155,17 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
         Backend::Adx => vg_rsa_pkcs1_sign_adx,
         #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_rsa_pkcs1_sign_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_sign_umaal,
     };
     // SAFETY: each pointer is valid for its length (`out` for writes,
     // `scratch` too), and none overlaps another or wraps around, as they are
@@ -201,6 +223,17 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
         Backend::Adx => vg_rsa_pkcs1_verify_precomputed_adx,
         #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_verify_precomputed,
     };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
@@ -243,6 +276,17 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
         Backend::Adx => vg_rsa_pkcs1_recover_precomputed_adx,
         #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_recover_precomputed,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
