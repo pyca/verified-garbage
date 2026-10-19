@@ -6,6 +6,21 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inst
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: key generation

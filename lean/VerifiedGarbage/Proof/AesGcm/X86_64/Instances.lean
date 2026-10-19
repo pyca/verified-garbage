@@ -9,11 +9,11 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
@@ -23,6 +23,114 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+public import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Proof.Gcm.Split
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.LoopTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGHash
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGXor
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ks
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.Split
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.LoopTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGHash
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGXor
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ks
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
 
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from
