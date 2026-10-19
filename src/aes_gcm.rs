@@ -97,13 +97,15 @@
 //! message of at least `POWERS_MIN_LEN` (128) bytes, or the first one after
 //! it with a 12-byte nonce and at most 16 bytes of additional data (a TLS
 //! record): its `_store_powers` instance stores them while it hashes the
-//! text. Once it has, every message uses them, shorter ones too, which
-//! never count towards them: `vg_ghash_with_powers_aes` loads `H · x⁻¹`
-//! rather than computing it, and `encrypt` copies its pieces with `memcpy`
-//! rather than `vg_aes_gcm_seal_gather`'s 16-byte steps and single bytes.
-//! `encrypt` with them copies its pieces to its output and seals them there,
-//! as `vg_aes_gcm_seal_gather` does. Streaming keeps the plain functions,
-//! and does not count towards them.
+//! text. The key uses them for those messages, and, once they are
+//! published, for `encrypt`'s shorter messages too, which never count
+//! towards them: `encrypt` with them copies its pieces to its output with
+//! `memcpy` and seals them there, faster than `vg_aes_gcm_seal_gather`'s
+//! 16-byte steps and single bytes (5% for a 64-byte TLS record on Neoverse
+//! N2), while a short `encrypt_in_place` or `decrypt_in_place` would gain
+//! only the load of `H · x⁻¹` instead of its product, and `open` with them
+//! is slower. Streaming keeps the plain functions, and does not count
+//! towards them.
 //!
 //! On either, which instance a call takes depends only on public values: the
 //! lengths of its text (and, for `encrypt`, of its pieces, nonce and
@@ -816,7 +818,8 @@ impl Powers {
     }
 
     /// Whether messages shorter than `POWERS_MIN_LEN` take the `_prepared`
-    /// instances: once the powers are published (`SHORT_READY`).
+    /// instances (on AArch64, `encrypt`'s only): once the powers are
+    /// published (`SHORT_READY`).
     #[inline(always)]
     fn short_ready(&self) -> bool {
         self.calls.load(Ordering::Relaxed) == SHORT_READY
@@ -1141,12 +1144,14 @@ impl AesGcm {
         // reads the powers (`short_ready`), as in `encrypt_in_place`. On
         // AVX-512 that makes 16- to 255-byte opens 6–33% faster (Emerald
         // Rapids), for one more register move on the long path (within 0.5%
-        // on Zen 3, #2775).
+        // on Zen 3, #2775). Not on AArch64, where the plain `open` is faster
+        // for them: 1–2% for 16- and 64-byte TLS records on Neoverse N2.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if (data.len() >= POWERS_MIN_LEN || self.powers.short_ready())
+        if (data.len() >= POWERS_MIN_LEN
+            || (cfg!(target_arch = "x86_64") && self.powers.short_ready()))
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
@@ -1408,7 +1413,9 @@ impl AesGcm {
     /// Whether `encrypt_in_place` takes `seal_prepared` for a message
     /// shorter than `POWERS_MIN_LEN`: once the powers are ready
     /// (`Powers::short_ready`), but on the 256-bit backend, whose `_prepared`
-    /// instance of `seal` has no path for TLS records.
+    /// instance of `seal` has no path for TLS records; never on AArch64,
+    /// where the powers save a short message only the copy of `encrypt`'s
+    /// pieces, and `open` with them is slower.
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     #[inline(always)]
     fn short_seal(&self) -> bool {
@@ -1416,7 +1423,7 @@ impl AesGcm {
         if self.backend == Backend::VaesVpclmul {
             return false;
         }
-        self.powers.short_ready()
+        cfg!(target_arch = "x86_64") && self.powers.short_ready()
     }
 
     /// `encrypt_in_place` with the key context with the powers, if
@@ -2837,8 +2844,10 @@ mod tests {
                 let mut out = [0u8; 700];
                 let tag = k.encrypt(&nonce, &aad, &[&msg[..1], &msg[1..]], &mut out);
                 assert_eq!((out, tag), (want, Ok(want_tag)));
-                // Shorter messages take the powers too, in place and out of
-                // place, sealing and opening, and do not count.
+                // Shorter messages, once the powers are published, seal and
+                // open as the baseline does, in place and out of place, on
+                // whichever instances `short_ready` routes them to, and do
+                // not count.
                 assert!(k.powers.short_ready());
                 for len in [0, 1, 15, 16, 17, 63, 64, POWERS_MIN_LEN - 1] {
                     let mut want = msg;
