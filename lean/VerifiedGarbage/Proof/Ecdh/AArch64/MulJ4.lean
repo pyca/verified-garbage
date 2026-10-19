@@ -88,8 +88,9 @@ theorem mulJ4_ok (hc : CfgOk c) (hC : Law c.C) (hO : PrimeOrder c.C) (hpadd : c.
       ((winQ c).M.mo + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ (winQ c).M.mo) ∧
       ∀ x ∈ winSlots (winQ c), x + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ x)
     (hb : ∀ w ∈ invJW c, c.winBits + 4 * (16 * c.n + 1) ≤ w.1 ∨ w.1 + w.2 ≤ c.winBits)
-    (hx : ∀ r ∈ [Reg.x20, .x26, .x27, .x28], r ∉ invJClob c.n ∧ r ∉ clob c.n) :
-    MulOk c (Impl.Ecdh.AArch64.Cfg.mulJ4 c) := by
+    (hx : ∀ r ∈ [Reg.x20, .x26, .x27, .x28], r ∉ invJClob c.n ∧ r ∉ clob c.n)
+    {dd : Option (Prog isa × Prog isa)} (hD : ∀ base, DblsOk (winQ c) c.C base size dd) :
+    MulOk c (Impl.Ecdh.AArch64.Cfg.mulJ4 c dd) := by
   intro base s hs g F P hP hpx hpy hrep rest R h
   have h0 := hc.n0
   have h7 := hc.n10
@@ -176,7 +177,7 @@ theorem mulJ4_ok (hc : CfgOk c) (hC : Law c.C) (hO : PrimeOrder c.C) (hpadd : c.
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (invJSpec hc hw hb) hRC hx0
     hs₂ hM₂ hF (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hJ2
     (by rw [hJ]; exact winE_two_bound (by omega_arith) hk hbd) (winAddOk hc)
-    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial))
+    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (hD base))
     fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => ?_)
   rw [winW_eq] at U₃
   rw [hJ, Nat.add_sub_cancel] at R₃

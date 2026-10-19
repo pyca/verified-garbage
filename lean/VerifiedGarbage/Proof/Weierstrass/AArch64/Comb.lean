@@ -263,6 +263,19 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
     rw [wx, wy, wz, I₁.val _ hDx, I₁.val _ hDy, I₁.val _ hDz]
 
 
+theorem winSaved_combClob {n : Nat} {r : Reg} (h : r ∈ clob n ++ winSaved n) : r ∈ combClob n := by
+  rcases List.mem_append.mp h with h | h
+  · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ h))
+  · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ (List.mem_append_left _ h)))
+
+theorem not_mem_winSaved {n : Nat} {r : Reg} (h : r ∉ [Reg.x21, .x22, .x23, .x24, .x25]) : r ∉ winSaved n := by
+  unfold winSaved; split
+  · exact h
+  · simp
+
+theorem maskRegs_combClob {n : Nat} {r : Reg} (h : r ∈ maskRegs) : r ∈ combClob n :=
+  List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ (List.mem_append_right _ h)))
+
 theorem combClob_mem {n : Nat} {r : Reg} (h : r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) :
     r ∈ combClob n := by
   simp only [combClob, clob, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at h ⊢

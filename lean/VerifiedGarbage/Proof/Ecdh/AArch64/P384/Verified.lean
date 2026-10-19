@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
+import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
 import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
 import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
 public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
@@ -26,6 +27,7 @@ meta import Mathlib.Tactic.SetLike
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+meta import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
 
 /-!
 # ECDH over P-384 on AArch64: `Verified`
@@ -73,9 +75,12 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
   have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
   have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p384) := by lit_decide
   have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) := by lit_decide
-  have hm : Ecdh.AArch64.MulOk p384 (Cfg.mulJ4 p384) :=
+  have hm : Ecdh.AArch64.MulOk p384 (Cfg.mulJ4 p384
+      (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR))) :=
     Ecdh.AArch64.mulJ4_ok (p384_ok hI) hL hO rfl (by decide +kernel) (by decide +kernel)
       (by decide +kernel) (by decide +kernel)
+      (P384.EcdhDouble.dblsOk P384.EcdhDouble.p384_C_p (Ecdh.AArch64.winLayQ (p384_ok hI)) (Ecdh.AArch64.winAQ (p384_ok hI))
+        (Weierstrass.unitMod_pow_two (p384_ok hI).p_odd _))
   obtain ⟨t, s', he, hsv, -, hpost⟩ :=
     Ecdh.AArch64.exchangeWith_ok' (p384_ok hI) hL hm (by decide +kernel) hmc hmu (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩

@@ -197,8 +197,9 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (hk8 : 8 * geom K.J ≤ k) {pa : Option (String × Nat)}
     (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
     (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa)
-    {s : State} (hI : WinInvJ K C base size k P s₀ s 1) :
-    WP isa (WinCfg.stepLast K pa) s fun s' =>
+    {s : State} (hI : WinInvJ K C base size k P s₀ s 1)
+    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) :
+    WP isa (WinCfg.stepLast K pa dd) s fun s' =>
       WinSt K C base size P s₀ s' ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -216,7 +217,7 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     have e : ∀ x, tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x => by
       show toM _ _ _ = toM _ _ _; rw [k₁.mem]
     rw [e, e, e]; exact hI.rep
-  refine WP.seq (WP.mono (quadJ_ok hL hA hp hC hM3 hP hF hS₁ (j := 0) (by decide) b₁ lt₁ rep₁)
+  refine WP.seq (WP.mono (quadJ_ok hL hA hp hC hM3 hP hD hF hS₁ (j := 0) (by decide) b₁ lt₁ rep₁)
     fun s₂ ⟨S₂, x₂, l₂, r₂⟩ => ?_)
   refine WP.seq (WP.mono (toProjR_ok hL hA hp hC hpn hone_lt hone hF S₂ l₂ r₂)
     fun s₅ ⟨S₅, x₅, l₅, r₅⟩ => ?_)
@@ -314,8 +315,8 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hk8 : 8 * geom K.J ≤ k) (hJ2 : 2 ≤ K.J) (hb : 16 * winE k K.J 2 + 8 < C.n)
     {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
     (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa)
-    (hfarI : AddFar K.M K.S IW pa) :
-    WP isa (WinCfg.windowJ K inv pa) s₀ fun s' => KeepRegs RC s₀ s' ∧
+    (hfarI : AddFar K.M K.S IW pa) {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) :
+    WP isa (WinCfg.windowJ K inv pa dd) s₀ fun s' => KeepRegs RC s₀ s' ∧
       Unch base (winW K ++ IW) s₀.mem s'.mem ∧ ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -431,8 +432,8 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (by omega_using [hJ])
     (fun j t h1 h2 hi => winStepJ_ok hL hA hp hC hM3 hO hP hP0 hpn hone_lt hone hF hk8 h1 h2
       (Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_left _
-        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi)
-    (fun t hi => WP.mono (stepLast_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 hpa hr' hfar hi)
+        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi hD)
+    (fun t hi => WP.mono (stepLast_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 hpa hr' hfar hi hD)
       fun u ⟨S, l, r⟩ => ⟨((B.keep.mono c19).trans Kn).trans (S.keep.mono hRC),
         (U₀.trans S.unch).mono fun w hw => by
           simp only [List.mem_append] at hw ⊢; rcases hw with (hw | hw) | hw <;> simp [hw],
