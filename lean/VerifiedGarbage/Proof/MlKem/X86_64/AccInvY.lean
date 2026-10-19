@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
-import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvTop
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAccA
 

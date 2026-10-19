@@ -2,7 +2,9 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV

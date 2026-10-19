@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 
 The pieces of `Bodies.avx2` (`KpkeMul.lean`) that keep a sum of products
 `ŝ[j] ×_T ŷ[j]` as 256 words (an *accumulator*) rather than as 256 `u32`s:
-the products of `vg_mlkem_multiply_ntts_avx2` (`MulAvx2.lean`) are added to
+the products of `MulAvx2.lean`'s loads and `vbase` are added to
 it where `vbase` leaves them, and `NTT⁻¹` starts from it rather than from
 the `u32`s it would pack.
 
@@ -21,10 +21,10 @@ that order: `ymm1` at byte `64 i` and `ymm2` at `64 i + 32`
 (`accIdx`).
 
 * `zeroAccY(acc = rdi)`: the accumulator of the zero polynomial.
-* `tabAccY(scratch = rcx)`: the `γ`s of `vg_mlkem_multiply_ntts_avx2`
+* `tabAccY(scratch = rcx)`: the `γ`s in `vbase`'s order
   (`gTabY`) at `scratch + 3328`, once for all the products.
 * `mulAccY(acc = rdi, f = rsi, g = rdx, scratch = rcx)`: `acc += f ×_T g`,
-  8 times on 32 coefficients: `vg_mlkem_multiply_ntts_avx2`'s loads and
+  8 times on 32 coefficients: the loads of `MulAvx2.lean` and
   `vbase`, with the table at `scratch + 3328`, then each of `ymm1` and
   `ymm2` added to its 32 bytes of the accumulator, reduced (`vcsub`).
 * `mulSetY(acc = rdi, f = rsi, g = rdx, scratch = rcx)`: `acc = f ×_T g`:
