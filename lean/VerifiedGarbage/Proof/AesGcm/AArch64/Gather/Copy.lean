@@ -10,8 +10,9 @@ import VerifiedGarbage.Proof.Cmac.Stream
 Untrusted: everything here is checked by Lean. `copyBlocks` copies `k ≥ 1`
 blocks from `x12` to `x11`, 16 bytes at a time through `v0`
 (`copyBlocks_wp`), and `copySlice` the `n` bytes at `x12` to `x11`: its
-whole blocks so, then its last `n mod 16` bytes one at a time (`copyLoop`,
-`copyLoop_ok`), leaving `x11` past them (`copySlice_wp`). The bytes copied
+whole blocks so, then its last `n mod 16` bytes eight, four and one at a
+time (`copyW`, `copyW_ok`), leaving `x11` past them (`copySlice_wp`). The
+bytes copied
 and the bytes written do not overlap.
 -/
 
@@ -24,7 +25,7 @@ namespace VG.Proof.AesGcm.AArch64.Gather
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.Impl.AesGcm.AArch64.SealGather VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac.Stream (bytesAt_append)
-open VG.Proof.AesGcm.AArch64 (LoopPre copyLoop_ok eval_zero eval_nonzero succ_ofNat loopRegs covers_prefix covers_off)
+open VG.Proof.AesGcm.AArch64 (LoopPre WordAt copyW_ok eval_zero eval_nonzero succ_ofNat loopRegs covers_prefix covers_off)
 
 /-- The registers the copy of a slice writes. -/
 abbrev copyRegs : List Reg := [.x11, .x12, .x13, .x14, .x15]
@@ -243,8 +244,12 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
     have lp : LoopPre s₃ (S + BitVec.ofNat 64 (16 * (n / 16))) (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
       ⟨by omega, by rw [rd₃, wr₃, kp₂.rd, kp₂.wr]; exact covers_off h.rd (by omega) hn,
         by rw [wr₃, kp₂.wr]; exact covers_off h.wr (by omega) hn, (h.disj.sub_left hS).sub_right hD⟩
-    refine WP.mono (copyLoop_ok s₃ (by rw [g₃ _ (by decide) (by decide), x12₂])
-      (by rw [g₃ _ (by decide) (by decide), x11₂]) x13₃' (by omega) lp) fun s₄ ⟨m₄, _, x11₄, g₄, sp₄, rd₄, wr₄⟩ =>
+    have W₀ : WordAt s₃ (S + BitVec.ofNat 64 (16 * (n / 16))) (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) 0
+        (D + BitVec.ofNat 64 (16 * (n / 16))) (bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * (n / 16))) 0) s₃ :=
+      ⟨Nat.zero_le _, by rw [g₃ _ (by decide) (by decide), x12₂]; simp,
+        by rw [g₃ _ (by decide) (by decide), x11₂]; simp, by rw [x13₃', Nat.sub_zero],
+        by simp [bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
+    refine WP.mono (copyW_ok lp W₀) fun s₄ ⟨m₄, g₄, sp₄, rd₄, wr₄, x11₄⟩ =>
         ⟨?_, by rw [x11₄, hend], kp₃.trans ⟨g₄, sp₄, rd₄, wr₄⟩⟩
     rw [m₄, hrest, m₃, m₂, hall]
 
