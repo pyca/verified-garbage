@@ -1873,6 +1873,53 @@ theorem sealSmall_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx
   simp only [sealSmall, Code.x86_64Depth, Nat.max_le]
   exact ⟨by decide, h, hb⟩
 
+/-! ## The `seal` of an instance -/
+
+theorem sealFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (sealFor v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h₁ := seal_spSafe v
+  cases hb : v.poly with
+  | avx2 => have h₂ := sealS_spSafe v hb; rw [hb] at h₂; exact h₂
+  | avx512 =>
+    rw [hb] at h₁
+    have := sealSmall_spSafe v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
+  | _ => rw [hb] at h₁; exact h₁
+
+theorem sealFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealFor v.callee v.poly).x86_64Depth ≤ 24 := by
+  have h₁ := seal_xdepth v
+  have h₂ := sealS_xdepth v
+  cases hb : v.poly with
+  | avx2 => rw [hb] at h₂; exact h₂
+  | avx512 =>
+    rw [hb] at h₁
+    have := sealSmall_xdepth v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
+  | _ => rw [hb] at h₁; exact h₁
+
+theorem sealFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42 (sealFor v.callee v.poly))
+      (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744) := by
+  have h₁ := seal_framed v
+  cases hb : v.poly with
+  | avx2 => have h₂ := sealS_framed v hb; rw [hb] at h₂; exact h₂
+  | avx512 =>
+    have ho := seal_ok v
+    have hc := seal_ct v
+    have hs := seal_spSafe v
+    have hd := seal_xdepth v
+    rw [hb] at ho hc hs hd
+    have hv := sealSmall_verified v.small v.small_poly ho hc
+    have hs' := sealSmall_spSafe v.small v.small_poly hs
+    have hd' := sealSmall_xdepth v.small v.small_poly hd
+    rw [Proof.ChaCha20.X86_64.XorImpl.small_callee] at hv hs' hd'
+    exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+      (n := 212) (post := Spec.ChaCha20Poly1305.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+      (bytes := 1720) (k := 42) hv (by decide) (by decide) (by decide) hs' hd' (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
+      sealFrameSat_pre
+  | _ => rw [hb] at h₁; exact h₁
+
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 /-!
@@ -5029,5 +5076,61 @@ theorem openWin_xdepth (u : Proof.ChaCha20.X86_64.XorImpl) (hu : u.poly = .avx2)
   rw [hu] at h
   simp only [openWin, Code.x86_64Depth, Nat.max_le]
   exact ⟨by decide, h, hb⟩
+
+/-! ## The `open` of an instance -/
+
+theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (openFor v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h₁ := open_spSafe v
+  cases hb : v.poly with
+  | avx2 => have h₂ := openS_spSafe v hb; rw [hb] at h₂; exact h₂
+  | avx512 =>
+    rw [hb] at h₁
+    have := openSmall_spSafe v.small v.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
+  | ifma =>
+    rw [hb] at h₁
+    have := openWin_spSafe Proof.ChaCha20.X86_64.XorImpl.avx512vl.small
+      Proof.ChaCha20.X86_64.XorImpl.avx512vl.small_poly h₁
+    rwa [Proof.ChaCha20.X86_64.XorImpl.small_callee] at this
+  | _ => rw [hb] at h₁; exact h₁
+
+theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42 (openFor v.callee v.poly))
+      (Spec.ChaCha20Poly1305.openContract X86_64.abi 1744) := by
+  have h₁ := open_framed v
+  cases hb : v.poly with
+  | avx2 => have h₂ := openS_framed v hb; rw [hb] at h₂; exact h₂
+  | avx512 =>
+    have ho := open_ok v
+    have hc := open_ct v
+    have hs := open_spSafe v
+    have hd := open_xdepth v
+    rw [hb] at ho hc hs hd
+    have hv := openSmall_verified v.small v.small_poly ho hc
+    have hs' := openSmall_spSafe v.small v.small_poly hs
+    have hd' := openSmall_xdepth v.small v.small_poly hd
+    rw [Proof.ChaCha20.X86_64.XorImpl.small_callee] at hv hs' hd'
+    exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+      (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+      (bytes := 1720) (k := 42) hv (by decide) (by decide) (by decide) hs' hd' (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+      openFrameSat_pre
+  | ifma =>
+    have ho := open_ok v
+    have hc := open_ct v
+    have hs := open_spSafe v
+    have hd := open_xdepth v
+    rw [hb] at ho hc hs hd
+    have hp := Proof.ChaCha20.X86_64.XorImpl.avx512vl.small_poly
+    have hv := openWin_verified _ hp ho hc
+    have hs' := openWin_spSafe _ hp hs
+    have hd' := openWin_xdepth _ hp hd
+    rw [Proof.ChaCha20.X86_64.XorImpl.small_callee] at hv hs' hd'
+    exact X86_64.Verified.stackArgScratchWipedX (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+      (n := 212) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+      (bytes := 1720) (k := 42) hv (by decide) (by decide) (by decide) hs' hd' (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+      openFrameSat_pre
+  | _ => rw [hb] at h₁; exact h₁
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

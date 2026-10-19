@@ -121,51 +121,32 @@ theorem last1C_ok {s : State} {c : Nat} (hc : Ctx 0 s) (hi : IncsC s.mem (s.gpr 
     exact d
   · cases e
 
-/-- Ten double rounds `R` of `S` sets: the state's rounds, and `rax` the only
-general-purpose register written (as a loop's counter). -/
-def RoundsOk (S : Nat) (R : Prog isa) : Prop :=
-  ∀ vs s₀, HB S vs s₀ → YM s₀ → WP isa R s₀ fun s =>
-    HB S (fun j => Nat.repeat Spec.ChaCha20.innerBlock 10 (vs j)) s ∧ YM s ∧ (∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) ∧
-      s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
-
-theorem roundsS_roundsOk (vl : Bool) {S : Nat} (hS : S = 1 ∨ S = 2) : RoundsOk S (roundsS vl S 10) :=
-  fun _ _ h hm => WP.mono (roundsS_ok vl hS h hm 10) fun _ ⟨h', hm', f⟩ =>
-    ⟨h', hm', fun _ _ => by rw [f.gpr], f.mem, f.rd, f.wr⟩
-
-/-- Writes of `rax` keep the regions of `Avx2Tail`'s code. -/
-theorem regn_rax {D : Nat} {s s' : State} (h : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) (b : Nat) :
-    regn D s' b = regn D s b := by
-  have e : s'.gpr (baseR b) = s.gpr (baseR b) := h _ (by unfold baseR; split <;> decide)
-  simp only [regn, e]
-
-theorem ctx_rax {D : Nat} {s s' : State} (hc : Ctx D s) (h : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r)
-    (hwr : s'.wr = s.wr) : Ctx D s' :=
-  ⟨fun b i n hb hi hn => by rw [regn_rax h, hwr]; exact hc.w b i n hb hi hn,
-    fun b b' hb hb' ne => by rw [regn_rax h, regn_rax h]; exact hc.d b b' hb hb' ne, hc.small⟩
-
 /-- The two blocks: at counters `0` and `c` from the state at `rdi`, into
-`buf[0, 128)`, by the rounds `R`. -/
-theorem twoC_ok {R : Prog isa} (hR : RoundsOk 1 R) {s : State} {c : Nat} (hc : Ctx 0 s)
-    (hm : Consts s.mem (s.gpr .r9)) (hi : IncsC s.mem (s.gpr .r9) c) :
-    WP isa (.seq (.block setup1) (.seq R (.block (addIn1 ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))))
+`buf[0, 128)`. -/
+theorem twoC_ok (vl : Bool) {s : State} {c : Nat} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9))
+    (hi : IncsC s.mem (s.gpr .r9) c) :
+    WP isa (.seq (.block setup1) (.seq (roundsS vl 1 10) (.block (addIn1 ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))))
       s fun s' =>
       (∀ k < 128, s'.mem (s.gpr .r9 + BitVec.ofNat 64 k) =
         (serialize (Spec.ChaCha20.block (ctr (S0 s) (cOf c (k / 64))))).getD (k % 64) 0) ∧
-      Frame (wregs 0 s) s.mem s'.mem ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr := by
+      Frame (wregs 0 s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine WP.seq (WP.mono (setup1C_ok hc hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
-  refine WP.seq (WP.mono (hR _ _ hz₁ ym₁) fun s₂ ⟨hz₂, _, g₂', m₂', rd₂', wr₂'⟩ => ?_)
-  have g₂ : ∀ r, r ≠ .rax → s₂.gpr r = s.gpr r := fun r h => by rw [g₂' r h, g₁]
-  have m₂ : s₂.mem = s.mem := m₂'.trans m₁
-  have hc₂ : Ctx 0 s₂ := ctx_rax hc g₂ (wr₂'.trans wr₁)
-  have r9₂ : s₂.gpr .r9 = s.gpr .r9 := g₂ _ (by decide)
-  have hi₂ : IncsC s₂.mem (s₂.gpr .r9) c := by rw [m₂, r9₂]; exact hi
+  refine WP.seq (WP.mono (roundsS_ok vl (.inl rfl) hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
+  have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
+  have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
+  have hc₂ : Ctx 0 s₂ := by
+    refine ⟨fun b i n hb h hn => ?_, fun b b' hb hb' ne => ?_, hc.small⟩
+    · have := hc.w b i n hb h hn
+      simpa only [regn, g₂, sm₂.wr, wr₁] using this
+    · have := hc.d b b' hb hb' ne
+      simpa only [regn, g₂] using this
+  have hi₂ : IncsC s₂.mem (s₂.gpr .r9) c := by rw [m₂, g₂]; exact hi
   refine WP.mono (last1C_ok hc₂ hi₂ hz₂) fun s₃ ⟨b₃, f₃, g₃, rd₃, wr₃⟩ => ⟨fun k hk => ?_, ?_,
-    fun r h => by rw [g₃, g₂ r h], rd₃.trans (rd₂'.trans rd₁), wr₃.trans (wr₂'.trans wr₁)⟩
-  · have hS : S0 s₂ = S0 s := by simp only [S0, g₂ .rdi (by decide), m₂]
-    rw [show s.gpr .r9 = s₂.gpr .r9 from r9₂.symm, b₃ k hk, hS]
+    g₃.trans g₂, rd₃.trans (sm₂.rd.trans rd₁), wr₃.trans (sm₂.wr.trans wr₁)⟩
+  · have hS : S0 s₂ = S0 s := by simp only [S0, g₂, m₂]
+    rw [show s.gpr .r9 = s₂.gpr .r9 by rw [g₂], b₃ k hk, hS]
     rfl
-  · have ws : wregs 0 s₂ = wregs 0 s := by simp only [wregs, r9₂, g₂ .rsi (by decide)]
+  · have ws : wregs 0 s₂ = wregs 0 s := by simp only [wregs, g₂]
     rw [← ws, ← m₂]; exact f₃
 
 /-! ## Four blocks at counters `0, c, c + 1, c + 2`
@@ -270,27 +251,30 @@ theorem lastC4_ok {s : State} {c : Nat} (hc : Ctx 0 s) (hi : IncsC4 s.mem (s.gpr
 
 /-- The four blocks: at counters `0, c, c + 1, c + 2` from the state at
 `rdi`, into `buf[0, 256)`. -/
-theorem fourC_ok {R : Prog isa} (hR : RoundsOk 2 R) {s : State} {c : Nat} (hc : Ctx 0 s)
-    (hm : Consts s.mem (s.gpr .r9)) (hi : IncsC4 s.mem (s.gpr .r9) c) :
-    WP isa (.seq (.block setup) (.seq R
+theorem fourC_ok (vl : Bool) {s : State} {c : Nat} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9))
+    (hi : IncsC4 s.mem (s.gpr .r9) c) :
+    WP isa (.seq (.block setup) (.seq (roundsS vl 2 10)
       (.block (addIn ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSet .xmm4 .xmm5 .xmm6 .xmm7 128)))) s fun s' =>
       (∀ k < 256, s'.mem (s.gpr .r9 + BitVec.ofNat 64 k) =
         (serialize (Spec.ChaCha20.block (ctr (S0 s) (cOf4 c (k / 64))))).getD (k % 64) 0) ∧
-      Frame (wregs 0 s) s.mem s'.mem ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr := by
+      Frame (wregs 0 s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine WP.seq (WP.mono (setupC4_ok hc hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
-  refine WP.seq (WP.mono (hR _ _ hz₁ ym₁) fun s₂ ⟨hz₂, _, g₂', m₂', rd₂', wr₂'⟩ => ?_)
-  have g₂ : ∀ r, r ≠ .rax → s₂.gpr r = s.gpr r := fun r h => by rw [g₂' r h, g₁]
-  have m₂ : s₂.mem = s.mem := m₂'.trans m₁
-  have hc₂ : Ctx 0 s₂ := ctx_rax hc g₂ (wr₂'.trans wr₁)
-  have r9₂ : s₂.gpr .r9 = s.gpr .r9 := g₂ _ (by decide)
-  have hi₂ : IncsC4 s₂.mem (s₂.gpr .r9) c := by rw [m₂, r9₂]; exact hi
+  refine WP.seq (WP.mono (roundsS_ok vl (.inr rfl) hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
+  have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
+  have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
+  have hc₂ : Ctx 0 s₂ := by
+    refine ⟨fun b i n hb h hn => ?_, fun b b' hb hb' ne => ?_, hc.small⟩
+    · have := hc.w b i n hb h hn
+      simpa only [regn, g₂, sm₂.wr, wr₁] using this
+    · have := hc.d b b' hb hb' ne
+      simpa only [regn, g₂] using this
+  have hi₂ : IncsC4 s₂.mem (s₂.gpr .r9) c := by rw [m₂, g₂]; exact hi
   refine WP.mono (lastC4_ok hc₂ hi₂ hz₂) fun s₃ ⟨b₃, f₃, g₃, rd₃, wr₃⟩ => ⟨fun k hk => ?_, ?_,
-    fun r h => by rw [g₃, g₂ r h], rd₃.trans (rd₂'.trans rd₁), wr₃.trans (wr₂'.trans wr₁)⟩
-  · have hS : S0 s₂ = S0 s := by simp only [S0, g₂ .rdi (by decide), m₂]
-    rw [show s.gpr .r9 = s₂.gpr .r9 from r9₂.symm, b₃ k hk, hS]
+    g₃.trans g₂, rd₃.trans (sm₂.rd.trans rd₁), wr₃.trans (sm₂.wr.trans wr₁)⟩
+  · have hS : S0 s₂ = S0 s := by simp only [S0, g₂, m₂]
+    rw [show s.gpr .r9 = s₂.gpr .r9 by rw [g₂], b₃ k hk, hS]
     rfl
-  · have ws : wregs 0 s₂ = wregs 0 s := by simp only [wregs, r9₂, g₂ .rsi (by decide)]
+  · have ws : wregs 0 s₂ = wregs 0 s := by simp only [wregs, g₂]
     rw [← ws, ← m₂]; exact f₃
 
 end VG.Proof.ChaCha20.X86_64.Avx2Tail
