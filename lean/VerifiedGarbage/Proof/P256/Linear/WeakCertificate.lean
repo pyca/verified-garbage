@@ -1,126 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Linear.WeakReference
-meta import VerifiedGarbage.Proof.P256.Linear.WeakReference
 public import VerifiedGarbage.Impl.P256.Linear
-meta import VerifiedGarbage.Impl.P256.Linear
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import Mathlib.Logic.Function.Basic
-meta import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.JacMul
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.P256.Linear.WeakReference
+meta import VerifiedGarbage.Impl.P256.Linear
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-meta import VerifiedGarbage.Proof.Weierstrass.JacMul
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 @[expose] public section
 

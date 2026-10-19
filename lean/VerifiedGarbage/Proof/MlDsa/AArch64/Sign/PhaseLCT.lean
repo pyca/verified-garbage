@@ -1,138 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorbWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
+meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorbWord
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-meta import VerifiedGarbage.Proof.MlDsa.Round.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA signing on AArch64: the loop leaks what `signLeakT` says

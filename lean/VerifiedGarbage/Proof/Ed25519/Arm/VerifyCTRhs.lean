@@ -1,69 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
-import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-import VerifiedGarbage.Proof.Ed25519.Arm.Points
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
-meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
-meta import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-meta import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-meta import VerifiedGarbage.Proof.Ed25519.Arm.Points
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
-meta import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 /-! Merged from `Proof.Ed25519.Arm.PointEqualCT`. -/
 

@@ -2,63 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
 
 /-! ## From `Resident.lean` -/
 

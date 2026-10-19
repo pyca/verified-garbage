@@ -1,68 +1,28 @@
 module
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.MaskedPrefix
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
+import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.MaskedPrefix
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 
 /-!
 # The blocks after the last group

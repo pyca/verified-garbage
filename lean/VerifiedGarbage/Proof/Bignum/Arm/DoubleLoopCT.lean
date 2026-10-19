@@ -3,92 +3,25 @@ public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
-meta import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
-import VerifiedGarbage.Proof.Bignum.Arm.BasesTail
-import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
-import VerifiedGarbage.Proof.Bignum.Arm.CsubValue
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCore
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBody
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoop
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
-import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
-import VerifiedGarbage.Proof.Bignum.Arm.InitMetaMemory
-import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
-import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
-import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
-import VerifiedGarbage.Proof.Bignum.Arm.MontBody
-import VerifiedGarbage.Proof.Bignum.Arm.MontCore
-import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
-import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
-import VerifiedGarbage.Proof.Bignum.Arm.MontMath
-import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
-import VerifiedGarbage.Proof.Bignum.Arm.MontRoundsCT
-import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
-import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
-import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
-import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-import VerifiedGarbage.Proof.Bignum.Arm.Round
-import VerifiedGarbage.Proof.Bignum.Arm.RoundFinish
-import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishMemory
-import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishSteps
-import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
-import VerifiedGarbage.Proof.Bignum.Arm.Row
-import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
-import VerifiedGarbage.Proof.Bignum.Arm.RowBody
-import VerifiedGarbage.Proof.Bignum.Arm.RowBody2
-import VerifiedGarbage.Proof.Bignum.Arm.RowCarry
-import VerifiedGarbage.Proof.Bignum.Arm.RowCarryMemory
-import VerifiedGarbage.Proof.Bignum.Arm.RowFull
-import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
-import VerifiedGarbage.Proof.Bignum.Arm.RowStep
-import VerifiedGarbage.Proof.Bignum.Arm.SelectBody
-import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
-import VerifiedGarbage.Proof.Bignum.Arm.SelectStep
-import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
-import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import VerifiedGarbage.Proof.Bignum.Arm.Sub
-import VerifiedGarbage.Proof.Bignum.Arm.SubAdvance
-import VerifiedGarbage.Proof.Bignum.Arm.SubBody
-import VerifiedGarbage.Proof.Bignum.Arm.SubRow
-import VerifiedGarbage.Proof.Bignum.Arm.SubStep
-import VerifiedGarbage.Proof.Bignum.Arm.WideMath
-import VerifiedGarbage.Proof.Bignum.Arm.WideValue
-import VerifiedGarbage.Proof.Bignum.Arm.Zero
-import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Repeated doubling leaks only the public count and workspace shape -/
 

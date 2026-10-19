@@ -1,112 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inv
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inv
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inv
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
-import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.FragC
-import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-meta import VerifiedGarbage.Proof.Framework.CallLay
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
-meta import VerifiedGarbage.Proof.MlKem.PolyW
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragC
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
-meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-meta import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # ML-DSA key generation on x86-64: the prologue and the seeds

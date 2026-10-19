@@ -3,144 +3,19 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 
 import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
-meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
 import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
-import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
-import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
-import VerifiedGarbage.Proof.Dsa.Arm.Bytes
-import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
-import VerifiedGarbage.Proof.Dsa.Arm.Doubling
-import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
-import VerifiedGarbage.Proof.Dsa.Arm.PowCall
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCorrect
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
-import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
-import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
-import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCorrect
-import VerifiedGarbage.Proof.Dsa.Arm.ScheduleTrace
-import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
-import VerifiedGarbage.Proof.Dsa.Arm.SignCT
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
-import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-import VerifiedGarbage.Proof.Dsa.BitLengthBounds
-import VerifiedGarbage.Proof.Dsa.Digest
-import VerifiedGarbage.Proof.Dsa.DomainWidths
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.Frame
-import VerifiedGarbage.Proof.Dsa.OutputBytes
-import VerifiedGarbage.Proof.Dsa.PackedBytes
-import VerifiedGarbage.Proof.Dsa.Random
-import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import VerifiedGarbage.Proof.Dsa.RandomSign
-import VerifiedGarbage.Proof.Dsa.RandomSignResult
-import VerifiedGarbage.Proof.Dsa.RandomTrace
-import VerifiedGarbage.Proof.Dsa.SignVerify
-import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.Dsa.StreamBytes
-import VerifiedGarbage.Proof.Dsa.Zero
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Mont.Arm.Csub
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.DigitRow
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.MulRow
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ops
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Select
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
-import VerifiedGarbage.Proof.Mont.Arm.Row
-import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-import VerifiedGarbage.Proof.Weierstrass.BytesLen32
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.Words32
-meta import VerifiedGarbage.Proof.Dsa.Arithmetic
-meta import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
-meta import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
-meta import VerifiedGarbage.Proof.Dsa.Arm.Bytes
-meta import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
-meta import VerifiedGarbage.Proof.Dsa.Arm.Doubling
-meta import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
-meta import VerifiedGarbage.Proof.Dsa.Arm.PowCall
-meta import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
-meta import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
-meta import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCorrect
-meta import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
+meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCorrect
-meta import VerifiedGarbage.Proof.Dsa.Arm.ScheduleTrace
-meta import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
-meta import VerifiedGarbage.Proof.Dsa.Arm.SignCT
-meta import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
-meta import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-meta import VerifiedGarbage.Proof.Dsa.BitLengthBounds
-meta import VerifiedGarbage.Proof.Dsa.Digest
-meta import VerifiedGarbage.Proof.Dsa.DomainWidths
-meta import VerifiedGarbage.Proof.Dsa.Encoding
-meta import VerifiedGarbage.Proof.Dsa.Frame
-meta import VerifiedGarbage.Proof.Dsa.OutputBytes
-meta import VerifiedGarbage.Proof.Dsa.PackedBytes
-meta import VerifiedGarbage.Proof.Dsa.Random
-meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
-meta import VerifiedGarbage.Proof.Dsa.RandomSign
-meta import VerifiedGarbage.Proof.Dsa.RandomSignResult
-meta import VerifiedGarbage.Proof.Dsa.RandomTrace
-meta import VerifiedGarbage.Proof.Dsa.SignVerify
-meta import VerifiedGarbage.Proof.Dsa.SizeBounds
-meta import VerifiedGarbage.Proof.Dsa.StreamBytes
-meta import VerifiedGarbage.Proof.Dsa.Zero
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Mont.Arm.Csub
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.DigitRow
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.MulRow
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ops
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Select
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
-meta import VerifiedGarbage.Proof.Mont.Arm.Row
-meta import VerifiedGarbage.Proof.Mont.Arm.Step
-meta import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.RsaPss.Params
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-meta import VerifiedGarbage.Proof.Weierstrass.BytesLen32
-meta import VerifiedGarbage.Proof.Weierstrass.Words
-meta import VerifiedGarbage.Proof.Weierstrass.Words32
 
 /-!
 # An attempt leaks only its trace (32-bit ARM)

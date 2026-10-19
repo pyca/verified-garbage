@@ -1,82 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 public import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
-meta import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
-meta import Mathlib.Data.List.Induction
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Impl.Gcm.X86_64
-meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-meta import VerifiedGarbage.Proof.Gcm.Ctr
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
+meta import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_chacha20_xor_split_avx512` verified

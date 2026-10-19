@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
@@ -16,58 +15,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncBase
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Out
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecSpec
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Decode
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncLoop
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Encode
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1Step
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4Step
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass1
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.Mem16Bytes
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
-import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
-import VerifiedGarbage.Proof.Rc4.AArch64.Rows
-import VerifiedGarbage.Proof.Rc4.Stream
-import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # ML-KEM-768 on AArch64: calling the primitives

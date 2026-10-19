@@ -1,117 +1,33 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombDigit
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
-import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Decode
-import VerifiedGarbage.Proof.Ed25519.Field64
-import VerifiedGarbage.Proof.Ed25519.Scalar
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Add
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Cmadd
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mux
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sqr
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sub
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombDigit
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.Decode
-meta import VerifiedGarbage.Proof.Ed25519.Field64
-meta import VerifiedGarbage.Proof.Ed25519.Scalar
-meta import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.BitByte
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.Csub
-meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Add
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Cmadd
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mux
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sqr
-meta import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sub
-meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
-meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
-meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyLit`. -/
 

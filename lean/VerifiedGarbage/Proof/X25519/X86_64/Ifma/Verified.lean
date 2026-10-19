@@ -1,80 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 public import VerifiedGarbage.Proof.X25519.X86_64.Main
-public import VerifiedGarbage.Spec.Weierstrass
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 import VerifiedGarbage.Proof.X25519.X86_64.Verified
-meta import VerifiedGarbage.Proof.X25519.X86_64.Verified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
-import VerifiedGarbage.Proof.X25519.X86_64.Freeze
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
-import VerifiedGarbage.Proof.X25519.X86_64.Inv
-import VerifiedGarbage.Proof.X25519.X86_64.Invert
-import VerifiedGarbage.Proof.X25519.X86_64.Sqr
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
+meta import VerifiedGarbage.Proof.X25519.X86_64.Main
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+meta import VerifiedGarbage.Proof.X25519.X86_64.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
-meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
-meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
-meta import VerifiedGarbage.Proof.X25519.X86_64.Freeze
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
-meta import VerifiedGarbage.Proof.X25519.X86_64.Inv
-meta import VerifiedGarbage.Proof.X25519.X86_64.Invert
-meta import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: `Verified`

@@ -1,102 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryHash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BufferSeparate
-import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
-public import VerifiedGarbage.Proof.Dsa.Generation.Trial
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateFromFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequence
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashValue
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopExhausted
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopInit
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopRound
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopStep
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShape
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeArguments
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFromFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoop
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeReject
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetup
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Reduce
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReduceFromFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionExponent
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Trial
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-public import VerifiedGarbage.Proof.Dsa.X86_64.Setup
-public import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LowByte
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-public import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
-import VerifiedGarbage.Proof.Dsa.Generation.Trial
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateFromFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequence
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashValue
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopExhausted
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopInit
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopRound
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopStep
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShape
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeArguments
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFromFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoop
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeReject
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetup
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Reduce
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReduceFromFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionExponent
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Trial
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-import VerifiedGarbage.Proof.Dsa.X86_64.Setup
-import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LowByte
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+public import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Concrete p-candidate construction plan for each accepted subgroup candidate -/
 

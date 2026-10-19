@@ -1,70 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Avx2Lit
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
-import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5CT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
@@ -74,14 +12,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5CT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2, as an `ArithImpl`

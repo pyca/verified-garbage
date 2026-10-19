@@ -6,6 +6,8 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Impl.Camellia.AArch64.Cbc
+public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
 
 /-!
 # Camellia's core for the modes on AArch64: the return address across the calls

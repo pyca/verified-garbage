@@ -1,102 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Sm4.AArch64.Link
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
-public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
-meta import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.AesSiv.Words
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-import VerifiedGarbage.Proof.Modes.AArch64.Copy
-import VerifiedGarbage.Proof.Modes.AArch64.Counter
-import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Proof.Modes.AArch64.Xor
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-import VerifiedGarbage.Proof.Sm4.AArch64.Imm
-import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
-import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCcm.Mac
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Dbl32
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
+meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-meta import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-meta import VerifiedGarbage.Proof.Modes.AArch64.Copy
-meta import VerifiedGarbage.Proof.Modes.AArch64.Counter
-meta import VerifiedGarbage.Proof.Modes.AArch64.Steps
-meta import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-meta import VerifiedGarbage.Proof.Modes.AArch64.Words
-meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
-meta import VerifiedGarbage.Proof.Modes.Addr
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
-meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
-meta import VerifiedGarbage.Proof.Sm4.CtrCipher
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Proof.Sm4.Planes
-meta import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SM4-CTR on AArch64 meets its contracts

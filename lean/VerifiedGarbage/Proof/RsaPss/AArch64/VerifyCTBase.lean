@@ -4,85 +4,18 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
-import VerifiedGarbage.Proof.RsaPss.AArch64.EmView
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
-import VerifiedGarbage.Proof.RsaPss.AArch64.Select
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyScan
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
-import VerifiedGarbage.Proof.RsaPss.Encoding
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
-import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaPss.SignCases
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Hmac.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
-meta import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.EmView
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.Select
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyScan
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
-meta import VerifiedGarbage.Proof.RsaPss.Encoding
-meta import VerifiedGarbage.Proof.RsaPss.MgfBytes
-meta import VerifiedGarbage.Proof.RsaPss.Params
-meta import VerifiedGarbage.Proof.RsaPss.SignCases
-meta import VerifiedGarbage.Proof.Sha256.StateMem
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # RSASSA-PSS verification on AArch64: constant time, the public data and the checks

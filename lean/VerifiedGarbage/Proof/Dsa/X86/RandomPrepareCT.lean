@@ -1,148 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Dsa.Digest
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.Random
-import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import VerifiedGarbage.Proof.Dsa.RandomSign
-import VerifiedGarbage.Proof.Dsa.RandomSignResult
-import VerifiedGarbage.Proof.Dsa.RandomTrace
-import VerifiedGarbage.Proof.Dsa.X86.Bytes
-import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
-import VerifiedGarbage.Proof.Dsa.X86.EntrySave
-import VerifiedGarbage.Proof.Dsa.X86.FetchByte
-import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.Dsa.X86.LoadSlot
-import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
-import VerifiedGarbage.Proof.Dsa.X86.Moduli
-import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
-import VerifiedGarbage.Proof.Dsa.X86.RandomBody
-import VerifiedGarbage.Proof.Dsa.X86.RandomCT
-import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
-import VerifiedGarbage.Proof.Dsa.X86.RandomSample
-import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
-import VerifiedGarbage.Proof.Dsa.X86.Reduce
-import VerifiedGarbage.Proof.Dsa.X86.RunBytes
-import VerifiedGarbage.Proof.Dsa.X86.SaveArgument
-import VerifiedGarbage.Proof.Dsa.X86.StackArgument
-import VerifiedGarbage.Proof.Dsa.X86.StageFrame
-import VerifiedGarbage.Proof.Dsa.Zero
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-import VerifiedGarbage.Proof.Mont.X86.ContextMath
-import VerifiedGarbage.Proof.Mont.X86.ContextMul
-import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
-import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
-import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
-import VerifiedGarbage.Proof.Mont.X86.ExponentMask
-import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-import VerifiedGarbage.Proof.Mont.X86.ExponentStep
-import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-import VerifiedGarbage.Proof.Mont.X86.Exponentiate
-import VerifiedGarbage.Proof.Mont.X86.Inverse
-import VerifiedGarbage.Proof.Mont.X86.P256Red
-import VerifiedGarbage.Proof.Mont.X86.PowerInit
-import VerifiedGarbage.Proof.Mont.X86.PowerLoop
-import VerifiedGarbage.Proof.Mont.X86.PowerTwo
-import VerifiedGarbage.Proof.Mont.X86.RedRow
-import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.RowW
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
-import VerifiedGarbage.Proof.Mont.X86.Step
-import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-meta import VerifiedGarbage.Proof.Dsa.Arithmetic
-meta import VerifiedGarbage.Proof.Dsa.Digest
-meta import VerifiedGarbage.Proof.Dsa.Encoding
-meta import VerifiedGarbage.Proof.Dsa.Random
-meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
-meta import VerifiedGarbage.Proof.Dsa.RandomSign
-meta import VerifiedGarbage.Proof.Dsa.RandomSignResult
-meta import VerifiedGarbage.Proof.Dsa.RandomTrace
-meta import VerifiedGarbage.Proof.Dsa.X86.Bytes
-meta import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
-meta import VerifiedGarbage.Proof.Dsa.X86.EntrySave
-meta import VerifiedGarbage.Proof.Dsa.X86.FetchByte
-meta import VerifiedGarbage.Proof.Dsa.X86.Layout
-meta import VerifiedGarbage.Proof.Dsa.X86.LoadSlot
-meta import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
-meta import VerifiedGarbage.Proof.Dsa.X86.Moduli
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomBody
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomCT
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
+import VerifiedGarbage.Spec.Weierstrass
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomSample
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
-meta import VerifiedGarbage.Proof.Dsa.X86.Reduce
-meta import VerifiedGarbage.Proof.Dsa.X86.RunBytes
-meta import VerifiedGarbage.Proof.Dsa.X86.SaveArgument
-meta import VerifiedGarbage.Proof.Dsa.X86.StackArgument
-meta import VerifiedGarbage.Proof.Dsa.X86.StageFrame
-meta import VerifiedGarbage.Proof.Dsa.Zero
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Mont.X86.Chain
-meta import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-meta import VerifiedGarbage.Proof.Mont.X86.ContextMath
-meta import VerifiedGarbage.Proof.Mont.X86.ContextMul
-meta import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
-meta import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-meta import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
-meta import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-meta import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
-meta import VerifiedGarbage.Proof.Mont.X86.ExponentMask
-meta import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-meta import VerifiedGarbage.Proof.Mont.X86.ExponentStep
-meta import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-meta import VerifiedGarbage.Proof.Mont.X86.Exponentiate
-meta import VerifiedGarbage.Proof.Mont.X86.Instr
-meta import VerifiedGarbage.Proof.Mont.X86.Inverse
-meta import VerifiedGarbage.Proof.Mont.X86.P256Red
-meta import VerifiedGarbage.Proof.Mont.X86.PowerInit
-meta import VerifiedGarbage.Proof.Mont.X86.PowerLoop
-meta import VerifiedGarbage.Proof.Mont.X86.PowerTwo
-meta import VerifiedGarbage.Proof.Mont.X86.RedRow
-meta import VerifiedGarbage.Proof.Mont.X86.Row
-meta import VerifiedGarbage.Proof.Mont.X86.RowW
-meta import VerifiedGarbage.Proof.Mont.X86.SparseShift
-meta import VerifiedGarbage.Proof.Mont.X86.SparseStep
-meta import VerifiedGarbage.Proof.Mont.X86.Step
-meta import VerifiedGarbage.Proof.Mont.X86.WordOps
-meta import VerifiedGarbage.Proof.RsaPss.Params
-meta import VerifiedGarbage.Proof.Weierstrass.Words
-meta import VerifiedGarbage.Proof.Weierstrass.Words32
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Preparing leaks only public data (x86)

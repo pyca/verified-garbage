@@ -1,69 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
-import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86.Power
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Freeze
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-meta import VerifiedGarbage.Proof.Ed25519.X86.Power
-meta import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.X25519.X86.Fold
-meta import VerifiedGarbage.Proof.X25519.X86.Freeze
-meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCT`. -/
 

@@ -1,70 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
 public import VerifiedGarbage.Spec.Sm4.Cbc
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-import VerifiedGarbage.Proof.Modes.AArch64.Copy
-import VerifiedGarbage.Proof.Modes.AArch64.Counter
-import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Spec.Ctr.Contract
-public import VerifiedGarbage.Proof.Modes.AArch64.Core
-public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCtr.Spec
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-public import VerifiedGarbage.Proof.Modes.AArch64.Copy
-public import VerifiedGarbage.Proof.Modes.AArch64.Counter
-public import VerifiedGarbage.Proof.Modes.AArch64.Steps
-public import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-public import VerifiedGarbage.Proof.Modes.AArch64.Words
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-public import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-public import VerifiedGarbage.Proof.Sm4.Layout
-public import VerifiedGarbage.Proof.Sm4.Planes
-public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SM4's core for the modes on AArch64

@@ -1,107 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
-meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.CbcNext
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
-import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
-import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
-import VerifiedGarbage.Proof.Modes.X86_64.Copy
-import VerifiedGarbage.Proof.Modes.X86_64.Counter
-import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
-import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.TripleDes.X86_64.Box
-import VerifiedGarbage.Proof.TripleDes.X86_64.Pre
-import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
-import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.Spec.TripleDes.Contract
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.Modes.Addr
-meta import VerifiedGarbage.Proof.Modes.CbcNext
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
-meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
-meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
-meta import VerifiedGarbage.Proof.Modes.X86_64.Copy
-meta import VerifiedGarbage.Proof.Modes.X86_64.Counter
-meta import VerifiedGarbage.Proof.Modes.X86_64.Steps
-meta import VerifiedGarbage.Proof.Modes.X86_64.Unchain
-meta import VerifiedGarbage.Proof.Modes.X86_64.Words
-meta import VerifiedGarbage.Proof.Rc2.Word
-meta import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
-meta import VerifiedGarbage.Proof.TripleDes.Permutation
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.Pre
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
-meta import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Spec.TripleDes.Contract
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 
 /-!
 # Triple DES-CBC on x86-64 meets its contracts

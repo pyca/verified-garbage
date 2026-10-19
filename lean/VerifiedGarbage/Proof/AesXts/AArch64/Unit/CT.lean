@@ -2,59 +2,12 @@ module
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
 
 import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
-meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
 import VerifiedGarbage.Proof.AesXts.AArch64.CT
-meta import VerifiedGarbage.Proof.AesXts.AArch64.CT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
+meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
+meta import VerifiedGarbage.Proof.AesXts.AArch64.CT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
-import VerifiedGarbage.Proof.AesCbc.AArch64.Body
-import VerifiedGarbage.Proof.AesCbc.Mem
-import VerifiedGarbage.Proof.AesXts.AArch64.Steps
-import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Pre
-import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Steps
-import VerifiedGarbage.Proof.AesXts.AArch64.Verified
-import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Proof.Ocb.State
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
-meta import VerifiedGarbage.Proof.AesCbc.AArch64.Body
-meta import VerifiedGarbage.Proof.AesCbc.Mem
-meta import VerifiedGarbage.Proof.AesXts.AArch64.Steps
-meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Pre
-meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Steps
-meta import VerifiedGarbage.Proof.AesXts.AArch64.Verified
-meta import VerifiedGarbage.Proof.AesXts.Alpha
-meta import VerifiedGarbage.Proof.Cmac.Dbl32
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Ocb.Spec
-meta import VerifiedGarbage.Proof.Ocb.State
 
 /-!
 # XTS-AES of data units on AArch64: constant time

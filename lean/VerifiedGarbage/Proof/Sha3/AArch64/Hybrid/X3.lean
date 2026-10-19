@@ -1,82 +1,44 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Round
 public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Round
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
 
 /-!

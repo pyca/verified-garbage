@@ -1,87 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
-meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Idea.FbScratch
-meta import VerifiedGarbage.Proof.Idea.FbScratch
 import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
-meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Spec.Idea.Cfb
 public import VerifiedGarbage.Impl.Idea.AArch64.Modes
-public import VerifiedGarbage.Proof.Idea.AArch64.Lit
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Idea.ModeBytes
-meta import VerifiedGarbage.Proof.Idea.ModeBytes
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Idea.AArch64.Block
-import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Proof.Idea.Memory
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-import VerifiedGarbage.Proof.Modes.AArch64.Copy
-import VerifiedGarbage.Proof.Modes.AArch64.Counter
-import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-import VerifiedGarbage.Proof.Modes.AArch64.Words
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.CallLay
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Idea.AArch64.Block
-meta import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-meta import VerifiedGarbage.Proof.Idea.KeyBits
-meta import VerifiedGarbage.Proof.Idea.Memory
-meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
-meta import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
-meta import VerifiedGarbage.Proof.Modes.AArch64.Copy
-meta import VerifiedGarbage.Proof.Modes.AArch64.Counter
-meta import VerifiedGarbage.Proof.Modes.AArch64.Steps
-meta import VerifiedGarbage.Proof.Modes.AArch64.Unchain
-meta import VerifiedGarbage.Proof.Modes.AArch64.Words
-meta import VerifiedGarbage.Proof.Modes.Addr
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Idea.FbScratch
+meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 meta import VerifiedGarbage.Spec.Idea.Cfb
+meta import VerifiedGarbage.Impl.Idea.AArch64.Modes
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on AArch64 meet their contracts

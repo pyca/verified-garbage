@@ -1,71 +1,16 @@
 module
 
-import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Camellia.Arm.Cbc
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Proof.Camellia.Arm.Ecb
-public import VerifiedGarbage.Proof.Camellia.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.TaintSum
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Camellia.Arm.Verified
-public import VerifiedGarbage.Proof.Camellia.Scratch
-import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCtr.Spec
-public import VerifiedGarbage.Proof.Camellia.Arm.Copy
-public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
-public import VerifiedGarbage.Proof.Camellia.Arm.Fl
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacAes.Arm.Words
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Arm.Syms
-public import VerifiedGarbage.Proof.Framework.NativeTaintCore
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Modes.Arm.Counter
-public import VerifiedGarbage.Proof.Modes.Arm.Ops
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Camellia.Arm.Copy
-import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
-import VerifiedGarbage.Proof.Camellia.Arm.Fl
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.Arm.Counter
-import VerifiedGarbage.Proof.Modes.Arm.Ops
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+public import VerifiedGarbage.Proof.Camellia.Scratch
 
 /-!
 # Camellia's ECB functions on ARMv7 as the modes' core

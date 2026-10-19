@@ -2,88 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.Generation.Primality
-import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Impl.Dsa.Generation.Layout
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Proof.Dsa.Generation.Primality
-public import VerifiedGarbage.Proof.Bignum.ExternalWords
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceSample
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceWitness
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.KernelFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstants
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundHeader
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTail
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailResult
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRound
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitness
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRange
-public import VerifiedGarbage.Proof.Dsa.BitLengthBounds
-public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
-public import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
-public import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-public import VerifiedGarbage.Proof.Dsa.Generation.WitnessMemory
-public import VerifiedGarbage.Proof.Dsa.Generation.WitnessSlice
-public import VerifiedGarbage.Proof.Ffdh.KeyScalar
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCall
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerRestore
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Context
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Finish
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Frame
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Prepared
-public import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
-public import VerifiedGarbage.Proof.RsaKeyGen.Halve
-import VerifiedGarbage.Proof.Bignum.ExternalWords
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceSample
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceWitness
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.KernelFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstants
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundHeader
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTail
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailResult
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRound
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitness
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRange
-import VerifiedGarbage.Proof.Dsa.BitLengthBounds
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
-import VerifiedGarbage.Proof.Dsa.Generation.PReduction
-import VerifiedGarbage.Proof.Dsa.Generation.WitnessMemory
-import VerifiedGarbage.Proof.Dsa.Generation.WitnessSlice
-import VerifiedGarbage.Proof.Ffdh.KeyScalar
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCall
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerRestore
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
-import VerifiedGarbage.Proof.MillerRabin.AArch64.Context
-import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
-import VerifiedGarbage.Proof.MillerRabin.AArch64.Finish
-import VerifiedGarbage.Proof.MillerRabin.AArch64.Frame
-import VerifiedGarbage.Proof.MillerRabin.AArch64.Prepared
-import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
-import VerifiedGarbage.Proof.RsaKeyGen.Halve
 
 /-! # Instantiate the shared probable-prime engine for each shaped q -/
 

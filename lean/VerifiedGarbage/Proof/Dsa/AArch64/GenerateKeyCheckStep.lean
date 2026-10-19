@@ -2,112 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyState
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-public import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveFailure
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveMainCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveCall
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
-public import VerifiedGarbage.Proof.Dsa.AArch64.Minus
-public import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
-public import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomBorrow
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyCandidate
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyInit
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyWhole
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDraw
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawRange
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFunctional
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomInRange
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomNonceEncoding
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepare
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareFinish
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareState
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomRange
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgs
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallPre
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInit
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
-public import VerifiedGarbage.Proof.Dsa.Random
-public import VerifiedGarbage.Proof.Dsa.RandomEncoding
-public import VerifiedGarbage.Proof.Dsa.RandomSign
-public import VerifiedGarbage.Proof.Dsa.RandomSignResult
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveFailure
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveMainCT
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveCall
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
-import VerifiedGarbage.Proof.Dsa.AArch64.Minus
-import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
-import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomBorrow
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyCandidate
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyInit
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyWhole
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomDraw
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawCopy
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawRange
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomFunctional
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomInRange
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomNonceEncoding
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepare
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareFinish
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareState
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomRange
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgs
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallPre
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInit
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
-import VerifiedGarbage.Proof.Dsa.Random
-import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import VerifiedGarbage.Proof.Dsa.RandomSign
-import VerifiedGarbage.Proof.Dsa.RandomSignResult
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # Key generation's domain check, on its frame state -/
 

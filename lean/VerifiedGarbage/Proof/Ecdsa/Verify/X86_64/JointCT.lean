@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 
 /-! Whole-function timing follows the public-input contract for baseline and ADX. -/
 

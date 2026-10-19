@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulReady
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
 
 @[expose] public section
 

@@ -2,71 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
-meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.AesGcm.Arm.Args
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
-import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
-import VerifiedGarbage.Proof.AesGcm.Arm.Words
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.GcmSiv.Words32
-import VerifiedGarbage.Proof.Rsa.ZeroTest32
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Spec.GcmSiv.Contract
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Args
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Words
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
-meta import VerifiedGarbage.Proof.Cmac.Block
-meta import VerifiedGarbage.Proof.Cmac.Dbl32
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.Be64
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.GcmSiv.Words32
-meta import VerifiedGarbage.Proof.Rsa.ZeroTest32
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Siv.Spec
-meta import VerifiedGarbage.Spec.GcmSiv.Contract
 
 /-!
 # AES-GCM-SIV on ARMv7: relating two runs, the keys and POLYVAL

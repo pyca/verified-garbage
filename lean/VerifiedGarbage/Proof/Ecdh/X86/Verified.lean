@@ -1,161 +1,47 @@
 module
 
 import VerifiedGarbage.Proof.Ecdh.X86.JacMain
-meta import VerifiedGarbage.Proof.Ecdh.X86.JacMain
 public import VerifiedGarbage.Proof.Ecdh.X86.Contract
-meta import VerifiedGarbage.Proof.Ecdh.X86.Contract
-public import VerifiedGarbage.Proof.Ecdh.X86.Lit
-meta import VerifiedGarbage.Proof.Ecdh.X86.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Spec.EcKey.P256
 public import VerifiedGarbage.Spec.Ecdh.Generic
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.Exchange
+import VerifiedGarbage.Proof.Ecdh.X86.Lit
+public import VerifiedGarbage.Impl.Ecdh.P256.X86
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.List.Forall2
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
-import VerifiedGarbage.Proof.Ecdh.X86.JacMul
-import VerifiedGarbage.Proof.Ecdh.X86.JacPow
-import VerifiedGarbage.Proof.Ecdh.X86.Peer
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
-import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
-import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
-import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.P256Red
-import VerifiedGarbage.Proof.Mont.X86.RedRow
-import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
-import VerifiedGarbage.Proof.Mont.X86.Step
-import VerifiedGarbage.Proof.P256.Order
-import VerifiedGarbage.Proof.P256.Prime
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
-import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
+import VerifiedGarbage.Proof.Weierstrass.WinLay
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
-import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
-import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Spec.Ecdh.P256
-meta import VerifiedGarbage.Proof.EcKey.PublicKey
-meta import VerifiedGarbage.Proof.Ecdh.Exchange
+meta import VerifiedGarbage.Proof.Ecdh.X86.JacMain
+meta import VerifiedGarbage.Proof.Ecdh.X86.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Spec.EcKey.P256
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Ecdh.X86.Main
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ecdh.X86.Lit
+meta import VerifiedGarbage.Impl.Ecdh.P256.X86
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Data.List.Forall2
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
-meta import VerifiedGarbage.Proof.Ecdh.X86.JacMul
-meta import VerifiedGarbage.Proof.Ecdh.X86.JacPow
-meta import VerifiedGarbage.Proof.Ecdh.X86.Peer
-meta import VerifiedGarbage.Proof.Ecdsa.Sign
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-meta import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-meta import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.BitByte
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Mont.Words128
-meta import VerifiedGarbage.Proof.Mont.X86.Csub
-meta import VerifiedGarbage.Proof.Mont.X86.Instr
-meta import VerifiedGarbage.Proof.Mont.X86.P256Red
-meta import VerifiedGarbage.Proof.Mont.X86.RedRow
-meta import VerifiedGarbage.Proof.Mont.X86.Row
-meta import VerifiedGarbage.Proof.Mont.X86.SparseShift
-meta import VerifiedGarbage.Proof.Mont.X86.SparseStep
-meta import VerifiedGarbage.Proof.Mont.X86.Step
-meta import VerifiedGarbage.Proof.P256.Order
-meta import VerifiedGarbage.Proof.P256.Prime
-meta import VerifiedGarbage.Proof.Rc2.Memory32
-meta import VerifiedGarbage.Proof.Weierstrass.InvToM
-meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
-meta import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-meta import VerifiedGarbage.Proof.Weierstrass.Words32
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-meta import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-meta import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
-meta import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-meta import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-meta import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-meta import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-meta import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
+meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-meta import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
-meta import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
-meta import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
-meta import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-meta import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
-meta import VerifiedGarbage.Proof.X25519.Field
-meta import VerifiedGarbage.Proof.X25519.X86.Arith
-meta import VerifiedGarbage.Proof.X25519.X86.Fold
-meta import VerifiedGarbage.Spec.Ecdh.P256
 
 /-!
 # ECDH over P-256 on x86 (32-bit): `Verified`

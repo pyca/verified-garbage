@@ -1,68 +1,17 @@
 module
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
 
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
-meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import VerifiedGarbage.Proof.MlKem.Arm.HashCT
-import VerifiedGarbage.Proof.MlKem.Arm.Loops
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-import VerifiedGarbage.Proof.MlKem.Arm.RowSum
-import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-meta import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
-meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-meta import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-meta import VerifiedGarbage.Proof.MlKem.Arm.HashCT
-meta import VerifiedGarbage.Proof.MlKem.Arm.Loops
-meta import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
-meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # ML-DSA signing on ARMv7: copies leak only their addresses

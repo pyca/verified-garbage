@@ -2,69 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Ocb.Stretch
 public import VerifiedGarbage.Proof.Ocb.Stretch32
-public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Proof.AesOcb.X86.Env
-public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.X86.Dbl
 import VerifiedGarbage.Proof.AesOcb.X86.Run
 import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.AesGcm.X86.Flush
-public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-public import VerifiedGarbage.Proof.Aes.X86.Decrypt
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.AesOcb.X86.Blk
-public import VerifiedGarbage.Proof.AesOcb.X86.Callee
-public import VerifiedGarbage.Proof.AesOcb.X86.Entry
-public import VerifiedGarbage.Proof.AesOcb.X86.LNtz
-public import VerifiedGarbage.Proof.AesOcb.X86.Run
-public import VerifiedGarbage.Proof.AesOcb.X86.Setup
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Ocb.Spec
-public import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.Aes.X86.Decrypt
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-import VerifiedGarbage.Proof.AesOcb.X86.Blk
-import VerifiedGarbage.Proof.AesOcb.X86.Callee
-import VerifiedGarbage.Proof.AesOcb.X86.Entry
-import VerifiedGarbage.Proof.AesOcb.X86.LNtz
-import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
-import VerifiedGarbage.Proof.AesOcb.X86.Setup
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Spec.Ocb.Contract
 
 /-!
 # AES-OCB on x86: `Offset_0` (`offset0`)

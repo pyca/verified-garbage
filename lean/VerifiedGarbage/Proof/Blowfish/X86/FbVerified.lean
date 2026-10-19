@@ -1,90 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
-meta import VerifiedGarbage.Proof.Blowfish.FbScratch
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Blowfish.X86.ModeCore
-meta import VerifiedGarbage.Proof.Blowfish.X86.ModeCore
 import VerifiedGarbage.Proof.Modes.X86.Modes
-meta import VerifiedGarbage.Proof.Modes.X86.Modes
-public import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
-meta import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Spec.Blowfish.Cfb
 public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+meta import VerifiedGarbage.Proof.Blowfish.FbScratch
+meta import VerifiedGarbage.Proof.Blowfish.X86.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.AesSiv.Words
-import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Blowfish.Schedule
-import VerifiedGarbage.Proof.Blowfish.X86.Ecb
-import VerifiedGarbage.Proof.Blowfish.X86.Run
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.Modes.Steps
-import VerifiedGarbage.Proof.Modes.X86.Counter
-import VerifiedGarbage.Proof.Modes.X86.Ops
-import VerifiedGarbage.Proof.Rc4.Memory
-import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Spec.Blowfish.Contract
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.AesCcm.Mac
-meta import VerifiedGarbage.Proof.AesCtr.Ctr32
-meta import VerifiedGarbage.Proof.AesCtr.Spec
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Blowfish.Blocks
-meta import VerifiedGarbage.Proof.Blowfish.Schedule
-meta import VerifiedGarbage.Proof.Blowfish.X86.Ecb
-meta import VerifiedGarbage.Proof.Blowfish.X86.Run
-meta import VerifiedGarbage.Proof.Cmac.Dbl32
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
-meta import VerifiedGarbage.Proof.Modes.Steps
-meta import VerifiedGarbage.Proof.Modes.X86.Counter
-meta import VerifiedGarbage.Proof.Modes.X86.Ops
-meta import VerifiedGarbage.Proof.Rc4.Memory
-meta import VerifiedGarbage.Proof.Rc4.Table
+meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Spec.Blowfish.Cfb
-meta import VerifiedGarbage.Spec.Blowfish.Contract
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 
 /-!
 # Blowfish-OFB and Blowfish-CFB64 on x86 (32-bit) meet their contracts
