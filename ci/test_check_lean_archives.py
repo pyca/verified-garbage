@@ -178,6 +178,37 @@ class LeanArchiveTests(unittest.TestCase):
         lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
         self.assertEqual(self.log.read_text(), "")
 
+    def test_restore_some_modules_then_the_others(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*") if p.is_file()}
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        (self.lean / ".lake/ltar").rename(target / ".lake/ltar")
+        chosen = self.root / "modules"
+        chosen.write_text("A.B\n")
+        lean_cache.restore(target, 2, str(self.stub), modules=chosen)
+        lib = target / ".lake/build/lib/lean"
+        self.assertTrue((lib / "A/B.olean").is_file())
+        self.assertFalse((lib / "C.olean").exists())
+        # `files.tar`: every `.hash` file, and the files of no module.
+        self.assertTrue((lib / "C.olean.hash").is_file())
+        self.assertTrue((target / ".lake/build/lib/libNative.so").is_file())
+        # A build in between rewrites A/B's outputs; the others leave them.
+        (lib / "A/B.olean").write_text("rebuilt")
+        (lib / "A/B.olean.hash").write_text("1")
+        lean_cache.restore(target, 2, str(self.stub), others=chosen)
+        restored = {p.relative_to(target): p.read_bytes()
+                    for p in (target / ".lake/build").rglob("*") if p.is_file()}
+        expected = dict(original)
+        expected[Path(".lake/build/lib/lean/A/B.olean")] = b"rebuilt"
+        expected[Path(".lake/build/lib/lean/A/B.olean.hash")] = b"1"
+        self.assertEqual(restored, expected)
+
+    def test_module_of(self):
+        self.assertEqual(lean_cache.module_of(Path("build/A/B.ltar")), "A.B")
+        self.assertIsNone(lean_cache.module_of(Path("packages/mathlib/.lake/build/Mathlib/Order.ltar")))
+
     def test_independent_package_cache_and_publication(self):
         packages = Path(".lake/mathlib-ltar")
         lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
