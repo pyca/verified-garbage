@@ -63,17 +63,17 @@ theorem width_ok {w : Width} {c : Prog isa} {s₀ s : State} (hs : compressEncod
   rw [h5, hd, ← hk.get .x2, e, P, fP, hm, hk.get .x0]
 
 theorem loop1_ok {s₀ : State} (hp : Pre width1 s₀) :
-    WP isa (ceLoop 1 315 8 [] ce1Body) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
+    WP isa (ceLoop width1 8 [] ce1Body) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
       bytesAt s'.mem (oP s₀) (32 * width1.d) = Spec.MlKem.compressEncode width1.d (P s₀) :=
   vloop_ok width1_ok (G := 4) (K := fun _ => True) rfl (by decide) rfl (by decide) (by decide)
-    (fun s => wp_nil ⟨GFr.refl s, fun _ _ _ => rfl, trivial⟩) (fun _ _ _ _ => trivial)
+    (fun s => wp_nil ⟨GFr.refl s, fun _ _ _ _ => rfl, trivial⟩) (fun _ _ _ _ => trivial)
     fun _ hk _ h => step1 hp hk h
 
 theorem loop4_ok {s₀ : State} (hp : Pre width4 s₀) :
-    WP isa (ceLoop 4 2520 8 [] ce4Body) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
+    WP isa (ceLoop width4 8 [] ce4Body) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
       bytesAt s'.mem (oP s₀) (32 * width4.d) = Spec.MlKem.compressEncode width4.d (P s₀) :=
   vloop_ok width4_ok (G := 16) (K := fun _ => True) rfl (by decide) rfl (by decide) (by decide)
-    (fun s => wp_nil ⟨GFr.refl s, fun _ _ _ => rfl, trivial⟩) (fun _ _ _ _ => trivial)
+    (fun s => wp_nil ⟨GFr.refl s, fun _ _ _ _ => rfl, trivial⟩) (fun _ _ _ _ => trivial)
     fun _ hk _ h => step4 hp hk h
 
 theorem idx10_eq : setLane (ofVDwords (BitVec.ofNat 64 ((List.range 8).foldl
@@ -89,14 +89,14 @@ theorem idx10Hi_eq : setLane (ofVDwords (BitVec.ofNat 64 ((List.range 8).foldl
       idxVec ce10IdxHi := by decide +kernel
 
 theorem loop10_ok {s₀ : State} (hp : Pre width10 s₀) :
-    WP isa (ceLoop 10 161271 16 (bytesVec .v20 ce10Idx ++ bytesVec .v21 ce10IdxHi) ce10Body) s₀
+    WP isa (ceLoop width10 16 (bytesVec .v20 ce10Idx ++ bytesVec .v21 ce10IdxHi) ce10Body) s₀
       fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
         bytesAt s'.mem (oP s₀) (32 * width10.d) = Spec.MlKem.compressEncode width10.d (P s₀) :=
   vloop_ok width10_ok (G := 4) (K := K10) rfl (by decide) rfl (by decide) (by decide)
     (fun s => by
       rw [← List.append_nil (bytesVec .v21 _)]
       exact wp_bytesVec fun s1 g1 v1 e1 => wp_bytesVec fun s2 g2 v2 e2 => wp_nil ⟨g1.trans g2,
-        fun r a b => by rw [v2 r b, v1 r a], by rw [v2 .v20 (by decide), e1, idx10_eq], by rw [e2, idx10Hi_eq]⟩)
+        fun r a b _ => by rw [v2 r b, v1 r a], by rw [v2 .v20 (by decide), e1, idx10_eq], by rw [e2, idx10Hi_eq]⟩)
     (fun _ _ hv hk => by rw [K10, hv]; exact hk)
     fun _ hk _ h => step10 hp hk h
 

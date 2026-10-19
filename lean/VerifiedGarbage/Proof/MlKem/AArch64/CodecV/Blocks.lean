@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Width
 
 /-!
 # ML-KEM on AArch64: the loads and compressions of the vector codecs
@@ -60,21 +61,21 @@ theorem ld4_ok {s : State} {p : Addr} {X : Nat → Nat} (h : Src p X s) (a b c d
     lanes_get h4 hbd (lanes_get h3 hbc l2), lanes_get h4 hcd l3, l4⟩
 
 /-- `Compress_d` of a coefficient less than `q`, as the code computes it. -/
-abbrev cf (d x : Nat) : Nat := (x * compressMul d + compressAdd) / 2 ^ 19 % 2 ^ d
+abbrev cf (w : Width) (x : Nat) : Nat := (x * w.mul + w.add) / 2 ^ 19 % 2 ^ w.d
 
 /-- The constants of `cmpV`. -/
-structure CConsts (d : Nat) (s : State) : Prop where
-  m : Lanes (s.v .v16) fun _ => compressMul d
-  a : Lanes (s.v .v17) fun _ => compressAdd
-  k : Lanes (s.v .v18) fun _ => 2 ^ d - 1
+structure CConsts (w : Width) (s : State) : Prop where
+  m : Lanes (s.v .v16) fun _ => w.mul
+  a : Lanes (s.v .v17) fun _ => w.add
+  k : Lanes (s.v .v18) fun _ => 2 ^ w.d - 1
 
-theorem CConsts.chg {d : Nat} {s t : State} (h : CConsts d s) {rs : List VReg} (c : VChg rs s t)
+theorem CConsts.chg {w : Width} {s t : State} (h : CConsts w s) {rs : List VReg} (c : VChg rs s t)
     (h16 : VReg.v16 ∉ rs := by decide) (h17 : VReg.v17 ∉ rs := by decide)
-    (h18 : VReg.v18 ∉ rs := by decide) : CConsts d t :=
+    (h18 : VReg.v18 ∉ rs := by decide) : CConsts w t :=
   ⟨Lanes.chg c h16 h.m, Lanes.chg c h17 h.a, Lanes.chg c h18 h.k⟩
 
 /-- `Compress_d` of four registers. -/
-theorem cmp4_ok {s : State} {d : Nat} (hd : d ∈ compressWidths) (hc : CConsts d s) {a b c e : VReg}
+theorem cmp4_ok {s : State} {w : Width} (hw : WOk w) (hc : CConsts w s) {a b c e : VReg}
     {X : Nat → Nat} (hX : ∀ i < 16, X i < 3329)
     (la : Lanes (s.v a) fun i => X i) (lb : Lanes (s.v b) fun i => X (4 + i))
     (lc : Lanes (s.v c) fun i => X (8 + i)) (le : Lanes (s.v e) fun i => X (12 + i))
@@ -83,27 +84,27 @@ theorem cmp4_ok {s : State} {d : Nat} (hd : d ∈ compressWidths) (hc : CConsts 
     (ha : a ≠ .v16 ∧ a ≠ .v17 ∧ a ≠ .v18 := by decide) (hb : b ≠ .v16 ∧ b ≠ .v17 ∧ b ≠ .v18 := by decide)
     (hc' : c ≠ .v16 ∧ c ≠ .v17 ∧ c ≠ .v18 := by decide) (he : e ≠ .v16 ∧ e ≠ .v17 ∧ e ≠ .v18 := by decide) :
     WP isa (.block (cmp4 a b c e)) s fun t => VChg [a, b, c, e] s t ∧
-      Lanes (t.v a) (fun i => cf d (X i)) ∧ Lanes (t.v b) (fun i => cf d (X (4 + i))) ∧
-      Lanes (t.v c) (fun i => cf d (X (8 + i))) ∧ Lanes (t.v e) (fun i => cf d (X (12 + i))) := by
+      Lanes (t.v a) (fun i => cf w (X i)) ∧ Lanes (t.v b) (fun i => cf w (X (4 + i))) ∧
+      Lanes (t.v c) (fun i => cf w (X (8 + i))) ∧ Lanes (t.v e) (fun i => cf w (X (12 + i))) := by
   unfold cmp4
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (cmpV_ok hd hc.m hc.a hc.k ha.2.1 ha.2.2 la fun i hi => hX i (by omega))
+  refine WP.mono (cmpV_ok hw.mul_le hw.add_lt hc.m hc.a hc.k ha.2.1 ha.2.2 la fun i hi => hX i (by omega))
     fun s1 ⟨c1, l1⟩ => ?_
-  have k1 : CConsts d s1 := hc.chg c1 (by simpa using ha.1.symm) (by simpa using ha.2.1.symm)
+  have k1 : CConsts w s1 := hc.chg c1 (by simpa using ha.1.symm) (by simpa using ha.2.1.symm)
     (by simpa using ha.2.2.symm)
   rw [WP.block_append_iff]
-  refine WP.mono (cmpV_ok hd k1.m k1.a k1.k hb.2.1 hb.2.2 (Lanes.chg c1 (by simpa using hab.symm) lb)
+  refine WP.mono (cmpV_ok hw.mul_le hw.add_lt k1.m k1.a k1.k hb.2.1 hb.2.2 (Lanes.chg c1 (by simpa using hab.symm) lb)
     fun i hi => hX _ (by omega)) fun s2 ⟨c2, l2⟩ => ?_
-  have k2 : CConsts d s2 := k1.chg c2 (by simpa using hb.1.symm) (by simpa using hb.2.1.symm)
+  have k2 : CConsts w s2 := k1.chg c2 (by simpa using hb.1.symm) (by simpa using hb.2.1.symm)
     (by simpa using hb.2.2.symm)
   rw [WP.block_append_iff]
-  refine WP.mono (cmpV_ok hd k2.m k2.a k2.k hc'.2.1 hc'.2.2
+  refine WP.mono (cmpV_ok hw.mul_le hw.add_lt k2.m k2.a k2.k hc'.2.1 hc'.2.2
     (Lanes.chg c2 (by simpa using hbc.symm) (Lanes.chg c1 (by simpa using hac.symm) lc))
     fun i hi => hX _ (by omega)) fun s3 ⟨c3, l3⟩ => ?_
-  have k3 : CConsts d s3 := k2.chg c3 (by simpa using hc'.1.symm) (by simpa using hc'.2.1.symm)
+  have k3 : CConsts w s3 := k2.chg c3 (by simpa using hc'.1.symm) (by simpa using hc'.2.1.symm)
     (by simpa using hc'.2.2.symm)
-  refine WP.mono (cmpV_ok hd k3.m k3.a k3.k he.2.1 he.2.2
+  refine WP.mono (cmpV_ok hw.mul_le hw.add_lt k3.m k3.a k3.k he.2.1 he.2.2
     (Lanes.chg c3 (by simpa using hce.symm) (Lanes.chg c2 (by simpa using hbe.symm)
       (Lanes.chg c1 (by simpa using hae.symm) le)))
     fun i hi => hX _ (by omega)) fun t ⟨c4, l4⟩ => ⟨?_, ?_, ?_, ?_, l4⟩
