@@ -201,7 +201,7 @@ theorem ammCoreSpec_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : 
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   have hn := hl.nl
   have hD' := hl.amm.D_ge
-  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl) hB r8₃ r9₃ r11₃ hs (by rw [hn]; simp only [Nat.reduceSub, Nat.mul_one]; omega)
+  refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl.amm) hB r8₃ r9₃ r11₃ hs (by rw [hn]; simp only [Nat.reduceSub, Nat.mul_one]; omega)
     (by have := hl.D_bounds; omega)
     (by rw [hn]; simpa using ho) (by rw [hn]; simpa using ha) (by rw [hn]; simpa using hb)
     (fun p hp => hlt p (by omega)) (fun p hp => hk p (by omega)) (fun p hp => hklt p (by omega))

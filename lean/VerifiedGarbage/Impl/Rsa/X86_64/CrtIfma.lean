@@ -297,8 +297,10 @@ def ammCore : Prog isa :=
           .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
         ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 
-/-- The multiplication of a layout: with the look-ahead for 2048 bits. -/
-def ammMul : Prog isa := if l = lay2048 then ammCoreU l else ammCore l
+/-- The multiplication of a layout: with the look-ahead where the lanes'
+roles take at most 10 registers (2048 bits, the CRT's and the public
+operation's), whose multiplications the chain of `u`s bounds. -/
+def ammMul : Prog isa := if l.nl * l.R ≤ 10 then ammCoreU l else ammCore l
 
 /-- `[o] := [a] [b] 2^(-52 S)`, the offsets in `p`'s region. -/
 def amm (o a b : Nat) : Prog isa :=

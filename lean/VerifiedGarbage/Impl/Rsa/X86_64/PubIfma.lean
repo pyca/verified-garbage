@@ -89,11 +89,11 @@ def sel : Prog isa :=
       (.seq (.block [.alu .cmp .r13 (.imm 19)]) (.ite .e (.block (setOps (oA l) (oA l) (oB l)))
         (.block (setOps (oA l) (oA l) (oA l))))))))
 
-/-- The vector code: the twenty multiplications of `sel`, by one `ammCore`
+/-- The vector code: the twenty multiplications of `sel`, by one `ammMul`
 in a loop (`r13` counting them): `A = x^65537`, almost reduced. -/
 def vec : Prog isa :=
   withMx l (.seq (.block [.mov32 .r13 (.imm 0)])
-    (.loop (seqs [sel l, ammCore l, .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) .ne))
+    (.loop (seqs [sel l, ammMul l, .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) .ne))
 
 /-- `A` into words at the accumulator, reduced below `m` into the result. -/
 def fin : List (Prog isa) :=

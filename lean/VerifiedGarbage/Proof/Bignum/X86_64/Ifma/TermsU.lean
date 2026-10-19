@@ -95,11 +95,47 @@ def checkStepU (p i : Nat) : Bool :=
 theorem checkStepU_2048 : ∀ p < lay2048.nl, ∀ i < lay2048.S, checkStepU lay2048 p i = true := by
   decide +kernel
 
-theorem run_ammStepU {p i : Nat} (hp : p < lay2048.nl) (hi : i < lay2048.S) :
-    ∃ σ, ESym.init.run (limU lay2048) (ammStepU lay2048 p i) = some σ ∧
-      (∀ r < 32, σ.reg r = expRegU lay2048 p i r) ∧
-      σ.rax = (if lay2048.S ≤ i + 1 then .gpr .rax else .ld .r9 (lay2048.D * p + lay2048.off (i + 1))) := by
-  have h := checkStepU_2048 p hp i hi
+theorem checkStepU_p2048 : ∀ p < VG.Impl.Rsa.X86_64.PubIfma.pay2048.nl,
+    ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay2048.S, checkStepU VG.Impl.Rsa.X86_64.PubIfma.pay2048 p i = true := by
+  decide +kernel
+
+open VG.Impl.Rsa.X86_64.PubIfma (pay2048) in
+/-- The layouts whose multiplication has the look-ahead (`ammMul`): 2048
+bits, the CRT's and the public operation's. -/
+def UOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop := l = lay2048 ∨ l = pay2048
+
+variable {l} in
+/-- `ammMul`'s choice: the look-ahead where the roles take at most 10 registers. -/
+theorem UOk.of_amm (hl : AmmOk l) (h : l.nl * l.R ≤ 10) : UOk l := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl
+  · exact .inl rfl
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact .inr rfl
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+
+variable {l} in
+/-- The sizes the proofs of the look-ahead use: two roles or more, the
+registers of the roles, the lanes' eight and the zero register. -/
+theorem UOk.regs (hu : UOk l) :
+    AmmOk l ∧ 2 ≤ l.R ∧ l.R ≤ 20 ∧ 1 ≤ l.nl ∧ l.nl * l.R + 8 * l.nl < 32 := by
+  rcases hu with rfl | rfl
+  · exact ⟨.inl (.inl rfl), by decide⟩
+  · exact ⟨.inr (.inl rfl), by decide⟩
+
+variable {l} in
+theorem UOk.checkStep (hu : UOk l) : ∀ p < l.nl, ∀ i < l.S, checkStepU l p i = true := by
+  rcases hu with rfl | rfl
+  · exact checkStepU_2048
+  · exact checkStepU_p2048
+
+variable {l} in
+theorem run_ammStepU (hu : UOk l) {p i : Nat} (hp : p < l.nl) (hi : i < l.S) :
+    ∃ σ, ESym.init.run (limU l) (ammStepU l p i) = some σ ∧
+      (∀ r < 32, σ.reg r = expRegU l p i r) ∧
+      σ.rax = (if l.S ≤ i + 1 then .gpr .rax else .ld .r9 (l.D * p + l.off (i + 1))) := by
+  have h := hu.checkStep p hp i hi
   unfold checkStepU at h
   split at h
   · rename_i σ hσ
