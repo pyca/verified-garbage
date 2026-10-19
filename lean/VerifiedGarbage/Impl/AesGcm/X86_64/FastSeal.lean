@@ -13,7 +13,9 @@ additional data (`Fast.cond`). It is the other instances' body
 (`Short.sealLong`) with the additional data absorbed with the prepared `H'`
 (`Fast.aad`), where `oneAad` would copy it a byte at a time and call
 `vg_ghash`, which computes `H'` from `H` on every call; for the instances
-without the short path, `SealFin.mid` likewise, with `Short.finKsA`.
+without the short path, `SealFin.mid` likewise, with `Short.finKsA`. It ends
+with `H'` and `H'²` loaded from the prepared key context (`Short.finishP`),
+where `Short.finishWith` would compute them from `H`.
 -/
 
 @[expose] public section
@@ -25,11 +27,11 @@ open VG.Impl.AesGcm.X86_64 (Callees oneBlocks)
 
 variable (c : Callees)
 
-/-- After the entry: `Short.sealLong` with `Fast.aad`, the keystream of `J₀`
-and of the counter block from `ks` (`Short.finKs` on 512-bit registers,
-`Short.finKsA` on 128-bit ones). -/
+/-- After the entry: `Short.sealLong` with `Fast.aad` and `Short.finishP`, the
+keystream of `J₀` and of the counter block from `ks` (`Short.finKs` on
+512-bit registers, `Short.finKsA` on 128-bit ones). -/
 def run (ks : Prog isa := Short.finKs) : Prog isa :=
-  .seq Fast.aad (.seq (oneBlocks c.enc) (Short.finishWith ks))
+  .seq Fast.aad (.seq (oneBlocks c.enc) (Short.finishP ks))
 
 /-- `Fast.cond any`, then this path, or `other`. -/
 def sel (other : Prog isa) (ks : Prog isa := Short.finKs) (any : Bool := false) : Prog isa :=
