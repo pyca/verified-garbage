@@ -72,16 +72,16 @@ theorem keyGen_relCT {P : KemLay} {keccak : Sha3.AArch64.Permutation} {σ τ : S
     (fun name hn=>by rw [Exec.syms ec,Exec.syms fc,Exec.syms ea,Exec.syms fa]; exact symbols name hn) hc ed fd
   exact ⟨by rw [aeq,beq,ceq],trivial⟩
 
-theorem kem_relCT {P : KemLay} {L : Kem.Layout} {σ τ : State} {ρ : List Byte}
+theorem kem_relCT {w16 : Bool} {P : KemLay} {L : Kem.Layout} {σ τ : State} {ρ : List Byte}
     {start rest : Prog isa} (hp : Kem.Pre P L σ) (hq : Kem.Pre P L τ)
     (ptr : ∀i<4,Kem.kA σ (L.slot i)=Kem.kA τ (L.slot i)) (sp : σ.sp=τ.sp)
     (shuffle : σ.syms "VG_MLKEM_REJ_SHUFFLE"=τ.syms "VG_MLKEM_REJ_SHUFFLE")
     (symbols : ∀name∈restSymbols,σ.syms name=τ.syms name)
-    (as : WP isa start σ (fun s=>Kem.BInv P L σ s.mem ρ 0 s ∧ Kem.MatrixTable P L σ s))
-    (au : WP isa start τ (fun s=>Kem.BInv P L τ s.mem ρ 0 s ∧ Kem.MatrixTable P L τ s))
+    (as : WP isa start σ (fun s=>Kem.BInvW w16 P L σ s.mem ρ 0 s ∧ Kem.MatrixTable P L σ s))
+    (au : WP isa start τ (fun s=>Kem.BInvW w16 P L τ s.mem ρ 0 s ∧ Kem.MatrixTable P L τ s))
     (ac : RelCT isa (fun s u=>s=σ ∧ u=τ) start (fun _ _=>True))
     (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) rest h).isSome=true) :
-    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Paired.matrix P false) rest))
+    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Paired.matrix P false w16) rest))
       (fun _ _=>True) := by
   intro s u tr ur t v h et eu
   rcases h with ⟨hs,hu⟩; subst s; subst u

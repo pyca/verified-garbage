@@ -5,15 +5,16 @@ namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem
 open VG.Proof.MlKem.AArch64.Kem
 variable {P : KemLay}
-theorem decaps_using_ct {start rest : Prog isa} (hw : P.Wf)
+theorem decaps_using_ct {w16 : Bool} {start rest : Prog isa} (hw : P.Wf)
     (prelude : ∀{s : State},Pre P (Decaps.deL P) s → Tables s →
-      WP isa start s (fun t=>BInv P (Decaps.deL P) s t.mem (Decaps.rhoD P s) 0 t ∧ MatrixTable P (Decaps.deL P) s t))
+      WP isa start s (fun t=>BInvW w16 P (Decaps.deL P) s t.mem (Decaps.rhoD P s) 0 t ∧
+        MatrixTable P (Decaps.deL P) s t))
     (ha : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
       (start) h).isSome=true)
     (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (rest) h).isSome=true) :
     ConstantTime isa (entryContract (decapsAArch64 P)).pre (entryContract (decapsAArch64 P)).pub
-      (.seq start (.seq (Paired.matrix P false) rest)) := by
+      (.seq start (.seq (Paired.matrix P false w16) rest)) := by
   intro s u tr ur t v hs hu hpub et eu
   have ps := kem_unstrip (Decaps.pre_of hw hs.1)
   have pu := kem_unstrip (Decaps.pre_of hw hu.1)
