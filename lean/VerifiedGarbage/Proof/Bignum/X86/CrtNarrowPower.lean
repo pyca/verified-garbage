@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtFactorPower
 public import VerifiedGarbage.Proof.Bignum.X86.CrtFactorFrame
 public import VerifiedGarbage.Proof.Bignum.X86.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86.CheckedPreparePrime
+public import VerifiedGarbage.Proof.Bignum.X86.CheckedWindowPower
 public import VerifiedGarbage.Proof.Bignum.X86.ReduceOperand
 public import VerifiedGarbage.Proof.Bignum.WordsPrefix
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
@@ -59,6 +60,22 @@ theorem context_frame {n output : Nat} {base : Addr} {m m' : Mem} {h : Nat} (hh 
     have : 64 ≤ contextBytes h := by unfold contextBytes slot stride; omega
     dsimp only
     omega
+
+/-- The narrow windowed exponentiation's changes, as changes of the
+modulus-width context and its table. -/
+theorem window_frame {n output : Nat} {base : Addr} {m m' : Mem}
+    (O : Outs base (primeSetupRanges (half n) ++ windowRanges (half n) (2 * half n) (tableOffset n)) m m') :
+    Outs base (factorRanges n output) m m' := by
+  intro a ha
+  have low := ha (0, 8) (by simp [factorRanges, arithmeticRanges])
+  have high := ha (64, contextBytes n - 64) (by simp [factorRanges, arithmeticRanges])
+  have table := ha (tableRange n) (by simp [factorRanges])
+  apply O a
+  intro r hr
+  simp only [primeSetupRanges, setupRanges, windowRanges, exponentRanges, productRanges,
+    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [slot, stride, contextBytes, tableRange, tableOffset, half] at * <;> omega
 
 /-- A change within the modulus-width context's slots. -/
 theorem slots_frame {n output o len : Nat} {base : Addr} {m m' : Mem}
@@ -203,9 +220,12 @@ theorem narrowPower_ok {s : State} {base : Addr} {bytes n prime exponent output 
     (by simp only [slot, stride] at n9 ⊢; omega)
     (.inr (.inl (by simp only [slot, stride] at n9 ⊢; omega)))) fun u₄ ⟨E₄, O₄, K₄⟩ => ?_)))
   have K₂₄ := (K₂.trans K₃).trans K₄
-  refine WP.seq (WP.mono (checkedPrimePower_ok (hs₁.of_keeps K₂₄ (by decide)) hh
+  have W : WinLay (half n) (tableOffset n) bytes :=
+    ⟨by unfold tableOffset contextBytes slot stride half; omega,
+      by simp only [tableOffset, slot, stride, half]; omega⟩
+  refine WP.seq (WP.mono (checkedWindowPower_ok (hs₁.of_keeps K₂₄ (by decide)) hh
     (by unfold half; omega) (Nat.le_trans (narrow_fits n) (Nat.le_trans (context_fits n) (by
-      simp only [size, slot, stride]; omega)))) fun u₅ ⟨C₅, V₅, O₅, K₅⟩ => ?_)
+      simp only [size, slot, stride]; omega))) W) fun u₅ ⟨C₅, V₅, O₅, K₅⟩ => ?_)
   refine WP.mono (zeroCopy_ok C₅.scr hh hhn (src := slot (half n) 6) (dst := slot n output)
     (by simp only [slot, stride] at n9 ⊢; omega) (by simp only [slot, stride]; omega)
     (.inr (by simp only [slot, stride] at n9 ⊢; omega))) fun t ⟨W₁, W₂, O₆, K₆⟩ => ?_
@@ -242,7 +262,7 @@ theorem narrowPower_ok {s : State} {base : Addr} {bytes n prime exponent output 
       (by simp only [contextBytes, slot, stride] at n9 ⊢; omega)
     have f₄ := slots_frame (n := n) (output := output) O₄ (by simp only [slot, stride]; omega)
       (by simp only [contextBytes, slot, stride] at n9 ⊢; omega)
-    exact ((((O₁.trans f₂).trans f₃).trans f₄).trans (context_frame hhn O₅)).trans
+    exact ((((O₁.trans f₂).trans f₃).trans f₄).trans (window_frame O₅)).trans
       (Outside.within O₆ (r := (slot n output, 16 * n)) (by simp [factorRanges]) (Nat.le_refl _)
         (by dsimp only; omega))
   · exact (K₁.trans ((K₂₄.mono (by decide)).trans K₅)).trans (K₆.mono (by decide))
@@ -294,11 +314,13 @@ theorem factor_outside {n output bytes : Nat} {base : Addr} {m m' : Mem}
   have bo := slot_bound (n := n) ho
   have c9 : contextBytes n = slot n 9 := rfl
   have h9 := slot_header n 9
+  have top : slot n 20 + 8 * stride n = size n := by unfold size slot; omega
+  have st : stride n = 16 * n + 8 := rfl
   refine Outs.outside O ?_
   intro r hr
-  simp only [factorRanges, arithmeticRanges, List.cons_append, List.nil_append, List.mem_cons,
+  simp only [factorRanges, arithmeticRanges, tableRange, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
   unfold stride at bo
-  rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
 end VG.Proof.Bignum.X86.Crt

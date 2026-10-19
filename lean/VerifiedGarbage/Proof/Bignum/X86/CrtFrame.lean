@@ -12,6 +12,9 @@ open VG VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont.X
 
 def arithmeticRanges (n : Nat) : List (Nat × Nat) := [(0, 8), (64, contextBytes n - 64)]
 
+/-- The narrow exponentiation's table, past the slots. -/
+def tableRange (n : Nat) : Nat × Nat := (slot n 20, 8 * stride n)
+
 theorem arithmetic_value {n i k : Nat} {base : Addr} {m m' : Mem}
     (O : Outs base (arithmeticRanges n) m m') (hi : 9 ≤ i) (hi' : i < 20) (hk : k ≤ 2 * n)
     (fit : VG.Impl.Bignum.X86.Crt.size n ≤ 2 ^ 64) :

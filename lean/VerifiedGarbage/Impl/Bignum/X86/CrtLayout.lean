@@ -25,7 +25,9 @@ def mqSlot : Nat := 17
 def productSlot : Nat := 18
 def resultSlot : Nat := 19
 
-def size (n : Nat) : Nat := slot n 20
+/-- The slots, and the narrow exponentiation's table of 16 entries of
+`half n` words after them. -/
+def size (n : Nat) : Nat := slot n 28
 def acceptanceOffset : Nat := 8
 def multiplierOffset : Nat := 48
 

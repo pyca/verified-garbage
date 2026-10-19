@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrimePowerTiming
 public import VerifiedGarbage.Proof.Bignum.X86.CrtNarrowPower
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
+public import VerifiedGarbage.Proof.Mont.X86.WindowTiming
 
 /-! # The factors' exponentiations branch only on their public lengths
 
@@ -28,11 +29,16 @@ theorem zeroCopy_relCT (n h src dst : Nat) :
     (VG.Taint.hintOf taint (workspaceTaint false) (.seq (zerosW 0 4) (copyArray 1 0 0))) rfl rfl rfl
   rfl
 
-theorem narrowPower_relCT (n prime exponent output : Nat) (hn : 0 < n) :
+theorem checkedWindowPower_relCT (n tab : Nat) :
+    RelCT isa Public (checkedWindowPower n tab) Public :=
+  VG.RelCT.seq (R := Public) (primeMask_relCT n) (VG.RelCT.seq (R := Public) (preparePrime_relCT n)
+    (checkedProgramChange (windowExponentiate_check n (2 * n) tab) (by rfl)))
+
+theorem narrowPower_relCT (n prime exponent output : Nat) :
     RelCT isa Public (narrowPower n prime exponent output) Public := by
   unfold narrowPower reduceInput loadNarrow checkedPreparePrime
   refine VG.RelCT.seq (R := Public) ?_ (VG.RelCT.seq (R := Public) ?_
-    (VG.RelCT.seq (R := Public) (checkedPrimePower_relCT _ (half_pos hn)) (zeroCopy_relCT _ _ _ _)))
+    (VG.RelCT.seq (R := Public) (checkedWindowPower_relCT _ _) (zeroCopy_relCT _ _ _ _)))
   · exact VG.RelCT.seq (copyArray_relCT _ _ _) (VG.RelCT.seq (copyArray_relCT _ _ _)
       (VG.RelCT.seq (VG.RelCT.seq (primeMask_relCT n) (preparePrime_relCT n))
         (VG.RelCT.seq (reduceOperand_relCT n 5) (copyArray_relCT _ _ _))))
@@ -67,7 +73,7 @@ theorem factorPowerFit_relCT {base : Addr} {bytes : Nat} (n prime exponent outpu
   have Branch : RelCT isa (fun s t => Public s t ∧ s.cf = t.cf)
       (.ite .b (narrowPower n prime exponent output) (factorPower n prime exponent output)) Public :=
     RelCT.ite (fun _ _ H => H.2)
-      ((narrowPower_relCT n prime exponent output hn).mono (fun _ _ H => H.1.1) (fun _ _ h => h))
+      ((narrowPower_relCT n prime exponent output).mono (fun _ _ H => H.1.1) (fun _ _ h => h))
       ((factorPower_relCT n prime exponent output hn).mono (fun _ _ H => H.1.1) (fun _ _ h => h))
   have T₂ := Branch _ _ _ _ _ _ ⟨A', Cs.trans Ct.symm⟩ E₂ F₂
   rw [T₁.1, T₂.1]

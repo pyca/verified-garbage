@@ -19,12 +19,13 @@ theorem factor_value {n output i k : Nat} {base : Addr} {m m' : Mem}
   have head := slot_header n i
   have bound := slot_bound (n := n) hi'
   have sep := slot_sep (n := n) ne
+  have tb := slot_le (n := n) (i := i) (j := 20) hi'
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
   apply O.val32
   · intro r hr
-    simp only [factorRanges, arithmeticRanges, List.cons_append, List.nil_append,
+    simp only [factorRanges, arithmeticRanges, tableRange, List.cons_append, List.nil_append,
       List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> unfold stride at sep <;> omega
+    rcases hr with rfl | rfl | rfl | rfl <;> unfold stride at sep tb <;> omega
   · unfold stride at bound; omega
 
 end VG.Proof.Bignum.X86.Crt

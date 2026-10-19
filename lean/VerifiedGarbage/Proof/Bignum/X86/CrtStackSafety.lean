@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Impl.Mont.X86.Window
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # Compositional stack-pointer safety avoids rechecking every dispatched width -/
@@ -37,6 +38,12 @@ theorem shiftExponent_sp (n out : Nat) : (Dynamic.shiftExponent n out).all stack
     rw [Dynamic.shiftExponent, List.all_append, ih]
     rfl
 
+theorem shiftUp_sp : ∀ k exp, (Dynamic.shiftUp k exp).all stackSafe = true
+  | 0, _ => rfl
+  | k + 1, exp => by
+    rw [Dynamic.shiftUp, List.all_append, shiftUp_sp k exp, Bool.and_true]
+    cases k == 0 <;> rfl
+
 theorem sized_sp (n : Nat) : (VG.Impl.Bignum.X86.Crt.sized n).all stackSafe = true := by
   simp only [VG.Impl.Bignum.X86.Crt.sized, VG.Impl.Bignum.X86.Crt.importComponents,
     VG.Impl.Bignum.X86.Crt.importComponent, VG.Impl.Bignum.X86.Crt.validate,
@@ -50,6 +57,9 @@ theorem sized_sp (n : Nat) : (VG.Impl.Bignum.X86.Crt.sized n).all stackSafe = tr
     VG.Impl.Bignum.X86.Crt.maskOutput, VG.Impl.Bignum.X86.Crt.writeResult,
     loadBE, storeBE, reverseBytes, checkFactorProduct, wideProduct, wideProductRow,
     copyArray, copyPadded, checkedPrimePower, checkedPreparePrime, primePower, preparePrime,
+    VG.Impl.Bignum.X86.Crt.checkedWindowPower, Dynamic.windowExponentiate, Dynamic.windowStep,
+    Dynamic.windowBody, Dynamic.squares, Dynamic.square, Dynamic.buildTable, Dynamic.copyWords,
+    Dynamic.selectWindow, Dynamic.topWindow, shiftUp_sp,
     sanitizeModulus, smallConstant, primeMask, crtCoefficient, reduceOperand, crtRecombine,
     Dynamic.contextSetup, Dynamic.exponentiate, Dynamic.exponentStep, Dynamic.exponentBody,
     Dynamic.exponentProduct, Dynamic.selectProduct, Dynamic.powerTwo, Dynamic.doubleLoop,

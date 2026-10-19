@@ -10,7 +10,8 @@ namespace VG.Proof.Bignum.X86.Crt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Bignum.X86.Crt
 
-def factorRanges (n output : Nat) : List (Nat × Nat) := arithmeticRanges n ++ [(slot n output, 16 * n)]
+def factorRanges (n output : Nat) : List (Nat × Nat) :=
+  arithmeticRanges n ++ [(slot n output, 16 * n), tableRange n]
 
 theorem factorPower_ok {s : State} {base : Addr} {bytes n prime exponent output : Nat}
     (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)

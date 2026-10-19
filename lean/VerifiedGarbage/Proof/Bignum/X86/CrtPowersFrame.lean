@@ -19,12 +19,13 @@ theorem powers_value {n i k : Nat} {base : Addr} {m m' : Mem}
   have bound := slot_bound (n := n) (i := i) (by omega)
   have p := slot_le (n := n) (i := i) (j := mpSlot) (by unfold mpSlot; omega)
   have q := slot_le (n := n) (i := i) (j := mqSlot) (by unfold mqSlot; omega)
+  have tb := slot_le (n := n) (i := i) (j := 20) (by omega)
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
   apply O.val32
   · intro r hr
-    simp only [powersRanges, arithmeticRanges, List.cons_append, List.nil_append,
+    simp only [powersRanges, arithmeticRanges, tableRange, List.cons_append, List.nil_append,
       List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> unfold stride at p q <;> omega
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> unfold stride at p q tb <;> omega
   · unfold stride at bound; omega
 
 end VG.Proof.Bignum.X86.Crt

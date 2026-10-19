@@ -11,7 +11,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof
 open VG.Impl.Bignum.X86.Crt
 
 def powersRanges (n : Nat) : List (Nat × Nat) :=
-  arithmeticRanges n ++ [(slot n mpSlot, 16 * n), (slot n mqSlot, 16 * n)]
+  arithmeticRanges n ++ [(slot n mpSlot, 16 * n), (slot n mqSlot, 16 * n), tableRange n]
 
 /-- What the factors' exponentiations at `half n` words need: each factor's
 length (a public argument) and, when it fits `half n` words, the factor and
@@ -70,10 +70,16 @@ theorem powers_ok {s : State} {base : Addr} {bytes n : Nat}
   · have first : Outs base (powersRanges n) s.mem u.mem := O.mono (by
       intro r hr
       simp only [factorRanges, powersRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      exact hr.elim Or.inl (fun h => Or.inr (Or.inl h)))
+      rcases hr with h | h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl h)
+      · exact Or.inr (Or.inr (Or.inr h)))
     exact first.trans (Ot.mono (by
       intro r hr
       simp only [factorRanges, powersRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      exact hr.elim Or.inl (fun h => Or.inr (Or.inr h))))
+      rcases hr with h | h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inr (Or.inl h))
+      · exact Or.inr (Or.inr (Or.inr h))))
 
 end VG.Proof.Bignum.X86.Crt

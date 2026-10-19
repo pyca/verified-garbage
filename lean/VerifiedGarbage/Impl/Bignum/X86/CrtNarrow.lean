@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.CheckedPrimePower
 public import VerifiedGarbage.Impl.Bignum.X86.CheckedPreparePrime
 public import VerifiedGarbage.Impl.Bignum.X86.ReduceOperand
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Impl.Mont.X86.Window
 
 /-! # A factor's exponentiation at half the modulus's width
 
@@ -39,10 +40,18 @@ def loadNarrow (n prime exponent output : Nat) : Prog isa :=
   .seq (copyArray (half n) (slot n output) (slot (half n) 5))
     (copyArray (half n) (slot n exponent) (slot (half n) 8))
 
+/-- The table of the narrow exponentiation's base powers: past the
+modulus-width layout's slots. -/
+def tableOffset (n : Nat) : Nat := slot n 20
+
+/-- `checkedPrimePower`, by fixed 4-bit windows. -/
+def checkedWindowPower (n tab : Nat) : Prog isa :=
+  .seq (primeMask n) (.seq (preparePrime n) (windowExponentiate n (2 * n) tab))
+
 def narrowPower (n prime exponent output : Nat) : Prog isa :=
   .seq (reduceInput n prime output) <|
   .seq (loadNarrow n prime exponent output) <|
-  .seq (checkedPrimePower (half n)) <|
+  .seq (checkedWindowPower (half n) (tableOffset n)) <|
   .seq (zerosW (slot n output) (4 * n)) (copyArray (half n) (slot (half n) 6) (slot n output))
 
 /-- CF is set when the factor's length (the argument `lenArg`) fits `half n` words. -/
