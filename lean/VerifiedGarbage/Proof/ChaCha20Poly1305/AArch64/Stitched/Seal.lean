@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Rest
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
@@ -57,8 +58,10 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 # ChaCha20-Poly1305 on AArch64, stitched: `seal`
 
 The chunks encrypt the data's whole chunks and absorb all but the last of
-them; the rest is encrypted by `vg_chacha20_xor`, and absorbed with the last
-chunk.
+them (and with SVE2, if a rest remains, also the last while the next 256
+bytes' keystream is computed, of which up to the rest's length is used:
+`Tail.rest`); whatever is left is encrypted by `vg_chacha20_xor`, and absorbed
+with what was not.
 -/
 
 @[expose] public section
@@ -92,8 +95,8 @@ theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤
   rw [hp, ← List.append_assoc, ← VG.Proof.Poly1305.bytesAt_add, Nat.add_sub_cancel' hn]
 
 /-- The Poly1305 state after the chunks, from that before, through `rs`. -/
-theorem crypted_inv {enc : Bool} {s₀ : State} (hp : APre e s₀) {s u : State} {key msg : List Byte} {T : Nat}
-    (hc : Crypted enc s₀ s key msg T u) {s' : State} (hk : Kept [sub s₀ 64 384, dR s₀] u s') :
+theorem sealed_inv {s₀ : State} (hp : APre e s₀) {s u : State} {key msg : List Byte} {P A : Nat}
+    (hc : Sealed s₀ s key msg P A u) {s' : State} (hk : Kept [sub s₀ 64 384, dR s₀] u s') :
     Inv0 s₀ s' :=
   hc.inv.step hk (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -124,27 +127,26 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
   have R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
-  refine WP.seq ((cryptStitched_ok true hp i₃ st₃ R₃).mono fun s₄ ⟨T, hc⟩ => ?_)
-  refine WP.seq (rest_call v hp hc.le hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.wr hc.cnt hc.data
+  refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp i₃ st₃ R₃).mono fun s₄ ⟨P, A, hc⟩ => ?_)
+  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.wr hc.cnt hc.data
     |>.mono fun s₅ ⟨v₅, k₅, f₅, ct₅⟩ => ?_)
   rw [D₃] at ct₅
-  have i₅ := crypted_inv hp hc k₅
-  have hpre := pre_le true T
+  have i₅ := sealed_inv hp hc k₅
+  have hpre := hc.aP
   have hle := hc.le
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-    (srcAt hp (p := pre true T) (by omega)) i₅.x21 i₅.rd i₅.wr
+    (srcAt hp (p := A) (by omega)) i₅.x21 i₅.rd i₅.wr
     (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22])
     (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
   have i₆ := mac_inv0 i₅ k₆
   refine WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_
   -- The message absorbed.
   have R₄ := hc.mac
-  simp only [↓reduceIte] at R₄
-  have X₄ : bytesAt s₄.mem (dp s₀) (pre true T) = bytesAt s₅.mem (dp s₀) (pre true T) :=
+  have X₄ : bytesAt s₄.mem (dp s₀) A = bytesAt s₅.mem (dp s₀) A :=
     (prefix_rest hp f₅ hpre hle).symm
   rw [X₄] at R₄
   have R₆ := r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄)
-  rw [List.append_assoc, split_pad (pre_mod true T) (by omega), ct₅] at R₆
+  rw [List.append_assoc, split_pad hc.a16 (by omega), ct₅] at R₆
   have R₇ := r₇ _ _ R₆
   have L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame k₆.frame (by rdisj_all) (by lit_omega),

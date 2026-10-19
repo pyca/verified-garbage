@@ -58,7 +58,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
   have R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
-  refine WP.seq ((cryptStitched_ok false hp i₃ st₃ R₃).mono fun s₄ ⟨T, hc⟩ => ?_)
+  refine WP.seq ((cryptStitched_ok false (Bool.and_false _) hp i₃ st₃ R₃).mono fun s₄ ⟨T, hc⟩ => ?_)
   have hle := hc.le
   have hpre : pre false T = 512 * T := rfl
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
@@ -70,10 +70,11 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
   refine WP.seq (WP.seq ((restArgs_ok i₅.x21).mono fun w ⟨⟨a0, a1, a2, a3, kw⟩, vw⟩ => ?_))
   have mw := kw.mem_eq
-  refine (rest_call v hp (s := s₃) hle a0
+  refine (rest_call v hp (s := s₃) (P := 512 * T) hle (fun _ => by omega) a0
     (by rw [a1, k₅.cs _ (pres .x22) (pres30 .x22), hc.x22, hpre])
     (by rw [a2, k₅.cs _ (pres .x23) (pres30 .x23), hc.x23, hpre]) a3 (by rw [kw.wr, i₅.wr])
-    (by rw [mw, stateAt_frame k₅.frame (by rdisj_all), hc.cnt])
+    (fun _ => by rw [mw, stateAt_frame k₅.frame (by rdisj_all), hc.cnt,
+      show 512 * T / 64 = 8 * T by omega])
     (fun k hk => by rw [mw, data_frame k₅.frame hd₅ hk, hc.data k hk])).mono
     fun s₆ ⟨v₆, k₆, _, pt₆⟩ => ?_
   rw [D₃] at pt₆
