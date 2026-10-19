@@ -22,19 +22,7 @@ theorem val32_off (m : Mem) (base : Addr) (d : Nat) : ∀ (e n : Nat),
     rw [val32, val32, val32_off m base d (e + 4) n, show d + (e + 4) = d + e + 4 by omega]
     simp only [w32, off, Offset.add_add]
 
-theorem val32_zero_part {m : Mem} {base : Addr} {d K : Nat} (h : val32 m base d K = 0) {a c : Nat}
-    (hac : a + c ≤ K) : val32 m base (d + 4 * a) c = 0 := by
-  have e1 := val32_append m base d a (K - a)
-  rw [show a + (K - a) = K by omega, h] at e1
-  have p := Nat.two_pow_pos (32 * a)
-  have z : val32 m base (d + 4 * a) (K - a) = 0 := by
-    rcases Nat.eq_zero_or_pos (val32 m base (d + 4 * a) (K - a)) with e | e
-    · exact e
-    · have : 0 < 2 ^ (32 * a) * val32 m base (d + 4 * a) (K - a) := Nat.mul_pos p e
-      omega
-  have e2 := val32_append m base (d + 4 * a) c (K - a - c)
-  rw [show c + (K - a - c) = K - a by omega, z] at e2
-  omega
+alias val32_zero_part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part
 
 theorem val32_low2 {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 2) < 2 ^ (32 * w)) :
     val32 m base d w = val32 m base d (w + 2) := by

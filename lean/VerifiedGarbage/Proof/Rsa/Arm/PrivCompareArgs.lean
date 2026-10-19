@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
+public import VerifiedGarbage.Proof.Rsa.SuccessBits32
 public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 
 /-! # Set up the private fault comparison and accumulate the three call-status bits -/
@@ -10,16 +11,10 @@ namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest wp_dp wp_mov op2_reg op2_imm dpVal)
 
-def successBits (r2 r1 r3 : BitVec 32) : BitVec 32 := r1 &&& r2 &&& r3 &&& 1
+abbrev successBits := VG.Proof.Rsa.successBits
 
-theorem successBits_cases (r2 r1 r3 : BitVec 32) : successBits r2 r1 r3 = 0 ∨ successBits r2 r1 r3 = 1 := by
-  unfold successBits
-  generalize r1 &&& r2 &&& r3 = x
-  have h : (x &&& 1).toNat = x.toNat % 2 := by
-    rw [BitVec.toNat_and, show (1 : BitVec 32).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  rcases Nat.mod_two_eq_zero_or_one x.toNat with zero | one
-  · exact .inl (BitVec.eq_of_toNat_eq (by rw [h, zero]; rfl))
-  · exact .inr (BitVec.eq_of_toNat_eq (by rw [h, one]; rfl))
+theorem successBits_cases (r2 r1 r3 : BitVec 32) : successBits r2 r1 r3 = 0 ∨ successBits r2 r1 r3 = 1 :=
+  VG.Proof.Rsa.successBits_cases r2 r1 r3
 
 theorem cmpArgs_ok (s : State) (ws : Workspace s s.sp frameBytes) :
     WP isa (.block cmpArgs) s fun t =>

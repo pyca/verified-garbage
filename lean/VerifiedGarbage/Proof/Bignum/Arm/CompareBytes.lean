@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.ZeroTest32
 public import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
 
@@ -25,13 +26,8 @@ structure CompareInv (s0 : State) (a b : BitVec 32) (n i : Nat) (s : State) : Pr
   mem : s.mem = s0.mem
   rest : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s0 s
 
-theorem byte_xor_zero32 (a b : Byte) : a.setWidth 32 ^^^ b.setWidth 32 = 0 ↔ a = b := by
-  rw [show (0 : BitVec 32) = 0#32 from rfl, BitVec.xor_eq_zero_iff]
-  constructor
-  · intro h
-    have eq := congrArg (BitVec.setWidth 8) h
-    simpa using eq
-  · rintro rfl; rfl
+theorem byte_xor_zero32 (a b : Byte) : a.setWidth 32 ^^^ b.setWidth 32 = 0 ↔ a = b :=
+  VG.Proof.Rsa.byte_xor_zero32 a b
 
 theorem compareBody_ok {s0 s : State} {a b : BitVec 32} {n i : Nat}
     (ctx : CompareCtx s0 a b n) (inv : CompareInv s0 a b n i s) (hi : i < n) :

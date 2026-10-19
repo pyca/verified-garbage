@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.ExponentTestMath
 public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
@@ -10,11 +11,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest wp_mov wp_dp wp_subs op2_lsr op2_imm op2_reg dpVal)
-
-def exponentBounds (lo hi : BitVec 32) : Bool :=
-  ((hi >>> 1) ||| ((lo &&& 1) ^^^ 1)) == 0
-
-def exponentIsOne (lo hi : BitVec 32) : Bool := ((lo ^^^ 1) ||| hi) == 0
 
 theorem exponentBoundsTest_ok (s : State) :
     WP isa (.block exponentBoundsTest) s fun t =>

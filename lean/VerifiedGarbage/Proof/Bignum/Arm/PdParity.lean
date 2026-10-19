@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.Rsa.Mont
 @[expose] public section
 
 namespace VG.Proof.Bignum.Arm
-open VG VG.Arm
+open VG
 open VG.Spec.Rsa.Mont (numAt arrAt)
 
 theorem numAt_byte_parity (m : Mem) (base : Addr) {w o : Nat} (positive : 0 < w) :

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckRegions
+public import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # Retain the callee return bits and precomputation across subsequent setup -/
 
@@ -43,9 +44,7 @@ theorem precomputation_pdPrefix {g : PrivGeometry} (h : g.Valid) :
 theorem wordsAt_frame {regions : List Region} {m m' : Mem} {p : Addr} {n : Nat}
     (frame : Frame regions m m') (fit : 8 * n < 2 ^ 64)
     (sep : ∀ r ∈ regions, (⟨p, 8 * n⟩ : Region).Disjoint r) :
-    Spec.Rsa.wordsAt m' p n = Spec.Rsa.wordsAt m p n := by
-  simp only [Spec.Rsa.wordsAt]
-  refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  exact frame.readW (r := ⟨p, 8 * n⟩) (Offset.contains_base _ (by omega) (by omega)) sep (by decide)
+    Spec.Rsa.wordsAt m' p n = Spec.Rsa.wordsAt m p n :=
+  VG.Proof.Rsa.wordsAt_frame frame fit sep
+
 end VG.Proof.Rsa.Arm

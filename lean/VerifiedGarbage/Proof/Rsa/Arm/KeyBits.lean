@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.KeyBits32
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Rsa.Arm.ShiftRight
 
@@ -11,47 +12,15 @@ namespace VG.Proof.Rsa.Arm.Keys
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm
 
-theorem or_one (n : Nat) : n ||| 1 = 2 * (n / 2) + 1 := by
-  apply Nat.eq_of_testBit_eq; intro i
-  rcases i with _ | i
-  · simp [Nat.testBit_zero]
-  · rw [Nat.testBit_or, Nat.testBit_succ, Nat.testBit_succ, Nat.testBit_succ,
-      show (2 * (n / 2) + 1) / 2 = n / 2 by omega]
-    simp
-
-theorem xor_one (n : Nat) : (2 * n + 1) ^^^ 1 = 2 * n := by
-  apply Nat.eq_of_testBit_eq; intro i
-  rcases i with _ | i
-  · simp [Nat.testBit_zero]
-  · rw [Nat.testBit_xor, Nat.testBit_succ, Nat.testBit_succ, Nat.testBit_succ,
-      show (2 * n + 1) / 2 = n by omega, show 2 * n / 2 = n by omega]
-    simp
-
-theorem bv_or_one (x : BitVec 32) : (x ||| (1 : BitVec 32)).toNat = 2 * (x.toNat / 2) + 1 := by
-  rw [BitVec.toNat_or]; simp [or_one]
-
-theorem bv_clr_one (x : BitVec 32) : ((x ||| (1 : BitVec 32)) ^^^ (1 : BitVec 32)).toNat = 2 * (x.toNat / 2) := by
-  rw [BitVec.toNat_xor, BitVec.toNat_or]; simp [or_one, xor_one]
-
-theorem bv_and_one (x : BitVec 32) : (x &&& (1 : BitVec 32)).toNat = x.toNat % 2 := by
-  rw [BitVec.toNat_and]; simp [Nat.and_one_is_mod]
-
-theorem bit_cases {x : BitVec 32} (h : x.toNat ≤ 1) : x = 0#32 ∨ x = (1 : BitVec 32) := by
-  rcases (by omega : x.toNat = 0 ∨ x.toNat = 1) with e | e
-  · exact .inl (BitVec.eq_of_toNat_eq (by simp [e]))
-  · exact .inr (BitVec.eq_of_toNat_eq (by simp [e]))
-
-theorem bv_and_bits {x y : BitVec 32} (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
-    (x &&& y).toNat = if x.toNat = 1 ∧ y.toNat = 1 then 1 else 0 := by
-  rcases bit_cases hx with rfl | rfl <;> rcases bit_cases hy with rfl | rfl <;> decide
-
-theorem bv_xor_bits {x y : BitVec 32} (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
-    (x ^^^ y).toNat = (x.toNat + y.toNat) % 2 := by
-  rcases bit_cases hx with rfl | rfl <;> rcases bit_cases hy with rfl | rfl <;> decide
-
-theorem bv_nor_bits {x y : BitVec 32} (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
-    ((x ||| y) ^^^ (1 : BitVec 32)).toNat = if x.toNat = 0 ∧ y.toNat = 0 then 1 else 0 := by
-  rcases bit_cases hx with rfl | rfl <;> rcases bit_cases hy with rfl | rfl <;> decide
+alias or_one := VG.Proof.Rsa.KeyBits32.or_one
+alias xor_one := VG.Proof.Rsa.KeyBits32.xor_one
+alias bv_or_one := VG.Proof.Rsa.KeyBits32.bv_or_one
+alias bv_clr_one := VG.Proof.Rsa.KeyBits32.bv_clr_one
+alias bv_and_one := VG.Proof.Rsa.KeyBits32.bv_and_one
+alias bit_cases := VG.Proof.Rsa.KeyBits32.bit_cases
+alias bv_and_bits := VG.Proof.Rsa.KeyBits32.bv_and_bits
+alias bv_xor_bits := VG.Proof.Rsa.KeyBits32.bv_xor_bits
+alias bv_nor_bits := VG.Proof.Rsa.KeyBits32.bv_nor_bits
 
 /-- The address of the low word of array `j` in `r`. -/
 theorem arr_addr0 {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N) {r : Reg}
@@ -64,26 +33,16 @@ theorem arr_addr0 {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
 /-- A store to the low word of an array. -/
 theorem num_write0 (m : Mem) (B : BitVec 32) {w j : Nat} (hw : 0 < w) (fit : arr w j + 4 * w ≤ 2 ^ 64)
     (v : BitVec 32) :
-    num (m.writeW (off (State.addr B) (arr w j)) v) B w j = v.toNat + 2 ^ 32 * (num m B w j / 2 ^ 32) := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
-  have o := writeW32_outside m (State.addr B) (d := arr (k + 1) j) v (by omega)
-  have tail := o.val32 (d := arr (k + 1) j + 4) (k := k) (by omega) (by omega)
-  simp only [num] at tail ⊢
-  rw [val32, val32, w32_write_self, tail]
-  have : w32 m (State.addr B) (arr (k + 1) j) < 2 ^ 32 := (m.readW _ 32).isLt
-  omega
+    num (m.writeW (off (State.addr B) (arr w j)) v) B w j = v.toNat + 2 ^ 32 * (num m B w j / 2 ^ 32) :=
+  VG.Proof.Rsa.KeyWorkspace.num_write0 m (State.addr B) hw fit v
 
 theorem num_mod2 (m : Mem) (B : BitVec 32) {w j : Nat} (hw : 0 < w) :
-    num m B w j % 2 = w32 m (State.addr B) (arr w j) % 2 := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
-  simp only [num]; rw [val32]; omega
+    num m B w j % 2 = w32 m (State.addr B) (arr w j) % 2 :=
+  VG.Proof.Rsa.KeyWorkspace.num_mod2 m (State.addr B) hw
 
 theorem num_mod32 (m : Mem) (B : BitVec 32) {w j : Nat} (hw : 0 < w) :
-    num m B w j % 2 ^ 32 = w32 m (State.addr B) (arr w j) := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
-  simp only [num]; rw [val32]
-  have : w32 m (State.addr B) (arr (k + 1) j) < 2 ^ 32 := (m.readW _ 32).isLt
-  omega
+    num m B w j % 2 ^ 32 = w32 m (State.addr B) (arr w j) :=
+  VG.Proof.Rsa.KeyWorkspace.num_mod32 m (State.addr B) hw
 
 /-- `half j`: `[j] = ([j] + r11 · 2^(32 w)) / 2`. -/
 theorem half_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)

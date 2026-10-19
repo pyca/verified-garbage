@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputArgs
+public import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 
 /-! # Accepted RSA output is retained; rejected output is zeroed in constant time -/
@@ -12,19 +13,12 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
 theorem acceptance_byte_mask (b : Bool) (v : Byte) :
-    v &&& (-BitVec.ofNat 32 b.toNat).setWidth 8 = if b then v else 0 := by
-  cases b
-  · change v &&& 0#8 = 0#8
-    exact BitVec.and_zero
-  · change v &&& BitVec.allOnes 8 = v
-    exact BitVec.and_allOnes
+    v &&& (-BitVec.ofNat 32 b.toNat).setWidth 8 = if b then v else 0 :=
+  VG.Proof.Rsa.acceptance_byte_mask b v
 
 theorem acceptance_bytes_mask (b : Bool) (bs : List Byte) :
-    bs.map (· &&& (-BitVec.ofNat 32 b.toNat).setWidth 8) = if b then bs else List.replicate bs.length 0 := by
-  simp only [acceptance_byte_mask]
-  cases b
-  · exact List.map_const'
-  · simp
+    bs.map (· &&& (-BitVec.ofNat 32 b.toNat).setWidth 8) = if b then bs else List.replicate bs.length 0 :=
+  VG.Proof.Rsa.acceptance_bytes_mask b bs
 
 theorem maskOutput_ok (s : State) {dst : BitVec 32} {k : Nat} {accepted : Bool}
     (positive : 0 < k) (countFit : k < 2 ^ 32) (outputFit : dst.toNat + k ≤ 2 ^ 32)

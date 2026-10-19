@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Mont.Words32
@@ -62,19 +63,17 @@ theorem Ws.of_mupd {s t : State} {B : BitVec 32} {Z w N : Nat} {m : Mem}
 
 /-! ## Offsets -/
 
-theorem arr_succ (w j : Nat) : arr w (j + 1) = arr w j + S w := by
-  simp only [arr, Nat.succ_mul, Nat.add_assoc]
+theorem arr_succ (w j : Nat) : arr w (j + 1) = arr w j + S w :=
+  VG.Proof.Rsa.KeyWorkspace.arr_succ w j
 
 theorem arr_mono {w j k : Nat} (h : j ≤ k) : arr w j ≤ arr w k :=
-  Nat.add_le_add_left (Nat.mul_le_mul_right _ h) _
+  VG.Proof.Rsa.KeyWorkspace.arr_mono h
 
-theorem arr_end {w j k : Nat} (h : j < k) : arr w j + S w ≤ arr w k := by
-  rw [← arr_succ]; exact arr_mono h
+theorem arr_end {w j k : Nat} (h : j < k) : arr w j + S w ≤ arr w k :=
+  VG.Proof.Rsa.KeyWorkspace.arr_end h
 
-theorem arr_disj {w j k : Nat} (h : j ≠ k) : arr w j + S w ≤ arr w k ∨ arr w k + S w ≤ arr w j := by
-  rcases Nat.lt_or_gt_of_ne h with h | h
-  · exact .inl (arr_end h)
-  · exact .inr (arr_end h)
+theorem arr_disj {w j k : Nat} (h : j ≠ k) : arr w j + S w ≤ arr w k ∨ arr w k + S w ≤ arr w j :=
+  VG.Proof.Rsa.KeyWorkspace.arr_disj h
 
 theorem Ws.arr_fit {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N) :
     arr w j + S w ≤ Z :=
@@ -146,20 +145,16 @@ def Keep (B : BitVec 32) (w : Nat) (js ds : List Nat) (m m' : Mem) : Prop :=
   Outs (State.addr B) (ranges w js ds) m m'
 
 theorem Keep.refl (B : BitVec 32) (w : Nat) (js ds : List Nat) (m : Mem) : Keep B w js ds m m :=
-  Outs.refl _ _ _
+  VG.Proof.Rsa.KeyWorkspace.Keep.refl (State.addr B) w js ds m
 
 theorem Keep.trans {B : BitVec 32} {w : Nat} {js ds : List Nat} {m₁ m₂ m₃ : Mem}
     (h₁ : Keep B w js ds m₁ m₂) (h₂ : Keep B w js ds m₂ m₃) : Keep B w js ds m₁ m₃ :=
-  Outs.trans h₁ h₂
+  VG.Proof.Rsa.KeyWorkspace.Keep.trans h₁ h₂
 
 theorem Keep.mono {B : BitVec 32} {w : Nat} {js ds js' ds' : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') (hj : ∀ j ∈ js, j ∈ js' := by simp)
-    (hd : ∀ d ∈ ds, d ∈ ds' := by simp) : Keep B w js' ds' m m' := by
-  refine Outs.mono h fun r hr => ?_
-  simp only [ranges, List.mem_append, List.mem_map] at hr ⊢
-  rcases hr with ⟨j, hj', rfl⟩ | ⟨d, hd', rfl⟩
-  · exact .inl ⟨j, hj j hj', rfl⟩
-  · exact .inr ⟨d, hd d hd', rfl⟩
+    (hd : ∀ d ∈ ds, d ∈ ds' := by simp) : Keep B w js' ds' m m' :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.mono h hj hd
 
 /-- Two frames, each widened to the union. -/
 theorem Keep.join {B : BitVec 32} {w : Nat} {js₁ ds₁ js₂ ds₂ js ds : List Nat} {m₁ m₂ m₃ : Mem}
@@ -167,75 +162,48 @@ theorem Keep.join {B : BitVec 32} {w : Nat} {js₁ ds₁ js₂ ds₂ js ds : Lis
     (hj₁ : ∀ j ∈ js₁, j ∈ js := by simp) (hd₁ : ∀ d ∈ ds₁, d ∈ ds := by simp)
     (hj₂ : ∀ j ∈ js₂, j ∈ js := by simp) (hd₂ : ∀ d ∈ ds₂, d ∈ ds := by simp) :
     Keep B w js ds m₁ m₃ :=
-  (h₁.mono hj₁ hd₁).trans (h₂.mono hj₂ hd₂)
+  VG.Proof.Rsa.KeyWorkspace.Keep.join h₁ h₂ hj₁ hd₁ hj₂ hd₂
 
 theorem Keep.of_arr {B : BitVec 32} {w o n d : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Outside (State.addr B) (arr w o + d) n m m') (hn : d + n ≤ S w) (ho : o ∈ js) :
-    Keep B w js ds m m' := by
-  intro x hx
-  have := hx (arr w o, S w) (by simp only [ranges, List.mem_append, List.mem_map]; exact .inl ⟨o, ho, rfl⟩)
-  exact h x (by omega)
+    Keep B w js ds m m' :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.of_arr h hn ho
 
 theorem Keep.of_slot {B : BitVec 32} {w e : Nat} {js ds : List Nat} {m m' : Mem}
-    (h : Outside (State.addr B) e 4 m m') (he : e ∈ ds) : Keep B w js ds m m' := by
-  intro x hx
-  have := hx (e, 4) (by simp only [ranges, List.mem_append, List.mem_map]; exact .inr ⟨e, he, rfl⟩)
-  exact h x this
+    (h : Outside (State.addr B) e 4 m m') (he : e ∈ ds) : Keep B w js ds m m' :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.of_slot h he
 
 /-- An array outside the frame. -/
 theorem Keep.num {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') {j : Nat} (hj : ∀ k ∈ js, k ≠ j) (hd : ∀ d ∈ ds, d + 4 ≤ hdr)
-    (fit : arr w j + S w ≤ 2 ^ 64) : num m' B w j = num m B w j := by
-  have hS : 4 * w ≤ S w := by simp only [S]; omega
-  refine Outs.val32 h (fun r hr => ?_) (by omega)
-  simp only [ranges, List.mem_append, List.mem_map] at hr
-  rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-  · have := arr_disj (w := w) (hj k hk); dsimp only; omega
-  · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
+    (fit : arr w j + S w ≤ 2 ^ 64) : num m' B w j = num m B w j :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.num h hj hd fit
 
 /-- All the words of an array outside the frame. -/
 theorem Keep.full {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') {j : Nat} (hj : ∀ k ∈ js, k ≠ j) (hd : ∀ d ∈ ds, d + 4 ≤ hdr)
     (fit : arr w j + S w ≤ 2 ^ 64) :
-    val32 m' (State.addr B) (arr w j) (w + 2) = val32 m (State.addr B) (arr w j) (w + 2) := by
-  refine Outs.val32 h (fun r hr => ?_) (by simp only [S] at fit; omega)
-  simp only [ranges, List.mem_append, List.mem_map] at hr
-  rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-  · have := arr_disj (w := w) (hj k hk); dsimp only; simp only [S] at *; omega
-  · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
+    val32 m' (State.addr B) (arr w j) (w + 2) = val32 m (State.addr B) (arr w j) (w + 2) :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.full h hj hd fit
 
 /-- A word of an array outside the frame. -/
 theorem Keep.word {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') {j i : Nat} (hi : 4 * i + 4 ≤ S w) (hj : ∀ k ∈ js, k ≠ j)
     (hd : ∀ d ∈ ds, d + 4 ≤ hdr) (fit : arr w j + S w ≤ 2 ^ 64) :
-    w32 m' (State.addr B) (arr w j + 4 * i) = w32 m (State.addr B) (arr w j + 4 * i) := by
-  have := Outs.val32 (k := 1) (d := arr w j + 4 * i) h (fun r hr => ?_) (by omega)
-  · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
-  simp only [ranges, List.mem_append, List.mem_map] at hr
-  rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-  · have := arr_disj (w := w) (hj k hk); dsimp only; omega
-  · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
+    w32 m' (State.addr B) (arr w j + 4 * i) = w32 m (State.addr B) (arr w j + 4 * i) :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.word h hi hj hd fit
 
 /-- A header word outside the frame. -/
 theorem Keep.slot {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') {e : Nat} (he : e + 4 ≤ hdr) (hd : ∀ d ∈ ds, e + 4 ≤ d ∨ d + 4 ≤ e) :
-    slot m' B e = slot m B e := by
-  have := Outs.val32 (k := 1) (d := e) h (fun r hr => ?_) (by simp only [hdr] at he; omega)
-  · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
-  simp only [ranges, List.mem_append, List.mem_map] at hr
-  rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-  · have : hdr ≤ arr w k := Nat.le_add_right _ _; dsimp only; omega
-  · exact hd d hd'
+    slot m' B e = slot m B e :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.slot h he hd
 
 /-- Memory outside the working space. -/
 theorem Keep.out {B : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : Keep B w js ds m m') {Z : Nat} (hj : ∀ j ∈ js, arr w j + S w ≤ Z) (hd : ∀ d ∈ ds, d + 4 ≤ Z)
-    {x : Addr} (hx : Z ≤ ofs (State.addr B) x) : m' x = m x := by
-  refine h x fun r hr => ?_
-  simp only [ranges, List.mem_append, List.mem_map] at hr
-  rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-  · have := hj k hk; dsimp only; omega
-  · have := hd d hd'; dsimp only; omega
+    {x : Addr} (hx : Z ≤ ofs (State.addr B) x) : m' x = m x :=
+  VG.Proof.Rsa.KeyWorkspace.Keep.out h hj hd hx
 
 /-! ## Header words -/
 

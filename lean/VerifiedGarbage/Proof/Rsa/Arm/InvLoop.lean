@@ -15,8 +15,7 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum
 open VG.Proof.X25519.Arm
 open VG.Proof.Rsa (invIter InvI)
 
-theorem invI_start' {a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) : InvI a m (a, m, 1, 0) :=
-  ⟨hm, h1, show 0 < m by omega, ⟨0, by simp⟩, by simp, rfl⟩
+alias invI_start' := VG.Proof.Rsa.invI_start'
 
 /-- The arrays and header words `inverse` writes. -/
 abbrev invArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, aT1, aT2, aT3, aT4]

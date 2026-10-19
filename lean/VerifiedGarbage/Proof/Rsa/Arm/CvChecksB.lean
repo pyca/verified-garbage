@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Proof.Rsa.Arm.CvChecksA
 
 /-! # `vg_rsa_crt_values` on ARMv7: the inverse, the mask, and the division of `d` set up -/
@@ -12,7 +13,7 @@ open VG.Proof.Rsa.Arm.Keys VG.Proof.Bignum.Arm VG.Impl.Bignum.Arm
 open VG.Proof.X25519.Arm
 
 /-- The mask of the checks, from the quotient `X₁` and remainder `X₂` of `n / p` and the gcd `V`. -/
-def maskOf (P Q X₁ X₂ V : Nat) : Bool := P % 2 = 1 ∧ X₁ = Q ∧ X₂ = 0 ∧ V = 1
+abbrev maskOf := VG.Proof.Rsa.CrtValues.maskOf
 
 /-- Before the division of `d` by `p - 1`. -/
 structure StD (s0 : State) (X₁ X₂ : Nat) (s : State) : Prop where
@@ -116,7 +117,7 @@ theorem checksB_ok {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
       k3a.slot (e := sE2) (by decide) (by decide), k3a.slot (e := sE3) (by decide) (by decide), e2,
       sl sPodd (by decide) (by decide) (by decide), sl sE1 (by decide) (by decide) (by decide),
       sl sE2 (by decide) (by decide) (by decide), h.podd, h.e1, h.e2]
-    simp only [maskOf]
+    simp only [maskOf, VG.Proof.Rsa.CrtValues.maskOf]
     by_cases a : cvP s0 % 2 = 1 <;> by_cases b : X₁ = cvQ s0 <;> by_cases c : X₂ = 0 <;>
       by_cases d : num t1.mem (cvB s0) (cvW s0) 1 = 1 <;> simp [a, b, c, d]
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvCnt
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Rsa.RecoverHalving
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a halving of `m` (`halfBody_ok`)
 
@@ -27,18 +27,8 @@ def Vh (P : RP) (σ : State) (k : Nat) : Nat → Nat := upd (upd (fun _ => 0) sT
 def HI (P : RP) (σ : State) (k : Nat) (s : State) : Prop :=
   KS P σ (Aload P σ) [aN] (AWh P σ k) [wR] (Vh P σ k) [sTc, sCnt] s ∧ Ws s P.B P.Z P.W 22
 
-theorem hvs_le (P : RP) (σ : State) (k : Nat) : (hvs P σ k).2 ≤ k := by
-  induction k with
-  | zero => exact Nat.le_of_eq rfl
-  | succ k ih =>
-    have ih' : (halveStep^[k] (mv P σ, 0)).2 ≤ k := ih
-    show (halveStep^[k + 1] (mv P σ, 0)).2 ≤ k + 1
-    rw [Function.iterate_succ_apply']
-    generalize halveStep^[k] (mv P σ, 0) = st at ih' ⊢
-    unfold halveStep
-    split
-    · show st.2 + 1 ≤ k + 1; omega
-    · show st.2 ≤ k + 1; omega
+theorem hvs_le (P : RP) (σ : State) (k : Nat) : (hvs P σ k).2 ≤ k :=
+  VG.Proof.Rsa.halve_count_le (mv P σ) k
 
 theorem hvs_succ (P : RP) (σ : State) (k : Nat) :
     hvs P σ (k + 1) = halveStep (hvs P σ k) := by rw [hvs, Function.iterate_succ_apply']

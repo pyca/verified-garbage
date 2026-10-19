@@ -22,15 +22,7 @@ def invU (A D : Nat) : List (Prog isa) := [
   .block [.mov .r11 (.imm 0)],
   half D]
 
-theorem invU_arith {u v x₁ x₂ β₁ β₂ P : Nat} (d₁ : x₁ + v = u + P * β₁) (b₁ : β₁ ≤ 1) (l₁ : x₁ < P)
-    (d₂ : x₂ + u = v + P * β₂) (b₂ : β₂ ≤ 1) (l₂ : x₂ < P) :
-    (if u % 2 = 0 then u else if (if u % 2 = 1 ∧ u < v then 1 else 0) = 0 then x₁ else x₂) / 2 =
-      (if u % 2 = 1 then (if u < v then (v - u) / 2 else (u - v) / 2) else u / 2) := by
-  rcases (by omega : β₁ = 0 ∨ β₁ = 1) with rfl | rfl <;> rcases (by omega : β₂ = 0 ∨ β₂ = 1) with rfl | rfl <;>
-  simp only [Nat.mul_zero, Nat.mul_one, Nat.add_zero] at d₁ d₂ <;>
-  by_cases e : u % 2 = 1 <;> by_cases f : u < v <;>
-  simp only [e, f, and_true, and_false, ↓reduceIte, show u % 2 = 0 ↔ ¬ u % 2 = 1 by omega, not_false_eq_true,
-    Nat.one_ne_zero] <;> omega
+alias invU_arith := VG.Proof.Rsa.invU_arith
 
 theorem invU_ok {s : State} {B : BitVec 32} {Z w N A D : Nat} (h : Ws s B Z w N)
     (hN15 : 15 ≤ N) (hN : N ≤ 256) (hb : (A = 0 ∧ D = 4) ∨ (A = 4 ∧ D = 0)) :

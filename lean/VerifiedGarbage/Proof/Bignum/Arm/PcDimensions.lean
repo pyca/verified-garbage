@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The shared RSA scratch requirement fits the ARMv7 workspace -/
 
@@ -22,10 +23,7 @@ theorem pc_dimensions {k len : Nat} (hk : 64 ≤ k) (hk' : k ≤ 1024)
 theorem rsa_bytes_frame {regions : List Region} {m m' : Mem} {src : Addr} {k : Nat}
     (frame : Frame regions m m') (fit : k < 2 ^ 64)
     (sep : ∀ r ∈ regions, (⟨src, k⟩ : Region).Disjoint r) :
-    Spec.Rsa.bytesAt m' src k = Spec.Rsa.bytesAt m src k := by
-  unfold Spec.Rsa.bytesAt
-  apply List.map_congr_left
-  intro j hj
-  exact frame.bytes (R := ⟨src, k⟩) sep (by change k ≤ 2 ^ 64; omega) (List.mem_range.mp hj)
+    Spec.Rsa.bytesAt m' src k = Spec.Rsa.bytesAt m src k :=
+  VG.Proof.Rsa.rsa_bytes_frame frame fit sep
 
 end VG.Proof.Bignum.Arm

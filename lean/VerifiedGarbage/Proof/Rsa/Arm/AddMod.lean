@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.MulModArithmetic
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Rsa.Arm.InvParts
@@ -14,22 +15,16 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum
 open VG.Proof.X25519.Arm
 
 /-- A sum below `2 m` modulo `m`. -/
-theorem mod_of_lt_two {x M : Nat} (h : x < 2 * M) : x % M = if x < M then x else x - M := by
-  split
-  · exact Nat.mod_eq_of_lt (by assumption)
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+theorem mod_of_lt_two {x M : Nat} (h : x < 2 * M) : x % M = if x < M then x else x - M :=
+  VG.Proof.Rsa.mod_of_lt_two h
 
 /-- The arithmetic of `addMod`: the negation of `b`, the sum, and the difference with `m`. -/
 theorem addMod_impl {P A Bv M N1 β1 T β2 U β3 : Nat} (hA : A < M) (hB : Bv < M) (hM : 2 * M ≤ P)
     (h1 : N1 + Bv = 0 + P * β1) (_hN1 : N1 < P) (hβ1 : β1 ≤ 1)
     (h2 : T + N1 = A + P * β2) (hT : T < P) (hβ2 : β2 ≤ 1)
     (h3 : U + M = T + P * β3) (hU : U < P) (hβ3 : β3 ≤ 1) :
-    (if β3 = 0 then U else T) = (A + Bv) % M := by
-  rw [mod_of_lt_two (by omega)]
-  rcases (by omega : β1 = 0 ∨ β1 = 1) with rfl | rfl <;>
-  rcases (by omega : β2 = 0 ∨ β2 = 1) with rfl | rfl <;>
-  rcases (by omega : β3 = 0 ∨ β3 = 1) with rfl | rfl <;>
-  simp only [Nat.mul_zero, Nat.mul_one] at h1 h2 h3 <;> split <;> split <;> omega
+    (if β3 = 0 then U else T) = (A + Bv) % M :=
+  VG.Proof.Rsa.addMod_impl hA hB hM h1 _hN1 hβ1 h2 hT hβ2 h3 hU hβ3
 
 theorem addMod_ok {s : State} {B : BitVec 32} {Z w N o a b m z t : Nat} (h : Ws s B Z w N)
     (hN : N ≤ 256) (ho : o < N) (ha : a < N) (hb : b < N) (hm : m < N) (hz : z < N) (ht : t + 2 < N)
