@@ -39,6 +39,7 @@ def CandidateData.atCandidate {g : Geo} {m eLen dLen : Nat}
   rb := C.rb
   count := C.count
   limit := C.limit
+  wide := C.wide
 
 theorem candidate_condition {m t r c j : Nat} (ht : 1 ≤ t) (hc : t ≤ c)
     (hj : j < (recoverPrimes.go m t r 100).2)
@@ -64,7 +65,7 @@ theorem searchBody_ok {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen 
       t.zf = some (!(decide (j + 1 < 100) &&
         !(candidateState m (C.V sTc) (C.AW wR) (8 * (dLen + eLen)) j).2.2)) :=
   candBody_index C.zero C.value C.bound C.inverse C.odd C.large C.one C.neg C.r2
-    C.ae C.ad C.tc C.rb C.count C.limit hs hj
+    C.ae C.ad C.tc C.rb C.count C.limit C.wide hs hj
 
 def SearchInvariant {g : Geo} {m eLen dLen : Nat}
     (C : CandidateData g m eLen dLen) (j : Nat) (s : State) : Prop :=

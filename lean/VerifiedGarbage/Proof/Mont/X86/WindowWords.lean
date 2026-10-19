@@ -157,4 +157,21 @@ theorem topWindow_ok {s : State} {base : Addr} {size exp k : Nat} (hs : Scr s ba
   · obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
     rw [mt.mem, w32_write_self, u₂.gpr, u₁.gpr, shr28_toNat, Nat.add_sub_cancel, val32_top_bits]
 
+/-- The exponent's next window, from its top bits. -/
+theorem window_exponent (X P : Nat) (hP : 0 < P) : X * 16 / P = 16 * (X / P) + X % P * 16 / P := by
+  have e : X * 16 = X % P * 16 + P * (16 * (X / P)) := by
+    have := Nat.mod_add_div X P
+    calc X * 16 = (X % P + P * (X / P)) * 16 := by rw [this]
+      _ = _ := by rw [Nat.add_mul, Nat.mul_assoc, Nat.mul_comm (X / P) 16]
+  rw [e, Nat.add_mul_div_left _ _ hP, Nat.add_comm]
+
+theorem window_power (b c w : Nat) : (b ^ c) ^ 16 * b ^ w = b ^ (16 * c + w) := by
+  rw [← Nat.pow_mul, ← Nat.pow_add, Nat.mul_comm c 16]
+
+/-- `8k` windows cover the exponent. -/
+theorem window_all (E k : Nat) : E * 16 ^ (8 * k) / 2 ^ (32 * k) = E := by
+  rw [show (16 : Nat) ^ (8 * k) = 2 ^ (32 * k) by
+    rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega]
+  exact Nat.mul_div_cancel _ (Nat.two_pow_pos _)
+
 end VG.Proof.Mont.X86.Dynamic

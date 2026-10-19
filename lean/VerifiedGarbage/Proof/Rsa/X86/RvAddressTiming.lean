@@ -36,6 +36,18 @@ theorem candSet_address (n : Nat) : AddressPublic (candSet n) := by
   · exact (check_of_erase_eq (candSet n) reference argumentTaint hint rfl rfl rfl).trans (by rfl)
   · decide +kernel
 
+theorem alignStart_address (n : Nat) : AddressPublic (alignStart n) := by
+  let reference := Code.erase (alignStart 1)
+  let hint := VG.Taint.hintOf taint argumentTaint reference
+  let out := (VG.Taint.check taint argumentTaint reference hint).getD argumentTaint
+  refine ⟨hint, out, ?_, ?_⟩
+  · exact (check_of_erase_eq (alignStart n) reference argumentTaint hint rfl rfl rfl).trans (by rfl)
+  · decide +kernel
+
+theorem windowCount_address : AddressPublic (.block windowCount) := by
+  let out := (VG.Taint.check taint argumentTaint (.block windowCount) (.block [])).getD argumentTaint
+  exact ⟨.block [], out, by rfl, by decide +kernel⟩
+
 theorem halfInit_address (n : Nat) : AddressPublic (halfInit n) := by
   let reference := Code.erase (halfInit 1)
   let hint := VG.Taint.hintOf taint argumentTaint reference

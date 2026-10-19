@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareLoop
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareInit
-public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
 
 /-! # The squaring search following a candidate's exponentiation -/
 

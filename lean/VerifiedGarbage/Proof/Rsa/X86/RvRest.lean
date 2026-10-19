@@ -53,7 +53,7 @@ theorem rest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
     (by simpa only [upd_self] using inverse) odd large
     (by simp [AM, upd, aO, aNg]) (by simp [AM, upd])
     (by simp [AM, upd, mR2, aNg, aO, mXm]) ae ad
-    (by simpa [countBits, upd, sTc, sInv, sCnt] using tbound) rbound count limit tracked
+    (by simpa [countBits, upd, sTc, sInv, sCnt] using tbound) rbound count limit inputs.countWide tracked
     (by simp [upd, sCnt, sInv]) (by simpa [upd, sTc, sInv, sCnt] using tpos))
     fun s3 ⟨j, st, _, hs, small, pos, found⟩ => ?_)
   refine WP.mono (fin_ok inputs hs

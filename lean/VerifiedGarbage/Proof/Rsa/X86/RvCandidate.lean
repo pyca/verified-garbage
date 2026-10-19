@@ -27,7 +27,8 @@ theorem candBody_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m eLen dLen
     (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (ht : V sTc ≤ 8 * (dLen + eLen)) (rb : AW wR < 2 ^ (8 * (dLen + eLen)))
-    (count : 0 < 8 * (dLen + eLen)) (limit : 8 * (dLen + eLen) ≤ 16384) :
+    (count : 0 < 8 * (dLen + eLen)) (limit : 8 * (dLen + eLen) ≤ 16384)
+    (hwide : 8 * (dLen + eLen) < 32 * g.W) :
     WP isa (candBody g.n) s fun t =>
       let st := candidateState m (V sTc) (AW wR) (8 * (dLen + eLen)) (V sCand)
       SI g s0 A AW (upd V sCand (V sCand + 1)) m (8 * (dLen + eLen)) 0 st t ∧
@@ -36,24 +37,7 @@ theorem candBody_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m eLen dLen
   unfold candBody
   simp only [seqs]
   refine WP.seq (WP.mono (candExp_ok h zero value bound inverse odd one r2 candidate baseBound
-    ae ad count limit) fun s1 h1 => ?_)
-  have hs : KS g s0 (upd A mY (Spec.Rsa.powMod (V sCand + 2) (AW wR) m * 2 ^ (64 * g.n) % m))
-      liveSq AW [wR] (upd V sCnt 0) slotsExp s1 := by
-    refine h1.mono ?_ ?_ ?_
-    · intro j hj
-      refine ⟨?_, ?_⟩
-      · simp only [liveSq, liveM, liveExp, List.mem_cons, List.not_mem_nil, or_false] at *
-        grind
-      · simp only [liveSq, liveM, List.mem_cons, List.not_mem_nil, or_false] at hj
-        rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp [AE, upd, mY, mG, aNg, aO, mR2, mBase, aOne, aZ, aN,
-            Nat.mod_eq_of_lt rb, VG.Proof.Bignum.powMod_eq]
-    · intro j hj
-      simp only [List.mem_singleton] at hj
-      subst j
-      exact ⟨by simp, upd_ne _ _ (by decide)⟩
-    · intro d hd
-      exact ⟨hd, by simp only [Nat.sub_self]⟩
+    ae ad count limit hwide rb) fun s1 hs => ?_)
   refine WP.seq (WP.mono (candSquare_ok hs value bound
     (by simpa only [upd_ne _ _ (by decide : sInv ≠ sCnt)] using inverse) odd hm one neg
     (by rw [VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ positive) ae ad

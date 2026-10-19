@@ -70,7 +70,8 @@ theorem prepare_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
     tc := by simpa [countBits, upd, sTc, sInv, sCnt] using tbound
     rb := rbound
     count := count
-    limit := limit }
+    limit := limit
+    wide := inputs.countWide }
   refine ⟨⟨C, rfl, ?_, ?_, tracked, ?_, ?_, ?_⟩⟩
   · simp [C, AM, upd, aN, aNg, aO, mXm, mR2, mBase, aOne, aZ]
   · simp [C, AM, upd, aOne, aNg, aO, mXm, mR2, mBase]
